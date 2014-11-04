@@ -52,12 +52,12 @@ def check_wimax_bs_temperature_fan(item, _no_params, info):
         if info:
             acb_temp = int(info[0][0])
             state = 0
-            infotext = "ACB temperature of BS is %s " % acb_temp
+            infotext = "FAN temperature of BS is %s " % acb_temp
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
-    return (state, infotext, [("acb_temp",acb_temp )])
+    return (state, infotext, [("fan_temp",acb_temp )])
 
 
 check_info["wimax_bs_temperature_fan"] = {

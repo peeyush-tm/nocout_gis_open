@@ -153,7 +153,7 @@ def get_current_value_old(current_values, device=None, service=None, data_source
     return current_values
 
 
-def get_current_value(q,device=None, service_list=None, data_source_list=None):
+def get_current_value(q,device=None, service_list=None, data_source_list=None, bs_name_ss_mac_mapping=None, ss_name_mac_mapping=None):
      #response = []
      # Teramatrix poller on which this device is being monitored
      site_name = get_site_name()
@@ -169,35 +169,11 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
      #signal.alarm(0.5)
      ss_mac_list, bs_device_list = [], []
      for service in service_list:
-	     logger.info('service: ' + pformat(service))
 	     device = old_device
+	     old_service = service
              if service in wimax_services:
-			for d in old_device:
-				ss_mac, __ = get_parent(host=d, db=False)
-				ss_mac_list.append(ss_mac)
-				logger.info('ss_mac ' + pformat(ss_mac_list))
-				bs_device,site_name=extract_host_for_live_polling(ss_mac.upper())[0]
-				logger.info('bs_device ' + pformat(bs_device))
-				bs_device_list.append(bs_device)				
-				# Reading bs_device and site_name from topology
-				#bs_device_list.append(bs_device)
-			logger.info('ss_list: ' + pformat(ss_mac_list))
-			logger.info('bs_list: ' + pformat(bs_device_list))
-			#ss_mac, bs_device = map(lambda t: get_parent(host=t[0], db=False),old_device)
-			devicename_ssmac_mapping = zip(ss_mac_list,old_device)
-		        #logger.debug('wimax ss_mac and bs_device:' + pformat(ss_mac) + ' and ' + pformat(bs_device[0]))
-			if ss_mac_list and bs_device_list:
-			     old_device = device
-			     device = str(bs_device_list[0])
-			     old_service = service
-			     service = 'wimax_topology'
-		     	else:
-				for d1 in device:
-					logger.info('Wimax BS name or SS mac did not found for SS and service ' + \
-					 pformat(d1)  + ' ' + pformat(service))
-			 		data_dict = {d1: []}
-			 		q.put(data_dict)
-			 	return
+			old_service = service
+			service = 'wimax_topology'
 	     if service in interface_services:
 		     # Replace the device with bs_device for these services
 		     ss_mac, bs_device = get_parent(host=device, db=False) 
@@ -268,22 +244,30 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
 			 	q.put(data_dict)
 			 	return
 		elif old_service in wimax_services:
+			filtered_ss_data =[]
 			try:
 				data_value = []	
 				check_output = filter(lambda t: 'wimax_topology' in t, check_output.split('\n'))
-				check_output = check_output.split('- ')[1].split(' ')
-				filtered_ss_data = map(lambda t: t.upper() in check_output,ss_mac_list)
+				check_output = check_output[0].split('- ')[1].split(' ')
+				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
+					filtered_ss_output = filter(lambda t:  ss_mac_entry.upper() in t,check_output)
+					filtered_ss_data.extend(filtered_ss_output)
 				index = wimax_services.index(old_service)
 				for entry in filtered_ss_data:
 					data_value = entry.split('=')[1].split(',')[index]
 					cal_ss_mac = entry.split('=')[0]
-					host_name_entry = filter(lambda t: cal_ss_mac.lower() in t,devicename_ssmac_mapping)
-					data_dict = {host_name_entry[0][1]:data_value}
-					q.put(data_dict)			
+					# MARK
+					for host_name,mac_value in ss_name_mac_mapping.items():
+						if mac_value ==  cal_ss_mac.lower():
+							ss_host_name = host_name
+							break
+					data_dict = {ss_host_name:data_value}
+					q.put(data_dict)
+							
 			except Exception, e:
-				for d1 in old_device:
-			 		logger.error('Empty check_output: ' + pformat(e))
-					data_dict = {d1: []}
+			 	logger.error('Empty check_output: ' + pformat(e))
+				for host_name,mac_value in ss_name_mac_mapping.items():
+					data_dict = {host_name:[]}
 			 		q.put(data_dict)
 			 	return
 				
@@ -332,36 +316,6 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
      #q.put(host_data_dict)
      #return data_dict
 
-
-
-def mysql_conn():
-        db = None
-        try:
-            db = mysql.connector.connect(
-                        user=_DATABASES['user'],
-                        host=_DATABASES['host'],
-                        password=_DATABASES['password'],
-                        database=_DATABASES['database'],
-                        port=_DATABASES['port']
-                        )
-        except Exception as exp:
-            print exp
-        return db
-
-
-
-def extract_host_for_live_polling(ss_host_mac):
-	logger.info('live_polling' + pformat(ss_host_mac))
-        query = """
-        select device_name ,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-	logger.info('data' + pformat(data))
-	
-        return data
 
 
 def alarm_handler(signum, frame):

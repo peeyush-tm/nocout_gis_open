@@ -18,7 +18,7 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def check_wimax_ss_ptx_invent(item, _no_params, info):
+def check_wimax_ss_ptx_invent(item, params, info):
     """
             check_wimax_ss_ptx_invent function calculates the operating ptx
 
@@ -43,11 +43,17 @@ def check_wimax_ss_ptx_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
+    warn,crit = params
     try:
         if info:
             if info[0][0]:
                 ptx = int(info[0][0])
-                state = 0
+		if ptx > crit:
+			state = 2
+		elif ptx >= warn and ptx < crit:
+			state = 1
+		else
+			state = 0 
                 infotext = "%d" % ptx
     except ValueError:
         infotext = "type_mismatch_value"
