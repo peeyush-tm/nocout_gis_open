@@ -455,13 +455,13 @@
             $("#apply_filter").on('click', function () {
                 if (startDate && endDate) {
                     //epoch function
-                    var myStartDate = "", myEndDate = "";
-                    var myStartTime = startDate.getTime()/1000.0;
-                    var myEndTime = endDate.getTime()/1000.0;
+                    var myStartDate = startDate.toDate(), myEndDate = endDate.toDate();
+                    var myStartTime = myStartDate.getTime()/1000.0;
+                    var myEndTime = myEndDate.getTime()/1000.0;
                     // var myStartDate = moment(startDate).format("DD-MM-YYYY HH:mm:ss");
                     // var myEndDate =  moment(endDate).format("DD-MM-YYYY HH:mm:ss");
-                    window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent(myStartDate)
-                            + '&end_date=' + encodeURIComponent(myEndDate);
+                    window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent(myStartTime)
+                            + '&end_date=' + encodeURIComponent(myEndTime);
                 } else {
                     alert("Select Start & End Date");
                 }

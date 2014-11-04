@@ -337,15 +337,13 @@ function nocoutPerfLib() {
 
 		}
 
+		
 		function getDateInEpochFormat(date, time) {
-			// if (date) {
-			// 	return date.getDate() + "-" + (parseInt(date.getMonth(), 10) + 1) + "-" + date.getFullYear();
-			// } else {
-			// 	return '';
-			// }
+	
 			var split_time = time.split(":");
-			var new_date = moment(date).add(split_time[0], 'h').add(split_time[1], 'm').add(split_time[2], 's'); 
-			console.log(new_date);
+			var new_date = moment(date).add(split_time[0], 'h').add(split_time[1], 'm').add(split_time[2], 's');
+			new_date = new_date.toDate();
+			return (new_date.getTime())/1000;
 		}
 
 		function createHighChart(config) {
