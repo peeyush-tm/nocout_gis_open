@@ -15,6 +15,7 @@ from activity_stream.forms import UserActionForm
 
 from datetime import datetime,timedelta
 from pytz import timezone
+from nocout.utils import logged_in_user_organizations
 
 import logging
 
@@ -77,7 +78,8 @@ class ActionListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
-            user_ids_list = UserProfile.objects.filter(username__icontains=sSearch).values_list('id', flat=True)
+            user_ids_list = UserProfile.objects.filter(username__icontains=sSearch,
+                                                       organization__in=logged_in_user_organizations(self)).values_list('id', flat=True)
             qs =UserAction.objects.filter( user_id__in=user_ids_list ).values('id', 'logged_at')
         return qs
 
@@ -96,9 +98,10 @@ class ActionListingTable(BaseDatatableView):
         limit = 10
         offset = 0
         start = 0
-        for x in range(0, UserAction.objects.count(), limit):
+        user_id_list = UserProfile.objects.filter(organization__in=logged_in_user_organizations(self)).values_list('id')
+        for x in range(0, UserAction.objects.filter(user_id__in=user_id_list).count(), limit):
             offset = start + limit
-            qs += UserAction.objects.filter(
+            qs += UserAction.objects.filter( user_id__in=user_id_list,
                 logged_at__range=(startdate.strftime("%Y-%m-%d 00:00:00"), enddate.strftime("%Y-%m-%d 00:00:00"))
             ).values("id", "logged_at")[start:offset]
             start += limit

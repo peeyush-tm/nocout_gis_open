@@ -1,2 +1,2 @@
 from user_profile import signals
-from inventory import management
+from inventory import management, signals

@@ -114,7 +114,18 @@
                     <li><a class="" href="/performance/customer_live/"><span class="sub-menu-text">Customer Live</span></a></li>
                     <li><a class="" href="/performance/network_live/"><span class="sub-menu-text">Network Live</span></a></li>
                     <li><a class="" href="/performance/other_live/"><span class="sub-menu-text">Other</span></a></li>
-                    <li><a class="" href="/performance/performance_dashboard/"><span class="sub-menu-text">RF Performance Dashboard</span></a></li>
+                    <li class="has-sub-sub">
+                        <a class="" href="javascript:;">
+                            <span class="sub-menu-text">RF Performance Dashboard</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            <li><a class="" href="{% url 'dashboard-rf-performance-wimax' %}"><span class="sub-menu-text">WiMAX</span></a></li>
+                            <li><a class="" href="{% url 'dashboard-rf-performance-pmp' %}"><span class="sub-menu-text">PMP</span></a></li>
+                            <li><a class="" href="{% url 'dashboard-rf-performance-ptp' %}"><span class="sub-menu-text">PTP</span></a></li>
+                            <li><a class="" href="{% url 'dashboard-rf-performance-ptp-bh' %}"><span class="sub-menu-text">PTP BH</span></a></li>
+                        </ul>
+                    </li>
                     <li><a class="" href="/performance/sector_dashboard/"><span class="sub-menu-text">Sector Dashboard</span></a></li>
                 </ul>
             </li>
@@ -181,11 +192,6 @@
                         <ul class="sub-sub">
                             {% if perms.device.view_device %}
                             <li><a class="" href="/device/"><span class="sub-menu-text">Devices</span></a></li>
-                            {% endif %}
-                            {% if perms.device_group.view_devicegroup %}
-
-                            <li><a class="" href="/device_group/"><span class="sub-menu-text">Device Group</span></a></li>
-
                             {% endif %}
                             {% if perms.device.view_devicetypefields %}
                             <li><a class="" href="/device_fields/"><span class="sub-menu-text">Device Fields</span></a></li>
@@ -282,7 +288,6 @@
                     </a>
                     <ul class="sub">
                         <li><a class="" href="/user/"><span class="sub-menu-text">Users</span></a></li>
-                        <li><a class="" href="/user_group/"><span class="sub-menu-text">User Groups</span></a></li>
                         <li><a class="" href="/sm/"><span class="sub-menu-text">User Session</span></a></li>
                         <li><a class="" href="/organization/"><span class="sub-menu-text">Organization</span></a></li>
                         
@@ -320,6 +325,7 @@
                 {% else %}
                     <li><a class="" href="/thematic_settings/"><span class="sub-menu-text">Thematic Settings</span></a></li>
                 {% endif %}
+                <li><a class="" href="{% url 'dashboard-settings' %}"><span class="sub-menu-text">Dashboard Settings</span></a></li>
                 </ul>
             </li>
 

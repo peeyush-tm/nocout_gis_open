@@ -1,0 +1,87 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block css %}
+    <style type="text/css">
+        #user_profile table tr td:first-child {
+            font-weight: bold;
+        }
+        #user_profile table tr td {
+            font-weight: normal;
+        }
+    </style>
+{% endblock %}
+{% block breadcrumb_title %}
+    <li><a href="{% url 'dashboard-settings' %}">Dashboard Settings</a></li>
+    <li>{{ object.id }}</li>
+{% endblock %}
+{% block content_title %}Dashboard Management{% endblock %}
+{% block content_description %}Dashboard setting detail{% endblock %}
+{% block content %}
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i> Dashboard Settings Detail - {{ object.name }}</h4>
+        </div>
+        <div class="box-body">
+            <div id="user_profile" class="col-md-6 col-md-offset-3">
+                <table class="table table-hover table-bordered">
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Name:</td>
+                        <td>{{ object.name }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Dashboard Type:</td>
+                        <td>{{ object.get_dashboard_type_display }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Page Name:</td>
+                        <td>{{ object.page_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Technology:</td>
+                        <td>{{ object.technology }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Range1:</td>
+                        <td><span style='display:inline-block; height:20px; width:20px; background:{{ object.range1_color_hex_value }}'></span> ({{ object.range1_start }} - {{ object.range1_end }})</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Range2:</td>
+                        <td><span style='display:inline-block; height:20px; width:20px; background:{{ object.range2_color_hex_value }}'></span> ({{ object.range2_start }} - {{ object.range2_end }})</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Range3:</td>
+                        <td><span style='display:inline-block; height:20px; width:20px; background:{{ object.range3_color_hex_value }}'></span> ({{ object.range3_start }} - {{ object.range3_end }})</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Range4:</td>
+                        <td><span style='display:inline-block; height:20px; width:20px; background:{{ object.range4_color_hex_value }}'></span> ({{ object.range4_start }} - {{ object.range4_end }})</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Range5:</td>
+                        <td><span style='display:inline-block; height:20px; width:20px; background:{{ object.range5_color_hex_value }}'></span> ({{ object.range5_start }} - {{ object.range5_end }})</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Range6:</td>
+                        <td><span style='display:inline-block; height:20px; width:20px; background:{{ object.range6_color_hex_value }}'></span> ({{ object.range6_start }} - {{ object.range6_end }})</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Range7:</td>
+                        <td><span style='display:inline-block; height:20px; width:20px; background:{{ object.range7_color_hex_value }}'></span> ({{ object.range7_start }} - {{ object.range7_end }})</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Range8:</td>
+                        <td><span style='display:inline-block; height:20px; width:20px; background:{{ object.range8_color_hex_value }}'></span> ({{ object.range8_start }} - {{ object.range8_end }})</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Range9:</td>
+                        <td><span style='display:inline-block; height:20px; width:20px; background:{{ object.range9_color_hex_value }}'></span> ({{ object.range9_start }} - {{ object.range9_end }})</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Range10:</td>
+                        <td><span style='display:inline-block; height:20px; width:20px; background:{{ object.range10_color_hex_value }}'></span> ({{ object.range10_start }} - {{ object.range10_end }})</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}

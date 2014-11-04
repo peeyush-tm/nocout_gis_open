@@ -2194,6 +2194,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     'bs_switch': bs_switch,
                     'backhaul': backhaul,
                     'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
+                    'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                    'bh_port': 0,
+                    'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
                     'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
                     'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
                     'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
@@ -3760,6 +3763,9 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'bs_site_id': row['Site ID'] if 'Site ID' in row.keys() else "",
                     'bs_site_type': row['Site Type'] if 'Site Type' in row.keys() else "",
                     'bs_type': row['Type Of BS (Technology)'] if 'Type Of BS (Technology)' in row.keys() else "",
+                    'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                    'bh_port': 0,
+                    'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
                     'infra_provider': row['Infra Provider'] if 'Infra Provider' in row.keys() else "",
                     'gps_type': row['Type Of GPS'] if 'Type Of GPS' in row.keys() else "",
                     'backhaul': backhaul,
@@ -4664,6 +4670,9 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'bs_site_id': row['Site ID'] if 'Site ID' in row.keys() else "",
                     'bs_site_type': row['Site Type'] if 'Site Type' in row.keys() else "",
                     'bs_type': row['Type Of BS (Technology)'] if 'Type Of BS (Technology)' in row.keys() else "",
+                    'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                    'bh_port': 0,
+                    'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
                     'infra_provider': row['Infra Provider'] if 'Infra Provider' in row.keys() else "",
                     'gps_type': row['Type Of GPS'] if 'Type Of GPS' in row.keys() else "",
                     'backhaul': backhaul,
@@ -5761,7 +5770,6 @@ def create_backhaul(backhaul_payload):
         ttsl_circuit_id = backhaul_payload['ttsl_circuit_id'] if backhaul_payload['ttsl_circuit_id'] else ""
     if 'description' in backhaul_payload.keys():
         description = backhaul_payload['description'] if backhaul_payload['description'] else ""
-
     if name:
         if name not in ['NA', 'na', 'N/A', 'n/a']:
             # ------------------------------ UPDATING BACKHAUL -------------------------------
@@ -6093,11 +6101,10 @@ def create_basestation(basestation_payload):
 
     # dictionary containing base station payload
     basestation_payload = basestation_payload
-
     # initializing variables
     name, alias, bs_site_id, bs_site_type, bs_switch, backhaul, bs_type, bh_bso, hssu_used = [''] * 9
     latitude, longitude, infra_provider, gps_type, building_height, tower_height, country, state, city = [''] * 9
-    address, description = [''] * 2
+    bh_port_name, bh_port, bh_capacity, address, description = [''] * 5
 
     # get base station parameters
     if 'name' in basestation_payload.keys():
@@ -6112,26 +6119,32 @@ def create_basestation(basestation_payload):
         bs_switch = basestation_payload['bs_switch'] if basestation_payload['bs_switch'] else ""
     if 'backhaul' in basestation_payload.keys():
         backhaul = basestation_payload['backhaul'] if basestation_payload['backhaul'] else ""
+    if 'bh_port_name' in basestation_payload.keys():
+        bh_port_name = basestation_payload['bh_port_name'] if basestation_payload['bh_port_name'] else ""
+    if 'bh_port' in basestation_payload.keys():
+        bh_port = basestation_payload['bh_port'] if isinstance(basestation_payload['bh_port'], (int, float)) else ""
+    if 'bh_capacity' in basestation_payload.keys():
+        bh_capacity = basestation_payload['bh_capacity'] if isinstance(basestation_payload['bh_capacity'], (int, float)) else ""
     if 'bs_type' in basestation_payload.keys():
         bs_type = basestation_payload['bs_type'] if basestation_payload['bs_type'] else ""
     if 'bh_bso' in basestation_payload.keys():
         bh_bso = basestation_payload['bh_bso'] if basestation_payload['bh_bso'] else ""
     if 'switch_port' in basestation_payload.keys():
-        switch_port = basestation_payload['switch_port'] if basestation_payload['switch_port'] else ""
+        switch_port = basestation_payload['switch_port'] if isinstance(basestation_payload['switch_port'], (int, float)) else ""
     if 'latitude' in basestation_payload.keys():
         latitude = basestation_payload['latitude'] if basestation_payload['latitude'] else ""
     if 'longitude' in basestation_payload.keys():
         longitude = basestation_payload['longitude'] if basestation_payload['longitude'] else ""
     if 'pop_port' in basestation_payload.keys():
-        pop_port = basestation_payload['pop_port'] if basestation_payload['pop_port'] else ""
+        pop_port = basestation_payload['pop_port'] if isinstance(basestation_payload['pop_port'], (int, float)) else ""
     if 'infra_provider' in basestation_payload.keys():
         infra_provider = basestation_payload['infra_provider'] if basestation_payload['infra_provider'] else ""
     if 'gps_type' in basestation_payload.keys():
         gps_type = basestation_payload['gps_type'] if basestation_payload['gps_type'] else ""
     if 'building_height' in basestation_payload.keys():
-        building_height = basestation_payload['building_height'] if basestation_payload['building_height'] else ""
+        building_height = basestation_payload['building_height'] if isinstance(basestation_payload['building_height'], (int, float)) else ""
     if 'tower_height' in basestation_payload.keys():
-        tower_height = basestation_payload['tower_height'] if basestation_payload['tower_height'] else ""
+        tower_height = basestation_payload['tower_height'] if isinstance(basestation_payload['tower_height'], (int, float)) else ""
     if 'country' in basestation_payload.keys():
         country = basestation_payload['country'] if basestation_payload['country'] else ""
     if 'state' in basestation_payload.keys():
@@ -6185,6 +6198,25 @@ def create_basestation(basestation_payload):
                         basestation.backhaul = backhaul
                     except Exception as e:
                         logger.info("Backhaul: ({} - {})".format(backhaul, e.message))
+                # bh port name
+                if bh_port_name:
+                    try:
+                        basestation.bh_port_name = bh_port_name
+                    except Exception as e:
+                        logger.info("BH Port Name: ({} - {})".format(bh_port_name, e.message))
+                # bh port
+                if isinstance(bh_port, (int, float)):
+                    try:
+                        basestation.bh_port = bh_port
+                    except Exception as e:
+                        logger.info("BH Port: ({} - {})".format(bh_port, e.message))
+                # bh capacity
+                if bh_capacity:
+                    try:
+                        basestation.bh_capacity = int(bh_capacity)
+                    except Exception as e:
+                        # logger.info("BH Capacity: ({} - {})".format(bh_capacity, e.message))
+                        pass
                 # bs type
                 if bs_type:
                     try:
@@ -6236,7 +6268,7 @@ def create_basestation(basestation_payload):
                             logger.info("Building Height: ({} - {})".format(building_height, e.message))
                     if isinstance(building_height, basestring):
                         try:
-                            basestation.building_height = float(building_height)
+                            basestation.building_height = Decimal(building_height)
                         except Exception as e:
                             logger.info("Building Height: ({} - {})".format(building_height, e.message))
                 # tower height
@@ -6248,7 +6280,7 @@ def create_basestation(basestation_payload):
                             logger.info("Tower Height: ({} - {})".format(tower_height, e.message))
                     if isinstance(tower_height, basestring):
                         try:
-                            basestation.tower_height = float(tower_height)
+                            basestation.tower_height = Decimal(tower_height)
                         except Exception as e:
                             logger.info("Tower Height: ({} - {})".format(tower_height, e.message))
                 # country
@@ -6329,6 +6361,24 @@ def create_basestation(basestation_payload):
                         basestation.backhaul = backhaul
                     except Exception as e:
                         logger.info("Backhaul: ({} - {})".format(backhaul, e.message))
+                # bh port name
+                if bh_port_name:
+                    try:
+                        basestation.bh_port_name = bh_port_name
+                    except Exception as e:
+                        logger.info("BH Port Name: ({} - {})".format(bh_port_name, e.message))
+                # bh port
+                if isinstance(bh_port, (int, float)):
+                    try:
+                        basestation.bh_port = bh_port
+                    except Exception as e:
+                        logger.info("BH Port: ({} - {})".format(bh_port, e.message))
+                # bh capacity
+                if bh_capacity:
+                    try:
+                        basestation.bh_capacity = int(bh_capacity)
+                    except Exception as e:
+                        logger.info("BH Capacity: ({} - {})".format(bh_capacity, e.message))
                 # bs type
                 if bs_type:
                     try:
@@ -6378,11 +6428,21 @@ def create_basestation(basestation_payload):
                             basestation.building_height = building_height
                         except Exception as e:
                             logger.info("Building Height: ({} - {})".format(building_height, e.message))
+                    if isinstance(building_height, basestring):
+                        try:
+                            basestation.building_height = Decimal(building_height)
+                        except Exception as e:
+                            logger.info("Building Height: ({} - {})".format(building_height, e.message))
                 # tower height
                 if tower_height:
                     if isinstance(tower_height, int) or isinstance(tower_height, float):
                         try:
                             basestation.tower_height = tower_height
+                        except Exception as e:
+                            logger.info("Tower Height: ({} - {})".format(tower_height, e.message))
+                    if isinstance(tower_height, basestring):
+                        try:
+                            basestation.tower_height = Decimal(tower_height)
                         except Exception as e:
                             logger.info("Tower Height: ({} - {})".format(tower_height, e.message))
                 # country

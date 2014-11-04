@@ -23,6 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.urlresolvers import reverse_lazy
 import re, ast
 from actstream import action
+from activity_stream.models import UserAction
 logger=logging.getLogger(__name__)
 
 
@@ -769,6 +770,8 @@ class KmzDelete(DeleteView):
         # remove original file if it exists
         try:
             os.remove(filename(kmz_obj[0]['filename']))
+            UserAction.objects.create(user_id=self.request.user.id, module='Kmz Report',
+                        action='A kmz report is deleted - {}'.format(kmz_obj[0]['name']))
             print "*********************************"
 
         except Exception as e:
