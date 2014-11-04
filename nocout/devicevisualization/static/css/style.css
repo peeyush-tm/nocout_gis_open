@@ -27,17 +27,19 @@
 }
 
 
-.windowContainer
+/*.windowContainer
 {
     max-width: 500px;
-    /*max-height: 300px;*/
-    /*overflow-y: auto;*/
-    /*padding: 8px;
-    border-radius: 10px;*/
+    width: 320px;
+    top: 25px;
+    right: 0px;
+    height: 500px !important;
+    position: fixed !important;
+    width: 320px;
 }
 .windowContainer tr td {
     word-break: break-all;
-}
+}*/
 .windowContainer .innerTable
 {
     width: 200px;
@@ -62,9 +64,9 @@
 {
     text-align: center;
 }
-.windowContainer table tr td {
+/*.windowContainer table tr td {
     word-break: break-all;
-}
+}*/
 .windowContainer .perf
 {
     float: right;
