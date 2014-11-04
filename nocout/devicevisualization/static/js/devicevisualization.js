@@ -937,3 +937,9 @@ $("#point_icons_container li").click(function(e) {
         point_icon_url = $("#point_icons_container li.selected_icon")[0].children[0].attributes['src'].value.split("../../")[1];
     }
 });
+
+/*Close info window when close button is clicked*/
+$('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
+    $('#infoWindowContainer').html("");
+    $('#infoWindowContainer').addClass("hide");
+});
