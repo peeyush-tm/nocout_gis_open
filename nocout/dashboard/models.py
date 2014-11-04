@@ -11,7 +11,7 @@ PAGE_NAME_CHOICES = (
 
 
 def get_dashboard_name_choices():
-    return [(dashboard['dashboard_name'], dashboard['dashboard_name']) for dashboard in dashboards]
+    return dict([(dashboard['dashboard_name'], dashboard['dashboard_name']) for dashboard in dashboards]).items()
 
 
 class DashboardSetting(models.Model):

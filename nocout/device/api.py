@@ -739,9 +739,11 @@ class BulkFetchLPDataApi(View):
         # converting 'json' into python object
         devices = eval(str(self.request.GET.get('devices', None)))
         ts_template_id = int(self.request.GET.get('ts_template', None))
-	wimax_services = ['wimax_dl_cinr','wimax_ul_cinr','wimax_dl_rssi',
+	exceptional_services = ['wimax_dl_cinr','wimax_ul_cinr','wimax_dl_rssi',
 			'wimax_ul_rssi','wimax_ul_intrf','wimax_dl_intrf',
-			'wimax_modulation_dl_fec','wimax_modulation_ul_fec']
+			'wimax_modulation_dl_fec','wimax_modulation_ul_fec',
+			'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count',
+			'cambium_rereg_count']
 
         service = ""
         data_source = ""
@@ -805,7 +807,7 @@ class BulkFetchLPDataApi(View):
                 for device_name in current_devices_list:
                     try:
                         device = Device.objects.get(device_name=device_name)
-			if service in wimax_services:
+			if service in exceptional_services:
 				bs_device = Topology.objects.get(connected_device_mac=device.mac_address)
 				device = Device.objects.get(device_name=bs_device.device_name)
                         site_instances_list.append(device.site_instance.id)
@@ -821,7 +823,7 @@ class BulkFetchLPDataApi(View):
                     for device_name in current_devices_list:
                         try:
                             device = Device.objects.get(device_name=device_name)
-			    if service in wimax_services:
+			    if service in exceptional_services:
 				    device_ss_mac = device.mac_address
 				    ss_name_mac_mapping[device.device_name] = device_ss_mac
 			            bs_device = Topology.objects.get(connected_device_mac=device.mac_address)
