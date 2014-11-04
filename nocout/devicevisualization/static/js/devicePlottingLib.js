@@ -569,7 +569,7 @@ function devicePlottingClass_gmap() {
 							}
 							gmap_self.plotDevices_gmap(result.data.objects.children,"base_station");
 
-                    /*Decrement the counter*/
+                    		/*Decrement the counter*/
 							counter = counter - 1;
 
 							/*Call the function after 3 sec. for lazyloading*/
@@ -697,7 +697,7 @@ function devicePlottingClass_gmap() {
 				oldIcon 	       : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
 				clusterIcon 	   : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
 				pointType	       : 	stationType,
-				// child_ss   	       : 	bs_ss_devices[i].data.param.sector,
+				child_ss   	       : 	bs_ss_devices[i].data.param.sector,
 				// original_sectors   : 	bs_ss_devices[i].data.param.sector,
 				dataset 	       : 	bs_ss_devices[i].data.param.base_station,
 				device_name 	   : 	bs_ss_devices[i].data.device_name,
