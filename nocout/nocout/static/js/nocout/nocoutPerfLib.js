@@ -324,7 +324,7 @@ function nocoutPerfLib() {
 			tomorowDate.setFullYear(date.getFullYear());
 			tomorowDate.setMonth(date.getMonth());
 			tomorowDate.setDate(date.getDate() + 1);
-			console.log(tomorowDate);
+			// console.log(tomorowDate);
 			return tomorowDate;
 		}
 

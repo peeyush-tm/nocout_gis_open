@@ -141,7 +141,7 @@ function WhiteMapClass() {
 		Here, we closeInfoWindow. If infoWindow was present, just close window. Else, if no window was there, unSpiderify Markers too.
 		 */
 		this.mapClickEvent = function(e) {
-			console.log('Click on Map');
+			// console.log('Click on Map');
 			//Close Window
 			var closeInfoWindow= this.closeInfoWindow();
 			//If no window was there
@@ -435,7 +435,7 @@ function WhiteMapClass() {
 			var allSSIds = [];
 			var polygonSelectedDevices = [];
 			var selected_polling_technology = $("#polling_tech option:selected").text();
-console.log(selected_polling_technology);
+// console.log(selected_polling_technology);
 			for(var k=0;k<allSS.length;k++) {
 				if(polygon) {
 					// console.log(allSS[k].attributes.ptLon, allSS[k].attributes.ptLat);
@@ -461,8 +461,8 @@ console.log(selected_polling_technology);
 					}
 				}
 			}
-console.log(allSSIds);
-console.log(polygonSelectedDevices);
+// console.log(allSSIds);
+// console.log(polygonSelectedDevices);
 			// for(var i=0; i< ssAndDeviceArray.length; i++) {
 			// 	console.log(ssAndDeviceArray[i]);
 			// 	if(polygon){
@@ -519,7 +519,7 @@ console.log(polygonSelectedDevices);
 					var x= cktLinesBsObj[key];
 					if(x && x.length) {
 						for(var i=0; i< x.length; i++) {
-							console.log(x[i].filteredLine);
+							// console.log(x[i].filteredLine);
 							if(x[i].filteredLine) {
 								x[i].style.display = 'block';
 								linesFeaturesList.push(x[i]);
