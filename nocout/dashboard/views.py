@@ -19,6 +19,7 @@ from performance.views import organization_customer_devices, organization_networ
 from dashboard.models import DashboardSetting
 from dashboard.forms import DashboardSettingForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
+from dashboard.config import dashboards
 from activity_stream.models import UserAction
 
 
@@ -186,6 +187,13 @@ class DashbaordSettingsCreateView(CreateView):
         """
         return super(DashbaordSettingsCreateView, self).dispatch(*args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super(DashbaordSettingsCreateView, self).get_context_data(**kwargs)
+        context['dashboards'] = json.dumps(dashboards)
+        technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        context['technology_options'] = json.dumps(technology_options)
+        return context
+
 
 class DashbaordSettingsDetailView(DetailView):
     """
@@ -210,6 +218,13 @@ class DashbaordSettingsUpdateView(UpdateView):
         The request dispatch method restricted with the permissions.
         """
         return super(DashbaordSettingsUpdateView, self).dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(DashbaordSettingsUpdateView, self).get_context_data(**kwargs)
+        context['dashboards'] = json.dumps(dashboards)
+        technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        context['technology_options'] = json.dumps(technology_options)
+        return context
 
 
 class DashbaordSettingsDeleteView(DeleteView):

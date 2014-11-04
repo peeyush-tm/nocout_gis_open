@@ -90,4 +90,119 @@
         });
     });
     </script>
+
+    <script>
+
+        function reset_dashboard_type(options) {
+            $("#id_dashboard_type").html(options);
+        }
+
+        function reset_dashboard_name(options) {
+            $("#id_name").html(options);
+            reset_dashboard_type("<option value=\"\" selected=\"selected\">---------</option>");
+        }
+
+        function reset_technology(options) {
+            $("#id_is_bh").parent().parent().parent().hide();
+            $("#id_technology").html(options);
+            reset_dashboard_name("<option value=\"\" selected=\"selected\">---------</option>");
+        }
+
+        var dashboards = {{ dashboards|safe }};
+        var technology_options = {{ technology_options|safe }};
+
+        $("#id_page_name").change(function () {
+            var page_name = $("#id_page_name").val();
+            var technologies = {};
+            dashboards.forEach(function(dashboard) {
+                if (page_name == dashboard.page_name) {
+                    technologies[technology_options[dashboard.technology]] = dashboard.technology;
+                }
+            });
+            var options = "<option value=\"\" selected=\"selected\">---------</option>";
+            for (var key in technologies) {
+                options += "<option value=\"" + key + "\" >" + technologies[key] + "</option>";
+            }
+            reset_technology(options);
+        });
+
+        function get_technology (technology_value) {
+            var technology = '';
+            for (var key in technology_options) {
+                if (technology_options[key] == technology_value) {
+                    technology = key;
+                }
+            }
+            return technology;
+        }
+
+        $("#id_technology").change(function () {
+            var page_name = $("#id_page_name").val();
+            var technology_value = $("#id_technology").val();
+            var technology = get_technology(technology_value);
+            if (technology != "P2P") {
+                $("#id_is_bh").parent().parent().parent().hide();
+                $("#id_is_bh")[0].checked = false;
+            } else {
+                $("#id_is_bh").parent().parent().parent().show()
+            }
+            var is_bh = $("#id_is_bh")[0].checked;
+            var dashboard_names = {};
+            dashboards.forEach(function(dashboard) {
+                if (page_name == dashboard.page_name && technology == dashboard.technology && is_bh == dashboard.is_bh) {
+                    dashboard_names[dashboard.dashboard_name] = dashboard.dashboard_name;
+                }
+            });
+            var options = "<option value=\"\" selected=\"selected\">---------</option>";
+            for (var key in dashboard_names) {
+                options += "<option value=\"" + key + "\" >" + dashboard_names[key] + "</option>";
+            }
+            reset_dashboard_name(options);
+        });
+
+        $("#id_is_bh").change(function () {
+            var page_name = $("#id_page_name").val();
+            var technology_value = $("#id_technology").val();
+            var technology = get_technology(technology_value);
+            if (technology == 'P2P') {
+                var is_bh = $("#id_is_bh")[0].checked;
+                var dashboard_names = {};
+                dashboards.forEach(function(dashboard) {
+                    if (page_name == dashboard.page_name && technology == dashboard.technology && is_bh == dashboard.is_bh) {
+                        dashboard_names[dashboard.dashboard_name] = dashboard.dashboard_name;
+                    }
+                });
+                var options = "<option value=\"\" selected=\"selected\">---------</option>";
+                for (var key in dashboard_names) {
+                    options += "<option value=\"" + key + "\" >" + dashboard_names[key] + "</option>";
+                }
+                reset_dashboard_name(options);
+            }
+        });
+
+        var dashboard_type_options = {'numeric': 'INT', 'string': 'STR'};
+
+        $("#id_name").change(function () {
+            var page_name = $("#id_page_name").val();
+            var technology_value = $("#id_technology").val();
+            var technology = get_technology(technology_value);
+            var is_bh = $("#id_is_bh")[0].checked;
+            var dashboard_name = $("#id_name").val();
+            var dashboard_types = {};
+            dashboards.forEach(function(dashboard) {
+                if (page_name == dashboard.page_name && technology == dashboard.technology && is_bh == dashboard.is_bh && dashboard_name == dashboard.dashboard_name) {
+                    dashboard_types[dashboard_type_options[dashboard.dashboard_type]] = dashboard.dashboard_type;
+                }
+            });
+            var options = "<option value=\"\" selected=\"selected\">---------</option>";
+            for (var key in dashboard_types) {
+                options += "<option value=\"" + key + "\" >" + dashboard_types[key] + "</option>";
+            }
+            reset_dashboard_type(options);
+        });
+
+        $(document).ready(function(){
+            reset_technology("<option value=\"\" selected=\"selected\">---------</option>", false);
+        });
+    </script>
 {% endblock %}
