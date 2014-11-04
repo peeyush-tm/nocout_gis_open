@@ -880,8 +880,8 @@ function devicePlottingClass_gmap() {
 					/*Create SS Marker Object*/
 					var ss_marker_object = {
 						position 		 : 	new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
-				    	// ptLat 			 : 	ss_marker_obj.data.lat,
-				    	// ptLon 			 : 	ss_marker_obj.data.lon,
+				    	ptLat 			 : 	ss_marker_obj.data.lat,
+				    	ptLon 			 : 	ss_marker_obj.data.lon,
 				    	technology 		 : 	ss_marker_obj.data.technology,
 				    	// map 			 : 	mapInstance,
 				    	icon 			 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
