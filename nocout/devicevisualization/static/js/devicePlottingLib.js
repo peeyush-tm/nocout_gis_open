@@ -175,10 +175,12 @@ function prepare_oms_object(oms_instance) {
 				var sectorMarkersAtThePoint = sectorMarkersMasterObj[marker.name];
 				if(sectorMarkersAtThePoint && sectorMarkersAtThePoint.length) {
 					for(var j=0; j< sectorMarkersAtThePoint.length; j++) {
-						sectorMarker = sectorMarkersAtThePoint[j].setMap(mapInstance);
-						sectorMarkersInMap.push(sectorMarker);
-						sectorMarkerOms = oms.addMarker(sectorMarkersAtThePoint[j]);
-						sectorOmsMarkers.push(sectorMarkerOms);
+						if(sectorMarkersAtThePoint[j].isActive == 1) {
+							sectorMarker = sectorMarkersAtThePoint[j].setMap(mapInstance);
+							sectorMarkersInMap.push(sectorMarker);
+							sectorMarkerOms = oms.addMarker(sectorMarkersAtThePoint[j]);
+							sectorOmsMarkers.push(sectorMarkerOms);
+						}
 					}
 				}
 				marker.isMarkerSpiderfied= true;
@@ -402,9 +404,9 @@ function devicePlottingClass_gmap() {
 			mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
 
 			/*Initialize markercluster*/
-         masterClusterInstance = new MarkerClusterer(mapInstance, [], clusterOptions);
+         	masterClusterInstance = new MarkerClusterer(mapInstance, [], clusterOptions);
 
-         //display advance search, filter etc button when call is going on.
+         	//display advance search, filter etc button when call is going on.
 			disableAdvanceButton();
 
 			/*Show The loading Icon*/
@@ -436,7 +438,7 @@ function devicePlottingClass_gmap() {
 						},350);
 	            }
 
-        			setTimeout(function() {
+    			setTimeout(function() {
             		var bs_list = getMarkerInCurrentBound();
 	            	if(bs_list.length > 0 && isCallCompleted == 1) {
 	            		if(recallPerf != "") {
