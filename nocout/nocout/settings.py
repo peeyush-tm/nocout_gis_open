@@ -183,6 +183,7 @@ INSTALLED_APPS = (
     'capacity_management',
     'download_center',
     'performance',
+    'dashboard',
     'scheduling_management',
     'dajaxice',
     'dajax',

@@ -214,7 +214,7 @@ function GisPerformance() {
                     for (var j = 0; j < bsGmapMarker["child_ss"][i]["sub_station"].length; j++) {
 
                         var ssMarker = allMarkersObject_gmap['sub_station']['ss_'+bsGmapMarker["child_ss"][i]["sub_station"][j].name];
-                        if(ssMarker && (ssMarker.map != null && ssMarker.map != "")) {
+                        if(ssMarker && (ssMarker.isActive && +(ssMarker.isActive) === 1)) {
                             //Store sub_station_name, sub_station_id, and empty performance data for the substation
                             var deviceSsJson = {
                                 "device_name": bsGmapMarker["child_ss"][i]["sub_station"][j]["device_name"],

@@ -105,6 +105,7 @@ def check_wimax_ss_link_status(item, _no_params, info):
 			if host_ip[0][0]:
                 		link_state =connection_telnet_for_link_state(host_ip[0][0], 23)
 				if link_state:
+					link_state = link_state.strip('\r')
 					infotext = "SS ethernet link state is %s" % link_state
 					state = 0
     except ValueError:

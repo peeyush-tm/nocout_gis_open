@@ -9,6 +9,7 @@ urlpatterns = patterns('',
   url(r'^delete/(?P<pk>\d+)$', views.UserDelete.as_view(), name='user_delete'),
   url(r'^myprofile/', views.CurrentUserProfileUpdate.as_view(), name='current_user_profile_update'),
   url(r'userlistingtable/', views.UserListingTable.as_view(), name= 'UserListingTable'),
-  url(r'userarchivedlistingtable/', views.UserArchivedListingTable.as_view(), name= 'UserArchivedListingTable')
+  url(r'userarchivedlistingtable/', views.UserArchivedListingTable.as_view(), name= 'UserArchivedListingTable'),
+  url(r'organisation/user/list/$', views.organisation_user_list, name= 'organisation-user-list'),
 
 )

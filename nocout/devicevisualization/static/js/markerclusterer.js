@@ -59,6 +59,16 @@
  * @constructor
  * @extends google.maps.OverlayView
  */
+
+var base_url = "";
+/*Set the base url of application for ajax calls*/
+if(window.location.origin) {
+    base_url = window.location.origin;
+} else {
+    base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+}
+
+
 function MarkerClusterer(map, opt_markers, opt_options) {
   // MarkerClusterer implements google.maps.OverlayView interface. We use the
   // extend function to extend MarkerClusterer with google.maps.OverlayView
@@ -191,8 +201,7 @@ function MarkerClusterer(map, opt_markers, opt_options) {
  * @private
  */
 MarkerClusterer.prototype.MARKER_CLUSTER_IMAGE_PATH_ =
-    'http://google-maps-utility-library-v3.googlecode.com/svn/trunk/markerclusterer/' +
-    'images/m';
+    base_url+'/static/js/OpenLayers/img/m';
 
 
 /**

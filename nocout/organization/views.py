@@ -14,6 +14,9 @@ from nocout.utils.util import date_handler, DictDiffer
 from user_group.models import UserGroup
 from django.contrib.auth.decorators import permission_required
 from django.utils.decorators import method_decorator
+from nocout.utils import logged_in_user_organizations
+
+from activity_stream.models import UserAction
 
 
 class OrganizationList(ListView):
@@ -63,7 +66,10 @@ class OrganizationListingTable(BaseDatatableView):
         """
         return the logged in user descendants organization ids.
         """
-        return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+            return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
+        else:
+            return list(str(self.request.user.userprofile.organization.id))
 
     def filter_queryset(self, qs):
         """
@@ -74,6 +80,7 @@ class OrganizationListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query=[]
             organization_descendants_ids= self.logged_in_user_organization_ids()
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
@@ -190,7 +197,8 @@ class OrganizationUpdate(UpdateView):
         """
         return super(OrganizationUpdate, self).dispatch(*args, **kwargs)
 
-
+    def get_queryset(self):
+        return logged_in_user_organizations(self)
 
     def form_valid(self, form):
         """
@@ -220,14 +228,19 @@ class OrganizationDelete(DeleteView):
     template_name = 'organization/organization_delete.html'
     success_url = reverse_lazy('organization_list')
 
+    def get_queryset(self):
+        return logged_in_user_organizations(self)
 
     @method_decorator(permission_required('organization.delete_organization', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
+    def delete(self, *args, **kwargs):
         """
-        The request dispatch function restricted with the permissions.
+        Log the user action as the organisation is deleted.
         """
-        return super(OrganizationDelete, self).dispatch(*args, **kwargs)
-
-
-
-
+        try:
+            organization_obj = self.get_object()
+            action ='A organization is deleted - {}(country- {}, State- {}, City- {})'.format(organization_obj.alias,
+                    organization_obj.country, organization_obj.state, organization_obj.city)
+            UserAction.objects.create(user_id=self.request.user.id, module='Organization', action=action )
+        except:
+            pass
+        return super(OrganizationDelete, self).delete(*args, **kwargs)

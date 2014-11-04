@@ -54,7 +54,7 @@ def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 		query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 		try:
 			if query_output[0][1]:
-				plugin_output = (query_output[0][1].split('OK-')[1])
+				plugin_output = (query_output[0][1].split('- ')[1])
 				plugin_output =	[mac for mac in plugin_output.split(' ')]
 				ss_mac  = map(lambda x: x.split('=')[0],plugin_output)
 				ss_ip  = map(lambda x: x.split('=')[1].split(',')[9],plugin_output)

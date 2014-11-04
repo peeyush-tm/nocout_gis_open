@@ -1,0 +1,32 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block breadcrumb_title %}
+    <li><a href="{% url 'dashboard-settings' %}">Dashboard Settings</a></li>
+    <li><a href="{% url 'dashboard-settings-detail' pk=object.id %}">{{ object.id }}</a></li>
+    <li>Delete</li>
+{% endblock %}
+{% block content_title %}Dashboard Management{% endblock %}
+{% block content_description %}Delete Dashboard settings{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> DELETE DASHBOARD SETTINGS</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form action="" method="post">{% csrf_token %}
+                                        <p>Are you sure you want to delete "{{ object }}" ?</p>
+                                        <input type="submit" value="Confirm"/>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

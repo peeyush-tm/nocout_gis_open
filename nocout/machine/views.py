@@ -12,6 +12,7 @@ from machine.forms import MachineForm
 from models import Machine
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
+from activity_stream.models import UserAction
 
 #************************************** Machine *****************************************
 class MachineList(ListView):
@@ -219,5 +220,11 @@ class MachineDelete(DeleteView):
         """
         overriding the delete method to log the user activity.
         """
+        try:
+            machine_obj = self.get_object()
+            action='A machine is deleted - {}(Machine Ip - {})'.format(machine_obj.alias, machine_obj.machine_ip)
+            UserAction.objects.create(user_id=self.request.user.id, module='Machine', action=action)
+        except:
+            pass
         return super(MachineDelete, self).delete(request, *args, **kwargs)
 

@@ -26,6 +26,8 @@ from django.conf import settings                                      # Importin
 from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
+from nocout.utils import logged_in_user_organizations
+from activity_stream.models import UserAction
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -52,7 +54,7 @@ class DeviceList(ListView):
         """
         return super(DeviceList, self).dispatch(*args, **kwargs)
 
-   
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -222,14 +224,14 @@ class OperationalDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    def logged_in_user_organization_ids(self):
-        """
-        Get logged in user's descendants organizations id's
-        """
-        organization_descendants_ids = list(
-            self.request.user.userprofile.organization.get_descendants(include_self=True) \
-            .values_list('id', flat=True))
-        return organization_descendants_ids
+    # def logged_in_user_organization_ids(self):
+    #     """
+    #     Get logged in user's descendants organizations id's
+    #     """
+    #     organization_descendants_ids = list(
+    #         self.request.user.userprofile.organization.get_descendants(include_self=True) )
+    #     print '..................',organization_descendants_ids
+    #     return organization_descendants_ids
 
     def get_initial_queryset(self):
         """
@@ -243,8 +245,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids,
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self),
                                      is_deleted=0,
                                      is_added_to_nms__in=[1, 2]).values(*self.columns + ['id'])
 
@@ -523,14 +524,14 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    def logged_in_user_organization_ids(self):
-        """
-        Get logged in user's descendants organizations id's
-        """
-        organization_descendants_ids = list(
-            self.request.user.userprofile.organization.get_descendants(include_self=True)
-            .values_list('id', flat=True))
-        return organization_descendants_ids
+    # def logged_in_user_organization_ids(self):
+    #     """
+    #     Get logged in user's descendants organizations id's
+    #     """
+    #     organization_descendants_ids = list(
+    #         self.request.user.userprofile.organization.get_descendants(include_self=True)
+    #         .values_list('id', flat=True))
+    #     return organization_descendants_ids
 
     def get_initial_queryset(self):
         """
@@ -544,8 +545,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids,
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self),
                                      is_deleted=0,
                                      is_monitored_on_nms=0,
                                      is_added_to_nms=0,
@@ -599,10 +599,22 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title=" Soft Delete"></i></a>'.format(
-                dct['id']))
+            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+            #    <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title=" Soft Delete"></i></a>'.format(
+            #     dct['id']))
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action)
+
             dct.update(nms_actions='')
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # checking whether device is 'backhaul configured on' or not
@@ -765,15 +777,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    def logged_in_user_organization_ids(self):
-        """
-        Get logged in user's descendants organizations id's
-        """
-        organization_descendants_ids = list(
-            self.request.user.userprofile.organization.get_descendants(include_self=True)
-            .values_list('id', flat=True))
-        return organization_descendants_ids
-
+   
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -786,8 +790,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids, is_deleted=0, host_state="Disable") \
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self), is_deleted=0, host_state="Disable") \
             .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
@@ -838,11 +841,22 @@ class DisabledDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(
-                dct['id']))
-            # dct.update(nms_actions='')
+            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+            #    <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(
+            #     dct['id']))
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action)
+            dct.update(nms_actions='')
             # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # # checking whether device is 'backhaul configured on' or not
             # try:
@@ -1006,14 +1020,14 @@ class ArchivedDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    def logged_in_user_organization_ids(self):
-        """
-        Get logged in user's descendants organizations id's
-        """
-        organization_descendants_ids = list(
-            self.request.user.userprofile.organization.get_descendants(include_self=True)
-            .values_list('id', flat=True))
-        return organization_descendants_ids
+    # def logged_in_user_organization_ids(self):
+    #     """
+    #     Get logged in user's descendants organizations id's
+    #     """
+    #     organization_descendants_ids = list(
+    #         self.request.user.userprofile.organization.get_descendants(include_self=True)
+    #         .values_list('id', flat=True))
+    #     return organization_descendants_ids
 
     def get_initial_queryset(self):
         """
@@ -1027,8 +1041,7 @@ class ArchivedDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids, is_deleted=1) \
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self), is_deleted=1) \
             .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
@@ -1079,10 +1092,25 @@ class ArchivedDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="/device/delete/{0}"><i class="fa fa-minus text-danger" title="Hard Delete"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_restore_form(get_restore_device_form, {{\'value\': {0}}})"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id']))
+            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+            #    <a href="/device/delete/{0}"><i class="fa fa-minus text-danger" title="Hard Delete"></i></a>\
+            #    <a href="javascript:;" onclick="Dajaxice.device.device_restore_form(get_restore_device_form, {{\'value\': {0}}})"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id']))
+            if self.request.user.is_superuser:
+                add_action = '<a href="javascript:;" onclick="Dajaxice.device.device_restore_form(get_restore_device_form, {{\'value\': {0}}})"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
+            else:
+                add_action = ''
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>&nbsp'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action+add_action)
             # dct.update(nms_actions='')
             # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # # checking whether device is 'backhaul configured on' or not
@@ -1247,14 +1275,14 @@ class AllDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    def logged_in_user_organization_ids(self):
-        """
-        Get logged in user's descendants organizations id's
-        """
-        organization_descendants_ids = list(
-            self.request.user.userprofile.organization.get_descendants(include_self=True)
-            .values_list('id', flat=True))
-        return organization_descendants_ids
+    # def logged_in_user_organization_ids(self):
+    #     """
+    #     Get logged in user's descendants organizations id's
+    #     """
+    #     organization_descendants_ids = list(
+    #         self.request.user.userprofile.organization.get_descendants(include_self=True)
+    #         .values_list('id', flat=True))
+    #     return organization_descendants_ids
 
     def get_initial_queryset(self):
         """
@@ -1268,8 +1296,7 @@ class AllDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids, is_deleted=0) \
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self), is_deleted=0) \
             .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
@@ -1332,11 +1359,22 @@ class AllDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})">\
-               <i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
-                dct['id']))
+            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+            #    <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})">\
+            #    <i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
+            #     dct['id']))
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action)
             dct.update(nms_actions='')
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # checking whether device is 'backhaul configured on' or not
@@ -1554,6 +1592,9 @@ class DeviceUpdate(UpdateView):
         """
         return super(DeviceUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def form_valid(self, form):
         """
         If the form is valid, redirect to the supplied URL.
@@ -1755,6 +1796,12 @@ class DeviceDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device is deleted - {}'.format(obj.device_alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device', action=action)
+        except:
+            pass
         return super(DeviceDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2011,6 +2058,12 @@ class DeviceTypeFieldsDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device field is deleted - {}'.format(obj.field_display_name)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Field', action=action)
+        except:
+            pass
         return super(DeviceTypeFieldsDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2307,6 +2360,12 @@ class DeviceTechnologyDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device technology is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Technology', action=action)
+        except:
+            pass
         return super(DeviceTechnologyDelete, self).delete(self, request, *args, **kwargs)
 
 
@@ -2601,6 +2660,12 @@ class DeviceVendorDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device vendor is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Vendor', action=action)
+        except:
+            pass
         return super(DeviceVendorDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2894,6 +2959,12 @@ class DeviceModelDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device model is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Model', action=action)
+        except:
+            pass
         return super(DeviceModelDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3170,6 +3241,12 @@ class DeviceTypeDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device type is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Type', action=action)
+        except:
+            pass
         return super(DeviceTypeDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3372,6 +3449,12 @@ class DevicePortDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device port is deleted - {}(value- {})'.format(obj.alias, obj.value)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Port', action=action)
+        except:
+            pass
         return super(DevicePortDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3420,6 +3503,7 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch and len(str(sSearch).strip()) >= 3:
+            sSearch = sSearch.replace("\\","")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
