@@ -39,34 +39,17 @@ $(".nav-tabs li a").click(function (e,isFirst) {
 		table_id = $("#"+div_id).find("table")[0].id,
 		ajax_url = e.currentTarget.attributes.data_url.value,
 		grid_headers = JSON.parse(e.currentTarget.attributes.data_header.value);
-		// isTableExists = $.fn.dataTableSettings;
-
-	/*Check that the table is created before or not*/
-	// for ( var i=0, iLen=isTableExists.length ; i<iLen ; i++ ) {
-
-	// 	if (isTableExists[i] && (isTableExists[i].nTable.id == table_id)) {
-
-	// 		if(last_clicked_tab != e.currentTarget.id || second_condition) {
-
-	// 			/*Clear the data from existing table*/
-	// 			$("#"+table_id).DataTable().fnDestroy();
-	// 			// $("#"+table_id).html("");
-	// 			destroy = true;
-	// 		}
-	// 	}
-	// }
 	
 	if(last_clicked_tab != e.currentTarget.id || second_condition) {
 
 		if(table_id.toLowerCase().indexOf("p2p") > -1 || table_id.toLowerCase().indexOf("ptp") > -1) {
-			
 			for(var i=0;i<grid_headers.length;i++) {
 				var column = grid_headers[i];
 				if(column.mData.indexOf("sector_id") > -1) {
-					if(column.bVisible) {
-						column.bVisible = false;
+					if(column.sClass) {
+						column.sClass = "hide";
 					} else {
-						column["bVisible"] = false;
+						column["sClass"] = "hide";
 					}
 				}
 			}

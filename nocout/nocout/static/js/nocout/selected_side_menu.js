@@ -462,7 +462,7 @@ $("form").submit(function(e) {
                 var old_field = oldFieldsArray[j],
                     new_field = newFieldsArray[j];
                 if(old_field && new_field) {
-                    if($.trim(old_field.value) != $.trim(new_field.value)) {
+                    if($.trim(old_field.value) != $.trim(new_field.value) && old_field.name.indexOf('password') === -1) {
                         var new_val = new_field.value.toLowerCase() != 'select' ? new_field.value : "",
                             old_val = old_field.value.toLowerCase() != 'select' ? old_field.value : "",
                             modified_str = old_field.name+"{"+old_val+" To "+new_val+"}";

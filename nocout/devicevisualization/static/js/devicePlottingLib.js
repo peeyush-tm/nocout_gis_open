@@ -175,10 +175,12 @@ function prepare_oms_object(oms_instance) {
 				var sectorMarkersAtThePoint = sectorMarkersMasterObj[marker.name];
 				if(sectorMarkersAtThePoint && sectorMarkersAtThePoint.length) {
 					for(var j=0; j< sectorMarkersAtThePoint.length; j++) {
-						sectorMarker = sectorMarkersAtThePoint[j].setMap(mapInstance);
-						sectorMarkersInMap.push(sectorMarker);
-						sectorMarkerOms = oms.addMarker(sectorMarkersAtThePoint[j]);
-						sectorOmsMarkers.push(sectorMarkerOms);
+						if(sectorMarkersAtThePoint[j].isActive == 1) {
+							sectorMarker = sectorMarkersAtThePoint[j].setMap(mapInstance);
+							sectorMarkersInMap.push(sectorMarker);
+							sectorMarkerOms = oms.addMarker(sectorMarkersAtThePoint[j]);
+							sectorOmsMarkers.push(sectorMarkerOms);
+						}
 					}
 				}
 				marker.isMarkerSpiderfied= true;
@@ -402,9 +404,9 @@ function devicePlottingClass_gmap() {
 			mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
 
 			/*Initialize markercluster*/
-         masterClusterInstance = new MarkerClusterer(mapInstance, [], clusterOptions);
+         	masterClusterInstance = new MarkerClusterer(mapInstance, [], clusterOptions);
 
-         //display advance search, filter etc button when call is going on.
+         	//display advance search, filter etc button when call is going on.
 			disableAdvanceButton();
 
 			/*Show The loading Icon*/
@@ -436,7 +438,7 @@ function devicePlottingClass_gmap() {
 						},350);
 	            }
 
-        			setTimeout(function() {
+    			setTimeout(function() {
             		var bs_list = getMarkerInCurrentBound();
 	            	if(bs_list.length > 0 && isCallCompleted == 1) {
 	            		if(recallPerf != "") {
@@ -569,7 +571,7 @@ function devicePlottingClass_gmap() {
 							}
 							gmap_self.plotDevices_gmap(result.data.objects.children,"base_station");
 
-                    /*Decrement the counter*/
+                    		/*Decrement the counter*/
 							counter = counter - 1;
 
 							/*Call the function after 3 sec. for lazyloading*/
@@ -697,7 +699,7 @@ function devicePlottingClass_gmap() {
 				oldIcon 	       : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
 				clusterIcon 	   : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
 				pointType	       : 	stationType,
-				// child_ss   	       : 	bs_ss_devices[i].data.param.sector,
+				child_ss   	       : 	bs_ss_devices[i].data.param.sector,
 				// original_sectors   : 	bs_ss_devices[i].data.param.sector,
 				dataset 	       : 	bs_ss_devices[i].data.param.base_station,
 				device_name 	   : 	bs_ss_devices[i].data.device_name,
