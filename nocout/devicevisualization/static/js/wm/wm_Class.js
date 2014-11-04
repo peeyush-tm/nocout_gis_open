@@ -1,5 +1,7 @@
-var ccpl_map, base_url;
-var hasAdvFilter = 0;
+var ccpl_map, base_url,
+	main_devices_data_wmap= [],
+	wm_obj = {'features': {}, 'data': {}, 'devices': {}, 'lines': {}, 'sectors': {}};
+var data_for_filter_wmap = []
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
 	base_url = window.location.origin;
@@ -45,17 +47,20 @@ function WhiteMapClass() {
 
 		var wmAdvanceFilterClass = "", wmAdvanceSearchClass = "";
 
-		var main_devices_data_feature_obj_wmaps = {'features': {}, 'data': {}, 'devices': {}};
+		
 		//Variable to Store JSON data of Markers
-		var main_devices_data_wmaps = [], data_for_filter = [];
+		var bs_data_list = [];
 		//Variable to Store All Markers
-		var main_stations_features_wmaps= [], filtered_features = [];
+		var bs_ss_features_list= [];
+		var filtered_Features = {markers: [], lines: [], sectors: []};
 		var main_devices_marker_features_wmaps = [], filtered_lines_main_devices_marker_features_wmaps= [];
-		var main_lines_sectors_features_wmaps= {'lines': [], 'sectors': []}, filtered_lines_sectors_features = [], main_line_sectors_features_obj_wmaps = {'lines': {}, 'sectors': {}};
+		var main_lines_sectors_features_wmaps= {'lines': [], 'sectors': []}, filtered_lines_sectors_features = [];
 
 		var state_city_obj= {}, all_cities_array= [], tech_vendor_obj= {}, all_vendor_array= [], sectorMarkerConfiguredOn= [], sectorMarkersMasterObj = {};
 
 		var pollableDevices = [];
+
+		var hasAdvFilter= 0, hasAdvSearch = 0;
 		//Variable to hold Markers
 		var deviceMarkerObj = {}, cktLinesObj = {}, sectorsObj = {}, cktLinesBsObj = {}, sectorsBsObj= {}, ssAndDeviceArray= [];
 		//Variable to hold device markers currently displayed on map
@@ -89,7 +94,7 @@ function WhiteMapClass() {
 
 		this.spiderfyBsMarker= function(markername) {
 			this.unSpiderifyBsMarker();
-			var bs_marker= main_devices_data_feature_obj_wmaps.features[markername];
+			var bs_marker= wm_obj.features[markername];
 			var bs_devices = deviceMarkerObj[markername];
 			var map_Zoom_Level = ccpl_map.getZoom();
 			devices_Marker_On_Map= [];
@@ -176,8 +181,8 @@ function WhiteMapClass() {
 		}
 
 		this.markerClick= function(event) {
-
-			if(event.feature.cluster.length) {
+			var feature = event.feature;
+			if(feature.cluster && feature.cluster.length) {
 				if(event.feature.cluster.length === 1 && event.feature.cluster[0].attributes.pointType=== "base_station" && !markerSpiderfied) {
 					this.unSpiderifyBsMarker();
 					this.spiderfyBsMarker( event.feature.cluster[0].attributes.name);
@@ -217,9 +222,31 @@ function WhiteMapClass() {
 						// global_this.bsMarkerClick(event, f);
 					}
 				}
-				
 			} else {
-				console.log('what happened');
+				var f = event.feature;
+				if (false){
+				} else {
+					this.onFeatureUnselect();
+					var infoWindowContent = gmap_self.makeWindowContent(f.attributes);
+					var feature = event.feature;
+					oldFeature= feature;
+					var popup = new OpenLayers.Popup.FramedCloud("popup",
+						feature.geometry.getBounds().getCenterLonLat(),
+						null,
+						infoWindowContent,
+						null,
+						true
+						);
+				popup.autoSize= true;
+				popup.maxSize= new OpenLayers.Size(300, 350);
+				feature.popup = popup;
+				ccpl_map.addPopup(popup);
+				/*Update window content to show less items*/
+				gmap_self.show_hide_info();
+				// popup.setSize(new OpenLayers.Size(500, 400));
+					//Click on Marker
+					// global_this.bsMarkerClick(event, f);
+				}
 			}
 		}
 		/*
@@ -230,7 +257,7 @@ function WhiteMapClass() {
 			if(marker.isSpiderfied) {
 				global_this.spiderfyBsMarker(marker);
 			} else {
-				global_this.openInfoWindow(e, marker, main_devices_data_feature_obj_wmaps.data[marker.name]);
+				global_this.openInfoWindow(e, marker, wm_obj.data[marker.name]);
 			}
 		}
 	/**
@@ -444,9 +471,9 @@ console.log(polygonSelectedDevices);
 			// 			var selected_technology = $("#polling_tech").val();
 			// 			if($.trim(deviceTechnology.toLowerCase()) === $.trim(selected_technology.toLowerCase())) {
 			// 				var deviceName = ssAndDeviceArray[i].attributes.name;
-			// 				var ssMarkers = main_devices_data_feature_obj_wmaps.features[deviceName];
+			// 				var ssMarkers = wm_obj.features[deviceName];
 			// 				for(var j=0; j< )
-			// 				// main_devices_data_feature_obj_wmaps.features
+			// 				// wm_obj.features
 			// 				console.log(ssAndDeviceArray[i]);
 			// 			}
 			// 		}
@@ -526,9 +553,9 @@ console.log(polygonSelectedDevices);
 				newSize = size;
 			}
 			//Loop through all markers
-			for (var i = 0; i < main_stations_features_wmaps.length; i++) {
+			for (var i = 0; i < bs_ss_features_list.length; i++) {
 				//Set icon marker size with newSize
-				main_stations_features_wmaps[i].icon.setSize(newSize);
+				bs_ss_features_list[i].icon.setSize(newSize);
 			}
 		}
 		/*
@@ -551,217 +578,106 @@ console.log(polygonSelectedDevices);
 	 */
 
 	/**
-	 * Advance Search and Filter
+	 * Search and Filter Function
 	 */	
-		this.updateStationMarker = function(base_station, newBaseStationObject, callback) {
-			callback();
-		}
-		/*
-		This function show Bs Marker
-		 */
-		this.showStationMarker = function(base_station) {
-			var bs_name = base_station.name;
-			var bs_marker = main_devices_data_feature_obj_wmaps.features[bs_name];
-			bs_marker.style.display= '';
-			var devicesMarkers = deviceMarkerObj[bs_name];
-			if (devicesMarkers) {
-				for (var i = 0; i < devicesMarkers.length; i++) {
-					var deviceMarker = devicesMarkers[i];
-					var deviceName = deviceMarker.name;
-					var sub_stations = main_devices_data_feature_obj_wmaps.features[deviceName];
-					if (sub_stations) {
-						for (var j = 0; j < sub_stations.length; j++) {
-							var sub_station = sub_stations[j];
-							sub_station.style.display= '';
-							// sub_station.display(true);
-						}
-					}
 
-					var lines = cktLinesObj[deviceName];
-					if (lines) {
-						for (var j = 0; j < lines.length; j++) {
-							var line = lines[j];
-							line.style.display = 'block'
-						}
-						global_this.linesLayer.redraw();
-					}
-
-					var sectors = sectorsObj[deviceName];
-					if (sectors) {
-						for (var j = 0; j < sectors.length; j++) {
-							var sector = sectors[j];
-							sector.style.display = 'block';
-						}
-						global_this.sectorsLayer.redraw();
-					}
-				}
-			}
-			global_this.markersVectorLayer.redraw();
-		}
-		/*
-		This function hides BS marker
-		 */
-		var markersToHide= [];
-		this.hideStationMarkers = function(base_station) {
-			var bs_name = base_station.name;
-			var bs_marker = main_devices_data_feature_obj_wmaps.features[bs_name];
-			global_this.markersVectorLayer.destroyFeatures([bs_marker]);
-			bs_marker.style.display = 'none';
-			// bs_marker.style = { visibility: 'hidden' };
-			// // bs_marker.display(false);
-			// var devicesMarkers = deviceMarkerObj[bs_name];
-			// if (devicesMarkers) {
-			// 	for (var i = 0; i < devicesMarkers.length; i++) {
-			// 		var deviceMarker = devicesMarkers[i];
-			// 		// deviceMarker.display(false);
-			// 		var deviceName = deviceMarker.name;
-			// 		var sub_stations = main_devices_data_feature_obj_wmaps.features[deviceName];
-			// 		if (sub_stations) {
-			// 			for (var j = 0; j < sub_stations.length; j++) {
-			// 				var sub_station = sub_stations[j];
-			// 				sub_station.style = { visibility: 'hidden' };
-			// 			}
-			// 		}
-
-			// 		var lines = cktLinesObj[deviceName];
-			// 		if (lines) {
-			// 			for (var j = 0; j < lines.length; j++) {
-			// 				var line = lines[j];
-			// 				line.style.display = 'none'
-			// 			}
-			// 			global_this.linesLayer.redraw();
-			// 		}
-
-			// 		var sectors = sectorsObj[deviceName];
-			// 		if (sectors) {
-			// 			for (var j = 0; j < sectors.length; j++) {
-			// 				var sector = sectors[j];
-			// 				sector.style.display = 'none';
-			// 			}
-			// 			global_this.sectorsLayer.redraw();
-			// 		}
-			// 	}
-			// }
-			// global_this.markersVectorLayer.redraw();
-		}
 		/*
 		This function is triggered when Reset Filter is done.
 		Select empty value in the Select2 boxes, update filter_data variable and reset basic filters too.
 		 */
 		this.resetAdvanceFilter = function() {
-			// this.resetBasicFilter();
 
-			wmAdvanceFilterClass.resetAdvanceFilter();
+			//reset filters
+			wmAdvanceFilterClass.resetFilter();
+
+			//set adAdvFilter = 0
 			hasAdvFilter = 0;
-		}
 
-		this.hideAdvanceFilter= function() {
-			wmAdvanceFilterClass.destroyAdvFilterHtml();
-		}
-		/*
-		This function is triggered when Apply Advance Filter is triggered.
-		Here, we check for the values selected in the Multibox and filter result according to it.
-		 */
-		var filteredFeatures = {markers: [], lines: [], sectors: []};
-		this.applyAdvanceFilter = function() {
-			this.resetBasicFilter();
-			data_for_filter= [];
-			var appliedFilter = wmAdvanceFilterClass.applyAdvFilter();
-			data_for_filter = appliedFilter.data_for_filter;
-
-			this.markersVectorLayer.removeAllFeatures();
-			this.markersVectorLayer.addFeatures(appliedFilter.filtered_Features);
-			filteredFeatures.markers = appliedFilter.filtered_Features;
-
-			this.linesLayer.removeAllFeatures();
-			this.linesLayer.addFeatures(appliedFilter.line_Features);
-			filteredFeatures.lines = appliedFilter.line_Features;
-
-			this.sectorsLayer.removeAllFeatures();
-			this.sectorsLayer.addFeatures(appliedFilter.sector_Features);
-			filteredFeatures.sectors = appliedFilter.sector_Features;
-
-			
-			wmAdvanceSearchClass.setMasterData(data_for_filter);
-			
-			global_this.markersLayerStrategy.recluster();
-
-			hasAdvFilter= 1;
+			//update page status
 			get_page_status();
 		}
 
 		/*
-		This function populates AdvanceFilter Multiselect dataItems
+		 * This function is triggered when Cancel Filter is done.
 		 */
-		this.showAdvanceFilter = function() {
-			var advFilterData= [];
-			var technologyData = { 'element_type':'multiselect', 'field_type':'string', 'key':'technology', 'title':'Technology', 'values':[] };
-			//Loop through the technology for the devices
-			if (technology.length) {
-				for (var i = 0; i < technology.length; i++) {
-					//technology[i] is a valid value
-					if (technology[i]) {
-						technologyData.values.push(technology[i]);
-					}
-				}
-			}
-			advFilterData.push(technologyData);
+		this.hideAdvanceFilter= function() {
 
-			var vendorData = { 'element_type':'multiselect', 'field_type':'string', 'key':'vendor', 'title':'Vendor', 'values':[] };
-			//Loop through the vendor for the devices
-			if (vendor.length) {
-				for (var i = 0; i < vendor.length; i++) {
-					//vendor[i] is a valid value
-					if (vendor[i]) {
-						vendorData.values.push(vendor[i]);
-					}
-				}
-			}
-			advFilterData.push(vendorData);
-
-			var cityData = { 'element_type':'multiselect', 'field_type':'string', 'key':'city', 'title':'City', 'values':[] };
-			//Loop through the city for the devices
-			if (city.length) {
-				for (var i = 0; i < city.length; i++) {
-					//city[i] is a valid value
-					if (city[i]) {
-						cityData.values.push(city[i]);
-					}
-				}
-			}
-			advFilterData.push(cityData);
-
-			var stateData = { 'element_type':'multiselect', 'field_type':'string', 'key':'state', 'title':'State', 'values':[] }
-			//Loop through the state for the devices
-			if (state.length) {
-				for (var i = 0; i < state.length; i++) {
-					//state[i] is a valid value
-					if (state[i]) {
-						stateData.values.push(state[i]);
-					}
-				}
-			}
-			advFilterData.push(stateData);
-			wmAdvanceFilterClass.prepareAdvFilterHtml(advFilterData);
+			//remove advance filter content
+			wmAdvanceFilterClass.destroyAdvanceFilter();
 		}
+
+		/*
+		 * This function is triggered when Apply Advance Filter is triggered.
+		 * Here, we check for the values selected in the Multibox and filter result according to it.
+		 */
+		
+		this.applyAdvanceFilter = function(appliedFilterData) {
+
+			data_for_filter_wmap= [];
+			
+			//reset basic filters
+			this.resetBasicFilter();
+
+			//set data for filter
+			data_for_filter_wmap = appliedFilterData.data_for_filters;
+
+			//remove features from markersLayer and add filteredFeatures
+			this.markersLayer.removeAllFeatures();
+			this.markersLayer.addFeatures(appliedFilterData.filtered_Features);
+			filtered_Features.markers = appliedFilterData.filtered_Features;
+			
+			//remove lines from linesLayer and add filteredLine
+			this.linesLayer.removeAllFeatures();
+			this.linesLayer.addFeatures(appliedFilterData.line_Features);
+			filtered_Features.lines = appliedFilterData.line_Features;
+
+			//remove sectors from sectorsLayer and add filtered sectors
+			this.sectorsLayer.removeAllFeatures();
+			this.sectorsLayer.addFeatures(appliedFilterData.sector_Features);
+			filtered_Features.sectors = appliedFilterData.sector_Features;
+			
+			//set master data for search to data_to_filter
+			wmAdvanceSearchClass.setMasterData(data_for_filter_wmap);
+			
+			//rescluster the strategy
+			global_this.markersLayerStrategy.recluster();
+
+			//set adv filter 1
+			hasAdvFilter= 1;
+			//update page status
+			get_page_status();
+
+			this.toggleLineLayer();
+		}
+
 		/*
 		This function reset Advance Search
 		 */
-		var search_Markers = [];
 		this.resetAdvanceSearch = function() {
-			wmAdvanceSearchClass.resetAdvanceSearch();	
-			if($("#gis_search_status_txt").length) {
-				$("#gis_search_status_txt").remove();
-			}		
-			//hide search markers here			
+
+			//reset adv class
+			wmAdvanceSearchClass.resetAdvanceSearch();
+
+			//set hasAdvSearch = 0
+			hasAdvSearch = 0;
+
+			//remove search markers
+			this.searchMarkerLayer.removeAllFeatures();
+
+			//update get status
+			get_page_status();
 		}
+
 		/*
 		This function applies Advance Search
 		 */
 		this.applyAdvanceSearch = function() {
-			wmAdvanceSearchClass.applyAdvanceSearch();
-			hideSpinner();
+			//apply adv Search
+			wmAdvanceSearchClass.applyAdvanceSearch(function() {
+				hideSpinner();
+			});
 		}
+
 		/*
 		This function populate Advance Search Dropdowns
 		 */
@@ -814,119 +730,121 @@ console.log(polygonSelectedDevices);
 				}
 			}
 			advSearchData.push(cityData);
-			wmAdvanceSearchClass.prepareAdvSearchHtml(advSearchData);
+			wmAdvanceSearchClass.createAdvanceSearchMarkup(advSearchData);
 		}
 
 		this.hideAdvanceSearch = function() {
-			wmAdvanceSearchClass.destroyAdvSearchHtml();
+			
+			wmAdvanceSearchClass.destroyAdvanceSearch();
 		}
 		/*
 		This function applies Basic Filter
 		 */
 		this.applyBasicFilter = function() {
-			var technologyValue = $("#technology").val();
-			var vendorValue = $("#vendor").val();
-			var stateValue = $("#state").val();
-			var cityValue = $("#city").val();
+
+			var technologyValue = $("#technology").val(), vendorValue = $("#vendor").val(), stateValue = $("#state").val(), cityValue = $("#city").val();
 			
-			var filtered_lines_features= [], filtered_stations_features = [], filtered_sector_features = [];
+			global_this.markersLayer.removeAllFeatures();
+			global_this.linesLayer.removeAllFeatures();
+			global_this.sectorsLayer.removeAllFeatures();
 
-			stationsLoop: for (var i = 0; i < data_for_filter.length; i++) {
-				var markerData = data_for_filter[i];
-				if (technologyValue === "" && vendorValue === "" && stateValue === "" && cityValue === "") {
-					filtered_stations_features = main_stations_features_wmaps;
-					filtered_lines_features = main_lines_sectors_features_wmaps.lines;
-					filtered_sector_features = main_lines_sectors_features_wmaps.sectors;
-					
-					// global_this.applyAdvanceFilter();
-					break stationsLoop;
-				} else {
-					if(technologyValue !== "") {
-						var baseStationTechnology = markerData.sector_ss_technology;
-						if(baseStationTechnology) {
-							baseStationTechnology= $.trim(baseStationTechnology.toLowerCase());
+			if(technologyValue == "" && vendorValue == "" && stateValue == "" && cityValue == "") {
+
+				global_this.markersLayer.addFeatures(filtered_Features.markers);
+				global_this.linesLayer.addFeatures(filtered_Features.lines);
+				global_this.sectorsLayer.addFeatures(filtered_Features.sectors);
+				global_this.markersLayerStrategy.recluster();
+
+				return;
+			} else {
+				var basic_filtered_features = {markers: [], lines: [], sectors: []}, i= 0;
+				
+				bsLoop: for(i=0; i< data_for_filter_wmap.length; i++) {
+					var bs = data_for_filter_wmap[i], j=0, k=0;
+					if(technologyValue != "") {
+						var bsTechnologies = bs.sector_ss_technology;
+						if(bsTechnologies) {
+							bsTechnologies = $.trim(bsTechnologies.toLowerCase());
 							technologyValue = $.trim(technologyValue.toLowerCase());
-							if(baseStationTechnology.indexOf(technologyValue) === -1) {
-								continue stationsLoop;
+							if(bsTechnologies.indexOf(technologyValue) == -1) {
+								continue bsLoop;
 							}
-						} else {
-							continue stationsLoop;
 						}
+					} else {
+						continue bsLoop;
 					}
 
-					if (vendorValue !== "") {
-						var baseStationVendor = markerData.sector_ss_vendor;
-						if(baseStationVendor) {
-							baseStationVendor= $.trim(baseStationVendor.toLowerCase());
+					if(vendorValue != "") {
+						var bsVendors = bs.sector_ss_vendor;
+						if(bsVendors) {
+							bsVendors = $.trim(bsVendors.toLowerCase());
 							vendorValue = $.trim(vendorValue.toLowerCase());
-							if (baseStationVendor.indexOf(vendorValue) === -1) {
-								continue stationsLoop;
+							if(bsVendors.indexOf(vendorValue) == -1) {
+								continue bsLoop;
 							}
-						} else {
-							continue stationsLoop;
 						}
+					} else {
+						continue bsLoop;
 					}
 
-					if (stateValue !== "") {
-						var baseStationState = markerData.data.state;
-						if(baseStationState) {
-							baseStationState= $.trim(baseStationState.toLowerCase());
+					if(stateValue != "") {
+						var bsState = bs.data.state;
+						if(bsState) {
+							bsState = $.trim(bsState.toLowerCase());
 							stateValue = $.trim(stateValue.toLowerCase());
-							if (baseStationState !== stateValue) {
-								continue stationsLoop;
+							if(bsState.indexOf(stateValue) == -1) {
+								continue bsLoop;
 							}
-						} else {
-							continue stationsLoop;
 						}
+					} else {
+						continue bsLoop;
 					}
 
-					if (cityValue !== "") {
-						var baseStationCity = markerData.data.city;
-						if(baseStationCity) {
-							// console.log(baseStationCity, cityValue);
-							baseStationCity= $.trim(baseStationCity.toLowerCase());
+					if(cityValue != "") {
+						var bsCity = bs.data.city;
+						if(bsCity) {
+							bsCity = $.trim(bsCity.toLowerCase());
 							cityValue = $.trim(cityValue.toLowerCase());
-							if (baseStationCity !== cityValue) {
-								continue stationsLoop;
+							if(bsCity.indexOf(cityValue) == -1) {
+								continue bsLoop;
 							}
-						} else {
-							continue stationsLoop;
 						}
+					} else {
+						continue bsLoop;
 					}
 
-					filtered_stations_features.push(main_devices_data_feature_obj_wmaps.features[markerData.name]);
-					for(var x=0; x< markerData.data.param.sector.length; x++) {
-						var sec = markerData.data.param.sector[x];
-						if($.trim(sec.technology.toLowerCase()) === $.trim(technologyValue.toLowerCase())) {
-							if(main_line_sectors_features_obj_wmaps.sectors[sec.sector_configured_on_device]) {
-								filtered_sector_features.push(main_line_sectors_features_obj_wmaps.sectors[sec.sector_configured_on_device]);
+					basic_filtered_features.markers.push(wm_obj.features[bs.name]);
+
+					for(j=0; j< bs.data.param.sector.length; j++) {
+						var bsSector = bs.data.param.sector[j];
+						if($.trim(bsSector.technology.toLowerCase()) == $.trim(technologyValue.toLowerCase())) {
+							if(wm_obj.sectors[bsSector.sector_configured_on_device]) {
+								basic_filtered_features.sectors.push(wm_obj.sectors[bsSector.sector_configured_on_device]);
 							}
-							if(main_line_sectors_features_obj_wmaps.lines[sec.sector_configured_on_device]) {
-								filtered_lines_features.push(main_line_sectors_features_obj_wmaps.lines[sec.sector_configured_on_device]);
+							if(wm_obj.lines[bsSector.sector_configured_on_device]) {
+								basic_filtered_features.lines.push(wm_obj.lines[bsSector.sector_configured_on_device]);
 							}
 
-							for(var y=0; y< sec.sub_station.length; y++) {
-								var sub_stat = sec.sub_station[y];
-								console.log(sub_stat.name);
-								console.log(Object.keys(main_devices_data_feature_obj_wmaps.features));
-								filtered_stations_features.push(main_devices_data_feature_obj_wmaps.features[sub_stat.name])
+							for(k=0; k< bsSector.sub_station.length; k++) {
+								var sub_Station = bsSector.sub_station[k];
+								basic_filtered_features.markers.push(wm_obj.features[sub_Station.name]);
 							}
 						}
 					}
 				}
+
+				global_this.markersLayer.addFeatures(basic_filtered_features.markers);	
+				global_this.linesLayer.addFeatures(basic_filtered_features.lines);
+				global_this.sectorsLayer.addFeatures(basic_filtered_features.sectors);
+				global_this.markersLayerStrategy.recluster();
 			}
-			console.log(filtered_stations_features.length);
-			global_this.markersLayer.removeAllFeatures();
-			global_this.markersLayer.addFeatures(filtered_stations_features);
-			global_this.markersLayerStrategy.recluster();
-			global_this.linesLayer.removeAllFeatures();
-			global_this.linesLayer.addFeatures(filtered_lines_features);
-			global_this.sectorsLayer.removeAllFeatures();
-			global_this.sectorsLayer.addFeatures(filtered_sector_features);
-			global_this.toggleLineLayer();
 		}
 
+		/*
+		This function populates basic filter dropdowns
+		 */
 		this.populateBasicFilterDropdowns = function() {
+
 			/*Populate City & State*/
 			var state_array = Object.keys(state_city_obj);
 
@@ -991,6 +909,10 @@ console.log(polygonSelectedDevices);
 				}
 			});
 		}
+
+		/*
+		Reset Filters
+		 */
 		this.resetBasicFilter = function() {
 			$("#technology").val('');
 			$("#vendor").val('');
@@ -1000,121 +922,37 @@ console.log(polygonSelectedDevices);
 			this.applyBasicFilter();
 		}
 	/**
-	 * End of Advance Search and Filter
-	 */
-
-	
+	 * End of Search and Filter Functions
+	 */	
 
 	/**
 	 *
-	 * Private Functions
+	 * Plotting Functions
 	 */
 	
-		
-	 	/**
-    * This function creates data to plot sectors on google maps.
-    * * @method createSectorData.
-    * * @param Lat {Number}, It contains lattitude of any point.
-    * * @param Lng {Number}, It contains longitude of any point.
-    * * @param radius {Number}, It contains radius for sector.
-    * * @param azimuth {Number}, It contains azimuth angle for sector.
-    * * @param beamwidth {Number}, It contains width for the sector.
-    * * @param sectorData {Object}, It contains sector info json object.
-    * * @param orientation {String}, It contains the orientation type of antena i.e. vertical or horizontal
-    * * @return {Object Array} sectorDataArray, It is the polygon points lat-lon object array
-    * */
-    function createSectorData(lat, lng, radius, azimuth, beamWidth, orientation, callback) {
-        var triangle = [],
-             sectorDataArray = [];
-        // Degrees to radians
-        var d2r = Math.PI / 180;
-        //  Radians to degrees
-        var r2d = 180 / Math.PI;
-
-        var PRlat = (radius / 6371) * r2d; // using 3959 miles or 6371 KM as earth's radius
-        var PRlng = PRlat / Math.cos(lat * d2r);
-
-        var PGpoints = [],
-             pointObj = {};
-
-        with(Math) {
-            lat1 = (+lat) + (PRlat * cos(d2r * (azimuth - beamWidth / 2)));
-            lon1 = (+lng) + (PRlng * sin(d2r * (azimuth - beamWidth / 2)));
-
-            /*Create lat-lon point object*/
-            /*Reset Pt Object*/
-            pointObj = {};
-            pointObj["lat"] = lat1;
-            pointObj["lon"] = lon1;
-            /*Add point object to array*/
-            PGpoints.push(pointObj);
-
-            lat2 = (+lat) + (PRlat * cos(d2r * (azimuth + beamWidth / 2)));
-            lon2 = (+lng) + (PRlng * sin(d2r * (azimuth + beamWidth / 2)));
-
-            var theta = 0;
-            var gamma = d2r * (azimuth + beamWidth / 2);
-
-            for (var a = 1; theta < gamma; a++) {
-                theta = d2r * (azimuth - beamWidth / 2 + a);
-                PGlon = (+lng) + (PRlng * sin(theta));
-                PGlat = (+lat) + (PRlat * cos(theta));
-                /*Reset Pt Object*/
-                pointObj = {};
-                pointObj["lat"] = PGlat;
-                pointObj["lon"] = PGlon;
-                /*Add point object to array*/
-                PGpoints.push(pointObj);
-            }
-            /*Reset Pt Object*/
-            pointObj = {};
-            pointObj["lat"] = lat2;
-            pointObj["lon"] = lon2;
-            /*Add point object to array*/
-            PGpoints.push(pointObj);
-
-            var centerPtObj = {};
-            centerPtObj["lat"] = lat;
-            centerPtObj["lon"] = lng;
-            /*Add center point object to array*/
-            PGpoints.push(centerPtObj);
-        }
-
-        /*Condition for the orientation of sector antina*/
-        if (orientation == "horizontal") {
-            var len = Math.floor(PGpoints.length / 3);
-            triangle.push(PGpoints[0]);
-            triangle.push(PGpoints[(len * 2) - 1]);
-            triangle.push(PGpoints[(len * 3) - 1]);
-            /*Assign the triangle object array to sectorDataArray for plotting the polygon*/
-            sectorDataArray = triangle;
-        } else {
-            /*Assign the PGpoints object array to sectorDataArray for plotting the polygon*/
-            sectorDataArray = PGpoints;
-        }
-        /*Callback with lat-lon object array.*/
-        callback(sectorDataArray);
-    };
-
 		/*
-		This function takes a array of Markers and loop through each list and call prototype method createOpenLayerMarker() to create Marker for it.
-		@param markersData {Array for BsData} Array containing Bs to be plotted.
-		@param callback {Function} Callback to return when Finished.
-		Also we add Marker Data in our variables for future use.
+		 * This function takes a array of Markers and loop through each list and call prototype method createOpenLayerMarker() to create Marker for it.
+		 * @param markersData {Array for BsData} Array containing Bs to be plotted.
+		 * @param callback {Function} Callback to return when Finished.
+		 * Also we add Marker Data in our variables for future use.
 		 */
 	   this.plotMarkers = function(markersData, callback) {
+			
 			//Loop through the markersData
 			$.each(markersData, function(i, markerData) {
 				
+				//store state in array
 				if(markerData.data.state) {
 					if(!state_city_obj[markerData.data.state]) {
 						state_city_obj[markerData.data.state] = [];
 					}
+					//store city in array
 					if(state_city_obj[markerData.data.state].indexOf(markerData.data.city) == -1) {
 						state_city_obj[markerData.data.state].push(markerData.data.city);
 					}
 				}
 
+				//store city in array
 				if(markerData.data.city) {
 					if(all_cities_array.indexOf(markerData.data.city) == -1) {
 						all_cities_array.push(markerData.data.city);
@@ -1131,7 +969,7 @@ console.log(polygonSelectedDevices);
 					type = "base_station";
 
 				//add data to main device obj
-				main_devices_data_feature_obj_wmaps.data[name] = markerData;
+				wm_obj.data[name] = markerData;
 				
 				var bsMarkerCustomInfo = { 
 					id: id, 
@@ -1153,9 +991,9 @@ console.log(polygonSelectedDevices);
 				}
 
 				var marker = global_this.createOpenLayerVectorMarker(size, icon, lon, lat, bsMarkerCustomInfo);
-				main_devices_data_feature_obj_wmaps.features[name] = marker;
+				wm_obj.features[name] = marker;
 
-				main_stations_features_wmaps.push(marker);
+				bs_ss_features_list.push(marker);
 				
 				var deviceIDArray= [];
 				//base station devices loop
@@ -1176,10 +1014,16 @@ console.log(polygonSelectedDevices);
 					if(all_vendor_array.indexOf(device.vendor) == -1) {
 						all_vendor_array.push(device.vendor); 
 					}
+					var sectorRadius = device.radius,
+						rad = 4;
+					/*If radius is greater than 4 Kms then set it to 4.*/
+					if((sectorRadius != null) && (sectorRadius > 0)) {
+						rad = sectorRadius;
+					}
 
 					var startEndObj = {};
 
-					createSectorData(lat, lon, 4, device.azimuth_angle, device.beam_width, device.orientation, function(sectorPoints) {
+					createSectorData(lat, lon, rad, device.azimuth_angle, device.beam_width, device.orientation, function(sectorPoints) {
 
 						var halfPt = Math.floor(sectorPoints.length / (+2));
 
@@ -1209,7 +1053,12 @@ console.log(polygonSelectedDevices);
 								lon: lon,
 								azimuth: device.azimuth_angle,
 								beam_width: device.beam_width,
-								radius: 4,
+								technology: device.technology,
+								vendor 				: device.vendor,
+								deviceExtraInfo 	: device.info,
+								deviceInfo 			: device.device_info,
+								poll_info 			: [],
+								radius: rad,
 								dataset: device.info,
 								startLat: startLat,
 								startLon: startLon,
@@ -1221,8 +1070,10 @@ console.log(polygonSelectedDevices);
 							};
 
 							var plottedSector = global_this.plotSector_wmap(sectorPoints, sectorCustomInfo);
+							filtered_Features.sectors.push(plottedSector);
 							main_lines_sectors_features_wmaps.sectors.push(plottedSector);
-							main_line_sectors_features_obj_wmaps.sectors[device.sector_configured_on_device] = plottedSector;
+							// wm_obj.sectors[device.sector_configured_on_device] = plottedSector;
+							wm_obj.sectors["poly_"+device.sector_configured_on+"_"+rad+"_"+device.azimuth_angle+"_"+device.beam_width] = plottedSector;
 							global_this.sectorsLayer.addFeatures([plottedSector]);
 
 							startEndObj["startLat"] = sectorPoints[halfPt].lat;
@@ -1278,15 +1129,15 @@ console.log(polygonSelectedDevices);
 								/*Push Sector marker to pollableDevices array*/
 								pollableDevices.push(deviceMarker);
 
-								main_devices_data_feature_obj_wmaps['devices']['sector_'+device.sector_configured_on] = deviceMarker;
+								wm_obj['devices']['sector_'+device.sector_configured_on] = deviceMarker;
 
 								sectorMarkerConfiguredOn.push(device.sector_configured_on);
 
-								if(main_devices_data_feature_obj_wmaps['devices'][name]) {
-									main_devices_data_feature_obj_wmaps['devices'][name].push(deviceMarker)
+								if(wm_obj['devices'][name]) {
+									wm_obj['devices'][name].push(deviceMarker)
 								} else {
-									main_devices_data_feature_obj_wmaps['devices'][name]= [];
-									main_devices_data_feature_obj_wmaps['devices'][name].push(deviceMarker)
+									wm_obj['devices'][name]= [];
+									wm_obj['devices'][name].push(deviceMarker)
 								}	
 							}
 
@@ -1299,7 +1150,7 @@ console.log(polygonSelectedDevices);
 					for (var k = 0; k < device.sub_station.length; k++) {
 
 						var sub_station = device.sub_station[k];
-						main_devices_data_feature_obj_wmaps.data[sub_station.name] = sub_station;
+						wm_obj.data[sub_station.name] = sub_station;
 
 						var perf_obj = { "performance_paramter" : "N/A", "performance_value" : "N/A", "frequency" : "N/A", "pl" : "N/A" };
 
@@ -1330,8 +1181,8 @@ console.log(polygonSelectedDevices);
 
 						//Create marker
 						sub_station_marker = global_this.createOpenLayerVectorMarker(size, sub_station_icon, sub_station_lon, sub_station_lat, subStationAdditionalInfo);
-						main_devices_data_feature_obj_wmaps.features[sub_station.name] = sub_station_marker;
-						main_stations_features_wmaps.push(sub_station_marker);
+						wm_obj.features[sub_station.name] = sub_station_marker;
+						bs_ss_features_list.push(sub_station_marker);
 
 						 /*Push SS marker to pollableDevices array*/
 						pollableDevices.push(sub_station_marker);
@@ -1407,30 +1258,37 @@ console.log(polygonSelectedDevices);
 							// console.log(startEndObj);
 							var line = global_this.plotLines_wmap(startEndObj.startLon,startEndObj.startLat, startEndObj.endLon,startEndObj.endLat, linkColor, lineAdditionalInfo);
 
+							filtered_Features.lines.push(line);
 							global_this.linesLayer.addFeatures([line]);
 							main_lines_sectors_features_wmaps.lines.push(line);
-							main_line_sectors_features_obj_wmaps.lines[device.sector_configured_on_device] = line;
+							wm_obj.lines['line_'+sub_station.name] = line;
 						}
 					}
 				}
 			});
 			callback();
 		}
+
 		/*
-		This function start Ajax Request to get the Data.
-		@param i {Number} Current Counter of Ajax Request
-		In Success, we get how many times we need to call Ajax Request and according to that, we recurvsily call this function.
-		Also call Functions to create Marker with the data.
+		 * This function start Ajax Request to get the Data.
+		 * @param i {Number} Current Counter of Ajax Request
+		 * In Success, we get how many times we need to call Ajax Request and according to that, we recurvsily call this function.
+		 * Also call Functions to create Marker with the data.
 		 */		
 		function startAjaxRequest(i) {
 			//Ajax Request
 			$.ajax({
-				url : base_url+"/"+"device/stats/?total_count="+total_count+"&page_number="+i,
+				//Url for the request
+				url : base_url+'/'+'device/stats/?total_count='+total_count+'&page_number='+i,
+				//request type
 				type: 'GET',
+				//json 
 				dataType: 'json',
 				//Success callback
 				success: function(response) {
+
 					if(response.success == 1) {
+
 						//First Time, find how many times Ajax Request is to be sent.
 						if (i === 1) {
 							total_count = response.data.meta.total_count;
@@ -1443,7 +1301,7 @@ console.log(polygonSelectedDevices);
 						//Condition to check if we need to call Ajax Request again
 						if (i <= loop_count && response.success && response.data.objects.children.length) {
 
-							main_devices_data_wmaps = main_devices_data_wmaps.concat(response.data.objects.children);
+							bs_data_list = bs_data_list.concat(response.data.objects.children);
 							
 							//Plot markers, on callback
 							global_this.plotMarkers(response.data.objects.children, function() {
@@ -1454,27 +1312,28 @@ console.log(polygonSelectedDevices);
 									//hide Loading
 									global_this.hideLoading();
 
-									data_for_filter = main_devices_data_wmaps;
+									data_for_filter_wmap = bs_data_list;
+									main_devices_data_wmap = bs_data_list;
 
-									filtered_Features = main_stations_features_wmaps;
+									filtered_Features.markers = bs_ss_features_list;
 
 									//add markers to the vector Layer
-									global_this.markersLayer.addFeatures(filtered_Features);
+									global_this.markersLayer.addFeatures(filtered_Features.markers);
 
 									//activate cluster strategy
 									global_this.markersLayerStrategy.activate();
 
 									//initiate advance filter class
-									wmAdvanceFilterClass = new WmAdvanceFilter(main_devices_data_wmaps, main_devices_data_feature_obj_wmaps.features, main_devices_data_feature_obj_wmaps.features, main_stations_features_wmaps, cktLinesBsObj, sectorsBsObj);
+									wmAdvanceFilterClass = new WmAdvanceFilter(bs_data_list, wm_obj.features, wm_obj.features, bs_ss_features_list, cktLinesBsObj, sectorsBsObj);
 									
 									//initiate advance search class
-									wmAdvanceSearchClass = new WmAdvanceSearch(data_for_filter);
+									wmAdvanceSearchClass = new WmAdvanceSearch(data_for_filter_wmap);
 
 									//populate basic filter dropdown
 									global_this.populateBasicFilterDropdowns();
+									// global_this.linesLayer.redraw();
 
-									global_this.linesLayer.redraw();
-
+									//hide linesLayer by default.
 									global_this.linesLayer.display(false);
 
 									return;
@@ -1502,12 +1361,15 @@ console.log(polygonSelectedDevices);
 						// (bool | optional) if you want it to fade out on its own or just sit there
 						sticky: false
 			        });
+
+					//hide Loading
+					global_this.hideLoading();
 				}
 			});
 		}
 	/**
 	 *
-	 * End of Private Functions
+	 * End of Plotting Functions
 	 */
 
 
@@ -1515,19 +1377,66 @@ console.log(polygonSelectedDevices);
 	 *
 	 * Utils Section
 	 */
+		
+		/*
+		This function removes all Features from marker, line and sector layers.
+		 */
+		this.hideAllFeatures = function() {
+			global_this.markersLayer.removeAllFeatures();
+			global_this.linesLayer.removeAllFeatures();
+			global_this.sectorsLayer.removeAllFeatures();
+		}
+
+		/*
+		This function shows all Filtered Features for marker, line and sector layers.
+		 */
+		this.showAllFeatures = function() {
+
+			global_this.markersLayer.addFeatures(main_devices_marker_features_wmaps);
+			global_this.linesLayer.addFeatures(main_lines_sectors_features_wmaps.lines);
+			global_this.sectorsLayer.addFeatures(main_lines_sectors_features_wmaps.sectors);
+			global_this.markersLayerStrategy.recluster();
+		}
+
+		/*
+		 * Update page status in the div
+		 */
+		function get_page_status() {
+			var status_txt = "";
+
+			if(hasAdvSearch == 0) {
+				//remove html element from page status
+				if($("#gis_search_status_txt").length) {
+					$("#gis_search_status_txt").remove();
+				}
+			}
+
+			//if filter is applied
+			if(hasAdvFilter == 1) {
+				status_txt+= '<li>Advance Filters Applied</li>';
+			}
+
+			//if nothing is applied
+			if(status_txt == "") {
+				status_txt += "<li>Default</li>";    
+			}
+
+			//update html
+			$("#gis_status_txt").html(status_txt);
+		}
 		/*
 		 * This function show Loading on the White Map Gui
 		*/
 		this.showLoading= function() {
 
-			//Disable Advance buttons Loading
-			disableAdvanceButton();
+				//Disable Advance buttons Loading
+				disableAdvanceButton();
 
-			//Show loading
-			$("#loadingIcon").show();
+				//Show loading
+				$("#loadingIcon").show();
 
-			//Set reset Filter button text
-			$("#resetFilters").button("loading");
+				//Set reset Filter button text
+				$("#resetFilters").button("loading");
 		}
 
 		/*
@@ -1535,14 +1444,14 @@ console.log(polygonSelectedDevices);
 		*/
 		this.hideLoading= function() {
 
-			//Enable Advance buttons Loading
-			disableAdvanceButton('no');
+				//Enable Advance buttons Loading
+				disableAdvanceButton('no');
 
-			//hide loading
-			$("#loadingIcon").hide();
+				//hide loading
+				$("#loadingIcon").hide();
 
-			//Set reset Filter button text
-			$("#resetFilters").button("complete");
+				//Set reset Filter button text
+				$("#resetFilters").button("complete");
 		}
 	/*
 	 *

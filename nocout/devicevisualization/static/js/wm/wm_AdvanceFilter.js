@@ -1,6 +1,6 @@
-function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, linesObj, sectorsObj) {
+function WmAdvanceFilter(bsData, bsMarkerObj, ssMarkerObj, masterStationsArr, linesObj, sectorsObj) {
 // console.log(data.length);
-	var master_Data = data;
+	var master_Data = bsData;
 	var master_Bs_Marker_Obj = bsMarkerObj;
 	var master_Ss_Marker_Obj = ssMarkerObj;
 	var master_Stations_Array = masterStationsArr;
@@ -8,7 +8,7 @@ function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, line
 	var master_Sectors_Obj = sectorsObj;
 	var previous_Stored_Values_Obj = {technology: [], vendor: [], city: [], state: []};
 
-	this.resetAdvanceFilter= function() {
+	this.resetFilter= function() {
 		showSpinner();
 		$("#filter_technology").select2('val', '');
 		$("#filter_vendor").select2('val', '');
@@ -25,11 +25,11 @@ function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, line
 		
 	}
 
-	this.applyAdvFilter = function() {
-		var filteredBsData = [];
+	this.applyFilter = function() {
 		var filteredBsMarkers = [];
 		var filteredLines = [];
 		var filteredSectors = [];
+		var data_for_filters = [];
 
 		//Values
 		var technologyValue = $("#filter_technology").val(), vendorValue = $("#filter_vendor").val(), stateValue = $("#filter_state").val(), cityValue = $("#filter_city").val();
@@ -176,6 +176,8 @@ function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, line
 				}
 			}
 
+			data_for_filters.push(markerData);
+
 			filteredBsMarkers.push(master_Bs_Marker_Obj[markerData.name]);
 			var bsSubStationsMarkers = master_Ss_Marker_Obj[markerData.name];
 			if(bsSubStationsMarkers && bsSubStationsMarkers.length) {
@@ -201,43 +203,45 @@ function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, line
 					filteredSectors.push(bsSectors[j]);
 				}
 			}
-
-			//push data in filteredBsData
-			filteredBsData.push(markerData);
 			$("#resetAdvFilterBtn").removeClass('hide');
 		}
-		return {filtered_data: filteredBsData, filtered_Features: filteredBsMarkers, line_Features: filteredLines, sector_Features: filteredSectors};
+		return {data_for_filters: data_for_filters,filtered_Features: filteredBsMarkers, line_Features: filteredLines, sector_Features: filteredSectors};
 	}
 
-	this.destroyAdvFilterHtml = function() {
+	/*
+	This function removes Advance Filter html markup from dom and hides it
+	 */
+	this.destroyAdvanceFilter = function() {
 		$("#advFilterFormContainer").html('');
 		if(!$("#advFilterContainerBlock").hasClass("hide")) {
 			$("#advFilterContainerBlock").addClass("hide");
 		}
 	}
 
-	this.prepareAdvFilterHtml= function(advFilterFormData) {
-		this.destroyAdvFilterHtml();
+	/*
+	* This function prepare HTML content which is shown on the Screen.
+	 */
+	this.createAdvanceFilterMarkup= function(advFilterFormData) {
+		//destroy old html
+		this.destroyAdvanceFilter();
+		//create advance filter html with form data
 		createAdvanceFilterHtml(advFilterFormData);
+
+		//update any previous_stored technology value
 		if(previous_Stored_Values_Obj.technology && previous_Stored_Values_Obj.technology.length) {
 			$("#filter_technology").select2('val', previous_Stored_Values_Obj.technology);
 		}
+		//update any previous_stored vendor value
 		if(previous_Stored_Values_Obj.vendor && previous_Stored_Values_Obj.vendor.length) {
 			$("#filter_vendor").select2('val', previous_Stored_Values_Obj.vendor);
 		}
+		//update any previous_stored state value
 		if(previous_Stored_Values_Obj.state && previous_Stored_Values_Obj.state.length) {
 			$("#filter_state").select2('val', previous_Stored_Values_Obj.state);
 		}
+		//update any previous_stored city value
 		if(previous_Stored_Values_Obj.city && previous_Stored_Values_Obj.city.length) {
 			$("#filter_city").select2('val', previous_Stored_Values_Obj.city);
 		}
-	}
-
-	this.getMasterData= function() {
-		return master_Data;
-	}
-
-	this.setMasterData= function(newData) {
-		master_Data = newData;
 	}
 }

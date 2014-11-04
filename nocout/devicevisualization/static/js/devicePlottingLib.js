@@ -1544,7 +1544,7 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>Base Station Device</h4></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div></div></div></div>";
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>Sector</h4></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div></div></div></div>";
 		} else {
 
 			infoTable += "<table class='table table-bordered'><tbody>";
@@ -4654,6 +4654,8 @@ function prepare_data_for_filter() {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
 		current_data = main_devices_data_earth;
+	} else if(window.location.pathname.indexOf("white_background") > -1) {
+		current_data = main_devices_data_wmap;
 	} else {
 		current_data = main_devices_data_gmaps;
 	}
@@ -4743,6 +4745,8 @@ function getDataForAdvanceSearch() {
 
 	if(window.location.pathname.indexOf("googleEarth") > -1) {
 		current_data = main_devices_data_earth;
+	} else if(window.location.pathname.indexOf("white_background") > -1) {		
+		current_data = main_devices_data_wmap;
 	} else {
 		current_data = main_devices_data_gmaps;
 	}

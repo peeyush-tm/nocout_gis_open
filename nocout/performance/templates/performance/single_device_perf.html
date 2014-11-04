@@ -45,9 +45,9 @@
                         <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10"
                                id="end_date" placeholder="End Date" class="hide">
                     </li> -->
-                    <li>
+                    <li style="width: 300px;">
                         <div class="input-group">
-                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" name="reservation" id="reservationtime" class="form-control" value="" />
+                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value="" />
                         </div>
                     </li>
                     <li>
@@ -455,11 +455,11 @@
             $("#apply_filter").on('click', function () {
                 if (startDate && endDate) {
                     //epoch function
-                    // var myStartTime = startDate.getTime()/1000.0;
-                    // var myEndTime = endDate.getTime()/1000.0;
                     var myStartDate = "", myEndDate = "";
-                    var myStartDate = moment(startDate).format("DD-MM-YYYY HH:mm:ss");
-                    var myEndDate =  moment(endDate).format("DD-MM-YYYY HH:mm:ss");
+                    var myStartTime = startDate.getTime()/1000.0;
+                    var myEndTime = endDate.getTime()/1000.0;
+                    // var myStartDate = moment(startDate).format("DD-MM-YYYY HH:mm:ss");
+                    // var myEndDate =  moment(endDate).format("DD-MM-YYYY HH:mm:ss");
                     window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent(myStartDate)
                             + '&end_date=' + encodeURIComponent(myEndDate);
                 } else {
@@ -627,7 +627,7 @@
                     opens: "left",
                     showDropdowns: true,
                     ranges: {
-                        'Today': [moment(), moment()],
+                        'Today': [moment().startOf('day'), moment()],
                         'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
                         'Last 7 Days': [moment().subtract('days', 6), moment()],
                         'Last 30 Days': [moment().subtract('days', 29), moment()],
@@ -637,7 +637,8 @@
                     buttonClasses: ['btn btn-default'],
                     applyClass: 'btn-small btn-primary',
                     cancelClass: 'btn-small',
-                    format: "MM/DD/YYYY HH:mm:ss"
+                    format: "DD-MM-YYYY HH:mm:ss",
+                    separator: 'to'
                 },
                 function(start, end) {
                     startDate= start;

@@ -337,6 +337,17 @@ function nocoutPerfLib() {
 
 		}
 
+		function getDateInEpochFormat(date, time) {
+			// if (date) {
+			// 	return date.getDate() + "-" + (parseInt(date.getMonth(), 10) + 1) + "-" + date.getFullYear();
+			// } else {
+			// 	return '';
+			// }
+			var split_time = time.split(":");
+			var new_date = moment(date).add(split_time[0], 'h').add(split_time[1], 'm').add(split_time[2], 's'); 
+			console.log(new_date);
+		}
+
 		function createHighChart(config) {
 			chart_instance = $('#' + service_id + '_chart').highcharts({
 				chart: {
@@ -493,7 +504,7 @@ var endTime = "23:59:59";
 			$.ajax({
 				url: get_url,
 				data: {
-					'start_date': getDateinStringFormat(ajax_start_date)+' '+startTime,
+					'start_date': getDateInEpochFormat(ajax_start_date, startTime),
 					'end_date': getDateinStringFormat(ajax_start_date)+' '+endTime
 				},
 				type: "GET",

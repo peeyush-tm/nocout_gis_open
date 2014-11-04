@@ -150,7 +150,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		});
 
 		//Create a OpenLayer Strategy Cluster
-		strategy= new OpenLayers.Strategy.Cluster({distance: clustererSettings.clustererDistance});
+		strategy= new OpenLayers.Strategy.Cluster({distance: clustererSettings.clustererDistance, threshold: 3});
 
 		//Create a Vector Layer for Markers with styleMap and strategy
 		layers.markersLayer = new OpenLayers.Layer.Vector("Markers Layer", {styleMap  : styleMap,strategies: [strategy]});
@@ -184,11 +184,13 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//vector Layer for Devices Marker
 		layers.markerDevicesLayer = new OpenLayers.Layer.Vector("Devices Marker Layer", {eventListeners: featureEventListener});
 
+		layers.markerDevicesLayer.display(false);
+
 		//Set markerDevicesLayer
 		this.markerDevicesLayer = layers.markerDevicesLayer;
 		
 		//Add layer to the map
-		// ccpl_map.addLayer(layers.markerDevicesLayer);		
+		// ccpl_map.addLayer(layers.markerDevicesLayer);
 
 		//vector Layer for Live Poll Polygon, before Adding feature, remove any previous feature created.
 		layers.livePollFeatureLayer= new OpenLayers.Layer.Vector("Live Poll Features Layer", {
@@ -203,6 +205,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//vector Layer for Search Icon
 		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Markers Layer");
+
+		layers.searchMarkerLayer.display(false);
 
 		//Set searchMarkerLayer
 		this.searchMarkerLayer = layers.searchMarkerLayer;
