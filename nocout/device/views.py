@@ -627,7 +627,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
 
             # checking whether device is 'sector configured on' or not
             try:
-                if Sector.objects.get(sector_configured_on=current_device):
+                if len(Sector.objects.filter(sector_configured_on=current_device)):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>'.format(
                         dct['id']))
             except Exception as e:
@@ -1388,7 +1388,7 @@ class AllDeviceListingTable(BaseDatatableView):
 
             # checking whether device is 'sector configured on' or not
             try:
-                if Sector.objects.get(sector_configured_on=current_device):
+                if len(Sector.objects.filter(sector_configured_on=current_device)):
                     dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
                         <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))

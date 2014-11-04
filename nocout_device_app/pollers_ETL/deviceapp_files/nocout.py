@@ -331,7 +331,7 @@ def addservice():
         snmp_port_tuple = None
         if payload.get('snmp_port'):
 		snmp_port_tuple = (int(payload.get('snmp_port')), [], [device_name])
-		g_service_vars['snmp_ports'].insert(0, snmp_port_tuple)
+		g_service_vars['snmp_ports'].append(snmp_port_tuple)
         
         snmp_community = None
         if payload.get('snmp_community'):
@@ -345,7 +345,7 @@ def addservice():
                     snmp_community_list.get('security_name'),snmp_community_list.get('auth_password'),
                     snmp_community_list.get('private_phase'),snmp_community_list.get('private_passphase')),
                     [device_name])
-            g_service_vars['snmp_communities'].insert(0, snmp_community)
+            g_service_vars['snmp_communities'].append(snmp_community)
 
         flag = write_new_host_rules()
         if not flag:
@@ -769,9 +769,10 @@ def add_host_to_mongo_conf(**values):
 		logger.error('Could not save the device conf into mongodb' + pprint.pformat(e))
 
 
-def get_parent(host=None, db=True):
+def get_parent(host=None, db=True, get_ip=False):
 	bs = None
 	device_mac = None
+	host_ip = None
 	if db:
 		if host:
 			try:
@@ -787,6 +788,9 @@ def get_parent(host=None, db=True):
 	else:
 		if host:
 			load_file(hosts_file)
+			if get_ip:
+				host_ip = g_host_vars['ipaddresses'][host]
+				return host_ip
 			# Filter the required row
 			host_row = filter(lambda e: re.match(host, e), g_host_vars['all_hosts'])
 			try:
@@ -880,11 +884,7 @@ def set_bulk_ping_levels(ping_levels_list=[]):
                 del g_service_vars['__builtins__']
 	except OSError, e:
 		logger.error('Could not open rules file: ' + pprint.pformat(e))
-    
-	v2_hosts = g_service_vars['bulkwalk_hosts']
-       	if not filter(lambda x: 'snmp-v2' in x[0], v2_hosts):
-               v2_hosts.append((["snmp-v2"], ALL_HOSTS))
-               g_service_vars['bulkwalk_hosts'] = v2_hosts    
+        
 	if ping_levels_list:
 		device_types = set(map(lambda x: x.get('device_type'), ping_levels_list))
 		old_ping_levels = g_service_vars['ping_levels']
@@ -977,11 +977,13 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
 		logger.debug('Removing existing checks')
                 iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1], g_service_vars['checks'])
                 g_service_vars['checks'] = map(lambda x: x, iter_func)
+		logger.debug('g_service_vars["checks"]' + pprint.pformat(g_service_vars['checks']))
 	    
 
 	for serv_param, param_vals in g_service_vars['extra_service_conf'].items():
                 iter_func = ifilterfalse(lambda t: hostname in t[2] and servicename in t[3], param_vals)
                 g_service_vars['extra_service_conf'][serv_param] = map(lambda x: x, iter_func)
+		logger.debug('extra service conf: ' + pprint.pformat(g_service_vars['extra_service_conf']))
 	if not flag:
                 g_service_vars['snmp_ports'] = filter(lambda t: hostname not in t[2], g_service_vars['snmp_ports'])
                 g_service_vars['snmp_communities'] = filter(lambda t: hostname not in t[-1], g_service_vars['snmp_communities'])
@@ -1025,13 +1027,13 @@ def write_new_host_rules():
 
 def sync():
     logger.debug('[-- sync --]')
-    load_file(hosts_file)
-    add_default_checks(default_checks_file)
-    flag = save_host(hosts_file)
     # Set flag for sync in mysql db
-    #toggle_sync_flag()
+    toggle_sync_flag()
     # First read all the new configs from db and write to rules.mk and hosts.mk
-    sync_device_conf_db = entry()
+    try:
+    	sync_device_conf_db = entry()
+    except Exception, e:
+    	logger.debug('Error in device_interface:' + pprint.pformat(e))
     sites_affected = []
     response = {
         "success": 1,
@@ -1080,7 +1082,7 @@ def sync():
             })
     logger.debug('[-- sync finish --]')
     # Reset the sync flag in mysql db
-    #toggle_sync_flag(mode=False)
+    toggle_sync_flag(mode=False)
     return response
 
 

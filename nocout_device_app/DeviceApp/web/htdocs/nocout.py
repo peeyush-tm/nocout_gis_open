@@ -769,9 +769,10 @@ def add_host_to_mongo_conf(**values):
 		logger.error('Could not save the device conf into mongodb' + pprint.pformat(e))
 
 
-def get_parent(host=None, db=True):
+def get_parent(host=None, db=True, get_ip=False):
 	bs = None
 	device_mac = None
+	host_ip = None
 	if db:
 		if host:
 			try:
@@ -787,6 +788,9 @@ def get_parent(host=None, db=True):
 	else:
 		if host:
 			load_file(hosts_file)
+			if get_ip:
+				host_ip = g_host_vars['ipaddresses'][host]
+				return host_ip
 			# Filter the required row
 			host_row = filter(lambda e: re.match(host, e), g_host_vars['all_hosts'])
 			try:
