@@ -17,6 +17,7 @@ from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value, \
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
+from performance.models import Topology
 from sitesearch.views import prepare_raw_bs_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 
@@ -738,6 +739,9 @@ class BulkFetchLPDataApi(View):
         # converting 'json' into python object
         devices = eval(str(self.request.GET.get('devices', None)))
         ts_template_id = int(self.request.GET.get('ts_template', None))
+	wimax_services = ['wimax_dl_cinr','wimax_ul_cinr','wimax_dl_rssi',
+			'wimax_ul_rssi','wimax_ul_intrf','wimax_dl_intrf',
+			'wimax_modulation_dl_fec','wimax_modulation_ul_fec']
 
         service = ""
         data_source = ""
