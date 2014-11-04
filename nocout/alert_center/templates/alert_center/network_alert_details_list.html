@@ -332,11 +332,11 @@
             /*Hide SECTOR ID Column*/
             for (var i = 0; i < gridHeadersObj.length; i++) {
                 var column = gridHeadersObj[i];
-                if (column.mData.indexOf("sector_id") > -1) {
-                    if (column.bVisible) {
-                        column.bVisible = false;
+                if(column.mData.indexOf("sector_id") > -1) {
+                    if(column.sClass) {
+                        column.sClass = "hide";
                     } else {
-                        column["bVisible"] = false;
+                        column["sClass"] = "hide";
                     }
                 }
             }
