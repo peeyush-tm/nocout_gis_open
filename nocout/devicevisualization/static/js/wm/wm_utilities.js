@@ -504,7 +504,7 @@ OpenLayers.Strategy.Cluster = OpenLayers.Class(OpenLayers.Strategy, {
                 var feature, clustered, cluster;
                 for(var i=0; i<this.features.length; ++i) {
                     feature = this.features[i];
-                    if(feature.geometry) {
+                    if(feature && feature.geometry) {
                         clustered = false;
                         for(var j=clusters.length-1; j>=0; --j) {
                             cluster = clusters[j];
@@ -773,3 +773,145 @@ function isLatLon(e) {
     }
 }
 
+
+
+
+/**
+* This function creates data to plot sectors on google maps.
+* @method createSectorData.
+* @param Lat {Number}, It contains lattitude of any point.
+* @param Lng {Number}, It contains longitude of any point.
+* @param radius {Number}, It contains radius for sector.
+ @param azimuth {Number}, It contains azimuth angle for sector.
+* @param beamwidth {Number}, It contains width for the sector.
+* @param sectorData {Object}, It contains sector info json object.
+* @param orientation {String}, It contains the orientation type of antena i.e. vertical or horizontal
+* @return {Object Array} sectorDataArray, It is the polygon points lat-lon object array
+*/
+function createSectorData(lat, lng, radius, azimuth, beamWidth, orientation, callback) {
+    var triangle = [], sectorDataArray = [];
+    // Degrees to radians
+    var d2r = Math.PI / 180;
+    //  Radians to degrees
+    var r2d = 180 / Math.PI;
+
+    var PRlat = (radius / 6371) * r2d; // using 3959 miles or 6371 KM as earth's radius
+    var PRlng = PRlat / Math.cos(lat * d2r);
+
+    var PGpoints = [],
+         pointObj = {};
+
+    with(Math) {
+        lat1 = (+lat) + (PRlat * cos(d2r * (azimuth - beamWidth / 2)));
+        lon1 = (+lng) + (PRlng * sin(d2r * (azimuth - beamWidth / 2)));
+
+        /*Create lat-lon point object*/
+        /*Reset Pt Object*/
+        pointObj = {};
+        pointObj["lat"] = lat1;
+        pointObj["lon"] = lon1;
+        /*Add point object to array*/
+        PGpoints.push(pointObj);
+
+        lat2 = (+lat) + (PRlat * cos(d2r * (azimuth + beamWidth / 2)));
+        lon2 = (+lng) + (PRlng * sin(d2r * (azimuth + beamWidth / 2)));
+
+        var theta = 0;
+        var gamma = d2r * (azimuth + beamWidth / 2);
+
+        for (var a = 1; theta < gamma; a++) {
+            theta = d2r * (azimuth - beamWidth / 2 + a);
+            PGlon = (+lng) + (PRlng * sin(theta));
+            PGlat = (+lat) + (PRlat * cos(theta));
+            /*Reset Pt Object*/
+            pointObj = {};
+            pointObj["lat"] = PGlat;
+            pointObj["lon"] = PGlon;
+            /*Add point object to array*/
+            PGpoints.push(pointObj);
+        }
+        /*Reset Pt Object*/
+        pointObj = {};
+        pointObj["lat"] = lat2;
+        pointObj["lon"] = lon2;
+        /*Add point object to array*/
+        PGpoints.push(pointObj);
+
+        var centerPtObj = {};
+        centerPtObj["lat"] = lat;
+        centerPtObj["lon"] = lng;
+        /*Add center point object to array*/
+        PGpoints.push(centerPtObj);
+    }
+
+    /*Condition for the orientation of sector antina*/
+    if (orientation == "horizontal") {
+        var len = Math.floor(PGpoints.length / 3);
+        triangle.push(PGpoints[0]);
+        triangle.push(PGpoints[(len * 2) - 1]);
+        triangle.push(PGpoints[(len * 3) - 1]);
+        /*Assign the triangle object array to sectorDataArray for plotting the polygon*/
+        sectorDataArray = triangle;
+    } else {
+        /*Assign the PGpoints object array to sectorDataArray for plotting the polygon*/
+        sectorDataArray = PGpoints;
+    }
+    /*Callback with lat-lon object array.*/
+    callback(sectorDataArray);
+};
+
+/**
+ * @method  showWmapFilteredData
+ * @param  {[type]} dataArray [description]
+ * @return {[type]}           [description]
+ */
+function showWmapFilteredData(dataArray) {
+
+    var filtered_bs_ss_data = [],
+        filtered_sector_data = [],
+        filtered_devices_data = [],
+        filtered_line_data = [];
+
+    for(var i=0;i<dataArray.length;i++) {        
+        var sectorsArray = dataArray[i].data.param.sector;
+        for(var j=0;j<sectorsArray.length;j++) {
+            /*Check that the current sector name is present in filtered data or not*/
+            var subStationsArray = sectorsArray[j].sub_station,
+                sectorName = sectorsArray[j].sector_configured_on ? $.trim(sectorsArray[j].sector_configured_on) : "",
+                radius = sectorsArray[j].radius,
+                azimuth = sectorsArray[j].azimuth_angle,
+                beamWidth = sectorsArray[j].beam_width,
+                bsName = dataArray[i].name ? $.trim(dataArray[i].name) : "",
+                bs_marker = wm_obj['features'][bsName],
+                sector_device = wm_obj['devices']["sector_"+sectorName],
+                sector_polygon = wm_obj['sectors']["poly_"+sectorName+"_"+radius+"_"+azimuth+"_"+beamWidth];
+
+            for(var k=0;k<subStationsArray.length;k++) {
+                /*BS, SS & Sectors from filtered data array*/
+                var ssName = subStationsArray[k].name ? $.trim(subStationsArray[k].name) : "",
+                    ss_marker = wm_obj['features'][ssName],
+                    line_marker = wm_obj['lines']["line_"+ssName];
+
+                if(ss_marker) {
+                    filtered_bs_ss_data.push(ss_marker);
+                }
+                if(line_marker) {
+                    filtered_line_data.push(line_marker);
+                }
+            }
+            
+            if(bs_marker) {
+                filtered_bs_ss_data.push(bs_marker);
+            }
+
+            if(sector_device) {
+                filtered_devices_data.push(sector_device);
+            }
+
+            if(sector_polygon) {
+                filtered_sector_data.push(sector_polygon);
+            }
+        }
+    }
+    whiteMapClass.applyAdvanceFilter({data_for_filters: dataArray, filtered_Features: filtered_bs_ss_data, line_Features: filtered_line_data, sector_Features: filtered_sector_data});
+}

@@ -29,11 +29,11 @@
                     <b>Status</b><br/> <ul id="gis_status_txt" class="list-unstyled "></ul>
                 </li>
                 <li><button type="button" id="advSearchBtn" class="btn btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
-                            data-loading-text="Please Wait..." onclick="whiteMapClass.showAdvanceSearch();" title="Click to Advance Search">
+                            data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
                     <i class="fa fa-filter"></i>Advance Search
                 </button></li>
                 <li>
-                    <button type="button" id="advFilterBtn" class="btn btn-info" onclick="whiteMapClass.showAdvanceFilter();"
+                    <button type="button" id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();"
                             data-complete-text="<i class='fa fa-filter'></i> Advance Filters"
                             data-loading-text="Please Wait...">
                         <i class='fa fa-filter'></i> Advance Filters
@@ -106,7 +106,7 @@
                 <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn" onclick="whiteMapClass.hideAdvanceFilter();">Cancel
                 </button>
                 <button type="button" class="pull-right btn btn-warning hide" style="margin-left:10px;" id="resetAdvFilterBtn" onclick="whiteMapClass.resetAdvanceFilter();">Reset Filter</button>
-                <button type="button" class="pull-right btn btn-success" id="setAdvFilterBtn" onclick="whiteMapClass.applyAdvanceFilter();">Filter</button>
+                <button type="button" class="pull-right btn btn-success" id="setAdvFilterBtn">Filter</button>
             </div>
             <div class="clearfix"></div>
             <div class="divide-20"></div>
@@ -166,7 +166,7 @@
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
                 </li>
                 <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
-                                                   onclick="whiteMapClass.toggleLines()"
+                                                   onchange="whiteMapClass.toggleLineLayer()"
                                                    style="vertical-align: text-top;" checked=0/></li>
                 <li class="fright">
                     <form action="#" class="form-horizontal">
@@ -309,6 +309,8 @@
     <script src={% static "js/flot/jquery.flot.min.js" %}></script>
     <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %}></script>
     <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
+    <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
+    <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>
     <script type="text/javascript" src={% static "js/OpenLayers/OpenLayers.js" %}></script>
 
 
@@ -323,11 +325,7 @@
     <script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
     <script type="text/javascript">
 
-        var gmap_self = "",
-                getFilterApi = "",
-                setFilterApi = "",
-                advSearch = "",
-                deviceName = "", advJustSearch= "";
+        var gmap_self = "", advSearch = "", advJustSearch = "";
 
         $(document).ready(function (e) {
 
@@ -335,6 +333,10 @@
             $("#headerToggleBtn").trigger('click');
 
             gmap_self = new devicePlottingClass_gmap();
+
+            advSearch = new advanceSearchClass();
+
+            advJustSearch = new advanceSearchMainClass();
         });
     </script>
 {% endblock %}

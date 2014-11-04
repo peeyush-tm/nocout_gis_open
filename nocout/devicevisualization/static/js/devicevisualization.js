@@ -221,16 +221,15 @@ function showAdvSearch() {
 
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
-    if(window.location.pathname.indexOf("white_background") > -1) {
-        whiteMapClass.applyAdvanceSearch();
+    
+    advJustSearch.showNotification();
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        advJustSearch.searchAndCenterData(data_for_filters_earth);
+    } else if (window.location.pathname.indexOf("white_background") > -1) {
+        advJustSearch.searchAndCenterData(data_for_filter_wmap);
     } else {
-        advJustSearch.showNotification();
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
-            advJustSearch.searchAndCenterData(data_for_filters_earth);
-        } else {
-            advJustSearch.searchAndCenterData(data_for_filters);
-        }        
-    }
+        advJustSearch.searchAndCenterData(data_for_filters);
+    }        
 });
 
 $("#cancelAdvSearchBtn").click(function(e) {
@@ -279,9 +278,9 @@ function showAdvFilters() {
 /*If 'Filter' button of advance filter is clicked*/
 $("#setAdvFilterBtn").click(function(e) {
 
-if(window.location.pathname.indexOf("white_background") > -1) {
-    return;
-    }
+// if(window.location.pathname.indexOf("white_background") > -1) {
+//     return;
+//     }
     /*Show spinner*/
     showSpinner();
 

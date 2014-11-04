@@ -23,12 +23,12 @@ function WmAdvanceSearch(data) {
 
 		$("#resetSearchForm").addClass('hide');
 
-		searchMarkerLayer.removeFeatures();
+		global_this.searchMarkerLayer.removeFeatures();
 
 		previous_Stored_Values_Obj = {name: [], ip: [], cktId: [], city: []};
 	}
 
-	this.applyAdvanceSearch = function() {
+	this.applyAdvanceSearch = function(callback) {
 		var bs_name = "", ip = "", city = "", searchCktId = "", that= this;
 		var base_stations = [];
 
@@ -176,17 +176,18 @@ function WmAdvanceSearch(data) {
 				alert("NO RESULT FOUND");
 			}
 		}
+		callback();
 	}
 
-	this.destroyAdvSearchHtml = function() {
+	this.destroyAdvanceSearch = function() {
 		$("#advSearchFormContainer").html('');
 		if(!$("#advSearchContainerBlock").hasClass("hide")) {
 			$("#advSearchContainerBlock").addClass("hide");
 		}
 	}
 	
-	this.prepareAdvSearchHtml= function(advSearchFormData) {
-		this.destroyAdvSearchHtml();
+	this.createAdvanceSearchMarkup= function(advSearchFormData) {
+		this.destroyAdvanceSearch();
 		createAdvanceSearchHtml(advSearchFormData);
 
 		if(previous_Stored_Values_Obj.name && previous_Stored_Values_Obj.name.length) {

@@ -62,6 +62,8 @@ function advanceSearchMainClass() {
                     ge.getFeatures().removeChild(child);
                 }
             }
+        } else if(window.location.pathname.indexOf("white_background") > -1) {
+            whiteMapClass.searchMarkerLayer.removeAllFeatures();
         } else {
             var markers = this.searchMarkers;
             for(var i=0; i< markers.length; i++) {
@@ -103,6 +105,29 @@ function advanceSearchMainClass() {
                 dampen: 0.3
             });
 
+        } else if (window.location.pathname.indexOf("white_background") > -1) {
+
+            var size, icon, additionalInfo= {}, size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height);
+            //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
+            searchedInputs= this.getInputArray();
+
+            if(searchedInputs['BS Name'].length || searchedInputs['Circuit Id'].length || searchedInputs['IP'].length) {
+                isOnlyStateorCityIsApplied= false;
+            }
+
+            if(!isOnlyStateorCityIsApplied) {
+                    if(iconUrl) {
+                        //set icon from global object
+                        icon = iconUrl; 
+                    } else {
+                        icon = this.constants.search_bs_icon
+                    }
+            }
+
+            searchMarker = whiteMapClass.createOpenLayerVectorMarker(size, icon, long, lat, additionalInfo);
+
+            whiteMapClass.searchMarkerLayer.display(true);
+            whiteMapClass.searchMarkerLayer.addFeatures([searchMarker]);
         } else {
 
             //create a new marker
@@ -375,7 +400,9 @@ function advanceSearchMainClass() {
 
         var bounds = "";
         if(window.location.pathname.indexOf("googleEarth") > -1) {
-            
+
+        } else if(window.location.pathname.indexOf("white_background") > -1) {
+            bounds = new OpenLayers.Bounds();
         } else {
             bounds= new google.maps.LatLngBounds();
         }
@@ -388,6 +415,8 @@ function advanceSearchMainClass() {
                   lookAt.setLongitude(lon);
                   lookAt.setRange(8000);
                   ge.getView().setAbstractView(lookAt);
+            } else if(window.location.pathname.indexOf("white_background") > -1) {
+                bounds.extend(new OpenLayers.LonLat(lon, lat));
             } else {
 
                 bounds.extend(new google.maps.LatLng(lat, lon));
@@ -405,6 +434,8 @@ function advanceSearchMainClass() {
 
                 if(window.location.pathname.indexOf("googleEarth") > -1) {
 
+                } else if(window.location.pathname.indexOf("white_background") > -1) {
+                    bounds.extend(new OpenLayers.LonLat(devicesInMap[i]['data']['lon'], devicesInMap[i]['data']['lat']));
                 } else {
                     bounds.extend(new google.maps.LatLng(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']));
                 }
@@ -425,7 +456,7 @@ function advanceSearchMainClass() {
         if(this.searchedCircuitLines.length) {
             for(var i=0; i< this.searchedCircuitLines.length; i++) {
                 if(window.location.pathname.indexOf("googleEarth") > -1) {
-
+                } else if(window.location.pathname.indexOf("white_background") > -1) {
                 } else {
                     bounds.extend(this.searchedCircuitLines[i]);
                 }
@@ -438,7 +469,11 @@ function advanceSearchMainClass() {
                 this.removeSearchMarkers();
             }
             if(window.location.pathname.indexOf("googleEarth") > -1) {
-                
+            } else if(window.location.pathname.indexOf("white_background") > -1) {
+                ccpl_map.zoomToExtent(bounds);
+                // if(mapInstance.getZoom() >= this.constants.maxZoomLevel) {
+                //     mapInstance.setZoom(this.constants.maxZoomLevel);
+                // }
             } else {
                 mapInstance.fitBounds(bounds);
                 if(mapInstance.getZoom() >= this.constants.maxZoomLevel) {
