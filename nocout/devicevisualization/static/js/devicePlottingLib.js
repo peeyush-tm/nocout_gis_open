@@ -3741,16 +3741,16 @@ function devicePlottingClass_gmap() {
 		right_click_html += "<div class='clearfix'></div></div></div>";
 
 		/*Close infowindow if any opened*/
-		// infowindow.close();
-		$("#infoWindowContainer").addClass('hide');
+		infowindow.close();
+		// $("#infoWindowContainer").addClass('hide');
 
 		/*Set the content for infowindow*/
-		// infowindow.setContent(right_click_html);
+		infowindow.setContent(right_click_html);
 		/*Open the info window*/
-		// infowindow.open(mapInstance,marker);
+		infowindow.open(mapInstance,marker);
 
-		$("#infoWindowContainer").html(right_click_html);
-		$("#infoWindowContainer").removeClass('hide');
+		// $("#infoWindowContainer").html(right_click_html);
+		// $("#infoWindowContainer").removeClass('hide');
 	};
 
 	/**
@@ -3940,20 +3940,20 @@ function devicePlottingClass_gmap() {
 				info_window_content = "<button class='btn btn-danger btn-xs' id='remove_tool_line'>Remove Line</button>";
 			
 			/*Close infowindow if any opened*/
-			// infowindow.close();
-			$("#infoWindowContainer").addClass('hide');
+			infowindow.close();
+			// $("#infoWindowContainer").addClass('hide');
 
 			/*Set the content for new infowindow*/
-			// infowindow.setContent(info_window_content);
+			infowindow.setContent(info_window_content);
 			
 			/*Set The Position for InfoWindow*/
-			// infowindow.setPosition(e.latLng);
+			infowindow.setPosition(e.latLng);
 			
 			/*Open the info window*/
-			// infowindow.open(mapInstance);
+			infowindow.open(mapInstance);
 
-			$("#infoWindowContainer").html(info_window_content);
-			$("#infoWindowContainer").removeClass('hide');
+			// $("#infoWindowContainer").html(info_window_content);
+			// $("#infoWindowContainer").removeClass('hide');
 			
 			/*Triggers when remove line button clicked*/
 			$("#remove_tool_line").click(function(e) {
@@ -4070,19 +4070,19 @@ function devicePlottingClass_gmap() {
 								info_window_content = "<button class='btn btn-danger btn-xs' id='remove_tool_line'>Remove Line</button>";
 							
 							/*Close infowindow if any opened*/
-							// infowindow.close();
-							$("#infoWindowContainer").addClass('hide');
+							infowindow.close();
+							// $("#infoWindowContainer").addClass('hide');
 
 							/*Set the content for new infowindow*/
-							// infowindow.setContent(info_window_content);
+							infowindow.setContent(info_window_content);
 							
 							/*Set The Position for InfoWindow*/
-							// infowindow.setPosition(e.latLng);
+							infowindow.setPosition(e.latLng);
 							
 							/*Open the info window*/
-							// infowindow.open(mapInstance);
-							$("#infoWindowContainer").html(info_window_content);
-							$("#infoWindowContainer").removeClass('hide');
+							infowindow.open(mapInstance);
+							// $("#infoWindowContainer").html(info_window_content);
+							// $("#infoWindowContainer").removeClass('hide');
 							
 							/*Triggers when remove line button clicked*/
 							$("#remove_tool_line").click(function(e) {
