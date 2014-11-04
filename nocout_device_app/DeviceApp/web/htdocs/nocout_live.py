@@ -32,39 +32,6 @@ interface_services = [
 		'cambium_ss_connected_bs_ip_invent'
 		]
 
-#def nocout_log():
-#    """
-#    Handles logging functinality for device app
-#
-#    Args:
-#        
-#    Kwargs:
-#
-#    Returns:
-#        logger object, which logs the activities to a log file
-#    
-#    Comments:
-#        Logging path - /tmp/nocout_da/<site_name>/nocout_live.log
-#    """
-#    logger=logging.getLogger('nocout_da')
-#    os.system('mkdir -p /tmp/nocout_da')
-#    os.system('chmod 777 /tmp/nocout_da')
-#    os.system('mkdir -p /tmp/nocout_da/%s' % defaults.omd_site)
-#    #os.system('mkdir -p /tmp/nocout_da/pardeep_slave_1')
-#    fd = os.open('/tmp/nocout_da/%s/nocout_live.log' % defaults.omd_site, os.O_RDWR | os.O_CREAT)
-#    #fd = os.open('/tmp/nocout_da/pardeep_slave_1/nocout_live.log', os.O_RDWR | os.O_CREAT)
-#    if not len(logger.handlers):
-#        logger.setLevel(logging.DEBUG)
-#        handler=logging.FileHandler('/tmp/nocout_da/%s/nocout_live.log' % defaults.omd_site)
-#        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-#        handler.setFormatter(formatter)
-#        logger.addHandler(handler)
-#    os.close(fd)
-#
-#    return logger
-
-
-
 
 def main():
     """
@@ -168,6 +135,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
      # Set timeout to 1sec (excepts floats only)
      #signal.alarm(0.5)
      ss_mac_list, bs_device_list = [], []
+     # Data sources for ping service
+     pl, rta = None, None
      for service in service_list:
 	     device = old_device
 	     old_service = service
@@ -192,21 +161,13 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 			 return 
 	     # Getting result from compiled checks output
              cmd = '/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (str(site_name), service, device)
+	     # For host check [ping service]
+	     if service.lower() == 'ping':
+		     cmd = 'ping -c 1 %s' % device
 	     logger.info('cmd: ' + pformat(cmd))
 	     #start = datetime.datetime.now()
              # Fork a subprocess
              p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-	#     while p.poll() is None:
-	#	     time.sleep(0.1)
-	#	     now = datetime.datetime.now()
-	#	     #logger.debug('In while')
-	#	     if (now-start).seconds > timeout:
-	#		     #logger.debug('now-start ' + pformat((now-start).seconds))
-	#		     os.kill(p.pid, signal.SIGKILL)
-	#		     os.waitpid(-1, os.WNOHANG)
-	#		     data_dict = {device: []}
-	#		     q.put(data_dict)
-	#		     return
 	     check_output, error = p.communicate()
 	     #check_output = """Check_mk version 1.2.2p3
 	     #cambium_ul_rssi 0a:00:3e:df:b3:2e OK - Device received signal strength indication is -69   (ul_rssi=-69;-72;-82;;)
@@ -270,7 +231,19 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					data_dict = {host_name:[]}
 			 		q.put(data_dict)
 			 	return
-				
+		elif old_service.lower() == 'ping':
+			check_output = check_output.split('\n')[4:]
+			pl_info, rta_info = check_output[0], check_output[1]
+			if pl_info:
+			        pl = pl_info.split(',')[-2].split()[0]
+			if rta_info:
+			        rta = rta_info.split('=')[1].split('/')[1]
+			if 'pl' in data_source_list:
+				data_dict = {device: [pl]}
+			if 'rta' in data_source_list:
+				data_dict = {device: [rta]}
+			q.put(data_dict)
+			return
 		else:
 			reg_exp1 = re.compile(r'(?<=\()[^)]*(?=\)$)', re.MULTILINE)
                  	# Parse perfdata for all services running on that device
