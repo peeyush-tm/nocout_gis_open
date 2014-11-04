@@ -219,6 +219,13 @@ class DashbaordSettingsUpdateView(UpdateView):
         """
         return super(DashbaordSettingsUpdateView, self).dispatch(*args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super(DashbaordSettingsUpdateView, self).get_context_data(**kwargs)
+        context['dashboards'] = json.dumps(dashboards)
+        technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        context['technology_options'] = json.dumps(technology_options)
+        return context
+
 
 class DashbaordSettingsDeleteView(DeleteView):
     """
