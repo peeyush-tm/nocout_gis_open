@@ -45,7 +45,7 @@
                         <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10"
                                id="end_date" placeholder="End Date" class="hide">
                     </li> -->
-                    <li style="width: 300px;">
+                    <li style="min-width: 320px;">
                         <div class="input-group">
                             <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value="" />
                         </div>
@@ -417,6 +417,7 @@
                 sPaginationType: "full_numbers"
             });
 
+
             //setting up a custom jquery function to retrive the get paramters.
             $.urlParam = function (name) {
                 var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
@@ -485,43 +486,90 @@
             });
 
             $("#download_excel").on('click', function () {
-
+                
+                //get start date and end date from params
+                var start_date = $.urlParam('start_date');
+                var end_date = $.urlParam('end_date');
                 if(!($("#sia").parent().hasClass("active")) && !($("#errors").parent().hasClass("active"))) {
                     var service_name = window.location.href.split('#')[1];
                     var service_data_source = window.location.href.split('#')[2];
-                    window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
-                        '/device/{{ device.id }}' +
-                        '?download_excel=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
-                        '&end_date=' + encodeURIComponent($("#end_date").val()));
-                } else {
 
+                    //if start date and end date is present, url request with epoch start and end date
+                    if(start_date && end_date) {
+                        window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
+                            '/device/{{ device.id }}' +
+                            '?download_excel=true' + '&start_date=' + encodeURIComponent(start_date) +
+                            '&end_date=' + encodeURIComponent(end_date);
+                    } else {
+                        window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
+                            '/device/{{ device.id }}' +
+                            '?download_excel=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
+                            '&end_date=' + encodeURIComponent($("#end_date").val()));
+                    }
+                } else {
                     if($("#errors").parent().hasClass("active")) {
-                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/ping/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_excel=true";
+
+                        //if start date and end date is present, url request with epoch start and end date
+                        if(start_date && end_date) {
+                            window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/ping/?start_date="+encodeURIComponent(start_date)+"&end_date="+encodeURIComponent(end_date)+"&download_excel=true";
+                        } else {
+                            window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/ping/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_excel=true";
+                        }
 
                     } else if($("#sia").parent().hasClass("active")) {
-                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/service/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_excel=true";
+
+                        //if start date and end date is present, url request with epoch start and end date
+                        if(start_date && end_date) {
+                            window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/service/?start_date="+encodeURIComponent(start_date)+"&end_date="+encodeURIComponent(end_date)+"&download_excel=true";
+                        } else {
+                            window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/service/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_excel=true";
+                        }
                     }
                 }
             });
 
             $("#download_csv").on('click', function () {
 
+                //get start date and end date from params
+                var start_date = $.urlParam('start_date');
+                var end_date = $.urlParam('end_date');
+
                 if(!($("#sia").parent().hasClass("active")) && !($("#errors").parent().hasClass("active"))) {
                     
                     var service_name = window.location.href.split('#')[1];
                     var service_data_source = window.location.href.split('#')[2];
 
-                    window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
-                            '/device/{{ device.id }}' +
-                            '?download_csv=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
-                            '&end_date=' + encodeURIComponent($("#end_date").val()))
+                    //if start date and end date is present, url request with epoch start and end date
+                    if(start_date && end_date) {
+                        window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
+                                '/device/{{ device.id }}' +
+                                '?download_csv=true' + '&start_date=' + encodeURIComponent(start_date) +
+                                '&end_date=' + encodeURIComponent(end_date))
+                    } else {
+                        window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
+                                '/device/{{ device.id }}' +
+                                '?download_csv=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
+                                '&end_date=' + encodeURIComponent($("#end_date").val()))
+                    }
                 } else {
 
                     if($("#errors").parent().hasClass("active")) {
-                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/ping/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_csv=true";
+
+                        //if start date and end date is present, url request with epoch start and end date
+                        if(start_date && end_date) {
+                            window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/ping/?start_date="+encodeURIComponent(start_date)+"&end_date="+encodeURIComponent(end_date)+"&download_csv=true";
+                        } else {
+                            window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/ping/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_csv=true";
+                        }
 
                     } else if($("#sia").parent().hasClass("active")) {
-                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/service/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_csv=true";
+
+                        //if start date and end date is present, url request with epoch start and end date
+                        if(start_date && end_date) {
+                            window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/service/?start_date="+encodeURIComponent(start_date)+"&end_date="+encodeURIComponent(end_date)+"&download_csv=true";
+                        } else {
+                            window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/service/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_csv=true";
+                        }
                     }
                 }
             });
@@ -561,26 +609,31 @@
         /*Load first inner tab of network performance*/
         $("#network_perf").click(function (e) {
             fetchFirstTabContent(e);
+            $.cookie('parent_tab_id','network_perf', {path: '/', secure: true});
         });
 
         /*Load first inner tab of service performance*/
         $("#service_perf").click(function (e) {
             fetchFirstTabContent(e);
+            $.cookie('parent_tab_id','service_perf', {path: '/', secure: true});
         });
 
         /*Load first inner tab of service status*/
         $("#service_status").click(function (e) {
             fetchFirstTabContent(e);
+            $.cookie('parent_tab_id','service_status', {path: '/', secure: true});
         });
 
         /*Load first inner tab of inventory status*/
         $("#inventory_status").click(function (e) {
             fetchFirstTabContent(e);
+            $.cookie('parent_tab_id','inventory_status', {path: '/', secure: true});
         });
 
         /*Load first inner tab of availability*/
         $("#availability").click(function (e) {
             fetchFirstTabContent(e);
+            $.cookie('parent_tab_id','availability', {path: '/', secure: true});
         });
 
 
@@ -596,7 +649,13 @@
             var tab_id = e.currentTarget.attributes.href.value.split("#")[1];
             var li_count = $("#" + tab_id + " .inner_tab_container .col-md-3 ul li").length;
             if (li_count > 0) {
-                $("#" + tab_id + " .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
+                var activeTabId = $.cookie('activeTabId');
+                //if activeTabId is stored in cookie and tabEL exist.
+                if(activeTabId && $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#"+activeTabId).length) {
+                    $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#"+activeTabId).trigger('click');    
+                } else {
+                    $("#" + tab_id + " .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
+                }
             }
         }
 
@@ -656,7 +715,7 @@
                     applyClass: 'btn-small btn-primary',
                     cancelClass: 'btn-small',
                     format: "DD-MM-YYYY HH:mm:ss",
-                    separator: 'To',
+                    separator: ' to ',
                     startDate: oldStartDate,
                     endDate:oldENdData
                 },
@@ -667,7 +726,7 @@
             );
             
             if($.urlParam('start_date') && $.urlParam('end_date')) {
-                $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + ' To ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss")); 
+                $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss")); 
                 startDate = moment(oldStartDate);
                 endDate = moment(oldENdData);
             }
