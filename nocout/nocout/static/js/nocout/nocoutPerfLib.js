@@ -324,7 +324,7 @@ function nocoutPerfLib() {
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
 
-        $.cookie('activeTabId', service_id+"_tab");        
+        $.cookie('activeTabId', service_id+"_tab", {path: '/', secure: true});
 
         var base_url = "",
             start_date = "",
