@@ -117,11 +117,10 @@ class UserForm(forms.ModelForm):
         Restrict the user other than super user to create the admin.
         """
         role = self.cleaned_data['role']
-        if not self.request.is_superuser:
+        if not self.request.is_superuser and len(role) == 1:
             if role[0].role_name == 'admin':
                 raise forms.ValidationError("Not permitted to create admin")
             else:
                 return role
         else:
             return role
-
