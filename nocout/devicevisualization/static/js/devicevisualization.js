@@ -70,6 +70,9 @@ function getPageType() {
     if(window.location.pathname.indexOf("googleEarth") > -1) {
         mapPageType = "googleEarth";
         // networkMapInstance = mapsLibInstance;
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        mapPageType = "white_background";
+        networkMapInstance = gmap_self;
     } else {
         mapPageType = "gmap";
     }
@@ -82,9 +85,9 @@ city_options = []
 $("#state").change(function(e) {
 
 
-    if(window.location.pathname.indexOf("white_background") > -1) {
-        return;
-}
+//     if(window.location.pathname.indexOf("white_background") > -1) {
+//         return;
+// }
     getPageType();
 
     var state_id = $(this).val(),
@@ -110,9 +113,9 @@ $("#state").change(function(e) {
 /*This event trigger when city dropdown value is changes*/
 $("#city").change(function(e) {
 
-    if(window.location.pathname.indexOf("white_background") > -1) {
-        return;
-}
+//     if(window.location.pathname.indexOf("white_background") > -1) {
+//         return;
+// }
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -120,9 +123,9 @@ $("#city").change(function(e) {
 /*This event trigger when vendor dropdown value is changes*/
 $("#vendor").change(function(e) {
 
-    if(window.location.pathname.indexOf("white_background") > -1) {
-        return;
-}
+//     if(window.location.pathname.indexOf("white_background") > -1) {
+//         return;
+// }
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -130,9 +133,9 @@ $("#vendor").change(function(e) {
 /*This event trigger when technology dropdown value is changes*/
 $("#technology").change(function(e) {
 
-if(window.location.pathname.indexOf("white_background") > -1) {
-    return;
-    }
+// if(window.location.pathname.indexOf("white_background") > -1) {
+//     return;
+//     }
     getPageType();
     var tech_id = $(this).val(),
         tech_value= $('#technology option:selected').text();
@@ -157,9 +160,8 @@ if(window.location.pathname.indexOf("white_background") > -1) {
 
 /*This event triggers when Reset Filter button clicked*/
 $("#resetFilters").click(function(e) {
-if(window.location.pathname.indexOf("white_background") > -1) {
-        return;
-}
+
+    
     $("#resetFilters").button("loading");
     /*Reset The basic filters dropdown*/
     $("#technology").val($("#technology option:first").val());
@@ -189,7 +191,14 @@ if(window.location.pathname.indexOf("white_background") > -1) {
 
         /*create the BS-SS network on the google map*/
         earth_instance.plotDevices_earth(main_devices_data_earth,'base_station');
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.hideAllFeatures();
 
+        data_for_filter_wmap = main_devices_data_wmap;
+
+        showWmapFilteredData(main_devices_data_wmap);
+
+        // $("#resetFilters").button("completed");
     } else {
 
         /*Reset filter object variable*/

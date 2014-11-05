@@ -2303,6 +2303,8 @@ function devicePlottingClass_gmap() {
 
 		if(page_type && page_type == 'googleEarth') {
 			current_data = main_devices_data_earth;
+		} else if (page_type && page_type == 'white_background') {
+			current_data = main_devices_data_wmap;
 		} else {
 			current_data = main_devices_data_gmaps
 		}
@@ -2343,10 +2345,10 @@ function devicePlottingClass_gmap() {
         }
 
         /*Check that after applying filters any data exist or not*/
-      if(filteredData.length === 0) {
+        if(filteredData.length === 0) {
 
         	$.gritter.add({
-                // (string | mandatory) the heading of the notification
+        		// (string | mandatory) the heading of the notification
                 title: 'GIS : Filters',
                 // (string | mandatory) the text inside the notification
                 text: 'No data available for applied filters.',
@@ -2355,16 +2357,19 @@ function devicePlottingClass_gmap() {
             });
 
         	if(page_type && page_type == 'googleEarth') {
-         	earth_instance.clearEarthElements();
-         } else {
-            data_for_filters = [];
-            // masterMarkersObj = [];
-            gmap_self.hide_all_elements_gmap();
-            /*Filter Line & label array as per filtered data*/
-            gmap_self.getFilteredLineLabel(data_for_filters);
+        		earth_instance.clearEarthElements();
+        	} else if (page_type && page_type == 'white_background') {
+        		data_for_filter_wmap = [];
+        		whiteMapClass.hideAllFeatures();
+        	} else {
+        		data_for_filters = [];
+        		// masterMarkersObj = [];
+        		gmap_self.hide_all_elements_gmap();
+        		/*Filter Line & label array as per filtered data*/
+        		gmap_self.getFilteredLineLabel(data_for_filters);
+        	}
 
-         }
-      } else {
+        } else {
         	if(page_type && page_type == 'googleEarth') {
 
 	            data_for_filters_earth = filteredData;
@@ -2375,6 +2380,13 @@ function devicePlottingClass_gmap() {
             	/*Populate the map with the filtered markers*/
 	            earth_instance.plotDevices_earth(filteredData,"base_station");
 
+	        } else if (page_type && page_type == 'white_background') {
+
+	        	data_for_filter_wmap = filteredData;
+
+	        	whiteMapClass.hideAllFeatures();
+
+	        	showWmapFilteredData(filteredData);
             } else {
 					
 				data_for_filters = filteredData;
@@ -2452,7 +2464,12 @@ function devicePlottingClass_gmap() {
 
 		        /*create the BS-SS network on the google earth*/
 		        earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
+		    } else if($.trim(mapPageType) == "white_background") {
 
+		    	whiteMapClass.hideAllFeatures();
+		    	data_for_filter_wmap = main_devices_data_wmap;
+
+		    	whiteMapClass.showAllFeatures();
         	} else {
 
         		gmap_self.show_all_elements_gmap();
