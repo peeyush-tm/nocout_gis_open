@@ -23,6 +23,7 @@ from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 
 from django.db import connections
 
+from pprint import pprint
 logger=logging.getLogger(__name__)
 
 global gis_information
@@ -807,10 +808,13 @@ class BulkFetchLPDataApi(View):
                 for device_name in current_devices_list:
                     try:
                         device = Device.objects.get(device_name=device_name)
-			if service in exceptional_services:
-				bs_device = Topology.objects.get(connected_device_mac=device.mac_address)
+			if str(service) in exceptional_services:
+				mac_address = device.mac_address
+				mac = device.mac_address.upper()
+				bs_device = Topology.objects.get(connected_device_mac=mac)
 				device = Device.objects.get(device_name=bs_device.device_name)
-                        site_instances_list.append(device.site_instance.id)
+			if device.site_instance.id not in site_instances_list:
+                        	site_instances_list.append(device.site_instance.id)
                     except Exception as e:
                         logger.info(e.message)
 
@@ -823,23 +827,24 @@ class BulkFetchLPDataApi(View):
                     for device_name in current_devices_list:
                         try:
                             device = Device.objects.get(device_name=device_name)
-			    if service in exceptional_services:
+			    if str(service) in exceptional_services:
 				    device_ss_mac = device.mac_address
 				    ss_name_mac_mapping[device.device_name] = device_ss_mac
-			            bs_device = Topology.objects.get(connected_device_mac=device.mac_address)
+				    mac = device.mac_address
+				    mac = mac.upper()
+			            bs_device = Topology.objects.get(connected_device_mac=mac)
 				    device = Device.objects.get(device_name=bs_device.device_name)
 				    if device.device_name in bs_name_ss_mac_mapping.keys():
 				            bs_name_ss_mac_mapping[device.device_name].append(device_ss_mac)
 			            else:
 					    bs_name_ss_mac_mapping[device.device_name] = [device_ss_mac]
 				    bs_site_id = device.site_instance.id
-				    if bs_site_id == site_id:
+				    if bs_site_id == site_id and device.device_name not in devices_in_current_site:
                                             devices_in_current_site.append(device.device_name)
 			    elif device.site_instance.id == site_id:
 				    devices_in_current_site.append(device.device_name)
                         except Exception as e:
                             logger.info(e.message)
-
                     # live polling data dictionary (payload for nocout.py api call)
                     lp_data = dict()
                     lp_data['mode'] = "live"

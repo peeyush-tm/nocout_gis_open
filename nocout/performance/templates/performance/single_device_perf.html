@@ -9,6 +9,8 @@
 {% block css %}
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} >
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
 {% endblock %}
 
 {% block content %}
@@ -24,32 +26,45 @@
             <!--Filters Block Start-->
             <div class="pull-right">
                 <ul class="list-unstyled list-inline">
-                    <li>
-                        <!--device_name Filter-->
-                        <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
-                            <option value="">Select Device</option>
-                        </select>
-                    </li>
-                    <li>
-                        <!--start_date Filter-->
-                        <input class="form-control col-xs-1 input-sm datepicker" type="text" name="start_date" size="10"
-                               id="start_date" placeholder="Start Date">
-                    </li>
-                    <li>
-                        <span class="col-xs-1 input-sm">To</span>
-                    </li>
-                    <li>
-                        <!--end_date Filter-->
+                   <!--  <li>
+                       device_name Filter
+                       <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
+                           <option value="">Select Device</option>
+                       </select>
+                   </li>
+                   <li>
+                       start_date Filter
+                       <input class="form-control col-xs-1 input-sm datepicker" type="text" name="start_date" size="10"
+                              id="start_date" placeholder="Start Date" class="hide">
+                   </li>
+                   <li>
+                       <span class="col-xs-1 input-sm">To</span>
+                   </li> -->
+                    <!-- <li>
+                        end_date Filter
                         <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10"
-                               id="end_date" placeholder="End Date">
+                               id="end_date" placeholder="End Date" class="hide">
+                    </li> -->
+                    <li style="width: 300px;">
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value="" />
+                        </div>
                     </li>
                     <li>
                         <div class="btn-group dropdown col-xs-1">
                             <button id="apply_filter" class="btn  btn-default btn-sm">
                                 Apply Filter
+                            </button>                            
+                        </div>
+                    </li>
+                    <li>
+                        <div class="btn-group dropdown col-xs-1">
+                            <button id="reset_filter" class="btn  btn-warning btn-sm">
+                                Reset Filter
                             </button>
                         </div>
                     </li>
+                    
                     <li>
                         <!--CSV or Excel download action. -->
                         <div class="btn-group dropdown col-xs-1">
@@ -446,14 +461,27 @@
             $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
 
             $("#apply_filter").on('click', function () {
-                if ($("#start_date").datepicker("getDate") > $("#end_date").datepicker("getDate")) {
-                    alert("Start Date Can not be greater than End Date");
-                    return false
+                if (startDate && endDate) {
+                    //epoch function
+                    var myStartDate = startDate.toDate(), myEndDate = endDate.toDate();
+                    var myStartTime = myStartDate.getTime()/1000.0;
+                    var myEndTime = myEndDate.getTime()/1000.0;
+                    
+                    window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent(myStartTime)
+                            + '&end_date=' + encodeURIComponent(myEndTime);
+
+                } else {
+                    alert("Select Start & End Date");
                 }
-                else {
-                    window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent($("#start_date").val())
-                            + '&end_date=' + encodeURIComponent($("#end_date").val());
-                }
+                // else {
+                //     window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent($("#start_date").val())
+                //             + '&end_date=' + encodeURIComponent($("#end_date").val());
+                // }
+            });
+
+            $("#reset_filter").on('click', function() {
+                window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + ''
+                            + '&end_date=';
             });
 
             $("#download_excel").on('click', function () {
@@ -600,9 +628,55 @@
 
 {% block load_js %}
     <script>
+    var startDate, endDate;
         jQuery(document).ready(function () {
             App.setPage("");  //Set current page
             App.init(); //Initialise plugins and elements
+
+
+
+            var oldStartDate = $.urlParam('start_date') ? new Date($.urlParam('start_date')*1000) : new Date();
+            var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date')*1000) : new Date();
+
+            $('#reservationtime').daterangepicker(
+                {
+                    timePicker: true, timePickerIncrement: 60, 
+                    // format: 'd/m/Y H:M:S' ,
+                    opens: "left",
+                    showDropdowns: true,
+                    ranges: {
+                        'Today': [moment().startOf('day'), moment()],
+                        'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
+                        'Last 7 Days': [moment().subtract('days', 6), moment()],
+                        'Last 30 Days': [moment().subtract('days', 29), moment()],
+                        'This Month': [moment().startOf('month'), moment().endOf('month')],
+                        'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
+                    },
+                    buttonClasses: ['btn btn-default'],
+                    applyClass: 'btn-small btn-primary',
+                    cancelClass: 'btn-small',
+                    format: "DD-MM-YYYY HH:mm:ss",
+                    separator: 'To',
+                    startDate: oldStartDate,
+                    endDate:oldENdData
+                },
+                function(start, end) {
+                    startDate= start;
+                    endDate = end;
+                }
+            );
+            
+            if($.urlParam('start_date') && $.urlParam('end_date')) {
+                $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + ' To ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss")); 
+                startDate = moment(oldStartDate);
+                endDate = moment(oldENdData);
+            }
+
+            // setTimeout(function() {
+            //     if($.cookie('activeTabId')) {
+            //         $('#'+$.cookie('activeTabId')).trigger('click');
+            //     }
+            // }, 100);
         });
     </script>
 {% endblock %}

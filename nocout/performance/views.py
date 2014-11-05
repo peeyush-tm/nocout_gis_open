@@ -657,15 +657,17 @@ class Get_Perfomance(View):
         end_date= self.request.GET.get('end_date','')
         isSet = False
 
+        date_format = "%d-%m-%Y %H:%M:%S"
+
         if len(start_date) and len(end_date):
-            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
-            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
-            start_date= format( start_date_object, 'U')
-            end_date= format( end_date_object, 'U')
-            isSet = True
-            if start_date == end_date:
-                # Converting the end date to the highest time in a day.
-                end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+            try:
+                start_date = float(start_date)
+                end_date = float(end_date)
+            except Exception, e:
+                start_date_object= datetime.datetime.strptime(start_date, date_format)
+                end_date_object= datetime.datetime.strptime(end_date, date_format)
+                start_date= format( start_date_object, 'U')
+                end_date= format( end_date_object, 'U')
         else:
             # The end date is the end limit we need to make query till.
             end_date_object = datetime.datetime.now()
@@ -1195,6 +1197,8 @@ class Get_Service_Type_Performance_Data(View):
             }
         }
 
+        date_format = "%d-%m-%Y %H:%M:%S"
+
         device = Device.objects.get(id=int(device_id))
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
@@ -1204,11 +1208,15 @@ class Get_Service_Type_Performance_Data(View):
         isSet = False
 
         if len(start_date) and len(end_date):
-            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
-            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
-            start_date= format( start_date_object, 'U')
-            end_date= format( end_date_object, 'U')
             isSet = True
+            try:
+                start_date = float(start_date)
+                end_date = float(end_date)
+            except Exception, e:
+                start_date_object= datetime.datetime.strptime(start_date, date_format)
+                end_date_object= datetime.datetime.strptime(end_date, date_format)
+                start_date= format( start_date_object, 'U')
+                end_date= format( end_date_object, 'U')
 
         if service_data_source_type in ['pl', 'rta']:
             if not isSet:

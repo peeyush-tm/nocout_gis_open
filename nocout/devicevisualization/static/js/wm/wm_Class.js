@@ -1,5 +1,7 @@
-var ccpl_map, base_url;
-var hasAdvFilter = 0;
+var ccpl_map, base_url,
+	main_devices_data_wmap= [],
+	wm_obj = {'features': {}, 'data': {}, 'devices': {}, 'lines': {}, 'sectors': {}};
+var data_for_filter_wmap = []
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
 	base_url = window.location.origin;
@@ -10,42 +12,67 @@ function WhiteMapClass() {
 
 	/*
 	 *
+	 * Public Variables
+	*/
+		//vector Layer for Sector
+		this.sectorsLayer = "";
+
+		//vector Layer for Lines
+		this.linesLayer = "";
+		
+		//vector Layer for Markers
+		this.markersLayer = "";
+
+		//CLuster Strategy for Markers Layer
+		this.markersLayerStrategy = "";
+
+		//vector Layer for Marker Devices
+		this.markerDevicesLayer = "";
+
+		//vector Layer for Live Poll Features
+		this.livePollFeatureLayer = "";
+
+		//vector Layer for Search Markers
+		this.searchMarkerLayer = "";
+
+		//Live Poll Polygon on off control
+		this.livePollingPolygonControl = "";
+	/*
+	 *
 	 * Private Variables
 	*/	
 		var global_this = "";
 
-		this.markerLayerStrategy = "";
+		var total_count = 0, device_count= 0, limit= 0, loop_count = 0;
 
-		var total_count = "", device_count= "", limit= "", loop_count = 0;	
+		var wmAdvanceFilterClass = "", wmAdvanceSearchClass = "";
+
+		
 		//Variable to Store JSON data of Markers
-		var markersDataArray = [], markersDataObj = {};
+		var bs_data_list = [];
 		//Variable to Store All Markers
-		var markerArray = [], markerObj = {};
+		var bs_ss_features_list= [];
+		var filtered_Features = {markers: [], lines: [], sectors: []};
+		var main_devices_marker_features_wmaps = [], filtered_lines_main_devices_marker_features_wmaps= [];
+		var main_lines_sectors_features_wmaps= {'lines': [], 'sectors': []}, filtered_lines_sectors_features = [];
+
+		var state_city_obj= {}, all_cities_array= [], tech_vendor_obj= {}, all_vendor_array= [], sectorMarkerConfiguredOn= [], sectorMarkersMasterObj = {};
+
+		var pollableDevices = [];
+
+		var hasAdvFilter= 0, hasAdvSearch = 0;
 		//Variable to hold Markers
-		var bsMarkerObj = {}, deviceMarkerObj = {}, subStationMarkerObj = {}, cktLinesObj = {}, sectorsObj = {}, ssMarkerObj= {}, masterStationsArray= [], cktLinesBsObj = {}, sectorsBsObj= {}, ssAndDeviceArray= [];
+		var deviceMarkerObj = {}, cktLinesObj = {}, sectorsObj = {}, cktLinesBsObj = {}, sectorsBsObj= {}, ssAndDeviceArray= [];
 		//Variable to hold device markers currently displayed on map
 		var devices_Marker_On_Map = [], devices_Lines_On_Map = [];
 		//Variable to hold Searched Markers List
 		var searched_markers = [];
-		//Variable to hold data after Advance Filter
-		var filtered_data = [];
 		/*
 		Variables to hold Data which Technologies, State, Cities
 		*/
 		var technology = [], vendor = [], state = [], city = [], bs_name = [], ip = [], cktId = [];
 
-		var wmAdvanceFilterClass = "";
-		var wmAdvanceSearchClass = "";
-
-		//Layer for Markers
-		this.markersLayer = "";
-		//Layer for Lines
-		this.linesLayer = "";
-		//Layer for Sector
-		this.sectorsLayer = "";
-		this.featuresLayer= "";
-		this.markersVectorLayer = "";
-		this.devicesVectorLayer= "";
+		
 		//Variable flag to start Performance
 		this.startPerformance = false;
 		//Variable flag to stop Performance
@@ -60,14 +87,14 @@ function WhiteMapClass() {
 		var markerSpiderfied= "";
 		this.unSpiderifyBsMarker= function() {
 			if(markerSpiderfied) {
-				global_this.devicesVectorLayer.removeAllFeatures();
+				global_this.markerDevicesLayer.removeAllFeatures();
 				markerSpiderfied= "";				
 			}
 		}
 
 		this.spiderfyBsMarker= function(markername) {
 			this.unSpiderifyBsMarker();
-			var bs_marker= bsMarkerObj[markername];
+			var bs_marker= wm_obj.features[markername];
 			var bs_devices = deviceMarkerObj[markername];
 			var map_Zoom_Level = ccpl_map.getZoom();
 			devices_Marker_On_Map= [];
@@ -80,22 +107,41 @@ function WhiteMapClass() {
 					bs_devices[i].move(new OpenLayers.LonLat(bs_devices[i].attributes.ptLon, bs_devices[i].attributes.ptLat));
 					devices_Marker_On_Map.push(bs_devices[i]);
 					if(i=== bs_devices.length-1) {
-						global_this.devicesVectorLayer.removeAllFeatures();
-						global_this.devicesVectorLayer.addFeatures(devices_Marker_On_Map);
-						global_this.devicesVectorLayer.redraw();
+						global_this.markerDevicesLayer.removeAllFeatures();
+						global_this.markerDevicesLayer.addFeatures(devices_Marker_On_Map);
+						global_this.markerDevicesLayer.redraw();
 					}
 				}
 				bs_marker.isSpiderfied = false;
 				markerSpiderfied= bs_marker;
 			}
 		}
+
+		this.toggleLineLayer = function() {
+			var selectedValue = $("#showConnLines").prop('checked');
+			if(selectedValue) {
+				this.linesLayer.display(true);
+			} else {
+				this.linesLayer.display(false);
+			}
+		}
+
+		this.mapZoomChangeEvent = function() {
+			if(ccpl_map.getZoom() > whiteMapSettings.zoomLevelAfterLineAppears) {
+				var selectedValue = $("#showConnLines").prop('checked', true);
+			} else {
+				var selectedValue = $("#showConnLines").prop('checked', false);
+			}
+			this.toggleLineLayer();
+		}
+
 		/*
 		This event is Triggered when Click on Map is done.
 		@param e {Event Object} Mouse event
 		Here, we closeInfoWindow. If infoWindow was present, just close window. Else, if no window was there, unSpiderify Markers too.
 		 */
 		this.mapClickEvent = function(e) {
-			console.log('Click on Map');
+			// console.log('Click on Map');
 			//Close Window
 			var closeInfoWindow= this.closeInfoWindow();
 			//If no window was there
@@ -134,9 +180,9 @@ function WhiteMapClass() {
 			gmap_self.show_hide_info();
 		}
 
-		this.markerLayerFeatureClick= function(event) {
-
-			if(event.feature.cluster.length) {
+		this.markerClick= function(event) {
+			var feature = event.feature;
+			if(feature.cluster && feature.cluster.length) {
 				if(event.feature.cluster.length === 1 && event.feature.cluster[0].attributes.pointType=== "base_station" && !markerSpiderfied) {
 					this.unSpiderifyBsMarker();
 					this.spiderfyBsMarker( event.feature.cluster[0].attributes.name);
@@ -176,9 +222,31 @@ function WhiteMapClass() {
 						// global_this.bsMarkerClick(event, f);
 					}
 				}
-				
 			} else {
-				console.log('what happened');
+				var f = event.feature;
+				if (false){
+				} else {
+					this.onFeatureUnselect();
+					var infoWindowContent = gmap_self.makeWindowContent(f.attributes);
+					var feature = event.feature;
+					oldFeature= feature;
+					var popup = new OpenLayers.Popup.FramedCloud("popup",
+						feature.geometry.getBounds().getCenterLonLat(),
+						null,
+						infoWindowContent,
+						null,
+						true
+						);
+				popup.autoSize= true;
+				popup.maxSize= new OpenLayers.Size(300, 350);
+				feature.popup = popup;
+				ccpl_map.addPopup(popup);
+				/*Update window content to show less items*/
+				gmap_self.show_hide_info();
+				// popup.setSize(new OpenLayers.Size(500, 400));
+					//Click on Marker
+					// global_this.bsMarkerClick(event, f);
+				}
 			}
 		}
 		/*
@@ -189,7 +257,7 @@ function WhiteMapClass() {
 			if(marker.isSpiderfied) {
 				global_this.spiderfyBsMarker(marker);
 			} else {
-				global_this.openInfoWindow(e, marker, markersDataObj[marker.name]);
+				global_this.openInfoWindow(e, marker, wm_obj.data[marker.name]);
 			}
 		}
 	/**
@@ -201,18 +269,8 @@ function WhiteMapClass() {
 	 *
 	 * Draw Feature Section
 	 */	
-		var workingControl = "";
-		this.toggleControl= function(element) {
-			var controls = this.controls;
-			for(key in controls) {
-				var control = controls[key];
-				if(element == key) {
-					workingControl = control;
-					control.activate();
-				} else {
-					control.deactivate();
-				}
-			}
+		this.drawLivePollPolygon= function(element) {
+			this.livePollingPolygonControl.activate();
 		}
 	/**
 	 *
@@ -317,9 +375,9 @@ function WhiteMapClass() {
 
 	    					$("#tech_send").button("complete");
 
-	    					ccpl_map.addLayer(global_this.featuresLayer);
+	    					ccpl_map.addLayer(global_this.livePollFeatureLayer);
 
-	    					global_this.toggleControl('polygon');
+	    					global_this.drawLivePollPolygon();
 	    				}
 	    			}
 	    		});
@@ -329,12 +387,11 @@ function WhiteMapClass() {
 		}
 		
 		this.stopPolling= function() {
-			if(workingControl) {
-				workingControl.deactivate();
-				workingControl= "";
-				this.featuresLayer.destroyFeatures();
-				ccpl_map.removeLayer(this.featuresLayer);
-			}
+			// if(this.livePollingPolygonControl) {
+			this.livePollingPolygonControl.deactivate();
+			this.livePollFeatureLayer.destroyFeatures();
+			ccpl_map.removeLayer(this.livePollFeatureLayer);
+			// }
 
 			if(!$("#sideInfoContainer").hasClass("hide")) {
 			$("#sideInfoContainer").addClass("hide");
@@ -364,12 +421,12 @@ function WhiteMapClass() {
     	$("#resetFilters").button("complete");
 		}
 		this.startPolling= function() {
-			ccpl_map.addLayer(this.featuresLayer);
+			ccpl_map.addLayer(this.livePollFeatureLayer);
 		}
 		var polygon = "";
 		this.livePollingPolygonAdded = function(e) {
 			polygon = e.feature;
-			workingControl.deactivate();
+			this.livePollingPolygonControl.deactivate();
 			global_this.getMarkerInPolygon();
 		}
 		this.getMarkerInPolygon = function() {
@@ -378,7 +435,7 @@ function WhiteMapClass() {
 			var allSSIds = [];
 			var polygonSelectedDevices = [];
 			var selected_polling_technology = $("#polling_tech option:selected").text();
-console.log(selected_polling_technology);
+// console.log(selected_polling_technology);
 			for(var k=0;k<allSS.length;k++) {
 				if(polygon) {
 					// console.log(allSS[k].attributes.ptLon, allSS[k].attributes.ptLat);
@@ -404,8 +461,8 @@ console.log(selected_polling_technology);
 					}
 				}
 			}
-console.log(allSSIds);
-console.log(polygonSelectedDevices);
+// console.log(allSSIds);
+// console.log(polygonSelectedDevices);
 			// for(var i=0; i< ssAndDeviceArray.length; i++) {
 			// 	console.log(ssAndDeviceArray[i]);
 			// 	if(polygon){
@@ -414,9 +471,9 @@ console.log(polygonSelectedDevices);
 			// 			var selected_technology = $("#polling_tech").val();
 			// 			if($.trim(deviceTechnology.toLowerCase()) === $.trim(selected_technology.toLowerCase())) {
 			// 				var deviceName = ssAndDeviceArray[i].attributes.name;
-			// 				var ssMarkers = subStationMarkerObj[deviceName];
+			// 				var ssMarkers = wm_obj.features[deviceName];
 			// 				for(var j=0; j< )
-			// 				// subStationMarkerObj
+			// 				// wm_obj.features
 			// 				console.log(ssAndDeviceArray[i]);
 			// 			}
 			// 		}
@@ -462,7 +519,7 @@ console.log(polygonSelectedDevices);
 					var x= cktLinesBsObj[key];
 					if(x && x.length) {
 						for(var i=0; i< x.length; i++) {
-							console.log(x[i].filteredLine);
+							// console.log(x[i].filteredLine);
 							if(x[i].filteredLine) {
 								x[i].style.display = 'block';
 								linesFeaturesList.push(x[i]);
@@ -496,9 +553,9 @@ console.log(polygonSelectedDevices);
 				newSize = size;
 			}
 			//Loop through all markers
-			for (var i = 0; i < markerArray.length; i++) {
+			for (var i = 0; i < bs_ss_features_list.length; i++) {
 				//Set icon marker size with newSize
-				markerArray[i].icon.setSize(newSize);
+				bs_ss_features_list[i].icon.setSize(newSize);
 			}
 		}
 		/*
@@ -521,217 +578,106 @@ console.log(polygonSelectedDevices);
 	 */
 
 	/**
-	 * Advance Search and Filter
+	 * Search and Filter Function
 	 */	
-		this.updateStationMarker = function(base_station, newBaseStationObject, callback) {
-			callback();
-		}
-		/*
-		This function show Bs Marker
-		 */
-		this.showStationMarker = function(base_station) {
-			var bs_name = base_station.name;
-			var bs_marker = bsMarkerObj[bs_name];
-			bs_marker.style.display= '';
-			var devicesMarkers = deviceMarkerObj[bs_name];
-			if (devicesMarkers) {
-				for (var i = 0; i < devicesMarkers.length; i++) {
-					var deviceMarker = devicesMarkers[i];
-					var deviceName = deviceMarker.name;
-					var sub_stations = subStationMarkerObj[deviceName];
-					if (sub_stations) {
-						for (var j = 0; j < sub_stations.length; j++) {
-							var sub_station = sub_stations[j];
-							sub_station.style.display= '';
-							// sub_station.display(true);
-						}
-					}
 
-					var lines = cktLinesObj[deviceName];
-					if (lines) {
-						for (var j = 0; j < lines.length; j++) {
-							var line = lines[j];
-							line.style.display = 'block'
-						}
-						global_this.linesLayer.redraw();
-					}
-
-					var sectors = sectorsObj[deviceName];
-					if (sectors) {
-						for (var j = 0; j < sectors.length; j++) {
-							var sector = sectors[j];
-							sector.style.display = 'block';
-						}
-						global_this.sectorsLayer.redraw();
-					}
-				}
-			}
-			global_this.markersVectorLayer.redraw();
-		}
-		/*
-		This function hides BS marker
-		 */
-		var markersToHide= [];
-		this.hideStationMarkers = function(base_station) {
-			var bs_name = base_station.name;
-			var bs_marker = bsMarkerObj[bs_name];
-			global_this.markersVectorLayer.destroyFeatures([bs_marker]);
-			bs_marker.style.display = 'none';
-			// bs_marker.style = { visibility: 'hidden' };
-			// // bs_marker.display(false);
-			// var devicesMarkers = deviceMarkerObj[bs_name];
-			// if (devicesMarkers) {
-			// 	for (var i = 0; i < devicesMarkers.length; i++) {
-			// 		var deviceMarker = devicesMarkers[i];
-			// 		// deviceMarker.display(false);
-			// 		var deviceName = deviceMarker.name;
-			// 		var sub_stations = subStationMarkerObj[deviceName];
-			// 		if (sub_stations) {
-			// 			for (var j = 0; j < sub_stations.length; j++) {
-			// 				var sub_station = sub_stations[j];
-			// 				sub_station.style = { visibility: 'hidden' };
-			// 			}
-			// 		}
-
-			// 		var lines = cktLinesObj[deviceName];
-			// 		if (lines) {
-			// 			for (var j = 0; j < lines.length; j++) {
-			// 				var line = lines[j];
-			// 				line.style.display = 'none'
-			// 			}
-			// 			global_this.linesLayer.redraw();
-			// 		}
-
-			// 		var sectors = sectorsObj[deviceName];
-			// 		if (sectors) {
-			// 			for (var j = 0; j < sectors.length; j++) {
-			// 				var sector = sectors[j];
-			// 				sector.style.display = 'none';
-			// 			}
-			// 			global_this.sectorsLayer.redraw();
-			// 		}
-			// 	}
-			// }
-			// global_this.markersVectorLayer.redraw();
-		}
 		/*
 		This function is triggered when Reset Filter is done.
 		Select empty value in the Select2 boxes, update filter_data variable and reset basic filters too.
 		 */
 		this.resetAdvanceFilter = function() {
-			// this.resetBasicFilter();
 
-			wmAdvanceFilterClass.resetAdvanceFilter();
+			//reset filters
+			wmAdvanceFilterClass.resetFilter();
+
+			//set adAdvFilter = 0
 			hasAdvFilter = 0;
-		}
 
-		this.hideAdvanceFilter= function() {
-			wmAdvanceFilterClass.destroyAdvFilterHtml();
-		}
-		/*
-		This function is triggered when Apply Advance Filter is triggered.
-		Here, we check for the values selected in the Multibox and filter result according to it.
-		 */
-		var filteredFeatures = {markers: [], lines: [], sectors: []};
-		this.applyAdvanceFilter = function() {
-			this.resetBasicFilter();
-			filtered_data= [];
-			var appliedFilter = wmAdvanceFilterClass.applyAdvFilter();
-			filtered_data = appliedFilter.filtered_data;
-
-			this.markersVectorLayer.removeAllFeatures();
-			this.markersVectorLayer.addFeatures(appliedFilter.filtered_Features);
-			filteredFeatures.markers = appliedFilter.filtered_Features;
-
-			this.linesLayer.removeAllFeatures();
-			this.linesLayer.addFeatures(appliedFilter.line_Features);
-			filteredFeatures.lines = appliedFilter.line_Features;
-
-			this.sectorsLayer.removeAllFeatures();
-			this.sectorsLayer.addFeatures(appliedFilter.sector_Features);
-			filteredFeatures.sectors = appliedFilter.sector_Features;
-
-			
-			wmAdvanceSearchClass.setMasterData(filtered_data);
-			
-			global_this.markerLayerStrategy.recluster();
-
-			hasAdvFilter= 1;
+			//update page status
 			get_page_status();
 		}
 
 		/*
-		This function populates AdvanceFilter Multiselect dataItems
+		 * This function is triggered when Cancel Filter is done.
 		 */
-		this.showAdvanceFilter = function() {
-			var advFilterData= [];
-			var technologyData = { 'element_type':'multiselect', 'field_type':'string', 'key':'technology', 'title':'Technology', 'values':[] };
-			//Loop through the technology for the devices
-			if (technology.length) {
-				for (var i = 0; i < technology.length; i++) {
-					//technology[i] is a valid value
-					if (technology[i]) {
-						technologyData.values.push(technology[i]);
-					}
-				}
-			}
-			advFilterData.push(technologyData);
+		this.hideAdvanceFilter= function() {
 
-			var vendorData = { 'element_type':'multiselect', 'field_type':'string', 'key':'vendor', 'title':'Vendor', 'values':[] };
-			//Loop through the vendor for the devices
-			if (vendor.length) {
-				for (var i = 0; i < vendor.length; i++) {
-					//vendor[i] is a valid value
-					if (vendor[i]) {
-						vendorData.values.push(vendor[i]);
-					}
-				}
-			}
-			advFilterData.push(vendorData);
-
-			var cityData = { 'element_type':'multiselect', 'field_type':'string', 'key':'city', 'title':'City', 'values':[] };
-			//Loop through the city for the devices
-			if (city.length) {
-				for (var i = 0; i < city.length; i++) {
-					//city[i] is a valid value
-					if (city[i]) {
-						cityData.values.push(city[i]);
-					}
-				}
-			}
-			advFilterData.push(cityData);
-
-			var stateData = { 'element_type':'multiselect', 'field_type':'string', 'key':'state', 'title':'State', 'values':[] }
-			//Loop through the state for the devices
-			if (state.length) {
-				for (var i = 0; i < state.length; i++) {
-					//state[i] is a valid value
-					if (state[i]) {
-						stateData.values.push(state[i]);
-					}
-				}
-			}
-			advFilterData.push(stateData);
-			wmAdvanceFilterClass.prepareAdvFilterHtml(advFilterData);
+			//remove advance filter content
+			wmAdvanceFilterClass.destroyAdvanceFilter();
 		}
+
+		/*
+		 * This function is triggered when Apply Advance Filter is triggered.
+		 * Here, we check for the values selected in the Multibox and filter result according to it.
+		 */
+		
+		this.applyAdvanceFilter = function(appliedFilterData) {
+
+			data_for_filter_wmap= [];
+			
+			//reset basic filters
+			this.resetBasicFilter();
+
+			//set data for filter
+			data_for_filter_wmap = appliedFilterData.data_for_filters;
+
+			//remove features from markersLayer and add filteredFeatures
+			this.markersLayer.removeAllFeatures();
+			this.markersLayer.addFeatures(appliedFilterData.filtered_Features);
+			filtered_Features.markers = appliedFilterData.filtered_Features;
+			
+			//remove lines from linesLayer and add filteredLine
+			this.linesLayer.removeAllFeatures();
+			this.linesLayer.addFeatures(appliedFilterData.line_Features);
+			filtered_Features.lines = appliedFilterData.line_Features;
+
+			//remove sectors from sectorsLayer and add filtered sectors
+			this.sectorsLayer.removeAllFeatures();
+			this.sectorsLayer.addFeatures(appliedFilterData.sector_Features);
+			filtered_Features.sectors = appliedFilterData.sector_Features;
+			
+			//set master data for search to data_to_filter
+			wmAdvanceSearchClass.setMasterData(data_for_filter_wmap);
+			
+			//rescluster the strategy
+			global_this.markersLayerStrategy.recluster();
+
+			//set adv filter 1
+			hasAdvFilter= 1;
+			//update page status
+			get_page_status();
+
+			this.toggleLineLayer();
+		}
+
 		/*
 		This function reset Advance Search
 		 */
-		var search_Markers = [];
 		this.resetAdvanceSearch = function() {
-			wmAdvanceSearchClass.resetAdvanceSearch();	
-			if($("#gis_search_status_txt").length) {
-				$("#gis_search_status_txt").remove();
-			}		
-			//hide search markers here			
+
+			//reset adv class
+			wmAdvanceSearchClass.resetAdvanceSearch();
+
+			//set hasAdvSearch = 0
+			hasAdvSearch = 0;
+
+			//remove search markers
+			this.searchMarkerLayer.removeAllFeatures();
+
+			//update get status
+			get_page_status();
 		}
+
 		/*
 		This function applies Advance Search
 		 */
 		this.applyAdvanceSearch = function() {
-			wmAdvanceSearchClass.applyAdvanceSearch();
-			hideSpinner();
+			//apply adv Search
+			wmAdvanceSearchClass.applyAdvanceSearch(function() {
+				hideSpinner();
+			});
 		}
+
 		/*
 		This function populate Advance Search Dropdowns
 		 */
@@ -784,166 +730,189 @@ console.log(polygonSelectedDevices);
 				}
 			}
 			advSearchData.push(cityData);
-			wmAdvanceSearchClass.prepareAdvSearchHtml(advSearchData);
+			wmAdvanceSearchClass.createAdvanceSearchMarkup(advSearchData);
 		}
 
 		this.hideAdvanceSearch = function() {
-			wmAdvanceSearchClass.destroyAdvSearchHtml();
+			
+			wmAdvanceSearchClass.destroyAdvanceSearch();
 		}
 		/*
 		This function applies Basic Filter
 		 */
 		this.applyBasicFilter = function() {
-			var technologyValue = $("#technology").val();
-			// global_this.markersVectorLayer.strategies[0].deactivate();
-			var vendorValue = $("#vendor").val();
-			var stateValue = $("#state").val();
-			var cityValue = $("#city").val();
-			var markerDataShowing = [];
-			var markersToShow= [], linesToShow= [], sectorsToShow= [];
 
-			stationsLoop: for (var i = 0; i < filtered_data.length; i++) {
-				var markerData = filtered_data[i];
-				var bsMarker = bsMarkerObj[markerData.name];
-				if (true) {
-					if (technologyValue === "" && vendorValue === "" && stateValue === "" && cityValue === "") {
-						console.log('lol');
-						markerDataShowing = filtered_data;
-						markersToShow = filteredFeatures.markers;
-						linesToShow = filteredFeatures.lines;
-						sectorsToShow = filteredFeatures.sectors;
-						break stationsLoop;
-					} else {
-						if (technologyValue !== "") {
-							var baseStationTechnology = markerData.sector_ss_technology;
-							if(baseStationTechnology) {
-								baseStationTechnology= $.trim(baseStationTechnology.toLowerCase());
-								technologyValue = $.trim(technologyValue.toLowerCase());
-								if(baseStationTechnology.indexOf(technologyValue) === -1) {
-									continue stationsLoop;
-								}
-							} else {
-								continue stationsLoop;
-							}
-						}
-
-						if (vendorValue !== "") {
-							var baseStationVendor = markerData.sector_ss_vendor;
-							if(baseStationVendor) {
-								baseStationVendor= $.trim(baseStationVendor.toLowerCase());
-								vendorValue = $.trim(vendorValue.toLowerCase());
-								if (vendorValue !== baseStationVendor) {
-									continue stationsLoop;
-								}
-							} else {
-								continue stationsLoop;
-							}
-						}
-
-						if (stateValue !== "") {
-							var baseStationState = markerData.data.state;
-							if(baseStationState) {
-								baseStationState= $.trim(baseStationState.toLowerCase());
-								stateValue = $.trim(stateValue.toLowerCase());
-								if (baseStationState !== stateValue) {
-									continue stationsLoop;
-								}
-							} else {
-								continue stationsLoop;
-							}
-						}
-
-						if (cityValue !== "") {
-							var baseStationCity = markerData.data.city;
-							if(baseStationCity) {
-								console.log(baseStationCity, cityValue);
-								baseStationCity= $.trim(baseStationCity.toLowerCase());
-								cityValue = $.trim(cityValue.toLowerCase());
-								if (baseStationCity !== cityValue) {
-									continue stationsLoop;
-								}
-							} else {
-								continue stationsLoop;
-							}
-						}
-
-						markerDataShowing.push(markerData);
-
-						markersToShow.push(bsMarkerObj[markerData.name]);
-						var bsSubStationsMarkers = ssMarkerObj[markerData.name];
-						if(bsSubStationsMarkers && bsSubStationsMarkers.length) {
-							for(var j=0; j< bsSubStationsMarkers.length; j++) {
-								markersToShow.push(bsSubStationsMarkers[j]);
-							}
-						}
-
-						var lines = cktLinesBsObj[markerData.name];
-
-						if(lines && lines.length) {
-							for(var j=0; j< lines.length; j++) {
-								linesToShow.push(lines[j]);
-							}
-						}
-						
-						var sectors = cktLinesBsObj[markerData.name];
-						if(sectors && sectors.length) {
-							for(var j=0; j< sectors.length; j++) {
-								sectorsToShow.push(sectors[j]);
-							}
-							
-						}
-					}
-				}
-			}
-
-			global_this.markersVectorLayer.removeAllFeatures();
-			global_this.markersVectorLayer.addFeatures(markersToShow);
-
-			// global_this.linesLayer.removeAllFeatures();
-			// global_this.linesLayer.addFeatures(linesToShow);
-			global_this.toggleLines();
-
+			var technologyValue = $("#technology").val(), vendorValue = $("#vendor").val(), stateValue = $("#state").val(), cityValue = $("#city").val();
+			
+			global_this.markersLayer.removeAllFeatures();
+			global_this.linesLayer.removeAllFeatures();
 			global_this.sectorsLayer.removeAllFeatures();
-			global_this.sectorsLayer.addFeatures(sectorsToShow);
 
-			wmAdvanceSearchClass.setMasterData(markerDataShowing);
+			if(technologyValue == "" && vendorValue == "" && stateValue == "" && cityValue == "") {
 
-			global_this.markerLayerStrategy.recluster();
+				global_this.markersLayer.addFeatures(filtered_Features.markers);
+				global_this.linesLayer.addFeatures(filtered_Features.lines);
+				global_this.sectorsLayer.addFeatures(filtered_Features.sectors);
+				global_this.markersLayerStrategy.recluster();
+
+				return;
+			} else {
+				var basic_filtered_features = {markers: [], lines: [], sectors: []}, i= 0;
+				
+				bsLoop: for(i=0; i< data_for_filter_wmap.length; i++) {
+					var bs = data_for_filter_wmap[i], j=0, k=0;
+					if(technologyValue != "") {
+						var bsTechnologies = bs.sector_ss_technology;
+						if(bsTechnologies) {
+							bsTechnologies = $.trim(bsTechnologies.toLowerCase());
+							technologyValue = $.trim(technologyValue.toLowerCase());
+							if(bsTechnologies.indexOf(technologyValue) == -1) {
+								continue bsLoop;
+							}
+						}
+					} else {
+						continue bsLoop;
+					}
+
+					if(vendorValue != "") {
+						var bsVendors = bs.sector_ss_vendor;
+						if(bsVendors) {
+							bsVendors = $.trim(bsVendors.toLowerCase());
+							vendorValue = $.trim(vendorValue.toLowerCase());
+							if(bsVendors.indexOf(vendorValue) == -1) {
+								continue bsLoop;
+							}
+						}
+					} else {
+						continue bsLoop;
+					}
+
+					if(stateValue != "") {
+						var bsState = bs.data.state;
+						if(bsState) {
+							bsState = $.trim(bsState.toLowerCase());
+							stateValue = $.trim(stateValue.toLowerCase());
+							if(bsState.indexOf(stateValue) == -1) {
+								continue bsLoop;
+							}
+						}
+					} else {
+						continue bsLoop;
+					}
+
+					if(cityValue != "") {
+						var bsCity = bs.data.city;
+						if(bsCity) {
+							bsCity = $.trim(bsCity.toLowerCase());
+							cityValue = $.trim(cityValue.toLowerCase());
+							if(bsCity.indexOf(cityValue) == -1) {
+								continue bsLoop;
+							}
+						}
+					} else {
+						continue bsLoop;
+					}
+
+					basic_filtered_features.markers.push(wm_obj.features[bs.name]);
+
+					for(j=0; j< bs.data.param.sector.length; j++) {
+						var bsSector = bs.data.param.sector[j];
+						if($.trim(bsSector.technology.toLowerCase()) == $.trim(technologyValue.toLowerCase())) {
+							if(wm_obj.sectors[bsSector.sector_configured_on_device]) {
+								basic_filtered_features.sectors.push(wm_obj.sectors[bsSector.sector_configured_on_device]);
+							}
+							if(wm_obj.lines[bsSector.sector_configured_on_device]) {
+								basic_filtered_features.lines.push(wm_obj.lines[bsSector.sector_configured_on_device]);
+							}
+
+							for(k=0; k< bsSector.sub_station.length; k++) {
+								var sub_Station = bsSector.sub_station[k];
+								basic_filtered_features.markers.push(wm_obj.features[sub_Station.name]);
+							}
+						}
+					}
+				}
+
+				global_this.markersLayer.addFeatures(basic_filtered_features.markers);	
+				global_this.linesLayer.addFeatures(basic_filtered_features.lines);
+				global_this.sectorsLayer.addFeatures(basic_filtered_features.sectors);
+				global_this.markersLayerStrategy.recluster();
+			}
 		}
 
+		/*
+		This function populates basic filter dropdowns
+		 */
 		this.populateBasicFilterDropdowns = function() {
-			if (technology.length) {
-				for (var i = 0; i < technology.length; i++) {
-					if (technology[i]) {
-						$("#technology").append('<option value="' + technology[i] + '">' + technology[i] + '</option>');
-					}
-				}
+
+			/*Populate City & State*/
+			var state_array = Object.keys(state_city_obj);
+
+			var state_option = "";
+			state_option = "<option value=''>Select State</option>";
+
+			for(var i=0;i<state_array.length;i++) {
+				state_option += "<option value='"+i+1+"'>"+state_array[i]+"</option>";
 			}
 
-			if (vendor.length) {
-				for (var i = 0; i < vendor.length; i++) {
-					if (vendor[i]) {
-						$("#vendor").append('<option value="' + vendor[i] + '">' + vendor[i] + '</option>');
-					}
-				}
+			$("#state").html(state_option);
+
+			var city_option = "";
+			city_option = "<option value=''>Select City</option>";
+
+			for(var i=0;i<all_cities_array.length;i++) {
+				city_option += "<option value='"+i+1+"'>"+all_cities_array[i]+"</option>";
 			}
 
-			if (city.length) {
-				for (var i = 0; i < city.length; i++) {
-					if (city[i]) {
-						$("#city").append('<option value="' + city[i] + '">' + city[i] + '</option>');
-					}
-				}
+			$("#city").html(city_option);
+
+			/*Populate Technology & Vendor*/
+			var technology_array = Object.keys(tech_vendor_obj);
+
+			var tech_option = "";
+			tech_option = "<option value=''>Select Technology</option>";
+
+			for(var i=0;i<technology_array.length;i++) {
+				tech_option += "<option value='"+technology_array[i]+"'>"+technology_array[i]+"</option>";
 			}
 
-			if (state.length) {
-				for (var i = 0; i < state.length; i++) {
-					if (state[i]) {
-						$("#state").append('<option value="' + state[i] + '">' + state[i] + '</option>');
-					}
-				}
+			$("#technology").html(tech_option);
+			// $("#polling_tech").html(tech_option);
+
+			var vendor_option = "";
+			vendor_option = "<option value=''>Select Vendor</option>";
+
+			for(var i=0;i<all_vendor_array.length;i++) {
+				vendor_option += "<option value='"+i+1+"'>"+all_vendor_array[i]+"</option>";
 			}
+
+			$("#vendor").html(vendor_option);
+
+			/*Ajax call for Live polling technology data*/
+			$.ajax({
+				url : base_url+"/"+"device/filter/",
+				// url : "../../static/filter_data.json",
+				success : function(result) {
+					var techData = JSON.parse(result).data.objects.technology.data;
+
+					/*Populate technology dropdown*/
+					var techOptions = "<option value=''>Select Technology</option>";
+					$.grep(techData,function(tech) {
+						if(technology_array.indexOf(tech.value) >= 0) {
+							techOptions += "<option value='"+tech.id+"'>"+tech.value.toUpperCase()+"</option>";
+						}
+					});
+					$("#polling_tech").html(techOptions);
+				},
+				error : function(err) {
+					// console.log(err.statusText);
+				}
+			});
 		}
+
+		/*
+		Reset Filters
+		 */
 		this.resetBasicFilter = function() {
 			$("#technology").val('');
 			$("#vendor").val('');
@@ -953,339 +922,320 @@ console.log(polygonSelectedDevices);
 			this.applyBasicFilter();
 		}
 	/**
-	 * End of Advance Search and Filter
-	 */
-
-	/**
-	* This function creates data to plot sectors on google maps.
-	* * @method getSectorPointsArray.
-	* * @param Lat {Number}, It contains lattitude of any point.
-	* * @param Lng {Number}, It contains longitude of any point.
-	* * @param radius {Number}, It contains radius for sector.
-	* * @param azimuth {Number}, It contains azimuth angle for sector.
-	* * @param beamwidth {Number}, It contains width for the sector.
-	* * @param sectorData {Object}, It contains sector info json object.
-	* * @param orientation {String}, It contains the orientation type of antena i.e. vertical or horizontal
-	* * @return {Object Array} sectorDataArray, It is the polygon points lat-lon object array
-	* */
-	function getSectorPointsArray(lat, lng, radius, azimuth, beamWidth, orientation, callback) {
-		var triangle = [],
-			 sectorDataArray = [];
-		// Degrees to radians
-		var d2r = Math.PI / 180;
-		//  Radians to degrees
-		var r2d = 180 / Math.PI;
-
-		var PRlat = (radius / 6371) * r2d; // using 3959 miles or 6371 KM as earth's radius
-		var PRlng = PRlat / Math.cos(lat * d2r);
-
-		var PGpoints = [],
-			 pointObj = {};
-
-		with(Math) {
-			lat1 = (+lat) + (PRlat * cos(d2r * (azimuth - beamWidth / 2)));
-			lon1 = (+lng) + (PRlng * sin(d2r * (azimuth - beamWidth / 2)));
-
-			/*Create lat-lon point object*/
-			/*Reset Pt Object*/
-			pointObj = {};
-			pointObj["lat"] = lat1;
-			pointObj["lon"] = lon1;
-			/*Add point object to array*/
-			PGpoints.push(pointObj);
-
-			lat2 = (+lat) + (PRlat * cos(d2r * (azimuth + beamWidth / 2)));
-			lon2 = (+lng) + (PRlng * sin(d2r * (azimuth + beamWidth / 2)));
-
-			var theta = 0;
-			var gamma = d2r * (azimuth + beamWidth / 2);
-
-			for (var a = 1; theta < gamma; a++) {
-				theta = d2r * (azimuth - beamWidth / 2 + a);
-				PGlon = (+lng) + (PRlng * sin(theta));
-				PGlat = (+lat) + (PRlat * cos(theta));
-				/*Reset Pt Object*/
-				pointObj = {};
-				pointObj["lat"] = PGlat;
-				pointObj["lon"] = PGlon;
-				/*Add point object to array*/
-				PGpoints.push(pointObj);
-			}
-			/*Reset Pt Object*/
-			pointObj = {};
-			pointObj["lat"] = lat2;
-			pointObj["lon"] = lon2;
-			/*Add point object to array*/
-			PGpoints.push(pointObj);
-
-			var centerPtObj = {};
-			centerPtObj["lat"] = lat;
-			centerPtObj["lon"] = lng;
-			/*Add center point object to array*/
-			PGpoints.push(centerPtObj);
-		}
-
-		/*Condition for the orientation of sector antina*/
-		if (orientation == "horizontal") {
-			var len = Math.floor(PGpoints.length / 3);
-			triangle.push(PGpoints[0]);
-			triangle.push(PGpoints[(len * 2) - 1]);
-			triangle.push(PGpoints[(len * 3) - 1]);
-			/*Assign the triangle object array to sectorDataArray for plotting the polygon*/
-			sectorDataArray = triangle;
-		} else {
-			/*Assign the PGpoints object array to sectorDataArray for plotting the polygon*/
-			sectorDataArray = PGpoints;
-		}
-		/*Callback with lat-lon object array.*/
-		callback(sectorDataArray);
-	};
+	 * End of Search and Filter Functions
+	 */	
 
 	/**
 	 *
-	 * Private Functions
+	 * Plotting Functions
 	 */
 	
-		var master_data_array = [], master_data_obj = {}
-		var bs_features_master_array = [], bs_features_master_obj = {};
-		var device_features_master_array = [], device_features_master_obj = {};
-		var ss_features_master_array = [], ss_features_master_obj = {};
-		var line_features_master_array = [], line_features_master_obj = {};
-		var sector_features_master_array = [], sector_features_master_obj = {};
 		/*
-		This function takes a array of Markers and loop through each list and call prototype method createOpenLayerMarker() to create Marker for it.
-		@param markersData {Array for BsData} Array containing Bs to be plotted.
-		@param callback {Function} Callback to return when Finished.
-		Also we add Marker Data in our variables for future use.
+		 * This function takes a array of Markers and loop through each list and call prototype method createOpenLayerMarker() to create Marker for it.
+		 * @param markersData {Array for BsData} Array containing Bs to be plotted.
+		 * @param callback {Function} Callback to return when Finished.
+		 * Also we add Marker Data in our variables for future use.
 		 */
-		// var stationsMarkerFeaturesArray = [];
-	   function addMarkers(markersData, callback) {
+	   this.plotMarkers = function(markersData, callback) {
+			
 			//Loop through the markersData
 			$.each(markersData, function(i, markerData) {
-				//Store data in a Object with BS Name as key
-				markersDataObj[markerData.name] = markerData;
-				//Push data in the Global Variable
-				markersDataArray.push(markerData);
-
-				master_data_array.push(markerData);
-				master_data_obj[markerData.name] = markerData;
-
-				//Push data for Search and Basic Filter dataset.
-				filtered_data.push(markerData);
-
-				//Add Bs Name to bs_name Array
-				bs_name.push(markerData.name);
-
-				//Add States to State Array
-				if (state.indexOf(markerData.data.state) === -1) {
-					state.push(markerData.data.state);
+				
+				//store state in array
+				if(markerData.data.state) {
+					if(!state_city_obj[markerData.data.state]) {
+						state_city_obj[markerData.data.state] = [];
+					}
+					//store city in array
+					if(state_city_obj[markerData.data.state].indexOf(markerData.data.city) == -1) {
+						state_city_obj[markerData.data.state].push(markerData.data.city);
+					}
 				}
 
-				//Add Cities to City Array
-				if (city.indexOf(markerData.data.city) === -1) {
-					city.push(markerData.data.city);
+				//store city in array
+				if(markerData.data.city) {
+					if(all_cities_array.indexOf(markerData.data.city) == -1) {
+						all_cities_array.push(markerData.data.city);
+					}
 				}
 
 				//base station 
-				var id = markerData.id, name = markerData.name, lon = markerData.data.lon, lat = markerData.data.lat, icon = base_url+"/static/img/icons/bs.png", size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height), type = "base_station";
-				var additionalInfoObject = { 
+				var id = markerData.id, 
+					name = markerData.name, 
+					lon = markerData.data.lon, 
+					lat = markerData.data.lat, 
+					icon = base_url+"/static/img/icons/bs.png", 
+					size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height), 
+					type = "base_station";
+
+				//add data to main device obj
+				wm_obj.data[name] = markerData;
+				
+				var bsMarkerCustomInfo = { 
 					id: id, 
 					name: name, 
 					type: type, 
-					visible: 'true', 
 					isSpiderfied: true, 
+					child_ss: markerData.data.param.sector,
+					original_sectors: markerData.data.param.sector,
 					dataset: markerData.data.param.base_station, 
 					bhInfo: markerData.data.param.backhual, 
+					bs_name: name,
+					filter_data: {"bs_name": markerData.name},
+					antenna_height: markerData.data.antenna_height,
 					ptLat: lat, 
 					ptLon: lon, 
-					pointType: type 
+					pointType: type,
+					markerType: 'BS',
+					isMarkerSpiderfied: false
 				}
 
-				var marker = global_this.createOpenLayerVectorMarker(size, icon, lon, lat, additionalInfoObject);
+				var marker = global_this.createOpenLayerVectorMarker(size, icon, lon, lat, bsMarkerCustomInfo);
+				wm_obj.features[name] = marker;
 
-				//Store marker in bs marker object
-				bsMarkerObj[name] = marker;
-				//push marker in markerArray
-				markerArray.push(marker);
-
-				bs_features_master_array.push(marker);
-				bs_features_master_obj[name] = marker;
-
-				masterStationsArray.push(marker);
-
-				filteredFeatures.markers.push(marker);
+				bs_ss_features_list.push(marker);
 				
+				var deviceIDArray= [];
 				//base station devices loop
 				var total_angle = 360, devices_length = markerData.data.param.sector.length, angleOnWhichDeviceIconToPlace = Math.floor(total_angle / devices_length), current_angle = 0;
 				//Loop through the bs devices
-				for (var i = 0; i < markerData.data.param.sector.length; i++) {
-					if(!(lon && lat)) {
-						return ;
+				for (var j = 0; j < markerData.data.param.sector.length; j++) {
+					
+					var device = markerData.data.param.sector[j];
+
+					if(!tech_vendor_obj[device.technology]) {
+						tech_vendor_obj[device.technology] = [];
 					}
 
-					var device = markerData.data.param.sector[i];
-
-					if (vendor.indexOf(device.vendor) === -1) {
-						vendor.push(device.vendor);
+					if(tech_vendor_obj[device.technology].indexOf(device.vendor) == -1) {
+						tech_vendor_obj[device.technology].push(device.vendor);
 					}
 
-					if (technology.indexOf(device.technology) === -1) {
-						technology.push(device.technology);
+					if(all_vendor_array.indexOf(device.vendor) == -1) {
+						all_vendor_array.push(device.vendor); 
+					}
+					var sectorRadius = device.radius,
+						rad = 4;
+					/*If radius is greater than 4 Kms then set it to 4.*/
+					if((sectorRadius != null) && (sectorRadius > 0)) {
+						rad = sectorRadius;
 					}
 
-					if(device.technology.toLowerCase() == "p2p" || device.technology.toLowerCase() == "ptp") {
-						//get angle at which device marker is to be shown
-						current_angle += angleOnWhichDeviceIconToPlace;
-						//Get Lat Lng at a specific angle and distance.
-						var deviceLatLngObject = getAtXYDirection(current_angle, 1, lon, lat);
-						//Get device Icon
-						var deviceIcon = base_url+'/static/img/icons/1x1.png';
-						var deviceType = "base_station_device";
-						var deviceAdditionalInfo = {
-							id: device.device_info[1].value,
-							name: device.device_info[0].value,
-							type: deviceType,
-							visible: false,
-							defaultIcon:  base_url+"/"+device.markerUrl,
-							clusterIcon: base_url+'/static/img/icons/1x1.png',
-							lat: lat,
-							lon: lon,
-							technology: device.technology,
-							ptLat: deviceLatLngObject.lat,
-							ptLon: deviceLatLngObject.lon,
-							device_name : device.sector_configured_on_device,
-							sectorName: device.sector_configured_on,
-							pointType 		 	: 'sector_Marker',
-							vendor 				: device.vendor,
-							deviceExtraInfo 	: device.info,
-							deviceInfo 			: device.device_info,
-							poll_info 			: [],
-							perf_data_obj  		: {}
-						}
-						//Create deviceMarker
-						var deviceMarker = global_this.createOpenLayerVectorMarker(size, deviceIcon, lon, lat, deviceAdditionalInfo);
+					var startEndObj = {};
 
-						ssAndDeviceArray.push(deviceMarker);
-						device_features_master_array.push(deviceMarker);
-						device_features_master_obj[name] = deviceMarker;
+					createSectorData(lat, lon, rad, device.azimuth_angle, device.beam_width, device.orientation, function(sectorPoints) {
 
-						// global_this.devicesVectorLayer.addFeatures(deviceMarker);
-						//Add marker to markerArray
-						markerArray.push(deviceMarker);
+						var halfPt = Math.floor(sectorPoints.length / (+2));
 
-						//Store deviceMarker in a obj for later use.
-						if (!deviceMarkerObj[name]) {
-							deviceMarkerObj[name] = [];
-						}					
-						deviceMarkerObj[name].push(deviceMarker);
-					}
-					var sectorPintsArray =[];
-					if (device.technology.toLowerCase() !== "p2p" && device.technology.toLowerCase() != "ptp") {
-						getSectorPointsArray(lat, lon, device.radius, device.azimuth_angle, device.beam_width, device.orientation, function(sectorsPointArray) {
-							var sectorAdditionalInfo = {
-								bsname: name,
-								ssname: sub_station_name,
-								ckt: device.circuit_id,
-								devicename: device.device_info[0].value,
-								type: "sector",
-								pointType: "sector",
-								startLat: lat,
-								startLon: lon,
-								bhInfo: [],
-								dataset: device.info,
-								"bs_name" : markerData.alias,
-								"sector_name" : device.sector_configured_on,
+						var startLat = sectorPoints[halfPt].lat;
+						var startLon = sectorPoints[halfPt].lon;
+
+						if($.trim(device.technology) != "PTP" && $.trim(device.technology) != "P2P") {
+							var sColor = "#000000",
+								sWidth = 1;
+
+							if(device.technology.toLowerCase() == 'pmp') {
+								sColor = '#FFFFFF';
+								sWidth = 2;
+							}
+
+							var sectorCustomInfo = {
 								ptLat: lat,
 								ptLon: lon,
-								technology: device.technology
+								pointType: "sector",
+								strokeColor      : sColor,
+								fillColor 	     : device.color,
+								technology: device.technology,
+								strokeOpacity    : 1,
+								fillOpacity 	 : 0.5,
+								strokeWeight     : sWidth,
+								lat: lat,
+								lon: lon,
+								azimuth: device.azimuth_angle,
+								beam_width: device.beam_width,
+								technology: device.technology,
+								vendor 				: device.vendor,
+								deviceExtraInfo 	: device.info,
+								deviceInfo 			: device.device_info,
+								poll_info 			: [],
+								radius: rad,
+								dataset: device.info,
+								startLat: startLat,
+								startLon: startLon,
+								filter_data 	 : {"bs_name" : name, "sector_name" : device.sector_configured_on},
+								bhInfo: [],
+								child_ss: device.sub_station,
+								polarisation: device.polarisation,
+								original_sectors : device.sub_station								
+							};
+
+							var plottedSector = global_this.plotSector_wmap(sectorPoints, sectorCustomInfo);
+							filtered_Features.sectors.push(plottedSector);
+							main_lines_sectors_features_wmaps.sectors.push(plottedSector);
+							// wm_obj.sectors[device.sector_configured_on_device] = plottedSector;
+							wm_obj.sectors["poly_"+device.sector_configured_on+"_"+rad+"_"+device.azimuth_angle+"_"+device.beam_width] = plottedSector;
+							global_this.sectorsLayer.addFeatures([plottedSector]);
+
+							startEndObj["startLat"] = sectorPoints[halfPt].lat;
+							startEndObj["startLon"] = sectorPoints[halfPt].lon;
+
+
+							startEndObj["sectorLat"] = sectorPoints[halfPt].lat;
+							startEndObj["sectorLon"] = sectorPoints[halfPt].lon;
+						} else {
+							startEndObj["startLat"] = markerData.data.lat;
+							startEndObj["startLon"] = markerData.data.lon;
+
+							startEndObj["sectorLat"] = markerData.data.lat;
+							startEndObj["sectorLon"] = markerData.data.lon;
+						}
+
+					});
+
+					if(device.technology.toLowerCase() == "p2p" || device.technology.toLowerCase() == "ptp") {
+						
+						if(deviceIDArray.indexOf(device['device_info'][1]['value']) === -1) {
+
+							var perf_obj = { "performance_paramter" : "N/A", "performance_value" : "N/A", "frequency" : "N/A", "pl" : "N/A" };
+
+							var deviceAdditionalInfo = {
+								ptLat: lat,
+								ptLon: lon,
+								originalIcon:  base_url+"/"+device.markerUrl,
+								defaultIcon: base_url+'/static/img/icons/1x1.png',
+								pointType 		 	: 'sector_Marker',
+								technology: device.technology,
+								vendor 				: device.vendor,
+								deviceExtraInfo 	: device.info,
+								deviceInfo 			: device.device_info,
+								poll_info 			: [],
+								sectorName: device.sector_configured_on,
+								device_name : device.sector_configured_on_device,
+								name: name,
+								filter_data 	    : {"bs_name" : name, "sector_name" : device.sector_configured_on},
+								sector_lat  		: startEndObj["startLat"],
+								sector_lon  		: startEndObj["startLon"],
+								type: "base_station_device",
+								perf_data_obj  		: perf_obj,
+								antenna_height 		: device.antenna_height
 							}
-							global_this.drawSector(sectorsPointArray, device.color, device.technology, sectorAdditionalInfo, function(sector) {
-								sectorPintsArray= sectorsPointArray;
-								global_this.sectorsLayer.addFeatures([sector]);
-								//Store CktID in an Object for later use.
-								if (!sectorsObj[device.device_info[0].value]) {
-									sectorsObj[device.device_info[0].value] = [];
-								}
-								sectorsObj[device.device_info[0].value].push(sector);
-								if (!sectorsBsObj[name]) {
-									sectorsBsObj[name] = [];
-								}
-								sectorsBsObj[name].push(sector);
-								filteredFeatures.sectors.push(sector);
 
-								sector_features_master_array.push(sector);
+							//Create deviceMarker
+							var deviceMarker = global_this.createOpenLayerVectorMarker(size, base_url+'/static/img/icons/1x1.png', lon, lat, deviceAdditionalInfo);
 
-								if (!sector_features_master_obj[name]) {
-									sector_features_master_obj[name] = [];
-								}
-								sector_features_master_obj[name].push(sector);
-								
-							});
-						});
+							if(sectorMarkerConfiguredOn.indexOf(device.sector_configured_on) == -1) {
+								main_devices_marker_features_wmaps.push(deviceMarker);
+
+								/*Push Sector marker to pollableDevices array*/
+								pollableDevices.push(deviceMarker);
+
+								wm_obj['devices']['sector_'+device.sector_configured_on] = deviceMarker;
+
+								sectorMarkerConfiguredOn.push(device.sector_configured_on);
+
+								if(wm_obj['devices'][name]) {
+									wm_obj['devices'][name].push(deviceMarker)
+								} else {
+									wm_obj['devices'][name]= [];
+									wm_obj['devices'][name].push(deviceMarker)
+								}	
+							}
+
+							/*End of Create Sector Marker*/
+							deviceIDArray.push(device['device_info'][1]['value']);
+						}
+
 					}
-
 					//substation loop
-					for (var j = 0; j < device.sub_station.length; j++) {
-						var sub_station = device.sub_station[j];
-						ip.push(sub_station.data.substation_device_ip_address);
-						cktId.push(sub_station.data.param.sub_station[3].value);
-						var sub_station_id = sub_station.id;
-						var sub_station_name = sub_station.name;
-						var sub_station_type = "sub_station";
-						var sub_station_lon = sub_station.data.lon;
-						var sub_station_lat = sub_station.data.lat;
-						var sub_station_icon = base_url+"/"+sub_station.data.markerUrl;
+					for (var k = 0; k < device.sub_station.length; k++) {
+
+						var sub_station = device.sub_station[k];
+						wm_obj.data[sub_station.name] = sub_station;
+
+						var perf_obj = { "performance_paramter" : "N/A", "performance_value" : "N/A", "frequency" : "N/A", "pl" : "N/A" };
+
 						var subStationAdditionalInfo = {
-							id: sub_station_id,
-							name: sub_station_name,
-							type: sub_station_type,
-							visible: true,
+							ptLat: sub_station.data.lat, ptLon: sub_station.data.lon, 
+							technology: device.technology,
+							pointType: "sub_station",
+							type: "sub_station",
 							dataset: sub_station.data.param.sub_station,
 							bhInfo: [],
 							poll_info: [],
-							ptLat: sub_station_lat, ptLon: sub_station_lon, 
-							pointType: sub_station_type,
-							technology: device.technology,
+							antenna_height: sub_station.data.antenna_height,
+							name: sub_station.name,
+							bs_name: name,
+							bs_sector_device :  device.sector_configured_on_device,
+							filter_data 	 :  {"bs_name" : name, "sector_name" : device.sector_configured_on, "ss_name" : sub_station.name},
 							device_name 	 : 	sub_station.device_name,
 							bs_sector_device :  device.sector_configured_on_device,
 							ss_ip 	 		 : 	sub_station.data.substation_device_ip_address,
 							sector_ip 		 :  device.sector_configured_on,
+							perf_data_obj: perf_obj
 						}
+
+						var sub_station_lon = sub_station.data.lon;
+						var sub_station_lat = sub_station.data.lat;
+						var sub_station_icon = base_url+"/"+sub_station.data.markerUrl;
+						var sub_station_name = sub_station.name
+
 						//Create marker
-						// var sub_station_marker = global_this.createOpenLayerMarker(size, sub_station_icon, sub_station_lon, sub_station_lat, subStationAdditionalInfo);
-						var sub_station_marker = global_this.createOpenLayerVectorMarker(size, sub_station_icon, sub_station_lon, sub_station_lat, subStationAdditionalInfo);
-						//Add marker to markerArray
-						markerArray.push(sub_station_marker);
-						// stationsMarkerFeaturesArray.push(sub_station_marker);
-						ssAndDeviceArray.push(sub_station_marker);
-						masterStationsArray.push(sub_station_marker);
+						sub_station_marker = global_this.createOpenLayerVectorMarker(size, sub_station_icon, sub_station_lon, sub_station_lat, subStationAdditionalInfo);
+						wm_obj.features[sub_station.name] = sub_station_marker;
+						bs_ss_features_list.push(sub_station_marker);
 
-						filteredFeatures.markers.push(sub_station_marker);
-						//Add marker to MarkerLayer
-						// global_this.markersLayer.addMarker(sub_station_marker);
-						// 
-						ss_features_master_array.push(sub_station_marker);
+						 /*Push SS marker to pollableDevices array*/
+						pollableDevices.push(sub_station_marker);
 
-						if (!ss_features_master_obj[name]) {
-							ss_features_master_obj[name] = [];
-						}
-						ss_features_master_obj[name].push(sub_station_marker);
+						var ss_info = {},
+						 	base_info = {};
+						startEndObj["nearEndLat"] = markerData.data.lat;
+						startEndObj["nearEndLon"] = markerData.data.lon;
 
-						//Store SubStations for later use.
-						if (!subStationMarkerObj[device.device_info[0].value]) {
-							subStationMarkerObj[device.device_info[0].value] = [];
-						}
-						subStationMarkerObj[device.device_info[0].value].push(sub_station_marker);
+						startEndObj["endLat"] = sub_station.data.lat;
+						startEndObj["endLon"] = sub_station.data.lon;
+						// console.log(startEndObj);
+						/*Sub station info Object*/
+						ss_info["info"] = sub_station.data.param.sub_station;
 
-						if (!ssMarkerObj[name]) {
-							ssMarkerObj[name] = [];
-						}
-						ssMarkerObj[name].push(sub_station_marker);
+						ss_info["antenna_height"] = sub_station.data.antenna_height;
+						/*Link color object*/
+						var linkColor = sub_station.data.link_color;
 
-						if (device.technology.toLowerCase() !== "p2p" && device.technology.toLowerCase() != "ptp") {
+						base_info["info"] = markerData.data.param.base_station;
+						base_info["antenna_height"] = markerData.data.antenna_height;
+
+						if(sub_station.data.show_link == 1) {
+
+							var ss_info_obj = "",
+							ss_height = 40;
+
+							if(sub_station.data.param.sub_station != undefined || sub_station.data.param.sub_station == "") {
+								ss_info_obj = sub_station.data.param.sub_station.info;
+								ss_height = sub_station.data.param.sub_station.antenna_height;
+							} else {
+								ss_info_obj = "";
+								ss_height = 40;
+							}
+
+							var bs_info_obj = "",
+							bs_height = 40;
+							if(markerData.data.param.base_station != undefined || markerData.data.param.base_station == "") {
+								bs_info_obj = markerData.data.param.base_station.info;
+								bs_height = markerData.data.param.base_station.antenna_height;
+							} else {
+								bs_info_obj = "";
+								bs_height = 40;
+							}
+
+							var sect_height="";
+							if (sect_height == undefined || sect_height == ""){
+								sect_height = 47;
+							}
 							var lineAdditionalInfo = {
 								bsname: name,
 								ssname: sub_station_name,
+								sectorName 	    : device.sector_configured_on,
 								ckt: device.circuit_id,
 								devicename: device.device_info[0].value,
 								type: "line",
@@ -1294,147 +1244,218 @@ console.log(polygonSelectedDevices);
 								ss_info: sub_station.data.param.sub_station,
 								nearLat: lat,
 								nearLon: lon,
+								sector_lat 		: startEndObj.sectorLat,
+								sector_lon 		: startEndObj.sectorLon,
+								ss_height 		: sect_height,
 								ss_lat: sub_station_lat,
+								bs_lat 			: startEndObj.startLat,
+								bs_lon 			: startEndObj.startLon,
 								ss_lon: sub_station_lon,
+								filter_data 	: {"bs_name" : name, "sector_name" : device.sector_configured_on, "ss_name" : sub_station_name},
 								filteredLine: true
 							}
 
-							var halfPt = Math.floor(sectorPintsArray.length / (+2));
+							// console.log(startEndObj);
+							var line = global_this.plotLines_wmap(startEndObj.startLon,startEndObj.startLat, startEndObj.endLon,startEndObj.endLat, linkColor, lineAdditionalInfo);
 
-							var line = global_this.drawLine(sectorPintsArray[halfPt].lon, sectorPintsArray[halfPt].lat, sub_station_lon, sub_station_lat, device.color, lineAdditionalInfo);
-							line.style.display= 'none';
+							filtered_Features.lines.push(line);
 							global_this.linesLayer.addFeatures([line]);
-
-							//Store CktID in an Object for later use.
-							if (!cktLinesObj[device.device_info[0].value]) {
-								cktLinesObj[device.device_info[0].value] = [];
-							}
-							cktLinesObj[device.device_info[0].value].push(line);
-
-							if (!cktLinesBsObj[name]) {
-								cktLinesBsObj[name] = [];
-							}
-							cktLinesBsObj[name].push(line);
-
-							line_features_master_array.push(line);
-
-							if (!line_features_master_obj[name]) {
-								line_features_master_obj[name] = [];
-							}
-							line_features_master_obj[name].push(line);
-
-						} else {
-							var lineAdditionalInfo = {
-								"bsname": name,
-								"ssname": sub_station_name,
-								"ckt": device.circuit_id,
-								devicename: device.device_info[0].value,
-								type: "line",
-								pointType: "path",
-								bs_info: markerData.data.param.base_station,
-								ss_info: sub_station.data.param.sub_station,
-								nearLat: lat,
-								nearLon: lon,
-								ss_lat: sub_station_lat,
-								ss_lon: sub_station_lon,
-								filteredLine: true
-							}
-							//Draw line between BS and SS
-							var line = global_this.drawLine(lon, lat, sub_station_lon, sub_station_lat, device.color, lineAdditionalInfo);
-							line.style.display= 'none';
-							//Add line to the LinesLayer
-							global_this.linesLayer.addFeatures([line]);
-							filteredFeatures.lines.push(line);
-
-
-							//Store CktID in an Object for later use.
-							if (!cktLinesObj[device.device_info[0].value]) {
-								cktLinesObj[device.device_info[0].value] = [];
-							}
-							cktLinesObj[device.device_info[0].value].push(line);
-
-							if (!cktLinesBsObj[name]) {
-								cktLinesBsObj[name] = [];
-							}
-							cktLinesBsObj[name].push(line);
-
-							line_features_master_array.push(line);
-
-							if (!line_features_master_obj[name]) {
-								line_features_master_obj[name] = [];
-							}
-							line_features_master_obj[name].push(line);
+							main_lines_sectors_features_wmaps.lines.push(line);
+							wm_obj.lines['line_'+sub_station.name] = line;
 						}
 					}
 				}
 			});
 			callback();
 		}
+
 		/*
-		This function start Ajax Request to get the Data.
-		@param i {Number} Current Counter of Ajax Request
-		In Success, we get how many times we need to call Ajax Request and according to that, we recurvsily call this function.
-		Also call Functions to create Marker with the data.
-		 */
-		var devicesCount=0;
+		 * This function start Ajax Request to get the Data.
+		 * @param i {Number} Current Counter of Ajax Request
+		 * In Success, we get how many times we need to call Ajax Request and according to that, we recurvsily call this function.
+		 * Also call Functions to create Marker with the data.
+		 */		
 		function startAjaxRequest(i) {
 			//Ajax Request
 			$.ajax({
-				url : base_url+"/"+"device/stats/?total_count="+devicesCount+"&page_number="+i,
+				//Url for the request
+				url : base_url+'/'+'device/stats/?total_count='+total_count+'&page_number='+i,
+				//request type
 				type: 'GET',
+				//json 
 				dataType: 'json',
 				//Success callback
 				success: function(response) {
+
 					if(response.success == 1) {
+
 						//First Time, find how many times Ajax Request is to be sent.
 						if (i === 1) {
 							total_count = response.data.meta.total_count;
-							devicesCount = total_count;
 							device_count = response.data.meta.device_count;
 							limit = response.data.meta.limit;
 
 							loop_count = Math.ceil(total_count / limit);
 						}
+
 						//Condition to check if we need to call Ajax Request again
 						if (i <= loop_count && response.success && response.data.objects.children.length) {
-							//IIFE to add Markers
-							(function(i) {
-								addMarkers(response.data.objects.children, function() {
-									//if all markers are plotted, dropdwon basicfilter, advance search and advance filter dropdowns with the markers data.
-									if (i === loop_count) {
-										disableAdvanceButton('no');
-										$("#loadingIcon").hide();
-										$("#resetFilters").button("complete");
 
-										global_this.markersVectorLayer.addFeatures(masterStationsArray);
-										global_this.markerLayerStrategy.activate();
+							bs_data_list = bs_data_list.concat(response.data.objects.children);
+							
+							//Plot markers, on callback
+							global_this.plotMarkers(response.data.objects.children, function() {
+								
+								//if all calls are completed
+								if (i === loop_count) {
 
-										wmAdvanceFilterClass = new WmAdvanceFilter(markersDataArray, bsMarkerObj, ssMarkerObj, masterStationsArray, cktLinesBsObj, sectorsBsObj);
-										wmAdvanceSearchClass = new WmAdvanceSearch(markersDataArray);
+									//hide Loading
+									global_this.hideLoading();
 
-										global_this.populateBasicFilterDropdowns();
-										return;
-									}
+									data_for_filter_wmap = bs_data_list;
+									main_devices_data_wmap = bs_data_list;
 
-									//send next request after 40 ms.
-									setTimeout(function() {
-										i++;
-										startAjaxRequest(i);
-									}, 40);
-								});
-							}(i));
+									filtered_Features.markers = bs_ss_features_list;
+
+									//add markers to the vector Layer
+									global_this.markersLayer.addFeatures(filtered_Features.markers);
+
+									//activate cluster strategy
+									global_this.markersLayerStrategy.activate();
+
+									//initiate advance filter class
+									wmAdvanceFilterClass = new WmAdvanceFilter(bs_data_list, wm_obj.features, wm_obj.features, bs_ss_features_list, cktLinesBsObj, sectorsBsObj);
+									
+									//initiate advance search class
+									wmAdvanceSearchClass = new WmAdvanceSearch(data_for_filter_wmap);
+
+									//populate basic filter dropdown
+									global_this.populateBasicFilterDropdowns();
+									// global_this.linesLayer.redraw();
+
+									//hide linesLayer by default.
+									global_this.linesLayer.display(false);
+
+									return;
+								}
+
+								//send next request after 40 ms.
+								setTimeout(function() {
+									i++;
+									//send next request
+									startAjaxRequest(i);
+								}, 40);
+							});
+
 							return ;
 						}
 					}
 				},
+				//on error, show error message
 				error: function(response) {
-					showErrorMessage('ajax call error', response);
+					$.gritter.add({
+						// (string | mandatory) the heading of the notification
+						title: 'GIS - Server Error',
+						// (string | mandatory) the text inside the notification
+						text: response.statusText,
+						// (bool | optional) if you want it to fade out on its own or just sit there
+						sticky: false
+			        });
+
+					//hide Loading
+					global_this.hideLoading();
 				}
 			});
 		}
 	/**
 	 *
-	 * End of Private Functions
+	 * End of Plotting Functions
+	 */
+
+
+	/*
+	 *
+	 * Utils Section
+	 */
+		
+		/*
+		This function removes all Features from marker, line and sector layers.
+		 */
+		this.hideAllFeatures = function() {
+			global_this.markersLayer.removeAllFeatures();
+			global_this.linesLayer.removeAllFeatures();
+			global_this.sectorsLayer.removeAllFeatures();
+		}
+
+		/*
+		This function shows all Filtered Features for marker, line and sector layers.
+		 */
+		this.showAllFeatures = function() {
+
+			global_this.markersLayer.addFeatures(main_devices_marker_features_wmaps);
+			global_this.linesLayer.addFeatures(main_lines_sectors_features_wmaps.lines);
+			global_this.sectorsLayer.addFeatures(main_lines_sectors_features_wmaps.sectors);
+			global_this.markersLayerStrategy.recluster();
+		}
+
+		/*
+		 * Update page status in the div
+		 */
+		function get_page_status() {
+			var status_txt = "";
+
+			if(hasAdvSearch == 0) {
+				//remove html element from page status
+				if($("#gis_search_status_txt").length) {
+					$("#gis_search_status_txt").remove();
+				}
+			}
+
+			//if filter is applied
+			if(hasAdvFilter == 1) {
+				status_txt+= '<li>Advance Filters Applied</li>';
+			}
+
+			//if nothing is applied
+			if(status_txt == "") {
+				status_txt += "<li>Default</li>";    
+			}
+
+			//update html
+			$("#gis_status_txt").html(status_txt);
+		}
+		/*
+		 * This function show Loading on the White Map Gui
+		*/
+		this.showLoading= function() {
+
+				//Disable Advance buttons Loading
+				disableAdvanceButton();
+
+				//Show loading
+				$("#loadingIcon").show();
+
+				//Set reset Filter button text
+				$("#resetFilters").button("loading");
+		}
+
+		/*
+		 * This function hides Loading on the White Map Gui
+		*/
+		this.hideLoading= function() {
+
+				//Enable Advance buttons Loading
+				disableAdvanceButton('no');
+
+				//hide loading
+				$("#loadingIcon").hide();
+
+				//Set reset Filter button text
+				$("#resetFilters").button("complete");
+		}
+	/*
+	 *
+	 * End of Utils Section
 	 */
 
 
@@ -1443,12 +1464,14 @@ console.log(polygonSelectedDevices);
 	* * Starts building of White Maps
 	* */
 	this.init = function() {
-		//save this as global variable within this class
+
+		//Set this
 		global_this = this;
-		disableAdvanceButton();
-		$("#loadingIcon").show();
-		$("#resetFilters").button("loading");
-		//Call prototype method createOpenLayerMap() to create White Map and in the callback, Bind Click control to map. Start Ajax Request to get Data.
+
+		//Show loading on the map
+		global_this.showLoading();
+		
+		//Call prototype method createOpenLayerMap() to create White Map and in the callback. Start Ajax Request to get Data.
 		this.createOpenLayerMap(function() {			
 			//start ajax request
 			startAjaxRequest(1);

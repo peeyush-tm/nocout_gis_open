@@ -193,7 +193,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					data_dict = {ss_host_name: []}
 			 	        q.put(data_dict)
 			 	        return
-		elif old_service in wimax_services:
+		elif str(old_service) in wimax_services:
 			filtered_ss_data =[]
 			try:
 				data_value = []	
@@ -204,7 +204,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					filtered_ss_data.extend(filtered_ss_output)
 				index = wimax_services.index(old_service)
 				for entry in filtered_ss_data:
-					data_value = entry.split('=')[1].split(',')[index]
+					value = entry.split('=')[1].split(',')[index]
+					data_value.append(value)
 					cal_ss_mac = entry.split('=')[0]
 					# MARK
 					for host_name,mac_value in ss_name_mac_mapping.items():
@@ -212,8 +213,9 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 							ss_host_name = host_name
 							break
 					data_dict = {ss_host_name:data_value}
+					data_value = []
 					q.put(data_dict)
-							
+			         			
 			except Exception, e:
 			 	logger.error('Empty check_output: ' + pformat(e))
 				for host_name,mac_value in ss_name_mac_mapping.items():
