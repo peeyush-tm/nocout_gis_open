@@ -12,6 +12,7 @@ from user_group.models import UserGroup
 from django.forms.util import ErrorList
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, CircuitL2Report
 from django.utils.html import escape
+from nocout.utils import logged_in_user_organizations
 import logging
 logger = logging.getLogger(__name__)
 
@@ -144,6 +145,7 @@ class AntennaForm(forms.ModelForm):
     reflector = forms.TypedChoiceField(choices=REFLECTOR, required=False)
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(AntennaForm, self).__init__(*args, **kwargs)
         self.fields['height'].initial = 0
         self.fields['azimuth_angle'].initial = 0
@@ -156,6 +158,15 @@ class AntennaForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            organization = self.request.user.userprofile.organization
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+        else:
+            self.fields['organization'].widget.choices = self.fields['organization'].choices
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -242,6 +253,7 @@ class BackhaulForm(forms.ModelForm):
     dr_site = forms.TypedChoiceField(choices=DR_SITE, initial='No', required=False)
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(BackhaulForm, self).__init__(*args, **kwargs)
         self.fields['bh_configured_on'].empty_label = 'Select'
         self.fields['bh_switch'].empty_label = 'Select'
@@ -254,6 +266,15 @@ class BackhaulForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            organization = self.request.user.userprofile.organization
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+        else:
+            self.fields['organization'].widget.choices = self.fields['organization'].choices
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -279,6 +300,11 @@ class BackhaulForm(forms.ModelForm):
         Meta Information
         """
         model = Backhaul
+        fields = (
+            'name', 'alias', 'organization', 'bh_configured_on', 'bh_port_name', 'bh_port', 'bh_type', 'bh_switch', 'switch_port_name',
+            'switch_port', 'pop', 'pop_port_name', 'pop_port', 'aggregator', 'aggregator_port_name', 'aggregator_port', 'pe_hostname',
+            'pe_ip', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity', 'ttsl_circuit_id', 'dr_site', 'description',
+        )
 
     def clean_name(self):
         """
@@ -340,6 +366,7 @@ class BaseStationForm(forms.ModelForm):
     bs_site_type = forms.TypedChoiceField(choices=BS_SITE_TYPE, required=False)
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(BaseStationForm, self).__init__(*args, **kwargs)
         self.fields['bs_switch'].empty_label = 'Select'
         self.fields['backhaul'].empty_label = 'Select'
@@ -363,6 +390,15 @@ class BaseStationForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            organization = self.request.user.userprofile.organization
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+        else:
+            self.fields['organization'].widget.choices = self.fields['organization'].choices
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -388,6 +424,12 @@ class BaseStationForm(forms.ModelForm):
         Meta Information
         """
         model = BaseStation
+
+        fields = (
+            'name', 'alias', 'organization', 'bs_site_id', 'bs_site_type', 'bs_switch', 'backhaul', 'bh_port_name', 'bh_port',
+            'bh_capacity', 'bs_type', 'bh_bso', 'hssu_used', 'latitude', 'longitude', 'infra_provider', 'gps_type',
+            'building_height', 'tower_height', 'country', 'state', 'city', 'address', 'description',
+        )
 
     def clean_name(self):
         """
@@ -441,6 +483,7 @@ class SectorForm(forms.ModelForm):
     dr_site = forms.TypedChoiceField(choices=DR_SITE, initial='No', required=False)
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(SectorForm, self).__init__(*args, **kwargs)
         self.fields['base_station'].empty_label = 'Select'
         self.fields['bs_technology'].empty_label = 'Select'
@@ -456,6 +499,15 @@ class SectorForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            organization = self.request.user.userprofile.organization
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+        else:
+            self.fields['organization'].widget.choices = self.fields['organization'].choices
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -481,6 +533,12 @@ class SectorForm(forms.ModelForm):
         Meta Information
         """
         model = Sector
+
+        fields = (
+            'name', 'alias', 'organization', 'sector_id', 'base_station', 'bs_technology', 'sector_configured_on', 'sector_configured_on_port', 'antenna',
+            'dr_site', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency',
+            'modulation', 'description',
+        )
 
     def clean_name(self):
         """
@@ -511,14 +569,15 @@ class SectorForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-        
-        
+
+
 #************************************* Customer ***************************************
 class CustomerForm(forms.ModelForm):
     """
         Class Based View Customer Model form to update and create.
     """
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(CustomerForm, self).__init__(*args, **kwargs)
 
         try:
@@ -526,6 +585,15 @@ class CustomerForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            organization = self.request.user.userprofile.organization
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+        else:
+            self.fields['organization'].widget.choices = self.fields['organization'].choices
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -575,8 +643,8 @@ class CustomerForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-        
-        
+
+
 #*********************************** Sub Station *************************************
 class SubStationForm(forms.ModelForm):
     """
@@ -599,6 +667,7 @@ class SubStationForm(forms.ModelForm):
     ethernet_extender = forms.TypedChoiceField(choices=ETHERNET_EXTENDER, required=False)
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request',None)
         super(SubStationForm, self).__init__(*args, **kwargs)
         self.fields['tower_height'].initial = 0
         self.fields['building_height'].initial = 0
@@ -622,6 +691,15 @@ class SubStationForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            organization = self.request.user.userprofile.organization
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+        else:
+            self.fields['organization'].widget.choices = self.fields['organization'].choices
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -647,6 +725,11 @@ class SubStationForm(forms.ModelForm):
         Meta Information
         """
         model = SubStation
+        fields = (
+            'name', 'alias', 'organization', 'device', 'antenna', 'version', 'serial_no', 'building_height', 'tower_height',
+            'ethernet_extender', 'cable_length', 'latitude', 'longitude', 'mac_address', 'country', 'state', 'city',
+            'address', 'description',
+        )
 
     def clean_name(self):
         """
@@ -677,8 +760,8 @@ class SubStationForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-        
-        
+
+
 #*********************************** Circuit ***************************************
 class CircuitForm(forms.ModelForm):
     """
@@ -689,6 +772,7 @@ class CircuitForm(forms.ModelForm):
                                          required=False, widget=forms.widgets.DateInput(format="%m/%d/%Y", attrs={'class': 'datepicker'}))
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(CircuitForm, self).__init__(*args, **kwargs)
         self.fields['sector'].empty_label = 'Select'
         self.fields['customer'].empty_label = 'Select'
@@ -700,6 +784,15 @@ class CircuitForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            organization = self.request.user.userprofile.organization
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+        else:
+            self.fields['organization'].widget.choices = self.fields['organization'].choices
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -725,6 +818,11 @@ class CircuitForm(forms.ModelForm):
         Meta Information
         """
         model = Circuit
+        fields = (
+            'name', 'alias', 'organization', 'circuit_type', 'circuit_id', 'sector', 'customer', 'sub_station', 'qos_bandwidth',
+            'dl_rssi_during_acceptance', 'dl_cinr_during_acceptance', 'jitter_value_during_acceptance', 'throughput_during_acceptance', 'date_of_acceptance', 'description',
+        )
+
 
     def clean_name(self):
         """
@@ -821,7 +919,7 @@ class CircuitL2ReportForm(forms.ModelForm):
             logger.info(e.message)
         if names.count() > 0:
             raise ValidationError('This name is already in use.')
-        
+
         return name
 
 
@@ -888,8 +986,8 @@ class IconSettingsForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-        
-        
+
+
 #*********************************** LivePollingSettings ***************************************
 class LivePollingSettingsForm(forms.ModelForm):
     """

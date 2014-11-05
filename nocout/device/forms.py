@@ -11,6 +11,7 @@ from device.models import DeviceTypeFields
 # commented because of goes package is not supported for python 2.7 on centos 6.5
 from functools import partial
 from django.forms.util import ErrorList
+from nocout.utils import logged_in_user_organizations
 import re
 import logging
 logger = logging.getLogger(__name__)
@@ -40,6 +41,8 @@ class DeviceForm(forms.ModelForm):
     #longitude = forms.CharField( widget=forms.TextInput(attrs={'type':'text'}))
 
     def __init__(self, *args, **kwargs):
+
+        self.request=kwargs.pop('request', None)
         # setting foreign keys field label
         self.base_fields['site_instance'].label = 'Site Instance'
         self.base_fields['machine'].label = 'Machine'
@@ -55,9 +58,15 @@ class DeviceForm(forms.ModelForm):
             logger.info(e.message)
         initial = kwargs.setdefault('initial', {})
 
+
         super(DeviceForm, self).__init__(*args, **kwargs)
 
+
         # setting select menus default values which is by default '---------'
+        if not self.request is None:
+            self.fields['organization'].queryset = logged_in_user_organizations(self)
+        else:
+            self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].empty_label = "Select"
         self.fields['parent'].empty_label = "Select"

@@ -70,5 +70,19 @@
                 trigger: 'focus'
             });
         });
+
+        $("#id_organization").change(function () {
+
+            Dajaxice.inventory.update_sector_configured_on(Dajax.process, {'option': $('#id_organization').val()});
+            $("#id_sector_configured_on").val("");
+            $("#id_sector_configured_on").parent().children().find('a span')[0].innerHTML = "Select";
+        });
+
+        $("#id_organization").change(function () {
+
+            Dajaxice.inventory.update_base_station(Dajax.process, {'option': $('#id_organization').val()});
+            $("#id_base_station").val("");
+            $("#id_base_station").parent().children().find('a span')[0].innerHTML = "Select";
+        });
     </script>
 {% endblock %}

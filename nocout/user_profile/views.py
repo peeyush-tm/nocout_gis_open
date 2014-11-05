@@ -1,11 +1,13 @@
 import json
 import pickle
+
 from django.contrib.auth.models import Group
 from django.db.models.query import ValuesQuerySet
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin, BaseUpdateView
 from django.core.urlresolvers import reverse_lazy
+from mptt.forms import TreeNodeChoiceField
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from user_profile.models import UserProfile, Roles
 from organization.models import Organization
@@ -200,7 +202,7 @@ class UserArchivedListingTable(BaseDatatableView):
             archieve_query = ", is_deleted = 1"
             exec_query += " | ".join(query) + archieve_query + ", organization__in = %s)"%organization_descendants_ids + \
                           ".values(*"+str(self.columns+['id'])+")"
-           
+
             exec exec_query
 
         return qs
@@ -506,8 +508,9 @@ def organisation_user_list(request):
     """
     if request.is_ajax():
         parent_list = UserProfile.objects.filter(organization__id=request.GET['organisation_id'])
+        user_tree_choice_field = TreeNodeChoiceField(queryset=parent_list)
         ctx_dict = {
-                'parent_list': parent_list,
+                'user_choices': user_tree_choice_field.choices,
             }
         # get the user list in the html <option> format.
         parent_list_option = render_to_string('user_profile/parent_list_option.html', ctx_dict)
