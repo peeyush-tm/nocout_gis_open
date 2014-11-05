@@ -76,6 +76,27 @@
 
             /*Initialize Datepicker*/
 			$(".datepicker").datepicker();
-        })
+        });
+
+        $("#id_organization").change(function () {
+
+            Dajaxice.inventory.update_sector(Dajax.process, {'option': $('#id_organization').val()});
+            $("#id_sector").val("");
+            $("#id_sector").parent().children().find('a span')[0].innerHTML = "Select";
+            });
+
+            $("#id_organization").change(function () {
+
+            Dajaxice.inventory.update_customer(Dajax.process, {'option': $('#id_organization').val()});
+            $("#id_customer").val("");
+            $("#id_customer").parent().children().find('a span')[0].innerHTML = "Select";
+            });
+
+            $("#id_organization").change(function () {
+
+            Dajaxice.inventory.update_sub_station(Dajax.process, {'option': $('#id_organization').val()});
+            $("#id_sub_station").val("");
+            $("#id_sub_station").parent().children().find('a span')[0].innerHTML = "Select";
+            });
     </script>
 {% endblock %}
