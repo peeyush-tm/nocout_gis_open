@@ -1,3 +1,4 @@
+import re
 import ast
 import copy
 from operator import itemgetter
@@ -381,7 +382,7 @@ class AntennaListingTable(BaseDatatableView):
         """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        
+
         for dct in qs:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_antenna'):
@@ -480,6 +481,14 @@ class AntennaUpdate(UpdateView):
 
     def get_queryset(self):
         return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(AntennaUpdate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -619,7 +628,7 @@ class BaseStationListingTable(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         return BaseStation.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
-       
+
 
     def prepare_results(self, qs):
         """
@@ -735,6 +744,14 @@ class BaseStationUpdate(UpdateView):
 
     def get_queryset(self):
         return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(BaseStationUpdate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -1006,6 +1023,14 @@ class BackhaulUpdate(UpdateView):
     def get_queryset(self):
         return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
 
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(BackhaulUpdate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1138,7 +1163,7 @@ class SectorListingTable(BaseDatatableView):
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            exec_query += " | ".join(query) 
+            exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
@@ -1150,7 +1175,7 @@ class SectorListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        
+
         return Sector.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
     def prepare_results(self, qs):
         """
@@ -1269,6 +1294,14 @@ class SectorUpdate(UpdateView):
 
     def get_queryset(self):
         return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(SectorUpdate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -1510,6 +1543,14 @@ class CustomerUpdate(UpdateView):
 
     def get_queryset(self):
         return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(CustomerUpdate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -1775,6 +1816,14 @@ class SubStationUpdate(UpdateView):
 
     def get_queryset(self):
         return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(SubStationUpdate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -2138,6 +2187,14 @@ class CircuitUpdate(UpdateView):
 
     def get_queryset(self):
         return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(CircuitUpdate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -3162,20 +3219,33 @@ class ThematicSettingsListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            threshold_config = ThresholdConfiguration.objects.get(id=int(dct['threshold_template']))
             image_string, range_text, full_string='','',''
             if dct['icon_settings'] and dct['icon_settings'] !='NULL':
                 ###@nishant-teatrix. PLEASE SHOW THE RANGE MIN < ICON < RANGE MAX
                 for d in eval(dct['icon_settings']):
                     img_url = str("/media/"+ (d.values()[0]) if "uploaded" in d.values()[0] else static("img/" + d.values()[0]))
                     image_string= '<img src="{0}" style="height:25px; width:25px">'.format(img_url.strip())
-                    range_text= ' Range '+ d.keys()[0][-1] +', '
-                    full_string+= image_string + range_text + "</br>"
+                    range_id_groups = re.match(r'[a-zA-Z_]+(\d+)', d.keys()[0])
+                    if range_id_groups:
+                        range_id = range_id_groups.groups()[-1]
+                        range_text= ' Range '+ range_id +', '
+                        range_start = 'range' + range_id +'_start'
+                        range_end = 'range' + range_id +'_end'
+                        range_start_value = getattr(threshold_config, range_start)
+                        range_end_value = getattr(threshold_config, range_end)
+                    else:
+                        range_text = ''
+                        range_start_value = ''
+                        range_end_value = ''
+
+                    full_string += image_string + range_text + "(" + range_start_value + ", " + range_end_value + ")" + "</br>"
             else:
                 full_string='N/A'
             user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user_profile.values_list('id', flat=True)
             checkbox_checked_true='checked' if user_current_thematic_setting else ''
             dct.update(
-                threshold_template=ThresholdConfiguration.objects.get(id=int(dct['threshold_template'])).name,
+                threshold_template=threshold_config.name,
                 icon_settings= full_string,
                 user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
                 actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\

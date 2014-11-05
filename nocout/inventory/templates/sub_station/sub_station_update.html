@@ -61,6 +61,19 @@
                 placement: 'right',
                 trigger: 'focus'
             });
-        })
+        });
+        $("#id_organization").change(function () {
+
+            Dajaxice.inventory.update_device(Dajax.process, {'option': $('#id_organization').val()});
+            $("#id_device").val("");
+            $("#id_device").parent().children().find('a span')[0].innerHTML = "Select";
+        });
+
+        $("#id_organization").change(function () {
+
+            Dajaxice.inventory.update_antenna(Dajax.process, {'option': $('#id_organization').val()});
+            $("#id_antenna").val("");
+            $("#id_antenna").parent().children().find('a span')[0].innerHTML = "Select";
+        });
     </script>
 {% endblock %}

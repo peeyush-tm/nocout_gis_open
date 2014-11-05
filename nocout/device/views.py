@@ -777,7 +777,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-   
+
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -1594,6 +1594,14 @@ class DeviceUpdate(UpdateView):
 
     def get_queryset(self):
         return Device.objects.filter(organization__in=logged_in_user_organizations(self))
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(DeviceUpdate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
