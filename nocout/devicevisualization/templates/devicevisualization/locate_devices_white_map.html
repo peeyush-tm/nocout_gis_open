@@ -3,12 +3,13 @@
     <li>Network Maps</li>
     <li>White Background</li>
 {% endblock %}
-{% block content_title %}Google Maps{% endblock %}
+{% block content_title %}White Background{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
+    <link rel="stylesheet" type="text/css" href={% static "js/OpenLayers/theme/fullscreen.css" %}>
     <!-- <link rel="stylesheet" type="text/css" href={% static "js/OpenLayers/style.css" %}> -->
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css"
@@ -194,8 +195,8 @@
                 <div class="col-md-12">
                     <ul class="list-unstyled list-inline">
                         <li>
-                            <input type="text" name="google_loc_search" id="google_loc_search" class="form-control col-xs-1" style="width:278px;"
-                                   placeholder="Location Search">
+                            <input type="text" name="google_loc_search" id="google_loc_search2" class="form-control col-xs-1" style="width:278px;"
+                                   placeholder="Location Search" disabled>
                         </li>
                         <li>
                             <input type="text" name="lat_lon_search" onkeypress="return isLatLon(event);" id="lat_lon_search" class="form-control col-xs-1" style="width:175px;"
@@ -203,31 +204,31 @@
                         </li>
                         <li>
                             <!--technology Filter-->
-                            <select name="technology" id="technology" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
+                            <select name="technology" id="technology" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select Technology</option>
                             </select>
                         </li>
                         <li>
                             <!--vendor Filter-->
-                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
+                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select Vendor</option>
                             </select>
                         </li>
                         <li>
                             <!--State Filter-->
-                            <select name="state" id="state" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
+                            <select name="state" id="state" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select State</option>
                             </select>
                         </li>
                         <li>
                             <!--City Filter-->
-                            <select name="city" id="city" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
+                            <select name="city" id="city" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select City</option>
                             </select>
                         </li>
                         <li>
                             <!--Reset Button-->
-                            <button type="button" class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" onclick="whiteMapClass.resetBasicFilter();"
+                            <button type="button" class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters"
                                     data-complete-text="<i class='fa fa-refresh'></i> Reset"
                                     data-loading-text="Please Wait...">
                                 <i class="fa fa-refresh">&nbsp;</i> Reset
@@ -243,7 +244,7 @@
         <div class='box-body' style="position:relative">
 
             <!--Map Container Start-->
-            <div id="deviceMap"></div>
+            <div id="wmap_container"></div>
             <!--Map Container End-->
         <!--SideInfo Panel Start-->
         <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:999;">
@@ -312,7 +313,8 @@
     <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
     <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>
     <script type="text/javascript" src={% static "js/OpenLayers/OpenLayers.js" %}></script>
-
+    <script src="https://raw.github.com/neovov/Fullscreen-API-Polyfill/master/fullscreen-api-polyfill.js"></script>
+    <script type="text/javascript" src={% static "js/OpenLayers/FullScreen.js" %}></script>
 
     <script type="text/javascript" src={% static "js/wm/wm_utilities.js" %}></script>
     <script type="text/javascript" src={% static "js/wm/wm_configuration.js" %}></script>

@@ -1,7 +1,6 @@
-var ccpl_map, base_url,
-	main_devices_data_wmap= [],
-	wm_obj = {'features': {}, 'data': {}, 'devices': {}, 'lines': {}, 'sectors': {}};
+var ccpl_map, base_url, main_devices_data_wmap= [], wm_obj = {'features': {}, 'data': {}, 'devices': {}, 'lines': {}, 'sectors': {}};
 var data_for_filter_wmap = []
+var state_city_obj= {}, all_cities_array= [], tech_vendor_obj= {}, all_vendor_array= [], sectorMarkerConfiguredOn= [], sectorMarkersMasterObj = {};
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
 	base_url = window.location.origin;
@@ -56,7 +55,6 @@ function WhiteMapClass() {
 		var main_devices_marker_features_wmaps = [], filtered_lines_main_devices_marker_features_wmaps= [];
 		var main_lines_sectors_features_wmaps= {'lines': [], 'sectors': []}, filtered_lines_sectors_features = [];
 
-		var state_city_obj= {}, all_cities_array= [], tech_vendor_obj= {}, all_vendor_array= [], sectorMarkerConfiguredOn= [], sectorMarkersMasterObj = {};
 
 		var pollableDevices = [];
 		var polled_devices_names= [];
@@ -635,9 +633,6 @@ function WhiteMapClass() {
 		this.applyAdvanceFilter = function(appliedFilterData) {
 
 			data_for_filter_wmap= [];
-			
-			//reset basic filters
-			this.resetBasicFilter();
 
 			//set data for filter
 			data_for_filter_wmap = appliedFilterData.data_for_filters;
@@ -663,12 +658,13 @@ function WhiteMapClass() {
 			//rescluster the strategy
 			global_this.markersLayerStrategy.recluster();
 
-			//set adv filter 1
-			hasAdvFilter= 1;
 			//update page status
 			get_page_status();
 
 			this.toggleLineLayer();
+
+			/*Enable Reset Button*/
+			$("#resetFilters").button("complete");
 		}
 
 		/*
@@ -762,6 +758,8 @@ function WhiteMapClass() {
 		This function applies Basic Filter
 		 */
 		this.applyBasicFilter = function() {
+
+			var filterArray = gmap_self.makeFiltersArray('white_background');
 
 			var technologyValue = $("#technology").val(), vendorValue = $("#vendor").val(), stateValue = $("#state").val(), cityValue = $("#city").val();
 			
@@ -865,70 +863,7 @@ function WhiteMapClass() {
 		This function populates basic filter dropdowns
 		 */
 		this.populateBasicFilterDropdowns = function() {
-
-			/*Populate City & State*/
-			var state_array = Object.keys(state_city_obj);
-
-			var state_option = "";
-			state_option = "<option value=''>Select State</option>";
-
-			for(var i=0;i<state_array.length;i++) {
-				state_option += "<option value='"+i+1+"'>"+state_array[i]+"</option>";
-			}
-
-			$("#state").html(state_option);
-
-			var city_option = "";
-			city_option = "<option value=''>Select City</option>";
-
-			for(var i=0;i<all_cities_array.length;i++) {
-				city_option += "<option value='"+i+1+"'>"+all_cities_array[i]+"</option>";
-			}
-
-			$("#city").html(city_option);
-
-			/*Populate Technology & Vendor*/
-			var technology_array = Object.keys(tech_vendor_obj);
-
-			var tech_option = "";
-			tech_option = "<option value=''>Select Technology</option>";
-
-			for(var i=0;i<technology_array.length;i++) {
-				tech_option += "<option value='"+technology_array[i]+"'>"+technology_array[i]+"</option>";
-			}
-
-			$("#technology").html(tech_option);
-			// $("#polling_tech").html(tech_option);
-
-			var vendor_option = "";
-			vendor_option = "<option value=''>Select Vendor</option>";
-
-			for(var i=0;i<all_vendor_array.length;i++) {
-				vendor_option += "<option value='"+i+1+"'>"+all_vendor_array[i]+"</option>";
-			}
-
-			$("#vendor").html(vendor_option);
-
-			/*Ajax call for Live polling technology data*/
-			$.ajax({
-				url : base_url+"/"+"device/filter/",
-				// url : "../../static/filter_data.json",
-				success : function(result) {
-					var techData = JSON.parse(result).data.objects.technology.data;
-
-					/*Populate technology dropdown*/
-					var techOptions = "<option value=''>Select Technology</option>";
-					$.grep(techData,function(tech) {
-						if(technology_array.indexOf(tech.value) >= 0) {
-							techOptions += "<option value='"+tech.id+"'>"+tech.value.toUpperCase()+"</option>";
-						}
-					});
-					$("#polling_tech").html(techOptions);
-				},
-				error : function(err) {
-					// console.log(err.statusText);
-				}
-			});
+			gmap_self.getBasicFilters();
 		}
 
 		/*
@@ -1413,7 +1348,7 @@ function WhiteMapClass() {
 		 */
 		this.showAllFeatures = function() {
 
-			global_this.markersLayer.addFeatures(main_devices_marker_features_wmaps);
+			global_this.markersLayer.addFeatures(bs_ss_features_list);
 			global_this.linesLayer.addFeatures(main_lines_sectors_features_wmaps.lines);
 			global_this.sectorsLayer.addFeatures(main_lines_sectors_features_wmaps.sectors);
 			global_this.markersLayerStrategy.recluster();
