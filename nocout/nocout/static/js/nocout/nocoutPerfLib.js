@@ -324,7 +324,6 @@ function nocoutPerfLib() {
             tomorowDate.setFullYear(date.getFullYear());
             tomorowDate.setMonth(date.getMonth());
             tomorowDate.setDate(date.getDate() + 1);
-            // console.log(tomorowDate);
             return tomorowDate;
         }
 
@@ -340,9 +339,9 @@ function nocoutPerfLib() {
 
         function getDateInEpochFormat(date, time) {
 
-            var split_time = time.split(":");
-            var new_date = moment(date).add(split_time[0], 'h').add(split_time[1], 'm').add(split_time[2], 's');
-            new_date = new_date.toDate();
+            // var split_time = time.split(":");
+            // var new_date = moment(date).add(split_time[0], 'h').add(split_time[1], 'm').add(split_time[2], 's');
+            new_date = new Date(date);
             return (new_date.getTime()) / 1000;
         }
 
@@ -486,26 +485,26 @@ function nocoutPerfLib() {
 
         var firstDayTime = "", lastDayTime = "";
 
-        function sendAjax(ajax_start_date, ajax_end_date, firstDay) {
+        function sendAjax(ajax_start_date, ajax_end_date, day) {
             if (!(ajax_start_date && ajax_end_date)) {
                 hideSpinner();
                 return;
             }
-            var startTime = "00:00:00";
-            var endTime = "23:59:59";
-            if (ajax_start_date === ajax_end_date) {
-                endTime = lastDayTime;
-            }
+            var moment1 = moment(ajax_start_date);
+            var moment2 = moment(ajax_end_date);
 
-            if (firstDay) {
-                startTime = firstDayTime;
+            var end_Date = "";
+            if(moment1.date() === moment2.date() && moment1.dayOfYear() === moment2.dayOfYear()) {
+                end_Date = moment(ajax_end_date).toDate();
+            } else {
+                end_Date = moment(ajax_start_date).endOf('day').toDate();
             }
-
+            
             $.ajax({
                 url: get_url,
                 data: {
-                    'start_date': getDateInEpochFormat(ajax_start_date, startTime),
-                    'end_date': getDateinStringFormat(ajax_start_date) + ' ' + endTime
+                    'start_date': getDateInEpochFormat(ajax_start_date),
+                    'end_date': getDateInEpochFormat(end_Date)
                 },
                 type: "GET",
                 dataType: "json",
@@ -534,9 +533,25 @@ function nocoutPerfLib() {
                     }
 
                     if ($.trim(ajax_start_date) && $.trim(ajax_end_date) && (ajax_start_date < ajax_end_date)) {
-                        timeInterval = setTimeout(function () {
-                            sendAjax(getTomorrowDate(ajax_start_date), ajax_end_date);
-                        }, 200);
+
+                        if(moment1.date() === moment2.date() && moment1.dayOfYear() === moment2.dayOfYear()) {
+                            if ($('#' + service_id + '_chart').highcharts()) {
+                                $('#' + service_id + '_chart').highcharts().redraw();
+                            }
+                            if (chart_instance == "" && $("#other_perf_table").length == 0) {
+                                $('#' + service_id + '_chart').html(result.message);
+                            }
+                            hideSpinner();
+                        } else {
+                            // ajax_start_date = moment(ajax_start_date).startOf('day').toDate();
+                            var nextDay = moment(ajax_start_date).add(1, 'd');
+                            var ohayoo = nextDay.startOf('day');
+                            timeInterval = setTimeout(function () {
+                                (function(ohayoo) {
+                                    sendAjax(ohayoo.toDate(), ajax_end_date);
+                                })(ohayoo);                            
+                            }, 400);
+                        }
                     } else {
                         if ($('#' + service_id + '_chart').highcharts()) {
                             $('#' + service_id + '_chart').highcharts().redraw();
@@ -551,15 +566,18 @@ function nocoutPerfLib() {
         }
 
         if (start_date && end_date) {
-            var js_start_date = getDate(start_date.split("%20")[0]);
-            var js_start_time = start_date.split("%20")[1];
-            firstDayTime = js_start_time.split("%3A");
-            firstDayTime = firstDayTime[0] + ":" + firstDayTime[1] + ":" + firstDayTime[2];
-            var js_end_date = getDate(end_date.split("%20")[0]);
-            var js_end_time = start_date.split("%20")[1];
-            lastDayTime = js_end_time.split("%3A");
-            lastDayTime = lastDayTime[0] + ":" + lastDayTime[1] + ":" + lastDayTime[2];
-            sendAjax(js_start_date, js_end_date, 'first');
+
+            start_date = new Date(start_date*1000);
+            end_date = new Date(end_date*1000);
+            // var js_start_date = getDate(start_date.split("%20")[0]);
+            // var js_start_time = start_date.split("%20")[1];
+            // firstDayTime = js_start_time.split("%3A");
+            // firstDayTime = firstDayTime[0] + ":" + firstDayTime[1] + ":" + firstDayTime[2];
+            // var js_end_date = getDate(end_date.split("%20")[0]);
+            // var js_end_time = start_date.split("%20")[1];
+            // lastDayTime = js_end_time.split("%3A");
+            // lastDayTime = lastDayTime[0] + ":" + lastDayTime[1] + ":" + lastDayTime[2];
+            sendAjax(start_date, end_date, 'first');
         } else {
             sendAjax('', '');
         }

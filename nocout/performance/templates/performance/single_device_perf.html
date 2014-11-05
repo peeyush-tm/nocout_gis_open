@@ -458,8 +458,10 @@
                     var myStartDate = startDate.toDate(), myEndDate = endDate.toDate();
                     var myStartTime = myStartDate.getTime()/1000.0;
                     var myEndTime = myEndDate.getTime()/1000.0;
-                    // var myStartDate = moment(startDate).format("DD-MM-YYYY HH:mm:ss");
-                    // var myEndDate =  moment(endDate).format("DD-MM-YYYY HH:mm:ss");
+                    // alert(startDate, endDate, myStartTime, myEndTime);
+
+
+                    
                     window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent(myStartTime)
                             + '&end_date=' + encodeURIComponent(myEndTime);
                 } else {
@@ -622,7 +624,7 @@
 
             $('#reservationtime').daterangepicker(
                 {
-                    timePicker: true, timePickerIncrement: 30, 
+                    timePicker: true, timePickerIncrement: 60, 
                     // format: 'd/m/Y H:M:S' ,
                     opens: "left",
                     showDropdowns: true,
