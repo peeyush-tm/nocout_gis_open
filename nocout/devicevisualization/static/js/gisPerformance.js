@@ -253,6 +253,7 @@ function GisPerformance() {
             	var sector_perf_val = "",
                     halfPt = "",
                     polyPathArray = [],
+                    polyPointsArray = [],
             	    new_line_path = [],
                     radius = bsMarkerObject["child_ss"][i].radius,
                     azimuth = bsMarkerObject["child_ss"][i].azimuth_angle,
@@ -267,7 +268,7 @@ function GisPerformance() {
                     /*If polygon exists*/
                     if(sector_poly_marker) {
                         if(sector_color) {
-                            sector_poly_marker.setOptions({fillColor: lineColor});
+                            sector_poly_marker.setOptions({fillColor: sector_color});
                         }
 
                         //Update color for Sector POly.
@@ -351,7 +352,7 @@ function GisPerformance() {
                         //If both sector Poly and line Color is defined
                         if (sector_poly_marker) {
                             /*Line path*/
-                            if(polyPointsArray) {
+                            if(polyPointsArray.length > 0) {
                                 new_line_path = [new google.maps.LatLng(polyPointsArray[halfPt].lat,polyPointsArray[halfPt].lon),new google.maps.LatLng(googlePolyLine.ss_lat,googlePolyLine.ss_lon)];
                                 if(new_line_path.length > 0) {
                                     googlePolyLine.setOptions({"bs_lat" : polyPointsArray[halfPt].lat,"bs_lon" : polyPointsArray[halfPt].lon});
@@ -365,13 +366,14 @@ function GisPerformance() {
                     var subStationIcon = this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 
                     //Get subStation Name
-                    var subStationName = bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"];
+                    var subStationName = bsMarkerObject['child_ss'][i]['sub_station'][j]["name"];
                     //Get subStation Marker
-                    var subStationMarker = markersMasterObj['SSNamae'][subStationName];
+                    // var subStationMarker = markersMasterObj['SSNamae'][subStationName];
+                    var subStationMarker = allMarkersObject_gmap['ss_'+subStationName];
 
                     var polled_info = this.calculatePerformanceValue("device_info", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 
-                    subStationMarker.hasPerf = 1;
+                    // subStationMarker.hasPerf = 1;
 
                     var existing_index = -1;
                     for (var x = 0; x < labelsArray.length; x++) {
@@ -451,9 +453,26 @@ function GisPerformance() {
                     //If substation icon is present
                     if (subStationIcon) {
                         //Update icon, oldIcon and clusterIcon for the SubStation Marker
-                        subStationMarker.setIcon(createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
-                        subStationMarker.oldIcon = (createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
-                        subStationMarker.clusterIcon = (createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
+                        var largeur= 32,
+                            hauteur= 37,
+                            divideBy= 1,
+                            anchorX= 0,
+                            iconUrl = base_url+"/"+subStationIcon;
+
+                        var old_icon_obj = new google.maps.MarkerImage(
+                            iconUrl,
+                            new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+                            new google.maps.Point(0, 0),
+                            new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+                            new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
+                        );
+
+                        //Update icon, oldIcon and clusterIcon for the SubStation Marker
+                        subStationMarker.setOptions({
+                            "icon" : old_icon_obj,
+                            "oldIcon" : old_icon_obj,
+                            "clusterIcon" : old_icon_obj
+                        });
                     }
                 }
 
