@@ -260,7 +260,7 @@ function nocoutPerfLib() {
                             $("#other_perf_table").remove();
                             $("#perf_data_table").remove();
 // console.log(e);
-                            $.cookie('activeTabId', e.target.id);
+                            // $.cookie('activeTabId', e.target.id);
 
                             perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
 
@@ -297,7 +297,21 @@ function nocoutPerfLib() {
                     chart_instance = "";
                     $("#other_perf_table").remove();
                     $("#perf_data_table").remove();
-                    perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
+                    /*Get Last opened tab id from cookie*/
+                    var parent_tab_id = $.cookie('parent_tab_id');
+                    if(parent_tab_id) {
+                        $('#'+parent_tab_id).trigger('click');
+                    } else {
+                        perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
+                    }
+
+                    // var tab_id = $.cookie('activeTabId');
+                    // console.log(tab_id);
+                    // if(tab_id) {
+                    //     $("#"+tab_id).trigger('click');
+                    // } else {
+                        // perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
+                    // }
                 }
             }
         });
@@ -313,7 +327,7 @@ function nocoutPerfLib() {
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
 
-        
+        $.cookie('activeTabId', service_id+"_tab", {path: '/', secure : true});        
 
         var base_url = "",
             start_date = "",
