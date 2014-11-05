@@ -213,8 +213,22 @@ $("#goFullScreen").click(function() {
             var bb= $("#page_content_div .box-title").height();
             var cc= $("#page_header_container").height();
 
-            if($("#deviceMap").length) {
-                /*Remove padding & margin*/
+            if(window.location.pathname.indexOf("googleEarth") > -1) {
+             
+            } else if (window.location.pathname.indexOf("white_background") > -1) {
+
+                $("#content").addClass("zero_padding_margin");
+                $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
+
+                /*Set width-height for map div in fullscreen*/
+                var mapDiv = $("#wmap_container");
+                mapDiv.attr('style', 'width: 100%; height:'+ screen.height+ 'px');
+                // mapDiv.attr('style', 'height: 100%;');
+                // mapDiv.style.width = "100%";
+                // mapDiv.style.height = screen.height+"px";
+                $("#content").css("min-height","200px");
+            } else {
+                   /*Remove padding & margin*/
                 $("#content").addClass("zero_padding_margin");
                 $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
 
@@ -242,10 +256,32 @@ $("#goFullScreen").click(function() {
                 mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(showControlDiv);
                 $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Exit Full Screen');
             }
+
+
         } else {
             exitFullscreen();
-            if($("#deviceMap").length) {
+            if(window.location.pathname.indexOf("googleEarth") > -1) {
+             
+            } else if (window.location.pathname.indexOf("white_background") > -1) {
                 showControlDiv= "";
+                $("#content").removeClass("zero_padding_margin");
+                $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
+                /*Reset width-height for map div in normal screen*/
+                var mapDiv = $("#wmap_container");
+                mapDiv.attr('style', 'width: 100%; height: 550px');
+
+                $("#content").removeAttr("style");
+                $(".mapContainerBlock .box-title").removeClass('hide');
+
+                $("#goFullScreen").removeClass('hide');
+
+                $("#headerToggleBtn").removeClass('hide');
+            } else {
+                showControlDiv= "";
+
+                $("#content").removeClass("zero_padding_margin");
+                $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
+
                 if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 3) {
                     mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
                 }
@@ -267,7 +303,7 @@ $("#goFullScreen").click(function() {
                 $("#goFullScreen").removeClass('hide');
                 $("#headerToggleBtn").removeClass('hide');
                 // $("#headerToggleBtn").trigger('click');
-            }
+            }            
         }
     } else {
         bootbox.alert("Fullscreen facility not supported by your browser.Please update.")
