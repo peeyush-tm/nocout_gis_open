@@ -905,7 +905,7 @@ class Fetch_Inventory_Devices(View):
         result = list()
         for device in device_list:
             result.append({'id': device.id,
-                           'alias': device.device_name,
+                           'alias': device.device_alias,
                            'technology': DeviceTechnology.objects.get(id=device.device_technology).name }
         )
         return result
@@ -931,34 +931,56 @@ class Inventory_Device_Status(View):
         }
         result['data']['objects']['values'] = list()
 
+        customer_name = ''
+
         device = Device.objects.get(id=device_id)
         technology = DeviceTechnology.objects.get(id=device.device_technology)
+        type = DeviceType.objects.get(id=device.device_type)
 
         if device.sector_configured_on.exists():
-            result['data']['objects']['headers'] = ['BS Name',
+            if technology.name in ['P2P','PTP','ptp','p2p']:
+                result['data']['objects']['headers'] = ['BS Name',
                                                     'Customer Name',
                                                     'Technology',
-                                                    'Building Height',
-                                                    'Tower Height',
+                                                    'Type',
                                                     'City',
                                                     'State',
                                                     'IP Address',
                                                     'MAC Address',
                                                     'Planned Frequency'
-            ]
+                ]
+            else:
+                result['data']['objects']['headers'] = ['BS Name',
+                                                    'Sector ID',
+                                                    'PMP Port',
+                                                    'Technology',
+                                                    'Type',
+                                                    'City',
+                                                    'State',
+                                                    'IP Address',
+                                                    'MAC Address',
+                                                    'Planned Frequency'
+                ]
             result['data']['objects']['values'] = []
             sector_objects = Sector.objects.filter(sector_configured_on=device.id)
-            ss_id = SubStation.objects.filter(device_id=device.id).values('id')
-            customer_name = Customer.objects.filter(id=Circuit.objects.filter(sub_station_id=ss_id).values('customer_id'))
-            if len(customer_name):
-                customer_name = customer_name[0].alias
-            else:
-                customer_name = "N/A"
+            sector_id = 'N/A'
+            pmp_port = 'N/A'
             for sector in sector_objects:
                 base_station = sector.base_station
                 planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                 planned_frequency = ",".join(planned_frequency)
-
+                if technology.name in ['P2P','PTP','ptp','p2p']:
+                    try:
+                        circuits = sector.circuit_set.get()
+                        customer_name = circuits.customer.alias
+                    except Exception as no_circuit:
+                        log.exception(no_circuit)
+                else:
+                    sector_id = sector.sector_id
+                try:
+                    pmp_port = sector.sector_configured_on_port.alias
+                except Exception as no_port:
+                    log.exception(no_port)
                 try:
                     city_name = City.objects.get(id=base_station.city).city_name\
                                                             if base_station.city\
@@ -971,11 +993,23 @@ class Inventory_Device_Status(View):
                                                             else "N/A"
                 except Exception as no_state:
                     state_name = "N/A"
-                result['data']['objects']['values'].append([base_station.alias,
+                if technology.name in ['P2P','PTP','ptp','p2p']:
+                    result['data']['objects']['values'].append([base_station.alias,
                                                         customer_name,
                                                        technology.alias,
-                                                       base_station.building_height,
-                                                       base_station.tower_height,
+                                                       type.alias,
+                                                       city_name,
+                                                       state_name,
+                                                       device.ip_address,
+                                                       device.mac_address,
+                                                       planned_frequency
+                ])
+                else:
+                    result['data']['objects']['values'].append([base_station.alias,
+                                                        sector_id,
+                                                        pmp_port,
+                                                       technology.alias,
+                                                       type.alias,
                                                        city_name,
                                                        state_name,
                                                        device.ip_address,
