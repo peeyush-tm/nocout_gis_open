@@ -16,7 +16,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 				new OpenLayers.Control.LayerSwitcher({'ascending':false}),
 				// new OpenLayers.Control.ScaleLine(), 
 				new OpenLayers.Control.MousePosition(),
-				// new OpenLayers.Control.KeyboardDefaults()
+				new OpenLayers.Control.KeyboardDefaults()
 			],
 			//Bounds for our Open layer.
 			maxExtent: new OpenLayers.Bounds(whiteMapSettings.initial_bounds),
@@ -214,25 +214,10 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//Add layer to the map
 		// ccpl_map.addLayer(layers.searchMarkerLayer);
 
-		//Create Panel to FullScreen
-		var panel = new OpenLayers.Control.Panel({
-			//Create Control Markup of Button to show buttonText
-			createControlMarkup: function(control) {
-				var button = document.createElement('button'),
-					span = document.createElement('span');
-				if (control.buttonText) {
-					span.innerHTML = control.buttonText;
-					button.innerHTML = control.buttonText;
-				}
-				return button;
-			}
-		});
-		//Add FullScreen to Map
-		panel.addControls([
-			new OpenLayers.Control.Button({ buttonText: "Full Screen", displayClass: "fullScreenButton", trigger: function() {}, title: 'Full Screen' })
-		]);
+		var panel = new OpenLayers.Control.Panel();
 
-		//Add FUll Screen panel to map
+		panel.addControls([new OpenLayers.Control.FullScreen()]);
+		
 		ccpl_map.addControl(panel);
 		
 		//Map set Extend to our bounds

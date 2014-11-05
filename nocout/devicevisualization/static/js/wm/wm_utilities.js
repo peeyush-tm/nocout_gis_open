@@ -74,7 +74,7 @@ function dmsToDegree(latLng) {
 Function to show Error Message
  */
 function showErrorMessage(errormsg, response) {
-    console.log(errormsg, response);
+    // console.log(errormsg, response);
 }
 
 

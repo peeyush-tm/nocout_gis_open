@@ -472,7 +472,10 @@ function disableAdvanceButton(status) {
         }
 
         for(var i=0; i< textBoxes.length; i++) {
-            document.getElementById(textBoxes[i]).disabled = disablingBit;
+            var el = document.getElementById(textBoxes[i]);
+            if(el) {
+                document.getElementById(textBoxes[i]).disabled = disablingBit;    
+            }            
         }
     } else {
         disablingBit= false;
@@ -486,7 +489,11 @@ function disableAdvanceButton(status) {
         }
 
         for(var i=0; i< textBoxes.length; i++) {
-            document.getElementById(textBoxes[i]).disabled = disablingBit;
+            var el = document.getElementById(textBoxes[i]);
+            if(el) {
+                document.getElementById(textBoxes[i]).disabled = disablingBit;    
+            }
+            // document.getElementById(textBoxes[i]).disabled = disablingBit;
         }
     }
 }
