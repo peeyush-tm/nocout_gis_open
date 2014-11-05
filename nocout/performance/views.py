@@ -289,40 +289,6 @@ class LivePerformanceListing(BaseDatatableView):
        'last_updated'
     ]
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return result_list:
-        """
-
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            if len(sSearch) > 3:
-                self.is_initialised = False
-                self.is_searched = True
-                search_data = self.prepare_devices(qs)
-                result_list = list()
-                for dictionary in search_data:
-                    x = json.dumps(dictionary)
-                    dictionary = json.loads(x)
-                    for dict in dictionary:
-                        if dictionary[dict]:
-                            if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                                dictionary not in result_list
-                            ):
-                                if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
-                                    result_list.append(dictionary)
-                            else:
-                                if sSearch == dictionary[dict] and dictionary not in result_list:
-                                    result_list.append(dictionary)
-
-                return result_list
-            else:
-                self.is_searched = False
-        return qs
-
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -418,71 +384,39 @@ class LivePerformanceListing(BaseDatatableView):
 
         return devices
 
-    def prepare_devices(self,qs):
+    def filter_queryset(self, qs):
         """
-
-        :param device_list:
-        :return:
-        """
-        page_type = self.request.GET['page_type']
-        return prepare_gis_devices(qs, page_type)
-
-    def prepare_results(self, qs):
-        """
-        Preparing the final result after fetching from the data base to render on the data table.
+        The filtering of the queryset with respect to the search keyword entered.
 
         :param qs:
-        :return qs
+        :return result_list:
         """
 
-        if qs:
-            for dct in qs:
-                # device = Device.objects.get(id=dct['id'])
-                if dct['page_type'] in ["customer", "network"]:
-                    dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                        <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
-                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                        .format(dct['page_type'],
-                                dct['id'],
-                                'ping')
-                    )
-                else:
-                    dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                        .format(dct['page_type'],
-                                dct['id']
-                        )
-                    )
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            if len(sSearch) > 3:
+                self.is_initialised = False
+                self.is_searched = True
+                search_data = self.prepare_devices(qs)
+                result_list = list()
+                for dictionary in search_data:
+                    x = json.dumps(dictionary)
+                    dictionary = json.loads(x)
+                    for dict in dictionary:
+                        if dictionary[dict]:
+                            if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                                dictionary not in result_list
+                            ):
+                                if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                    result_list.append(dictionary)
+                            else:
+                                if sSearch == dictionary[dict] and dictionary not in result_list:
+                                    result_list.append(dictionary)
 
+                return result_list
+            else:
+                self.is_searched = False
         return qs
-
-    def prepare_machines(self, qs):
-        """
-        """
-        device_list = []
-        for device in qs:
-            device_list.append(
-                {
-                    'device_name': device['device_name'],
-                    'device_machine': device['machine__name']
-                }
-            )
-
-        return prepare_machines(device_list)
-
-    def prepare_polled_results(self, qs, multi_proc=False, machine_dict={}):
-        """
-        preparing polled results
-        after creating static inventory first
-        """
-        result_qs = polled_results(qs=qs,
-                                   multi_proc=multi_proc,
-                                   machine_dict=machine_dict,
-                                   model_is=self.model
-        )
-        return result_qs
 
     def ordering(self, qs):
         """
@@ -536,6 +470,72 @@ class LivePerformanceListing(BaseDatatableView):
             self.is_initialised = True
             self.is_ordered = False
             return qs
+
+    def prepare_devices(self,qs):
+        """
+
+        :param device_list:
+        :return:
+        """
+        page_type = self.request.GET['page_type']
+        return prepare_gis_devices(qs, page_type)
+
+    def prepare_machines(self, qs):
+        """
+        """
+        device_list = []
+        for device in qs:
+            device_list.append(
+                {
+                    'device_name': device['device_name'],
+                    'device_machine': device['machine__name']
+                }
+            )
+
+        return prepare_machines(device_list)
+
+    def prepare_polled_results(self, qs, multi_proc=False, machine_dict={}):
+        """
+        preparing polled results
+        after creating static inventory first
+        """
+        result_qs = polled_results(qs=qs,
+                                   multi_proc=multi_proc,
+                                   machine_dict=machine_dict,
+                                   model_is=self.model
+        )
+        return result_qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+
+        if qs:
+            for dct in qs:
+                # device = Device.objects.get(id=dct['id'])
+                if dct['page_type'] in ["customer", "network"]:
+                    dct.update(
+                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                        <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
+                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
+                        .format(dct['page_type'],
+                                dct['id'],
+                                'ping')
+                    )
+                else:
+                    dct.update(
+                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
+                        .format(dct['page_type'],
+                                dct['id']
+                        )
+                    )
+
+        return qs
 
     def get_context_data(self, *args, **kwargs):
         """
