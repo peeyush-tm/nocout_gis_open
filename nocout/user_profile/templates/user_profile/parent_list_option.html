@@ -1,4 +1,6 @@
-    <option value=>Select</option>
-{% for user in parent_list %}
-    <option value={{ user.id }}>{{ user.username }}</option>
+<option value=>Select</option>
+{% for choice_tuple in user_choices %}
+    {% if choice_tuple.0 %}
+        <option value={{ choice_tuple.0 }}>{{ choice_tuple.1 }}</option>
+    {% endif %}
 {% endfor %}

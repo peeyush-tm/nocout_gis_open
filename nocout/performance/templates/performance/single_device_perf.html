@@ -54,9 +54,17 @@
                         <div class="btn-group dropdown col-xs-1">
                             <button id="apply_filter" class="btn  btn-default btn-sm">
                                 Apply Filter
+                            </button>                            
+                        </div>
+                    </li>
+                    <li>
+                        <div class="btn-group dropdown col-xs-1">
+                            <button id="reset_filter" class="btn  btn-warning btn-sm">
+                                Reset Filter
                             </button>
                         </div>
                     </li>
+                    
                     <li>
                         <!--CSV or Excel download action. -->
                         <div class="btn-group dropdown col-xs-1">
@@ -458,10 +466,10 @@
                     var myStartDate = startDate.toDate(), myEndDate = endDate.toDate();
                     var myStartTime = myStartDate.getTime()/1000.0;
                     var myEndTime = myEndDate.getTime()/1000.0;
-                    // var myStartDate = moment(startDate).format("DD-MM-YYYY HH:mm:ss");
-                    // var myEndDate =  moment(endDate).format("DD-MM-YYYY HH:mm:ss");
+                    
                     window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent(myStartTime)
                             + '&end_date=' + encodeURIComponent(myEndTime);
+
                 } else {
                     alert("Select Start & End Date");
                 }
@@ -469,6 +477,11 @@
                 //     window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent($("#start_date").val())
                 //             + '&end_date=' + encodeURIComponent($("#end_date").val());
                 // }
+            });
+
+            $("#reset_filter").on('click', function() {
+                window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + ''
+                            + '&end_date=';
             });
 
             $("#download_excel").on('click', function () {
@@ -620,9 +633,14 @@
             App.setPage("");  //Set current page
             App.init(); //Initialise plugins and elements
 
+
+
+            var oldStartDate = $.urlParam('start_date') ? new Date($.urlParam('start_date')*1000) : new Date();
+            var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date')*1000) : new Date();
+
             $('#reservationtime').daterangepicker(
                 {
-                    timePicker: true, timePickerIncrement: 30, 
+                    timePicker: true, timePickerIncrement: 60, 
                     // format: 'd/m/Y H:M:S' ,
                     opens: "left",
                     showDropdowns: true,
@@ -638,13 +656,27 @@
                     applyClass: 'btn-small btn-primary',
                     cancelClass: 'btn-small',
                     format: "DD-MM-YYYY HH:mm:ss",
-                    separator: 'to'
+                    separator: 'To',
+                    startDate: oldStartDate,
+                    endDate:oldENdData
                 },
                 function(start, end) {
                     startDate= start;
                     endDate = end;
                 }
             );
+            
+            if($.urlParam('start_date') && $.urlParam('end_date')) {
+                $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + ' To ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss")); 
+                startDate = moment(oldStartDate);
+                endDate = moment(oldENdData);
+            }
+
+            // setTimeout(function() {
+            //     if($.cookie('activeTabId')) {
+            //         $('#'+$.cookie('activeTabId')).trigger('click');
+            //     }
+            // }, 100);
         });
     </script>
 {% endblock %}

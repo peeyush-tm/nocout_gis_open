@@ -24,6 +24,17 @@ $.urlParam = function (name) {
     }
 };
 
+function updateQueryStringParameter(uri, key, value) {
+  var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+  var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+  if (uri.match(re)) {
+    return uri.replace(re, '$1' + key + "=" + value + '$2');
+  }
+  else {
+    return uri + separator + key + "=" + value;
+  }
+}
+
 var timeInterval = "";
 
 
@@ -248,6 +259,8 @@ function nocoutPerfLib() {
                             chart_instance = "";
                             $("#other_perf_table").remove();
                             $("#perf_data_table").remove();
+// console.log(e);
+                            $.cookie('activeTabId', e.target.id);
 
                             perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
 
@@ -299,6 +312,9 @@ function nocoutPerfLib() {
      * @param device_id "INT", It contains the ID of current device.
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
+
+        
+
         var base_url = "",
             start_date = "",
             end_date = "",
@@ -324,7 +340,6 @@ function nocoutPerfLib() {
             tomorowDate.setFullYear(date.getFullYear());
             tomorowDate.setMonth(date.getMonth());
             tomorowDate.setDate(date.getDate() + 1);
-            // console.log(tomorowDate);
             return tomorowDate;
         }
 
@@ -340,9 +355,9 @@ function nocoutPerfLib() {
 
         function getDateInEpochFormat(date, time) {
 
-            var split_time = time.split(":");
-            var new_date = moment(date).add(split_time[0], 'h').add(split_time[1], 'm').add(split_time[2], 's');
-            new_date = new_date.toDate();
+            // var split_time = time.split(":");
+            // var new_date = moment(date).add(split_time[0], 'h').add(split_time[1], 'm').add(split_time[2], 's');
+            new_date = new Date(date);
             return (new_date.getTime()) / 1000;
         }
 
@@ -486,26 +501,31 @@ function nocoutPerfLib() {
 
         var firstDayTime = "", lastDayTime = "";
 
-        function sendAjax(ajax_start_date, ajax_end_date, firstDay) {
-            if (!(ajax_start_date && ajax_end_date)) {
-                hideSpinner();
-                return;
-            }
-            var startTime = "00:00:00";
-            var endTime = "23:59:59";
-            if (ajax_start_date === ajax_end_date) {
-                endTime = lastDayTime;
+        function sendAjax(ajax_start_date, ajax_end_date) {
+
+            var urlDataStartDate = '', urlDataEndDate = '';
+            if(ajax_start_date == '' && ajax_end_date == '') {                
+            } else {
+                var end_Date = "";
+                if(moment(ajax_start_date).date() === moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() === moment(ajax_end_date).dayOfYear()) {
+                    end_Date = moment(ajax_end_date).toDate();
+                } else {
+                    end_Date = moment(ajax_start_date).endOf('day').toDate();
+                }
+                urlDataStartDate = getDateInEpochFormat(ajax_start_date);
+                urlDataEndDate = getDateInEpochFormat(end_Date)
             }
 
-            if (firstDay) {
-                startTime = firstDayTime;
+            if (!(ajax_start_date && ajax_end_date)) {
+                hideSpinner();
+                // return;
             }
 
             $.ajax({
                 url: get_url,
                 data: {
-                    'start_date': getDateInEpochFormat(ajax_start_date, startTime),
-                    'end_date': getDateinStringFormat(ajax_start_date) + ' ' + endTime
+                    'start_date': urlDataStartDate,
+                    'end_date': urlDataEndDate
                 },
                 type: "GET",
                 dataType: "json",
@@ -527,6 +547,8 @@ function nocoutPerfLib() {
                                 addDataToDataTableForChart(result.data.objects.chart_data, 'perf_data_table')
                             }
                         }
+                    } else {
+                       $('#' + service_id + '_chart').html(result.message); 
                     }
 
                     if (result && result.success === 1 && result.data && result.data.objects && result.data.objects.table_data && result.data.objects.table_data.length === 0) {
@@ -534,32 +556,36 @@ function nocoutPerfLib() {
                     }
 
                     if ($.trim(ajax_start_date) && $.trim(ajax_end_date) && (ajax_start_date < ajax_end_date)) {
-                        timeInterval = setTimeout(function () {
-                            sendAjax(getTomorrowDate(ajax_start_date), ajax_end_date);
-                        }, 200);
-                    } else {
-                        if ($('#' + service_id + '_chart').highcharts()) {
-                            $('#' + service_id + '_chart').highcharts().redraw();
+
+                        if(moment(ajax_start_date).date() === moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() === moment(ajax_end_date).dayOfYear()) {
+                            if ($('#' + service_id + '_chart').highcharts()) {
+                                $('#' + service_id + '_chart').highcharts().redraw();
+                            }
+                            if (chart_instance == "" && $("#other_perf_table").length == 0) {
+                                $('#' + service_id + '_chart').html(result.message);
+                            }
+                            hideSpinner();
+                        } else {
+                            // ajax_start_date = moment(ajax_start_date).startOf('day').toDate();
+                            var nextDay = moment(ajax_start_date).add(1, 'd');
+                            var ohayoo = nextDay.startOf('day');
+                            timeInterval = setTimeout(function () {
+                                (function(ohayoo) {
+                                    sendAjax(ohayoo.toDate(), ajax_end_date);
+                                })(ohayoo);                            
+                            }, 400);
                         }
-                        if (chart_instance == "" && $("#other_perf_table").length == 0) {
-                            $('#' + service_id + '_chart').html(result.message);
-                        }
-                        hideSpinner();
                     }
                 }
             })
+            
+
         }
 
         if (start_date && end_date) {
-            var js_start_date = getDate(start_date.split("%20")[0]);
-            var js_start_time = start_date.split("%20")[1];
-            firstDayTime = js_start_time.split("%3A");
-            firstDayTime = firstDayTime[0] + ":" + firstDayTime[1] + ":" + firstDayTime[2];
-            var js_end_date = getDate(end_date.split("%20")[0]);
-            var js_end_time = start_date.split("%20")[1];
-            lastDayTime = js_end_time.split("%3A");
-            lastDayTime = lastDayTime[0] + ":" + lastDayTime[1] + ":" + lastDayTime[2];
-            sendAjax(js_start_date, js_end_date, 'first');
+            start_date = new Date(start_date*1000);
+            end_date = new Date(end_date*1000);
+            sendAjax(start_date, end_date);
         } else {
             sendAjax('', '');
         }
