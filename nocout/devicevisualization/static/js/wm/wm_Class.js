@@ -59,6 +59,7 @@ function WhiteMapClass() {
 		var state_city_obj= {}, all_cities_array= [], tech_vendor_obj= {}, all_vendor_array= [], sectorMarkerConfiguredOn= [], sectorMarkersMasterObj = {};
 
 		var pollableDevices = [];
+		var polled_devices_names= [];
 
 		var hasAdvFilter= 0, hasAdvSearch = 0;
 		//Variable to hold Markers
@@ -327,6 +328,26 @@ function WhiteMapClass() {
 			if($("#clearPolygonBtn").hasClass("hide")) {
 				$("#clearPolygonBtn").removeClass("hide");
 			}
+
+
+		/*Reset marker icon*/
+		for(var i=0;i<polled_devices_names.length;i++) {
+
+			var ss_marker = wm_obj['features'][polled_devices_names[i]],
+				sector_marker = wm_obj['devices']['sector_'+polled_devices_names[i]];
+
+			if(ss_marker) {
+				//update icon here
+				// ss_marker.setOptions({
+				// 	"icon" : ss_marker.oldIcon
+				// });
+			} else if(sector_marker) {
+				//update sector marker
+				// sector_marker.setOptions({
+				// 	"icon" : sector_marker.oldIcon
+				// });
+			}
+    	}
 
 			$.ajax({
 				url : base_url+"/"+"device/filter/",
