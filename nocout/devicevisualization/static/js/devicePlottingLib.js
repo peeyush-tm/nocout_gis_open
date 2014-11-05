@@ -4930,7 +4930,7 @@ function getMarkerInCurrentBound() {
         if(markersMasterObj['BS'].hasOwnProperty(key)) {
             var markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
             if(markerVisible) {
-            	if(markersMasterObj['BS'][key].map != null && markersMasterObj['BS'][key].map != "") {
+            	if(markersMasterObj['BS'][key].isActive  && markersMasterObj['BS'][key].isActive != 0) {
             		bsMarkersInBound.push(markersMasterObj['BS'][key]['name']);
             	}                
             }
