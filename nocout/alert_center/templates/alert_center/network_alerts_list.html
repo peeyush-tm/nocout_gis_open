@@ -59,10 +59,19 @@
 {% block jquery %}
 <!-- Library to load tab content on tab click-->
 <script type="text/javascript">
-    var dataTableInstance = "";
+    var dataTableInstance = "",
+        base_url = "",
+        excel_columns = [];
     /*This is a temporary code which is replace when data for data table is provided*/
     $(document).ready(function (e) {
         var sort_index = 9;
+
+        /*Set the base url of application for ajax calls*/
+        if(window.location.origin) {
+            base_url = window.location.origin;
+        } else {
+            base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+        }
 
         /*Ajax url to get grid data*/
             ajax_url_get_parameter = "";
@@ -93,6 +102,13 @@
                     /*Show the spinner*/
                     showSpinner();
 
+                    for(var i=0;i<tableheaders.length;i++) {
+                        var current_column = tableheaders[i];
+                        if(current_column && current_column['sClass'] != 'hide' && current_column['mData'] != 'action') {
+                            excel_columns.push(i);
+                        }
+                    }
+
                     destroy = typeof destroy !== 'undefined' ? destroy : true;
                     $('.datatable').each(function () {
                         var datatable = $(this);
@@ -107,7 +123,20 @@
                     if (destroy) {
                         $("#" + tableId).dataTable().fnDestroy();
                     }
+
                     var dtable = $("#" + tableId).DataTable({
+                        sDom: 'T<"clear">lfrtip',
+                        oTableTools: {
+                            sSwfPath : base_url+"/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                            aButtons : [
+                                {
+                                    sExtends : "xls",
+                                    sButtonText : "Download Excel",
+                                    sFileName : "*.xls",
+                                    mColumns : excel_columns
+                                }
+                            ]
+                        },
                         bAutoWidth: false,
                         bDestroy : true,
                         bPaginate: true,
