@@ -195,7 +195,7 @@
                     <ul class="list-unstyled list-inline">
                         <li>
                             <input type="text" name="google_loc_search" id="google_loc_search" class="form-control col-xs-1" style="width:278px;"
-                                   placeholder="Location Search">
+                                   placeholder="Location Search" disabled>
                         </li>
                         <li>
                             <input type="text" name="lat_lon_search" onkeypress="return isLatLon(event);" id="lat_lon_search" class="form-control col-xs-1" style="width:175px;"
@@ -203,31 +203,31 @@
                         </li>
                         <li>
                             <!--technology Filter-->
-                            <select name="technology" id="technology" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
+                            <select name="technology" id="technology" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select Technology</option>
                             </select>
                         </li>
                         <li>
                             <!--vendor Filter-->
-                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
+                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select Vendor</option>
                             </select>
                         </li>
                         <li>
                             <!--State Filter-->
-                            <select name="state" id="state" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
+                            <select name="state" id="state" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select State</option>
                             </select>
                         </li>
                         <li>
                             <!--City Filter-->
-                            <select name="city" id="city" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
+                            <select name="city" id="city" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select City</option>
                             </select>
                         </li>
                         <li>
                             <!--Reset Button-->
-                            <button type="button" class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" onclick="whiteMapClass.resetBasicFilter();"
+                            <button type="button" class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters"
                                     data-complete-text="<i class='fa fa-refresh'></i> Reset"
                                     data-loading-text="Please Wait...">
                                 <i class="fa fa-refresh">&nbsp;</i> Reset
