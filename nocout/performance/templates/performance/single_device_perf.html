@@ -562,31 +562,31 @@
         /*Load first inner tab of network performance*/
         $("#network_perf").click(function (e) {
             fetchFirstTabContent(e);
-            $.cookie('parent_tab_id','network_perf', {path: '/', secure : true});
+            $.cookie('parent_tab_id','network_perf');
         });
 
         /*Load first inner tab of service performance*/
         $("#service_perf").click(function (e) {
             fetchFirstTabContent(e);
-            $.cookie('parent_tab_id','service_perf', {path: '/', secure : true});
+            $.cookie('parent_tab_id','service_perf');
         });
 
         /*Load first inner tab of service status*/
         $("#service_status").click(function (e) {
             fetchFirstTabContent(e);
-            $.cookie('parent_tab_id','service_status', {path: '/', secure : true});
+            $.cookie('parent_tab_id','service_status');
         });
 
         /*Load first inner tab of inventory status*/
         $("#inventory_status").click(function (e) {
             fetchFirstTabContent(e);
-            $.cookie('parent_tab_id','inventory_status', {path: '/', secure : true});
+            $.cookie('parent_tab_id','inventory_status');
         });
 
         /*Load first inner tab of availability*/
         $("#availability").click(function (e) {
             fetchFirstTabContent(e);
-            $.cookie('parent_tab_id','availability', {path: '/', secure : true});
+            $.cookie('parent_tab_id','availability');
         });
 
 
@@ -603,8 +603,9 @@
             var li_count = $("#" + tab_id + " .inner_tab_container .col-md-3 ul li").length;
             if (li_count > 0) {
                 var activeTabId = $.cookie('activeTabId');
-                if(activeTabId) {
-                    $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#"+activeTabId).trigger('click');
+                //if activeTabId is stored in cookie and tabEL exist.
+                if(activeTabId && $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#"+activeTabId).length) {
+                    $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#"+activeTabId).trigger('click');    
                 } else {
                     $("#" + tab_id + " .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
                 }

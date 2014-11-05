@@ -259,9 +259,6 @@ function nocoutPerfLib() {
                             chart_instance = "";
                             $("#other_perf_table").remove();
                             $("#perf_data_table").remove();
-// console.log(e);
-                            // $.cookie('activeTabId', e.target.id);
-
                             perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
 
                         });
@@ -299,13 +296,13 @@ function nocoutPerfLib() {
                     $("#perf_data_table").remove();
                     /*Get Last opened tab id from cookie*/
                     var parent_tab_id = $.cookie('parent_tab_id');
-                    if(parent_tab_id) {
+                    //If parent Tab id is there & parent tab el exist in the dom.
+                    if(parent_tab_id && $('#'+parent_tab_id).length) {
                         $('#'+parent_tab_id).trigger('click');
                     } else {
                         perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
                     }
 
-                    // var tab_id = $.cookie('activeTabId');
                     // console.log(tab_id);
                     // if(tab_id) {
                     //     $("#"+tab_id).trigger('click');
@@ -327,7 +324,7 @@ function nocoutPerfLib() {
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
 
-        $.cookie('activeTabId', service_id+"_tab", {path: '/', secure : true});        
+        $.cookie('activeTabId', service_id+"_tab");        
 
         var base_url = "",
             start_date = "",
@@ -561,32 +558,36 @@ function nocoutPerfLib() {
                                 addDataToDataTableForChart(result.data.objects.chart_data, 'perf_data_table')
                             }
                         }
-                    } else {
-                       $('#' + service_id + '_chart').html(result.message); 
                     }
 
-                    if (result && result.success === 1 && result.data && result.data.objects && result.data.objects.table_data && result.data.objects.table_data.length === 0) {
-                        $('#' + service_id + '_chart').html(result.message);
-                    }
+                    // if (result && result.success === 1 && result.data && result.data.objects && result.data.objects.table_data && result.data.objects.table_data.length === 0) {
+                    //     $('#' + service_id + '_chart').html(result.message);
+                    // }
 
-                    if ($.trim(ajax_start_date) && $.trim(ajax_end_date) && (ajax_start_date < ajax_end_date)) {
+                    //check condition if start date and end date is defined.
+                    if ($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
 
+                        //if last date
                         if(moment(ajax_start_date).date() === moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() === moment(ajax_end_date).dayOfYear()) {
+
+
                             if ($('#' + service_id + '_chart').highcharts()) {
                                 $('#' + service_id + '_chart').highcharts().redraw();
                             }
                             if (chart_instance == "" && $("#other_perf_table").length == 0) {
                                 $('#' + service_id + '_chart').html(result.message);
                             }
+
                             hideSpinner();
+                        //Else sendAjax request for next Date
                         } else {
-                            // ajax_start_date = moment(ajax_start_date).startOf('day').toDate();
+
                             var nextDay = moment(ajax_start_date).add(1, 'd');
                             var ohayoo = nextDay.startOf('day');
                             timeInterval = setTimeout(function () {
                                 (function(ohayoo) {
                                     sendAjax(ohayoo.toDate(), ajax_end_date);
-                                })(ohayoo);                            
+                                })(ohayoo);
                             }, 400);
                         }
                     }
