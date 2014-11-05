@@ -11,6 +11,7 @@ from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
 from django.forms.util import ErrorList
+from device.models import Device
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, CircuitL2Report
 from django.utils.html import escape
 from nocout.utils import logged_in_user_organizations
@@ -272,8 +273,18 @@ class BackhaulForm(forms.ModelForm):
             organization = self.request.user.userprofile.organization
             if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+                self.fields['bh_configured_on'].queryset = self.fields['bh_configured_on'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+                self.fields['aggregator'].queryset = self.fields['aggregator'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+                self.fields['bh_switch'].queryset = self.fields['bh_switch'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+                self.fields['pop'].queryset = self.fields['pop'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+
             else:
+
                 self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+                self.fields['bh_configured_on'].queryset = self.fields['bh_configured_on'].queryset.filter(organization=organization)
+                self.fields['aggregator'].queryset = self.fields['aggregator'].queryset.filter(organization=organization)
+                self.fields['bh_switch'].queryset = self.fields['bh_switch'].queryset.filter(organization=organization)
+                self.fields['pop'].queryset = self.fields['pop'].queryset.filter(organization=organization)
         else:
             self.fields['organization'].widget.choices = self.fields['organization'].choices
 
@@ -396,8 +407,12 @@ class BaseStationForm(forms.ModelForm):
             organization = self.request.user.userprofile.organization
             if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+                self.fields['bs_switch'].queryset = self.fields['bs_switch'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+                self.fields['backhaul'].queryset = self.fields['backhaul'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
             else:
                 self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+                self.fields['bs_switch'].queryset = self.fields['bs_switch'].queryset.filter(organization=organization)
+                self.fields['backhaul'].queryset = self.fields['backhaul'].queryset.filter(organization=organization)
         else:
             self.fields['organization'].widget.choices = self.fields['organization'].choices
 
@@ -505,8 +520,12 @@ class SectorForm(forms.ModelForm):
             organization = self.request.user.userprofile.organization
             if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+                self.fields['sector_configured_on'].queryset = self.fields['sector_configured_on'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+                self.fields['base_station'].queryset = self.fields['base_station'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
             else:
                 self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+                self.fields['sector_configured_on'].queryset = self.fields['sector_configured_on'].queryset.filter(organization=organization)
+                self.fields['base_station'].queryset = self.fields['base_station'].queryset.filter(organization=organization)
         else:
             self.fields['organization'].widget.choices = self.fields['organization'].choices
 
@@ -697,8 +716,12 @@ class SubStationForm(forms.ModelForm):
             organization = self.request.user.userprofile.organization
             if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+                self.fields['device'].queryset = self.fields['device'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+                self.fields['antenna'].queryset = self.fields['antenna'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
             else:
                 self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+                self.fields['device'].queryset = self.fields['device'].queryset.filter(organization=organization)
+                self.fields['antenna'].queryset = self.fields['antenna'].queryset.filter(organization=organization)
         else:
             self.fields['organization'].widget.choices = self.fields['organization'].choices
 
@@ -790,8 +813,14 @@ class CircuitForm(forms.ModelForm):
             organization = self.request.user.userprofile.organization
             if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+                self.fields['sector'].queryset = self.fields['sector'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+                self.fields['customer'].queryset = self.fields['customer'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+                self.fields['sub_station'].queryset = self.fields['sub_station'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
             else:
                 self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+                self.fields['sector'].queryset = self.fields['sector'].queryset.filter(organization=organization)
+                self.fields['customer'].queryset = self.fields['customer'].queryset.filter(organization=organization)
+                self.fields['sub_station'].queryset = self.fields['sub_station'].queryset.filter(organization=organization)
         else:
             self.fields['organization'].widget.choices = self.fields['organization'].choices
 
