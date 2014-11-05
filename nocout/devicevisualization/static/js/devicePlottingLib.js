@@ -1458,7 +1458,7 @@ function devicePlottingClass_gmap() {
 
 		/*True,if clicked on the link line*/
 		if(clickedType == "path") {
-
+			var path_circuit_id = "";
 			/*Tabbale Start*/
 			infoTable += '<div class="tabbable">';
 			/*Tabs Creation Start*/
@@ -1500,13 +1500,23 @@ function devicePlottingClass_gmap() {
 			
 			/*Loop for ss info object array*/
 			for(var i=0;i<contentObject.ss_info.length;i++) {
+				if(contentObject.ss_info[i].title && $.trim(contentObject.ss_info[i].title.toLowerCase()) === 'circuit id') {
+					path_circuit_id = contentObject.ss_info[i].value;
+				}
 
 				if(contentObject.ss_info[i].show == 1) {
 					infoTable += "<tr><td>"+contentObject.ss_info[i].title+"</td><td>"+contentObject.ss_info[i].value+"</td></tr>";
 				}
 			}
 
+			var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
+				link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
+
 			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
+			if(path_circuit_id) {
+				infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
+				infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
+			}
 			infoTable += "</tbody></table>";
 			/*SS Info End*/
 			infoTable += '</div>';
@@ -1572,15 +1582,12 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 
 			/*Final infowindow content string*/
-// <<<<<<< HEAD
-// 			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>Sector</h4></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div></div></div></div>";
-// =======
 			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>Base Station Device</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div></div></div>";
-// >>>>>>> b8f9c4aaa8eadd2814b2a8090f3eee9b5a5cfee7
 		} else {
 
 			infoTable += "<table class='table table-bordered'><tbody>";
-			var startPtInfo = [];
+			var startPtInfo = [],
+				ss_circuit_id = "";
 
 			if(contentObject.bsInfo != undefined) {
 				startPtInfo = contentObject.bsInfo;
@@ -1589,7 +1596,9 @@ function devicePlottingClass_gmap() {
 			}
 			
 			for(var i=0;i<startPtInfo.length;i++) {
-
+				if(startPtInfo[i].title && $.trim(startPtInfo[i].title.toLowerCase()) === 'circuit id') {
+					ss_circuit_id = startPtInfo[i].value;
+				}
 				if(startPtInfo[i].show == 1) {
 					infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
 				}
@@ -1606,6 +1615,18 @@ function devicePlottingClass_gmap() {
 
 			/*Set the lat lon of the point*/
 			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
+
+			var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
+				link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
+
+			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
+			
+			if(clickedType == "sub_station") {
+				if(ss_circuit_id) {
+					infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
+					infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
+				}
+			}
 
 			if(clickedType == "base_station") {
 
