@@ -6,6 +6,10 @@ from inventory.models import IconSettings
 from service.models import Service
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
+from device.models import Device
+from organization.models import Organization
+from inventory.models import Backhaul
+
 logger = logging.getLogger(__name__)
 
 
@@ -366,6 +370,154 @@ def gt_critical_initial_choices(request):
                    .format(icon_setting.id, img_url, icon_setting.alias))
     dajax.assign('#id_gt_critical', 'innerHTML', ''.join(out))
     return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def update_bh_configured_on(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        bh_configured_on = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        bh_configured_on = Device.objects.filter(organization=int(option))
+
+    for bh in bh_configured_on:
+        out.append("<option value='#'>%s</option>" % bh)
+    dajax.assign('#id_bh_configured_on', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def update_bh_switch(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        bh_switch = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        bh_switch = Device.objects.filter(organization=int(option))
+
+    for bh in bh_switch:
+        out.append("<option value='#'>%s</option>" % bh)
+    dajax.assign('#id_bh_switch', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def update_pop(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        pop = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        pop = Device.objects.filter(organization=int(option))
+
+    for p in pop :
+        out.append("<option value='#'>%s</option>" % p)
+    dajax.assign('#id_pop', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+
+@dajaxice_register(method='GET')
+def update_aggregator(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        aggregators = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        aggregators = Device.objects.filter(organization=int(option))
+
+    for aggregator in aggregators :
+        out.append("<option value='#'>%s</option>" % aggregator)
+    dajax.assign('#id_aggregator', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
+def update_bs_switch(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        bs_switch = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        bs_switch = Device.objects.filter(organization=int(option))
+
+    for switch in bs_switch:
+        out.append("<option value='#'>%s</option>" % switch)
+    dajax.assign('#id_bs_switch', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def update_backhaul(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        backhauls = Backhaul.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        backhauls = Backhaul.objects.filter(organization=int(option))
+
+    for backhaul in backhauls:
+        out.append("<option value='#'>%s</option>" % backhaul)
+    dajax.assign('#id_backhaul', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
+def update_sector_configured_on(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        sector_confs = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        sector_confs = Device.objects.filter(organization=int(option))
+
+    for sector in sector_confs:
+        out.append("<option value='#'>%s</option>" % sector)
+    dajax.assign('#id_sector_configured_on', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
 
 
 # @dajaxice_register(method='GET')
