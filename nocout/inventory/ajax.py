@@ -8,7 +8,7 @@ from django.contrib.staticfiles.templatetags.staticfiles import static
 
 from device.models import Device
 from organization.models import Organization
-from inventory.models import Backhaul
+from inventory.models import Backhaul, BaseStation, Antenna, Sector, Customer, SubStation
 
 logger = logging.getLogger(__name__)
 
@@ -517,7 +517,127 @@ def update_sector_configured_on(request, option):
     dajax.assign('#id_sector_configured_on', 'innerHTML', ''.join(out))
     return dajax.json()
 
+@dajaxice_register(method='GET')
+def update_base_station(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
 
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        basestations = BaseStation.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        basestations = BaseStation.objects.filter(organization=int(option))
+
+    for basestation in basestations:
+        out.append("<option value='#'>%s</option>" % basestation)
+    dajax.assign('#id_base_station', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def update_device(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        devices = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        devices = Device.objects.filter(organization=int(option))
+
+    for device in devices:
+        out.append("<option value='#'>%s</option>" % device)
+    dajax.assign('#id_device', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def update_antenna(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        antennas = Antenna.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        antennas = Antenna.objects.filter(organization=int(option))
+
+    for antenna in antennas:
+        out.append("<option value='#'>%s</option>" % antenna)
+    dajax.assign('#id_antenna', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
+def update_sector(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        sectors = Sector.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        sectors = Sector.objects.filter(organization=int(option))
+
+    for sector in sectors:
+        out.append("<option value='#'>%s</option>" % sector)
+    dajax.assign('#id_sector', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
+def update_customer(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        customers = Customer.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        customers = Customer.objects.filter(organization=int(option))
+
+    for customer in customers:
+        out.append("<option value='#'>%s</option>" % customer)
+    dajax.assign('#id_customer', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
+def update_sub_station(request, option):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    try:
+        org = Organization.objects.get(id=int(option))
+    except Organization.DoesNotExist as e:
+        return dajax.json()
+
+    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+        substations = SubStation.objects.filter(organization__in=org.get_descendants(include_self=True))
+    else:
+        substations = SubStation.objects.filter(organization=int(option))
+
+    for substation in substations:
+        out.append("<option value='#'>%s</option>" % substation)
+    dajax.assign('#id_sub_station', 'innerHTML', ''.join(out))
+    return dajax.json()
 
 
 # @dajaxice_register(method='GET')
