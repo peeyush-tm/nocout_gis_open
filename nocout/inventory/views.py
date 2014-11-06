@@ -27,9 +27,10 @@ from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
 from nocout.utils.util import DictDiffer, cache_for, cache_get_key
 
 from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
-    ThematicSettings, GISInventoryBulkImport, UserThematicSettings, CircuitL2Report
+    ThematicSettings, GISInventoryBulkImport, UserThematicSettings, CircuitL2Report, PingThematicSettings, \
+    UserPingThematicSettings
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
-    ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm
+    ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm, PingThematicSettingsForm
 from organization.models import Organization
 from site_instance.models import SiteInstance
 from user_group.models import UserGroup
@@ -4026,6 +4027,355 @@ class GISInventoryBulkImportUpdate(UpdateView):
     model = GISInventoryBulkImport
     form_class = GISInventoryBulkImportEditForm
     success_url = reverse_lazy('gis_inventory_bulk_import_list')
+
+
+#**************************************** Ping Thematic Settings *********************************************
+class PingThematicSettingsList(ListView):
+    """
+    Class Based View to render PingThematicSettings List Page.
+    """
+    model = PingThematicSettings
+    template_name = 'ping_thematic_settings/ping_thematic_settings_list.html'
+
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(PingThematicSettingsList, self).dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(PingThematicSettingsList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
+            {'mData': 'service',                 'sTitle': 'Service',                   'sWidth': 'auto'},
+            {'mData': 'data_source',             'sTitle': 'Data Source',               'sWidth': 'auto'},
+            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
+            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto'}]
+
+        # user_id = self.request.user.id
+
+        #if user is superadmin or gisadmin
+        if self.request.user.is_superuser:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+
+        is_global = False
+        if 'admin' in self.request.path:
+            is_global = True
+
+        context['is_global'] = json.dumps(is_global)
+
+        return context
+
+
+class PingThematicSettingsListingTable(BaseDatatableView):
+    """
+    Class based View to render Thematic Settings Data table.
+    """
+    model = PingThematicSettings
+    columns = ['alias', 'service', 'data_source', 'icon_settings']
+    order_columns = ['alias', 'service', 'data_source']
+
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+
+        """
+        # get tab technology
+        technology = DeviceTechnology.objects.filter(name__icontains=self.kwargs['technology'])[0].name
+
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            sSearch = sSearch.replace("\\", "")
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns:
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").filter(technology__name='"+technology+"').values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self, technology="P2P"):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        is_global = 1
+        if self.request.GET.get('admin'):
+            is_global = 0
+
+        return PingThematicSettings.objects.filter(technology=DeviceTechnology.objects.filter(name=technology)).filter(is_global=is_global).values(*self.columns + ['id'])
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in qs:
+            # modify 'icon_setting' field for display in datatables i.e. format: "start_range > icon > end_range"
+            icon_settings_display_field = ""
+
+            # after converting 'icon_settings' string in list of icon_setting dictionaries using eval, loop on it
+            for d in eval(dct['icon_settings']):
+                r = d.keys()[0]
+
+                # fetching number from dictionary key for e.g. 4 from 'icon_settings4'
+                s = ''.join(x for x in r if x.isdigit())
+
+                # range fields corresponding to current icon setting
+                range_start_field = "range{}_start".format(s)
+                range_end_field = "range{}_end".format(s)
+
+                # initialize start and end range
+                start_range, end_range = [''] * 2
+
+                # start range
+                try:
+                    start_range = PingThematicSettings.objects.filter(id=dct['id']).values(range_start_field)[0].values()[0]
+                    if not start_range:
+                        start_range = "N/A"
+                except Exception as e:
+                    logger.info("Start Range Exception: ", e.message)
+
+                # end range
+                try:
+                    end_range = PingThematicSettings.objects.filter(id=dct['id']).values(range_end_field)[0].values()[0]
+                    if not end_range:
+                        end_range = "N/A"
+                except Exception as e:
+                    logger.info("End Range Exception: ", e.message)
+
+                # image url
+                img_url = str("/media/" + (d.values()[0])
+                              if "uploaded" in d.values()[0]
+                              else static("img/" + d.values()[0]))
+
+                # image html content
+                image_string = '<img src="{0}" style="height:25px; width:25px">'.format(img_url.strip())
+
+                # icon settings content to be displayed in datatable
+                icon_settings_display_field += " {} > {} > {} <br />".format(start_range, image_string, end_range)
+
+            user_current_thematic_setting = self.request.user.id in PingThematicSettings.objects.get(
+                id=dct['id']).user_profile.values_list('id', flat=True)
+            checkbox_checked_true = 'checked' if user_current_thematic_setting else ''
+            dct.update(
+                icon_settings=icon_settings_display_field,
+                user_selection='<input type="checkbox" class="check_class" ' + checkbox_checked_true +
+                               ' name="setting_selection" value={0}><br>'.format(dct['id']),
+                actions='<a href="/ping_thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/ping_thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                    dct.pop('id')))
+        return qs
+
+    def get_context_data(self, technology):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+        request = self.request
+
+        # self.initialize(*args, **kwargs)
+        self.initialize()
+
+        qs = self.get_initial_queryset(technology)
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+
+        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret
+
+
+class PingThematicSettingsDetail(DetailView):
+    """
+    Class based view to render the Thematic Settings detail.
+    """
+    model = PingThematicSettings
+    template_name = 'ping_thematic_settings/ping_thematic_settings_detail.html'
+
+
+class PingThematicSettingsCreate(CreateView):
+    """
+    Class based view to create new PingThematicSettings.
+    """
+    template_name = 'ping_thematic_settings/ping_thematic_settings_new.html'
+    model = PingThematicSettings
+    form_class = PingThematicSettingsForm
+    success_url = reverse_lazy('ping_thematic_settings_list')
+
+    @method_decorator(permission_required('inventory.add_pingthematicsettings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(PingThematicSettingsCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
+        icon_settings_keys = list(set(form.data.keys()) - set(
+            [key for key in form.cleaned_data.keys() if "icon" not in key] + ['csrfmiddlewaretoken']))
+
+        # sorting icon settings list
+        icon_settings_keys = sorted(icon_settings_keys, key=lambda r: int(''.join(x for x in r if x.isdigit())))
+
+        icon_settings_values_list = [{key: form.data[key]} for key in icon_settings_keys if form.data[key]]
+        self.object = form.save()
+        self.object.icon_settings = icon_settings_values_list
+        self.object.save()
+        verb_string = "Create Thematic Settings : %s" % self.object.alias
+        return HttpResponseRedirect(PingThematicSettingsCreate.success_url)
+
+
+class PingThematicSettingsUpdate(UpdateView):
+    """
+    Class based view to update Thematic Settings.
+    """
+    template_name = 'ping_thematic_settings/ping_thematic_settings_update.html'
+    model = PingThematicSettings
+    form_class = PingThematicSettingsForm
+    success_url = reverse_lazy('ping_thematic_settings_list')
+
+    @method_decorator(permission_required('inventory.change_pingthematicsettings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(PingThematicSettingsUpdate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        icon_settings_keys = list(set(form.data.keys()) - set(
+            [key for key in form.cleaned_data.keys() if "icon" not in key] + ['csrfmiddlewaretoken']))
+
+        # sorting icon settings list
+        icon_settings_keys = sorted(icon_settings_keys, key=lambda r: int(''.join(x for x in r if x.isdigit())))
+
+        icon_settings_values_list = [{key: form.data[key]} for key in icon_settings_keys if form.data[key]]
+        self.object = form.save()
+        self.object.icon_settings = icon_settings_values_list
+        self.object.save()
+        # self.object = form.save()
+        if changed_fields_dict:
+            verb_string = 'Update Thematic Settings : %s, ' % (self.object.alias) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+        return HttpResponseRedirect(PingThematicSettingsUpdate.success_url)
+
+
+class PingThematicSettingsDelete(DeleteView):
+    """
+    Class based View to delete the Thematic Settings.
+    """
+    model = PingThematicSettings
+    template_name = 'ping_thematic_settings/ping_thematic_settings_delete.html'
+    success_url = reverse_lazy('ping_thematic_settings_list')
+
+    @method_decorator(permission_required('inventory.delete_pingthematicsettings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(PingThematicSettingsDelete, self).dispatch(*args, **kwargs)
+
+    @method_decorator(permission_required('inventory.delete_pingthematicsettings', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action = 'A thematic settings is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Thematic Settings', action=action)
+        except Exception as e:
+            logger.info("User Ping Thematic Settings delete error. Exception: ", e.message)
+
+        return super(PingThematicSettingsDelete, self).delete(request, *args, **kwargs)
+
+
+class Ping_Update_User_Thematic_Setting(View):
+    """
+    The Class Based View to Response the Ajax call on click to bind the user with the thematic setting.
+    """
+
+    def get(self, request):
+        result = {
+            "success": 0,
+            "message": "Thematic Setting Not Bind to User",
+            "data": {
+                "meta": None,
+                "objects": {}
+            }
+        }
+
+        thematic_setting_id = self.request.GET.get('ts_template_id', None)
+        user_profile_id = self.request.user.id
+        if thematic_setting_id:
+            ts_obj = PingThematicSettings.objects.get(id=int(thematic_setting_id))
+            user_obj = UserProfile.objects.get(id=user_profile_id)
+            tech_obj = ts_obj.technology
+            to_delete = UserPingThematicSettings.objects.filter(user_profile=user_obj, thematic_technology=tech_obj)
+
+            if len(to_delete):
+                to_delete.delete()
+
+            uts = UserPingThematicSettings(user_profile=user_obj,
+                                           thematic_template=ts_obj,
+                                           thematic_technology=tech_obj)
+            uts.save()
+
+            result['success'] = 1
+            result['message'] = 'Thematic Setting Bind to User Successfully'
+            result['data']['objects']['username'] = self.request.user.userprofile.username
+            result['data']['objects']['thematic_setting_name'] = PingThematicSettings.objects.get(
+                id=int(thematic_setting_id)).name
+
+        return HttpResponse(json.dumps(result))
 
 
 

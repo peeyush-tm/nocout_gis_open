@@ -403,3 +403,61 @@ class CircuitL2Report(models.Model):
     user_id = models.ForeignKey(UserProfile)
     circuit_id = models.ForeignKey(Circuit)
     is_public = models.BooleanField('Is Public', default=True)
+
+
+class PingThematicSettings(models.Model):
+    """
+        ThematicSettings Model Columns Declaration.
+    """
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+
+    technology = models.ForeignKey(DeviceTechnology)
+    service = models.CharField('Service', max_length=250)
+    data_source = models.CharField('Data Source', max_length=250)
+
+    range1_start = models.CharField('Range1 Start', max_length=20, null=True, blank=True)
+    range1_end = models.CharField('Range1 End', max_length=20, null=True, blank=True)
+
+    range2_start = models.CharField('Range2 Start', max_length=20, null=True, blank=True)
+    range2_end = models.CharField('Range2 End', max_length=20, null=True, blank=True)
+
+    range3_start = models.CharField('Range3 Start', max_length=20, null=True, blank=True)
+    range3_end = models.CharField('Range3 End', max_length=20, null=True, blank=True)
+
+    range4_start = models.CharField('Range4 Start', max_length=20, null=True, blank=True)
+    range4_end = models.CharField('Range4 End', max_length=20, null=True, blank=True)
+
+    range5_start = models.CharField('Range5 Start', max_length=20, null=True, blank=True)
+    range5_end = models.CharField('Range5 End', max_length=20, null=True, blank=True)
+
+    range6_start = models.CharField('Range6 Start', max_length=20, null=True, blank=True)
+    range6_end = models.CharField('Range6 End', max_length=20, null=True, blank=True)
+
+    range7_start = models.CharField('Range7 Start', max_length=20, null=True, blank=True)
+    range7_end = models.CharField('Range7 End', max_length=20, null=True, blank=True)
+
+    range8_start = models.CharField('Range8 Start', max_length=20, null=True, blank=True)
+    range8_end = models.CharField('Range8 End', max_length=20, null=True, blank=True)
+
+    range9_start = models.CharField('Range9 Start', max_length=20, null=True, blank=True)
+    range9_end = models.CharField('Range9 End', max_length=20, null=True, blank=True)
+
+    range10_start = models.CharField('Range10 Start', max_length=20, null=True, blank=True)
+    range10_end = models.CharField('Range10 End', max_length=20, null=True, blank=True)
+
+    icon_settings = models.TextField(default='NULL')
+    user_profile = models.ManyToManyField(UserProfile, through="UserPingThematicSettings")
+    is_global = models.BooleanField('Global Setting', default=False)
+
+    def __unicode__(self):
+        return self.name
+
+
+class UserPingThematicSettings(models.Model):
+    """
+        User PING thematic settings
+    """
+    user_profile = models.ForeignKey(UserProfile)
+    thematic_template = models.ForeignKey(PingThematicSettings)
+    thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
