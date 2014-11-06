@@ -1293,11 +1293,12 @@ class CustomerList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class CustomerListingTable(BaseDatatableView):
+class CustomerListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Customer Data table.
     """
     model = Customer
+    required_permissions = ('inventory.view_customer',)
     columns = ['alias', 'address', 'description']
     order_columns = ['alias']
 
