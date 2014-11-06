@@ -989,22 +989,15 @@ class BackhaulUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(BackhaulUpdate.success_url)
 
 
-class BackhaulDelete(DeleteView):
+class BackhaulDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Backhaul.
     """
     model = Backhaul
     template_name = 'backhaul/backhaul_delete.html'
     success_url = reverse_lazy('backhauls_list')
+    required_permissions = ('inventory.delete_backhaul',)
 
-    @method_decorator(permission_required('inventory.delete_backhaul', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(BackhaulDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_backhaul', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
