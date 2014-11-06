@@ -2891,20 +2891,13 @@ class ThresholdConfigurationDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #**************************************** ThematicSettings *********************************************
-class ThematicSettingsList(ListView):
+class ThematicSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render ThematicSettings List Page.
     """
     model = ThematicSettings
     template_name = 'thematic_settings/thematic_settings_list.html'
-
-    @method_decorator(permission_required('inventory.view_thematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ThematicSettingsList, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('inventory.view_thematicsettings',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2934,11 +2927,12 @@ class ThematicSettingsList(ListView):
         return context
 
 
-class ThematicSettingsListingTable(BaseDatatableView):
+class ThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
     model = ThematicSettings
+    required_permissions = ('inventory.view_thematicsettings',)
     columns = ['alias', 'threshold_template', 'icon_settings']
     order_columns = ['alias', 'threshold_template']
     def filter_queryset(self, qs):
@@ -3057,15 +3051,16 @@ class ThematicSettingsListingTable(BaseDatatableView):
         return ret
 
 
-class ThematicSettingsDetail(DetailView):
+class ThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Thematic Settings detail.
     """
     model = ThematicSettings
+    required_permissions = ('inventory.view_thematicsettings',)
     template_name = 'thematic_settings/thematic_settings_detail.html'
 
 
-class ThematicSettingsCreate(CreateView):
+class ThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new ThematicSettings.
     """
@@ -3073,13 +3068,7 @@ class ThematicSettingsCreate(CreateView):
     model = ThematicSettings
     form_class = ThematicSettingsForm
     success_url = reverse_lazy('thematic_settings_list')
-
-    @method_decorator(permission_required('inventory.add_thematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThematicSettingsCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_thematicsettings',)
 
     def form_valid(self, form):
         """
@@ -3094,7 +3083,7 @@ class ThematicSettingsCreate(CreateView):
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
 
-class ThematicSettingsUpdate(UpdateView):
+class ThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Thematic Settings.
     """
@@ -3102,13 +3091,7 @@ class ThematicSettingsUpdate(UpdateView):
     model = ThematicSettings
     form_class = ThematicSettingsForm
     success_url = reverse_lazy('thematic_settings_list')
-
-    @method_decorator(permission_required('inventory.change_thematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThematicSettingsUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_thematicsettings',)
 
     def form_valid(self, form):
         """
@@ -3134,22 +3117,15 @@ class ThematicSettingsUpdate(UpdateView):
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
 
 
-class ThematicSettingsDelete(DeleteView):
+class ThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Thematic Settings.
     """
     model = ThematicSettings
     template_name = 'thematic_settings/thematic_settings_delete.html'
     success_url = reverse_lazy('thematic_settings_list')
+    required_permissions = ('inventory.delete_thematicsettings',)
 
-    @method_decorator(permission_required('inventory.delete_thematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThematicSettingsDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_thematicsettings', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
