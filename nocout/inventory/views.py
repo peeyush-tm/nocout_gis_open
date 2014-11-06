@@ -1645,11 +1645,12 @@ class SubStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
         return ret
 
 
-class SubStationDetail(DetailView):
+class SubStationDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Sub Station detail.
     """
     model = SubStation
+    required_permissions = ('inventory.view_substation',)
     template_name = 'sub_station/sub_station_detail.html'
 
 
