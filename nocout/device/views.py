@@ -3125,19 +3125,13 @@ class DeviceTypeDelete(PermissionsRequiredMixin, DeleteView):
 
 
 # ****************************************** Device Type *******************************************
-class DevicePortList(ListView):
+class DevicePortList(PermissionsRequiredMixin, ListView):
     """
     Render list of ports
     """
     model = DevicePort
     template_name = 'device_port/device_ports_list.html'
-
-    @method_decorator(permission_required('device.view_deviceport', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DevicePortList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_deviceport',)
 
     def get_context_data(self, **kwargs):
         """
@@ -3155,11 +3149,12 @@ class DevicePortList(ListView):
         return context
 
 
-class DevicePortListingTable(BaseDatatableView):
+class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device ports
     """
     model = DevicePort
+    required_permissions = ('device.view_deviceport',)
     columns = ['name', 'alias', 'value']
     order_columns = ['name', 'alias', 'value']
 
@@ -3233,15 +3228,16 @@ class DevicePortListingTable(BaseDatatableView):
         return ret
 
 
-class DevicePortDetail(DetailView):
+class DevicePortDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for device port
     """
     model = DevicePort
+    required_permissions = ('device.view_deviceport',)
     template_name = 'device_port/device_port_detail.html'
 
 
-class DevicePortCreate(CreateView):
+class DevicePortCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device port create view
     """
@@ -3249,13 +3245,7 @@ class DevicePortCreate(CreateView):
     model = DevicePort
     form_class = DevicePortForm
     success_url = reverse_lazy('device_ports_list')
-
-    @method_decorator(permission_required('device.add_deviceport', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DevicePortCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_deviceport',)
 
     def form_valid(self, form):
         """
@@ -3265,7 +3255,7 @@ class DevicePortCreate(CreateView):
         return HttpResponseRedirect(DevicePortCreate.success_url)
 
 
-class DevicePortUpdate(UpdateView):
+class DevicePortUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device port update view
     """
@@ -3273,13 +3263,7 @@ class DevicePortUpdate(UpdateView):
     model = DevicePort
     form_class = DevicePortForm
     success_url = reverse_lazy('device_ports_list')
-
-    @method_decorator(permission_required('device.change_deviceport', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DevicePortUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_deviceport',)
 
     def form_valid(self, form):
         """
@@ -3304,20 +3288,14 @@ class DevicePortUpdate(UpdateView):
         return HttpResponseRedirect(DevicePortUpdate.success_url)
 
 
-class DevicePortDelete(DeleteView):
+class DevicePortDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device port delete view
     """
     model = DevicePort
     template_name = 'device_port/device_port_delete.html'
     success_url = reverse_lazy('device_ports_list')
-
-    @method_decorator(permission_required('device.delete_deviceport', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DevicePortDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_deviceport',)
 
     def delete(self, request, *args, **kwargs):
         """
