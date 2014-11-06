@@ -1531,11 +1531,12 @@ class SubStationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class SubStationListingTable(BaseDatatableView):
+class SubStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Sub Station Data table.
     """
     model = SubStation
+    required_permissions = ('inventory.view_substation',)
     columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                'tower_height', 'city', 'state', 'address', 'description']
     order_columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
