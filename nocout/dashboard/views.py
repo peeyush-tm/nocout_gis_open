@@ -19,6 +19,7 @@ from performance.views import organization_customer_devices, organization_networ
 from dashboard.models import DashboardSetting
 from dashboard.forms import DashboardSettingForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
+from dashboard.config import dashboards
 from activity_stream.models import UserAction
 
 
@@ -186,6 +187,13 @@ class DashbaordSettingsCreateView(CreateView):
         """
         return super(DashbaordSettingsCreateView, self).dispatch(*args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super(DashbaordSettingsCreateView, self).get_context_data(**kwargs)
+        context['dashboards'] = json.dumps(dashboards)
+        technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        context['technology_options'] = json.dumps(technology_options)
+        return context
+
 
 class DashbaordSettingsDetailView(DetailView):
     """
@@ -210,6 +218,13 @@ class DashbaordSettingsUpdateView(UpdateView):
         The request dispatch method restricted with the permissions.
         """
         return super(DashbaordSettingsUpdateView, self).dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(DashbaordSettingsUpdateView, self).get_context_data(**kwargs)
+        context['dashboards'] = json.dumps(dashboards)
+        technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        context['technology_options'] = json.dumps(technology_options)
+        return context
 
 
 class DashbaordSettingsDeleteView(DeleteView):
@@ -313,14 +328,26 @@ class WiMAX_Performance_Dashboard(View):
 
     """
 
-    def get(self, request):
+    template_name = 'rf_performance/wimax.html'
+
+    def get_init_data(self):
         """
         Handles the get request
 
         :param request:
         :return Http response object:
         """
-        return render(self.request, 'home/home.html')
+        data_source_config = {
+            'ul_rssi': {'service_name': 'wimax_ul_rssi', 'model': ServiceStatus},
+            'dl_rssi': {'service_name': 'wimax_dl_rssi', 'model': ServiceStatus},
+            'ul_cinr': {'service_name': 'wimax_ul_cinr', 'model': ServiceStatus},
+            'dl_cinr': {'service_name': 'wimax_dl_cinr', 'model': ServiceStatus},
+        }
+        technology = DeviceTechnology.objects.get(name__icontains='WiMAX').id
+        devices_method_to_call = organization_customer_devices
+        devices_method_kwargs = dict(specify_ptp_type='all')
+        is_bh = False
+        return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
 
 
 class PMP_Performance_Dashboard(PerformanceDashboardMixin, View):

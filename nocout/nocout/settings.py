@@ -200,7 +200,7 @@ INSTALLED_APPS = (
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': 'nocout_cache',
+        'LOCATION': '/tmp/nocout_cache',
     }
 }
 

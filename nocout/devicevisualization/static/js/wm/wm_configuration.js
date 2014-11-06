@@ -1,6 +1,6 @@
 var whiteMapSettings = {
 	format: 'image/png',
-	domElement: 'deviceMap',
+	domElement: 'wmap_container',
 	geoserver_url_India: "http://i.codescape.in:887/geoserver/wms",
 	layer: "Test2:IND_adm1",
 	initial_bounds: [68.498, 7.925, 97.335, 35.501],
@@ -8,7 +8,7 @@ var whiteMapSettings = {
 	maxResolution: 0.11264453125,
 	units: 'degrees',
 	size: {
-		medium: {width: 20, height: 28} 
+		medium: {width: 20, height: 40} 
 	},
 	zoomLevelAfterLineAppears: 6
 }

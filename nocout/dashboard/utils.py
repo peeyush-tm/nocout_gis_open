@@ -102,8 +102,11 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
     chart_data = []
     colors = []
     for count in range(1, 11):
-        chart_data.append(['range%d' %count, range_counter['range%d' %count]])
+        start_range = getattr(dashboard_setting, 'range%d_start' %count)
+        end_range = getattr(dashboard_setting, 'range%d_end' %count)
         color = getattr(dashboard_setting, 'range%d_color_hex_value' %count)
+
+        chart_data.append(['range%d (%s - %s)' % (count, start_range, end_range), range_counter['range%d' %count]])
         if color:
             colors.append(color)
         else:

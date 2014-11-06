@@ -175,10 +175,12 @@ function prepare_oms_object(oms_instance) {
 				var sectorMarkersAtThePoint = sectorMarkersMasterObj[marker.name];
 				if(sectorMarkersAtThePoint && sectorMarkersAtThePoint.length) {
 					for(var j=0; j< sectorMarkersAtThePoint.length; j++) {
-						sectorMarker = sectorMarkersAtThePoint[j].setMap(mapInstance);
-						sectorMarkersInMap.push(sectorMarker);
-						sectorMarkerOms = oms.addMarker(sectorMarkersAtThePoint[j]);
-						sectorOmsMarkers.push(sectorMarkerOms);
+						if(sectorMarkersAtThePoint[j].isActive == 1) {
+							sectorMarker = sectorMarkersAtThePoint[j].setMap(mapInstance);
+							sectorMarkersInMap.push(sectorMarker);
+							sectorMarkerOms = oms.addMarker(sectorMarkersAtThePoint[j]);
+							sectorOmsMarkers.push(sectorMarkerOms);
+						}
 					}
 				}
 				marker.isMarkerSpiderfied= true;
@@ -190,7 +192,9 @@ function prepare_oms_object(oms_instance) {
 		/*Call the function to create info window content*/
 		var content = gmap_self.makeWindowContent(marker);
 		/*Set the content for infowindow*/
-		infowindow.setContent(content);
+		$("#infoWindowContainer").html(content);
+		$("#infoWindowContainer").removeClass('hide');
+		// infowindow.setContent(content);
 
 		// if(e) {
 		// 	/*Set The Position for InfoWindow*/
@@ -200,10 +204,10 @@ function prepare_oms_object(oms_instance) {
 		// 	infowindow.setPosition(new google.maps.LatLng(marker.ptLat,marker.ptLon));
 		// }
 		/*Open the info window*/
-		infowindow.open(mapInstance,marker);
+		// infowindow.open(mapInstance,marker);
 
 		/*Show only 5 rows, hide others*/
-		gmap_self.show_hide_info();
+		// gmap_self.show_hide_info();
 	});
 
 	/*Event when the markers cluster expands or spiderify*/
@@ -402,9 +406,9 @@ function devicePlottingClass_gmap() {
 			mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
 
 			/*Initialize markercluster*/
-         masterClusterInstance = new MarkerClusterer(mapInstance, [], clusterOptions);
+         	masterClusterInstance = new MarkerClusterer(mapInstance, [], clusterOptions);
 
-         //display advance search, filter etc button when call is going on.
+         	//display advance search, filter etc button when call is going on.
 			disableAdvanceButton();
 
 			/*Show The loading Icon*/
@@ -436,7 +440,7 @@ function devicePlottingClass_gmap() {
 						},350);
 	            }
 
-        			setTimeout(function() {
+    			setTimeout(function() {
             		var bs_list = getMarkerInCurrentBound();
 	            	if(bs_list.length > 0 && isCallCompleted == 1) {
 	            		if(recallPerf != "") {
@@ -569,7 +573,7 @@ function devicePlottingClass_gmap() {
 							}
 							gmap_self.plotDevices_gmap(result.data.objects.children,"base_station");
 
-                    /*Decrement the counter*/
+                    		/*Decrement the counter*/
 							counter = counter - 1;
 
 							/*Call the function after 3 sec. for lazyloading*/
@@ -697,7 +701,7 @@ function devicePlottingClass_gmap() {
 				oldIcon 	       : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
 				clusterIcon 	   : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
 				pointType	       : 	stationType,
-				// child_ss   	       : 	bs_ss_devices[i].data.param.sector,
+				child_ss   	       : 	bs_ss_devices[i].data.param.sector,
 				// original_sectors   : 	bs_ss_devices[i].data.param.sector,
 				dataset 	       : 	bs_ss_devices[i].data.param.base_station,
 				device_name 	   : 	bs_ss_devices[i].data.device_name,
@@ -769,7 +773,7 @@ function devicePlottingClass_gmap() {
 
 				/*Call createSectorData function to get the points array to plot the sector on google maps.*/
 				gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-
+				
 					var halfPt = Math.floor(pointsArray.length / (+2));
 
 					if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
@@ -864,6 +868,7 @@ function devicePlottingClass_gmap() {
 				for(var k=sector_child.length;k--;) {
 				// for(var k=0;k<sector_child.length;k++) {
 
+				
 					var ss_marker_obj = sector_child[k];
 
 					// var perf_obj = {
@@ -876,8 +881,8 @@ function devicePlottingClass_gmap() {
 					/*Create SS Marker Object*/
 					var ss_marker_object = {
 						position 		 : 	new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
-				    	// ptLat 			 : 	ss_marker_obj.data.lat,
-				    	// ptLon 			 : 	ss_marker_obj.data.lon,
+				    	ptLat 			 : 	ss_marker_obj.data.lat,
+				    	ptLon 			 : 	ss_marker_obj.data.lon,
 				    	technology 		 : 	ss_marker_obj.data.technology,
 				    	// map 			 : 	mapInstance,
 				    	icon 			 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
@@ -1118,15 +1123,17 @@ function devicePlottingClass_gmap() {
 		google.maps.event.addListener(pathConnector, 'click', function(e) {
 			/*Call the function to create info window content*/
 			var content = gmap_self.makeWindowContent(this);
+			$("#infoWindowContainer").html(content);
+			$("#infoWindowContainer").removeClass('hide');
 			/*Set the content for infowindow*/
-			infowindow.setContent(content);
+			// infowindow.setContent(content);
 			/*Set The Position for InfoWindow*/
-			infowindow.setPosition(e.latLng);
+			// infowindow.setPosition(e.latLng);
 			/*Open the info window*/
-			infowindow.open(mapInstance);
+			// infowindow.open(mapInstance);
 
 			/*Show only 5 rows, hide others*/
-			gmap_self.show_hide_info();
+			// gmap_self.show_hide_info();
 		});
 
 		markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= pathConnector;
@@ -1424,14 +1431,16 @@ function devicePlottingClass_gmap() {
 
 			/*Call the function to create info window content*/
 			var content = gmap_self.makeWindowContent(poly);
+			$("#infoWindowContainer").html(content);
+			$("#infoWindowContainer").removeClass('hide');
 			/*Set the content for infowindow*/
-			infowindow.setContent(content);
+			// infowindow.setContent(content);
 			/*Set The Position for InfoWindow*/
-			infowindow.setPosition(e.latLng);
+			// infowindow.setPosition(e.latLng);
 			/*Open the info window*/
-			infowindow.open(mapInstance);
+			// infowindow.open(mapInstance);
 			/*Show only 5 rows, hide others*/
-			gmap_self.show_hide_info();
+			// gmap_self.show_hide_info();
 		});
 	};
 
@@ -1450,12 +1459,23 @@ function devicePlottingClass_gmap() {
 
 		/*True,if clicked on the link line*/
 		if(clickedType == "path") {
+			var path_circuit_id = "";
+			/*Tabbale Start*/
+			infoTable += '<div class="tabbable">';
+			/*Tabs Creation Start*/
+			infoTable += '<ul class="nav nav-tabs">';
+			infoTable += '<li class="active"><a href="#near_end_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> BS-Sector Info</a></li>';
+			infoTable += '<li class=""><a href="#far_end_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> SS Info</a></li>';
+			infoTable += '</ul>';
+			/*Tabs Creation Ends*/
 
-			infoTable += "<table class='table table-bordered'><thead><th>BS-Sector Info</th><th>SS Info</th></thead><tbody>";
-			infoTable += "<tr>";
-			/*BS-Sector Info Start*/
-			infoTable += "<td>";	
-			infoTable += "<table class='table table-hover innerTable'><tbody>";
+			/*Tab-content Start*/
+			infoTable += '<div class="tab-content">';
+
+			/*First Tab Content Start*/
+			infoTable += '<div class="tab-pane fade active in" id="near_end_block"><div class="divide-10"></div>';
+
+			infoTable += "<table class='table table-bordered'><tbody>";
 			
 			/*Loop for BS or Sector info object array*/
 			for(var i=0;i<contentObject.bs_info.length;i++) {
@@ -1470,25 +1490,44 @@ function devicePlottingClass_gmap() {
 			infoTable += "</td>";
 			/*BS-Sector Info End*/
 
+			infoTable += '</div>';
+			/*First Tab Content End*/
+
+			/*Second Tab Content Start*/
+			infoTable += '<div class="tab-pane fade" id="far_end_block"><div class="divide-10"></div>';
 			/*SS Info Start*/
 			infoTable += "<td>";			
-			infoTable += "<table class='table table-hover innerTable'><tbody>";
+			infoTable += "<table class='table table-bordered'><tbody>";
 			
 			/*Loop for ss info object array*/
 			for(var i=0;i<contentObject.ss_info.length;i++) {
+				if(contentObject.ss_info[i].title && $.trim(contentObject.ss_info[i].title.toLowerCase()) === 'circuit id') {
+					path_circuit_id = contentObject.ss_info[i].value;
+				}
 
 				if(contentObject.ss_info[i].show == 1) {
 					infoTable += "<tr><td>"+contentObject.ss_info[i].title+"</td><td>"+contentObject.ss_info[i].value+"</td></tr>";
 				}
 			}
 
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
-			infoTable += "</tbody></table>";		
-			infoTable += "</td>";
-			/*SS Info End*/
+			var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
+				link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
 
-			infoTable += "</tr>";
+			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
+			if(path_circuit_id) {
+				infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
+				infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
+			}
 			infoTable += "</tbody></table>";
+			/*SS Info End*/
+			infoTable += '</div>';
+			/*Second Tab Content End*/
+
+			infoTable += '</div>';
+			/*Tab-content end*/
+
+			infoTable += '</div>';
+			/*Tabbale End*/
 
 			var isBSLeft = 0;
 
@@ -1509,10 +1548,10 @@ function devicePlottingClass_gmap() {
 
 			if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
 				/*Concat infowindow content*/
-				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
 			} else {
 				/*Concat infowindow content*/
-				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
 			}
 
 		} else if (clickedType == 'sector_Marker' || clickedType == 'sector') {
@@ -1544,11 +1583,12 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>Base Station Device</h4></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div></div></div></div>";
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>Base Station Device</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div></div></div>";
 		} else {
 
 			infoTable += "<table class='table table-bordered'><tbody>";
-			var startPtInfo = [];
+			var startPtInfo = [],
+				ss_circuit_id = "";
 
 			if(contentObject.bsInfo != undefined) {
 				startPtInfo = contentObject.bsInfo;
@@ -1557,7 +1597,9 @@ function devicePlottingClass_gmap() {
 			}
 			
 			for(var i=0;i<startPtInfo.length;i++) {
-
+				if(startPtInfo[i].title && $.trim(startPtInfo[i].title.toLowerCase()) === 'circuit id') {
+					ss_circuit_id = startPtInfo[i].value;
+				}
 				if(startPtInfo[i].show == 1) {
 					infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
 				}
@@ -1575,6 +1617,18 @@ function devicePlottingClass_gmap() {
 			/*Set the lat lon of the point*/
 			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
 
+			var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
+				link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
+
+			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
+			
+			if(clickedType == "sub_station") {
+				if(ss_circuit_id) {
+					infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
+					infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
+				}
+			}
+
 			if(clickedType == "base_station") {
 
 				infoTable += "<tr><td colspan='2'><b>Backhaul Info</b></td></tr>";
@@ -1589,7 +1643,7 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+contentObject.pointType.toUpperCase()+"</h4></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div></div></div></div>";
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+contentObject.pointType.toUpperCase()+"</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div></div></div>";
 		}
 		/*Return the info window content*/
 		return windowContent;
@@ -2271,6 +2325,8 @@ function devicePlottingClass_gmap() {
 
 		if(page_type && page_type == 'googleEarth') {
 			current_data = main_devices_data_earth;
+		} else if (page_type && page_type == 'white_background') {
+			current_data = main_devices_data_wmap;
 		} else {
 			current_data = main_devices_data_gmaps
 		}
@@ -2311,10 +2367,10 @@ function devicePlottingClass_gmap() {
         }
 
         /*Check that after applying filters any data exist or not*/
-      if(filteredData.length === 0) {
+        if(filteredData.length === 0) {
 
         	$.gritter.add({
-                // (string | mandatory) the heading of the notification
+        		// (string | mandatory) the heading of the notification
                 title: 'GIS : Filters',
                 // (string | mandatory) the text inside the notification
                 text: 'No data available for applied filters.',
@@ -2323,16 +2379,19 @@ function devicePlottingClass_gmap() {
             });
 
         	if(page_type && page_type == 'googleEarth') {
-         	earth_instance.clearEarthElements();
-         } else {
-            data_for_filters = [];
-            // masterMarkersObj = [];
-            gmap_self.hide_all_elements_gmap();
-            /*Filter Line & label array as per filtered data*/
-            gmap_self.getFilteredLineLabel(data_for_filters);
+        		earth_instance.clearEarthElements();
+        	} else if (page_type && page_type == 'white_background') {
+        		data_for_filter_wmap = [];
+        		whiteMapClass.hideAllFeatures();
+        	} else {
+        		data_for_filters = [];
+        		// masterMarkersObj = [];
+        		gmap_self.hide_all_elements_gmap();
+        		/*Filter Line & label array as per filtered data*/
+        		gmap_self.getFilteredLineLabel(data_for_filters);
+        	}
 
-         }
-      } else {
+        } else {
         	if(page_type && page_type == 'googleEarth') {
 
 	            data_for_filters_earth = filteredData;
@@ -2343,6 +2402,13 @@ function devicePlottingClass_gmap() {
             	/*Populate the map with the filtered markers*/
 	            earth_instance.plotDevices_earth(filteredData,"base_station");
 
+	        } else if (page_type && page_type == 'white_background') {
+
+	        	data_for_filter_wmap = filteredData;
+
+	        	whiteMapClass.hideAllFeatures();
+
+	        	showWmapFilteredData(filteredData);
             } else {
 					
 				data_for_filters = filteredData;
@@ -2420,7 +2486,12 @@ function devicePlottingClass_gmap() {
 
 		        /*create the BS-SS network on the google earth*/
 		        earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
+		    } else if($.trim(mapPageType) == "white_background") {
 
+		    	whiteMapClass.hideAllFeatures();
+		    	data_for_filter_wmap = main_devices_data_wmap;
+
+		    	whiteMapClass.showAllFeatures();
         	} else {
 
         		gmap_self.show_all_elements_gmap();
@@ -3714,11 +3785,15 @@ function devicePlottingClass_gmap() {
 
 		/*Close infowindow if any opened*/
 		infowindow.close();
+		// $("#infoWindowContainer").addClass('hide');
 
 		/*Set the content for infowindow*/
 		infowindow.setContent(right_click_html);
 		/*Open the info window*/
 		infowindow.open(mapInstance,marker);
+
+		// $("#infoWindowContainer").html(right_click_html);
+		// $("#infoWindowContainer").removeClass('hide');
 	};
 
 	/**
@@ -3824,7 +3899,8 @@ function devicePlottingClass_gmap() {
 
 		current_point_for_line = "point_"+String(marker.lat).split(".").join("-")+"_"+String(marker.lon).split(".").join("-");
 
-		infowindow.close();
+		// infowindow.close();
+		$("#infoWindowContainer").addClass('hide');
 
 		//first clear the listners. as ruler tool might be in place
         google.maps.event.clearListeners(mapInstance,'click');
@@ -3908,6 +3984,7 @@ function devicePlottingClass_gmap() {
 			
 			/*Close infowindow if any opened*/
 			infowindow.close();
+			// $("#infoWindowContainer").addClass('hide');
 
 			/*Set the content for new infowindow*/
 			infowindow.setContent(info_window_content);
@@ -3917,6 +3994,9 @@ function devicePlottingClass_gmap() {
 			
 			/*Open the info window*/
 			infowindow.open(mapInstance);
+
+			// $("#infoWindowContainer").html(info_window_content);
+			// $("#infoWindowContainer").removeClass('hide');
 			
 			/*Triggers when remove line button clicked*/
 			$("#remove_tool_line").click(function(e) {
@@ -3938,7 +4018,8 @@ function devicePlottingClass_gmap() {
 		point_data_obj[current_pt].connected_lat = 0;
 		point_data_obj[current_pt].connected_lon = 0;
 		
-		infowindow.close();
+		// infowindow.close();
+		$("#infoWindowContainer").addClass('hide');
 		current_line_ptr.setMap(null);
 
 		var request_obj = {
@@ -4033,6 +4114,7 @@ function devicePlottingClass_gmap() {
 							
 							/*Close infowindow if any opened*/
 							infowindow.close();
+							// $("#infoWindowContainer").addClass('hide');
 
 							/*Set the content for new infowindow*/
 							infowindow.setContent(info_window_content);
@@ -4042,6 +4124,8 @@ function devicePlottingClass_gmap() {
 							
 							/*Open the info window*/
 							infowindow.open(mapInstance);
+							// $("#infoWindowContainer").html(info_window_content);
+							// $("#infoWindowContainer").removeClass('hide');
 							
 							/*Triggers when remove line button clicked*/
 							$("#remove_tool_line").click(function(e) {
@@ -4070,7 +4154,8 @@ function devicePlottingClass_gmap() {
 		ruler_pt_count = 0;
 
 		/*If any info window is open then close it*/
-		infowindow.close();
+		// infowindow.close();
+		$("#infoWindowContainer").addClass('hide');
 
 		for(var i=0;i<ruler_array.length;i++) {
 			ruler_array[i].setMap(null);
@@ -4431,6 +4516,7 @@ function devicePlottingClass_gmap() {
 
 		/*close infowindow*/
 		infowindow.close();
+		$("#infoWindowContainer").addClass('hide');
 
 		/*Clear lat-lon searched marker if exist*/
         if(lastSearchedPt.position != undefined) {
@@ -4654,6 +4740,8 @@ function prepare_data_for_filter() {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
 		current_data = main_devices_data_earth;
+	} else if(window.location.pathname.indexOf("white_background") > -1) {
+		current_data = main_devices_data_wmap;
 	} else {
 		current_data = main_devices_data_gmaps;
 	}
@@ -4743,6 +4831,8 @@ function getDataForAdvanceSearch() {
 
 	if(window.location.pathname.indexOf("googleEarth") > -1) {
 		current_data = main_devices_data_earth;
+	} else if(window.location.pathname.indexOf("white_background") > -1) {		
+		current_data = main_devices_data_wmap;
 	} else {
 		current_data = main_devices_data_gmaps;
 	}
@@ -4879,7 +4969,7 @@ function getMarkerInCurrentBound() {
         if(markersMasterObj['BS'].hasOwnProperty(key)) {
             var markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
             if(markerVisible) {
-            	if(markersMasterObj['BS'][key].map != null && markersMasterObj['BS'][key].map != "") {
+            	if(markersMasterObj['BS'][key].isActive  && markersMasterObj['BS'][key].isActive != 0) {
             		bsMarkersInBound.push(markersMasterObj['BS'][key]['name']);
             	}                
             }

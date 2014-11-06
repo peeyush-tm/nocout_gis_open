@@ -63,8 +63,19 @@
     <!-- Library to load tab content on tab click-->
     <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <script type="text/javascript">
-        var dataTableInstance = "";
+        var dataTableInstance = "",
+            base_url = "",
+            excel_columns = [];
+            
         $(document).ready(function (e) {
+
+            /*Set the base url of application for ajax calls*/
+            if(window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            }
+
             function ourDataTableWidget() {
                 /**
                  * This function creates the jquery data table on given domElement
@@ -77,6 +88,13 @@
                 this.createDataTable = function (tableId, tableheaders, ajax_url, destroy) {
                     /*Show the spinner*/
                     showSpinner();
+
+                    for(var i=0;i<tableheaders.length;i++) {
+                        var current_column = tableheaders[i];
+                        if(current_column && current_column['sClass'] != 'hide' && current_column['mData'] != 'action') {
+                            excel_columns.push(i);
+                        }
+                    }
 
                     destroy = typeof destroy !== 'undefined' ? destroy : true;
                     $('.datatable').each(function () {
@@ -93,6 +111,18 @@
                         $("#" + tableId).dataTable().fnDestroy();
                     }
                     var dtable = $("#" + tableId).DataTable({
+                        sDom: 'T<"clear">lfrtip',
+                        oTableTools: {
+                            sSwfPath : base_url+"/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                            aButtons : [
+                                {
+                                    sExtends : "xls",
+                                    sButtonText : "Download Excel",
+                                    sFileName : "*.xls",
+                                    mColumns : excel_columns
+                                }
+                            ]
+                        },
                         bAutoWidth: false,
                         bDestroy : true,
                         bPaginate: true,

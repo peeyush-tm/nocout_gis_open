@@ -12,7 +12,8 @@ urlpatterns = patterns('',
   url(r'^edit/(?P<pk>\d+)$', views.DeviceUpdate.as_view(), name='device_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.DeviceDelete.as_view(), name='device_delete'),
 
-  url(r'^stats/$', cache_page(60 * 60)(api.DeviceStatsApi.as_view())),
+  # url(r'^stats/$', cache_page(60 * 60)(api.DeviceStatsApi.as_view())),
+  url(r'^stats/$', api.DeviceStatsApi.as_view()),
 
   url(r'^filter/$', api.DeviceFilterApi.as_view()),
   url(r'^lp_services/', api.LPServicesApi.as_view()),

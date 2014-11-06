@@ -448,7 +448,7 @@ def query_all_gis_inventory():
         on
             (bh.BHID = bs_info.BHID)
 
-        Group by BSID,SECTOR_ID,CID
+        group by BSID,SECTOR_ID,CID
         ;
         '''
     return gis

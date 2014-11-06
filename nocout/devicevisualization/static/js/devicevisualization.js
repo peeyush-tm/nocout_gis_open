@@ -70,6 +70,9 @@ function getPageType() {
     if(window.location.pathname.indexOf("googleEarth") > -1) {
         mapPageType = "googleEarth";
         // networkMapInstance = mapsLibInstance;
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        mapPageType = "white_background";
+        networkMapInstance = gmap_self;
     } else {
         mapPageType = "gmap";
     }
@@ -82,9 +85,9 @@ city_options = []
 $("#state").change(function(e) {
 
 
-    if(window.location.pathname.indexOf("white_background") > -1) {
-        return;
-}
+//     if(window.location.pathname.indexOf("white_background") > -1) {
+//         return;
+// }
     getPageType();
 
     var state_id = $(this).val(),
@@ -110,9 +113,9 @@ $("#state").change(function(e) {
 /*This event trigger when city dropdown value is changes*/
 $("#city").change(function(e) {
 
-    if(window.location.pathname.indexOf("white_background") > -1) {
-        return;
-}
+//     if(window.location.pathname.indexOf("white_background") > -1) {
+//         return;
+// }
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -120,9 +123,9 @@ $("#city").change(function(e) {
 /*This event trigger when vendor dropdown value is changes*/
 $("#vendor").change(function(e) {
 
-    if(window.location.pathname.indexOf("white_background") > -1) {
-        return;
-}
+//     if(window.location.pathname.indexOf("white_background") > -1) {
+//         return;
+// }
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -130,9 +133,9 @@ $("#vendor").change(function(e) {
 /*This event trigger when technology dropdown value is changes*/
 $("#technology").change(function(e) {
 
-if(window.location.pathname.indexOf("white_background") > -1) {
-    return;
-    }
+// if(window.location.pathname.indexOf("white_background") > -1) {
+//     return;
+//     }
     getPageType();
     var tech_id = $(this).val(),
         tech_value= $('#technology option:selected').text();
@@ -157,9 +160,8 @@ if(window.location.pathname.indexOf("white_background") > -1) {
 
 /*This event triggers when Reset Filter button clicked*/
 $("#resetFilters").click(function(e) {
-if(window.location.pathname.indexOf("white_background") > -1) {
-        return;
-}
+
+    
     $("#resetFilters").button("loading");
     /*Reset The basic filters dropdown*/
     $("#technology").val($("#technology option:first").val());
@@ -189,7 +191,14 @@ if(window.location.pathname.indexOf("white_background") > -1) {
 
         /*create the BS-SS network on the google map*/
         earth_instance.plotDevices_earth(main_devices_data_earth,'base_station');
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.hideAllFeatures();
 
+        data_for_filter_wmap = main_devices_data_wmap;
+
+        showWmapFilteredData(main_devices_data_wmap);
+
+        // $("#resetFilters").button("completed");
     } else {
 
         /*Reset filter object variable*/
@@ -221,16 +230,15 @@ function showAdvSearch() {
 
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
-    if(window.location.pathname.indexOf("white_background") > -1) {
-        whiteMapClass.applyAdvanceSearch();
+    
+    advJustSearch.showNotification();
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        advJustSearch.searchAndCenterData(data_for_filters_earth);
+    } else if (window.location.pathname.indexOf("white_background") > -1) {
+        advJustSearch.searchAndCenterData(data_for_filter_wmap);
     } else {
-        advJustSearch.showNotification();
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
-            advJustSearch.searchAndCenterData(data_for_filters_earth);
-        } else {
-            advJustSearch.searchAndCenterData(data_for_filters);
-        }        
-    }
+        advJustSearch.searchAndCenterData(data_for_filters);
+    }        
 });
 
 $("#cancelAdvSearchBtn").click(function(e) {
@@ -279,9 +287,9 @@ function showAdvFilters() {
 /*If 'Filter' button of advance filter is clicked*/
 $("#setAdvFilterBtn").click(function(e) {
 
-if(window.location.pathname.indexOf("white_background") > -1) {
-    return;
-    }
+// if(window.location.pathname.indexOf("white_background") > -1) {
+//     return;
+//     }
     /*Show spinner*/
     showSpinner();
 
@@ -297,9 +305,9 @@ if(window.location.pathname.indexOf("white_background") > -1) {
 /*If 'Cancel' button of advance filter form is clicked*/
 $("#cancelAdvFilterBtn").click(function(e) {
 
-if(window.location.pathname.indexOf("white_background") > -1) {
-    return;
-    }
+// if(window.location.pathname.indexOf("white_background") > -1) {
+//     return;
+//     }
     $("#advFilterFormContainer").html("");
 
     if(!($("#advFilterContainerBlock").hasClass("hide"))) {
@@ -314,9 +322,7 @@ if(window.location.pathname.indexOf("white_background") > -1) {
  * @method removeAdvFilters
  */
 function removeAdvFilters() {
-if(window.location.pathname.indexOf("white_background") > -1) {
-    return;
-    }
+
     /*Reset advance filter status flag*/
     hasAdvFilter = 0;
 
@@ -324,6 +330,8 @@ if(window.location.pathname.indexOf("white_background") > -1) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
         data_for_filters_earth = main_devices_data_earth;
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        data_for_filters = main_devices_data_wmap;
     } else {
         data_for_filters = main_devices_data_gmaps;
     }
@@ -464,7 +472,10 @@ function disableAdvanceButton(status) {
         }
 
         for(var i=0; i< textBoxes.length; i++) {
-            document.getElementById(textBoxes[i]).disabled = disablingBit;
+            var el = document.getElementById(textBoxes[i]);
+            if(el) {
+                document.getElementById(textBoxes[i]).disabled = disablingBit;    
+            }            
         }
     } else {
         disablingBit= false;
@@ -478,7 +489,11 @@ function disableAdvanceButton(status) {
         }
 
         for(var i=0; i< textBoxes.length; i++) {
-            document.getElementById(textBoxes[i]).disabled = disablingBit;
+            var el = document.getElementById(textBoxes[i]);
+            if(el) {
+                document.getElementById(textBoxes[i]).disabled = disablingBit;    
+            }
+            // document.getElementById(textBoxes[i]).disabled = disablingBit;
         }
     }
 }
@@ -937,4 +952,10 @@ $("#point_icons_container li").click(function(e) {
     if($("#point_icons_container li.selected_icon")[0].children[0].hasAttribute('src')) {
         point_icon_url = $("#point_icons_container li.selected_icon")[0].children[0].attributes['src'].value.split("../../")[1];
     }
+});
+
+/*Close info window when close button is clicked*/
+$('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
+    $('#infoWindowContainer').html("");
+    $('#infoWindowContainer').addClass("hide");
 });

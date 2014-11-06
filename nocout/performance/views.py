@@ -200,7 +200,7 @@ class Live_Performance(ListView):
         if page_type in ["customer"]:
             datatable_headers = [
                 # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True, 'bVisible': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
                 {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -221,7 +221,7 @@ class Live_Performance(ListView):
         elif page_type in ["network"]:
             datatable_headers = [
                 # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True, 'bVisible': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
                 {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -241,7 +241,7 @@ class Live_Performance(ListView):
         else:
             datatable_headers = [
                 # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True, 'bVisible': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
                 {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -268,37 +268,26 @@ class LivePerformanceListing(BaseDatatableView):
 
     """
     model = NetworkStatus
-    columns = ['id', 'ip_address', 'device_technology', 'device_type', 'bs_name', 'city', 'state']
+    is_ordered = False
+    is_searched = False
+    is_initialised = True
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return result_list:
-        """
-
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            if len(sSearch) > 3:
-                search_data = self.prepare_devices(qs)
-                result_list = list()
-                for dictionary in search_data:
-                    x = json.dumps(dictionary)
-                    dictionary = json.loads(x)
-                    for dict in dictionary:
-                        if dictionary[dict]:
-                            if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                                dictionary not in result_list
-                            ):
-                                if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
-                                    result_list.append(dictionary)
-                            else:
-                                if sSearch == dictionary[dict] and dictionary not in result_list:
-                                    result_list.append(dictionary)
-
-                return result_list
-        return qs
+    columns = ['id',
+               'ip_address',
+               'device_technology',
+               'device_type',
+               'bs_name',
+               'city',
+               'state',
+               'packet_loss',
+               'latency',
+               'last_updated'
+    ]
+    polled_columns = [
+        'packet_loss',
+       'latency',
+       'last_updated'
+    ]
 
     def get_initial_queryset(self):
         """
@@ -395,178 +384,91 @@ class LivePerformanceListing(BaseDatatableView):
 
         return devices
 
-    def prepare_devices(self,qs):
+    def filter_queryset(self, qs):
         """
-
-        :param device_list:
-        :return:
-        """
-        devices = qs
-
-        page_type = self.request.GET['page_type']
-
-        device_list = []
-        for device in devices:
-            if device['id'] not in device_list:
-                device_list.append(device['id'])
-
-        if len(device_list):
-            raw_results = gis_information
-
-            for device in devices:
-                device_id = device['id']
-                sector_id = []
-                circuit_id = []
-                bh_id = []
-
-                for result in raw_results:
-                    #if device is sector
-                    if page_type == 'network' \
-                            and device_id == result['SECTOR_CONF_ON_ID'] \
-                            and result['SECTOR_SECTOR_ID'] not in sector_id:
-
-                        sector_id.append(format_value(result['SECTOR_SECTOR_ID']))
-                        device.update({
-                            "sector_id": ", ".join(sector_id),
-                            "circuit_id": format_value(result['CCID']),
-                            "customer_name" : format_value(result['CUST']),
-                            "bs_name": format_value(result['BSALIAS']),
-                            "city": format_value(result['BSSTATE']),
-                            "state": format_value(result['BSCITY']),
-                            "device_type": format_value(result['SECTOR_TYPE']),
-                            "device_technology": format_value(result['SECTOR_TECH'])
-                        })
-                    elif page_type == 'customer' \
-                            and device_id == result['SS_DEVICE_ID']\
-                            and result['CCID'] not in circuit_id:
-                        circuit_id.append(result['CCID'])
-                        device.update({
-                            "sector_id": format_value(result['SECTOR_SECTOR_ID']),
-                            "circuit_id": format_value(result['CCID']),
-                            "customer_name" : format_value(result['CUST']),
-                            "bs_name": format_value(result['BSALIAS']),
-                            "city": format_value(result['BSSTATE']),
-                            "state": format_value(result['BSCITY']),
-                            "device_type": format_value(result['SS_TYPE']),
-                            "device_technology": format_value(result['SECTOR_TECH'])
-                        })
-                    elif page_type == 'other' \
-                            and device_id == result['BH_DEVICE_ID']\
-                            and result['BH_DEVICE_ID'] not in bh_id:
-                        bh_id.append(result['BH_DEVICE_ID'])
-                        device.update({
-                            "sector_id": format_value(result['SECTOR_SECTOR_ID']),
-                            "circuit_id": format_value(result['CCID']),
-                            "customer_name" : format_value(result['CUST']),
-                            "bs_name": format_value(result['BSALIAS']),
-                            "city": format_value(result['BSSTATE']),
-                            "state": format_value(result['BSCITY']),
-                            "device_type": format_value(result['BHTYPE']),
-                            "device_technology": format_value(result['BHTECH'])
-                        })
-                    else:
-                        pass
-        return devices
-
-    def prepare_results(self, qs, multi_proc=False):
-        """
-        Preparing the final result after fetching from the data base to render on the data table.
+        The filtering of the queryset with respect to the search keyword entered.
 
         :param qs:
-        :return qs
+        :return result_list:
         """
 
-        device_list = []
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            if len(sSearch) > 3:
+                self.is_initialised = False
+                self.is_searched = True
+                search_data = self.prepare_devices(qs)
+                result_list = list()
+                for dictionary in search_data:
+                    x = json.dumps(dictionary)
+                    dictionary = json.loads(x)
+                    for dict in dictionary:
+                        if dictionary[dict]:
+                            if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                                dictionary not in result_list
+                            ):
+                                if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                    result_list.append(dictionary)
+                            else:
+                                if sSearch == dictionary[dict] and dictionary not in result_list:
+                                    result_list.append(dictionary)
 
-        if qs:
-            for dct in qs:
-                device = Device.objects.get(id=dct['id'])
-                if dct['page_type'] in ["customer", "network"]:
-                    dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                        <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
-                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                        .format(dct['page_type'],
-                                dct['id'],
-                                'ping')
-                    )
-                else:
-                    dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                        .format(dct['page_type'],
-                                dct['id']
-                        )
-                    )
-
-                device_list.append({'device_name': device.device_name, 'device_machine': device.machine.name})
-
-            # Unique machine from the device_list
-            unique_device_machine_list = {device['device_machine']: True for device in device_list}.keys()
-
-            machine_dict = {}
-            #Creating the machine as a key and device_name as a list for that machine.
-            for machine in unique_device_machine_list:
-                machine_dict[machine] = [device['device_name'] for device in device_list if
-                                         device['device_machine'] == machine]
-
-            #Fetching the data for the device w.r.t to their machine.
-            ## multi processing module here
-            ## to fetch the deice results from corrosponding machines
-            model_is = self.model
-            processed = []
-            if multi_proc:
-                model_is = self.model
-                perf_result = []
-                q = Queue()
-                jobs = [
-                    Process(
-                        target=get_multiprocessing_performance_data,
-                        args=(q,machine_device_list, machine,model_is)
-                    ) for machine, machine_device_list in machine_dict.items()
-                ]
-
-                for j in jobs:
-                    j.start()
-                for k in jobs:
-                    k.join()
-
-                while True:
-                    if not q.empty():
-                        # perf_result.append(q.get())
-                        self.map_results(q.get(),qs)
-                    else:
-                        break
-
+                return result_list
             else:
-                for machine, machine_device_list in machine_dict.items():
-                    perf_result = get_performance_data(machine_device_list, machine, model_is)
-                    self.map_results(perf_result,qs)
-
-            #sorting the dict in the descending order for the qs prepared finally.
-            sorted_qs = sorted(qs, key=itemgetter('last_updated'), reverse=True)
-            return sorted_qs
-        return device_list
-
-    def map_results(self,perf_result,qs):
-        """
-        """
-        processed = []
-        for p_result in perf_result:
-            if p_result not in processed:
-                processed.append(p_result)
-                for dct in qs:
-                    result = perf_result[p_result]
-                    if dct["device_name"] == p_result:
-                        dct["packet_loss"] = result["packet_loss"]
-                        dct["latency"] = result["latency"]
-                        dct["last_updated"] = result["last_updated"]
+                self.is_searched = False
+        return qs
 
     def ordering(self, qs):
         """
         sorting for the table
         """
         request = self.request
+
+        page_type = request.GET['page_type']
+        
+
+        if page_type == 'customer':
+            columns = ['id',
+               'ip_address',
+               'device_technology',
+               'device_type',
+               'bs_name',
+               'circuit_id',
+               'customer_name',
+               'city',
+               'state',
+               'packet_loss',
+               'latency',
+               'last_updated'
+            ]
+        elif page_type == 'network':
+            columns = ['id',
+               'ip_address',
+               'device_technology',
+               'device_type',
+               'bs_name',
+               'sector_id',
+               'city',
+               'state',
+               'packet_loss',
+               'latency',
+               'last_updated'
+            ]
+        else:
+            columns = ['id',
+               'ip_address',
+               'device_technology',
+               'device_type',
+               'bs_name',
+               'city',
+               'state',
+               'packet_loss',
+               'latency',
+               'last_updated'
+            ]
+
+        i_sort_col = 0
+
         # Number of columns that are used in sorting
         try:
             i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
@@ -586,14 +488,96 @@ class LivePerformanceListing(BaseDatatableView):
 
             reverse = False if s_sort_dir == 'desc' else True
 
-        if i_sorting_cols:
+        if i_sorting_cols and i_sort_col:
+            self.is_ordered = True
+            self.is_initialised = False
             sort_data = self.prepare_devices(qs)
             try:
-                sort_using = self.columns[i_sorting_cols]
+                sort_using = columns[i_sort_col]
+                if sort_using in self.polled_columns:
+                    ##now we need to poll the devices
+                    ##here we can limit the number of devices in query
+                    ##to get the data from
+                    ##that needs to be per machine basis
+                    ##once we have the results
+                    ##we can quickly call upon prepare_devices
+                    pass
                 sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
                 return sorted_qs
+
             except Exception as nocolumn:
-                pass
+                self.is_initialised = True
+                self.is_ordered = False
+
+        else:
+            self.is_initialised = True
+            self.is_ordered = False
+            return qs
+
+    def prepare_devices(self,qs):
+        """
+
+        :param device_list:
+        :return:
+        """
+        page_type = self.request.GET['page_type']
+        return prepare_gis_devices(qs, page_type)
+
+    def prepare_machines(self, qs):
+        """
+        """
+        device_list = []
+        for device in qs:
+            device_list.append(
+                {
+                    'device_name': device['device_name'],
+                    'device_machine': device['machine__name']
+                }
+            )
+
+        return prepare_machines(device_list)
+
+    def prepare_polled_results(self, qs, multi_proc=False, machine_dict={}):
+        """
+        preparing polled results
+        after creating static inventory first
+        """
+        result_qs = polled_results(qs=qs,
+                                   multi_proc=multi_proc,
+                                   machine_dict=machine_dict,
+                                   model_is=self.model
+        )
+        return result_qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+
+        if qs:
+            for dct in qs:
+                # device = Device.objects.get(id=dct['id'])
+                if dct['page_type'] in ["customer", "network"]:
+                    dct.update(
+                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                        <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
+                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
+                        .format(dct['page_type'],
+                                dct['id'],
+                                'ping')
+                    )
+                else:
+                    dct.update(
+                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
+                        .format(dct['page_type'],
+                                dct['id']
+                        )
+                    )
+
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -617,19 +601,30 @@ class LivePerformanceListing(BaseDatatableView):
         # number of records after filtering
         total_display_records = len(qs)
 
+        #check if this has just initialised
+        #if so : process the results
         qs = self.ordering(qs)
         qs = self.paging(qs)
+        ##check if this has been searched
+        ## if this has been seached
+        ## dont call prepare_devices
 
-        #prepare devices with GIS information
-        qs = self.prepare_devices(qs=qs)
-        #end prepare devices with GIS information
+        if self.is_initialised and not self.is_searched:
+            #prepare devices with GIS information
+            qs = self.prepare_devices(qs=qs)
+            #end prepare devices with GIS information
 
-        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        # if the qs is empty then JSON is unable to serialize the empty
+        # ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
 
-        # prepare output data
-        aaData = self.prepare_results(qs, multi_proc=True)
+        #preparing machine list
+        machines = self.prepare_machines(qs)
+        #preparing the polled results
+        qs = self.prepare_polled_results(qs, multi_proc=True, machine_dict=machines)
+
+        aaData = self.prepare_results(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
@@ -637,6 +632,82 @@ class LivePerformanceListing(BaseDatatableView):
         }
         return ret
 
+def prepare_machines(device_list):
+    """
+
+    :return:
+    """
+    # Unique machine from the device_list
+    unique_device_machine_list = {device['device_machine']: True for device in device_list}.keys()
+
+    machine_dict = {}
+    #Creating the machine as a key and device_name as a list for that machine.
+    for machine in unique_device_machine_list:
+        machine_dict[machine] = [device['device_name'] for device in device_list if
+                                 device['device_machine'] == machine]
+
+    return machine_dict
+
+
+@cache_for(600)
+def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
+    """
+    ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
+    """
+    #Fetching the data for the device w.r.t to their machine.
+    ## multi processing module here
+    ## to fetch the deice results from corrosponding machines
+    model = model_is
+    devices = qs
+    processed = []
+    perf_result = []
+    if multi_proc:
+
+        q = Queue()
+        jobs = [
+            Process(
+                target=get_multiprocessing_performance_data,
+                args=(q,machine_device_list, machine,model)
+            ) for machine, machine_device_list in machine_dict.items()
+        ]
+
+        for j in jobs:
+            j.start()
+        for k in jobs:
+            k.join()
+
+        while True:
+            if not q.empty():
+                perf_result.append(q.get())
+            else:
+                break
+
+    else:
+        for machine, machine_device_list in machine_dict.items():
+            perf_result.append(get_performance_data(machine_device_list, machine, model))
+
+    result_qs = map_results(perf_result,devices)
+    return result_qs
+
+
+def map_results(perf_result, qs):
+    """
+    """
+    result_qs = qs
+    performance = perf_result
+
+    processed = []
+    for device_result in performance:
+        for p_result in device_result:
+            if p_result not in processed:
+                processed.append(p_result)
+                for dct in result_qs:
+                    result = device_result[p_result]
+                    if dct["device_name"] == p_result:
+                        dct["packet_loss"] = result["packet_loss"]
+                        dct["latency"] = result["latency"]
+                        dct["last_updated"] = result["last_updated"]
+    return result_qs
 
 class Get_Perfomance(View):
     """
@@ -657,15 +728,17 @@ class Get_Perfomance(View):
         end_date= self.request.GET.get('end_date','')
         isSet = False
 
-        if len(start_date) and len(end_date):
-            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
-            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
-            start_date= format( start_date_object, 'U')
-            end_date= format( end_date_object, 'U')
-            isSet = True
-            if start_date == end_date:
-                # Converting the end date to the highest time in a day.
-                end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+        date_format = "%d-%m-%Y %H:%M:%S"
+
+        if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
+            try:
+                start_date = float(start_date)
+                end_date = float(end_date)
+            except Exception, e:
+                start_date_object= datetime.datetime.strptime(start_date, date_format)
+                end_date_object= datetime.datetime.strptime(end_date, date_format)
+                start_date= format( start_date_object, 'U')
+                end_date= format( end_date_object, 'U')
         else:
             # The end date is the end limit we need to make query till.
             end_date_object = datetime.datetime.now()
@@ -875,7 +948,7 @@ class Fetch_Inventory_Devices(View):
         result = list()
         for device in device_list:
             result.append({'id': device.id,
-                           'alias': device.device_name,
+                           'alias': device.device_alias,
                            'technology': DeviceTechnology.objects.get(id=device.device_technology).name }
         )
         return result
@@ -901,34 +974,56 @@ class Inventory_Device_Status(View):
         }
         result['data']['objects']['values'] = list()
 
+        customer_name = ''
+
         device = Device.objects.get(id=device_id)
         technology = DeviceTechnology.objects.get(id=device.device_technology)
+        type = DeviceType.objects.get(id=device.device_type)
 
         if device.sector_configured_on.exists():
-            result['data']['objects']['headers'] = ['BS Name',
+            if technology.name in ['P2P','PTP','ptp','p2p']:
+                result['data']['objects']['headers'] = ['BS Name',
                                                     'Customer Name',
                                                     'Technology',
-                                                    'Building Height',
-                                                    'Tower Height',
+                                                    'Type',
                                                     'City',
                                                     'State',
                                                     'IP Address',
                                                     'MAC Address',
                                                     'Planned Frequency'
-            ]
+                ]
+            else:
+                result['data']['objects']['headers'] = ['BS Name',
+                                                    'Sector ID',
+                                                    'PMP Port',
+                                                    'Technology',
+                                                    'Type',
+                                                    'City',
+                                                    'State',
+                                                    'IP Address',
+                                                    'MAC Address',
+                                                    'Planned Frequency'
+                ]
             result['data']['objects']['values'] = []
             sector_objects = Sector.objects.filter(sector_configured_on=device.id)
-            ss_id = SubStation.objects.filter(device_id=device.id).values('id')
-            customer_name = Customer.objects.filter(id=Circuit.objects.filter(sub_station_id=ss_id).values('customer_id'))
-            if len(customer_name):
-                customer_name = customer_name[0].alias
-            else:
-                customer_name = "N/A"
+            sector_id = 'N/A'
+            pmp_port = 'N/A'
             for sector in sector_objects:
                 base_station = sector.base_station
                 planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                 planned_frequency = ",".join(planned_frequency)
-
+                if technology.name in ['P2P','PTP','ptp','p2p']:
+                    try:
+                        circuits = sector.circuit_set.get()
+                        customer_name = circuits.customer.alias
+                    except Exception as no_circuit:
+                        log.exception(no_circuit)
+                else:
+                    sector_id = sector.sector_id
+                try:
+                    pmp_port = sector.sector_configured_on_port.alias
+                except Exception as no_port:
+                    log.exception(no_port)
                 try:
                     city_name = City.objects.get(id=base_station.city).city_name\
                                                             if base_station.city\
@@ -941,11 +1036,23 @@ class Inventory_Device_Status(View):
                                                             else "N/A"
                 except Exception as no_state:
                     state_name = "N/A"
-                result['data']['objects']['values'].append([base_station.alias,
+                if technology.name in ['P2P','PTP','ptp','p2p']:
+                    result['data']['objects']['values'].append([base_station.alias,
                                                         customer_name,
                                                        technology.alias,
-                                                       base_station.building_height,
-                                                       base_station.tower_height,
+                                                       type.alias,
+                                                       city_name,
+                                                       state_name,
+                                                       device.ip_address,
+                                                       device.mac_address,
+                                                       planned_frequency
+                ])
+                else:
+                    result['data']['objects']['values'].append([base_station.alias,
+                                                        sector_id,
+                                                        pmp_port,
+                                                       technology.alias,
+                                                       type.alias,
                                                        city_name,
                                                        state_name,
                                                        device.ip_address,
@@ -1195,6 +1302,8 @@ class Get_Service_Type_Performance_Data(View):
             }
         }
 
+        date_format = "%d-%m-%Y %H:%M:%S"
+
         device = Device.objects.get(id=int(device_id))
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
@@ -1203,12 +1312,28 @@ class Get_Service_Type_Performance_Data(View):
         end_date= self.request.GET.get('end_date','')
         isSet = False
 
-        if len(start_date) and len(end_date):
-            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
-            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
-            start_date= format( start_date_object, 'U')
-            end_date= format( end_date_object, 'U')
+        if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
             isSet = True
+            try:
+                start_date = float(start_date)
+                end_date = float(end_date)
+            except Exception, e:
+                start_date_object= datetime.datetime.strptime(start_date, date_format)
+                end_date_object= datetime.datetime.strptime(end_date, date_format)
+                start_date= format( start_date_object, 'U')
+                end_date= format( end_date_object, 'U')
+
+        else:
+            # The end date is the end limit we need to make query till.
+            end_date_object = datetime.datetime.now()
+            # The start date is the last monday of the week we need to calculate from.
+            start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+            # Replacing the time, to start with the 00:00:00 of the last monday obtained.
+            start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+            # Converting the date to epoch time or Unix Timestamp
+            end_date = format(end_date_object, 'U')
+            start_date = format(start_date_object, 'U')
+
 
         if service_data_source_type in ['pl', 'rta']:
             if not isSet:
@@ -1320,8 +1445,8 @@ class Get_Service_Type_Performance_Data(View):
                     worksheet.write(row, column, table_data[row-1][ table_header[column].lower() ], style=style)
 
             response= HttpResponse(mimetype= 'application/vnd.ms-excel', content_type='text/plain')
-            start_date_string=datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
-            end_date_string=datetime.datetime.fromtimestamp(float(end_date)  ).strftime("%d/%B/%Y")
+            start_date_string=start_date
+            end_date_string=end_date
             response['Content-Disposition'] = 'attachment; filename=performance_report_{0}_{1}_to_{2}.xls'\
                 .format( inventory_device_name, start_date_string, end_date_string )
             workbook.save(response)
@@ -1331,8 +1456,8 @@ class Get_Service_Type_Performance_Data(View):
 
             table_data, table_header=self.return_table_header_and_table_data(service_name, result)
             response = HttpResponse(content_type='text/csv')
-            start_date_string=datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
-            end_date_string=datetime.datetime.fromtimestamp(float(end_date)  ).strftime("%d/%B/%Y")
+            start_date_string=start_date
+            end_date_string=end_date
             response['Content-Disposition'] = 'attachment; filename="performance_report_{0}_{1}_to_{2}.xls"'\
                 .format(inventory_device_name, start_date_string, end_date_string)
 
@@ -1833,6 +1958,102 @@ def organization_backhaul_devices(organizations, technology = None):
     )
 
 
+@cache_for(3600)
+def indexed_gis_devices(page_type):
+    """
+
+    :return:
+    """
+    raw_results = gis_information
+
+    indexed_raw_results = {}
+
+    indexes = {
+        'network': 'SECTOR_CONF_ON_ID',
+        'customer': 'SS_DEVICE_ID',
+        'other': 'BH_DEVICE_ID'
+    }
+
+    for result in raw_results:
+        defined_index = result[indexes[page_type]]
+        if defined_index not in indexed_raw_results:
+            indexed_raw_results[defined_index] = []
+        indexed_raw_results[defined_index].append(result)
+    return indexed_raw_results
+
+
+@cache_for(3600)
+def prepare_gis_devices(devices, page_type):
+    """
+    map the devices with gis data
+    :return:
+    """
+    # ##binary search instead
+    # from bisect import bisect_left
+    #
+    # def binary_search(a, x, lo=0, hi=None):   # can't use a to specify default for hi
+    #     hi = hi if hi is not None else len(a) # hi defaults to len(a)
+    #     pos = bisect_left(a,x,lo,hi)          # find insertion position
+    #     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
+    # ##binary search instead
+
+    gis_result = indexed_gis_devices(page_type=page_type)
+
+    for device in devices:
+        device_id = device['id']
+        sector_id = []
+        circuit_id = []
+        bh_id = []
+        if device_id in gis_result:
+            raw_results = gis_result[device_id] ##this is a list
+            for result in raw_results:
+                #if device is sector
+                if page_type == 'network' \
+                        and device_id == result['SECTOR_CONF_ON_ID'] \
+                        and result['SECTOR_SECTOR_ID'] not in sector_id:
+
+                    sector_id.append(format_value(result['SECTOR_SECTOR_ID']))
+                    device.update({
+                        "sector_id": ", ".join(sector_id),
+                        "circuit_id": format_value(result['CCID']),
+                        "customer_name" : format_value(result['CUST']),
+                        "bs_name": format_value(result['BSALIAS']),
+                        "city": format_value(result['BSCITY']),
+                        "state": format_value(result['BSSTATE']),
+                        "device_type": format_value(result['SECTOR_TYPE']),
+                        "device_technology": format_value(result['SECTOR_TECH'])
+                    })
+                elif page_type == 'customer' \
+                        and device_id == result['SS_DEVICE_ID']\
+                        and result['CCID'] not in circuit_id:
+                    circuit_id.append(result['CCID'])
+                    device.update({
+                        "sector_id": format_value(result['SECTOR_SECTOR_ID']),
+                        "circuit_id": format_value(result['CCID']),
+                        "customer_name" : format_value(result['CUST']),
+                        "bs_name": format_value(result['BSALIAS']),
+                        "city": format_value(result['BSCITY']),
+                        "state": format_value(result['BSSTATE']),
+                        "device_type": format_value(result['SS_TYPE']),
+                        "device_technology": format_value(result['SECTOR_TECH'])
+                    })
+                elif page_type == 'other' \
+                        and device_id == result['BH_DEVICE_ID']\
+                        and result['BH_DEVICE_ID'] not in bh_id:
+                    bh_id.append(result['BH_DEVICE_ID'])
+                    device.update({
+                        "sector_id": format_value(result['SECTOR_SECTOR_ID']),
+                        "circuit_id": format_value(result['CCID']),
+                        "customer_name" : format_value(result['CUST']),
+                        "bs_name": format_value(result['BSALIAS']),
+                        "city": format_value(result['BSCITY']),
+                        "state": format_value(result['BSSTATE']),
+                        "device_type": format_value(result['BHTYPE']),
+                        "device_technology": format_value(result['BHTECH'])
+                    })
+                else:
+                    pass
+    return devices
 
 ## for distributed performance collection
 ## function to accept machine wise device list

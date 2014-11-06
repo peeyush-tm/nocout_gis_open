@@ -23,6 +23,7 @@ from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 
 from django.db import connections
 
+from pprint import pprint
 logger=logging.getLogger(__name__)
 
 global gis_information
@@ -670,7 +671,6 @@ class BulkFetchLPDataApi(View):
         :Parameters:
             - 'ts_template' (unicode) - threshold configuration template id
             - 'devices' (list) - list of devices
-
         :Returns:
            - 'result' (dict) - dictionary containing list of live polled values and icon urls
             {
@@ -739,9 +739,11 @@ class BulkFetchLPDataApi(View):
         # converting 'json' into python object
         devices = eval(str(self.request.GET.get('devices', None)))
         ts_template_id = int(self.request.GET.get('ts_template', None))
-        wimax_services = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
-                          'wimax_ul_rssi', 'wimax_ul_intrf', 'wimax_dl_intrf',
-                          'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
+        exceptional_services = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
+                                'wimax_ul_rssi', 'wimax_ul_intrf', 'wimax_dl_intrf',
+                                'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec',
+                                'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count',
+                                'cambium_rereg_count']
 
         service = ""
         data_source = ""
@@ -761,7 +763,7 @@ class BulkFetchLPDataApi(View):
         except Exception as e:
             logger.info("No service and data source corresponding to this live pollig setting template.")
 
-        # result dictionary to be returned as output of api
+        # result dictionary to be returned as output of ap1
         result = {
             "success": 0,
             "message": "Failed to fetch live polling data.",
@@ -805,10 +807,13 @@ class BulkFetchLPDataApi(View):
                 for device_name in current_devices_list:
                     try:
                         device = Device.objects.get(device_name=device_name)
-                        if service in wimax_services:
-                            bs_device = Topology.objects.get(connected_device_mac=device.mac_address)
+                        if str(service) in exceptional_services:
+                            mac_address = device.mac_address
+                            mac = device.mac_address.upper()
+                            bs_device = Topology.objects.get(connected_device_mac=mac)
                             device = Device.objects.get(device_name=bs_device.device_name)
-                        site_instances_list.append(device.site_instance.id)
+                        if device.site_instance.id not in site_instances_list:
+                            site_instances_list.append(device.site_instance.id)
                     except Exception as e:
                         logger.info(e.message)
 
@@ -821,23 +826,24 @@ class BulkFetchLPDataApi(View):
                     for device_name in current_devices_list:
                         try:
                             device = Device.objects.get(device_name=device_name)
-                            if service in wimax_services:
+                            if str(service) in exceptional_services:
                                 device_ss_mac = device.mac_address
                                 ss_name_mac_mapping[device.device_name] = device_ss_mac
-                                bs_device = Topology.objects.get(connected_device_mac=device.mac_address)
+                                mac = device.mac_address
+                                mac = mac.upper()
+                                bs_device = Topology.objects.get(connected_device_mac=mac)
                                 device = Device.objects.get(device_name=bs_device.device_name)
                                 if device.device_name in bs_name_ss_mac_mapping.keys():
                                     bs_name_ss_mac_mapping[device.device_name].append(device_ss_mac)
                                 else:
                                     bs_name_ss_mac_mapping[device.device_name] = [device_ss_mac]
                                 bs_site_id = device.site_instance.id
-                                if bs_site_id == site_id:
+                                if bs_site_id == site_id and device.device_name not in devices_in_current_site:
                                     devices_in_current_site.append(device.device_name)
                             elif device.site_instance.id == site_id:
                                 devices_in_current_site.append(device.device_name)
                         except Exception as e:
                             logger.info(e.message)
-
                     # live polling data dictionary (payload for nocout.py api call)
                     lp_data = dict()
                     lp_data['mode'] = "live"
@@ -1000,7 +1006,8 @@ class BulkFetchLPDataApi(View):
                                 except Exception as e:
                                     logger.info(e.message)
                             # image url
-                            img_url = "media/" + str(image_partial) if "uploaded" in str(image_partial) else "static/img/" + str(image_partial)
+                            img_url = "media/" + str(image_partial) if "uploaded" in str(
+                                image_partial) else "static/img/" + str(image_partial)
 
                             # icon to be send in response
                             icon = str(img_url)
@@ -1049,7 +1056,5 @@ def nocout_live_polling(q, site):
             q.put(response_dict)
     except Exception as e:
         logger.info(e.message)
-
-
 
 

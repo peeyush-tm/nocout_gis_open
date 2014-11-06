@@ -627,7 +627,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
 
             # checking whether device is 'sector configured on' or not
             try:
-                if Sector.objects.get(sector_configured_on=current_device):
+                if len(Sector.objects.filter(sector_configured_on=current_device)):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>'.format(
                         dct['id']))
             except Exception as e:
@@ -777,7 +777,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-   
+
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -1388,7 +1388,7 @@ class AllDeviceListingTable(BaseDatatableView):
 
             # checking whether device is 'sector configured on' or not
             try:
-                if Sector.objects.get(sector_configured_on=current_device):
+                if len(Sector.objects.filter(sector_configured_on=current_device)):
                     dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
                         <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
@@ -1594,6 +1594,14 @@ class DeviceUpdate(UpdateView):
 
     def get_queryset(self):
         return Device.objects.filter(organization__in=logged_in_user_organizations(self))
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(DeviceUpdate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """

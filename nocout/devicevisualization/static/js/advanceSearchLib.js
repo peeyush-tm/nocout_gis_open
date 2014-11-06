@@ -596,7 +596,9 @@ function advanceSearchClass() {
 
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
 			current_data_array = main_devices_data_earth;
-		} else {
+		} else if (window.location.pathname.indexOf("white_background") > -1) { 
+			current_data_array = main_devices_data_wmap;
+		}else {
 			current_data_array = main_devices_data_gmaps;
 		}
 
@@ -799,6 +801,10 @@ function advanceSearchClass() {
 	        /*create the BS-SS network on the google earth*/
 	        earth_instance.plotDevices_earth(data_for_filters_earth,"base_station");
 
+        } else if (window.location.pathname.indexOf("white_background") > -1) { 
+
+        		showWmapFilteredData(result_plot_devices);
+
         } else {
 
 	        /*Create a instance of networkMapClass*/
@@ -830,7 +836,7 @@ function advanceSearchClass() {
 
 
 	this.removeFilters = function() {
-
+		
 		/*Reset filter data array*/
 		lastSelectedValues = [];
 		appliedAdvFilter = [];

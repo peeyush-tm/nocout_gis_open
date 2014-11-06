@@ -246,214 +246,233 @@ function GisPerformance() {
         var gisData = this.gisData;
         //Get BS Gmap Marker
         var bsMarkerObject = markersMasterObj['BSNamae'][gisData.basestation_name];
-        var condition= false;
         //Step no. 2 ==> Loop through all the SS in the BS
         try {
             //Loop through devices
             for (var i = 0; i < bsMarkerObject['child_ss'].length; i++) {
-            	condition = true;
             	var sector_perf_val = "",
+                    halfPt = "",
                     polyPathArray = [],
+                    polyPointsArray = [],
             	    new_line_path = [],
                     radius = bsMarkerObject["child_ss"][i].radius,
                     azimuth = bsMarkerObject["child_ss"][i].azimuth_angle,
                     beamWidth = bsMarkerObject["child_ss"][i].beam_width,
                     sector_marker = allMarkersObject_gmap['sector_device']['sector_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)],
-                    sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on+"_"+radius+"_"+azimuth+"_"+beamWidth)];
+                    sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on+"_"+radius+"_"+azimuth+"_"+beamWidth)],
+                    sector_color = this.calculatePerformanceValue("color", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false),
+                    sector_polled_info = this.calculatePerformanceValue("device_info", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
 
+                /*If PMP or WIMAX*/
+                if($.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) != "ptp" && $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) != "p2p") {
+                    /*If polygon exists*/
+                    if(sector_poly_marker) {
+                        if(sector_color) {
+                            sector_poly_marker.setOptions({fillColor: sector_color});
+                        }
+
+                        //Update color for Sector POly.
+                        var new_radius = this.calculatePerformanceValue("radius", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
+                        var azimuth = this.calculatePerformanceValue("azimuth_angle", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
+                        var beam_width = this.calculatePerformanceValue("beam_width", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
+                        var polarisation = sector_poly_marker.polarisation ? sector_poly_marker.polarisation : 'vertical';
+
+                        if((new_radius && $.trim(new_radius) != "") && (azimuth && $.trim(azimuth) != "") && (beam_width && $.trim(beam_width) != "")) {
+                            /*Create sector path data*/
+                            networkMapInstance.createSectorData(+(sector_poly_marker.ptLat),+(sector_poly_marker.ptLon),new_radius,azimuth,beam_width,polarisation,function(pointsArray) {
+                                halfPt = Math.floor(pointsArray.length / (+2));
+                                polyPointsArray = pointsArray;
+                                for(var i=0;i<pointsArray.length;i++) {
+                                    var pt = new google.maps.LatLng(pointsArray[i].lat,pointsArray[i].lon);
+                                    polyPathArray.push(pt);
+                                }
+                            });
+                            sector_poly_marker.setPath(polyPathArray);
+                        }
+                        /*Update the polled info of sector device*/
+                        sector_poly_marker["poll_info"] = sector_polled_info ? sector_polled_info : [];
+                    }
+
+                } else {
+                    /*If sector marker exists*/
+                    if(sector_marker) {
+                        var new_icon_sector = this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
+                        if(new_icon_sector) {
+                            var largeur= 32,
+                                hauteur= 37,
+                                divideBy= 1,
+                                anchorX= 0,
+                                iconUrl = base_url+"/"+new_icon_sector;
+
+                            var old_icon_obj = new google.maps.MarkerImage(
+                                iconUrl,
+                                new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+                                new google.maps.Point(0, 0),
+                                new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+                                new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
+                            );
+                            var other_icons_obj = new google.maps.MarkerImage(
+                                base_url+'/static/img/icons/1x1.png',
+                                null,
+                                null,
+                                null,
+                                null
+                            );
+                            // sector_marker.icon = other_icons_obj;
+                            // sector_marker.clusterIcon = other_icons_obj;
+                            // sector_marker.oldIcon = old_icon_obj;
+                            sector_marker.setOptions({
+                                "icon" : other_icons_obj,
+                                "clusterIcon" : other_icons_obj,
+                                "oldIcon" : old_icon_obj,
+                            });
+                        }
+
+                        /*Update the polled info of sector device*/
+                        sector_marker["poll_info"] = sector_polled_info ? sector_polled_info : [];
+
+                        /*Create Label on Sector Marker*/
+                        sector_perf_val = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
+                    }
+                }
 
 
                 //Loop through sub_station of devices
                 for (var j = 0; j < bsMarkerObject['child_ss'][i]['sub_station'].length; j++) {
+                    
+                    //Step no. 3 ===> Fetch PerformanceValue for various key from GisData JSon
+                    var lineColor = this.calculatePerformanceValue("color", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+                    // //Update Polyline content.
+                    if(lineColor) {
+                        googlePolyLine.setOptions({strokeColor: lineColor});
+                    }
 
-                    if((sector_marker && (sector_marker.map != null)) || (sector_poly_marker && (sector_poly_marker.map != null))) {
-
-                        var halfPt;
-                        //Step no. 3 ===> Fetch PerformanceValue for various key from GisData JSon
-                        var lineColor = this.calculatePerformanceValue("color", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                        //Fetch googlePolyline from markersMasterObj;
-                        var googlePolyLine = markersMasterObj['LinesName'][String(bsMarkerObject["name"]) + bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]];
-                        // //Update Polyline content.
-                        if(googlePolyLine && lineColor) {
-                            googlePolyLine.setOptions({strokeColor: lineColor});
-                        }
-
-                        //If technology is WiMAX and PMP
-                        if($.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) != "ptp" && $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) != "p2p") {
-                            //Get sector Polyline
-                            var sectorPoly = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on+"_"+radius+"_"+azimuth+"_"+beamWidth)];
-                            //If both sector Poly and line Color is defined
-                            if (sector_poly_marker && lineColor) {
-                                var sector_perf_obj = {};
-                                sector_perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                                sector_perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                                sector_perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                                sector_perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                                //Update color for Sector POly.
-                                var new_radius = this.calculatePerformanceValue("radius", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                                var azimuth = this.calculatePerformanceValue("azimuth_angle", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                                var beam_width = this.calculatePerformanceValue("beam_width", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                                var polarisation = sector_poly_marker.polarisation ? sector_poly_marker.polarisation : 'vertical';
-
-                                if((new_radius && $.trim(new_radius) != "") && (azimuth && $.trim(azimuth) != "") && (beam_width && $.trim(beam_width) != "")) {
-                                    /*Check to draw sector only for first time in ss loop*/
-                                    if(condition) {
-
-                                        networkMapInstance.createSectorData(+(sector_poly_marker.ptLat),+(sector_poly_marker.ptLon),new_radius,azimuth,beam_width,polarisation,function(pointsArray) {
-                                            halfPt = Math.floor(pointsArray.length / (+2));
-                                            polyPointsArray = pointsArray;
-                                            for(var i=0;i<pointsArray.length;i++) {
-                                                var pt = new google.maps.LatLng(pointsArray[i].lat,pointsArray[i].lon);
-                                                polyPathArray.push(pt);
-                                            }
-                                        });
-                                        sector_poly_marker.setPath(polyPathArray);
-                                    }
-                                    new_line_path = [new google.maps.LatLng(polyPointsArray[halfPt].lat,polyPointsArray[halfPt].lon),new google.maps.LatLng(googlePolyLine.ss_lat,googlePolyLine.ss_lon)];
-                                }
-
+                    //If technology is WiMAX and PMP
+                    if($.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) != "ptp" && $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) != "p2p") {
+                        //If both sector Poly and line Color is defined
+                        if (sector_poly_marker) {
+                            /*Line path*/
+                            if(polyPointsArray.length > 0) {
+                                new_line_path = [new google.maps.LatLng(polyPointsArray[halfPt].lat,polyPointsArray[halfPt].lon),new google.maps.LatLng(googlePolyLine.ss_lat,googlePolyLine.ss_lon)];
                                 if(new_line_path.length > 0) {
                                     googlePolyLine.setOptions({"bs_lat" : polyPointsArray[halfPt].lat,"bs_lon" : polyPointsArray[halfPt].lon});
                                     googlePolyLine.setPath(new_line_path);
                                 }
-
-                                sector_poly_marker.hasPerf = 1;
-                                sector_poly_marker.perf_data_obj = sector_perf_obj;
-                                sector_poly_marker.setOptions({fillColor: lineColor});
                             }
-                        } else {
-                            if(condition) {
-                                if(sector_marker) {
-                                    var new_icon_sector = this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
-                                    if(new_icon_sector) {
-                                        var largeur= 32,
-                                            hauteur= 37,
-                                            divideBy= 1,
-                                            anchorX= 0,
-                                            iconUrl = base_url+"/"+new_icon_sector;
+                        }
+                    }
 
-                                        var old_icon_obj = new google.maps.MarkerImage(
-                                            iconUrl,
-                                            new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
-                                            new google.maps.Point(0, 0),
-                                            new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
-                                            new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
-                                        );
-                                        var other_icons_obj = new google.maps.MarkerImage(
-                                            base_url+'/static/img/icons/1x1.png',
-                                            null,
-                                            null,
-                                            null,
-                                            null
-                                        );
-                                        sector_marker.icon = other_icons_obj;
-                                        sector_marker.clusterIcon = other_icons_obj;
-                                        sector_marker.clusterIcon = old_icon_obj;
-                                    }
+                    //Get substation icon from Performance
+                    var subStationIcon = this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 
-                                    /*Create Label on Sector Marker*/
-                                    sector_perf_val = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
+                    //Get subStation Name
+                    var subStationName = bsMarkerObject['child_ss'][i]['sub_station'][j]["name"];
+                    //Get subStation Marker
+                    // var subStationMarker = markersMasterObj['SSNamae'][subStationName];
+                    var subStationMarker = allMarkersObject_gmap['ss_'+subStationName];
+
+                    var polled_info = this.calculatePerformanceValue("device_info", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+
+                    // subStationMarker.hasPerf = 1;
+
+                    var existing_index = -1;
+                    for (var x = 0; x < labelsArray.length; x++) {
+                        var move_listener_obj = labelsArray[x].moveListener_;
+                        if (move_listener_obj) {
+                            var keys_array = Object.keys(move_listener_obj);
+                            for(var z=0;z<keys_array.length;z++) {
+                                if(typeof move_listener_obj[keys_array[z]] === 'object') {
+                                   if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+                                        if (($.trim(move_listener_obj[keys_array[z]]["name"]) == $.trim(subStationMarker.name)) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == $.trim(subStationMarker.bs_name))) {
+                                            existing_index = x;
+                                            labelsArray[x].close();
+                                        }
+                                   }
                                 }
                             }
                         }
+                    }
+                    /*Remove that label from array*/
+                    if (existing_index >= 0) {
+                        labelsArray.splice(existing_index, 1);
+                    }
 
-                        //Get substation icon from Performance
-                        var subStationIcon = this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+                    var visible_flag = false;
+                    if (!$("#show_hide_label")[0].checked) {
+                        visible_flag = true;
+                    }
+                    
+                    var ss_val = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]),
+                        perf_val = "",
+                        technology_condition = $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) == "ptp" || $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) == "p2p";
 
-                        //Get subStation Name
-                        var subStationName = bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"];
-                        //Get subStation Marker
-                        var subStationMarker = markersMasterObj['SSNamae'][subStationName];
-
-                        var polled_info = this.calculatePerformanceValue("device_info", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-
-                        subStationMarker.hasPerf = 1;
-
-                        var existing_index = -1;
-                        for (var x = 0; x < labelsArray.length; x++) {
-                            var move_listener_obj = labelsArray[x].moveListener_;
-                            if (move_listener_obj) {
-                                var keys_array = Object.keys(move_listener_obj);
-                                for(var z=0;z<keys_array.length;z++) {
-                                    if(typeof move_listener_obj[keys_array[z]] === 'object') {
-                                       if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-                                            if (($.trim(move_listener_obj[keys_array[z]]["name"]) == $.trim(subStationMarker.name)) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == $.trim(subStationMarker.bs_name))) {
-                                                existing_index = x;
-                                                labelsArray[x].close();
-                                            }
-                                       }
-                                    }
-                                }
-                            }
-                        }
-                        /*Remove that label from array*/
-                        if (existing_index >= 0) {
-                            labelsArray.splice(existing_index, 1);
-                        }
-
-                        var visible_flag = false;
-                        if (!$("#show_hide_label")[0].checked) {
-                            visible_flag = true;
-                        }
-                        
-                        var ss_val = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]),
-                            perf_val = "",
-                            technology_condition = $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) == "ptp" || $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) == "p2p";
-
-                        if(technology_condition) {
-
-                            if(ss_val && sector_perf_val) {
-                                perf_val = "("+ss_val+", "+sector_perf_val+")";
-                            } else if(ss_val && !sector_perf_val) {
-                                perf_val = "("+ss_val+", N/A)";
-                            } else if(!ss_val && sector_perf_val) {
-                                perf_val = "(N/A, "+sector_perf_val+")";
-                            } else {
-                                perf_val = "";
-                            }
+                    if(technology_condition) {
+                        if(ss_val && sector_perf_val) {
+                            perf_val = "("+ss_val+", "+sector_perf_val+")";
+                        } else if(ss_val && !sector_perf_val) {
+                            perf_val = "("+ss_val+", N/A)";
+                        } else if(!ss_val && sector_perf_val) {
+                            perf_val = "(N/A, "+sector_perf_val+")";
                         } else {
-                            perf_val = ss_val;
+                            perf_val = "";
                         }
+                    } else {
+                        perf_val = ss_val;
+                    }
 
-                        if(perf_val && $.trim(perf_val)) {
-                            var perf_infobox = new InfoBox({
-                                content: perf_val,
-                                boxStyle: {
-                                    border: "1px solid black",
-                                    background: "white",
-                                    textAlign: "center",
-                                    fontSize: "9pt",
-                                    color: "black",
-                                    padding: '2px',
-                                    width : '100px'
-                                },
-                                disableAutoPan: true,
-                                position: new google.maps.LatLng(subStationMarker.ptLat, subStationMarker.ptLon),
-                                closeBoxURL: "",
-                                isHidden: visible_flag,
-                                // visible : visible_flag,
-                                enableEventPropagation: true,
-                                zIndex: 80
-                            });
+                    if(perf_val && $.trim(perf_val)) {
+                        var perf_infobox = new InfoBox({
+                            content: perf_val,
+                            boxStyle: {
+                                border: "1px solid black",
+                                background: "white",
+                                textAlign: "center",
+                                fontSize: "9pt",
+                                color: "black",
+                                padding: '2px',
+                                width : '100px'
+                            },
+                            disableAutoPan: true,
+                            position: new google.maps.LatLng(subStationMarker.ptLat, subStationMarker.ptLon),
+                            closeBoxURL: "",
+                            isHidden: visible_flag,
+                            // visible : visible_flag,
+                            enableEventPropagation: true,
+                            zIndex: 80
+                        });
 
-                            perf_infobox.open(mapInstance, subStationMarker);
-                            if(subStationMarker.map && (subStationMarker.map != null && subStationMarker.map != "")) {
-                                labelsArray.push(perf_infobox);
-                            }
+                        perf_infobox.open(mapInstance, subStationMarker);
+                        if(subStationMarker.map && (subStationMarker.map != null && subStationMarker.map != "")) {
+                            labelsArray.push(perf_infobox);
                         }
+                    }
 
-                        subStationMarker["poll_info"] = polled_info;
+                    subStationMarker["poll_info"] = polled_info;
 
 
-                        //If substation icon is present
-                        if (subStationIcon) {
-                            //Update icon, oldIcon and clusterIcon for the SubStation Marker
-                            subStationMarker.setIcon(createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
-                            subStationMarker.oldIcon = (createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
-                            subStationMarker.clusterIcon = (createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
-                        }
-                        /*Reset the flag*/
-                        condition= false;
+                    //If substation icon is present
+                    if (subStationIcon) {
+                        //Update icon, oldIcon and clusterIcon for the SubStation Marker
+                        var largeur= 32,
+                            hauteur= 37,
+                            divideBy= 1,
+                            anchorX= 0,
+                            iconUrl = base_url+"/"+subStationIcon;
+
+                        var old_icon_obj = new google.maps.MarkerImage(
+                            iconUrl,
+                            new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+                            new google.maps.Point(0, 0),
+                            new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+                            new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
+                        );
+
+                        //Update icon, oldIcon and clusterIcon for the SubStation Marker
+                        subStationMarker.setOptions({
+                            "icon" : old_icon_obj,
+                            "oldIcon" : old_icon_obj,
+                            "clusterIcon" : old_icon_obj
+                        });
                     }
                 }
 
@@ -502,22 +521,6 @@ function GisPerformance() {
      */
     this.calculatePerformanceValue = function (key, device, ssName) {
         var gisData = this.gisData;
-
-        // var perf_sector_array = gisData["param"]["sector"];
-
-        // for(var i=0;i<perf_sector_array.length;i++) {
-
-        // 	if(perf_sector_array[i].device_name && ($.trim(perf_sector_array[i].device_name) == device)) {
-        // 		var perf_substation_array = perf_sector_array[i].sub_station;
-
-        // 		for(var j=0;j<perf_substation_array.length;j++) {
-
-        // 			if(perf_substation_array[j].device_name && ($.trim(perf_substation_array[j].device_name) == ssName)) {
-        // 				return perf_substation_array[j].performance_data[key];
-        // 			}
-        // 		}
-        // 	}
-        // }
 
         //Loop through GIS Sector Data
         for (var i = 0; i < gisData["param"]["sector"].length; i++) {

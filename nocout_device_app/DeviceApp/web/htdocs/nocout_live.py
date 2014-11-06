@@ -32,39 +32,6 @@ interface_services = [
 		'cambium_ss_connected_bs_ip_invent'
 		]
 
-#def nocout_log():
-#    """
-#    Handles logging functinality for device app
-#
-#    Args:
-#        
-#    Kwargs:
-#
-#    Returns:
-#        logger object, which logs the activities to a log file
-#    
-#    Comments:
-#        Logging path - /tmp/nocout_da/<site_name>/nocout_live.log
-#    """
-#    logger=logging.getLogger('nocout_da')
-#    os.system('mkdir -p /tmp/nocout_da')
-#    os.system('chmod 777 /tmp/nocout_da')
-#    os.system('mkdir -p /tmp/nocout_da/%s' % defaults.omd_site)
-#    #os.system('mkdir -p /tmp/nocout_da/pardeep_slave_1')
-#    fd = os.open('/tmp/nocout_da/%s/nocout_live.log' % defaults.omd_site, os.O_RDWR | os.O_CREAT)
-#    #fd = os.open('/tmp/nocout_da/pardeep_slave_1/nocout_live.log', os.O_RDWR | os.O_CREAT)
-#    if not len(logger.handlers):
-#        logger.setLevel(logging.DEBUG)
-#        handler=logging.FileHandler('/tmp/nocout_da/%s/nocout_live.log' % defaults.omd_site)
-#        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-#        handler.setFormatter(formatter)
-#        logger.addHandler(handler)
-#    os.close(fd)
-#
-#    return logger
-
-
-
 
 def main():
     """
@@ -159,15 +126,21 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
      site_name = get_site_name()
      wimax_services = ['wimax_dl_rssi','wimax_ul_rssi','wimax_dl_cinr','wimax_ul_cinr','wimax_dl_intrf','wimax_ul_intrf',
         'wimax_modulation_dl_fec','wimax_modulation_ul_fec']
+     cambium_services = ['cambium_ul_rssi', 'cambium_ul_jitter',
+		     'cambium_reg_count', 'cambium_rereg_count']
      ss_device, ss_mac, bs_device = None, None, None
      old_device = device
      #logger.debug('service_list: ' + pformat(service_list))
-
+     filtered_ss_data = []
+     ss_host_name = None
      # Pass our custom alarm handler function to signal
      #signal.signal(signal.SIGALRM, alarm_handler)
      # Set timeout to 1sec (excepts floats only)
      #signal.alarm(0.5)
      ss_mac_list, bs_device_list = [], []
+     # Data sources for ping service
+     pl, rta = None, None
+     ip = None
      for service in service_list:
 	     device = old_device
 	     old_service = service
@@ -175,75 +148,52 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 			old_service = service
 			service = 'wimax_topology'
 	     if service in interface_services:
-		     # Replace the device with bs_device for these services
-		     ss_mac, bs_device = get_parent(host=device, db=False) 
-		     #ss_mac, bs_device = ss_mac.lower(), bs_device.lower()
-		     logger.debug('ss_mac and bs_device:' + pformat(ss_mac) + ' and ' + pformat(bs_device))
-		     if ss_mac and bs_device:
-			     old_device = device
-			     device = bs_device
-			     old_service = service
-			     service = 'cambium_topology_discover'
-		     else:
-			 logger.info('BS name or SS mac did not found for SS and service ' + \
-					 pformat(device)  + ' ' + pformat(service))
-			 data_dict = {device: []}
-			 q.put(data_dict)
-			 return 
+                     old_service = service
+	             service = 'cambium_topology_discover'
 	     # Getting result from compiled checks output
              cmd = '/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (str(site_name), service, device)
+	     # For host check [ping service]
+	     if service.lower() == 'ping':
+		     # Get the device ip from device name
+		     try:
+		         ip = get_parent(host=device, db=False, get_ip=True)
+		     except Exception, e:
+		     	logger.info('Error in get_parent : ' + pformat(e))
+		     cmd = 'ping -c 1 %s' % ip
 	     logger.info('cmd: ' + pformat(cmd))
 	     #start = datetime.datetime.now()
              # Fork a subprocess
              p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-	#     while p.poll() is None:
-	#	     time.sleep(0.1)
-	#	     now = datetime.datetime.now()
-	#	     #logger.debug('In while')
-	#	     if (now-start).seconds > timeout:
-	#		     #logger.debug('now-start ' + pformat((now-start).seconds))
-	#		     os.kill(p.pid, signal.SIGKILL)
-	#		     os.waitpid(-1, os.WNOHANG)
-	#		     data_dict = {device: []}
-	#		     q.put(data_dict)
-	#		     return
 	     check_output, error = p.communicate()
-	     #check_output = """Check_mk version 1.2.2p3
-	     #cambium_ul_rssi 0a:00:3e:df:b3:2e OK - Device received signal strength indication is -69   (ul_rssi=-69;-72;-82;;)
-	     #cambium_ul_rssi 0a:00:3e:df:b3:f8 OK - Device received signal strength indication is -60   (ul_rssi=-60;-72;-82;;)
-	     #cambium_ul_rssi 0a:00:3e:df:b3:41 OK - Device received signal strength indication is -71   (ul_rssi=-71;-72;-82;;)
-	     #"""
 	     logger.debug(' Check_output: ' + pformat(check_output))
              if check_output:
 		if old_service in interface_services:
 			data_value = []
-			check_output = filter(lambda t: ss_mac in t, check_output.split('\n'))
-		        logger.debug('check_output after filtering:' + pformat(check_output))
 			try:
-				check_output = check_output[0]
-		 		output =check_output.split(' ')
-		 		ss_entry = filter(lambda t: ss_mac.upper() in t ,output)
-		 		if ss_entry:
-		 			if old_service == 'cambium_ul_rssi':
-						data_value = ss_entry.split('/')[2]
-		 			elif old_service == 'cambium_ul_jitter':
-						data_value = ss_entry.split('/')[3]
-		 			elif old_service == 'cambium_reg_count':
-						data_value = ss_entry.split('/')[4]
-		 			elif old_service == 'cambium_rereg_count':
-						data_value = ss_entry.split('/')[5] 
-				 	data_dict = {old_device: data_value}
-			 		q.put(data_dict)
-				else:	
-			 		logger.error('Empty check_output: ' + pformat(e))
-					data_dict = {old_device: []}
-			 		q.put(data_dict)
+				check_output = filter(lambda t: 'cambium_topology_discover' in t, check_output.split('\n'))
+				check_output = check_output[0].split('- ')[1].split(' ')
+				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
+					filtered_ss_output = filter(lambda t:  ss_mac_entry.lower() in t, check_output)
+					filtered_ss_data.extend(filtered_ss_output)
+				logger.info('filtered_ss_data: ' + pformat(filtered_ss_data))
+				index = cambium_services.index(old_service)
+				for entry in filtered_ss_data:
+					data_value = entry.split('/')[index+2]
+					cal_ss_mac = entry.split('/')[1]
+					for host_name,mac_value in ss_name_mac_mapping.items():
+						if mac_value ==  cal_ss_mac.lower():
+							ss_host_name = host_name
+							break
+					data_dict = {ss_host_name:data_value}
+					q.put(data_dict)
 			except Exception, e:
 			 	logger.error('Empty check_output: ' + pformat(e))
-				data_dict = {old_device: []}
-			 	q.put(data_dict)
-			 	return
-		elif old_service in wimax_services:
+				for host_name,mac_value in ss_name_mac_mapping.items():
+					ss_host_name = host_name
+					data_dict = {ss_host_name: []}
+			 	        q.put(data_dict)
+			 	        return
+		elif str(old_service) in wimax_services:
 			filtered_ss_data =[]
 			try:
 				data_value = []	
@@ -254,7 +204,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 					filtered_ss_data.extend(filtered_ss_output)
 				index = wimax_services.index(old_service)
 				for entry in filtered_ss_data:
-					data_value = entry.split('=')[1].split(',')[index]
+					value = entry.split('=')[1].split(',')[index]
+					data_value.append(value)
 					cal_ss_mac = entry.split('=')[0]
 					# MARK
 					for host_name,mac_value in ss_name_mac_mapping.items():
@@ -262,15 +213,28 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 							ss_host_name = host_name
 							break
 					data_dict = {ss_host_name:data_value}
+					data_value = []
 					q.put(data_dict)
-							
+			         			
 			except Exception, e:
 			 	logger.error('Empty check_output: ' + pformat(e))
 				for host_name,mac_value in ss_name_mac_mapping.items():
 					data_dict = {host_name:[]}
 			 		q.put(data_dict)
 			 	return
-				
+		elif old_service.lower() == 'ping':
+			check_output = check_output.split('\n')[4:]
+			pl_info, rta_info = check_output[0], check_output[1]
+			if pl_info:
+			        pl = pl_info.split(',')[-2].split()[0]
+			if rta_info:
+			        rta = rta_info.split('=')[1].split('/')[1]
+			if 'pl' in data_source_list:
+				data_dict = {device: [pl]}
+			if 'rta' in data_source_list:
+				data_dict = {device: [rta]}
+			q.put(data_dict)
+			return
 		else:
 			reg_exp1 = re.compile(r'(?<=\()[^)]*(?=\)$)', re.MULTILINE)
                  	# Parse perfdata for all services running on that device

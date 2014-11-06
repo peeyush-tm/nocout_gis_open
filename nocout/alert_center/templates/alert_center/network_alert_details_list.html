@@ -251,9 +251,18 @@
 {% block jquery %}
     <!-- Custom script for data table-->
     <script type="text/javascript">
-        var dataTableInstance = "";
+        var dataTableInstance = "",
+            base_url = "",
+            excel_columns = [];
 
         $(document).ready(function () {
+
+            /*Set the base url of application for ajax calls*/
+            if(window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            }
 
             /* Removing the pagination in the datatable*/
             function ourDataTableWidget() {
@@ -266,8 +275,16 @@
                  * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
                  */
                 this.createDataTable = function (tableId, tableheaders, ajax_url, destroy) {
+
                     /*Show the spinner*/
                     showSpinner();
+
+                    for(var i=0;i<tableheaders.length;i++) {
+                        var current_column = tableheaders[i];
+                        if(current_column && current_column['sClass'] != 'hide' && current_column['mData'] != 'action') {
+                            excel_columns.push(i);
+                        }
+                    }
 
                     destroy = typeof destroy !== 'undefined' ? destroy : true;
                     $('.datatable').each(function () {
@@ -284,6 +301,18 @@
                         $("#" + tableId).dataTable().fnDestroy();
                     }
                     var dtable = $("#" + tableId).DataTable({
+                        sDom: 'T<"clear">lfrtip',
+                        oTableTools: {
+                            sSwfPath : base_url+"/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                            aButtons : [
+                                {
+                                    sExtends : "xls",
+                                    sButtonText : "Download Excel",
+                                    sFileName : "*.xls",
+                                    mColumns : excel_columns
+                                }
+                            ]
+                        },
                         bAutoWidth: false,
                         bDestroy : true,
                         bPaginate: true,
@@ -332,11 +361,11 @@
             /*Hide SECTOR ID Column*/
             for (var i = 0; i < gridHeadersObj.length; i++) {
                 var column = gridHeadersObj[i];
-                if (column.mData.indexOf("sector_id") > -1) {
-                    if (column.bVisible) {
-                        column.bVisible = false;
+                if(column.mData.indexOf("sector_id") > -1) {
+                    if(column.sClass) {
+                        column.sClass = "hide";
                     } else {
-                        column["bVisible"] = false;
+                        column["sClass"] = "hide";
                     }
                 }
             }
