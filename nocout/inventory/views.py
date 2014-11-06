@@ -929,7 +929,7 @@ class BackhaulDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'backhaul/backhaul_detail.html'
 
 
-class BackhaulCreate(CreateView):
+class BackhaulCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new backhaul..
     """
@@ -937,13 +937,7 @@ class BackhaulCreate(CreateView):
     model = Backhaul
     form_class = BackhaulForm
     success_url = reverse_lazy('backhauls_list')
-
-    @method_decorator(permission_required('inventory.add_backhaul', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(BackhaulCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_backhaul',)
 
     def form_valid(self, form):
         """
