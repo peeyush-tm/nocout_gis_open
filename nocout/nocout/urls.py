@@ -9,9 +9,9 @@ from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 dajaxice_autodiscover()
 
 # Uncomment the next two lines to enable the admin:
-# from django.contrib import admin
+from django.contrib import admin
 
-# admin.autodiscover()
+admin.autodiscover()
 
 handler404 = 'nocout.views.handler404'
 handler500 = 'nocout.views.handler500'
@@ -43,6 +43,7 @@ urlpatterns = patterns('',
                        url(r'icon_settings/', include('inventory.icon_settings_urls')),
                        url(r'live_polling_settings/', include('inventory.live_polling_settings_urls')),
                        url(r'threshold_configuration/', include('inventory.threshold_configuration_urls')),
+                       url(r'ping_thematic_settings/', include('inventory.ping_thematic_settings_urls')),
                        url(r'thematic_settings/', include('inventory.thematic_settings_urls')),
                        url(r'^device_port/', include('device.device_ports_urls')),
                        url(r'^antenna/', include('inventory.antenna_urls')),
@@ -66,7 +67,7 @@ urlpatterns = patterns('',
                        url(r'^scheduling/', include('scheduling_management.urls')),
                        url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
                        url(r'session_security/', include('session_security.urls')),
-                       # url(r'^admin/', include(admin.site.urls)),
+                       url(r'^admin/', include(admin.site.urls)),
                        url(r'^logs/', include('activity_stream.urls')),
                        url(r'^sm/', include('session_management.urls')),
                        url(r'^bulk_import/', include('inventory.bulk_import_urls')))

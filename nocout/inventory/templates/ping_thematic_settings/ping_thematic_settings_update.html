@@ -1,0 +1,150 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block breadcrumb_title %}
+    <li>Settings</li>
+    <li>Thematic Settings</li>
+    <li>Edit</li>
+{% endblock %}
+{% block css %}
+	<!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+{% endblock %}
+{% block content_title %}Edit Thematic Settings{% endblock %}
+{% block content_description %}Edit thematic settings{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i>THEMATIC SETTINGS : {{ object.name }}</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/thematic_settings/')"><i class="fa fa-times"></i> Cancel</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function () {
+            // implement select2 on selection menu fields
+            $("#id_technology").select2();
+            $("#id_service").select2();
+            $("#id_data_source").select2();
+
+            /*Number of range inputs*/
+            var total_label = $("label").length,
+                    range_count = 0;
+
+            for (var i = 0; i < total_label; i++) {
+                if ($("label")[i].innerHTML.indexOf("Start") > -1 || $("label")[i].innerHTML.indexOf("End") > -1) {
+                    range_count++;
+                }
+            }
+
+            /***********Update Range HTML Code Start***********/
+
+            /*Update Range html*/
+            for (var j = 1; j <= range_count / 2; j++) {
+                var icon_box = $("#id_icon_settings" + j).parent().html();
+                if ($("#id_icon_settings" + j).length > 0) {
+                    $("#id_icon_settings" + j).parent().parent().parent().remove();
+                }
+
+                $("#id_range" + j + "_start").parent().html($("#id_range" + j + "_start").parent().html() + "" + $("#id_range" + j + "_end").parent().html() + "" + icon_box);
+
+
+                $("#id_range" + j + "_start").attr("style", "width:30%;margin-right:4.5%;");
+                $("#id_range" + j + "_start").addClass("col-md-4");
+                $("#id_range" + j + "_start").attr("placeholder", "Start");
+
+                $("#id_range" + j + "_end").attr("style", "width:30%;margin-right:4.5%;");
+                $("#id_range" + j + "_end").addClass("col-md-4");
+                $("#id_range" + j + "_end").attr("placeholder", "End");
+
+                $("#id_icon_settings" + j).attr("style", "width:30%;float:right;");
+
+                // $("#id_range"+j+"_start").parent().parent().parent().next().children().parent().remove();
+                $("#id_range" + j + "_start").closest(".form-group").next().remove();
+
+                $("#id_range" + j + "_end").parent().parent().parent().children()[0].innerHTML = "Range " + j;
+            }
+
+            /***********Update Range HTML Code End***********/
+            //Loop through all select div
+            var divForm = $("#id_data_source").parent().parent().parent();
+            $(divForm.nextAll()).each(function (i, el) {
+                var selectEl = $(el).find('select');
+
+                function formatResult(item) {
+                    if (item.id) {
+                        var id_is = item.id;
+                        if (id_is.indexOf('uploaded') != -1) {
+                            id_is = "/media/" + id_is;
+                        } else {
+                            id_is = "/static/img/" + id_is;
+                        }
+
+                        return '<img style="width:20px; margin-right:10px;" src=' + id_is + ' />' + item.text;
+                    } else {
+                        return item.text;
+                    }
+                }
+
+                function formatSelection(item) {
+                    if (item.id) {
+                        var id_is = item.id;
+                        if (id_is.indexOf('uploaded') != -1) {
+                            id_is = "/media/" + id_is
+                        } else {
+                            id_is = "/static/img/" + id_is;
+                        }
+
+                        return '<img style="width:20px; margin-right:10px;" src=' + id_is + ' />' + item.text;
+                    } else {
+                        return item.text;
+                    }
+                }
+
+                // $(selectEl).select2("destroy");
+                $(selectEl).select2({
+                    formatResult: formatResult,
+                    formatSelection: formatSelection
+                });
+            });
+
+        });
+    </script>
+{% endblock %}

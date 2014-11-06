@@ -1,11 +1,12 @@
 import os
 from django.core.exceptions import ValidationError
 import re
+import ast
 from django import forms
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
 from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, \
-    GISInventoryBulkImport
+    GISInventoryBulkImport, PingThematicSettings
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
@@ -1176,3 +1177,127 @@ class GISInventoryBulkImportEditForm(forms.ModelForm):
         """
         model = GISInventoryBulkImport
         exclude = ['status', 'uploaded_by', 'added_on', 'modified_on', 'upload_status']
+
+
+#************************************** Ping Thematic Settings **********************************
+class PingThematicSettingsForm(forms.ModelForm):
+    """
+        Ping thematic settings form
+    """
+    # icon choices fetched from 'IconSettings' model
+    ICON_CHOICES = [('', 'Select')]
+    try:
+        ICON_CHOICES = [('', 'Select')] + [(icon.upload_image, icon.alias) for icon in IconSettings.objects.all()]
+    except Exception as e:
+        logger.info("No choices for icon. Exception: {}".format(e.message))
+
+    # services select menu choices
+    SERVICES = (
+        ('', 'Select'),
+        ('ping', 'Ping')
+    )
+
+    # data sources menu choices
+    DATA_SOURCES = (
+        ('', 'Select'),
+        ('pl', 'PL'),
+        ('rta', 'RTA')
+    )
+
+    # icon fields
+    icon_settings1 = forms.ChoiceField(label='Icon 1', choices=ICON_CHOICES, required=False)
+    icon_settings2 = forms.ChoiceField(label='Icon 2', choices=ICON_CHOICES, required=False)
+    icon_settings3 = forms.ChoiceField(label='Icon 3', choices=ICON_CHOICES, required=False)
+    icon_settings4 = forms.ChoiceField(label='Icon 4', choices=ICON_CHOICES, required=False)
+    icon_settings5 = forms.ChoiceField(label='Icon 5', choices=ICON_CHOICES, required=False)
+    icon_settings6 = forms.ChoiceField(label='Icon 6', choices=ICON_CHOICES, required=False)
+    icon_settings7 = forms.ChoiceField(label='Icon 7', choices=ICON_CHOICES, required=False)
+    icon_settings8 = forms.ChoiceField(label='Icon 8', choices=ICON_CHOICES, required=False)
+    icon_settings9 = forms.ChoiceField(label='Icon 9', choices=ICON_CHOICES, required=False)
+    icon_settings10 = forms.ChoiceField(label='Icon 10', choices=ICON_CHOICES, required=False)
+
+    # service field
+    service = forms.TypedChoiceField(choices=SERVICES, required=True)
+
+    # data source field
+    data_source = forms.TypedChoiceField(choices=DATA_SOURCES, required=True)
+
+    def __init__(self, *args, **kwargs):
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(PingThematicSettingsForm, self).__init__(*args, **kwargs)
+
+        # modify technology field initial option
+        self.fields['technology'].empty_label = 'Select'
+
+        # fetch default options for icon setting fields
+        icon_settings = ""
+        try:
+            icon_settings = PingThematicSettings.objects.get(id=self.id).icon_settings
+
+            # convert string into python list of dictionaries
+            icon_settings = ast.literal_eval(icon_settings)
+
+            # loop through list 'icon_settings' containing dictionaries for icon settings for all selected ranges
+            for ic_dict in icon_settings:
+                field, value = ic_dict.items()[0]
+                # setting initial value for a field
+                self.initial[field] = value
+
+        except Exception as e:
+            pass
+
+        for name, field in self.fields.items():
+
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = PingThematicSettings
+        exclude = ['icon_settings', 'user_profile']
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = ThematicSettings.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
+
+    def clean(self):
+        """
+        Validations for thematic settings form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data

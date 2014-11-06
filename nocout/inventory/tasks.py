@@ -1326,10 +1326,13 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
     for row_index in xrange(1, sheet.nrows):
         d = dict()
         for col_index in xrange(len(keys)):
-            if keys[col_index] == "SS Date Of Acceptance":
+            if keys[col_index] in ["Date Of Acceptance", "SS Date Of Acceptance"]:
                 if isinstance(sheet.cell(row_index, col_index).value, float):
-                    d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
-                        *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
+                    try:
+                        d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
+                            *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
+                    except Exception as e:
+                        logger.info("Date of Exception Error. Exception: {}".format(e.message))
             else:
                 if isinstance(sheet.cell(row_index, col_index).value, str):
                     d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
@@ -1355,6 +1358,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
     # id of last inserted row in 'device' model
     device_latest_id = 0
 
+    # row counter
+    counter = 0
+
     # get device latest inserted in schema
     try:
         id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
@@ -1369,6 +1375,11 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
         for row in complete_d:
             # increment device latest id by 1
             device_latest_id += 1
+
+            # increment counter by 1
+            counter += 1
+
+            print "********************* PTP - Row: {}".format(counter)
 
             # errors in this row
             errors = ""
@@ -2467,10 +2478,13 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
     for row_index in xrange(1, sheet.nrows):
         d = dict()
         for col_index in xrange(len(keys)):
-            if keys[col_index] == "SS Date Of Acceptance":
+            if keys[col_index] in ["Date Of Acceptance", "SS Date Of Acceptance"]:
                 if isinstance(sheet.cell(row_index, col_index).value, float):
-                    d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
-                        *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
+                    try:
+                        d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
+                            *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
+                    except Exception as e:
+                        logger.info("Date of Exception Error. Exception: {}".format(e.message))
             else:
                 if isinstance(sheet.cell(row_index, col_index).value, str):
                     d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
@@ -2488,6 +2502,9 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
     # id of last inserted row in 'device' model
     device_latest_id = 0
 
+    # row counter
+    counter = 0
+
     # get device latest inserted in schema
     try:
         id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
@@ -2499,6 +2516,11 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
         for row in complete_d:
             # increment device latest id by 1
             device_latest_id += 1
+
+            # increment counter by 1
+            counter += 1
+
+            print "********************* PTP BH - Row: {}".format(counter)
 
             # initialize variables
             base_station = ""
@@ -3300,6 +3322,9 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
     # id of last inserted row in 'device' model
     device_latest_id = 0
 
+    # row counter
+    counter = 0
+
     # get device latest inserted in schema
     try:
         id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
@@ -3311,6 +3336,11 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
         for row in complete_d:
             # increment device latest id by 1
             device_latest_id += 1
+
+            # increment counter by 1
+            counter += 1
+
+            print "********************* PMP BS - Row: {}".format(counter)
 
             # initialize variables
             base_station = ""
@@ -3874,8 +3904,11 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
         for col_index in xrange(len(keys)):
             if keys[col_index] == "Date Of Acceptance":
                 if isinstance(sheet.cell(row_index, col_index).value, float):
-                    d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
-                        *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
+                    try:
+                        d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
+                            *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
+                    except Exception as e:
+                        logger.info("Date of Exception Error. Exception: {}".format(e.message))
             else:
                 if isinstance(sheet.cell(row_index, col_index).value, str):
                     d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
@@ -3893,6 +3926,9 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
     # id of last inserted row in 'device' model
     device_latest_id = 0
 
+    # row counter
+    counter = 0
+
     # get device latest inserted in schema
     try:
         id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
@@ -3904,6 +3940,11 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
         for row in complete_d:
             # increment device latest id by 1
             device_latest_id += 1
+
+            # increment counter by 1
+            counter += 1
+
+            print "********************* PMP SM - Row: {}".format(counter)
 
             # initialize variables
             sub_station = ""
@@ -4209,6 +4250,9 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
     # id of last inserted row in 'device' model
     device_latest_id = 0
 
+    # row counter
+    counter = 0
+
     # get device latest inserted in schema
     try:
         id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
@@ -4219,6 +4263,11 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
         for row in complete_d:
             # increment device latest id by 1
             device_latest_id += 1
+
+            # increment counter by 1
+            counter += 1
+
+            print "********************* Wimax BS - Row: {}".format(counter)
 
             # initialize variables
             base_station = ""
@@ -4802,10 +4851,13 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
     for row_index in xrange(1, sheet.nrows):
         d = dict()
         for col_index in xrange(len(keys)):
-            if keys[col_index] == "SS Date Of Acceptance":
+            if keys[col_index] == "Date Of Acceptance":
                 if isinstance(sheet.cell(row_index, col_index).value, float):
-                    d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
-                        *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
+                    try:
+                        d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
+                            *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
+                    except Exception as e:
+                        logger.info("Date of Exception Error. Exception: {}".format(e.message))
             else:
                 if isinstance(sheet.cell(row_index, col_index).value, str):
                     d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
@@ -4823,6 +4875,9 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
     # id of last inserted row in 'device' model
     device_latest_id = 0
 
+    # row counter
+    counter = 0
+
     # get device latest inserted in schema
     try:
         id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
@@ -4834,6 +4889,11 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
         for row in complete_d:
             # increment device latest id by 1
             device_latest_id += 1
+
+            # increment counter by 1
+            counter += 1
+
+            print "********************* Wimax SS - Row: {}".format(counter)
 
             # initialize variables
             sub_station = ""
@@ -6215,8 +6275,7 @@ def create_basestation(basestation_payload):
                     try:
                         basestation.bh_capacity = int(bh_capacity)
                     except Exception as e:
-                        # logger.info("BH Capacity: ({} - {})".format(bh_capacity, e.message))
-                        pass
+                        logger.info("BH Capacity: ({} - {})".format(bh_capacity, e.message))
                 # bs type
                 if bs_type:
                     try:

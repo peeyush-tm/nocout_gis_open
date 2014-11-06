@@ -194,10 +194,10 @@
         var to_seperator_html = "<span class='col-sm-1' style='padding: 0px;padding-top: 5px;text-align: center;'>To</span>";
 
         /*Update Range html*/
-        for(var j=1;j<=range_count/2;j++) {            
+        for(var j=1;j<=range_count/2;j++) {
 
             $("#id_range"+j+"_start").parent().html($("#id_range"+j+"_start").parent().html()+""+to_seperator_html+""+$("#id_range"+j+"_end").parent().html());
-            
+
             $("#id_range"+j+"_start").attr("style","width:45%;");
             $("#id_range"+j+"_start").addClass("col-md-4");
             $("#id_range"+j+"_start").attr("placeholder","Start");
@@ -206,7 +206,7 @@
             $("#id_range"+j+"_end").addClass("col-md-4");
             $("#id_range"+j+"_end").addClass("pull-right");
             $("#id_range"+j+"_end").attr("placeholder","End");
-            
+
             // $("#id_range"+j+"_start").parent().parent().parent().next().children().parent().remove();
             $("#id_range"+j+"_start").closest(".form-group").next().remove();
 
