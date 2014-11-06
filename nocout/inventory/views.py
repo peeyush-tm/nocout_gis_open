@@ -10,12 +10,10 @@ import os
 from os.path import basename
 from django.views.generic.base import View
 import re
-from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render, render_to_response
 import json
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect, HttpResponse
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView, View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.core.urlresolvers import reverse_lazy
