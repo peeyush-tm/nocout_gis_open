@@ -1423,7 +1423,7 @@ class CustomerCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(CustomerCreate.success_url)
 
 
-class CustomerUpdate(UpdateView):
+class CustomerUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Customer.
     """
@@ -1431,13 +1431,7 @@ class CustomerUpdate(UpdateView):
     model = Customer
     form_class = CustomerForm
     success_url = reverse_lazy('customers_list')
-
-    @method_decorator(permission_required('inventory.change_customer', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CustomerUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_customer',)
 
     def get_queryset(self):
         return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
