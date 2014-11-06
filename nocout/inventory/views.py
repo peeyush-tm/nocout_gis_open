@@ -1738,19 +1738,13 @@ class SubStationDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #**************************************** Circuit *********************************************
-class CircuitList(ListView):
+class CircuitList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render Circuit List Page.
     """
     model = Circuit
     template_name = 'circuit/circuits_list.html'
-
-    @method_decorator(permission_required('inventory.view_circuit', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(CircuitList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_circuit',)
 
     def get_queryset(self):
         """
@@ -1785,11 +1779,12 @@ class CircuitList(ListView):
         return context
 
 
-class CircuitListingTable(BaseDatatableView):
+class CircuitListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Circuit Data table.
     """
     model = Circuit
+    required_permissions = ('inventory.view_circuit',)
     columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
                'sub_station__alias', 'date_of_acceptance', 'description']
     order_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
@@ -1997,15 +1992,16 @@ class CircuitListingTable(BaseDatatableView):
         return ret
 
 
-class CircuitDetail(DetailView):
+class CircuitDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Circuit detail.
     """
     model = Circuit
+    required_permissions = ('inventory.view_circuit',)
     template_name = 'circuit/circuit_detail.html'
 
 
-class CircuitCreate(CreateView):
+class CircuitCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Circuit.
     """
@@ -2014,13 +2010,7 @@ class CircuitCreate(CreateView):
     model = Circuit
     form_class = CircuitForm
     success_url = reverse_lazy('circuits_list')
-
-    @method_decorator(permission_required('inventory.add_circuit', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CircuitCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_circuit',)
 
     def form_valid(self, form):
         """
@@ -2031,7 +2021,7 @@ class CircuitCreate(CreateView):
         return HttpResponseRedirect(CircuitCreate.success_url)
 
 
-class CircuitUpdate(UpdateView):
+class CircuitUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Cicuit.
     """
@@ -2039,13 +2029,7 @@ class CircuitUpdate(UpdateView):
     model = Circuit
     form_class = CircuitForm
     success_url = reverse_lazy('circuits_list')
-
-    @method_decorator(permission_required('inventory.change_circuit', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CircuitUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_circuit',)
 
     def get_queryset(self):
         return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
@@ -2077,22 +2061,15 @@ class CircuitUpdate(UpdateView):
         return HttpResponseRedirect(CircuitUpdate.success_url)
 
 
-class CircuitDelete(DeleteView):
+class CircuitDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Circuit.
     """
     model = Circuit
     template_name = 'circuit/circuit_delete.html'
     success_url = reverse_lazy('circuits_list')
+    required_permissions = ('inventory.delete_circuit',)
 
-    @method_decorator(permission_required('inventory.delete_circuit', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CircuitDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_circuit', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
