@@ -238,19 +238,13 @@ class ServiceDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #************************************* Service Parameters *****************************************
-class ServiceParametersList(ListView):
+class ServiceParametersList(PermissionsRequiredMixin, ListView):
     """
     Class Based View for the Service parameter Listing.
     """
     model = ServiceParameters
     template_name = 'service_parameter/services_parameter_list.html'
-
-    @method_decorator(permission_required('service.view_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersList, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.view_serviceparameters',)
 
     def get_context_data(self, **kwargs):
         """
@@ -271,11 +265,12 @@ class ServiceParametersList(ListView):
         return context
 
 
-class ServiceParametersListingTable(BaseDatatableView):
+class ServiceParametersListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render ServiceParameters Data table.
     """
     model = ServiceParameters
+    required_permissions = ('service.view_serviceparameters',)
     columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval',
                'max_check_attempts']
     order_columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval',
@@ -359,15 +354,16 @@ class ServiceParametersListingTable(BaseDatatableView):
         return ret
 
 
-class ServiceParametersDetail(DetailView):
+class ServiceParametersDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the details of the service parameters
     """
     model = ServiceParameters
+    required_permissions = ('service.view_serviceparameters',)
     template_name = 'service_parameter/service_parameter_detail.html'
 
 
-class ServiceParametersCreate(CreateView):
+class ServiceParametersCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based View to create the service parameters
     """
@@ -375,13 +371,7 @@ class ServiceParametersCreate(CreateView):
     model = ServiceParameters
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
-
-    @method_decorator(permission_required('service.add_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.add_serviceparameters',)
 
     def form_valid(self, form):
         """
@@ -392,7 +382,7 @@ class ServiceParametersCreate(CreateView):
         return HttpResponseRedirect(ServiceParametersCreate.success_url)
 
 
-class ServiceParametersUpdate(UpdateView):
+class ServiceParametersUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to Update the Service Parameters.
     """
@@ -400,14 +390,7 @@ class ServiceParametersUpdate(UpdateView):
     model = ServiceParameters
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
-
-    @method_decorator(permission_required('service.change_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersUpdate, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('service.change_serviceparameters',)
 
     def form_valid(self, form):
         """
@@ -428,20 +411,14 @@ class ServiceParametersUpdate(UpdateView):
         return HttpResponseRedirect(ServiceParametersUpdate.success_url)
 
 
-class ServiceParametersDelete(DeleteView):
+class ServiceParametersDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class Based View to Delete the ServiceParameters.
     """
     model = ServiceParameters
     template_name = 'service_parameter/service_parameter_delete.html'
     success_url = reverse_lazy('services_parameter_list')
-
-    @method_decorator(permission_required('service.delete_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.delete_serviceparameters',)
 
     def delete(self, request, *args, **kwargs):
         """
