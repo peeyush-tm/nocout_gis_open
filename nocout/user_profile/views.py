@@ -3,7 +3,6 @@ import pickle
 
 from django.contrib.auth.models import Group
 from django.db.models.query import ValuesQuerySet
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin, BaseUpdateView
 from django.core.urlresolvers import reverse_lazy
@@ -17,7 +16,6 @@ from django.contrib.auth.hashers import make_password
 from collections import OrderedDict
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.utils.util import DictDiffer, project_group_role_dict_mapper
-from django.contrib.auth.decorators import permission_required
 from django.template.loader import render_to_string
 from django.db.models import Q
 from nocout.utils import logged_in_user_organizations
