@@ -1178,7 +1178,7 @@ class SectorDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'sector/sector_detail.html'
 
 
-class SectorCreate(CreateView):
+class SectorCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Sector.
     """
@@ -1186,13 +1186,7 @@ class SectorCreate(CreateView):
     model = Sector
     form_class = SectorForm
     success_url = reverse_lazy('sectors_list')
-
-    @method_decorator(permission_required('inventory.add_sector', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(SectorCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_sector',)
 
     def form_valid(self, form):
         """
