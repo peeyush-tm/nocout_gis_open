@@ -355,6 +355,11 @@ $("#createPolygonBtn").click(function(e) {
 
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.initLivePolling();
+
+        hasSelectDevice = 1;
+
+        /*Call get_page_status function to show the current status*/
+        get_page_status();
     } else {
         networkMapInstance.initLivePolling();
 
@@ -370,7 +375,7 @@ $("#tech_send").click(function(e) {
     if(window.location.pathname.indexOf("googleEarth") > -1) {
         earth_instance.fetchPollingTemplate_earth();
     } else if(window.location.pathname.indexOf("white_background") > -1) {
-        whiteMapClass.fetchPollingTempate();
+        whiteMapClass.fetchPollingTemplate_wmap();
     } else {
         networkMapInstance.fetchPollingTemplate_gmap();
     }
@@ -379,7 +384,8 @@ $("#tech_send").click(function(e) {
 $("#fetch_polling").click(function(e) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-        
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.getDevicesPollingData_wmaps();
     } else {
         networkMapInstance.getDevicesPollingData();
     }
@@ -388,7 +394,7 @@ $("#fetch_polling").click(function(e) {
 /*Change event on polling technology dropdown*/
 $("#polling_tech").change(function(e) {
     if(window.location.pathname.indexOf("white_background") > -1) {
-
+        whiteMapClass.initLivePolling();
     } else {
         networkMapInstance.initLivePolling();
     }
@@ -447,7 +453,12 @@ function get_page_status() {
 $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $(this).val();
     defaultIconSize= val;
-    networkMapInstance.updateAllMarkersWithNewIcon(val);
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.toggleIconSize();
+    } else {
+        networkMapInstance.updateAllMarkersWithNewIcon(val);
+        
+    }
 });
 
 
