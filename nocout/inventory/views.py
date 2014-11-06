@@ -2696,19 +2696,13 @@ class LivePollingSettingsDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #**************************************** ThresholdConfiguration *********************************************
-class ThresholdConfigurationList(ListView):
+class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render ThresholdConfiguration List Page.
     """
     model = ThresholdConfiguration
     template_name = 'threshold_configuration/threshold_configuration_list.html'
-
-    @method_decorator(permission_required('inventory.view_thresholdconfiguration', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ThresholdConfigurationList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_thresholdconfiguration',)
 
 
     def get_context_data(self, **kwargs):
@@ -2729,11 +2723,12 @@ class ThresholdConfigurationList(ListView):
         return context
 
 
-class ThresholdConfigurationListingTable(BaseDatatableView):
+class ThresholdConfigurationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render ThresholdConfiguration Data table.
     """
     model = ThresholdConfiguration
+    required_permissions = ('inventory.view_thresholdconfiguration',)
     columns = ['alias', 'live_polling_template__alias']
     order_columns = ['alias', 'live_polling_template__alias']
 
@@ -2815,15 +2810,16 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
         return ret
 
 
-class ThresholdConfigurationDetail(DetailView):
+class ThresholdConfigurationDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Threshold Configuration detail.
     """
     model = ThresholdConfiguration
+    required_permissions = ('inventory.view_thresholdconfiguration',)
     template_name = 'threshold_configuration/threshold_configuration_detail.html'
 
 
-class ThresholdConfigurationCreate(CreateView):
+class ThresholdConfigurationCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Threshold Configuration.
     """
@@ -2831,13 +2827,7 @@ class ThresholdConfigurationCreate(CreateView):
     model = ThresholdConfiguration
     form_class = ThresholdConfigurationForm
     success_url = reverse_lazy('threshold_configuration_list')
-
-    @method_decorator(permission_required('inventory.add_threshold_configuration', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThresholdConfigurationCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_threshold_configuration',)
 
     def form_valid(self, form):
         """
@@ -2848,7 +2838,7 @@ class ThresholdConfigurationCreate(CreateView):
         return HttpResponseRedirect(ThresholdConfigurationCreate.success_url)
 
 
-class ThresholdConfigurationUpdate(UpdateView):
+class ThresholdConfigurationUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Threshold Configuration.
     """
@@ -2856,13 +2846,7 @@ class ThresholdConfigurationUpdate(UpdateView):
     model = ThresholdConfiguration
     form_class = ThresholdConfigurationForm
     success_url = reverse_lazy('threshold_configuration_list')
-
-    @method_decorator(permission_required('inventory.change_threshold_configuration', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThresholdConfigurationUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_threshold_configuration',)
 
     def form_valid(self, form):
         """
@@ -2883,22 +2867,15 @@ class ThresholdConfigurationUpdate(UpdateView):
         return HttpResponseRedirect(ThresholdConfigurationUpdate.success_url)
 
 
-class ThresholdConfigurationDelete(DeleteView):
+class ThresholdConfigurationDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Threshold Configuration.
     """
     model = ThresholdConfiguration
     template_name = 'threshold_configuration/threshold_configuration_delete.html'
     success_url = reverse_lazy('threshold_configuration_list')
+    required_permissions = ('inventory.delete_threshold_configuration',)
 
-    @method_decorator(permission_required('inventory.delete_threshold_configuration', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThresholdConfigurationDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_threshold_configuration', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
