@@ -3948,7 +3948,7 @@ class PingThematicSettingsDetail(DetailView):
     template_name = 'ping_thematic_settings/ping_thematic_settings_detail.html'
 
 
-class PingThematicSettingsCreate(CreateView):
+class PingThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new PingThematicSettings.
     """
@@ -3956,13 +3956,7 @@ class PingThematicSettingsCreate(CreateView):
     model = PingThematicSettings
     form_class = PingThematicSettingsForm
     success_url = reverse_lazy('ping_thematic_settings_list')
-
-    @method_decorator(permission_required('inventory.add_pingthematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(PingThematicSettingsCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_pingthematicsettings',)
 
     def form_valid(self, form):
         """
@@ -3982,7 +3976,7 @@ class PingThematicSettingsCreate(CreateView):
         return HttpResponseRedirect(PingThematicSettingsCreate.success_url)
 
 
-class PingThematicSettingsUpdate(UpdateView):
+class PingThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Thematic Settings.
     """
@@ -3990,13 +3984,7 @@ class PingThematicSettingsUpdate(UpdateView):
     model = PingThematicSettings
     form_class = PingThematicSettingsForm
     success_url = reverse_lazy('ping_thematic_settings_list')
-
-    @method_decorator(permission_required('inventory.change_pingthematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(PingThematicSettingsUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_pingthematicsettings',)
 
     def form_valid(self, form):
         """
@@ -4027,22 +4015,15 @@ class PingThematicSettingsUpdate(UpdateView):
         return HttpResponseRedirect(PingThematicSettingsUpdate.success_url)
 
 
-class PingThematicSettingsDelete(DeleteView):
+class PingThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Thematic Settings.
     """
     model = PingThematicSettings
     template_name = 'ping_thematic_settings/ping_thematic_settings_delete.html'
     success_url = reverse_lazy('ping_thematic_settings_list')
+    required_permissions = ('inventory.delete_pingthematicsettings',)
 
-    @method_decorator(permission_required('inventory.delete_pingthematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(PingThematicSettingsDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_pingthematicsettings', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
