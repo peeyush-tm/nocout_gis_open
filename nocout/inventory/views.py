@@ -1486,19 +1486,13 @@ class CustomerDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #**************************************** Sub Station *********************************************
-class SubStationList(ListView):
+class SubStationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render Sub Station List Page.
     """
     model = SubStation
     template_name = 'sub_station/sub_stations_list.html'
-
-    @method_decorator(permission_required('inventory.view_substation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(SubStationList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_substation',)
 
     def get_queryset(self):
         """
