@@ -2502,19 +2502,13 @@ class IconSettingsDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #**************************************** LivePollingSettings *********************************************
-class LivePollingSettingsList(ListView):
+class LivePollingSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render LivePollingSettings List Page.
     """
     model = LivePollingSettings
     template_name = 'live_polling_settings/live_polling_settings_list.html'
-
-    @method_decorator(permission_required('inventory.view_livepollingsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(LivePollingSettingsList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_livepollingsettings',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2536,11 +2530,12 @@ class LivePollingSettingsList(ListView):
         return context
 
 
-class LivePollingSettingsListingTable(BaseDatatableView):
+class LivePollingSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render LivePollingSettings Data table.
     """
     model = LivePollingSettings
+    required_permissions = ('inventory.view_livepollingsettings',)
     columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
     order_columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
 
@@ -2621,15 +2616,16 @@ class LivePollingSettingsListingTable(BaseDatatableView):
         return ret
 
 
-class LivePollingSettingsDetail(DetailView):
+class LivePollingSettingsDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the LivePollingSettings detail.
     """
     model = LivePollingSettings
+    required_permissions = ('inventory.view_livepollingsettings',)
     template_name = 'live_polling_settings/live_polling_settings_detail.html'
 
 
-class LivePollingSettingsCreate(CreateView):
+class LivePollingSettingsCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new LivePollingSettings.
     """
@@ -2637,13 +2633,7 @@ class LivePollingSettingsCreate(CreateView):
     model = LivePollingSettings
     form_class = LivePollingSettingsForm
     success_url = reverse_lazy('live_polling_settings_list')
-
-    @method_decorator(permission_required('inventory.add_livepollingsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(LivePollingSettingsCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_livepollingsettings',)
 
     def form_valid(self, form):
         """
@@ -2654,7 +2644,7 @@ class LivePollingSettingsCreate(CreateView):
         return HttpResponseRedirect(LivePollingSettingsCreate.success_url)
 
 
-class LivePollingSettingsUpdate(UpdateView):
+class LivePollingSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update LivePollingSettings.
     """
@@ -2662,13 +2652,7 @@ class LivePollingSettingsUpdate(UpdateView):
     model = LivePollingSettings
     form_class = LivePollingSettingsForm
     success_url = reverse_lazy('live_polling_settings_list')
-
-    @method_decorator(permission_required('inventory.change_livepollingsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(LivePollingSettingsUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_livepollingsettings',)
 
     def form_valid(self, form):
         """
@@ -2689,22 +2673,15 @@ class LivePollingSettingsUpdate(UpdateView):
         return HttpResponseRedirect(LivePollingSettingsUpdate.success_url)
 
 
-class LivePollingSettingsDelete(DeleteView):
+class LivePollingSettingsDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the LivePollingSettings
     """
     model = LivePollingSettings
     template_name = 'live_polling_settings/live_polling_settings_delete.html'
     success_url = reverse_lazy('live_polling_settings_list')
+    required_permissions = ('inventory.delete_livepollingsettings',)
 
-    @method_decorator(permission_required('inventory.delete_livepollingsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(LivePollingSettingsDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_livepollingsettings', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
