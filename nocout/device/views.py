@@ -3310,19 +3310,13 @@ class DevicePortDelete(PermissionsRequiredMixin, DeleteView):
         return super(DevicePortDelete, self).delete(request, *args, **kwargs)
 
 
-class DeviceFrequencyListing(ListView):
+class DeviceFrequencyListing(PermissionsRequiredMixin, ListView):
     """
     Render list of device frequencies list
     """
     model = DeviceFrequency
     template_name = 'device_frequency/device_frequency_list.html'
-
-    @method_decorator(permission_required('device.view_devicefrequency', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceFrequencyListing, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicefrequency',)
 
     def get_context_data(self, **kwargs):
         """
@@ -3341,11 +3335,12 @@ class DeviceFrequencyListing(ListView):
         return context
 
 
-class DeviceFrequencyListingTable(BaseDatatableView):
+class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device frequencies
     """
     model = DeviceFrequency
+    required_permissions = ('device.view_devicefrequency',)
     columns = ['value', 'color_hex_value', 'frequency_radius']
     order_columns = ['value', 'color_hex_value', 'frequency_radius']
 
@@ -3434,7 +3429,7 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceFrequencyCreate(CreateView):
+class DeviceFrequencyCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device frequency create view
     """
@@ -3442,13 +3437,7 @@ class DeviceFrequencyCreate(CreateView):
     model = DeviceFrequency
     form_class = DeviceFrequencyForm
     success_url = reverse_lazy('device_frequency_list')
-
-    @method_decorator(permission_required('device.add_devicefrequency', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceFrequencyCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicefrequency',)
 
     def form_valid(self, form):
         """
@@ -3458,7 +3447,7 @@ class DeviceFrequencyCreate(CreateView):
         return HttpResponseRedirect(DeviceFrequencyCreate.success_url)
 
 
-class DeviceFrequencyUpdate(UpdateView):
+class DeviceFrequencyUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device frequency update view
     """
@@ -3466,13 +3455,7 @@ class DeviceFrequencyUpdate(UpdateView):
     model = DeviceFrequency
     form_class = DeviceFrequencyForm
     success_url = reverse_lazy('device_frequency_list')
-
-    @method_decorator(permission_required('device.change_devicefrequency', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceFrequencyUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicefrequency',)
 
     def form_valid(self, form):
         """
@@ -3482,20 +3465,14 @@ class DeviceFrequencyUpdate(UpdateView):
         return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)
 
 
-class DeviceFrequencyDelete(DeleteView):
+class DeviceFrequencyDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device frequency delete view
     """
     model = DeviceFrequency
     template_name = 'device_frequency/device_frequency_delete.html'
     success_url = reverse_lazy('device_frequency_list')
-
-    @method_decorator(permission_required('device.delete_devicefrequency', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceFrequencyDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicefrequency',)
 
     def delete(self, request, *args, **kwargs):
         """
