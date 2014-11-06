@@ -1673,7 +1673,7 @@ class SubStationCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(SubStationCreate.success_url)
 
 
-class SubStationUpdate(UpdateView):
+class SubStationUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update the Sub Station.
     """
@@ -1681,13 +1681,7 @@ class SubStationUpdate(UpdateView):
     model = SubStation
     form_class = SubStationForm
     success_url = reverse_lazy('sub_stations_list')
-
-    @method_decorator(permission_required('inventory.change_substation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(SubStationUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_substation',)
 
     def get_queryset(self):
         return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
