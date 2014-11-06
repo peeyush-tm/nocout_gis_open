@@ -1057,11 +1057,12 @@ class SectorList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class SectorListingTable(BaseDatatableView):
+class SectorListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Sector Data Table.
     """
     model = Sector
+    required_permissions = ('inventory.view_sector',)
     columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
                'base_station__alias', 'sector_configured_on_port__alias', 'antenna__alias', 'mrc', 'description']
     order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
