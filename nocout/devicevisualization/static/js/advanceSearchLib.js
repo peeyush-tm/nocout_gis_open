@@ -836,7 +836,7 @@ function advanceSearchClass() {
 
 
 	this.removeFilters = function() {
-
+		
 		/*Reset filter data array*/
 		lastSelectedValues = [];
 		appliedAdvFilter = [];

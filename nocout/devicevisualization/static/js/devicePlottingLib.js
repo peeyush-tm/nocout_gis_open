@@ -773,7 +773,7 @@ function devicePlottingClass_gmap() {
 
 				/*Call createSectorData function to get the points array to plot the sector on google maps.*/
 				gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-
+				
 					var halfPt = Math.floor(pointsArray.length / (+2));
 
 					if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
@@ -868,6 +868,7 @@ function devicePlottingClass_gmap() {
 				for(var k=sector_child.length;k--;) {
 				// for(var k=0;k<sector_child.length;k++) {
 
+				
 					var ss_marker_obj = sector_child[k];
 
 					// var perf_obj = {

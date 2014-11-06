@@ -305,9 +305,9 @@ $("#setAdvFilterBtn").click(function(e) {
 /*If 'Cancel' button of advance filter form is clicked*/
 $("#cancelAdvFilterBtn").click(function(e) {
 
-if(window.location.pathname.indexOf("white_background") > -1) {
-    return;
-    }
+// if(window.location.pathname.indexOf("white_background") > -1) {
+//     return;
+//     }
     $("#advFilterFormContainer").html("");
 
     if(!($("#advFilterContainerBlock").hasClass("hide"))) {
@@ -322,9 +322,7 @@ if(window.location.pathname.indexOf("white_background") > -1) {
  * @method removeAdvFilters
  */
 function removeAdvFilters() {
-if(window.location.pathname.indexOf("white_background") > -1) {
-    return;
-    }
+
     /*Reset advance filter status flag*/
     hasAdvFilter = 0;
 
@@ -332,6 +330,8 @@ if(window.location.pathname.indexOf("white_background") > -1) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
         data_for_filters_earth = main_devices_data_earth;
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        data_for_filters = main_devices_data_wmap;
     } else {
         data_for_filters = main_devices_data_gmaps;
     }
