@@ -2867,19 +2867,13 @@ class DeviceModelDelete(PermissionsRequiredMixin, DeleteView):
 # ****************************************** Device Type *******************************************
 
 
-class DeviceTypeList(ListView):
+class DeviceTypeList(PermissionsRequiredMixin, ListView):
     """
     Render list of device types
     """
     model = DeviceType
     template_name = 'device_type/device_type_list.html'
-
-    @method_decorator(permission_required('device.view_devicetype', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicetype',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2907,11 +2901,12 @@ class DeviceTypeList(ListView):
         return context
 
 
-class DeviceTypeListingTable(BaseDatatableView):
+class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device types
     """
     model = DeviceType
+    required_permissions = ('device.view_devicetype',)
     columns = ['name', 'alias', 'agent_tag', 'packets', 'timeout', 'normal_check_interval',
                'rta_warning', 'rta_critical', 'pl_warning', 'pl_critical', 'device_icon', 'device_gmap_icon']
     order_columns = ['name', 'alias', 'agent_tag', 'packets', 'timeout', 'normal_check_interval',
@@ -3046,15 +3041,16 @@ class DeviceTypeListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceTypeDetail(DetailView):
+class DeviceTypeDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for device type
     """
     model = DeviceType
+    required_permissions = ('device.view_devicetype',)
     template_name = 'device_type/device_type_detail.html'
 
 
-class DeviceTypeCreate(CreateView):
+class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device type create view
     """
@@ -3062,13 +3058,7 @@ class DeviceTypeCreate(CreateView):
     model = DeviceType
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
-
-    @method_decorator(permission_required('device.add_devicetype', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicetype',)
 
     def form_valid(self, form):
         """
@@ -3078,7 +3068,7 @@ class DeviceTypeCreate(CreateView):
         return HttpResponseRedirect(DeviceTypeCreate.success_url)
 
 
-class DeviceTypeUpdate(UpdateView):
+class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device type update view
     """
@@ -3086,13 +3076,7 @@ class DeviceTypeUpdate(UpdateView):
     model = DeviceType
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
-
-    @method_decorator(permission_required('device.change_devicetype', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicetype',)
 
     def form_valid(self, form):
         """
@@ -3118,20 +3102,14 @@ class DeviceTypeUpdate(UpdateView):
         return HttpResponseRedirect(DeviceTypeUpdate.success_url)
 
 
-class DeviceTypeDelete(DeleteView):
+class DeviceTypeDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device type delete view
     """
     model = DeviceType
     template_name = 'device_type/device_type_delete.html'
     success_url = reverse_lazy('device_type_list')
-
-    @method_decorator(permission_required('device.delete_devicetype', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicetype',)
 
     def delete(self, request, *args, **kwargs):
         """
