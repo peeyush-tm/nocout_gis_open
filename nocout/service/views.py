@@ -433,19 +433,13 @@ class ServiceParametersDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #********************************** Service Data Source ***************************************
-class ServiceDataSourceList(ListView):
+class ServiceDataSourceList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render the Service Data Source.
     """
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_sources_list.html'
-
-    @method_decorator(permission_required('service.view_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceList, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.view_servicedatasource',)
 
     def get_context_data(self, **kwargs):
         """
@@ -465,8 +459,9 @@ class ServiceDataSourceList(ListView):
         return context
 
 
-class ServiceDataSourceListingTable(BaseDatatableView):
+class ServiceDataSourceListingTable(PermissionsRequiredMixin, BaseDatatableView):
     model = ServiceDataSource
+    required_permissions = ('service.view_servicedatasource',)
     columns = ['name', 'alias', 'warning', 'critical']
     order_columns = ['name', 'alias', 'warning', 'critical']
 
@@ -547,15 +542,16 @@ class ServiceDataSourceListingTable(BaseDatatableView):
         return ret
 
 
-class ServiceDataSourceDetail(DetailView):
+class ServiceDataSourceDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the Service Data Source Detail information.
     """
     model = ServiceDataSource
+    required_permissions = ('service.view_servicedatasource',)
     template_name = 'service_data_source/service_data_source_detail.html'
 
 
-class ServiceDataSourceCreate(CreateView):
+class ServiceDataSourceCreate(PermissionsRequiredMixin, CreateView):
     """
     Class Based View to Creater the Service Data Source Detail.
     """
@@ -563,14 +559,7 @@ class ServiceDataSourceCreate(CreateView):
     model = ServiceDataSource
     form_class = ServiceDataSourceForm
     success_url = reverse_lazy('service_data_sources_list')
-
-    @method_decorator(permission_required('service.add_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceCreate, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('service.add_servicedatasource',)
 
     def form_valid(self, form):
         """
@@ -580,7 +569,7 @@ class ServiceDataSourceCreate(CreateView):
         return HttpResponseRedirect(ServiceDataSourceCreate.success_url)
 
 
-class ServiceDataSourceUpdate(UpdateView):
+class ServiceDataSourceUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based View to update the Service Data Source.
     """
@@ -588,13 +577,7 @@ class ServiceDataSourceUpdate(UpdateView):
     model = ServiceDataSource
     form_class = ServiceDataSourceForm
     success_url = reverse_lazy('service_data_sources_list')
-
-    @method_decorator(permission_required('service.change_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.change_servicedatasource',)
 
     def form_valid(self, form):
         """
@@ -613,20 +596,14 @@ class ServiceDataSourceUpdate(UpdateView):
         return HttpResponseRedirect(ServiceDataSourceUpdate.success_url)
 
 
-class ServiceDataSourceDelete(DeleteView):
+class ServiceDataSourceDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class Based View to Delete the Service Data Source.
     """
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_source_delete.html'
     success_url = reverse_lazy('service_data_sources_list')
-
-    @method_decorator(permission_required('service.delete_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.delete_servicedatasource',)
 
     def delete(self, request, *args, **kwargs):
         """
