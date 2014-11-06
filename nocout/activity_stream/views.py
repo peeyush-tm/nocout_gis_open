@@ -6,8 +6,6 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from django.conf import settings
 from user_profile.models import UserProfile
-from django.contrib.auth.decorators import permission_required
-from django.utils.decorators import method_decorator
 
 from django.http import HttpResponse
 from activity_stream.models import UserAction
@@ -16,6 +14,7 @@ from activity_stream.forms import UserActionForm
 from datetime import datetime,timedelta
 from pytz import timezone
 from nocout.utils import logged_in_user_organizations
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 import logging
 
@@ -33,19 +32,13 @@ def time_converter(time_real):
     return now_india.strftime("%Y-%m-%d %H:%M:%S")
 
 
-class ActionList(ListView):
+class ActionList(PermissionsRequiredMixin, ListView):
     """
     Class Based View for the User Log Activity
     """
     model = UserAction
     template_name = 'activity_stream/actions_logs.html'
-
-    @method_decorator(permission_required('actstream.view_action', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ActionList, self).dispatch(*args, **kwargs)
+    required_permissions = ('actstream.view_action',)
 
     def get_context_data(self, **kwargs):
         """
