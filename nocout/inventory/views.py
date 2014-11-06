@@ -694,7 +694,7 @@ class BaseStationCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(BaseStationCreate.success_url)
 
 
-class BaseStationUpdate(UpdateView):
+class BaseStationUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Base Station.
     """
@@ -702,14 +702,7 @@ class BaseStationUpdate(UpdateView):
     model = BaseStation
     form_class = BaseStationForm
     success_url = reverse_lazy('base_stations_list')
-
-
-    @method_decorator(permission_required('inventory.change_basestation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(BaseStationUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_basestation',)
 
     def get_queryset(self):
         return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
