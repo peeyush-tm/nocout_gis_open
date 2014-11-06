@@ -3001,9 +3001,19 @@ function devicePlottingClass_gmap() {
 							        defaultPixelsPerValue : 10
 							    });
 
+								var marker_name = "",
+									sector_ip = "";
+
+								for(var x=0;x<polygonSelectedDevices.length;x++) {
+									if(polygonSelectedDevices[x].device_name === allSSIds[i]) {
+										marker_name = polygonSelectedDevices[x].name
+										sector_ip = polygonSelectedDevices[x].sector_ip ? polygonSelectedDevices[x].sector_ip : "";
+									}
+								}
+
 								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon,
-									ss_marker = allMarkersObject_gmap['sub_station']['ss_'+allSSIds[i]],
-									sector_marker = allMarkersObject_gmap['sector_device']['sector_'+allSSIds[i]],
+									ss_marker = allMarkersObject_gmap['sub_station']['ss_'+marker_name],
+									sector_marker = allMarkersObject_gmap['sector_device']['sector_'+sector_ip],
 									marker_polling_obj = {
 										"device_name" : allSSIds[i],
 										"polling_icon" : newIcon,
