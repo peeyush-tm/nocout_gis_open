@@ -4251,6 +4251,10 @@ class PingThematicSettingsCreate(CreateView):
         """
         icon_settings_keys = list(set(form.data.keys()) - set(
             [key for key in form.cleaned_data.keys() if "icon" not in key] + ['csrfmiddlewaretoken']))
+
+        # sorting icon settings list
+        icon_settings_keys = sorted(icon_settings_keys, key=lambda r: int(''.join(x for x in r if x.isdigit())))
+
         icon_settings_values_list = [{key: form.data[key]} for key in icon_settings_keys if form.data[key]]
         self.object = form.save()
         self.object.icon_settings = icon_settings_values_list
@@ -4284,6 +4288,10 @@ class PingThematicSettingsUpdate(UpdateView):
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         icon_settings_keys = list(set(form.data.keys()) - set(
             [key for key in form.cleaned_data.keys() if "icon" not in key] + ['csrfmiddlewaretoken']))
+
+        # sorting icon settings list
+        icon_settings_keys = sorted(icon_settings_keys, key=lambda r: int(''.join(x for x in r if x.isdigit())))
+
         icon_settings_values_list = [{key: form.data[key]} for key in icon_settings_keys if form.data[key]]
         self.object = form.save()
         self.object.icon_settings = icon_settings_values_list
