@@ -49,6 +49,7 @@ from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory,
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
     bulk_upload_wimax_ss_inventory
 from activity_stream.models import UserAction
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 logger = logging.getLogger(__name__)
 
@@ -288,19 +289,13 @@ def inventory_details_wrt_organization(request):
 
 
 #**************************************** Antenna *********************************************
-class AntennaList(ListView):
+class AntennaList(PermissionsRequiredMixin, ListView):
     """
     Class based view to render Antenna list page.
     """
     model = Antenna
     template_name = 'antenna/antenna_list.html'
-
-    @method_decorator(permission_required('inventory.view_antenna', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(AntennaList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_antenna',)
 
     def get_queryset(self):
         """
