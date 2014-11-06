@@ -1713,22 +1713,15 @@ class SubStationUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(SubStationUpdate.success_url)
 
 
-class SubStationDelete(DeleteView):
+class SubStationDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Sub Station.
     """
     model = SubStation
     template_name = 'sub_station/sub_station_delete.html'
     success_url = reverse_lazy('sub_stations_list')
+    required_permissions = ('inventory.delete_substation',)
 
-    @method_decorator(permission_required('inventory.delete_substation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(SubStationDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_substation', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
