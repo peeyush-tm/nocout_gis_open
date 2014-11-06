@@ -435,7 +435,7 @@ class AntennaDetail(DetailView):
     template_name = 'antenna/antenna_detail.html'
 
 
-class AntennaCreate(CreateView):
+class AntennaCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Antenna.
     """
@@ -443,13 +443,7 @@ class AntennaCreate(CreateView):
     model = Antenna
     form_class = AntennaForm
     success_url = reverse_lazy('antennas_list')
-
-    @method_decorator(permission_required('inventory.add_antenna', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(AntennaCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_antenna',)
 
     def form_valid(self, form):
         """
