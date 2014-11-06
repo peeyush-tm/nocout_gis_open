@@ -45,6 +45,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	m = 0
 	perf_out = None
 	ds_index =None
+        age = None
 	file_paths = []
 	temp_dict = {}
 	data_dict = {
@@ -54,7 +55,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		"data": [],
 		"meta": None,
 		"ip_address": str(ip),
-		"severity":None
+		"severity":None,
+		"age": None
 	}
 	status_dict = {
 		"host": str(host),
@@ -63,7 +65,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		"data": [],
 		"meta": None,
 		"ip_address": str(ip),
-		"severity":None
+		"severity":None,
+		"age": None
 	}
 	matching_criteria ={}
     	perf_db = None
@@ -105,7 +108,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		try:
                         service_for_livestatus = serv_disc
 			if service_for_livestatus == 'ping':
-				query_string = "GET hosts\nColumns: host_state last_check host_perf_data\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
+				query_string = "GET services\nColumns: host_state last_check host_perf_data service_last_state_change\n"+\
+				"Filter: host_name = %s\nFilter: service_description = %s\nOutputFormat: json\n" % (host,'PING')
 				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 				if query_output:
 					service_state = (query_output[0][0])
@@ -115,12 +119,16 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 						service_state = "down"
 					perf_out = query_output[0][2]
 					last_check = query_output[0][1]
+					last_change = query_output[0][3]
+					if last_change:
+						current_time = int(time.time())
+						age = current_time - last_change
 				else:
 					service_state= "UNKNOWN"
 					continue
 					
 			else:
-				query_string = "GET services\nColumns: service_state last_check service_perf_data\nFilter: " + \
+				query_string = "GET services\nColumns: service_state last_check service_perf_data service_last_state_change\nFilter: " + \
 				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (serv_disc,host)
 				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 				if query_output:
@@ -135,6 +143,10 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 						service_state = "UNKNOWN"
 					perf_out = query_output[0][2]
 					last_check = query_output[0][1]
+					last_change = query_output[0][3]
+					if last_change:
+						current_time = int(time.time())
+						age = current_time - last_change
 				else:
 					service_state = "UNKNOWN"
 					continue
@@ -195,6 +207,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 						temp_dict.update({"min_value": min_value,
 						"max_value":max_value})
 					data_dict.get('data').append(temp_dict)
+					data_dict['age'] = age
+					status_dict['age'] = age
 					status_dict.get('data').append(temp_dict)	
 				else:
 					print "Error in collecting performance data from the Live query"
@@ -232,7 +246,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					"data": [],
 					"meta": None,
 					"severity": None,
-					"ds": None
+					"ds": None,
+					"age":age
 			}
 			matching_criteria = {}
 			status_dict = {
@@ -242,7 +257,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					"data": [],
 					"meta": None,
 					"severity": None,
-					"ds": None
+					"ds": None,
+					"age":age
 			}
 	
 		params = []
