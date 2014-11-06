@@ -517,19 +517,13 @@ class AntennaDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #****************************************** Base Station ********************************************
-class BaseStationList(ListView):
+class BaseStationList(PermissionsRequiredMixin, ListView):
     """
     Class based View to render Base Station Data table.
     """
     model = BaseStation
     template_name = 'base_station/base_stations_list.html'
-
-    @method_decorator(permission_required('inventory.view_basestation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(BaseStationList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_basestation',)
 
     def get_queryset(self):
         """
