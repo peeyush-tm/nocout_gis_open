@@ -454,7 +454,7 @@ class AntennaCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(AntennaCreate.success_url)
 
 
-class AntennaUpdate(UpdateView):
+class AntennaUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Antenna .
     """
@@ -462,13 +462,7 @@ class AntennaUpdate(UpdateView):
     model = Antenna
     form_class = AntennaForm
     success_url = reverse_lazy('antennas_list')
-
-    @method_decorator(permission_required('inventory.change_antenna', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(AntennaUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_antenna',)
 
     def get_queryset(self):
         return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
