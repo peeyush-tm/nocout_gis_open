@@ -1,8 +1,6 @@
 import json
-from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
