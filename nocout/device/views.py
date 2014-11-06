@@ -2,11 +2,9 @@
 
 import json
 from operator import itemgetter
-from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
