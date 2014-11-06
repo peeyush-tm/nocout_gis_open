@@ -666,12 +666,13 @@ class BaseStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
         return ret
 
 
-class BaseStationDetail(DetailView):
+class BaseStationDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Base Station detail.
     """
     model = BaseStation
     template_name = 'base_station/base_station_detail.html'
+    required_permissions = ('inventory.view_basestation',)
 
 
 class BaseStationCreate(CreateView):
