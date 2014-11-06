@@ -1654,7 +1654,7 @@ class SubStationDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'sub_station/sub_station_detail.html'
 
 
-class SubStationCreate(CreateView):
+class SubStationCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Sub Station.
     """
@@ -1662,13 +1662,7 @@ class SubStationCreate(CreateView):
     model = SubStation
     form_class = SubStationForm
     success_url = reverse_lazy('sub_stations_list')
-
-    @method_decorator(permission_required('inventory.add_substation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(SubStationCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_substation',)
 
     def form_valid(self, form):
         """
