@@ -2590,19 +2590,13 @@ class DeviceVendorDelete(PermissionsRequiredMixin, DeleteView):
 # ****************************************** Device Model *******************************************
 
 
-class DeviceModelList(ListView):
+class DeviceModelList(PermissionsRequiredMixin, ListView):
     """
     Render list of models
     """
     model = DeviceModel
     template_name = 'device_model/device_model_list.html'
-
-    @method_decorator(permission_required('device.view_devicemodel', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceModelList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicemodel',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2620,11 +2614,12 @@ class DeviceModelList(ListView):
         return context
 
 
-class DeviceModelListingTable(BaseDatatableView):
+class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device models
     """
     model = DeviceModel
+    required_permissions = ('device.view_devicemodel',)
     columns = ['name', 'alias', 'device_types']
     order_columns = ['name', 'alias', 'device_types']
 
@@ -2753,15 +2748,16 @@ class DeviceModelListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceModelDetail(DetailView):
+class DeviceModelDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for model
     """
     model = DeviceModel
+    required_permissions = ('device.view_devicemodel',)
     template_name = 'device_model/device_model_detail.html'
 
 
-class DeviceModelCreate(CreateView):
+class DeviceModelCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device model create view
     """
@@ -2769,13 +2765,7 @@ class DeviceModelCreate(CreateView):
     model = DeviceModel
     form_class = DeviceModelForm
     success_url = reverse_lazy('device_model_list')
-
-    @method_decorator(permission_required('device.add_devicemodel', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceModelCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicemodel',)
 
     def form_valid(self, form):
         """
@@ -2796,7 +2786,7 @@ class DeviceModelCreate(CreateView):
         return HttpResponseRedirect(DeviceModelCreate.success_url)
 
 
-class DeviceModelUpdate(UpdateView):
+class DeviceModelUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device model update view
     """
@@ -2804,13 +2794,7 @@ class DeviceModelUpdate(UpdateView):
     model = DeviceModel
     form_class = DeviceModelForm
     success_url = reverse_lazy('device_model_list')
-
-    @method_decorator(permission_required('device.change_devicemodel', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceModelUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicemodel',)
 
     def form_valid(self, form):
         """
@@ -2858,20 +2842,14 @@ class DeviceModelUpdate(UpdateView):
         return HttpResponseRedirect(DeviceModelUpdate.success_url)
 
 
-class DeviceModelDelete(DeleteView):
+class DeviceModelDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device model delete view
     """
     model = DeviceModel
     template_name = 'device_model/device_model_delete.html'
     success_url = reverse_lazy('device_model_list')
-
-    @method_decorator(permission_required('device.delete_devicemodel', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceModelDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicemodel',)
 
     def delete(self, request, *args, **kwargs):
         """
