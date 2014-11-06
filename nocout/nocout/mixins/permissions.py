@@ -1,7 +1,11 @@
 """
-PermissionRequired Mixin to be used for class based views through-out the system.
+Permissions Required Mixin to be used for class based views through-out the system.
+SuperUser Required Mixin to be used for class based views through-out the system.
 
-Reference : http://www.robgolding.com/blog/2012/07/12/django-class-based-view-mixins-part-1/
+References :
+
+    - http://www.robgolding.com/blog/2012/07/12/django-class-based-view-mixins-part-1/
+    - https://django-braces.readthedocs.org/en/latest/
 """
 
 from django.http import HttpResponseForbidden
@@ -35,3 +39,16 @@ class PermissionsRequiredMixin(object):
         if not request.user.has_perms(self.required_permissions):
             return HttpResponseForbidden()
         return super(PermissionsRequiredMixin, self).dispatch(request, *args, **kwargs)
+
+
+class SuperUserRequiredMixin(object):
+    """
+    View mixin which requires that the authenticated user is a super user
+    (i.e. `is_superuser` is True).
+    """
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return HttpResponseForbidden()
+        return super(SuperUserRequiredMixin, self).dispatch(request, *args, **kwargs)
