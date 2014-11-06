@@ -814,21 +814,15 @@ class ProtocolDelete(PermissionsRequiredMixin, DeleteView):
             pass
         return super(ProtocolDelete, self).delete( request, *args, **kwargs)
 
-    
+
 #**************************************** DeviceServiceConfiguration *********************************************
-class DeviceServiceConfigurationList(ListView):
+class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to list the Device Service Configuration page.
     """
     model = DeviceServiceConfiguration
     template_name = 'device_service_configuration/device_service_configuration_list.html'
-
-    @method_decorator(permission_required('service.view_deviceserviceconfiguration', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceServiceConfigurationList, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.view_deviceserviceconfiguration',)
 
     def get_context_data(self, **kwargs):
         """
@@ -859,11 +853,12 @@ class DeviceServiceConfigurationList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class DeviceServiceConfigurationListingTable(BaseDatatableView):
+class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View render the Device Service Configuration Table.
     """
     model = DeviceServiceConfiguration
+    required_permissions = ('service.view_deviceserviceconfiguration',)
     columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
                'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
                'critical', 'added_on', 'modified_on']
