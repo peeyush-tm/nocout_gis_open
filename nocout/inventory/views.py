@@ -1463,22 +1463,15 @@ class CustomerUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(CustomerUpdate.success_url)
 
 
-class CustomerDelete(DeleteView):
+class CustomerDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Customer.
     """
     model = Customer
     template_name = 'customer/customer_delete.html'
     success_url = reverse_lazy('customers_list')
+    required_permissions = ('inventory.delete_customer',)
 
-    @method_decorator(permission_required('inventory.delete_customer', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CustomerDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_customer', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
