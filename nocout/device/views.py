@@ -2310,19 +2310,13 @@ class DeviceTechnologyDelete(PermissionsRequiredMixin, DeleteView):
 
 
 # ************************************* Device Vendor ***********************************************
-class DeviceVendorList(ListView):
+class DeviceVendorList(PermissionsRequiredMixin, ListView):
     """
     Render list of vendors
     """
     model = DeviceVendor
     template_name = 'device_vendor/device_vendor_list.html'
-
-    @method_decorator(permission_required('device.view_devicevendor', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceVendorList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicevendor',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2341,11 +2335,12 @@ class DeviceVendorList(ListView):
         return context
 
 
-class DeviceVendorListingTable(BaseDatatableView):
+class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device vendors
     """
     model = DeviceVendor
+    required_permissions = ('device.view_devicevendor',)
     columns = ['name', 'alias', 'device_models', 'device_types']
     order_columns = ['name', 'alias', 'device_models', 'device_types']
 
@@ -2477,15 +2472,16 @@ class DeviceVendorListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceVendorDetail(DetailView):
+class DeviceVendorDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for vendor
     """
     model = DeviceVendor
+    required_permissions = ('device.view_devicevendor',)
     template_name = 'device_vendor/device_vendor_detail.html'
 
 
-class DeviceVendorCreate(CreateView):
+class DeviceVendorCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device vendor create view
     """
@@ -2493,13 +2489,7 @@ class DeviceVendorCreate(CreateView):
     model = DeviceVendor
     form_class = DeviceVendorForm
     success_url = reverse_lazy('device_vendor_list')
-
-    @method_decorator(permission_required('device.add_devicevendor', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceVendorCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicevendor',)
 
     def form_valid(self, form):
         """
@@ -2519,7 +2509,7 @@ class DeviceVendorCreate(CreateView):
         return HttpResponseRedirect(DeviceVendorCreate.success_url)
 
 
-class DeviceVendorUpdate(UpdateView):
+class DeviceVendorUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device vendor update view
     """
@@ -2527,13 +2517,7 @@ class DeviceVendorUpdate(UpdateView):
     model = DeviceVendor
     form_class = DeviceVendorForm
     success_url = reverse_lazy('device_vendor_list')
-
-    @method_decorator(permission_required('device.change_devicevendor', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceVendorUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicevendor',)
 
     def form_valid(self, form):
         """
@@ -2581,20 +2565,14 @@ class DeviceVendorUpdate(UpdateView):
         return HttpResponseRedirect(DeviceVendorUpdate.success_url)
 
 
-class DeviceVendorDelete(DeleteView):
+class DeviceVendorDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device vendor delete view
     """
     model = DeviceVendor
     template_name = 'device_vendor/device_vendor_delete.html'
     success_url = reverse_lazy('device_vendor_list')
-
-    @method_decorator(permission_required('device.delete_devicevendor', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceVendorDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicevendor',)
 
     def delete(self, request, *args, **kwargs):
         """
