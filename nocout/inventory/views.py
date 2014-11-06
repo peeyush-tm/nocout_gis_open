@@ -427,12 +427,13 @@ class AntennaListingTable(PermissionsRequiredMixin, BaseDatatableView):
         return ret
 
 
-class AntennaDetail(DetailView):
+class AntennaDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the antenna detail.
     """
     model = Antenna
     template_name = 'antenna/antenna_detail.html'
+    required_permissions = ('inventory.view_antenna',)
 
 
 class AntennaCreate(PermissionsRequiredMixin, CreateView):
