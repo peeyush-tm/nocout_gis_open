@@ -948,7 +948,7 @@ class BackhaulCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(BackhaulCreate.success_url)
 
 
-class BackhaulUpdate(UpdateView):
+class BackhaulUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Backhaul.
     """
@@ -956,14 +956,7 @@ class BackhaulUpdate(UpdateView):
     model = Backhaul
     form_class = BackhaulForm
     success_url = reverse_lazy('backhauls_list')
-
-
-    @method_decorator(permission_required('inventory.change_backhaul', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(BackhaulUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_backhaul',)
 
     def get_queryset(self):
         return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
