@@ -391,6 +391,20 @@ def update_related_field(request, option):
         pass
 
 @dajaxice_register(method='GET')
+def bh_configured_on_searching(request, search_string, organisation_id):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    bh_config_on = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
+
+    for bh in bh_config_on:
+        out.append("<option value='#'>%s</option>" % bh)
+    dajax.assign('#id_bh_configured_on', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
 def update_bs_switch(request, option):
     dajax = Dajax()
     out = list()

@@ -106,5 +106,23 @@
             $("#id_aggregator").parent().children().find('a span')[0].innerHTML = "Select";
         });
 
+        // to call the dajax function after the specific period of time of search.
+        var globalTimeout = null;
+        $("#id_bh_configured_on").on("select2-open", function() {
+            $("#select2-drop .select2-search input").keypress(function() {
+                if(globalTimeout != null) clearTimeout(globalTimeout);
+                    globalTimeout = setTimeout(list_device_on_search_basis, 50);
+            })
+        })
+
+        function list_device_on_search_basis(){
+            Dajaxice.inventory.bh_configured_on_searching(Dajax.process, {
+                'search_string': $("#select2-drop .select2-search input").val(),
+                'organisation_id': $('#id_organization option:selected').val()
+            });
+            $("#id_bh_configured_on").val("");
+            $("#id_bh_configured_on").parent().children().find('a span')[0].innerHTML = "Select";
+        }
+
     </script>
 {% endblock %}
