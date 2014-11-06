@@ -920,11 +920,12 @@ class BackhaulListingTable(PermissionsRequiredMixin, BaseDatatableView):
         return ret
 
 
-class BackhaulDetail(DetailView):
+class BackhaulDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Backhaul detail.
     """
     model = Backhaul
+    required_permissions = ('inventory.view_backhaul',)
     template_name = 'backhaul/backhaul_detail.html'
 
 
