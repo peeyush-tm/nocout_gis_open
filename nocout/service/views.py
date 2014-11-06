@@ -618,19 +618,13 @@ class ServiceDataSourceDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #********************************** Protocol ***************************************
-class ProtocolList(ListView):
+class ProtocolList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render the List page.
     """
     model = Protocol
     template_name = 'protocol/protocols_list.html'
-
-    @method_decorator(permission_required('service.view_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolList, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.view_protocol',)
 
     def get_context_data(self, **kwargs):
         """
@@ -657,11 +651,12 @@ class ProtocolList(ListView):
         return context
 
 
-class ProtocolListingTable(BaseDatatableView):
+class ProtocolListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class Based View to render the protocol Data table.
     """
     model = Protocol
+    required_permissions = ('service.view_protocol',)
     columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
                'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
     order_columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
@@ -743,15 +738,16 @@ class ProtocolListingTable(BaseDatatableView):
         return ret
 
 
-class ProtocolDetail(DetailView):
+class ProtocolDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the detail Protocol information
     """
     model = Protocol
+    required_permissions = ('service.view_protocol',)
     template_name = 'protocol/protocol_detail.html'
 
 
-class ProtocolCreate(CreateView):
+class ProtocolCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based View to Create the Protocol.
     """
@@ -759,13 +755,7 @@ class ProtocolCreate(CreateView):
     model = Protocol
     form_class = ProtocolForm
     success_url = reverse_lazy('protocols_list')
-
-    @method_decorator(permission_required('service.add_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.add_protocol',)
 
 
     def form_valid(self, form):
@@ -776,7 +766,7 @@ class ProtocolCreate(CreateView):
         return HttpResponseRedirect(ProtocolCreate.success_url)
 
 
-class ProtocolUpdate(UpdateView):
+class ProtocolUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to update the protocol.
     """
@@ -784,13 +774,7 @@ class ProtocolUpdate(UpdateView):
     model = Protocol
     form_class = ProtocolForm
     success_url = reverse_lazy('protocols_list')
-
-    @method_decorator(permission_required('service.change_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.change_protocol',)
 
     def form_valid(self, form):
         """
@@ -808,20 +792,14 @@ class ProtocolUpdate(UpdateView):
             self.object = form.save()
         return HttpResponseRedirect(ProtocolUpdate.success_url)
 
-class ProtocolDelete(DeleteView):
+class ProtocolDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class Based View to delete the protocol.
     """
     model = Protocol
     template_name = 'protocol/protocol_delete.html'
     success_url = reverse_lazy('protocols_list')
-
-    @method_decorator(permission_required('service.delete_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.delete_protocol',)
 
     def delete(self, request, *args, **kwargs):
         """
