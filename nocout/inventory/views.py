@@ -1395,11 +1395,12 @@ class CustomerListingTable(PermissionsRequiredMixin, BaseDatatableView):
         return ret
 
 
-class CustomerDetail(DetailView):
+class CustomerDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the customer detail.
     """
     model = Customer
+    required_permissions = ('inventory.view_customer',)
     template_name = 'customer/customer_detail.html'
 
 
