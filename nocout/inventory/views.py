@@ -65,19 +65,13 @@ def inventory(request):
     return render(request, 'inventory/inventory.html')
 
 
-class InventoryListing(ListView):
+class InventoryListing(PermissionsRequiredMixin, ListView):
     """
     Class Based Inventory View to render list page.
     """
     model = Inventory
     template_name = 'inventory/inventory_list.html'
-
-    @method_decorator(permission_required('inventory.view_inventory', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(InventoryListing, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_inventory',)
 
     def get_context_data(self, **kwargs):
         """
@@ -98,12 +92,13 @@ class InventoryListing(ListView):
         return context
 
 
-class InventoryListingTable(BaseDatatableView):
+class InventoryListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Inventory Data table.
     """
 
     model = Inventory
+    required_permissions = ('inventory.view_inventory',)
     columns = ['alias', 'user_group__name', 'organization__name', 'description']
     order_columns = ['alias', 'user_group__name', 'organization__name', 'description']
 
@@ -187,7 +182,7 @@ class InventoryListingTable(BaseDatatableView):
         return ret
 
 
-class InventoryCreate(CreateView):
+class InventoryCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Inventory.
     """
@@ -196,13 +191,7 @@ class InventoryCreate(CreateView):
     model = Inventory
     form_class = InventoryForm
     success_url = reverse_lazy('InventoryList')
-
-    @method_decorator(permission_required('inventory.add_inventory', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(InventoryCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_inventory',)
 
     def form_valid(self, form):
         """
@@ -212,7 +201,7 @@ class InventoryCreate(CreateView):
         return HttpResponseRedirect(InventoryCreate.success_url)
 
 
-class InventoryUpdate(UpdateView):
+class InventoryUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update new Inventory.
     """
@@ -220,13 +209,7 @@ class InventoryUpdate(UpdateView):
     model = Inventory
     form_class = InventoryForm
     success_url = reverse_lazy('InventoryList')
-
-    @method_decorator(permission_required('inventory.change_inventory', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(InventoryUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_inventory',)
 
     def form_valid(self, form):
         """
@@ -236,7 +219,7 @@ class InventoryUpdate(UpdateView):
         return HttpResponseRedirect(InventoryCreate.success_url)
 
 
-class InventoryDelete(DeleteView):
+class InventoryDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Inventory
 
@@ -244,15 +227,8 @@ class InventoryDelete(DeleteView):
     model = Inventory
     template_name = 'inventory/inventory_delete.html'
     success_url = reverse_lazy('InventoryList')
+    required_permissions = ('inventory.delete_inventory',)
 
-    @method_decorator(permission_required('inventory.delete_inventory', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(InventoryDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_inventory', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity.
