@@ -494,22 +494,15 @@ class AntennaUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(AntennaUpdate.success_url)
 
 
-class AntennaDelete(DeleteView):
+class AntennaDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Antenna.
     """
     model = Antenna
     template_name = 'antenna/antenna_delete.html'
     success_url = reverse_lazy('antennas_list')
+    required_permissions = ('inventory.delete_antenna',)
 
-    @method_decorator(permission_required('inventory.delete_antenna', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(AntennaDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_antenna', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
