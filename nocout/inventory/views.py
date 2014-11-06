@@ -1237,22 +1237,15 @@ class SectorUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(SectorUpdate.success_url)
 
 
-class SectorDelete(DeleteView):
+class SectorDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Sector.
     """
     model = Sector
     template_name = 'sector/sector_delete.html'
     success_url = reverse_lazy('sectors_list')
+    required_permissions = ('inventory.delete_sector',)
 
-    @method_decorator(permission_required('inventory.delete_sector', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(SectorDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_sector', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
