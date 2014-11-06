@@ -1013,19 +1013,13 @@ class BackhaulDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #**************************************** Sector *********************************************
-class SectorList(ListView):
+class SectorList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render Sector List Page.
     """
     model = Sector
     template_name = 'sector/sectors_list.html'
-
-    @method_decorator(permission_required('inventory.view_sector', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(SectorList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_sector',)
 
     def get_queryset(self):
         """
