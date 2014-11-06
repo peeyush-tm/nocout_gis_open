@@ -2304,19 +2304,13 @@ class CircuitL2ReportDelete(DeleteView):
         return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
 
 #**************************************** IconSettings *********************************************
-class IconSettingsList(ListView):
+class IconSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render IconSettings List Page.
     """
     model = IconSettings
     template_name = 'icon_settings/icon_settings_list.html'
-
-    @method_decorator(permission_required('inventory.view_iconsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(IconSettingsList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_iconsettings',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2335,11 +2329,12 @@ class IconSettingsList(ListView):
         return context
 
 
-class IconSettingsListingTable(BaseDatatableView):
+class IconSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render IconSettings Data table.
     """
     model = IconSettings
+    required_permissions = ('inventory.view_iconsettings',)
     columns = ['alias', 'upload_image']
     order_columns = ['alias', 'upload_image']
 
@@ -2427,15 +2422,16 @@ class IconSettingsListingTable(BaseDatatableView):
         return ret
 
 
-class IconSettingsDetail(DetailView):
+class IconSettingsDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the IconSettings detail.
     """
     model = IconSettings
+    required_permissions = ('inventory.view_iconsettings',)
     template_name = 'icon_settings/icon_settings_detail.html'
 
 
-class IconSettingsCreate(CreateView):
+class IconSettingsCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new IconSettings.
     """
@@ -2443,13 +2439,7 @@ class IconSettingsCreate(CreateView):
     model = IconSettings
     form_class = IconSettingsForm
     success_url = reverse_lazy('icon_settings_list')
-
-    @method_decorator(permission_required('inventory.add_iconsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(IconSettingsCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_iconsettings',)
 
     def form_valid(self, form):
         """
@@ -2460,7 +2450,7 @@ class IconSettingsCreate(CreateView):
         return HttpResponseRedirect(IconSettingsCreate.success_url)
 
 
-class IconSettingsUpdate(UpdateView):
+class IconSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update IconSettings.
     """
@@ -2468,13 +2458,7 @@ class IconSettingsUpdate(UpdateView):
     model = IconSettings
     form_class = IconSettingsForm
     success_url = reverse_lazy('icon_settings_list')
-
-    @method_decorator(permission_required('inventory.change_iconsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(IconSettingsUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_iconsettings',)
 
     def form_valid(self, form):
         """
@@ -2495,22 +2479,15 @@ class IconSettingsUpdate(UpdateView):
         return HttpResponseRedirect(IconSettingsUpdate.success_url)
 
 
-class IconSettingsDelete(DeleteView):
+class IconSettingsDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the machine
     """
     model = IconSettings
     template_name = 'icon_settings/icon_settings_delete.html'
     success_url = reverse_lazy('icon_settings_list')
+    required_permissions = ('inventory.delete_iconsettings',)
 
-    @method_decorator(permission_required('inventory.delete_iconsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(IconSettingsDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_iconsettings', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
