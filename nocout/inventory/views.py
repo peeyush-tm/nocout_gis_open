@@ -327,13 +327,14 @@ class AntennaList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class AntennaListingTable(BaseDatatableView):
+class AntennaListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Antenna Data table.
     """
     model = Antenna
     columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
     order_columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
+    required_permissions = ('inventory.view_antenna',)
 
     def filter_queryset(self, qs):
         """
