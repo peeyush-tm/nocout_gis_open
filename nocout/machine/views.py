@@ -1,9 +1,7 @@
-from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render
 import json
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -13,22 +11,18 @@ from models import Machine
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from activity_stream.models import UserAction
+from nocout.mixins.permissions import PermissionsRequiredMixin
+
 
 #************************************** Machine *****************************************
-class MachineList(ListView):
+class MachineList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render Machine List Page.
     """
 
     model = Machine
     template_name = 'machine/machines_list.html'
-
-    @method_decorator(permission_required('machine.view_machine', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(MachineList, self).dispatch(*args, **kwargs)
+    required_permissions = ('machine.view_machine',)
 
     def get_context_data(self, **kwargs):
         """
@@ -47,11 +41,13 @@ class MachineList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class MachineListingTable(BaseDatatableView):
+
+class MachineListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Machine Data table.
     """
     model = Machine
+    required_permissions = ('machine.view_machine',)
     columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
     order_columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
 
@@ -132,15 +128,17 @@ class MachineListingTable(BaseDatatableView):
                }
         return ret
 
-class MachineDetail(DetailView):
+
+class MachineDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the machine detail.
     """
     model = Machine
+    required_permissions = ('machine.view_machine',)
     template_name = 'machine/machine_detail.html'
 
 
-class MachineCreate(CreateView):
+class MachineCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new machine.
     """
@@ -148,13 +146,7 @@ class MachineCreate(CreateView):
     model = Machine
     form_class = MachineForm
     success_url = reverse_lazy('machines_list')
-
-    @method_decorator(permission_required('machine.add_machine', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(MachineCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('machine.add_machine',)
 
     def form_valid(self, form):
         """
@@ -165,7 +157,7 @@ class MachineCreate(CreateView):
         return HttpResponseRedirect(MachineCreate.success_url)
 
 
-class MachineUpdate(UpdateView):
+class MachineUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update machine.
     """
@@ -173,14 +165,7 @@ class MachineUpdate(UpdateView):
     model = Machine
     form_class = MachineForm
     success_url = reverse_lazy('machines_list')
-
-    @method_decorator(permission_required('machine.change_machine', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(MachineUpdate, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('machine.change_machine',)
 
     def form_valid(self, form):
         """
@@ -200,21 +185,15 @@ class MachineUpdate(UpdateView):
             self.object=form.save()
         return HttpResponseRedirect( MachineUpdate.success_url )
 
-class MachineDelete(DeleteView):
+
+class MachineDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the machine
     """
     model = Machine
     template_name = 'machine/machine_delete.html'
     success_url = reverse_lazy('machines_list')
-
-    @method_decorator(permission_required('machine.delete_machine', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-
-        return super(MachineDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('machine.delete_machine',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -227,4 +206,3 @@ class MachineDelete(DeleteView):
         except:
             pass
         return super(MachineDelete, self).delete(request, *args, **kwargs)
-
