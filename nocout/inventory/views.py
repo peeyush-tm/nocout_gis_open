@@ -1197,7 +1197,7 @@ class SectorCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(SectorCreate.success_url)
 
 
-class SectorUpdate(UpdateView):
+class SectorUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Sector.
     """
@@ -1205,13 +1205,7 @@ class SectorUpdate(UpdateView):
     model = Sector
     form_class = SectorForm
     success_url = reverse_lazy('sectors_list')
-
-    @method_decorator(permission_required('inventory.change_sector', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(SectorUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_sector',)
 
     def get_queryset(self):
         return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
