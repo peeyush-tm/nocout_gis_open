@@ -12,27 +12,19 @@ from .models import Organization
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from nocout.utils.util import date_handler, DictDiffer
 from user_group.models import UserGroup
-from django.contrib.auth.decorators import permission_required
-from django.utils.decorators import method_decorator
 from nocout.utils import logged_in_user_organizations
-
 from activity_stream.models import UserAction
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
-class OrganizationList(ListView):
+class OrganizationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render Organization List page.
     """
 
     model = Organization
     template_name = 'organization/organization_list.html'
-
-    @method_decorator(permission_required('organization.view_organization', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(OrganizationList, self).dispatch(*args, **kwargs)
+    required_permissions = ('organization.view_organization',)
 
     def get_context_data(self, **kwargs):
         """
@@ -54,11 +46,13 @@ class OrganizationList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class OrganizationListingTable(BaseDatatableView):
+
+class OrganizationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Organization Data table.
     """
     model = Organization
+    required_permissions = ('organization.view_organization',)
     columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
     order_columns = ['name',  'alias', 'parent__name', 'city', 'state', 'country']
 
@@ -148,15 +142,17 @@ class OrganizationListingTable(BaseDatatableView):
                }
         return ret
 
-class OrganizationDetail(DetailView):
+
+class OrganizationDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the organization detail.
     """
     model = Organization
+    required_permissions = ('organization.view_organization',)
     template_name = 'organization/organization_detail.html'
 
 
-class OrganizationCreate(CreateView):
+class OrganizationCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new organization.
     """
@@ -164,13 +160,7 @@ class OrganizationCreate(CreateView):
     model = Organization
     form_class = OrganizationForm
     success_url = reverse_lazy('organization_list')
-
-    @method_decorator(permission_required('organization.add_organization', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(OrganizationCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('organization.add_organization',)
 
 
     def form_valid(self, form):
@@ -181,7 +171,8 @@ class OrganizationCreate(CreateView):
         self.model.objects.rebuild()
         return super(ModelFormMixin, self).form_valid(form)
 
-class OrganizationUpdate(UpdateView):
+
+class OrganizationUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update organization.
     """
@@ -189,13 +180,7 @@ class OrganizationUpdate(UpdateView):
     model = Organization
     form_class = OrganizationForm
     success_url = reverse_lazy('organization_list')
-
-    @method_decorator(permission_required('organization.change_organization', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(OrganizationUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('organization.change_organization',)
 
     def get_queryset(self):
         return logged_in_user_organizations(self)
@@ -220,18 +205,18 @@ class OrganizationUpdate(UpdateView):
         return HttpResponseRedirect( OrganizationUpdate.success_url )
 
 
-class OrganizationDelete(DeleteView):
+class OrganizationDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to Delete the Organization.
     """
     model = Organization
     template_name = 'organization/organization_delete.html'
     success_url = reverse_lazy('organization_list')
+    required_permissions = ('organization.delete_organization',)
 
     def get_queryset(self):
         return logged_in_user_organizations(self)
 
-    @method_decorator(permission_required('organization.delete_organization', raise_exception=True))
     def delete(self, *args, **kwargs):
         """
         Log the user action as the organisation is deleted.
