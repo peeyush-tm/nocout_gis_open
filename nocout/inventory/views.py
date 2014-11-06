@@ -801,11 +801,12 @@ class BackhaulList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class BackhaulListingTable(BaseDatatableView):
+class BackhaulListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Backhaul Data table.
     """
     model = Backhaul
+    required_permissions = ('inventory.view_backhaul',)
     columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id', 'pop_port',
                'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
     order_columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id',
