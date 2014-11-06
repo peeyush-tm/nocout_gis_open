@@ -2031,19 +2031,13 @@ class DeviceTypeFieldsDelete(PermissionsRequiredMixin, DeleteView):
 
 # **************************************** Device Technology ****************************************
 
-class DeviceTechnologyList(ListView):
+class DeviceTechnologyList(PermissionsRequiredMixin, ListView):
     """
     Render list of technologies
     """
     model = DeviceTechnology
     template_name = 'device_technology/device_technology_list.html'
-
-    @method_decorator(permission_required('device.view_devicetechnology', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTechnologyList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicetechnology',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2063,11 +2057,12 @@ class DeviceTechnologyList(ListView):
         return context
 
 
-class DeviceTechnologyListingTable(BaseDatatableView):
+class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device technologies
     """
     model = DeviceTechnology
+    required_permissions = ('device.view_devicetechnology',)
     columns = ['name', 'alias', 'device_vendor', 'device_vendor__model__name', 'device_vendor__model_type__name']
     order_columns = ['name', 'alias', 'device_vendor', 'device_vendor__model__name', 'device_vendor__model_type__name']
 
@@ -2201,15 +2196,16 @@ class DeviceTechnologyListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceTechnologyDetail(DetailView):
+class DeviceTechnologyDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for technology
     """
     model = DeviceTechnology
+    required_permissions = ('device.view_devicetechnology',)
     template_name = 'device_technology/device_technology_detail.html'
 
 
-class DeviceTechnologyCreate(CreateView):
+class DeviceTechnologyCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device technology create view
     """
@@ -2217,13 +2213,7 @@ class DeviceTechnologyCreate(CreateView):
     model = DeviceTechnology
     form_class = DeviceTechnologyForm
     success_url = reverse_lazy('device_technology_list')
-
-    @method_decorator(permission_required('device.add_devicetechnology', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTechnologyCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicetechnology',)
 
     def form_valid(self, form):
         """
@@ -2243,7 +2233,7 @@ class DeviceTechnologyCreate(CreateView):
         return HttpResponseRedirect(DeviceTechnologyCreate.success_url)
 
 
-class DeviceTechnologyUpdate(UpdateView):
+class DeviceTechnologyUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device technology update view
     """
@@ -2251,13 +2241,7 @@ class DeviceTechnologyUpdate(UpdateView):
     model = DeviceTechnology
     form_class = DeviceTechnologyForm
     success_url = reverse_lazy('device_technology_list')
-
-    @method_decorator(permission_required('device.change_devicetechnology', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTechnologyUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicetechnology',)
 
     def form_valid(self, form):
         """
@@ -2303,20 +2287,14 @@ class DeviceTechnologyUpdate(UpdateView):
         return HttpResponseRedirect(DeviceTechnologyUpdate.success_url)
 
 
-class DeviceTechnologyDelete(DeleteView):
+class DeviceTechnologyDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device technology delete view
     """
     model = DeviceTechnology
     template_name = 'device_technology/device_technology_delete.html'
     success_url = reverse_lazy('device_technology_list')
-
-    @method_decorator(permission_required('device.delete_devicetechnology', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTechnologyDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicetechnology',)
 
     def delete(self, request, *args, **kwargs):
         """
