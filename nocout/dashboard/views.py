@@ -328,14 +328,26 @@ class WiMAX_Performance_Dashboard(View):
 
     """
 
-    def get(self, request):
+    template_name = 'rf_performance/wimax.html'
+
+    def get_init_data(self):
         """
         Handles the get request
 
         :param request:
         :return Http response object:
         """
-        return render(self.request, 'home/home.html')
+        data_source_config = {
+            'ul_rssi': {'service_name': 'wimax_ul_rssi', 'model': ServiceStatus},
+            'dl_rssi': {'service_name': 'wimax_dl_rssi', 'model': ServiceStatus},
+            'ul_cinr': {'service_name': 'wimax_ul_cinr', 'model': ServiceStatus},
+            'dl_cinr': {'service_name': 'wimax_dl_cinr', 'model': ServiceStatus},
+        }
+        technology = DeviceTechnology.objects.get(name__icontains='WiMAX').id
+        devices_method_to_call = organization_customer_devices
+        devices_method_kwargs = dict(specify_ptp_type='all')
+        is_bh = False
+        return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
 
 
 class PMP_Performance_Dashboard(PerformanceDashboardMixin, View):
