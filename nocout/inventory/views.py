@@ -1169,11 +1169,12 @@ class SectorListingTable(PermissionsRequiredMixin, BaseDatatableView):
         return ret
 
 
-class SectorDetail(DetailView):
+class SectorDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Sector detail.
     """
     model = Sector
+    required_permissions = ('inventory.view_sector',)
     template_name = 'sector/sector_detail.html'
 
 
