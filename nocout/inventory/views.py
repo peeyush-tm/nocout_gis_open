@@ -557,11 +557,12 @@ class BaseStationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class BaseStationListingTable(BaseDatatableView):
+class BaseStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Base Station Data table.
     """
     model = BaseStation
+    required_permissions = ('inventory.view_basestation',)
     columns = ['alias', 'bs_site_id',
                'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
     order_columns = ['alias', 'bs_site_id',
