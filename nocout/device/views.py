@@ -1792,19 +1792,13 @@ class DeviceDelete(PermissionsRequiredMixin, DeleteView):
 # ******************************** Device Type Form Fields Views ************************************
 
 
-class DeviceTypeFieldsList(ListView):
+class DeviceTypeFieldsList(PermissionsRequiredMixin, ListView):
     """
     Render list of device type extra fields
     """
     model = DeviceTypeFields
     template_name = 'device_extra_fields/device_extra_fields_list.html'
-
-    @method_decorator(permission_required('device.view_devicetypefields', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeFieldsList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicetypefields',)
 
     def get_context_data(self, **kwargs):
         """
@@ -1822,11 +1816,12 @@ class DeviceTypeFieldsList(ListView):
         return context
 
 
-class DeviceTypeFieldsListingTable(BaseDatatableView):
+class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device type fields
     """
     model = DeviceTypeFields
+    required_permissions = ('device.view_devicetypefields',)
     columns = ['field_name', 'field_display_name', 'device_type__name']
     order_columns = ['field_name', 'field_display_name', 'device_type__name']
 
@@ -1942,15 +1937,16 @@ class DeviceTypeFieldsListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceTypeFieldsDetail(DetailView):
+class DeviceTypeFieldsDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for device extra field
     """
     model = DeviceTypeFields
+    required_permissions = ('device.view_devicetypefields',)
     template_name = 'device_extra_fields/device_extra_field_detail.html'
 
 
-class DeviceTypeFieldsCreate(CreateView):
+class DeviceTypeFieldsCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device type field create view
     """
@@ -1958,13 +1954,7 @@ class DeviceTypeFieldsCreate(CreateView):
     model = DeviceTypeFields
     form_class = DeviceTypeFieldsForm
     success_url = reverse_lazy('device_extra_field_list')
-
-    @method_decorator(permission_required('device.add_devicetypefieldsvalue', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeFieldsCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicetypefieldsvalue',)
 
     def form_valid(self, form):
         """
@@ -1974,7 +1964,7 @@ class DeviceTypeFieldsCreate(CreateView):
         return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 
-class DeviceTypeFieldsUpdate(UpdateView):
+class DeviceTypeFieldsUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device type fields update view
     """
@@ -1982,13 +1972,7 @@ class DeviceTypeFieldsUpdate(UpdateView):
     model = DeviceTypeFields
     form_class = DeviceTypeFieldsUpdateForm
     success_url = reverse_lazy('device_extra_field_list')
-
-    @method_decorator(permission_required('device.change_devicetypefieldsvalue', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeFieldsUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicetypefieldsvalue',)
 
     def form_valid(self, form):
         """
@@ -2023,20 +2007,14 @@ class DeviceTypeFieldsUpdate(UpdateView):
         return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 
-class DeviceTypeFieldsDelete(DeleteView):
+class DeviceTypeFieldsDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device type field delete view
     """
     model = DeviceTypeFields
     template_name = 'device_extra_fields/device_extra_field_delete.html'
     success_url = reverse_lazy('device_extra_field_list')
-
-    @method_decorator(permission_required('device.delete_devicetypefieldsvalue', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeFieldsDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicetypefieldsvalue',)
 
     def delete(self, request, *args, **kwargs):
         """
