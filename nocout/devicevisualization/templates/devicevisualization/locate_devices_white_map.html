@@ -195,10 +195,6 @@
                 <div class="col-md-12">
                     <ul class="list-unstyled list-inline">
                         <li>
-                            <input type="text" name="google_loc_search" id="google_loc_search2" class="form-control col-xs-1" style="width:278px;"
-                                   placeholder="Location Search" disabled>
-                        </li>
-                        <li>
                             <input type="text" name="lat_lon_search" onkeypress="return isLatLon(event);" id="lat_lon_search" class="form-control col-xs-1" style="width:175px;"
                                    placeholder="Lattitude,Longitude">
                         </li>
@@ -245,6 +241,8 @@
 
             <!--Map Container Start-->
             <div id="wmap_container"></div>
+
+            <div id="infoWindowContainer" class="sideInfoContainer col-md-5 col-md-offset-7 hide" style="z-index:999;"></div>
             <!--Map Container End-->
         <!--SideInfo Panel Start-->
         <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:999;">
