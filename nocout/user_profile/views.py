@@ -21,22 +21,17 @@ from django.contrib.auth.decorators import permission_required
 from django.template.loader import render_to_string
 from django.db.models import Q
 from nocout.utils import logged_in_user_organizations
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
-class UserList(ListView):
+class UserList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to for User Listing.
 
     """
     model = UserProfile
     template_name = 'user_profile/users_list.html'
-
-    @method_decorator(permission_required('user_profile.view_userprofile', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(UserList, self).dispatch(*args, **kwargs)
+    required_permissions = ('user_profile.view_userprofile',)
 
     def get_context_data(self, **kwargs):
         """
@@ -60,11 +55,12 @@ class UserList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class UserListingTable(BaseDatatableView):
+class UserListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class Based View for the User data table rendering.
     """
     model = UserProfile
+    required_permissions = ('user_profile.view_userprofile',)
     columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number', 'last_login']
     order_columns = ['username' , 'first_name', 'email', 'organization__name', 'role__role_name', 'parent__first_name',
@@ -276,15 +272,16 @@ class UserArchivedListingTable(BaseDatatableView):
                }
         return ret
 
-class UserDetail(DetailView):
+class UserDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render User Detail.
     """
     model = UserProfile
+    required_permissions = ('user_profile.view_userprofile',)
     template_name = 'user_profile/user_detail.html'
 
 
-class UserCreate(CreateView):
+class UserCreate(PermissionsRequiredMixin, CreateView):
     """
     Class Based View to Create a User.
     """
@@ -292,13 +289,7 @@ class UserCreate(CreateView):
     model = UserProfile
     form_class = UserForm
     success_url = reverse_lazy('user_list')
-
-    @method_decorator(permission_required('user_profile.add_userprofile', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(UserCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('user_profile.add_userprofile',)
 
     def get_form_kwargs(self):
         """
@@ -323,7 +314,7 @@ class UserCreate(CreateView):
         self.object.groups.add(project_group)
         return super(ModelFormMixin, self).form_valid(form)
 
-class UserUpdate(UpdateView):
+class UserUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to Update the user.
     """
@@ -332,13 +323,7 @@ class UserUpdate(UpdateView):
     form_class = UserForm
     success_url = reverse_lazy('user_list')
 
-
-    @method_decorator(permission_required('user_profile.change_userprofile', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(UserUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('user_profile.change_userprofile',)
 
     def get_queryset(self):
         return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
@@ -414,20 +399,14 @@ class UserUpdate(UpdateView):
         return HttpResponseRedirect(UserCreate.success_url)
 
 
-class UserDelete(DeleteView):
+class UserDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class Based View to Delete the User.
     """
     model = UserProfile
     template_name = 'user_profile/user_delete.html'
     success_url = reverse_lazy('user_list')
-
-    @method_decorator(permission_required('user_profile.delete_userprofile', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(UserDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('user_profile.delete_userprofile',)
 
     def get(self, *args, **kwargs):
         """
