@@ -759,19 +759,13 @@ class BaseStationDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #**************************************** Backhaul *********************************************
-class BackhaulList(ListView):
+class BackhaulList(PermissionsRequiredMixin, ListView):
     """
     Class based View to render Backhaul Listing page..
     """
     model = Backhaul
     template_name = 'backhaul/backhauls_list.html'
-
-    @method_decorator(permission_required('inventory.view_backhaul', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(BackhaulList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_backhaul',)
 
     def get_queryset(self):
         """
