@@ -8,7 +8,7 @@ var whiteMapSettings = {
 	maxResolution: 0.11264453125,
 	units: 'degrees',
 	size: {
-		medium: {width: 20, height: 40} 
+		medium: {width: 32, height: 37} 
 	},
 	zoomLevelAfterLineAppears: 6
 }
