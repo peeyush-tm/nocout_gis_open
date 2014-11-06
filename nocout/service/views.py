@@ -12,6 +12,7 @@ from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, Pr
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from activity_stream.models import UserAction
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 # ########################################################
 from django.conf import settings
@@ -24,19 +25,13 @@ if settings.DEBUG:
 
 
 # **************************************** Service *********************************************
-class ServiceList(ListView):
+class ServiceList(PermissionsRequiredMixin, ListView):
     """
     Class Based to render the Service Listing page.
     """
     model = Service
     template_name = 'service/services_list.html'
-
-    @method_decorator(permission_required('service.view_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceList, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.view_service',)
 
     def get_context_data(self, **kwargs):
         """
@@ -56,11 +51,12 @@ class ServiceList(ListView):
         return context
 
 
-class ServiceListingTable(BaseDatatableView):
+class ServiceListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Service Listing Table.
     """
     model = Service
+    required_permissions = ('service.view_service',)
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
     order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
 
@@ -163,16 +159,17 @@ class ServiceListingTable(BaseDatatableView):
         return ret
 
 
-class ServiceDetail(DetailView):
+class ServiceDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the Service Details
 
     """
     model = Service
+    required_permissions = ('service.view_service',)
     template_name = 'service/service_detail.html'
 
 
-class ServiceCreate(CreateView):
+class ServiceCreate(PermissionsRequiredMixin, CreateView):
     """
     Class Based View to Create the Service
     """
@@ -180,14 +177,7 @@ class ServiceCreate(CreateView):
     model = Service
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
-
-    @method_decorator(permission_required('service.add_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceCreate, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('service.add_service',)
 
     def form_valid(self, form):
         """
@@ -197,7 +187,7 @@ class ServiceCreate(CreateView):
         return HttpResponseRedirect(ServiceCreate.success_url)
 
 
-class ServiceUpdate(UpdateView):
+class ServiceUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to update the Service.
     """
@@ -205,14 +195,7 @@ class ServiceUpdate(UpdateView):
     model = Service
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
-
-    @method_decorator(permission_required('service.change_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceUpdate, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('service.change_service',)
 
     def form_valid(self, form):
         """
@@ -233,20 +216,14 @@ class ServiceUpdate(UpdateView):
         return HttpResponseRedirect(ServiceUpdate.success_url)
 
 
-class ServiceDelete(DeleteView):
+class ServiceDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class Based View to Delete the Service.
     """
     model = Service
     template_name = 'service/service_delete.html'
     success_url = reverse_lazy('services_list')
-
-    @method_decorator(permission_required('service.delete_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.delete_service',)
 
     def delete(self, request, *args, **kwargs):
         """
