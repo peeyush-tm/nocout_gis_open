@@ -675,7 +675,7 @@ class BaseStationDetail(PermissionsRequiredMixin, DetailView):
     required_permissions = ('inventory.view_basestation',)
 
 
-class BaseStationCreate(CreateView):
+class BaseStationCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Base Station.
     """
@@ -683,13 +683,7 @@ class BaseStationCreate(CreateView):
     model = BaseStation
     form_class = BaseStationForm
     success_url = reverse_lazy('base_stations_list')
-
-    @method_decorator(permission_required('inventory.add_basestation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(BaseStationCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_basestation',)
 
     def form_valid(self, form):
         """
