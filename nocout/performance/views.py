@@ -200,7 +200,7 @@ class Live_Performance(ListView):
         if page_type in ["customer"]:
             datatable_headers = [
                 # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True, 'bVisible': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
                 {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -221,7 +221,7 @@ class Live_Performance(ListView):
         elif page_type in ["network"]:
             datatable_headers = [
                 # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True, 'bVisible': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
                 {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -241,7 +241,7 @@ class Live_Performance(ListView):
         else:
             datatable_headers = [
                 # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True, 'bVisible': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
                 {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
@@ -424,6 +424,49 @@ class LivePerformanceListing(BaseDatatableView):
         """
         request = self.request
 
+        page_type = request.GET['page_type']
+        
+
+        if page_type == 'customer':
+            columns = ['id',
+               'ip_address',
+               'device_technology',
+               'device_type',
+               'bs_name',
+               'circuit_id',
+               'customer_name',
+               'city',
+               'state',
+               'packet_loss',
+               'latency',
+               'last_updated'
+            ]
+        elif page_type == 'network':
+            columns = ['id',
+               'ip_address',
+               'device_technology',
+               'device_type',
+               'bs_name',
+               'sector_id',
+               'city',
+               'state',
+               'packet_loss',
+               'latency',
+               'last_updated'
+            ]
+        else:
+            columns = ['id',
+               'ip_address',
+               'device_technology',
+               'device_type',
+               'bs_name',
+               'city',
+               'state',
+               'packet_loss',
+               'latency',
+               'last_updated'
+            ]
+
         i_sort_col = 0
 
         # Number of columns that are used in sorting
@@ -450,7 +493,7 @@ class LivePerformanceListing(BaseDatatableView):
             self.is_initialised = False
             sort_data = self.prepare_devices(qs)
             try:
-                sort_using = self.columns[i_sort_col]
+                sort_using = columns[i_sort_col]
                 if sort_using in self.polled_columns:
                     ##now we need to poll the devices
                     ##here we can limit the number of devices in query
@@ -1975,8 +2018,8 @@ def prepare_gis_devices(devices, page_type):
                         "circuit_id": format_value(result['CCID']),
                         "customer_name" : format_value(result['CUST']),
                         "bs_name": format_value(result['BSALIAS']),
-                        "city": format_value(result['BSSTATE']),
-                        "state": format_value(result['BSCITY']),
+                        "city": format_value(result['BSCITY']),
+                        "state": format_value(result['BSSTATE']),
                         "device_type": format_value(result['SECTOR_TYPE']),
                         "device_technology": format_value(result['SECTOR_TECH'])
                     })
@@ -1989,8 +2032,8 @@ def prepare_gis_devices(devices, page_type):
                         "circuit_id": format_value(result['CCID']),
                         "customer_name" : format_value(result['CUST']),
                         "bs_name": format_value(result['BSALIAS']),
-                        "city": format_value(result['BSSTATE']),
-                        "state": format_value(result['BSCITY']),
+                        "city": format_value(result['BSCITY']),
+                        "state": format_value(result['BSSTATE']),
                         "device_type": format_value(result['SS_TYPE']),
                         "device_technology": format_value(result['SECTOR_TECH'])
                     })
@@ -2003,8 +2046,8 @@ def prepare_gis_devices(devices, page_type):
                         "circuit_id": format_value(result['CCID']),
                         "customer_name" : format_value(result['CUST']),
                         "bs_name": format_value(result['BSALIAS']),
-                        "city": format_value(result['BSSTATE']),
-                        "state": format_value(result['BSCITY']),
+                        "city": format_value(result['BSCITY']),
+                        "state": format_value(result['BSSTATE']),
                         "device_type": format_value(result['BHTYPE']),
                         "device_technology": format_value(result['BHTECH'])
                     })
