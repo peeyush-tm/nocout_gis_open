@@ -167,8 +167,6 @@ class AntennaForm(forms.ModelForm):
                 self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
             else:
                 self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
-        else:
-            self.fields['organization'].widget.choices = self.fields['organization'].choices
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -266,27 +264,28 @@ class BackhaulForm(forms.ModelForm):
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
+
         except Exception as e:
             logger.info(e.message)
 
         if self.request is not None:
             organization = self.request.user.userprofile.organization
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
-                self.fields['bh_configured_on'].queryset = self.fields['bh_configured_on'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
-                self.fields['aggregator'].queryset = self.fields['aggregator'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
-                self.fields['bh_switch'].queryset = self.fields['bh_switch'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
-                self.fields['pop'].queryset = self.fields['pop'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
-
+            if kwargs['instance'] is not None:
+                instance_organization = kwargs['instance'].organization
+                self.fields['bh_configured_on'].queryset = self.fields['bh_configured_on'].queryset.filter(organization=instance_organization)
+                self.fields['aggregator'].queryset = self.fields['aggregator'].queryset.filter(organization=instance_organization)
+                self.fields['bh_switch'].queryset = self.fields['bh_switch'].queryset.filter(organization=instance_organization)
+                self.fields['pop'].queryset = self.fields['pop'].queryset.filter(organization=instance_organization)
             else:
-
-                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
                 self.fields['bh_configured_on'].queryset = self.fields['bh_configured_on'].queryset.filter(organization=organization)
                 self.fields['aggregator'].queryset = self.fields['aggregator'].queryset.filter(organization=organization)
                 self.fields['bh_switch'].queryset = self.fields['bh_switch'].queryset.filter(organization=organization)
                 self.fields['pop'].queryset = self.fields['pop'].queryset.filter(organization=organization)
-        else:
-            self.fields['organization'].widget.choices = self.fields['organization'].choices
+
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -400,21 +399,24 @@ class BaseStationForm(forms.ModelForm):
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
+
         except Exception as e:
             logger.info(e.message)
 
         if self.request is not None:
             organization = self.request.user.userprofile.organization
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
-                self.fields['bs_switch'].queryset = self.fields['bs_switch'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
-                self.fields['backhaul'].queryset = self.fields['backhaul'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+            if kwargs['instance'] is not None:
+                instance_organization = kwargs['instance'].organization
+                self.fields['bs_switch'].queryset = self.fields['bs_switch'].queryset.filter(organization=instance_organization)
+                self.fields['backhaul'].queryset = self.fields['backhaul'].queryset.filter(organization=instance_organization)
             else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
                 self.fields['bs_switch'].queryset = self.fields['bs_switch'].queryset.filter(organization=organization)
                 self.fields['backhaul'].queryset = self.fields['backhaul'].queryset.filter(organization=organization)
-        else:
-            self.fields['organization'].widget.choices = self.fields['organization'].choices
+
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -513,21 +515,25 @@ class SectorForm(forms.ModelForm):
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
+
         except Exception as e:
             logger.info(e.message)
 
         if self.request is not None:
             organization = self.request.user.userprofile.organization
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
-                self.fields['sector_configured_on'].queryset = self.fields['sector_configured_on'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
-                self.fields['base_station'].queryset = self.fields['base_station'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+            if kwargs['instance'] is not None:
+                instance_organization = kwargs['instance'].organization
+                self.fields['sector_configured_on'].queryset = self.fields['sector_configured_on'].queryset.filter(organization=instance_organization)
+                self.fields['base_station'].queryset = self.fields['base_station'].queryset.filter(organization=instance_organization)
             else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
                 self.fields['sector_configured_on'].queryset = self.fields['sector_configured_on'].queryset.filter(organization=organization)
                 self.fields['base_station'].queryset = self.fields['base_station'].queryset.filter(organization=organization)
-        else:
-            self.fields['organization'].widget.choices = self.fields['organization'].choices
+
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -612,8 +618,6 @@ class CustomerForm(forms.ModelForm):
                 self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
             else:
                 self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
-        else:
-            self.fields['organization'].widget.choices = self.fields['organization'].choices
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -714,16 +718,18 @@ class SubStationForm(forms.ModelForm):
 
         if self.request is not None:
             organization = self.request.user.userprofile.organization
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
-                self.fields['device'].queryset = self.fields['device'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
-                self.fields['antenna'].queryset = self.fields['antenna'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+            if kwargs['instance'] is not None:
+                instance_organization = kwargs['instance'].organization
+                self.fields['device'].queryset = self.fields['device'].queryset.filter(organization=instance_organization)
+                self.fields['antenna'].queryset = self.fields['antenna'].queryset.filter(organization=instance_organization)
             else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
                 self.fields['device'].queryset = self.fields['device'].queryset.filter(organization=organization)
                 self.fields['antenna'].queryset = self.fields['antenna'].queryset.filter(organization=organization)
-        else:
-            self.fields['organization'].widget.choices = self.fields['organization'].choices
+
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -811,18 +817,20 @@ class CircuitForm(forms.ModelForm):
 
         if self.request is not None:
             organization = self.request.user.userprofile.organization
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
-                self.fields['sector'].queryset = self.fields['sector'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
-                self.fields['customer'].queryset = self.fields['customer'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
-                self.fields['sub_station'].queryset = self.fields['sub_station'].queryset.filter(organization__in=organization.get_descendants(include_self=True))
+            if kwargs['instance'] is not None:
+                instance_organization = kwargs['instance'].organization
+                self.fields['sector'].queryset = self.fields['sector'].queryset.filter(organization=instance_organization)
+                self.fields['customer'].queryset = self.fields['customer'].queryset.filter(organization=instance_organization)
+                self.fields['sub_station'].queryset = self.fields['sub_station'].queryset.filter(organization=instance_organization)
             else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
                 self.fields['sector'].queryset = self.fields['sector'].queryset.filter(organization=organization)
                 self.fields['customer'].queryset = self.fields['customer'].queryset.filter(organization=organization)
                 self.fields['sub_station'].queryset = self.fields['sub_station'].queryset.filter(organization=organization)
-        else:
-            self.fields['organization'].widget.choices = self.fields['organization'].choices
+
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
