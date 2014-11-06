@@ -874,6 +874,12 @@ function showWmapFilteredData(dataArray) {
 
     for(var i=0;i<dataArray.length;i++) {        
         var sectorsArray = dataArray[i].data.param.sector;
+        var bsName = dataArray[i].name ? $.trim(dataArray[i].name) : "";
+        var bs_marker = bs_marker = wm_obj['features'][bsName];
+
+        if(bs_marker) {
+            filtered_bs_ss_data.push(bs_marker);
+        }
         for(var j=0;j<sectorsArray.length;j++) {
             /*Check that the current sector name is present in filtered data or not*/
             var subStationsArray = sectorsArray[j].sub_station,
@@ -898,10 +904,6 @@ function showWmapFilteredData(dataArray) {
                 if(line_marker) {
                     filtered_line_data.push(line_marker);
                 }
-            }
-            
-            if(bs_marker) {
-                filtered_bs_ss_data.push(bs_marker);
             }
 
             if(sector_device) {
