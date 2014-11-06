@@ -128,8 +128,14 @@ function WhiteMapClass() {
 		this.mapZoomChangeEvent = function() {
 			if(ccpl_map.getZoom() > whiteMapSettings.zoomLevelAfterLineAppears) {
 				var selectedValue = $("#showConnLines").prop('checked', true);
+				this.markersLayerStrategy.distance = 30;
+				this.markersLayerStrategy.threshold = 3;
+				this.markersLayerStrategy.recluster();
 			} else {
 				var selectedValue = $("#showConnLines").prop('checked', false);
+				this.markersLayerStrategy.distance = 70;
+				this.markersLayerStrategy.threshold = "";
+				this.markersLayerStrategy.recluster();
 			}
 			this.toggleLineLayer();
 		}
@@ -162,6 +168,7 @@ function WhiteMapClass() {
 		this.onFeatureSelect = function(e) {
 			this.onFeatureUnselect();
 			var infoWindowContent;
+			// console.log(e.feature.attributes);
 			if(e.feature.attributes && e.feature.attributes.pointType === "sector_Marker") {
 				infoWindowContent = gmap_self.makeWindowContent(e.feature.attributes);
 			} else {
@@ -200,7 +207,7 @@ function WhiteMapClass() {
 					} else {
 						this.onFeatureUnselect();
 						var infoWindowContent = gmap_self.makeWindowContent(event.feature.cluster[0].attributes);
-
+						// console.log(event.feature.cluster[0].attributes);
 						var feature = event.feature;
 						oldFeature= feature;
 						var popup = new OpenLayers.Popup.FramedCloud("popup",
@@ -641,6 +648,8 @@ function WhiteMapClass() {
 			this.markersLayer.removeAllFeatures();
 			this.markersLayer.addFeatures(appliedFilterData.filtered_Features);
 			filtered_Features.markers = appliedFilterData.filtered_Features;
+
+			// console.log(filtered_Features.markers);
 			
 			//remove lines from linesLayer and add filteredLine
 			this.linesLayer.removeAllFeatures();
@@ -946,9 +955,13 @@ function WhiteMapClass() {
 					isMarkerSpiderfied: false
 				}
 
+
+
 				var marker = global_this.createOpenLayerVectorMarker(size, icon, lon, lat, bsMarkerCustomInfo);
 				wm_obj.features[name] = marker;
-
+				if(markerData.alias === 'BB Ganguly') {
+					// console.log('bs '+ marker);
+				}
 				bs_ss_features_list.push(marker);
 				
 				var deviceIDArray= [];
@@ -979,7 +992,9 @@ function WhiteMapClass() {
 
 					var startEndObj = {};
 
+
 					createSectorData(lat, lon, rad, device.azimuth_angle, device.beam_width, device.orientation, function(sectorPoints) {
+
 
 						var halfPt = Math.floor(sectorPoints.length / (+2));
 
@@ -1048,7 +1063,7 @@ function WhiteMapClass() {
 
 					});
 
-					if(device.technology.toLowerCase() == "p2p" || device.technology.toLowerCase() == "ptp") {
+					if($.trim(device.technology.toLowerCase()) == "p2p" || $.trim(device.technology.toLowerCase()) == "ptp") {
 						
 						if(deviceIDArray.indexOf(device['device_info'][1]['value']) === -1) {
 
@@ -1058,7 +1073,7 @@ function WhiteMapClass() {
 								ptLat: lat,
 								ptLon: lon,
 								originalIcon:  base_url+"/"+device.markerUrl,
-								defaultIcon: base_url+'/static/img/icons/1x1.png',
+								defaultIcon: base_url+'/static/img/i/1x1.png',
 								pointType 		 	: 'sector_Marker',
 								technology: device.technology,
 								vendor 				: device.vendor,
@@ -1077,9 +1092,10 @@ function WhiteMapClass() {
 							}
 
 							//Create deviceMarker
-							var deviceMarker = global_this.createOpenLayerVectorMarker(size, base_url+'/static/img/icons/1x1.png', lon, lat, deviceAdditionalInfo);
-
-							if(sectorMarkerConfiguredOn.indexOf(device.sector_configured_on) == -1) {
+							var deviceMarker = global_this.createOpenLayerVectorMarker(size, base_url+"/"+device.markerUrl, lon, lat, deviceAdditionalInfo);
+							// global_this.markerDevicesLayer.addFeatures(deviceMarker);
+							
+						if(sectorMarkerConfiguredOn.indexOf(device.sector_configured_on) == -1) {
 								main_devices_marker_features_wmaps.push(deviceMarker);
 
 								/*Push Sector marker to pollableDevices array*/
@@ -1104,6 +1120,8 @@ function WhiteMapClass() {
 					}
 					//substation loop
 					for (var k = 0; k < device.sub_station.length; k++) {
+
+
 
 						var sub_station = device.sub_station[k];
 						wm_obj.data[sub_station.name] = sub_station;
@@ -1138,6 +1156,9 @@ function WhiteMapClass() {
 						//Create marker
 						sub_station_marker = global_this.createOpenLayerVectorMarker(size, sub_station_icon, sub_station_lon, sub_station_lat, subStationAdditionalInfo);
 						wm_obj.features[sub_station.name] = sub_station_marker;
+						if(markerData.alias === 'BB Ganguly') {
+					// console.log('ss '+ marker);
+				}
 						bs_ss_features_list.push(sub_station_marker);
 
 						 /*Push SS marker to pollableDevices array*/

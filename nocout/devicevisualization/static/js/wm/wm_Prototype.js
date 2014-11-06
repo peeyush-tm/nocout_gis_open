@@ -32,8 +32,9 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map = new OpenLayers.Map(domEl, options);
 
 		//Map Zoom event of trigger mapZoomChangeEvent in events file.
-		ccpl_map.events.register("zoomend", ccpl_map, function(){
+		ccpl_map.events.register("moveend", ccpl_map, function(){
 			that.mapZoomChangeEvent(arguments);
+			return;
 		});
 
 		//Click a Click Control for OpenLayer
@@ -82,6 +83,15 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//Add Lines Layer to the map
 		ccpl_map.addLayer(layers.linesLayer);
+
+		//vector Layer for Devices Marker
+		layers.markerDevicesLayer = new OpenLayers.Layer.Vector("Devices Marker Layer", {visible: false, eventListeners: featureEventListener});
+
+		//Set markerDevicesLayer
+		this.markerDevicesLayer = layers.markerDevicesLayer;
+		
+		//Add layer to the map
+		ccpl_map.addLayer(layers.markerDevicesLayer);
 
 		var clusterStyle, styleMap, strategy;
 
@@ -150,7 +160,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		});
 
 		//Create a OpenLayer Strategy Cluster
-		strategy= new OpenLayers.Strategy.Cluster({distance: clustererSettings.clustererDistance, threshold: 3});
+		strategy= new OpenLayers.Strategy.Cluster({distance: clustererSettings.clustererDistance});
 
 		//Create a Vector Layer for Markers with styleMap and strategy
 		layers.markersLayer = new OpenLayers.Layer.Vector("Markers Layer", {styleMap  : styleMap,strategies: [strategy]});
@@ -180,17 +190,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//Add layer to the map
 		ccpl_map.addLayer(layers.markersLayer);
-
-		//vector Layer for Devices Marker
-		layers.markerDevicesLayer = new OpenLayers.Layer.Vector("Devices Marker Layer", {eventListeners: featureEventListener});
-
-		layers.markerDevicesLayer.display(false);
-
-		//Set markerDevicesLayer
-		this.markerDevicesLayer = layers.markerDevicesLayer;
-		
-		//Add layer to the map
-		// ccpl_map.addLayer(layers.markerDevicesLayer);
 
 		//vector Layer for Live Poll Polygon, before Adding feature, remove any previous feature created.
 		layers.livePollFeatureLayer= new OpenLayers.Layer.Vector("Live Poll Features Layer", {
@@ -313,17 +312,15 @@ var lastInfoOpen = null;
 WhiteMapClass.prototype.plotSector_wmap = function(sectorPointsArray, additionalInfo) {
 
 	var style = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+	var pointsList = [], linearRing = "", sector = "", feature= "";
 
 	style.fillColor = additionalInfo.fillColor;
 	style.strokeColor = additionalInfo.strokeColor;
 	style.strokeWidth = additionalInfo.strokeWeight;
-
-	var pointsList = [], linearRing = "", sector = "", feature= "";
 	
 	$.each(sectorPointsArray, function(i, sectorPoint) {
 		pointsList.push(new OpenLayers.Geometry.Point(sectorPoint.lon, sectorPoint.lat));
 	});
-
 	linearRing = new OpenLayers.Geometry.LinearRing(pointsList);
 
 	sector = new OpenLayers.Geometry.Polygon([linearRing]);
