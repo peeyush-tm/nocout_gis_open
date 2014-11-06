@@ -1261,19 +1261,13 @@ class SectorDelete(PermissionsRequiredMixin, DeleteView):
 
 
 #**************************************** Customer *********************************************
-class CustomerList(ListView):
+class CustomerList(PermissionsRequiredMixin, ListView):
     """
     Class based View to render Customer listing page.
     """
     model = Customer
     template_name = 'customer/customers_list.html'
-
-    @method_decorator(permission_required('inventory.view_customer', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(CustomerList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_customer',)
 
     def get_queryset(self):
         """
