@@ -466,6 +466,23 @@ def update_bs_switch(request, option):
         pass
 
 @dajaxice_register(method='GET')
+def bs_switch_on_searching(request, search_string, organisation_id):
+    """
+    update the bs switch on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    bh_switch_device_list = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
+
+    for device in bh_switch_device_list:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
+    dajax.assign('#id_bs_switch', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
 def update_backhaul(request, option):
     """
     update bs backhaul on change of the organisation,
