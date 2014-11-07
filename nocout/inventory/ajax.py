@@ -566,19 +566,13 @@ def update_device(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        devices = Device.objects.filter(organization=int(option))[:50]
+        for device in devices:
+            out.append("<option value={}>{}</option>".format(device.id, device) )
+        dajax.assign('#id_device', 'innerHTML', ''.join(out))
         return dajax.json()
-
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        devices = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        devices = Device.objects.filter(organization=int(option))
-
-    for device in devices:
-        out.append("<option value='#'>%s</option>" % device)
-    dajax.assign('#id_device', 'innerHTML', ''.join(out))
-    return dajax.json()
-
+    except Organization.DoesNotExist:
+        pass
 
 @dajaxice_register(method='GET')
 def update_antenna(request, option):
