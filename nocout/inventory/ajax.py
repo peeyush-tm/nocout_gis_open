@@ -405,6 +405,20 @@ def bh_configured_on_searching(request, search_string, organisation_id):
     return dajax.json()
 
 @dajaxice_register(method='GET')
+def bh_switch_on_searching(request, search_string, organisation_id):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    bh_switch_device_list = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
+
+    for device in bh_switch_device_list:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
+    dajax.assign('#id_bh_switch', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
 def update_bs_switch(request, option):
     dajax = Dajax()
     out = list()
