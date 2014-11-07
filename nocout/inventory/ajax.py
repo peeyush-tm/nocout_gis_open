@@ -575,6 +575,23 @@ def update_device(request, option):
         pass
 
 @dajaxice_register(method='GET')
+def device_on_searching(request, search_string, organisation_id):
+    """
+    update the device on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    device_list = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
+
+    for device in device_list:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
+    dajax.assign('#id_device', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
 def update_antenna(request, option):
     dajax = Dajax()
     out = list()
