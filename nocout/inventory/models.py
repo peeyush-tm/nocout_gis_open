@@ -2,7 +2,6 @@ import time
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
-from django.dispatch import receiver
 from service.models import Service, ServiceDataSource
 from user_group.models import UserGroup
 from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
@@ -14,6 +13,10 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy
 from user_profile.models import UserProfile
 from organization.models import Organization
+from inventory.signals import auto_assign_thematic
+from django.db.models.signals import post_save, pre_save
+from inventory.signals import resize_icon_size
+
 
 def get_default_org():
     """
@@ -366,7 +369,7 @@ class GISInventoryBulkImport(models.Model):
     uploaded_by = models.CharField('Uploaded By', max_length=100, null=True, blank=True)
     added_on = models.DateTimeField('Added On', null=True, blank=True)
     modified_on = models.DateTimeField('Modified On', null=True, blank=True)
-    
+
     def save(self, *args, **kwargs):
         """ On save, update timestamps """
         if not self.id:
@@ -382,7 +385,7 @@ class GISInventoryBulkImport(models.Model):
 
 #*********** L2 Reports Model *******************
 class CircuitL2Report(models.Model):
-    
+
     # function to modify name and path of uploaded file
     def uploaded_report_name(instance, filename):
         timestamp = time.time()
@@ -461,3 +464,7 @@ class UserPingThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(PingThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
+
+
+post_save.connect(auto_assign_thematic, sender=UserProfile)
+pre_save.connect(resize_icon_size, sender=IconSettings)
