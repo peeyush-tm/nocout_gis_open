@@ -162,6 +162,10 @@ class AntennaForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
+            '''
+            Checks if user is admin then organization field will be admin's organization & suborganization else
+            organization field will be user's organization only.
+            '''
             organization = self.request.user.userprofile.organization
             if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
@@ -269,6 +273,10 @@ class BackhaulForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
+            '''
+            Checks if organization field is selected or not. if organization field is selected then
+            organization dependent fields will be of selected organization. else it will be of user's organization.
+            '''
             organization = self.request.user.userprofile.organization
             if kwargs['instance'] is not None:
                 instance_organization = kwargs['instance'].organization
@@ -404,6 +412,10 @@ class BaseStationForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
+            '''
+            Checks if organization field is selected or not. if organization field is selected then
+            organization dependent fields will be of selected organization. else it will be of user's organization.
+            '''
             organization = self.request.user.userprofile.organization
             if kwargs['instance'] is not None:
                 instance_organization = kwargs['instance'].organization
@@ -520,6 +532,10 @@ class SectorForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
+            '''
+            Checks if organization field is selected or not. if organization field is selected then
+            organization dependent fields will be of selected organization. else it will be of user's organization.
+            '''
             organization = self.request.user.userprofile.organization
             if kwargs['instance'] is not None:
                 instance_organization = kwargs['instance'].organization
@@ -613,6 +629,10 @@ class CustomerForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
+            '''
+            Checks if user is admin then organization field will be admin's organization & suborganization else
+            organization field will be user's organization only.
+            '''
             organization = self.request.user.userprofile.organization
             if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
@@ -717,6 +737,10 @@ class SubStationForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
+            '''
+            Checks if organization field is selected or not. if organization field is selected then
+            organization dependent fields will be of selected organization. else it will be of user's organization.
+            '''
             organization = self.request.user.userprofile.organization
             if kwargs['instance'] is not None:
                 instance_organization = kwargs['instance'].organization
@@ -816,6 +840,10 @@ class CircuitForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
+            '''
+            Checks if organization field is selected or not. if organization field is selected then
+            organization dependent fields will be of selected organization. else it will be of user's organization.
+            '''
             organization = self.request.user.userprofile.organization
             if kwargs['instance'] is not None:
                 instance_organization = kwargs['instance'].organization
