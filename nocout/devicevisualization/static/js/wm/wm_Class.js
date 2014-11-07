@@ -65,6 +65,7 @@ function WhiteMapClass() {
 		var main_devices_marker_features_wmaps = [], filtered_lines_main_devices_marker_features_wmaps= [];
 		var main_lines_sectors_features_wmaps= {'lines': [], 'sectors': []}, filtered_lines_sectors_features = [];
 
+		var bsDevicesObj = {};
 
 		var pollableDevices = [];
 		var polled_devices_names= [];
@@ -96,33 +97,105 @@ function WhiteMapClass() {
 		var markerSpiderfied= "";
 		this.unSpiderifyBsMarker= function() {
 			if(markerSpiderfied) {
+				markerSpiderfied.attributes.isMarkerSpiderfied = false;
+				markerSpiderfied= "";
 				global_this.markerDevicesLayer.removeAllFeatures();
-				markerSpiderfied= "";				
 			}
 		}
 
-		this.spiderfyBsMarker= function(markername) {
-			this.unSpiderifyBsMarker();
-			var bs_marker= wm_obj.features[markername];
-			var bs_devices = deviceMarkerObj[markername];
-			var map_Zoom_Level = ccpl_map.getZoom();
-			devices_Marker_On_Map= [];
-			if(bs_devices) {
-				//Loop through the devices
-				for (var i = 0; i < bs_devices.length; i++) {
-					// console.log(bs_devices[i]);
-					bs_devices[i].style.externalGraphic = bs_devices[i].attributes.defaultIcon;
+		// this.spiderfyBsMarker= function(markername) {
+		// 	this.unSpiderifyBsMarker();
+		// 	var bs_marker= wm_obj.features[markername];
+		// 	var bs_devices = deviceMarkerObj[markername];
+		// 	var map_Zoom_Level = ccpl_map.getZoom();
+		// 	devices_Marker_On_Map= [];
+		// 	if(bs_devices) {
+		// 		//Loop through the devices
+		// 		for (var i = 0; i < bs_devices.length; i++) {
+		// 			// console.log(bs_devices[i]);
+		// 			bs_devices[i].style.externalGraphic = bs_devices[i].attributes.defaultIcon;
 
-					bs_devices[i].move(new OpenLayers.LonLat(bs_devices[i].attributes.ptLon, bs_devices[i].attributes.ptLat));
-					devices_Marker_On_Map.push(bs_devices[i]);
-					if(i=== bs_devices.length-1) {
-						global_this.markerDevicesLayer.removeAllFeatures();
-						global_this.markerDevicesLayer.addFeatures(devices_Marker_On_Map);
-						global_this.markerDevicesLayer.redraw();
+		// 			bs_devices[i].move(new OpenLayers.LonLat(bs_devices[i].attributes.ptLon, bs_devices[i].attributes.ptLat));
+		// 			devices_Marker_On_Map.push(bs_devices[i]);
+		// 			if(i=== bs_devices.length-1) {
+		// 				global_this.markerDevicesLayer.removeAllFeatures();
+		// 				global_this.markerDevicesLayer.addFeatures(devices_Marker_On_Map);
+		// 				global_this.markerDevicesLayer.redraw();
+		// 			}
+		// 		}
+		// 		bs_marker.isSpiderfied = false;
+		// 		markerSpiderfied= bs_marker;
+		// 	}
+		// }
+
+		function spiderifyMarker(feature, otherfeatures) {
+			global_this.unSpiderifyBsMarker();
+			if(feature && otherfeatures && otherfeatures.length) {
+				var totalLen = 1+ otherfeatures.length;
+				var totalAngle = 360;
+				var angleToIncrase = totalAngle/totalLen;
+				var currentAngle = 0;
+				var zoomLevel = ccpl_map.getZoom();	
+				for(var i=0; i< otherfeatures.length; i++) {		
+					otherfeatures[i].style.externalGraphic = otherfeatures[i].attributes.originalIcon;
+					
+// otherfeatures[i].style.externalGraphic = otherfeatures[i].attributes.originalIcon;
+// 					var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+// 					var diffLon = ((xy.lon)*1000000000000) - ((otherfeatures[i].attributes.ptLon)*1000000000000);
+// 					var diffLat = ((xy.lat)*1000000000000) - ((otherfeatures[i].attributes.ptLat)*1000000000000);
+// 					var deviceLng = (((diffLon * zoomLevel)/9)/1000000000000);
+// 					var deviceLat = (((diffLat * zoomLevel)/9)/1000000000000);
+// 					console.log(deviceLng, deviceLat);
+// 					var newLatLong = new OpenLayers.LonLat(deviceLng, deviceLat);
+// 					// if(zoomLevel> 8) {
+// 					// 	if(zoomLevel> 11) {
+// 					// 		var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+// 					// 		var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+							
+// 					// 	} else {
+// 					// 		var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+// 					// 		var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+// 					// 	}
+						
+// 					// } else {
+// 					// 	var xy = getAtXYDirection(currentAngle, 3, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+// 					// 	var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+// 					// }
+// 					var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
+// 					var end_point = new OpenLayers.Geometry.Point(deviceLng, deviceLat);
+
+// 					global_this.markerDevicesLayer.addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
+// 					global_this.markerDevicesLayer.addFeatures(otherfeatures[i]);
+// 					otherfeatures[i].move(newLatLong);
+// 					currentAngle+= angleToIncrase;
+
+
+					if(zoomLevel> 8) {
+						if(zoomLevel> 11) {
+							var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+							var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+							
+						} else {
+							var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+							var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+						}
+						
+					} else {
+						var xy = getAtXYDirection(currentAngle, 3, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+						var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
 					}
+					var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
+					var end_point = new OpenLayers.Geometry.Point(xy.lon,xy.lat);
+
+					// var vector = new OpenLayers.Layer.Vector();
+					global_this.markerDevicesLayer.addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
+					global_this.markerDevicesLayer.addFeatures(otherfeatures[i]);
+					otherfeatures[i].move(newLatLong);
+					currentAngle+= angleToIncrase;
 				}
-				bs_marker.isSpiderfied = false;
-				markerSpiderfied= bs_marker;
+
+				markerSpiderfied = feature;
+				feature.attributes.isMarkerSpiderfied = true;
 			}
 		}
 
@@ -141,8 +214,8 @@ function WhiteMapClass() {
 
 			if(ccpl_map.getZoom() > whiteMapSettings.zoomLevelAfterLineAppears) {
 				var selectedValue = $("#showConnLines").prop('checked', true);
-				this.markersLayerStrategy.distance = 30;
-				this.markersLayerStrategy.threshold = 3;
+				this.markersLayerStrategy.distance = 40;
+				this.markersLayerStrategy.threshold = 10;
 				this.markersLayerStrategy.recluster();
 			} else {
 				var selectedValue = $("#showConnLines").prop('checked', false);
@@ -151,6 +224,7 @@ function WhiteMapClass() {
 				this.markersLayerStrategy.recluster();
 			}
 			this.toggleLineLayer();
+			// this.unSpiderifyBsMarker();
 		}
 
 		/*
@@ -159,18 +233,12 @@ function WhiteMapClass() {
 		Here, we closeInfoWindow. If infoWindow was present, just close window. Else, if no window was there, unSpiderify Markers too.
 		 */
 		this.mapClickEvent = function(e) {
-			// console.log('Click on Map');
-			//Close Window
-			var closeInfoWindow= this.closeInfoWindow();
-			//If no window was there
-			if(closeInfoWindow=== 'no window') {
-				//Unspiderify Bs Markers
-				this.unSpiderifyBsMarker();
-			}
+			// console.log(e);
+			// this.unSpiderifyBsMarker();
 		}
 
 		var oldFeature = "";
-		this.onFeatureUnselect = function() {
+		this.removePopupWindow = function() {
 			if(oldFeature) {
 				ccpl_map.removePopup(oldFeature.popup);
 				oldFeature.popup.destroy();
@@ -179,7 +247,6 @@ function WhiteMapClass() {
 		}
 
 		this.onFeatureSelect = function(e) {
-			this.onFeatureUnselect();
 			var infoWindowContent;
 			// console.log(e.feature.attributes);
 			if(e.feature.attributes && e.feature.attributes.pointType === "sector_Marker") {
@@ -189,8 +256,8 @@ function WhiteMapClass() {
 			}
 
 			$("#infoWindowContainer").html(infoWindowContent);
+			$("#infoWindowContainer").find('ul.list-unstyled.list-inline').remove();
 			$("#infoWindowContainer").removeClass('hide');
-
 			// var feature = e.feature;
 			// oldFeature= feature;
 			// var popup = new OpenLayers.Popup.FramedCloud("popup", feature.geometry.getBounds().getCenterLonLat(), null, infoWindowContent, null, true);
@@ -201,77 +268,34 @@ function WhiteMapClass() {
 			// /*Update window content to show less items*/
 			// gmap_self.show_hide_info();
 		}
-
 		this.markerClick= function(event) {
 			var feature = event.feature;
 			if(feature.cluster && feature.cluster.length) {
-				if(event.feature.cluster.length === 1 && event.feature.cluster[0].attributes.pointType=== "base_station" && !markerSpiderfied) {
-					this.unSpiderifyBsMarker();
-					this.spiderfyBsMarker( event.feature.cluster[0].attributes.name);
-					markerSpiderfied = event.feature.cluster[0];
-					event.feature.cluster[0].attributes.isSpiderfied = false;
-				} else {
-					var f = event.feature;
-					if (f.cluster.length >= 2){
-						//Click on Cluster
-						clusterpoints = [];
-						for(var i = 0; i<f.cluster.length; i++){
-							clusterpoints.push(f.cluster[i].geometry);
-						}
-						var linestring = new OpenLayers.Geometry.LineString(clusterpoints);
-						ccpl_map.zoomToExtent(linestring.getBounds());
-					} else {
-						this.onFeatureUnselect();
-						var infoWindowContent = gmap_self.makeWindowContent(event.feature.cluster[0].attributes);
-						$("#infoWindowContainer").html(infoWindowContent);
-						$("#infoWindowContainer").removeClass('hide');
-						// console.log(event.feature.cluster[0].attributes);
-					// 	var feature = event.feature;
-					// 	oldFeature= feature;
-					// 	var popup = new OpenLayers.Popup.FramedCloud("popup",
-					// 		feature.geometry.getBounds().getCenterLonLat(),
-					// 		null,
-					// 		infoWindowContent,
-					// 		null,
-					// 		true
-					// 		);
-					// popup.autoSize= true;
-					// popup.maxSize= new OpenLayers.Size(300, 350);
-					// feature.popup = popup;
-					// ccpl_map.addPopup(popup);
-					// /*Update window content to show less items*/
-					// gmap_self.show_hide_info();
-					// popup.setSize(new OpenLayers.Size(500, 400));
-						//Click on Marker
-						// global_this.bsMarkerClick(event, f);
+				var f = event.feature;
+				if (f.cluster.length >= 2){
+					//Click on Cluster
+					clusterpoints = [];
+					for(var i = 0; i<f.cluster.length; i++){
+						clusterpoints.push(f.cluster[i].geometry);
 					}
+					var linestring = new OpenLayers.Geometry.LineString(clusterpoints);
+					ccpl_map.zoomToExtent(linestring.getBounds());
+				} else {
+					var infoWindowContent = gmap_self.makeWindowContent(event.feature.cluster[0].attributes);
+					$("#infoWindowContainer").html(infoWindowContent);
+					$("#infoWindowContainer").find('ul.list-unstyled.list-inline').remove();
+					$("#infoWindowContainer").removeClass('hide');
 				}
 			} else {
 				var f = event.feature;
-				if (false){
+				if(f.attributes.type=== "base_station" && f.attributes.isMarkerSpiderfied === false) {
+					spiderifyMarker(f, bsDevicesObj[f.attributes.name]);
 				} else {
-					this.onFeatureUnselect();
+
 					var infoWindowContent = gmap_self.makeWindowContent(f.attributes);
 					$("#infoWindowContainer").html(infoWindowContent);
-					$("#infoWindowContainer").removeClass('hide');
-				// 	var feature = event.feature;
-				// 	oldFeature= feature;
-				// 	var popup = new OpenLayers.Popup.FramedCloud("popup",
-				// 		feature.geometry.getBounds().getCenterLonLat(),
-				// 		null,
-				// 		infoWindowContent,
-				// 		null,
-				// 		true
-				// 		);
-				// popup.autoSize= true;
-				// popup.maxSize= new OpenLayers.Size(300, 350);
-				// feature.popup = popup;
-				// ccpl_map.addPopup(popup);
-				// /*Update window content to show less items*/
-				// gmap_self.show_hide_info();
-				// popup.setSize(new OpenLayers.Size(500, 400));
-					//Click on Marker
-					// global_this.bsMarkerClick(event, f);
+					$("#infoWindowContainer").find('ul.list-unstyled.list-inline').remove();
+					$("#infoWindowContainer").removeClass('hide');				
 				}
 			}
 		}
@@ -307,11 +331,11 @@ function WhiteMapClass() {
 	 *
 	 * Gis Performance Section
 	 */
-	 	function updateBsMarker() {}
-	 	function createRequestJson() {}
-	 	function sendAjaxRequest() {}
-	 	function gisPerformanceStop() {}
-	 	function gisPerformanceStart() {}
+		function updateBsMarker() {}
+		function createRequestJson() {}
+		function sendAjaxRequest() {}
+		function gisPerformanceStop() {}
+		function gisPerformanceStart() {}
 	/**
 	 *
 	 * End of Gis Performance Section
@@ -325,28 +349,37 @@ function WhiteMapClass() {
 		this.initLivePolling = function() {
 
 			/*Reset marker icon*/
-			for(var i=0;i<polled_devices_names.length;i++) {
+			for(var i=0;i<polygonSelectedDevices.length;i++) {
 
-				var ss_marker = wm_obj['features'][polled_devices_names[i]],
-				sector_marker = allMarkersObject_gmap['devices']['sector_'+polled_devices_names[i]];
+				var ss_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.name],
+					pointType = ss_marker.attributes.pointType,
+					sector_marker = "";
 
-				// if(ss_marker) {
-				// 	ss_marker.setOptions({
-				// 		"icon" : ss_marker.lastIcon
-				// 	});
-				// } else if(sector_marker) {
-				// 	sector_marker.setOptions({
-				// 		"icon" : sector_marker.lastIcon
-				// 	});
-				// }
+				if(pointType === 'sub_station') {
+					sector_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.sector_ip];
+				} else {
+					sector_marker = wm_obj['devices']['sector_'+polygonSelectedDevices[i].attributes.sectorName]
+				}
+
+				if(ss_marker) {
+					ss_marker.style.externalGraphic = ss_marker.attributes.originalIcon;
+					
+				} else if(sector_marker) {
+					sector_marker.style.externalGraphic = sector_marker.attributes.originalIcon
+					
+				}
 			}
+			global_this.markersLayer.redraw();
+			global_this.markerDevicesLayer.redraw();
 
 			global_this.livePollFeatureLayer.removeAllFeatures();
+
+			global_this.livePollingPolygonControl.activate();
 
 			ccpl_map.addLayer(global_this.livePollFeatureLayer);
 
 			/*Reset global variables*/
-	    	allSSIds = [];
+			allSSIds = [];
 			polygonSelectedDevices = [];
 			currentPolygon = {};
 			polled_devices_names = [];
@@ -389,12 +422,12 @@ function WhiteMapClass() {
 
 		this.fetchPollingTemplate_wmap = function() {
 			var selected_technology = $("#polling_tech").val(),
-    		pathArray = [],
+			pathArray = [],
 			polygon = "";
 
 
-	    	/*Re-Initialize the polling*/
-	    	whiteMapClass.initLivePolling();
+			/*Re-Initialize the polling*/
+			whiteMapClass.initLivePolling();
 			
 			/*Reset the variables*/
 			polygonSelectedDevices = [];
@@ -402,57 +435,82 @@ function WhiteMapClass() {
 			if(selected_technology != "") {
 				$("#tech_send").button("loading");
 				/*ajax call for services & datasource*/
-	    		$.ajax({
-	    			url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology),
-	    			success : function(results) {
+				$.ajax({
+					url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology),
+					success : function(results) {
 
-	    				result = JSON.parse(results);
-	    				if(result.success == 1) {
-	    					/*Make live polling template select box*/
-	    					var polling_templates = result.data.thematic_settings;
-	    					var polling_select = "<select class='form-control' name='lp_template_select' id='lp_template_select'><option value=''>Select Template</option>";
+						result = JSON.parse(results);
+						if(result.success == 1) {
+							/*Make live polling template select box*/
+							var polling_templates = result.data.thematic_settings;
+							var polling_select = "<select class='form-control' name='lp_template_select' id='lp_template_select'><option value=''>Select Template</option>";
 
-	    					for(var i=0;i<polling_templates.length;i++) {
-	    						polling_select += '<option value="'+polling_templates[i].id+'">'+polling_templates[i].value+'</option>'
-	    					}
-	    					polling_select += "</select>";
+							for(var i=0;i<polling_templates.length;i++) {
+								polling_select += '<option value="'+polling_templates[i].id+'">'+polling_templates[i].value+'</option>'
+							}
+							polling_select += "</select>";
 
-	    					$("#sideInfo .panel-body .col-md-12 .template_container").html(polling_select);
+							$("#sideInfo .panel-body .col-md-12 .template_container").html(polling_select);
 
-	    					if($("#fetch_polling").hasClass("hide")) {
-	    						$("#fetch_polling").removeClass("hide");
-	    					}
+							if($("#fetch_polling").hasClass("hide")) {
+								$("#fetch_polling").removeClass("hide");
+							}
 
-	    					$("#tech_send").button("complete");
+							$("#tech_send").button("complete");
 
-	    					global_this.drawLivePollPolygon();
-	    				}
-	    			},
-	    			error : function(err) {
-	    				
-	    				$("#tech_send").button("complete");
-	    				$("#sideInfo .panel-body .col-md-12 .template_container").html("");
+							global_this.drawLivePollPolygon();
+						}
+					},
+					error : function(err) {
+						
+						$("#tech_send").button("complete");
+						$("#sideInfo .panel-body .col-md-12 .template_container").html("");
 
-	    				if(!($("#fetch_polling").hasClass("hide"))) {
+						if(!($("#fetch_polling").hasClass("hide"))) {
 							$("#fetch_polling").addClass("hide");
 						}
-	    				
-	    				$.gritter.add({
-				            // (string | mandatory) the heading of the notification
-				            title: 'Live Polling - Error',
-				            // (string | mandatory) the text inside the notification
-				            text: err.statusText,
-				            // (bool | optional) if you want it to fade out on its own or just sit there
-				            sticky: false
-				        });
-	    			}
-	    		});
-	    	} else {
-	    		alert("Please select technology.");
-	    	}
+						
+						$.gritter.add({
+							// (string | mandatory) the heading of the notification
+							title: 'Live Polling - Error',
+							// (string | mandatory) the text inside the notification
+							text: err.statusText,
+							// (bool | optional) if you want it to fade out on its own or just sit there
+							sticky: false
+						});
+					}
+				});
+			} else {
+				alert("Please select technology.");
+			}
 		}
 
 		this.stopPolling= function() {
+
+			/*Reset marker icon*/
+			for(var i=0;i<polygonSelectedDevices.length;i++) {
+
+				var ss_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.name],
+					pointType = ss_marker.attributes.pointType,
+					sector_marker = "";
+
+				if(pointType === 'sub_station') {
+					sector_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.sector_ip];
+				} else {
+					sector_marker = wm_obj['devices']['sector_'+polygonSelectedDevices[i].attributes.sectorName]
+				}
+
+				if(ss_marker) {
+					ss_marker.style.externalGraphic = ss_marker.attributes.originalIcon;
+					
+				} else if(sector_marker) {
+					sector_marker.style.externalGraphic = sector_marker.attributes.originalIcon
+					
+				}
+			}
+			global_this.markersLayer.redraw();
+			global_this.markerDevicesLayer.redraw();
+
 			if(global_this.livePollingPolygonControl) {
 				global_this.livePollingPolygonControl.deactivate();
 				global_this.livePollFeatureLayer.destroyFeatures();
@@ -489,6 +547,17 @@ function WhiteMapClass() {
 
 			/*Enable 'Reset' button*/
 			$("#resetFilters").button("complete");
+
+			/*Reset global variables*/
+			allSSIds = [];
+			polygonSelectedDevices = [];
+			currentPolygon = {};
+			polled_devices_names = [];
+			complete_polled_devices_data = [];
+			complete_polled_devices_icon = {};
+			total_polled_occurence = 0;
+			nav_click_counter = 0;
+			polled_device_count = {};
 		}
 
 
@@ -598,7 +667,7 @@ function WhiteMapClass() {
 						devices_counter = polygonSelectedDevices[i].attributes.device_name;
 					}
 
-                        if(!polled_device_count[devices_counter]) {
+						if(!polled_device_count[devices_counter]) {
 						polled_device_count[devices_counter]  = 1;
 					} else {
 						polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
@@ -628,7 +697,7 @@ function WhiteMapClass() {
 
 					} else {
 						if(polled_device_count[devices_counter] ) //<= 1) //why do we have this condition ???
-                        {
+						{
 							var device_end_txt = "",
 								point_name = "";
 							if(polygonSelectedDevices[i].attributes.pointType == 'sub_station') {
@@ -657,25 +726,25 @@ function WhiteMapClass() {
 		 * This function fetch the polling value for selected devices
 		 * @method getDevicesPollingData
 		 */
-	    this.getDevicesPollingData_wmaps = function() {
+		this.getDevicesPollingData_wmaps = function() {
 
-	    	if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
+			if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
 
-	    		$("#getDevicesPollingData").button("loading");
+				$("#getDevicesPollingData").button("loading");
 
-	    		/*Disable service templates dropdown*/
-	    		$("#lp_template_select").attr("disabled","disabled");
+				/*Disable service templates dropdown*/
+				$("#lp_template_select").attr("disabled","disabled");
 
 				var selected_lp_template = $("#lp_template_select").val();
 
-	            // start spinner
-	            if($("#fetch_spinner").hasClass("hide")) {
+				// start spinner
+				if($("#fetch_spinner").hasClass("hide")) {
 					$("#fetch_spinner").removeClass("hide");
 				}
 
-		    	$.ajax({
-					url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
-					// url : base_url+"/"+"static/services.json",
+				$.ajax({
+					// url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+					url : base_url+"/"+"static/services.json",
 					success : function(results) {
 						var result = "";
 
@@ -689,22 +758,24 @@ function WhiteMapClass() {
 
 							$("#getDevicesPollingData").button("complete");
 
+
 							/*Remove 'text-info' class from all li's*/
 							if($(".deviceWellContainer div div ul li")) {
 								$(".deviceWellContainer div div ul li").removeClass("text-info");
 							}
 
-	                        // stop spinner
-	                        if(!($("#fetch_spinner").hasClass("hide"))) {
-	                            $("#fetch_spinner").addClass("hide");
-	                        }
+							// stop spinner
+							if(!($("#fetch_spinner").hasClass("hide"))) {
+								$("#fetch_spinner").addClass("hide");
+							}
 
 							if($(".devices_container").hasClass("hide")) {
 								$(".devices_container").removeClass("hide");
 							}
+
+
 							var hasPolledInfo = true;
 							for(var i=0;i<allSSIds.length;i++) {
-
 								var new_device_name = "";
 								if(allSSIds[i] && allSSIds[i].indexOf(".") != -1) {
 									new_device_name = allSSIds[i].split('.');
@@ -712,15 +783,14 @@ function WhiteMapClass() {
 								} else {
 									new_device_name = allSSIds[i];
 								}
-
 								if(result.data.devices[allSSIds[i]] != undefined) {
 
 									if(hasPolledInfo) {
 										if($("#polling_tabular_view").hasClass("hide")) {
-							    			$("#polling_tabular_view").removeClass("hide");
-							    		}
+											$("#polling_tabular_view").removeClass("hide");
+										}
 
-							    		/*Remove hide class to navigation container on polling widget*/
+										/*Remove hide class to navigation container on polling widget*/
 										if($("#navigation_container").hasClass("hide")) {
 											$("#navigation_container").removeClass("hide");
 										}
@@ -750,7 +820,7 @@ function WhiteMapClass() {
 
 										/*Create integer array from fetched values for sparkline chart*/
 										var chart_data = string_val.map(function(item) {
-										    return parseInt(item, 10);
+											return parseInt(item, 10);
 										});
 
 										$("#pollVal_"+new_device_name).append("<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> , (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")</li>");
@@ -761,15 +831,28 @@ function WhiteMapClass() {
 
 									/*Plot sparkline chart with the fetched polling value*/
 									$("#sparkline_"+new_device_name).sparkline(final_chart_data, {
-								        type: "line",
-								        lineColor: "blue",
-								        spotColor : "orange",
-								        defaultPixelsPerValue : 10
-								    });
+										type: "line",
+										lineColor: "blue",
+										spotColor : "orange",
+										defaultPixelsPerValue : 10
+									});
+									var ss_name = "",
+										sector_ip = "";
+									for(var x=0;x<polygonSelectedDevices.length;x++) {
+										if(allSSIds[i] === polygonSelectedDevices[x].attributes.device_name) {
+											if(polygonSelectedDevices[x].attributes.pointType === 'sub_station') {
+												ss_name = polygonSelectedDevices[x].attributes.name;
+												sector_ip = polygonSelectedDevices[x].attributes.sector_ip;
+											} else {
+													ss_name = "";
+													sector_ip = polygonSelectedDevices[x].attributes.sectorName;  
+											}
+										}
+									}
 
 									var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon,
-										ss_marker = wm_obj['features'][allSSIds[i]],
-										sector_marker = wm_obj['sector_device']['sector_'+allSSIds[i]],
+										ss_marker = wm_obj['features'][ss_name],
+										sector_marker = wm_obj['devices']['sector_'+sector_ip],
 										marker_polling_obj = {
 											"device_name" : allSSIds[i],
 											"polling_icon" : newIcon,
@@ -789,6 +872,7 @@ function WhiteMapClass() {
 									
 									/*Update the marker icons*/
 									if(ss_marker) {
+console.log(ss_marker);
 										ss_marker.style.externalGraphic = newIcon;
 										global_this.markersLayer.drawFeature(ss_marker);
 									} else if(sector_marker) {
@@ -815,44 +899,192 @@ function WhiteMapClass() {
 							$("#getDevicesPollingData").button("complete");
 
 							// stop spinner
-		                    if(!($("#fetch_spinner").hasClass("hide"))) {
+							if(!($("#fetch_spinner").hasClass("hide"))) {
 								$("#fetch_spinner").addClass("hide");
 							}
 
 							$.gritter.add({
-					            // (string | mandatory) the heading of the notification
-					            title: 'Live Polling - Error',
-					            // (string | mandatory) the text inside the notification
-					            text: result.message,
-					            // (bool | optional) if you want it to fade out on its own or just sit there
-					            sticky: false
-					        });
+								// (string | mandatory) the heading of the notification
+								title: 'Live Polling - Error',
+								// (string | mandatory) the text inside the notification
+								text: result.message,
+								// (bool | optional) if you want it to fade out on its own or just sit there
+								sticky: false
+							});
 						}
 					},
 					error : function(err) {
 
-	                    $("#getDevicesPollingData").button("complete");
+						$("#getDevicesPollingData").button("complete");
 
-	                    // stop spinner
-	                    if(!($("#fetch_spinner").hasClass("hide"))) {
+						// stop spinner
+						if(!($("#fetch_spinner").hasClass("hide"))) {
 							$("#fetch_spinner").addClass("hide");
 						}
 
 						$.gritter.add({
-				            // (string | mandatory) the heading of the notification
-				            title: 'Live Polling - Error',
-				            // (string | mandatory) the text inside the notification
-				            text: err.statusText,
-				            // (bool | optional) if you want it to fade out on its own or just sit there
-				            sticky: false
-				        });
+							// (string | mandatory) the heading of the notification
+							title: 'Live Polling - Error',
+							// (string | mandatory) the text inside the notification
+							text: err.statusText,
+							// (bool | optional) if you want it to fade out on its own or just sit there
+							sticky: false
+						});
 					}
 				});
 
-	    	} else {
-	    		bootbox.alert("Please select devices & polling template first.");
-	    	}
-	    };
+			} else {
+				bootbox.alert("Please select devices & polling template first.");
+			}
+		};
+
+		/**
+		 * This function show the polled devices data in tabular format & also give option to download that data
+		 * @method show_polling_datatable
+		 */
+		this.show_polling_datatable_wmaps = function() {
+
+			var table_html = "";
+
+			table_html += "<div class='polling_table_container'><table style='z-index:9999;' id='polling_data_table' class='datatable table table-striped table-bordered table-hover'><thead><tr><th>Device Name</th><th>Time</th><th>Value</th></tr><thead><tbody>";
+
+			for(var i=0;i<complete_polled_devices_data.length;i++) {
+				table_html += '<tr>';
+				table_html += '<td>'+complete_polled_devices_data[i].device_name+'</td>';
+				table_html += '<td>'+complete_polled_devices_data[i].polling_time+'</td>';
+				table_html += '<td>'+complete_polled_devices_data[i].polling_value+'</td>';
+				table_html += '</tr>';
+			}
+
+			table_html += "</tbody></table></div><div class='clearfix'></div>";
+
+			/*Call the bootbox to show the popup with Fresnel Zone Graph*/
+			bootbox.dialog({
+				message: table_html,
+				title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Polling Data - Tabular Format'
+			});
+
+			if($("#polling_data_table").length > 0) {
+				/*Initialize Data Table*/
+				$("#polling_data_table").DataTable({
+					sDom: 'T<"clear">lfrtip',
+					oTableTools: {
+						sSwfPath : base_url+"/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+						aButtons : [
+							{
+								sExtends : "xls",
+								sButtonText : "Download Excel",
+								sFileName : "*.xls"
+							}
+						]
+					},
+					bProcessing : true,
+					bPaginate : true,
+					bAutoWidth : true,
+					sPaginationType : "full_numbers"
+				});
+			}
+
+		};
+
+		/**
+	 * This function shows the previous polled icon(if available) on google maps for selected devices
+	 * @method show_previous_polled_icon
+	 */
+	this.show_previous_polled_icon_wmaps = function() {
+		if(nav_click_counter > 0) {
+			nav_click_counter--;
+		}
+		/*Remove 'text-info' class from all li's*/
+		$(".deviceWellContainer div div ul li").removeClass("text-info");
+
+		for(var i=0;i<polled_devices_names.length;i++) {
+
+			var ss_marker = wm_obj['features'][polled_devices_names[i]],
+				sector_marker = wm_obj['devices']['sector_'+polled_devices_names[i]],
+				new_device_name = "";
+
+			if(polled_devices_names[i] && polled_devices_names[i].indexOf(".") != -1) {
+				new_device_name = polled_devices_names[i].split('.');
+				new_device_name = new_device_name.join('-');
+			} else {
+				new_device_name = polled_devices_names[i];
+			}
+
+			if(nav_click_counter > 0) {
+				newIcon = complete_polled_devices_icon[polled_devices_names[i]][nav_click_counter-1];
+			} else {
+				newIcon = complete_polled_devices_icon[polled_devices_names[i]][nav_click_counter];
+			}
+
+			if(ss_marker) {
+				ss_marker.style.externalGraphic = newIcon;
+
+			} else if(sector_marker) {
+				sector_Marker.style.externalGraphic = newIcon;
+			}
+			$("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className = $("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className+' text-info';
+		}
+		global_this.markersLayer.redraw();
+		global_this.markerDevicesLayer.redraw();
+
+		if((nav_click_counter-1) <= 0) {
+			/*Disable next button*/
+			$("#navigation_container button#previous_polling_btn").addClass('disabled');
+		}
+		/*Enable next button*/
+		$("#navigation_container button#next_polling_btn").removeClass('disabled');
+	};
+
+	/**
+	 * This function shows the next polled icon(if available) on google maps for selected devices
+	 * @method show_next_polled_icon
+	 */
+	this.show_next_polled_icon_wmaps = function() {
+
+		if(nav_click_counter <= total_polled_occurence) {
+			nav_click_counter++;
+		}
+
+		$(".deviceWellContainer div div ul li").removeClass("text-info");
+
+
+		for(var i=0;i<polled_devices_names.length;i++) {
+
+			var ss_marker = wm_obj['features'][polled_devices_names[i]],
+				sector_marker = wm_obj['devices']['sector_'+polled_devices_names[i]],
+				new_device_name = "";
+
+			if(polled_devices_names[i] && polled_devices_names[i].indexOf(".") != -1) {
+				new_device_name = polled_devices_names[i].split('.');
+				new_device_name = new_device_name.join('-');
+			} else {
+				new_device_name = polled_devices_names[i];
+			}
+
+			if(nav_click_counter > 0) {
+				newIcon = complete_polled_devices_icon[polled_devices_names[i]][nav_click_counter-1];
+			} else {
+				newIcon = complete_polled_devices_icon[polled_devices_names[i]][nav_click_counter];
+			}
+
+			if(ss_marker) {
+				ss_marker.style.externalGraphic = newIcon;
+				
+			} else if(sector_marker) {
+				sector_Marker.style.externalGraphic = newIcon;
+			}
+			$("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className = $("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className+' text-info';
+		}
+
+		if((nav_click_counter+1) > total_polled_occurence) {
+			/*Disable next button*/
+			$("#navigation_container button#next_polling_btn").addClass('disabled');
+		}
+
+		/*Enable previous button*/
+		$("#navigation_container button#previous_polling_btn").removeClass('disabled');
+	};
 	/**
 	 * 
 	 * End of Polling Section
@@ -995,6 +1227,8 @@ function WhiteMapClass() {
 		
 		this.applyAdvanceFilter = function(appliedFilterData) {
 
+			this.unSpiderifyBsMarker();
+
 			data_for_filter_wmap= [];
 
 			//set data for filter
@@ -1038,16 +1272,16 @@ function WhiteMapClass() {
 		this.resetAdvanceSearch = function() {
 
 			//reset adv class
-			wmAdvanceSearchClass.resetAdvanceSearch();
+			// wmAdvanceSearchClass.resetAdvanceSearch();
 
 			//set hasAdvSearch = 0
-			hasAdvSearch = 0;
+			// hasAdvSearch = 0;
 
 			//remove search markers
 			this.searchMarkerLayer.removeAllFeatures();
 
 			//update get status
-			get_page_status();
+			// get_page_status();
 		}
 
 		/*
@@ -1297,7 +1531,8 @@ function WhiteMapClass() {
 					name: name, 
 					type: type, 
 					isSpiderfied: true, 
-					oldIcon: base_url+"/static/img/icons/bs.png", 
+					icon: icon, 
+					originalIcon: base_url+"/static/img/icons/bs.png", 
 					child_ss: markerData.data.param.sector,
 					original_sectors: markerData.data.param.sector,
 					dataset: markerData.data.param.base_station, 
@@ -1316,9 +1551,7 @@ function WhiteMapClass() {
 
 				var marker = global_this.createOpenLayerVectorMarker(size, icon, lon, lat, bsMarkerCustomInfo);
 				wm_obj.features[name] = marker;
-				if(markerData.alias === 'BB Ganguly') {
-					// console.log('bs '+ marker);
-				}
+
 				bs_ss_features_list.push(marker);
 				
 				var deviceIDArray= [];
@@ -1419,19 +1652,18 @@ function WhiteMapClass() {
 						}
 
 					});
-
+					var device_marker_size = new OpenLayers.Size(whiteMapSettings.devices_size.medium.width, whiteMapSettings.devices_size.medium.height);
 					if($.trim(device.technology.toLowerCase()) == "p2p" || $.trim(device.technology.toLowerCase()) == "ptp") {
 						
 						if(deviceIDArray.indexOf(device['device_info'][1]['value']) === -1) {
 
 							var perf_obj = { "performance_paramter" : "N/A", "performance_value" : "N/A", "frequency" : "N/A", "pl" : "N/A" };
-
+							
 							var deviceAdditionalInfo = {
 								ptLat: lat,
 								ptLon: lon,
 								originalIcon:  base_url+"/"+device.markerUrl,
-								defaultIcon: base_url+'/static/img/i/1x1.png',
-								oldIcon: base_url+"/"+device.markerUrl,
+								icon: base_url+'/static/img/i/1x1.png',
 								pointType 		 	: 'sector_Marker',
 								technology: device.technology,
 								vendor 				: device.vendor,
@@ -1449,11 +1681,17 @@ function WhiteMapClass() {
 								antenna_height 		: device.antenna_height
 							}
 
+							if(!bsDevicesObj[name]) {
+								bsDevicesObj[name]= [];
+							}
+
 							//Create deviceMarker
-							var deviceMarker = global_this.createOpenLayerVectorMarker(size, deviceAdditionalInfo.defaultIcon, lon, lat, deviceAdditionalInfo);
+							var deviceMarker = global_this.createOpenLayerVectorMarker(device_marker_size, deviceAdditionalInfo.icon, lon, lat, deviceAdditionalInfo);
 							// global_this.markerDevicesLayer.addFeatures(deviceMarker);
-							
-						if(sectorMarkerConfiguredOn.indexOf(device.sector_configured_on) == -1) {
+							bsDevicesObj[name].push(deviceMarker);
+
+
+							if(sectorMarkerConfiguredOn.indexOf(device.sector_configured_on) == -1) {
 								main_devices_marker_features_wmaps.push(deviceMarker);
 
 								/*Push Sector marker to pollableDevices array*/
@@ -1492,7 +1730,8 @@ function WhiteMapClass() {
 							pointType: "sub_station",
 							type: "sub_station",
 							dataset: sub_station.data.param.sub_station,
-							oldIcon: base_url+"/"+sub_station.data.markerUrl,
+							originalIcon: base_url+"/"+sub_station.data.markerUrl,
+							icon: base_url+"/"+sub_station.data.markerUrl,
 							bhInfo: [],
 							poll_info: [],
 							antenna_height: sub_station.data.antenna_height,
@@ -1513,18 +1752,16 @@ function WhiteMapClass() {
 						var sub_station_name = sub_station.name
 
 						//Create marker
-						sub_station_marker = global_this.createOpenLayerVectorMarker(size, sub_station_icon, sub_station_lon, sub_station_lat, subStationAdditionalInfo);
+						sub_station_marker = global_this.createOpenLayerVectorMarker(device_marker_size, sub_station_icon, sub_station_lon, sub_station_lat, subStationAdditionalInfo);
 						wm_obj.features[sub_station.name] = sub_station_marker;
-						if(markerData.alias === 'BB Ganguly') {
-					// console.log('ss '+ marker);
-				}
+						
 						bs_ss_features_list.push(sub_station_marker);
 
 						 /*Push SS marker to pollableDevices array*/
 						pollableDevices.push(sub_station_marker);
 
 						var ss_info = {},
-						 	base_info = {};
+							base_info = {};
 						startEndObj["nearEndLat"] = markerData.data.lat;
 						startEndObj["nearEndLon"] = markerData.data.lon;
 
@@ -1696,7 +1933,7 @@ function WhiteMapClass() {
 						text: response.statusText,
 						// (bool | optional) if you want it to fade out on its own or just sit there
 						sticky: false
-			        });
+					});
 
 					//hide Loading
 					global_this.hideLoading();
