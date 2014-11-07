@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.http.response import HttpResponseRedirect
 from nocout.utils.util import DictDiffer
 import json
-from activity_stream.models import UserAction
+from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
@@ -179,7 +179,7 @@ class SiteInstanceUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(SiteInstanceUpdate.success_url)
 
 
-class SiteInstanceDelete(PermissionsRequiredMixin, DeleteView):
+class SiteInstanceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the Site Instance.
     """
@@ -187,14 +187,3 @@ class SiteInstanceDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'site_instance/site_instance_delete.html'
     success_url = reverse_lazy('site_instance_list')
     required_permissions = ('site_instance.delete_siteinstance',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Log the user activity before deleting the Site Instance.
-        """
-        try:
-            UserAction.objects.create(user_id=self.request.user.id, module='Site Instance',
-                         action='A site instance is deleted - {}'.format(self.get_object().name) )
-        except:
-            pass
-        return super(SiteInstanceDelete, self).delete(request, *args, **kwargs)
