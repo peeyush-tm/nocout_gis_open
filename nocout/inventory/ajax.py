@@ -467,23 +467,22 @@ def update_bs_switch(request, option):
 
 @dajaxice_register(method='GET')
 def update_backhaul(request, option):
+    """
+    update bs backhaul on change of the organisation,
+    And return only fifty result.
+    """
     dajax = Dajax()
     out = list()
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        backhauls = Backhaul.objects.filter(organization=int(option))[:50]
+        for backhaul in backhauls:
+            out.append("<option value={}>{}</option>" .format(backhaul.id, backhaul) )
+        dajax.assign('#id_backhaul', 'innerHTML', ''.join(out))
         return dajax.json()
-
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        backhauls = Backhaul.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        backhauls = Backhaul.objects.filter(organization=int(option))
-
-    for backhaul in backhauls:
-        out.append("<option value='#'>%s</option>" % backhaul)
-    dajax.assign('#id_backhaul', 'innerHTML', ''.join(out))
-    return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
 @dajaxice_register(method='GET')
 def update_sector_configured_on(request, option):
