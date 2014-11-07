@@ -274,26 +274,50 @@ class BackhaulForm(forms.ModelForm):
 
         if self.request is not None:
             '''
-            Checks if organization field is selected or not. if organization field is selected then
-            organization dependent fields will be of selected organization. else it will be of user's organization.
+            If user submits form and returned with an error, then get selected values from POST data.
+            If user requests to edit an instance, then get instance values.
+            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
             '''
-            organization = self.request.user.userprofile.organization
-            if kwargs['instance'] is not None:
-                instance_organization = kwargs['instance'].organization
-                self.fields['bh_configured_on'].queryset = self.fields['bh_configured_on'].queryset.filter(organization=instance_organization)
-                self.fields['aggregator'].queryset = self.fields['aggregator'].queryset.filter(organization=instance_organization)
-                self.fields['bh_switch'].queryset = self.fields['bh_switch'].queryset.filter(organization=instance_organization)
-                self.fields['pop'].queryset = self.fields['pop'].queryset.filter(organization=instance_organization)
-            else:
-                self.fields['bh_configured_on'].queryset = self.fields['bh_configured_on'].queryset.filter(organization=organization)
-                self.fields['aggregator'].queryset = self.fields['aggregator'].queryset.filter(organization=organization)
-                self.fields['bh_switch'].queryset = self.fields['bh_switch'].queryset.filter(organization=organization)
-                self.fields['pop'].queryset = self.fields['pop'].queryset.filter(organization=organization)
+            request = self.request
 
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            if request.method == 'POST':
+                organization = request.POST.get('organization')
+                bh_configured_on = request.POST.get('bh_configured_on')
+                aggregator = request.POST.get('aggregator')
+                bh_switch = request.POST.get('bh_switch')
+                pop = request.POST.get('pop')
+            elif kwargs['instance'] is not None: # request.method == 'GET'
+                instance = kwargs['instance']
+                organization = instance.organization
+                bh_configured_on = instance.bh_configured_on.id if instance.bh_configured_on else None
+                aggregator = instance.aggregator.id if instance.aggregator else None
+                bh_switch = instance.bh_switch.id if instance.bh_switch else None
+                pop = instance.pop.id if instance.pop else None
+            else: # request.method == 'GET' and instance is None
+                organization = request.user.userprofile.organization
+                bh_configured_on = None
+                aggregator = None
+                bh_switch = None
+                pop = None
+
+            devices_set = Device.objects.values_list('id', flat=True)
+            if organization:
+                devices_set = devices_set.filter(organization=organization)
+
+            device_ids = set(list(devices_set[:50]) + [bh_configured_on, aggregator, bh_switch, pop])
+
+            if None in device_ids: device_ids.remove(None)
+            if '' in device_ids: device_ids.remove('')
+
+            self.fields['bh_configured_on'].queryset = self.fields['bh_configured_on'].queryset.filter(id__in=device_ids)
+            self.fields['aggregator'].queryset = self.fields['aggregator'].queryset.filter(id__in=device_ids)
+            self.fields['bh_switch'].queryset = self.fields['bh_switch'].queryset.filter(id__in=device_ids)
+            self.fields['pop'].queryset = self.fields['pop'].queryset.filter(id__in=device_ids)
+
+            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
             else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
