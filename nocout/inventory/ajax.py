@@ -660,19 +660,13 @@ def update_sub_station(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        substations = SubStation.objects.filter(organization=int(option))[:50]
+        for substation in substations:
+            out.append("<option value={}>{}</option>".format(substation.id, substation) )
+        dajax.assign('#id_sub_station', 'innerHTML', ''.join(out))
         return dajax.json()
-
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        substations = SubStation.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        substations = SubStation.objects.filter(organization=int(option))
-
-    for substation in substations:
-        out.append("<option value='#'>%s</option>" % substation)
-    dajax.assign('#id_sub_station', 'innerHTML', ''.join(out))
-    return dajax.json()
-
+    except Organization.DoesNotExist:
+        pass
 
 # @dajaxice_register(method='GET')
 # def load_sheet_no_select_menu(request, uploaded_file):
