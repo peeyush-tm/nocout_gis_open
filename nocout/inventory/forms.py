@@ -581,23 +581,46 @@ class SectorForm(forms.ModelForm):
 
         if self.request is not None:
             '''
-            Checks if organization field is selected or not. if organization field is selected then
-            organization dependent fields will be of selected organization. else it will be of user's organization.
+            If user submits form and returned with an error, then get selected values from POST data.
+            If user requests to edit an instance, then get instance values.
+            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
             '''
-            organization = self.request.user.userprofile.organization
-            if kwargs['instance'] is not None:
-                instance_organization = kwargs['instance'].organization
-                self.fields['sector_configured_on'].queryset = self.fields['sector_configured_on'].queryset.filter(organization=instance_organization)
-                self.fields['base_station'].queryset = self.fields['base_station'].queryset.filter(organization=instance_organization)
-            else:
-                self.fields['sector_configured_on'].queryset = self.fields['sector_configured_on'].queryset.filter(organization=organization)
-                self.fields['base_station'].queryset = self.fields['base_station'].queryset.filter(organization=organization)
+            request = self.request
 
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
-            else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+            if request.method == 'POST':
+                organization = request.POST.get('organization')
+                sector_configured_on = request.POST.get('sector_configured_on')
+                base_station = request.POST.get('base_station')
+            elif kwargs['instance'] is not None: # request.method == 'GET'
+                instance = kwargs['instance']
+                organization = instance.organization
+                sector_configured_on = instance.sector_configured_on.id if instance.sector_configured_on else None
+                base_station = instance.base_station.id if instance.base_station else None
+            else: # request.method == 'GET' and instance is None
+                organization = request.user.userprofile.organization
+                sector_configured_on = None
+                base_station = None
 
+            devices_set = Device.objects.values_list('id', flat=True)
+            base_stations_set = BaseStation.objects.values_list('id', flat=True)
+            if organization:
+                devices_set = devices_set.filter(organization=organization)
+                base_stations_set = base_stations_set.filter(organization=organization)
+
+            device_ids = list(devices_set[:50])
+            base_station_ids = list(base_stations_set[:50])
+            if sector_configured_on: # Not None or ''
+                device_ids.append(sector_configured_on)
+            if base_station: # Not None or ''
+                base_station_ids.append(base_station)
+
+            self.fields['sector_configured_on'].queryset = self.fields['sector_configured_on'].queryset.filter(id__in=device_ids)
+            self.fields['base_station'].queryset = self.fields['base_station'].queryset.filter(id__in=base_station_ids)
+
+            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
