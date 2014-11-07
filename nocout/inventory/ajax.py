@@ -566,6 +566,23 @@ def update_base_station(request, option):
         pass
 
 @dajaxice_register(method='GET')
+def base_station_on_searching(request, search_string, organisation_id):
+    """
+    update the base station on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    base_station_list = BaseStation.objects.filter(organization__id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for base_station in base_station_list:
+        out.append("<option value={}>{}</option>".format(base_station.id, base_station) )
+    dajax.assign('#id_base_station', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
 def update_device(request, option):
     dajax = Dajax()
     out = list()

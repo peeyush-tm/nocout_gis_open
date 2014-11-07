@@ -103,6 +103,21 @@
             $("#id_base_station").parent().children().find('a span')[0].innerHTML = "Select";
         });
 
+        // to call the dajax function on base station search.
+        var base_stationTimeout = null;
+        $("#id_base_station").on("select2-open", function() {
+            $("#select2-drop .select2-search input").keypress(function() {
+                if(base_stationTimeout != null) clearTimeout(base_stationTimeout);
+                    base_stationTimeout = setTimeout(list_bs_on_base_station_search, 50);
+            });
+        });
+
+        function list_bs_on_base_station_search(){
+            Dajaxice.inventory.base_station_on_searching(Dajax.process, {
+                'search_string': $("#select2-drop .select2-search input").val(),
+                'organisation_id': $('#id_organization option:selected').val()
+            });
+        }
 
     </script>
 {% endblock %}
