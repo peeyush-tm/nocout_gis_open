@@ -502,6 +502,23 @@ def update_backhaul(request, option):
         pass
 
 @dajaxice_register(method='GET')
+def backhaul_on_searching(request, search_string, organisation_id):
+    """
+    update the bs switch on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    backhaul_list = Backhaul.objects.filter(organization__id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for backhaul in backhaul_list:
+        out.append("<option value={}>{}</option>".format(backhaul.id, backhaul) )
+    dajax.assign('#id_backhaul', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
 def update_sector_configured_on(request, option):
     dajax = Dajax()
     out = list()
