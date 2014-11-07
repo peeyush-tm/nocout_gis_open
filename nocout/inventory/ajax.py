@@ -606,6 +606,22 @@ def update_antenna(request, option):
     except Organization.DoesNotExist:
         pass
 
+@dajaxice_register(method='GET')
+def antenna_on_searching(request, search_string, organisation_id):
+    """
+    update the antenna on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    antenna_list = Antenna.objects.filter(organization_id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for antenna in antenna_list:
+        out.append("<option value={}>{}</option>".format(antenna.id, antenna) )
+    dajax.assign('#id_antenna', 'innerHTML', ''.join(out))
+    return dajax.json()
 
 @dajaxice_register(method='GET')
 def update_sector(request, option):
