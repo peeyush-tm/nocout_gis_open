@@ -83,35 +83,25 @@
                 placement: 'right',
                 trigger: 'focus'
             });
+        })
 
-            $("#id_organization").change(function () {
+        $("#id_organization").change(function () {
 
-            Dajaxice.inventory.update_bh_configured_on(Dajax.process, {'option': $('#id_organization').val()});
+            Dajaxice.inventory.update_related_field(Dajax.process, {
+                'option': $('#id_organization').val()
+            });
             $("#id_bh_configured_on").val("");
             $("#id_bh_configured_on").parent().children().find('a span')[0].innerHTML = "Select";
-        });
 
-        $("#id_organization").change(function () {
-
-            Dajaxice.inventory.update_bh_switch(Dajax.process, {'option': $('#id_organization').val()});
             $("#id_bh_switch").val("");
             $("#id_bh_switch").parent().children().find('a span')[0].innerHTML = "Select";
-        });
 
-        $("#id_organization").change(function () {
-
-            Dajaxice.inventory.update_pop(Dajax.process, {'option': $('#id_organization').val()});
             $("#id_pop").val("");
             $("#id_pop").parent().children().find('a span')[0].innerHTML = "Select";
-        });
 
-        $("#id_organization").change(function () {
-
-            Dajaxice.inventory.update_aggregator(Dajax.process, {'option': $('#id_organization').val()});
             $("#id_aggregator").val("");
             $("#id_aggregator").parent().children().find('a span')[0].innerHTML = "Select";
         });
 
-        })
     </script>
 {% endblock %}

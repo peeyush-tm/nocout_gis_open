@@ -378,9 +378,9 @@ def update_related_field(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-        device_list = Device.objects.filter(organization=int(option))
+        device_list = Device.objects.filter(organization=int(option))[:50]
         for device in device_list:
-            out.append("<option value='#'>%s</option>" % device)
+            out.append("<option value={}>{}</option>".format(device.id, device) )
 
         dajax.assign('#id_bh_configured_on', 'innerHTML', ''.join(out))
         dajax.assign('#id_bh_switch', 'innerHTML', ''.join(out))
