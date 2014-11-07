@@ -702,6 +702,23 @@ def update_sub_station(request, option):
     except Organization.DoesNotExist:
         pass
 
+@dajaxice_register(method='GET')
+def sub_station_on_searching(request, search_string, organisation_id):
+    """
+    update the sub station on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    sub_station_list = SubStation.objects.filter(organization_id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for substation in sub_station_list:
+        out.append("<option value={}>{}</option>".format(substation.id, substation) )
+    dajax.assign('#id_sub_station', 'innerHTML', ''.join(out))
+    return dajax.json()
+
 # @dajaxice_register(method='GET')
 # def load_sheet_no_select_menu(request, uploaded_file):
 #     dajax = Dajax()
