@@ -341,7 +341,8 @@ function GisPerformance() {
                 for (var j = 0; j < bsMarkerObject['child_ss'][i]['sub_station'].length; j++) {
                     
                     //Step no. 3 ===> Fetch PerformanceValue for various key from GisData JSon
-                    var lineColor = this.calculatePerformanceValue("color", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+                    var lineColor = this.calculatePerformanceValue("color", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]),
+                        googlePolyLine = allMarkersObject_gmap['path']['line_'+bsMarkerObject['child_ss'][i]['sub_station'][j]['name']];
                     // //Update Polyline content.
                     if(lineColor) {
                         googlePolyLine.setOptions({strokeColor: lineColor});
@@ -368,8 +369,7 @@ function GisPerformance() {
                     //Get subStation Name
                     var subStationName = bsMarkerObject['child_ss'][i]['sub_station'][j]["name"];
                     //Get subStation Marker
-                    // var subStationMarker = markersMasterObj['SSNamae'][subStationName];
-                    var subStationMarker = allMarkersObject_gmap['ss_'+subStationName];
+                    var subStationMarker = allMarkersObject_gmap['sub_station']['ss_'+subStationName];
 
                     var polled_info = this.calculatePerformanceValue("device_info", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 
@@ -442,7 +442,7 @@ function GisPerformance() {
                         });
 
                         perf_infobox.open(mapInstance, subStationMarker);
-                        if(subStationMarker.map && (subStationMarker.map != null && subStationMarker.map != "")) {
+                        if(subStationMarker && (subStationMarker.isActive != 0)) {
                             labelsArray.push(perf_infobox);
                         }
                     }
@@ -475,23 +475,6 @@ function GisPerformance() {
                         });
                     }
                 }
-
-               //Get Device Markers for the BS.
-
-               var deviceMarkers = sectorMarkersMasterObj[String(gisData.basestation_name)] ? sectorMarkersMasterObj[String(gisData.basestation_name)] : [];
-               //Loop through all the devices
-               for (var k = 0; k < deviceMarkers.length; k++) {
-                   if (deviceMarkers[i] && (deviceMarkers[i].map != null && deviceMarkers[i].map != "")) {
-                       //Get the Device Name from the Performance Data
-                       var deviceObject = this.findObjectbyDeviceName(deviceMarkers[i]["deviceInfo"][0]["value"]);
-                       //If Icon for the device is provided in performance data
-                       if (deviceObject["performance_data"]["performance_icon"]) {
-                           //Update oldIcon for the device to the Given Icon
-                           deviceMarkers[i].oldIcon = (createGoogleMarker(base_url + '/' + deviceObject["performance_data"]["performance_icon"], deviceMarkers[i]));
-                           deviceMarkers[i].poll_info = deviceObject["performance_data"]["device_info"];
-                       }
-                   }
-               }
             }
         } catch (exception) {
             //Pass

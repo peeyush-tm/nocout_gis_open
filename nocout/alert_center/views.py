@@ -34,6 +34,9 @@ from multiprocessing import Process, Queue
 
 logger = logging.getLogger(__name__)
 
+global gis_information
+gis_information = cached_all_gis_inventory(query_all_gis_inventory())
+
 
 def getNetworkAlert(request):
     """
@@ -1525,9 +1528,6 @@ def filter_machines(organization_devices):
                                   device['machine_name'] == machine ]
 
     return machine_dict
-
-global gis_information
-gis_information = cached_all_gis_inventory(query_all_gis_inventory())
 
 def prepare_raw_alert_results(device_list=[], performance_data=None):
     """

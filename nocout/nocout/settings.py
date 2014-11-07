@@ -223,6 +223,9 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
 }
 BROKER_URL = 'mongodb://localhost:27017/nocout_celery_db'
 
+#=time zone for celery periodic tasks
+CELERY_TIMEZONE = 'Asia/Calcutta'
+
 import djcelery
 djcelery.setup_loader()
 
