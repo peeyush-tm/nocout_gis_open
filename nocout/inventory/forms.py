@@ -437,22 +437,46 @@ class BaseStationForm(forms.ModelForm):
 
         if self.request is not None:
             '''
-            Checks if organization field is selected or not. if organization field is selected then
-            organization dependent fields will be of selected organization. else it will be of user's organization.
+            If user submits form and returned with an error, then get selected values from POST data.
+            If user requests to edit an instance, then get instance values.
+            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
             '''
-            organization = self.request.user.userprofile.organization
-            if kwargs['instance'] is not None:
-                instance_organization = kwargs['instance'].organization
-                self.fields['bs_switch'].queryset = self.fields['bs_switch'].queryset.filter(organization=instance_organization)
-                self.fields['backhaul'].queryset = self.fields['backhaul'].queryset.filter(organization=instance_organization)
-            else:
-                self.fields['bs_switch'].queryset = self.fields['bs_switch'].queryset.filter(organization=organization)
-                self.fields['backhaul'].queryset = self.fields['backhaul'].queryset.filter(organization=organization)
+            request = self.request
 
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            if request.method == 'POST':
+                organization = request.POST.get('organization')
+                bs_switch = request.POST.get('bs_switch')
+                backhaul = request.POST.get('backhaul')
+            elif kwargs['instance'] is not None: # request.method == 'GET'
+                instance = kwargs['instance']
+                organization = instance.organization
+                bs_switch = instance.bs_switch.id if instance.bs_switch else None
+                backhaul = instance.backhaul.id if instance.backhaul else None
+            else: # request.method == 'GET' and instance is None
+                organization = request.user.userprofile.organization
+                bs_switch = None
+                backhaul = None
+
+            devices_set = Device.objects.values_list('id', flat=True)
+            backhauls_set = Backhaul.objects.values_list('id', flat=True)
+            if organization:
+                devices_set = devices_set.filter(organization=organization)
+                backhauls_set = backhauls_set.filter(organization=organization)
+
+            device_ids = list(devices_set[:50])
+            backhaul_ids = list(backhauls_set[:50])
+            if bs_switch: # Not None or ''
+                device_ids.append(bs_switch)
+            if backhaul: # Not None or ''
+                backhaul_ids.append(backhaul)
+
+            self.fields['bs_switch'].queryset = self.fields['bs_switch'].queryset.filter(id__in=device_ids)
+            self.fields['backhaul'].queryset = self.fields['backhaul'].queryset.filter(id__in=backhaul_ids)
+
+            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
             else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
