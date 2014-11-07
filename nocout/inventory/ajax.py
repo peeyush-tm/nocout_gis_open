@@ -399,8 +399,8 @@ def bh_configured_on_searching(request, search_string, organisation_id):
     bh_config_on = Device.objects.filter(organization__id=organisation_id).\
                     filter(device_name__icontains=search_string)[:50]
 
-    for bh in bh_config_on:
-        out.append("<option value='#'>%s</option>" % bh)
+    for device in bh_config_on:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_bh_configured_on', 'innerHTML', ''.join(out))
     return dajax.json()
 
