@@ -809,22 +809,46 @@ class SubStationForm(forms.ModelForm):
 
         if self.request is not None:
             '''
-            Checks if organization field is selected or not. if organization field is selected then
-            organization dependent fields will be of selected organization. else it will be of user's organization.
+            If user submits form and returned with an error, then get selected values from POST data.
+            If user requests to edit an instance, then get instance values.
+            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
             '''
-            organization = self.request.user.userprofile.organization
-            if kwargs['instance'] is not None:
-                instance_organization = kwargs['instance'].organization
-                self.fields['device'].queryset = self.fields['device'].queryset.filter(organization=instance_organization)
-                self.fields['antenna'].queryset = self.fields['antenna'].queryset.filter(organization=instance_organization)
-            else:
-                self.fields['device'].queryset = self.fields['device'].queryset.filter(organization=organization)
-                self.fields['antenna'].queryset = self.fields['antenna'].queryset.filter(organization=organization)
+            request = self.request
 
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            if request.method == 'POST':
+                organization = request.POST.get('organization')
+                device = request.POST.get('device')
+                antenna = request.POST.get('antenna')
+            elif kwargs['instance'] is not None: # request.method == 'GET'
+                instance = kwargs['instance']
+                organization = instance.organization
+                device = instance.device.id if instance.device else None
+                antenna = instance.antenna.id if instance.antenna else None
+            else: # request.method == 'GET' and instance is None
+                organization = request.user.userprofile.organization
+                device = None
+                antenna = None
+
+            devices_set = Device.objects.values_list('id', flat=True)
+            antennas_set = Antenna.objects.values_list('id', flat=True)
+            if organization:
+                devices_set = devices_set.filter(organization=organization)
+                antennas_set = antennas_set.filter(organization=organization)
+
+            device_ids = list(devices_set[:50])
+            antenna_ids = list(antennas_set[:50])
+            if device: # Not None or ''
+                device_ids.append(device)
+            if antenna: # Not None or ''
+                antenna_ids.append(antenna)
+
+            self.fields['device'].queryset = self.fields['device'].queryset.filter(id__in=device_ids)
+            self.fields['antenna'].queryset = self.fields['antenna'].queryset.filter(id__in=antenna_ids)
+
+            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
             else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
