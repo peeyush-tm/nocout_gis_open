@@ -671,6 +671,23 @@ def update_customer(request, option):
         pass
 
 @dajaxice_register(method='GET')
+def customer_on_searching(request, search_string, organisation_id):
+    """
+    update the customer on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    customer_list = Customer.objects.filter(organization_id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for customer in customer_list:
+        out.append("<option value={}>{}</option>".format(customer.id, customer) )
+    dajax.assign('#id_customer', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
 def update_sub_station(request, option):
     dajax = Dajax()
     out = list()
