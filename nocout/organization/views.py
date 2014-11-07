@@ -13,7 +13,7 @@ from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from nocout.utils.util import date_handler, DictDiffer
 from user_group.models import UserGroup
 from nocout.utils import logged_in_user_organizations
-from activity_stream.models import UserAction
+from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
@@ -205,7 +205,7 @@ class OrganizationUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect( OrganizationUpdate.success_url )
 
 
-class OrganizationDelete(PermissionsRequiredMixin, DeleteView):
+class OrganizationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to Delete the Organization.
     """
@@ -216,16 +216,3 @@ class OrganizationDelete(PermissionsRequiredMixin, DeleteView):
 
     def get_queryset(self):
         return logged_in_user_organizations(self)
-
-    def delete(self, *args, **kwargs):
-        """
-        Log the user action as the organisation is deleted.
-        """
-        try:
-            organization_obj = self.get_object()
-            action ='A organization is deleted - {}(country- {}, State- {}, City- {})'.format(organization_obj.alias,
-                    organization_obj.country, organization_obj.state, organization_obj.city)
-            UserAction.objects.create(user_id=self.request.user.id, module='Organization', action=action )
-        except:
-            pass
-        return super(OrganizationDelete, self).delete(*args, **kwargs)
