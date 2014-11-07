@@ -103,6 +103,8 @@ def format_value(format_this, type_of=None):
                 return img_url
             else:
                 return "static/img/icons/mobilephonetower10.png"
+        elif type_of == 'mac':
+            return format_this.upper() if format_this else 'NA'
     except:
         pass
     return 'NA'
