@@ -534,6 +534,23 @@ def update_sector_configured_on(request, option):
         pass
 
 @dajaxice_register(method='GET')
+def sector_config_on_searching(request, search_string, organisation_id):
+    """
+    update the sector_config on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    sector_config_list = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
+
+    for device in sector_config_list:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
+    dajax.assign('#id_sector_configured_on', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
 def update_base_station(request, option):
     dajax = Dajax()
     out = list()
