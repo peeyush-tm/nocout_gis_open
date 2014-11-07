@@ -2540,10 +2540,18 @@ function devicePlottingClass_gmap() {
     this.initLivePolling = function() {
 
 		/*Reset marker icon*/
-		for(var i=0;i<polled_devices_names.length;i++) {
+		for(var i=0;i<polygonSelectedDevices.length;i++) {
 
-			var ss_marker = allMarkersObject_gmap['sub_station']['ss_'+polled_devices_names[i]],
-				sector_marker = allMarkersObject_gmap['sector_device']['sector_'+polled_devices_names[i]];
+            var ss_marker = allMarkersObject_gmap['sub_station']['ss_'+polygonSelectedDevices[i].name],
+            	sector_ip = "";
+            
+            if(polygonSelectedDevices[i].pointType && ($.trim(polygonSelectedDevices[i].pointType) == 'sub_station')) {
+            	sector_ip = polygonSelectedDevices[i].sector_ip;
+            } else {
+            	sector_ip = polygonSelectedDevices[i].sectorName;
+            }
+
+            var sector_marker = allMarkersObject_gmap['sector_device']['sector_'+sector_ip];
 
 			if(ss_marker) {
 				ss_marker.setOptions({
@@ -3222,10 +3230,18 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Reset marker icon*/
-		for(var i=0;i<polled_devices_names.length;i++) {
+		for(var i=0;i<polygonSelectedDevices.length;i++) {
 
-			var ss_marker = allMarkersObject_gmap['sub_station']['ss_'+polled_devices_names[i]],
-				sector_marker = allMarkersObject_gmap['sector_device']['sector_'+polled_devices_names[i]];
+            var ss_marker = allMarkersObject_gmap['sub_station']['ss_'+polygonSelectedDevices[i].name],
+            	sector_ip = "";
+            
+            if(polygonSelectedDevices[i].pointType && ($.trim(polygonSelectedDevices[i].pointType) == 'sub_station')) {
+            	sector_ip = polygonSelectedDevices[i].sector_ip;
+            } else {
+            	sector_ip = polygonSelectedDevices[i].sectorName;
+            }
+
+            var sector_marker = allMarkersObject_gmap['sector_device']['sector_'+sector_ip];
 
 			if(ss_marker) {
 				ss_marker.setOptions({
