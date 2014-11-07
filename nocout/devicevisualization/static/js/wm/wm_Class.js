@@ -131,37 +131,63 @@ function WhiteMapClass() {
 		function spiderifyMarker(feature, otherfeatures) {
 			global_this.unSpiderifyBsMarker();
 			if(feature && otherfeatures && otherfeatures.length) {
-				var totalLen = otherfeatures.length;
+				var totalLen = 1+ otherfeatures.length;
 				var totalAngle = 360;
 				var angleToIncrase = totalAngle/totalLen;
 				var currentAngle = 0;
 				var zoomLevel = ccpl_map.getZoom();	
 				for(var i=0; i< otherfeatures.length; i++) {		
 					otherfeatures[i].style.externalGraphic = otherfeatures[i].attributes.originalIcon;
-					var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
-					var diffLon = ((xy.lon)*1000000000000) - ((otherfeatures[i].attributes.ptLon)*1000000000000);
-					var diffLat = ((xy.lat)*1000000000000) - ((otherfeatures[i].attributes.ptLat)*1000000000000);
-					var deviceLng = (((diffLon * zoomLevel)/9)/1000000000000);
-					var deviceLat = (((diffLat * zoomLevel)/9)/1000000000000);
-					console.log(deviceLng, deviceLat);
-					var newLatLong = new OpenLayers.LonLat(deviceLng, deviceLat);
-					// if(zoomLevel> 8) {
-					// 	if(zoomLevel> 11) {
-					// 		var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
-					// 		var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+					
+// otherfeatures[i].style.externalGraphic = otherfeatures[i].attributes.originalIcon;
+// 					var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+// 					var diffLon = ((xy.lon)*1000000000000) - ((otherfeatures[i].attributes.ptLon)*1000000000000);
+// 					var diffLat = ((xy.lat)*1000000000000) - ((otherfeatures[i].attributes.ptLat)*1000000000000);
+// 					var deviceLng = (((diffLon * zoomLevel)/9)/1000000000000);
+// 					var deviceLat = (((diffLat * zoomLevel)/9)/1000000000000);
+// 					console.log(deviceLng, deviceLat);
+// 					var newLatLong = new OpenLayers.LonLat(deviceLng, deviceLat);
+// 					// if(zoomLevel> 8) {
+// 					// 	if(zoomLevel> 11) {
+// 					// 		var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+// 					// 		var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
 							
-					// 	} else {
-					// 		var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
-					// 		var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
-					// 	}
+// 					// 	} else {
+// 					// 		var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+// 					// 		var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+// 					// 	}
 						
-					// } else {
-					// 	var xy = getAtXYDirection(currentAngle, 3, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
-					// 	var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
-					// }
-					var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
-					var end_point = new OpenLayers.Geometry.Point(deviceLng, deviceLat);
+// 					// } else {
+// 					// 	var xy = getAtXYDirection(currentAngle, 3, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+// 					// 	var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+// 					// }
+// 					var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
+// 					var end_point = new OpenLayers.Geometry.Point(deviceLng, deviceLat);
 
+// 					global_this.markerDevicesLayer.addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
+// 					global_this.markerDevicesLayer.addFeatures(otherfeatures[i]);
+// 					otherfeatures[i].move(newLatLong);
+// 					currentAngle+= angleToIncrase;
+
+
+					if(zoomLevel> 8) {
+						if(zoomLevel> 11) {
+							var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+							var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+							
+						} else {
+							var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+							var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+						}
+						
+					} else {
+						var xy = getAtXYDirection(currentAngle, 3, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
+						var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+					}
+					var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
+					var end_point = new OpenLayers.Geometry.Point(xy.lon,xy.lat);
+
+					// var vector = new OpenLayers.Layer.Vector();
 					global_this.markerDevicesLayer.addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
 					global_this.markerDevicesLayer.addFeatures(otherfeatures[i]);
 					otherfeatures[i].move(newLatLong);
@@ -1200,6 +1226,8 @@ console.log(ss_marker);
 		 */
 		
 		this.applyAdvanceFilter = function(appliedFilterData) {
+
+			this.unSpiderifyBsMarker();
 
 			data_for_filter_wmap= [];
 
