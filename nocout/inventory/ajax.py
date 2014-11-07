@@ -639,6 +639,23 @@ def update_sector(request, option):
         pass
 
 @dajaxice_register(method='GET')
+def sector_on_searching(request, search_string, organisation_id):
+    """
+    update the sector on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
+
+    sector_list = Sector.objects.filter(organization_id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for sector in sector_list:
+        out.append("<option value={}>{}</option>".format(sector.id, sector) )
+    dajax.assign('#id_sector', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+@dajaxice_register(method='GET')
 def update_customer(request, option):
     dajax = Dajax()
     out = list()
