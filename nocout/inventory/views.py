@@ -46,8 +46,8 @@ from nocout.utils import logged_in_user_organizations
 from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
     bulk_upload_wimax_ss_inventory
-from activity_stream.models import UserAction
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.user_action import UserLogDeleteMixin
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +217,7 @@ class InventoryUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(InventoryCreate.success_url)
 
 
-class InventoryDelete(PermissionsRequiredMixin, DeleteView):
+class InventoryDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Inventory
 
@@ -226,19 +226,6 @@ class InventoryDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'inventory/inventory_delete.html'
     success_url = reverse_lazy('InventoryList')
     required_permissions = ('inventory.delete_inventory',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity.
-        """
-
-        try:
-            obj = self.get_object()
-            action='A inventory is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Inventory', action=action)
-        except:
-            pass
-        return super(InventoryDelete, self).delete(request, *args, **kwargs)
 
 
 def inventory_details_wrt_organization(request):
@@ -478,7 +465,7 @@ class AntennaUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(AntennaUpdate.success_url)
 
 
-class AntennaDelete(PermissionsRequiredMixin, DeleteView):
+class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Antenna.
     """
@@ -486,18 +473,6 @@ class AntennaDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'antenna/antenna_delete.html'
     success_url = reverse_lazy('antennas_list')
     required_permissions = ('inventory.delete_antenna',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A antenna is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Antenna', action=action)
-        except:
-            pass
-        return super(AntennaDelete, self).delete(request, *args, **kwargs)
 
 
 #****************************************** Base Station ********************************************
@@ -725,7 +700,7 @@ class BaseStationUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(BaseStationUpdate.success_url)
 
 
-class BaseStationDelete(PermissionsRequiredMixin, DeleteView):
+class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Base Station.
     """
@@ -733,20 +708,6 @@ class BaseStationDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'base_station/base_station_delete.html'
     success_url = reverse_lazy('base_stations_list')
     required_permissions = ('inventory.delete_basestation',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A base station is deleted - {}(latitude: {}, longitude: {})'.format(obj.alias,
-                                                obj.latitude, obj.longitude)
-            UserAction.objects.create(user_id=self.request.user.id, module='BaseStation', action=action)
-        except:
-            pass
-        return super(BaseStationDelete, self).delete(request, *args, **kwargs)
-
 
 
 #**************************************** Backhaul *********************************************
@@ -988,7 +949,7 @@ class BackhaulUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(BackhaulUpdate.success_url)
 
 
-class BackhaulDelete(PermissionsRequiredMixin, DeleteView):
+class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Backhaul.
     """
@@ -996,19 +957,6 @@ class BackhaulDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'backhaul/backhaul_delete.html'
     success_url = reverse_lazy('backhauls_list')
     required_permissions = ('inventory.delete_backhaul',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A backhaul is deleted - {}(BH port name- {}, BH port- {}))'.format(obj.alias,
-                    obj.bh_port_name, obj.bh_port)
-            UserAction.objects.create(user_id=self.request.user.id, module='Backhaul', action=action)
-        except:
-            pass
-        return super(BackhaulDelete, self).delete(request, *args, **kwargs)
 
 
 #**************************************** Sector *********************************************
@@ -1244,7 +1192,7 @@ class SectorUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(SectorUpdate.success_url)
 
 
-class SectorDelete(PermissionsRequiredMixin, DeleteView):
+class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Sector.
     """
@@ -1252,19 +1200,6 @@ class SectorDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'sector/sector_delete.html'
     success_url = reverse_lazy('sectors_list')
     required_permissions = ('inventory.delete_sector',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            technology = DeviceTechnology.objects.get(name=obj.bs_technology).alias
-            action='A sector is deleted - {}(Technology- {})'.format(obj.alias, technology)
-            UserAction.objects.create(user_id=self.request.user.id, module='Sector', action=action)
-        except:
-            pass
-        return super(SectorDelete, self).delete(request, *args, **kwargs)
 
 
 #**************************************** Customer *********************************************
@@ -1478,7 +1413,7 @@ class CustomerUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(CustomerUpdate.success_url)
 
 
-class CustomerDelete(PermissionsRequiredMixin, DeleteView):
+class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Customer.
     """
@@ -1486,18 +1421,6 @@ class CustomerDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'customer/customer_delete.html'
     success_url = reverse_lazy('customers_list')
     required_permissions = ('inventory.delete_customer',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A customer is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Customer', action=action)
-        except:
-            pass
-        return super(CustomerDelete, self).delete(request, *args, **kwargs)
 
 
 #**************************************** Sub Station *********************************************
@@ -1736,7 +1659,7 @@ class SubStationUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(SubStationUpdate.success_url)
 
 
-class SubStationDelete(PermissionsRequiredMixin, DeleteView):
+class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Sub Station.
     """
@@ -1744,20 +1667,6 @@ class SubStationDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'sub_station/sub_station_delete.html'
     success_url = reverse_lazy('sub_stations_list')
     required_permissions = ('inventory.delete_substation',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A sub station is deleted - {}(Latitude- {}, Longitude- {}, Mac Address- {})'.format(obj.alias,
-                            obj.latitude, obj.longitude, obj.mac_address)
-            UserAction.objects.create(user_id=self.request.user.id, module='Sub Station', action=action)
-        except:
-            pass
-        return super(SubStationDelete, self).delete(request, *args, **kwargs)
-
 
 
 #**************************************** Circuit *********************************************
@@ -2092,7 +2001,7 @@ class CircuitUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(CircuitUpdate.success_url)
 
 
-class CircuitDelete(PermissionsRequiredMixin, DeleteView):
+class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Circuit.
     """
@@ -2100,18 +2009,6 @@ class CircuitDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'circuit/circuit_delete.html'
     success_url = reverse_lazy('circuits_list')
     required_permissions = ('inventory.delete_circuit',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A circuit is deleted - {}(Circuit ID- {})'.format(obj.alias, obj.circuit_id)
-            UserAction.objects.create(user_id=self.request.user.id, module='Circuit', action=action)
-        except:
-            pass
-        return super(CircuitDelete, self).delete(request, *args, **kwargs)
 
 
 #********************************* Circuit L2 Reports*******************************************
@@ -2510,7 +2407,7 @@ class IconSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(IconSettingsUpdate.success_url)
 
 
-class IconSettingsDelete(PermissionsRequiredMixin, DeleteView):
+class IconSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the machine
     """
@@ -2518,18 +2415,6 @@ class IconSettingsDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'icon_settings/icon_settings_delete.html'
     success_url = reverse_lazy('icon_settings_list')
     required_permissions = ('inventory.delete_iconsettings',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A icon setting is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Icon Setting', action=action)
-        except:
-            pass
-        return super(IconSettingsDelete, self).delete(request, *args, **kwargs)
 
 
 #**************************************** LivePollingSettings *********************************************
@@ -2704,7 +2589,7 @@ class LivePollingSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(LivePollingSettingsUpdate.success_url)
 
 
-class LivePollingSettingsDelete(PermissionsRequiredMixin, DeleteView):
+class LivePollingSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the LivePollingSettings
     """
@@ -2712,18 +2597,6 @@ class LivePollingSettingsDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'live_polling_settings/live_polling_settings_delete.html'
     success_url = reverse_lazy('live_polling_settings_list')
     required_permissions = ('inventory.delete_livepollingsettings',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A live polling setting is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Live Polling Setting', action=action)
-        except:
-            pass
-        return super(LivePollingSettingsDelete, self).delete(request, *args, **kwargs)
 
 
 #**************************************** ThresholdConfiguration *********************************************
@@ -2898,7 +2771,7 @@ class ThresholdConfigurationUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(ThresholdConfigurationUpdate.success_url)
 
 
-class ThresholdConfigurationDelete(PermissionsRequiredMixin, DeleteView):
+class ThresholdConfigurationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Threshold Configuration.
     """
@@ -2906,19 +2779,6 @@ class ThresholdConfigurationDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'threshold_configuration/threshold_configuration_delete.html'
     success_url = reverse_lazy('threshold_configuration_list')
     required_permissions = ('inventory.delete_threshold_configuration',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A threshold configuration is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Threshold Configuration', action=action)
-        except:
-            pass
-        return super(ThresholdConfigurationDelete, self).delete(request, *args, **kwargs)
-
 
 
 #**************************************** ThematicSettings *********************************************
@@ -3148,7 +3008,7 @@ class ThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
 
 
-class ThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
+class ThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Thematic Settings.
     """
@@ -3156,19 +3016,6 @@ class ThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'thematic_settings/thematic_settings_delete.html'
     success_url = reverse_lazy('thematic_settings_list')
     required_permissions = ('inventory.delete_thematicsettings',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A thematic settings is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Thematic Settings', action=action)
-        except:
-            pass
-        return super(ThematicSettingsDelete, self).delete(request, *args, **kwargs)
-
 
 
 class Get_Threshold_Ranges_And_Icon_For_Thematic_Settings(View):
@@ -4072,7 +3919,7 @@ class PingThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(PingThematicSettingsUpdate.success_url)
 
 
-class PingThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
+class PingThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Thematic Settings.
     """
@@ -4080,19 +3927,6 @@ class PingThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'ping_thematic_settings/ping_thematic_settings_delete.html'
     success_url = reverse_lazy('ping_thematic_settings_list')
     required_permissions = ('inventory.delete_pingthematicsettings',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action = 'A thematic settings is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Thematic Settings', action=action)
-        except Exception as e:
-            logger.info("User Ping Thematic Settings delete error. Exception: ", e.message)
-
-        return super(PingThematicSettingsDelete, self).delete(request, *args, **kwargs)
 
 
 class Ping_Update_User_Thematic_Setting(View):
