@@ -645,18 +645,13 @@ def update_customer(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        customers = Customer.objects.filter(organization=int(option))[:50]
+        for customer in customers:
+            out.append("<option value={}>{}</option>".format(customer.id, customer) )
+        dajax.assign('#id_customer', 'innerHTML', ''.join(out))
         return dajax.json()
-
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        customers = Customer.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        customers = Customer.objects.filter(organization=int(option))
-
-    for customer in customers:
-        out.append("<option value='#'>%s</option>" % customer)
-    dajax.assign('#id_customer', 'innerHTML', ''.join(out))
-    return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
 @dajaxice_register(method='GET')
 def update_sub_station(request, option):
