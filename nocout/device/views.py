@@ -2,11 +2,9 @@
 
 import json
 from operator import itemgetter
-from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
@@ -28,6 +26,7 @@ from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from nocout.utils import logged_in_user_organizations
 from activity_stream.models import UserAction
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -39,21 +38,13 @@ logger = logging.getLogger(__name__)
 # ***************************************** Device Views ********************************************
 
 
-class DeviceList(ListView):
+class DeviceList(PermissionsRequiredMixin, ListView):
     """
     Render list of devices
     """
     model = Device
     template_name = 'device/devices_list.html'
-
-
-    @method_decorator(permission_required('device.view_device', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceList, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('device.view_device',)
 
     def get_context_data(self, **kwargs):
         """
@@ -124,11 +115,12 @@ def create_device_tree(request):
     return render_to_response('device/devices_tree_view.html', templateData, context_instance=RequestContext(request))
 
 
-class OperationalDeviceListingTable(BaseDatatableView):
+class OperationalDeviceListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing operational devices only
     """
     model = Device
+    required_permissions = ('device.view_device',)
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
@@ -1438,11 +1430,12 @@ class AllDeviceListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceDetail(DetailView):
+class DeviceDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for device
     """
     model = Device
+    required_permissions = ('device.view_device',)
     template_name = 'device/device_detail.html'
 
     def get_context_data(self, **kwargs):
@@ -1470,7 +1463,7 @@ class DeviceDetail(DetailView):
         return context
 
 
-class DeviceCreate(CreateView):
+class DeviceCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device create view
     """
@@ -1478,13 +1471,7 @@ class DeviceCreate(CreateView):
     model = Device
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
-
-    @method_decorator(permission_required('device.add_device', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_device',)
 
     def form_valid(self, form):
         """
@@ -1576,7 +1563,7 @@ class DeviceCreate(CreateView):
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 
-class DeviceUpdate(UpdateView):
+class DeviceUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device update view
     """
@@ -1584,13 +1571,7 @@ class DeviceUpdate(UpdateView):
     model = Device
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
-
-    @method_decorator(permission_required('device.change_device', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_device',)
 
     def get_queryset(self):
         return Device.objects.filter(organization__in=logged_in_user_organizations(self))
@@ -1784,21 +1765,14 @@ class DeviceUpdate(UpdateView):
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 
-class DeviceDelete(DeleteView):
+class DeviceDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device delete view
     """
     model = Device
-
+    required_permissions = ('device.delete_device',)
     template_name = 'device/device_delete.html'
     success_url = reverse_lazy('device_list')
-
-    @method_decorator(permission_required('device.delete_device', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -1816,19 +1790,13 @@ class DeviceDelete(DeleteView):
 # ******************************** Device Type Form Fields Views ************************************
 
 
-class DeviceTypeFieldsList(ListView):
+class DeviceTypeFieldsList(PermissionsRequiredMixin, ListView):
     """
     Render list of device type extra fields
     """
     model = DeviceTypeFields
     template_name = 'device_extra_fields/device_extra_fields_list.html'
-
-    @method_decorator(permission_required('device.view_devicetypefields', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeFieldsList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicetypefields',)
 
     def get_context_data(self, **kwargs):
         """
@@ -1846,11 +1814,12 @@ class DeviceTypeFieldsList(ListView):
         return context
 
 
-class DeviceTypeFieldsListingTable(BaseDatatableView):
+class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device type fields
     """
     model = DeviceTypeFields
+    required_permissions = ('device.view_devicetypefields',)
     columns = ['field_name', 'field_display_name', 'device_type__name']
     order_columns = ['field_name', 'field_display_name', 'device_type__name']
 
@@ -1966,15 +1935,16 @@ class DeviceTypeFieldsListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceTypeFieldsDetail(DetailView):
+class DeviceTypeFieldsDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for device extra field
     """
     model = DeviceTypeFields
+    required_permissions = ('device.view_devicetypefields',)
     template_name = 'device_extra_fields/device_extra_field_detail.html'
 
 
-class DeviceTypeFieldsCreate(CreateView):
+class DeviceTypeFieldsCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device type field create view
     """
@@ -1982,13 +1952,7 @@ class DeviceTypeFieldsCreate(CreateView):
     model = DeviceTypeFields
     form_class = DeviceTypeFieldsForm
     success_url = reverse_lazy('device_extra_field_list')
-
-    @method_decorator(permission_required('device.add_devicetypefieldsvalue', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeFieldsCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicetypefieldsvalue',)
 
     def form_valid(self, form):
         """
@@ -1998,7 +1962,7 @@ class DeviceTypeFieldsCreate(CreateView):
         return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 
-class DeviceTypeFieldsUpdate(UpdateView):
+class DeviceTypeFieldsUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device type fields update view
     """
@@ -2006,13 +1970,7 @@ class DeviceTypeFieldsUpdate(UpdateView):
     model = DeviceTypeFields
     form_class = DeviceTypeFieldsUpdateForm
     success_url = reverse_lazy('device_extra_field_list')
-
-    @method_decorator(permission_required('device.change_devicetypefieldsvalue', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeFieldsUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicetypefieldsvalue',)
 
     def form_valid(self, form):
         """
@@ -2047,20 +2005,14 @@ class DeviceTypeFieldsUpdate(UpdateView):
         return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 
-class DeviceTypeFieldsDelete(DeleteView):
+class DeviceTypeFieldsDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device type field delete view
     """
     model = DeviceTypeFields
     template_name = 'device_extra_fields/device_extra_field_delete.html'
     success_url = reverse_lazy('device_extra_field_list')
-
-    @method_decorator(permission_required('device.delete_devicetypefieldsvalue', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeFieldsDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicetypefieldsvalue',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -2077,19 +2029,13 @@ class DeviceTypeFieldsDelete(DeleteView):
 
 # **************************************** Device Technology ****************************************
 
-class DeviceTechnologyList(ListView):
+class DeviceTechnologyList(PermissionsRequiredMixin, ListView):
     """
     Render list of technologies
     """
     model = DeviceTechnology
     template_name = 'device_technology/device_technology_list.html'
-
-    @method_decorator(permission_required('device.view_devicetechnology', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTechnologyList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicetechnology',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2109,11 +2055,12 @@ class DeviceTechnologyList(ListView):
         return context
 
 
-class DeviceTechnologyListingTable(BaseDatatableView):
+class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device technologies
     """
     model = DeviceTechnology
+    required_permissions = ('device.view_devicetechnology',)
     columns = ['name', 'alias', 'device_vendor', 'device_vendor__model__name', 'device_vendor__model_type__name']
     order_columns = ['name', 'alias', 'device_vendor', 'device_vendor__model__name', 'device_vendor__model_type__name']
 
@@ -2247,15 +2194,16 @@ class DeviceTechnologyListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceTechnologyDetail(DetailView):
+class DeviceTechnologyDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for technology
     """
     model = DeviceTechnology
+    required_permissions = ('device.view_devicetechnology',)
     template_name = 'device_technology/device_technology_detail.html'
 
 
-class DeviceTechnologyCreate(CreateView):
+class DeviceTechnologyCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device technology create view
     """
@@ -2263,13 +2211,7 @@ class DeviceTechnologyCreate(CreateView):
     model = DeviceTechnology
     form_class = DeviceTechnologyForm
     success_url = reverse_lazy('device_technology_list')
-
-    @method_decorator(permission_required('device.add_devicetechnology', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTechnologyCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicetechnology',)
 
     def form_valid(self, form):
         """
@@ -2289,7 +2231,7 @@ class DeviceTechnologyCreate(CreateView):
         return HttpResponseRedirect(DeviceTechnologyCreate.success_url)
 
 
-class DeviceTechnologyUpdate(UpdateView):
+class DeviceTechnologyUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device technology update view
     """
@@ -2297,13 +2239,7 @@ class DeviceTechnologyUpdate(UpdateView):
     model = DeviceTechnology
     form_class = DeviceTechnologyForm
     success_url = reverse_lazy('device_technology_list')
-
-    @method_decorator(permission_required('device.change_devicetechnology', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTechnologyUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicetechnology',)
 
     def form_valid(self, form):
         """
@@ -2349,20 +2285,14 @@ class DeviceTechnologyUpdate(UpdateView):
         return HttpResponseRedirect(DeviceTechnologyUpdate.success_url)
 
 
-class DeviceTechnologyDelete(DeleteView):
+class DeviceTechnologyDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device technology delete view
     """
     model = DeviceTechnology
     template_name = 'device_technology/device_technology_delete.html'
     success_url = reverse_lazy('device_technology_list')
-
-    @method_decorator(permission_required('device.delete_devicetechnology', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTechnologyDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicetechnology',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -2378,19 +2308,13 @@ class DeviceTechnologyDelete(DeleteView):
 
 
 # ************************************* Device Vendor ***********************************************
-class DeviceVendorList(ListView):
+class DeviceVendorList(PermissionsRequiredMixin, ListView):
     """
     Render list of vendors
     """
     model = DeviceVendor
     template_name = 'device_vendor/device_vendor_list.html'
-
-    @method_decorator(permission_required('device.view_devicevendor', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceVendorList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicevendor',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2409,11 +2333,12 @@ class DeviceVendorList(ListView):
         return context
 
 
-class DeviceVendorListingTable(BaseDatatableView):
+class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device vendors
     """
     model = DeviceVendor
+    required_permissions = ('device.view_devicevendor',)
     columns = ['name', 'alias', 'device_models', 'device_types']
     order_columns = ['name', 'alias', 'device_models', 'device_types']
 
@@ -2545,15 +2470,16 @@ class DeviceVendorListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceVendorDetail(DetailView):
+class DeviceVendorDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for vendor
     """
     model = DeviceVendor
+    required_permissions = ('device.view_devicevendor',)
     template_name = 'device_vendor/device_vendor_detail.html'
 
 
-class DeviceVendorCreate(CreateView):
+class DeviceVendorCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device vendor create view
     """
@@ -2561,13 +2487,7 @@ class DeviceVendorCreate(CreateView):
     model = DeviceVendor
     form_class = DeviceVendorForm
     success_url = reverse_lazy('device_vendor_list')
-
-    @method_decorator(permission_required('device.add_devicevendor', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceVendorCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicevendor',)
 
     def form_valid(self, form):
         """
@@ -2587,7 +2507,7 @@ class DeviceVendorCreate(CreateView):
         return HttpResponseRedirect(DeviceVendorCreate.success_url)
 
 
-class DeviceVendorUpdate(UpdateView):
+class DeviceVendorUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device vendor update view
     """
@@ -2595,13 +2515,7 @@ class DeviceVendorUpdate(UpdateView):
     model = DeviceVendor
     form_class = DeviceVendorForm
     success_url = reverse_lazy('device_vendor_list')
-
-    @method_decorator(permission_required('device.change_devicevendor', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceVendorUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicevendor',)
 
     def form_valid(self, form):
         """
@@ -2649,20 +2563,14 @@ class DeviceVendorUpdate(UpdateView):
         return HttpResponseRedirect(DeviceVendorUpdate.success_url)
 
 
-class DeviceVendorDelete(DeleteView):
+class DeviceVendorDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device vendor delete view
     """
     model = DeviceVendor
     template_name = 'device_vendor/device_vendor_delete.html'
     success_url = reverse_lazy('device_vendor_list')
-
-    @method_decorator(permission_required('device.delete_devicevendor', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceVendorDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicevendor',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -2680,19 +2588,13 @@ class DeviceVendorDelete(DeleteView):
 # ****************************************** Device Model *******************************************
 
 
-class DeviceModelList(ListView):
+class DeviceModelList(PermissionsRequiredMixin, ListView):
     """
     Render list of models
     """
     model = DeviceModel
     template_name = 'device_model/device_model_list.html'
-
-    @method_decorator(permission_required('device.view_devicemodel', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceModelList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicemodel',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2710,11 +2612,12 @@ class DeviceModelList(ListView):
         return context
 
 
-class DeviceModelListingTable(BaseDatatableView):
+class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device models
     """
     model = DeviceModel
+    required_permissions = ('device.view_devicemodel',)
     columns = ['name', 'alias', 'device_types']
     order_columns = ['name', 'alias', 'device_types']
 
@@ -2843,15 +2746,16 @@ class DeviceModelListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceModelDetail(DetailView):
+class DeviceModelDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for model
     """
     model = DeviceModel
+    required_permissions = ('device.view_devicemodel',)
     template_name = 'device_model/device_model_detail.html'
 
 
-class DeviceModelCreate(CreateView):
+class DeviceModelCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device model create view
     """
@@ -2859,13 +2763,7 @@ class DeviceModelCreate(CreateView):
     model = DeviceModel
     form_class = DeviceModelForm
     success_url = reverse_lazy('device_model_list')
-
-    @method_decorator(permission_required('device.add_devicemodel', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceModelCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicemodel',)
 
     def form_valid(self, form):
         """
@@ -2886,7 +2784,7 @@ class DeviceModelCreate(CreateView):
         return HttpResponseRedirect(DeviceModelCreate.success_url)
 
 
-class DeviceModelUpdate(UpdateView):
+class DeviceModelUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device model update view
     """
@@ -2894,13 +2792,7 @@ class DeviceModelUpdate(UpdateView):
     model = DeviceModel
     form_class = DeviceModelForm
     success_url = reverse_lazy('device_model_list')
-
-    @method_decorator(permission_required('device.change_devicemodel', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceModelUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicemodel',)
 
     def form_valid(self, form):
         """
@@ -2948,20 +2840,14 @@ class DeviceModelUpdate(UpdateView):
         return HttpResponseRedirect(DeviceModelUpdate.success_url)
 
 
-class DeviceModelDelete(DeleteView):
+class DeviceModelDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device model delete view
     """
     model = DeviceModel
     template_name = 'device_model/device_model_delete.html'
     success_url = reverse_lazy('device_model_list')
-
-    @method_decorator(permission_required('device.delete_devicemodel', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceModelDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicemodel',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -2979,19 +2865,13 @@ class DeviceModelDelete(DeleteView):
 # ****************************************** Device Type *******************************************
 
 
-class DeviceTypeList(ListView):
+class DeviceTypeList(PermissionsRequiredMixin, ListView):
     """
     Render list of device types
     """
     model = DeviceType
     template_name = 'device_type/device_type_list.html'
-
-    @method_decorator(permission_required('device.view_devicetype', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicetype',)
 
     def get_context_data(self, **kwargs):
         """
@@ -3019,11 +2899,12 @@ class DeviceTypeList(ListView):
         return context
 
 
-class DeviceTypeListingTable(BaseDatatableView):
+class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device types
     """
     model = DeviceType
+    required_permissions = ('device.view_devicetype',)
     columns = ['name', 'alias', 'agent_tag', 'packets', 'timeout', 'normal_check_interval',
                'rta_warning', 'rta_critical', 'pl_warning', 'pl_critical', 'device_icon', 'device_gmap_icon']
     order_columns = ['name', 'alias', 'agent_tag', 'packets', 'timeout', 'normal_check_interval',
@@ -3158,15 +3039,16 @@ class DeviceTypeListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceTypeDetail(DetailView):
+class DeviceTypeDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for device type
     """
     model = DeviceType
+    required_permissions = ('device.view_devicetype',)
     template_name = 'device_type/device_type_detail.html'
 
 
-class DeviceTypeCreate(CreateView):
+class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device type create view
     """
@@ -3174,13 +3056,7 @@ class DeviceTypeCreate(CreateView):
     model = DeviceType
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
-
-    @method_decorator(permission_required('device.add_devicetype', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicetype',)
 
     def form_valid(self, form):
         """
@@ -3190,7 +3066,7 @@ class DeviceTypeCreate(CreateView):
         return HttpResponseRedirect(DeviceTypeCreate.success_url)
 
 
-class DeviceTypeUpdate(UpdateView):
+class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device type update view
     """
@@ -3198,13 +3074,7 @@ class DeviceTypeUpdate(UpdateView):
     model = DeviceType
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
-
-    @method_decorator(permission_required('device.change_devicetype', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicetype',)
 
     def form_valid(self, form):
         """
@@ -3230,20 +3100,14 @@ class DeviceTypeUpdate(UpdateView):
         return HttpResponseRedirect(DeviceTypeUpdate.success_url)
 
 
-class DeviceTypeDelete(DeleteView):
+class DeviceTypeDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device type delete view
     """
     model = DeviceType
     template_name = 'device_type/device_type_delete.html'
     success_url = reverse_lazy('device_type_list')
-
-    @method_decorator(permission_required('device.delete_devicetype', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceTypeDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicetype',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -3259,19 +3123,13 @@ class DeviceTypeDelete(DeleteView):
 
 
 # ****************************************** Device Type *******************************************
-class DevicePortList(ListView):
+class DevicePortList(PermissionsRequiredMixin, ListView):
     """
     Render list of ports
     """
     model = DevicePort
     template_name = 'device_port/device_ports_list.html'
-
-    @method_decorator(permission_required('device.view_deviceport', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DevicePortList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_deviceport',)
 
     def get_context_data(self, **kwargs):
         """
@@ -3289,11 +3147,12 @@ class DevicePortList(ListView):
         return context
 
 
-class DevicePortListingTable(BaseDatatableView):
+class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device ports
     """
     model = DevicePort
+    required_permissions = ('device.view_deviceport',)
     columns = ['name', 'alias', 'value']
     order_columns = ['name', 'alias', 'value']
 
@@ -3367,15 +3226,16 @@ class DevicePortListingTable(BaseDatatableView):
         return ret
 
 
-class DevicePortDetail(DetailView):
+class DevicePortDetail(PermissionsRequiredMixin, DetailView):
     """
     Render detail view for device port
     """
     model = DevicePort
+    required_permissions = ('device.view_deviceport',)
     template_name = 'device_port/device_port_detail.html'
 
 
-class DevicePortCreate(CreateView):
+class DevicePortCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device port create view
     """
@@ -3383,13 +3243,7 @@ class DevicePortCreate(CreateView):
     model = DevicePort
     form_class = DevicePortForm
     success_url = reverse_lazy('device_ports_list')
-
-    @method_decorator(permission_required('device.add_deviceport', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DevicePortCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_deviceport',)
 
     def form_valid(self, form):
         """
@@ -3399,7 +3253,7 @@ class DevicePortCreate(CreateView):
         return HttpResponseRedirect(DevicePortCreate.success_url)
 
 
-class DevicePortUpdate(UpdateView):
+class DevicePortUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device port update view
     """
@@ -3407,13 +3261,7 @@ class DevicePortUpdate(UpdateView):
     model = DevicePort
     form_class = DevicePortForm
     success_url = reverse_lazy('device_ports_list')
-
-    @method_decorator(permission_required('device.change_deviceport', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DevicePortUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_deviceport',)
 
     def form_valid(self, form):
         """
@@ -3438,20 +3286,14 @@ class DevicePortUpdate(UpdateView):
         return HttpResponseRedirect(DevicePortUpdate.success_url)
 
 
-class DevicePortDelete(DeleteView):
+class DevicePortDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device port delete view
     """
     model = DevicePort
     template_name = 'device_port/device_port_delete.html'
     success_url = reverse_lazy('device_ports_list')
-
-    @method_decorator(permission_required('device.delete_deviceport', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DevicePortDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_deviceport',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -3466,19 +3308,13 @@ class DevicePortDelete(DeleteView):
         return super(DevicePortDelete, self).delete(request, *args, **kwargs)
 
 
-class DeviceFrequencyListing(ListView):
+class DeviceFrequencyListing(PermissionsRequiredMixin, ListView):
     """
     Render list of device frequencies list
     """
     model = DeviceFrequency
     template_name = 'device_frequency/device_frequency_list.html'
-
-    @method_decorator(permission_required('device.view_devicefrequency', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceFrequencyListing, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.view_devicefrequency',)
 
     def get_context_data(self, **kwargs):
         """
@@ -3497,11 +3333,12 @@ class DeviceFrequencyListing(ListView):
         return context
 
 
-class DeviceFrequencyListingTable(BaseDatatableView):
+class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of device frequencies
     """
     model = DeviceFrequency
+    required_permissions = ('device.view_devicefrequency',)
     columns = ['value', 'color_hex_value', 'frequency_radius']
     order_columns = ['value', 'color_hex_value', 'frequency_radius']
 
@@ -3590,7 +3427,7 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         return ret
 
 
-class DeviceFrequencyCreate(CreateView):
+class DeviceFrequencyCreate(PermissionsRequiredMixin, CreateView):
     """
     Render device frequency create view
     """
@@ -3598,13 +3435,7 @@ class DeviceFrequencyCreate(CreateView):
     model = DeviceFrequency
     form_class = DeviceFrequencyForm
     success_url = reverse_lazy('device_frequency_list')
-
-    @method_decorator(permission_required('device.add_devicefrequency', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceFrequencyCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.add_devicefrequency',)
 
     def form_valid(self, form):
         """
@@ -3614,7 +3445,7 @@ class DeviceFrequencyCreate(CreateView):
         return HttpResponseRedirect(DeviceFrequencyCreate.success_url)
 
 
-class DeviceFrequencyUpdate(UpdateView):
+class DeviceFrequencyUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Render device frequency update view
     """
@@ -3622,13 +3453,7 @@ class DeviceFrequencyUpdate(UpdateView):
     model = DeviceFrequency
     form_class = DeviceFrequencyForm
     success_url = reverse_lazy('device_frequency_list')
-
-    @method_decorator(permission_required('device.change_devicefrequency', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceFrequencyUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.change_devicefrequency',)
 
     def form_valid(self, form):
         """
@@ -3638,20 +3463,14 @@ class DeviceFrequencyUpdate(UpdateView):
         return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)
 
 
-class DeviceFrequencyDelete(DeleteView):
+class DeviceFrequencyDelete(PermissionsRequiredMixin, DeleteView):
     """
     Render device frequency delete view
     """
     model = DeviceFrequency
     template_name = 'device_frequency/device_frequency_delete.html'
     success_url = reverse_lazy('device_frequency_list')
-
-    @method_decorator(permission_required('device.delete_devicefrequency', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceFrequencyDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device.delete_devicefrequency',)
 
     def delete(self, request, *args, **kwargs):
         """

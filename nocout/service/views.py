@@ -1,8 +1,6 @@
 import json
-from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -12,6 +10,7 @@ from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, Pr
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from activity_stream.models import UserAction
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 # ########################################################
 from django.conf import settings
@@ -24,19 +23,13 @@ if settings.DEBUG:
 
 
 # **************************************** Service *********************************************
-class ServiceList(ListView):
+class ServiceList(PermissionsRequiredMixin, ListView):
     """
     Class Based to render the Service Listing page.
     """
     model = Service
     template_name = 'service/services_list.html'
-
-    @method_decorator(permission_required('service.view_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceList, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.view_service',)
 
     def get_context_data(self, **kwargs):
         """
@@ -56,11 +49,12 @@ class ServiceList(ListView):
         return context
 
 
-class ServiceListingTable(BaseDatatableView):
+class ServiceListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Service Listing Table.
     """
     model = Service
+    required_permissions = ('service.view_service',)
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
     order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
 
@@ -163,16 +157,17 @@ class ServiceListingTable(BaseDatatableView):
         return ret
 
 
-class ServiceDetail(DetailView):
+class ServiceDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the Service Details
 
     """
     model = Service
+    required_permissions = ('service.view_service',)
     template_name = 'service/service_detail.html'
 
 
-class ServiceCreate(CreateView):
+class ServiceCreate(PermissionsRequiredMixin, CreateView):
     """
     Class Based View to Create the Service
     """
@@ -180,14 +175,7 @@ class ServiceCreate(CreateView):
     model = Service
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
-
-    @method_decorator(permission_required('service.add_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceCreate, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('service.add_service',)
 
     def form_valid(self, form):
         """
@@ -197,7 +185,7 @@ class ServiceCreate(CreateView):
         return HttpResponseRedirect(ServiceCreate.success_url)
 
 
-class ServiceUpdate(UpdateView):
+class ServiceUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to update the Service.
     """
@@ -205,14 +193,7 @@ class ServiceUpdate(UpdateView):
     model = Service
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
-
-    @method_decorator(permission_required('service.change_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceUpdate, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('service.change_service',)
 
     def form_valid(self, form):
         """
@@ -233,20 +214,14 @@ class ServiceUpdate(UpdateView):
         return HttpResponseRedirect(ServiceUpdate.success_url)
 
 
-class ServiceDelete(DeleteView):
+class ServiceDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class Based View to Delete the Service.
     """
     model = Service
     template_name = 'service/service_delete.html'
     success_url = reverse_lazy('services_list')
-
-    @method_decorator(permission_required('service.delete_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.delete_service',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -261,19 +236,13 @@ class ServiceDelete(DeleteView):
 
 
 #************************************* Service Parameters *****************************************
-class ServiceParametersList(ListView):
+class ServiceParametersList(PermissionsRequiredMixin, ListView):
     """
     Class Based View for the Service parameter Listing.
     """
     model = ServiceParameters
     template_name = 'service_parameter/services_parameter_list.html'
-
-    @method_decorator(permission_required('service.view_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersList, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.view_serviceparameters',)
 
     def get_context_data(self, **kwargs):
         """
@@ -294,11 +263,12 @@ class ServiceParametersList(ListView):
         return context
 
 
-class ServiceParametersListingTable(BaseDatatableView):
+class ServiceParametersListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render ServiceParameters Data table.
     """
     model = ServiceParameters
+    required_permissions = ('service.view_serviceparameters',)
     columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval',
                'max_check_attempts']
     order_columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval',
@@ -382,15 +352,16 @@ class ServiceParametersListingTable(BaseDatatableView):
         return ret
 
 
-class ServiceParametersDetail(DetailView):
+class ServiceParametersDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the details of the service parameters
     """
     model = ServiceParameters
+    required_permissions = ('service.view_serviceparameters',)
     template_name = 'service_parameter/service_parameter_detail.html'
 
 
-class ServiceParametersCreate(CreateView):
+class ServiceParametersCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based View to create the service parameters
     """
@@ -398,13 +369,7 @@ class ServiceParametersCreate(CreateView):
     model = ServiceParameters
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
-
-    @method_decorator(permission_required('service.add_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.add_serviceparameters',)
 
     def form_valid(self, form):
         """
@@ -415,7 +380,7 @@ class ServiceParametersCreate(CreateView):
         return HttpResponseRedirect(ServiceParametersCreate.success_url)
 
 
-class ServiceParametersUpdate(UpdateView):
+class ServiceParametersUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to Update the Service Parameters.
     """
@@ -423,14 +388,7 @@ class ServiceParametersUpdate(UpdateView):
     model = ServiceParameters
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
-
-    @method_decorator(permission_required('service.change_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersUpdate, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('service.change_serviceparameters',)
 
     def form_valid(self, form):
         """
@@ -451,20 +409,14 @@ class ServiceParametersUpdate(UpdateView):
         return HttpResponseRedirect(ServiceParametersUpdate.success_url)
 
 
-class ServiceParametersDelete(DeleteView):
+class ServiceParametersDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class Based View to Delete the ServiceParameters.
     """
     model = ServiceParameters
     template_name = 'service_parameter/service_parameter_delete.html'
     success_url = reverse_lazy('services_parameter_list')
-
-    @method_decorator(permission_required('service.delete_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.delete_serviceparameters',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -479,19 +431,13 @@ class ServiceParametersDelete(DeleteView):
 
 
 #********************************** Service Data Source ***************************************
-class ServiceDataSourceList(ListView):
+class ServiceDataSourceList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render the Service Data Source.
     """
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_sources_list.html'
-
-    @method_decorator(permission_required('service.view_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceList, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.view_servicedatasource',)
 
     def get_context_data(self, **kwargs):
         """
@@ -511,8 +457,9 @@ class ServiceDataSourceList(ListView):
         return context
 
 
-class ServiceDataSourceListingTable(BaseDatatableView):
+class ServiceDataSourceListingTable(PermissionsRequiredMixin, BaseDatatableView):
     model = ServiceDataSource
+    required_permissions = ('service.view_servicedatasource',)
     columns = ['name', 'alias', 'warning', 'critical']
     order_columns = ['name', 'alias', 'warning', 'critical']
 
@@ -593,15 +540,16 @@ class ServiceDataSourceListingTable(BaseDatatableView):
         return ret
 
 
-class ServiceDataSourceDetail(DetailView):
+class ServiceDataSourceDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the Service Data Source Detail information.
     """
     model = ServiceDataSource
+    required_permissions = ('service.view_servicedatasource',)
     template_name = 'service_data_source/service_data_source_detail.html'
 
 
-class ServiceDataSourceCreate(CreateView):
+class ServiceDataSourceCreate(PermissionsRequiredMixin, CreateView):
     """
     Class Based View to Creater the Service Data Source Detail.
     """
@@ -609,14 +557,7 @@ class ServiceDataSourceCreate(CreateView):
     model = ServiceDataSource
     form_class = ServiceDataSourceForm
     success_url = reverse_lazy('service_data_sources_list')
-
-    @method_decorator(permission_required('service.add_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceCreate, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('service.add_servicedatasource',)
 
     def form_valid(self, form):
         """
@@ -626,7 +567,7 @@ class ServiceDataSourceCreate(CreateView):
         return HttpResponseRedirect(ServiceDataSourceCreate.success_url)
 
 
-class ServiceDataSourceUpdate(UpdateView):
+class ServiceDataSourceUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based View to update the Service Data Source.
     """
@@ -634,13 +575,7 @@ class ServiceDataSourceUpdate(UpdateView):
     model = ServiceDataSource
     form_class = ServiceDataSourceForm
     success_url = reverse_lazy('service_data_sources_list')
-
-    @method_decorator(permission_required('service.change_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.change_servicedatasource',)
 
     def form_valid(self, form):
         """
@@ -659,20 +594,14 @@ class ServiceDataSourceUpdate(UpdateView):
         return HttpResponseRedirect(ServiceDataSourceUpdate.success_url)
 
 
-class ServiceDataSourceDelete(DeleteView):
+class ServiceDataSourceDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class Based View to Delete the Service Data Source.
     """
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_source_delete.html'
     success_url = reverse_lazy('service_data_sources_list')
-
-    @method_decorator(permission_required('service.delete_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.delete_servicedatasource',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -687,19 +616,13 @@ class ServiceDataSourceDelete(DeleteView):
 
 
 #********************************** Protocol ***************************************
-class ProtocolList(ListView):
+class ProtocolList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render the List page.
     """
     model = Protocol
     template_name = 'protocol/protocols_list.html'
-
-    @method_decorator(permission_required('service.view_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolList, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.view_protocol',)
 
     def get_context_data(self, **kwargs):
         """
@@ -726,11 +649,12 @@ class ProtocolList(ListView):
         return context
 
 
-class ProtocolListingTable(BaseDatatableView):
+class ProtocolListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class Based View to render the protocol Data table.
     """
     model = Protocol
+    required_permissions = ('service.view_protocol',)
     columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
                'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
     order_columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
@@ -812,15 +736,16 @@ class ProtocolListingTable(BaseDatatableView):
         return ret
 
 
-class ProtocolDetail(DetailView):
+class ProtocolDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the detail Protocol information
     """
     model = Protocol
+    required_permissions = ('service.view_protocol',)
     template_name = 'protocol/protocol_detail.html'
 
 
-class ProtocolCreate(CreateView):
+class ProtocolCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based View to Create the Protocol.
     """
@@ -828,13 +753,7 @@ class ProtocolCreate(CreateView):
     model = Protocol
     form_class = ProtocolForm
     success_url = reverse_lazy('protocols_list')
-
-    @method_decorator(permission_required('service.add_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.add_protocol',)
 
 
     def form_valid(self, form):
@@ -845,7 +764,7 @@ class ProtocolCreate(CreateView):
         return HttpResponseRedirect(ProtocolCreate.success_url)
 
 
-class ProtocolUpdate(UpdateView):
+class ProtocolUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to update the protocol.
     """
@@ -853,13 +772,7 @@ class ProtocolUpdate(UpdateView):
     model = Protocol
     form_class = ProtocolForm
     success_url = reverse_lazy('protocols_list')
-
-    @method_decorator(permission_required('service.change_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.change_protocol',)
 
     def form_valid(self, form):
         """
@@ -877,20 +790,14 @@ class ProtocolUpdate(UpdateView):
             self.object = form.save()
         return HttpResponseRedirect(ProtocolUpdate.success_url)
 
-class ProtocolDelete(DeleteView):
+class ProtocolDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class Based View to delete the protocol.
     """
     model = Protocol
     template_name = 'protocol/protocol_delete.html'
     success_url = reverse_lazy('protocols_list')
-
-    @method_decorator(permission_required('service.delete_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.delete_protocol',)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -905,21 +812,15 @@ class ProtocolDelete(DeleteView):
             pass
         return super(ProtocolDelete, self).delete( request, *args, **kwargs)
 
-    
+
 #**************************************** DeviceServiceConfiguration *********************************************
-class DeviceServiceConfigurationList(ListView):
+class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to list the Device Service Configuration page.
     """
     model = DeviceServiceConfiguration
     template_name = 'device_service_configuration/device_service_configuration_list.html'
-
-    @method_decorator(permission_required('service.view_deviceserviceconfiguration', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceServiceConfigurationList, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.view_deviceserviceconfiguration',)
 
     def get_context_data(self, **kwargs):
         """
@@ -950,11 +851,12 @@ class DeviceServiceConfigurationList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class DeviceServiceConfigurationListingTable(BaseDatatableView):
+class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View render the Device Service Configuration Table.
     """
     model = DeviceServiceConfiguration
+    required_permissions = ('service.view_deviceserviceconfiguration',)
     columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
                'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
                'critical', 'added_on', 'modified_on']

@@ -1,6 +1,4 @@
-from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -12,20 +10,16 @@ from django.http.response import HttpResponseRedirect
 from nocout.utils.util import DictDiffer
 import json
 from activity_stream.models import UserAction
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
-class SiteInstanceList(ListView):
+
+class SiteInstanceList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render Site Instance List page.
     """
     model = SiteInstance
     template_name = 'site_instance/site_instance_list.html'
-
-    @method_decorator(permission_required('site_instance.view_siteinstance', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(SiteInstanceList, self).dispatch(*args, **kwargs)
+    required_permissions = ('site_instance.view_siteinstance',)
 
     def get_context_data(self, **kwargs):
         """
@@ -45,11 +39,12 @@ class SiteInstanceList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class SiteInstanceListingTable(BaseDatatableView):
+class SiteInstanceListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Site Instance Data table.
     """
     model = SiteInstance
+    required_permissions = ('site_instance.view_siteinstance',)
     columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
     order_columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
 
@@ -127,15 +122,16 @@ class SiteInstanceListingTable(BaseDatatableView):
                }
         return ret
 
-class SiteInstanceDetail(DetailView):
+class SiteInstanceDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render Site Instance Detail.
     """
     model = SiteInstance
+    required_permissions = ('site_instance.view_siteinstance',)
     template_name = 'site_instance/site_instance_detail.html'
 
 
-class SiteInstanceCreate(CreateView):
+class SiteInstanceCreate(PermissionsRequiredMixin, CreateView):
     """
     Class Based View to Create a Site Instance.
     """
@@ -143,13 +139,7 @@ class SiteInstanceCreate(CreateView):
     model = SiteInstance
     form_class = SiteInstanceForm
     success_url = reverse_lazy('site_instance_list')
-
-    @method_decorator(permission_required('site_instance.add_siteinstance', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(SiteInstanceCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('site_instance.add_siteinstance',)
 
     def form_valid(self, form):
         """
@@ -158,7 +148,7 @@ class SiteInstanceCreate(CreateView):
         self.object=form.save()
         return HttpResponseRedirect(SiteInstanceCreate.success_url)
 
-class SiteInstanceUpdate(UpdateView):
+class SiteInstanceUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to Update the Site Instance.
     """
@@ -166,13 +156,7 @@ class SiteInstanceUpdate(UpdateView):
     model = SiteInstance
     form_class = SiteInstanceForm
     success_url = reverse_lazy('site_instance_list')
-
-    @method_decorator(permission_required('site_instance.change_siteinstance', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(SiteInstanceUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('site_instance.change_siteinstance',)
 
     def form_valid(self, form):
         """
@@ -195,20 +179,14 @@ class SiteInstanceUpdate(UpdateView):
         return HttpResponseRedirect(SiteInstanceUpdate.success_url)
 
 
-class SiteInstanceDelete(DeleteView):
+class SiteInstanceDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class Based View to Delete the Site Instance.
     """
     model = SiteInstance
     template_name = 'site_instance/site_instance_delete.html'
     success_url = reverse_lazy('site_instance_list')
-
-    @method_decorator(permission_required('site_instance.delete_siteinstance', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(SiteInstanceDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('site_instance.delete_siteinstance',)
 
     def delete(self, request, *args, **kwargs):
         """
