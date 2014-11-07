@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 import os
 from django.conf import global_settings
 from collections import namedtuple
+from datetime import timedelta
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
@@ -225,6 +226,21 @@ BROKER_URL = 'mongodb://localhost:27017/nocout_celery_db'
 
 #=time zone for celery periodic tasks
 CELERY_TIMEZONE = 'Asia/Calcutta'
+
+
+CELERYBEAT_SCHEDULE = {
+    'wimax-topology': {
+        'task': 'inventory.tasks.get_topology',
+        'schedule': timedelta(seconds=600),
+        'args': ('WiMAX')
+    },
+    'pmp-topology': {
+        'task': 'inventory.tasks.get_topology',
+        'schedule': timedelta(seconds=600),
+        'args': ('PMP')
+    },
+}
+
 
 import djcelery
 djcelery.setup_loader()
