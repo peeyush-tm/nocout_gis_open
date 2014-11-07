@@ -448,24 +448,22 @@ def aggregator_on_searching(request, search_string, organisation_id):
 
 @dajaxice_register(method='GET')
 def update_bs_switch(request, option):
+    """
+    update bs switch on change of the organisation,
+    And return only fifty result.
+    """
     dajax = Dajax()
     out = list()
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        bs_switch = Device.objects.filter(organization=int(option))[:50]
+        for device in bs_switch:
+            out.append("<option value={}>{}</option>".format(device.id, device) )
+        dajax.assign('#id_bs_switch', 'innerHTML', ''.join(out))
         return dajax.json()
-
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        bs_switch = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        bs_switch = Device.objects.filter(organization=int(option))
-
-    for switch in bs_switch:
-        out.append("<option value='#'>%s</option>" % switch)
-    dajax.assign('#id_bs_switch', 'innerHTML', ''.join(out))
-    return dajax.json()
-
+    except Organization.DoesNotExist:
+        pass
 
 @dajaxice_register(method='GET')
 def update_backhaul(request, option):
