@@ -66,6 +66,31 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			} 
 		};
 
+		//vector Layer for Search Icon
+		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Markers Layer");
+
+		layers.searchMarkerLayer.display(false);
+
+		//Set searchMarkerLayer
+		this.searchMarkerLayer = layers.searchMarkerLayer;
+
+		//Add layer to the map
+		ccpl_map.addLayer(layers.searchMarkerLayer);
+
+		// var kmlFileExample = new OpenLayers.Layer.Vector("kml layer", {
+		// 	projection: new OpenLayers.Projection("EPSG:4326"),
+		// 	strategies: [new OpenLayers.Strategy.Fixed()],
+		// 	protocol: new OpenLayers.Protocol.HTTP({
+		// 		url: base_url+'/static/06112014-9nwcx5b.kml',
+		// 		format: new OpenLayers.Format.KML({
+		// 			extractStyles: true,
+		// 			extractAttributes: true
+		// 		})
+		// 	})
+		// });
+
+		// ccpl_map.addLayer(kmlFileExample);
+
 		//Create a Vector Layer which will hold Sectors
 		layers.sectorsLayer = new OpenLayers.Layer.Vector('Sectors Layers', {eventListeners: featureEventListener});
 
@@ -225,17 +250,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		this.livePollingPolygonControl = new OpenLayers.Control.DrawFeature(layers.livePollFeatureLayer, OpenLayers.Handler.Polygon, {eventListeners: {"featureadded": this.livePollingPolygonAdded}});
 
 		ccpl_map.addControl(this.livePollingPolygonControl);
-
-		//vector Layer for Search Icon
-		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Markers Layer");
-
-		layers.searchMarkerLayer.display(false);
-
-		//Set searchMarkerLayer
-		this.searchMarkerLayer = layers.searchMarkerLayer;
-
-		//Add layer to the map
-		// ccpl_map.addLayer(layers.searchMarkerLayer);
 
 		var panel = new OpenLayers.Control.Panel();
 

@@ -1038,16 +1038,16 @@ function WhiteMapClass() {
 		this.resetAdvanceSearch = function() {
 
 			//reset adv class
-			wmAdvanceSearchClass.resetAdvanceSearch();
+			// wmAdvanceSearchClass.resetAdvanceSearch();
 
 			//set hasAdvSearch = 0
-			hasAdvSearch = 0;
+			// hasAdvSearch = 0;
 
 			//remove search markers
 			this.searchMarkerLayer.removeAllFeatures();
 
 			//update get status
-			get_page_status();
+			// get_page_status();
 		}
 
 		/*
