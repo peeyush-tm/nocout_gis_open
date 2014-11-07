@@ -9,7 +9,7 @@ from models import Service, ServiceParameters, ServiceDataSource, Protocol, Devi
 from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
-from activity_stream.models import UserAction
+from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 
 # ########################################################
@@ -214,7 +214,7 @@ class ServiceUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(ServiceUpdate.success_url)
 
 
-class ServiceDelete(PermissionsRequiredMixin, DeleteView):
+class ServiceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the Service.
     """
@@ -222,17 +222,6 @@ class ServiceDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'service/service_delete.html'
     success_url = reverse_lazy('services_list')
     required_permissions = ('service.delete_service',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            UserAction.objects.create(user_id=self.request.user.id, module='Service',
-                         action='A service is deleted - {}'.format(self.get_object().alias) )
-        except:
-            pass
-        return super(ServiceDelete, self).delete(request, *args, **kwargs)
 
 
 #************************************* Service Parameters *****************************************
@@ -409,7 +398,7 @@ class ServiceParametersUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(ServiceParametersUpdate.success_url)
 
 
-class ServiceParametersDelete(PermissionsRequiredMixin, DeleteView):
+class ServiceParametersDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the ServiceParameters.
     """
@@ -417,17 +406,7 @@ class ServiceParametersDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'service_parameter/service_parameter_delete.html'
     success_url = reverse_lazy('services_parameter_list')
     required_permissions = ('service.delete_serviceparameters',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Log the user activity before deleting the Service Parameters.
-        """
-        try:
-            UserAction.objects.create(user_id=self.request.user.id, module='Service Parameters',
-                         action='A service parameters is deleted - {}'.format(self.get_object().parameter_description) )
-        except:
-            pass
-        return super(ServiceParametersDelete, self).delete(request, *args, **kwargs)
+    obj_alias = 'parameter_description'
 
 
 #********************************** Service Data Source ***************************************
@@ -594,7 +573,7 @@ class ServiceDataSourceUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(ServiceDataSourceUpdate.success_url)
 
 
-class ServiceDataSourceDelete(PermissionsRequiredMixin, DeleteView):
+class ServiceDataSourceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the Service Data Source.
     """
@@ -602,17 +581,6 @@ class ServiceDataSourceDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'service_data_source/service_data_source_delete.html'
     success_url = reverse_lazy('service_data_sources_list')
     required_permissions = ('service.delete_servicedatasource',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding delete method to log the user activity.
-        """
-        try:
-            UserAction.objects.create(user_id=self.request.user.id, module='Service Data Source',
-                         action='A service sata source is deleted - {}'.format(self.get_object().alias) )
-        except:
-            pass
-        return super(ServiceDataSourceDelete, self).delete(request, *args, **kwargs)
 
 
 #********************************** Protocol ***************************************
@@ -790,7 +758,7 @@ class ProtocolUpdate(PermissionsRequiredMixin, UpdateView):
             self.object = form.save()
         return HttpResponseRedirect(ProtocolUpdate.success_url)
 
-class ProtocolDelete(PermissionsRequiredMixin, DeleteView):
+class ProtocolDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to delete the protocol.
     """
@@ -798,19 +766,7 @@ class ProtocolDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'protocol/protocol_delete.html'
     success_url = reverse_lazy('protocols_list')
     required_permissions = ('service.delete_protocol',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            protocol_obj = self.get_object()
-            UserAction.objects.create(user_id=self.request.user.id, module='Protocol',
-                         action='A protocol is deleted - {}(port - {}, version - {})'.format(protocol_obj.protocol_name,
-                                                protocol_obj.port, protocol_obj.version) )
-        except:
-            pass
-        return super(ProtocolDelete, self).delete( request, *args, **kwargs)
+    obj_alias = 'protocol_name'
 
 
 #**************************************** DeviceServiceConfiguration *********************************************
