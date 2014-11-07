@@ -525,18 +525,13 @@ def update_sector_configured_on(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        sector_confs = Device.objects.filter(organization=int(option))[:50]
+        for sector in sector_confs:
+            out.append("<option value={}>{}</option>".format(sector.id, sector) )
+        dajax.assign('#id_sector_configured_on', 'innerHTML', ''.join(out))
         return dajax.json()
-
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        sector_confs = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        sector_confs = Device.objects.filter(organization=int(option))
-
-    for sector in sector_confs:
-        out.append("<option value='#'>%s</option>" % sector)
-    dajax.assign('#id_sector_configured_on', 'innerHTML', ''.join(out))
-    return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
 @dajaxice_register(method='GET')
 def update_base_station(request, option):
