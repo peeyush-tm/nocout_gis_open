@@ -3,45 +3,13 @@
 	"message" : "Live Polling Data Fetched Successfully",
 	"data" : {
 		"devices" : {
-			"115.114.15.188" : {
+			"7624" : {
 			 	"value" : "50",
 				"icon" : "static/img/marker/icon1_small.png"
 			},
-			"14.141.111.132" : {
+			"7625" : {
 			 	"value" : "20",
 				"icon" : "static/img/marker/icon2_small.png"
-			},
-			"121.244.195.36" : {
-			 	"value" : "10",
-				"icon" : "static/img/marker/icon3_small.png"
-			},
-			"115.112.97.172" : {
-			 	"value" : "60",
-				"icon" : "static/img/marker/icon1_small.png"
-			},
-			"115.112.83.180" : {
-			 	"value" : "-25",
-				"icon" : "static/img/marker/icon2_small.png"
-			},
-			"121.241.90.84" : {
-			 	"value" : "22",
-				"icon" : "static/img/marker/icon3_small.png"
-			},
-			"14.141.13.228" : {
-			 	"value" : "28",
-				"icon" : "static/img/marker/icon1_small.png"
-			},
-			"14.141.37.190" : {
-			 	"value" : "36",
-				"icon" : "static/img/marker/icon2_small.png"
-			},
-			"115.112.161.68" : {
-			 	"value" : "45",
-				"icon" : "static/img/marker/icon3_small.png"
-			},
-			"115.111.145.156" : {
-			 	"value" : "47",
-				"icon" : "static/img/marker/icon1_small.png"
 			}
 		}
 	}

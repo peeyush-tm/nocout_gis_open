@@ -23,7 +23,7 @@ function WmAdvanceSearch(data) {
 
 		$("#resetSearchForm").addClass('hide');
 
-		global_this.searchMarkerLayer.removeFeatures();
+		whiteMapClass.resetAdvanceSearch();
 
 		previous_Stored_Values_Obj = {name: [], ip: [], cktId: [], city: []};
 	}
@@ -162,8 +162,8 @@ function WmAdvanceSearch(data) {
 				for (var i = 0; i < base_stations.length; i++) {
 					var marker = whiteMapClass.createOpenLayerVectorMarker(new OpenLayers.Size(21, 25), base_url+'/static/img/icons/bs_bounce.png', base_stations[i].data.lon, base_stations[i].data.lat, {});
 					searchmarkersList.push(marker);
-					// this.markersLayer.addMarker(marker);
-					// search_Markers.push(marker);
+					this.markersLayer.addMarker(marker);
+					search_Markers.push(marker);
 					
 					bounds.extend(new OpenLayers.LonLat(base_stations[i].data.lon, base_stations[i].data.lat));
 					that.showNotification();
