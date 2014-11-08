@@ -1,8 +1,6 @@
 import json
-from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -12,22 +10,17 @@ from .forms import CommandForm
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from activity_stream.models import UserAction
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
-class CommandList(ListView):
+class CommandList(PermissionsRequiredMixin, ListView):
     """
     Generic Class based View to List the Commands.
     """
 
     model = Command
     template_name = 'command/commands_list.html'
-
-    @method_decorator(permission_required('command.view_command', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(CommandList, self).dispatch(*args, **kwargs)
+    required_permissions = ('command.view_command',)
 
     def get_context_data(self, **kwargs):
         """
@@ -46,12 +39,13 @@ class CommandList(ListView):
         return context
 
 
-class CommandListingTable(BaseDatatableView):
+class CommandListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     A generic class based view for the command data table rendering.
 
     """
     model = Command
+    required_permissions = ('command.view_command',)
     columns = ['name', 'alias', 'command_line']
     order_columns = ['name', 'alias', 'command_line']
 
@@ -131,16 +125,18 @@ class CommandListingTable(BaseDatatableView):
                }
         return ret
 
-class CommandDetail(DetailView):
+
+class CommandDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based Detail View
 
     """
     model = Command
+    required_permissions = ('command.view_command',)
     template_name = 'command/command_detail.html'
 
 
-class CommandCreate(CreateView):
+class CommandCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based View to create Command
 
@@ -149,14 +145,7 @@ class CommandCreate(CreateView):
     model = Command
     form_class = CommandForm
     success_url = reverse_lazy('commands_list')
-
-    @method_decorator(permission_required('command.add_command', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-
-        """
-        return super(CommandCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('command.add_command',)
 
     def form_valid(self, form):
         """
@@ -167,7 +156,7 @@ class CommandCreate(CreateView):
         return HttpResponseRedirect(CommandCreate.success_url)
 
 
-class CommandUpdate(UpdateView):
+class CommandUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based View to update Command
 
@@ -176,14 +165,7 @@ class CommandUpdate(UpdateView):
     model = Command
     form_class = CommandForm
     success_url = reverse_lazy('commands_list')
-
-    @method_decorator(permission_required('command.change_command', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-
-        """
-        return super(CommandUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('command.change_command',)
 
     def form_valid(self, form):
         """
@@ -207,7 +189,7 @@ class CommandUpdate(UpdateView):
         return HttpResponseRedirect( CommandUpdate.success_url )
 
 
-class CommandDelete(DeleteView):
+class CommandDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete Command
 
@@ -215,16 +197,8 @@ class CommandDelete(DeleteView):
     model = Command
     template_name = 'command/command_delete.html'
     success_url = reverse_lazy('commands_list')
-    
-    @method_decorator(permission_required('command.delete_command', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
+    required_permissions = ('command.delete_command',)
 
-        """
-        return super(CommandDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('command.delete_command', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         Overriding the delete method to log the user activity.

@@ -88,7 +88,7 @@ def format_value(format_this, type_of=None):
         elif type_of == 'frequency_color':
             return format_this if format_this else 'rgba(74,72,94,0.58)'
         elif type_of == 'frequency_radius':
-            return format_this if format_this else uniform(0,3)
+            return format_this if format_this else 0.5
         elif type_of == 'integer':
             return format_this if format_this else 0
         elif type_of == 'antenna':
@@ -103,6 +103,8 @@ def format_value(format_this, type_of=None):
                 return img_url
             else:
                 return "static/img/icons/mobilephonetower10.png"
+        elif type_of == 'mac':
+            return format_this.upper() if format_this else 'NA'
     except:
         pass
     return 'NA'

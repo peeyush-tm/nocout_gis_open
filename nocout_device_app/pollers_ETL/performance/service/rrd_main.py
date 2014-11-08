@@ -10,6 +10,7 @@ import rrd_migration
 import socket
 import json
 import imp
+from itertools import groupby
 
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
@@ -43,26 +44,41 @@ def get_host_services_name(site_name=None, mongo_host=None, mongo_db=None, mongo
 	     Exception: SyntaxError,socket error 
 	"""
         try:
-            query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
-                
-            main_output = json.loads(get_from_socket(site_name, query))
-            for host_name in main_output:
-                modified_query = "GET hosts\nColumns: host_services host_address\n" +\
-                    "Filter: host_name = %s\nOutputFormat: json\n" % (host_name[0])
-                output= json.loads(get_from_socket(site_name, modified_query))
-                rrd_migration.rrd_migration_main(
-                    site_name,
-                    host_name[0],
-                    output[0],
-                    output[0][1],
-                    mongo_host,
-                    mongo_db,
-                    mongo_port
-                )
+            network_perf_query = "GET hosts\nColumns: host_name host_address host_state last_check host_last_state_change host_perf_data\nOutputFormat: json\n"
+            service_perf_query = "GET services\nColumns: host_name host_address service_description service_state "+\
+			    "last_check service_last_state_change service_perf_data\nFilter: service_description ~ _invent\n"+\
+			    "Filter: service_description ~ _status\nFilter: service_description ~ Check_MK\nOr: 3\nNegate:\nOutputFormat: json\n"
+            nw_qry_output = json.loads(get_from_socket(site_name, network_perf_query))
+	    print 'NW qry OUT --'
+	    print nw_qry_output
+            serv_qry_output = json.loads(get_from_socket(site_name, service_perf_query))
+	    print 'Serv qry OUT --'
+	    print serv_qry_output
+	    # Group service perf data host-wise
+	    serv_qry_output = sorted(serv_qry_output, key=lambda k: k[0])
+	    for host, group in groupby(serv_qry_output, key=lambda e: e[0]):
+		    # Find the entry in network perf data, for this host
+		    nw_entry = filter(lambda t: host == t[0], nw_qry_output)
+		    #print 'nw_entry -----'
+		    #print nw_entry
+		    serv_entry = list(group)
+		    rrd_migration.build_export(
+			    site_name,
+			    host,
+			    nw_entry[0][1],
+			    nw_entry,
+			    serv_entry,
+			    mongo_host,
+			    mongo_db,
+			    mongo_port
+			    )	
         except SyntaxError, e:
             raise MKGeneralException(("Can not get performance data: %s") % (e))
         except socket.error, msg:
             raise MKGeneralException(("Failed to create socket. Error code %s Error Message %s:") % (str(msg[0]), msg[1]))
+        except ValueError, val_err:
+		print 'Error in serv/nw qry output'
+		print val_err.message
 
 def get_from_socket(site_name, query):
     """
@@ -82,8 +98,14 @@ def get_from_socket(site_name, query):
     s.connect(socket_path)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
-    output = s.recv(100000000)
-    output.strip("\n")
+    output = ''
+    while True:
+     out = s.recv(100000000)
+     out.strip()
+     if not len(out):
+     	break
+     output += out
+
     return output
 
 

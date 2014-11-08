@@ -10,6 +10,9 @@ var whiteMapSettings = {
 	size: {
 		medium: {width: 20, height: 40} 
 	},
+	devices_size: {
+		medium: {width: 32, height: 37}
+	},
 	zoomLevelAfterLineAppears: 6
 }
 

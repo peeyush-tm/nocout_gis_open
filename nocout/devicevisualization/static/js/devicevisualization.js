@@ -355,6 +355,11 @@ $("#createPolygonBtn").click(function(e) {
 
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.initLivePolling();
+
+        hasSelectDevice = 1;
+
+        /*Call get_page_status function to show the current status*/
+        get_page_status();
     } else {
         networkMapInstance.initLivePolling();
 
@@ -370,7 +375,7 @@ $("#tech_send").click(function(e) {
     if(window.location.pathname.indexOf("googleEarth") > -1) {
         earth_instance.fetchPollingTemplate_earth();
     } else if(window.location.pathname.indexOf("white_background") > -1) {
-        whiteMapClass.fetchPollingTempate();
+        whiteMapClass.fetchPollingTemplate_wmap();
     } else {
         networkMapInstance.fetchPollingTemplate_gmap();
     }
@@ -379,7 +384,8 @@ $("#tech_send").click(function(e) {
 $("#fetch_polling").click(function(e) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-        
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.getDevicesPollingData_wmaps();
     } else {
         networkMapInstance.getDevicesPollingData();
     }
@@ -388,7 +394,7 @@ $("#fetch_polling").click(function(e) {
 /*Change event on polling technology dropdown*/
 $("#polling_tech").change(function(e) {
     if(window.location.pathname.indexOf("white_background") > -1) {
-
+        whiteMapClass.initLivePolling();
     } else {
         networkMapInstance.initLivePolling();
     }
@@ -396,8 +402,11 @@ $("#polling_tech").change(function(e) {
 
 /*When "Tabular View" button for polling widget clicked*/
 $("#polling_tabular_view").click(function(e) {
-
-    networkMapInstance.show_polling_datatable();
+    if(window.location.pathname.indexOf("white_background")) {
+        whiteMapClass.show_polling_datatable_wmaps();
+    } else {
+        networkMapInstance.show_polling_datatable();
+    }
 });
 
 /*triggers when clear selection button is clicked*/
@@ -447,7 +456,12 @@ function get_page_status() {
 $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $(this).val();
     defaultIconSize= val;
-    networkMapInstance.updateAllMarkersWithNewIcon(val);
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.toggleIconSize();
+    } else {
+        networkMapInstance.updateAllMarkersWithNewIcon(val);
+        
+    }
 });
 
 
@@ -522,11 +536,20 @@ function isLatLon(e) {
                 
                 if((lat_check && lon_check) || (dms_regex.exec(entered_txt.split(",")[0]) && dms_regex.exec(entered_txt.split(",")[1]))) {
                     if((lat_check && lon_check)) {
-                        networkMapInstance.pointToLatLon(entered_txt);
+                        if(window.location.pathname.indexOf("white_background") > -1) {
+                            whiteMapClass.zoomToLonLat(entered_txt);
+                        } else {
+                            networkMapInstance.pointToLatLon(entered_txt);
+                        }
                     } else {
                         var converted_lat = dmsToDegree(dms_regex.exec(entered_txt.split(",")[0]));
                         var converted_lng = dmsToDegree(dms_regex.exec(entered_txt.split(",")[1]));
-                        networkMapInstance.pointToLatLon(converted_lat+","+converted_lng);
+                        
+                        if(window.location.pathname.indexOf("white_background") > -1) {
+                            whiteMapClass.zoomToLonLat(entered_txt);
+                        } else {
+                            networkMapInstance.pointToLatLon(entered_txt);
+                        }
                     }
                 } else {
                     alert("Please Enter Proper Lattitude,Longitude.");
@@ -927,14 +950,22 @@ $("#show_hide_label").click(function(e) {
  * This event trigger when previous navigation button on polling widget clicked
  */
 $("#navigation_container button#previous_polling_btn").click(function(e) {
-    networkMapInstance.show_previous_polled_icon();
+    if(window.location.pathname.indexOf("white_background")) {
+        whiteMapClass.show_previous_polled_icon_wmaps();
+    } else {
+        networkMapInstance.show_previous_polled_icon();
+    }
 });
 
 /**
  * This event trigger when next navigation button on polling widget clicked
  */
 $("#navigation_container button#next_polling_btn").click(function(e) {
-    networkMapInstance.show_next_polled_icon();
+   if(window.location.pathname.indexOf("white_background")) {
+        whiteMapClass.show_next_polled_icon_wmaps();
+    } else {
+        networkMapInstance.show_next_polled_icon();
+    }
 });
 
 /**

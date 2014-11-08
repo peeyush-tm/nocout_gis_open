@@ -58,28 +58,7 @@ def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 				plugin_output =	[mac for mac in plugin_output.split(' ')]
 				ss_mac  = map(lambda x: x.split('=')[0],plugin_output)
 				ss_ip  = map(lambda x: x.split('=')[1].split(',')[9],plugin_output)
-				ss_sector_id  = map(lambda x: x.split('=')[1].split(',')[8],plugin_output)
-				print ss_sector_id
-				for sec_id in ss_sector_id:
-					if int(sec_id) == 1:
-                                		service1 = "check_wimax_sector_id_pmp1_invent"
-                        		elif int(sec_id) == 2:
-                                		service1 = " check_wimax_sector_id_pmp2_invent"
-                        		if service1:
-                               		 	query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                		"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service1,host[0])
-                                		result= json.loads(utility_module.get_from_socket(site,query_string).strip())
-                                		if result:
-                                        		updated_ss_sector_id = str(result[0][0].split('OK-')[1])
-							ss_sec_id.append(updated_ss_sector_id)
-						else:
-							ss_sec_id.append(None)
-							print '....'
-							print ss_sec_id
-					else:
-						ss_sec_id.append(None)
-				print '-----'
-				print ss_sec_id
+				ss_sec_id  = map(lambda x: x.split('=')[1].split(',')[8],plugin_output)
 				service_state = (query_output[0][0])
 				if service_state == 0:
 					service_state = "OK"

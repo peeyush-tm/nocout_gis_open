@@ -10,12 +10,10 @@ import os
 from os.path import basename
 from django.views.generic.base import View
 import re
-from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render, render_to_response
 import json
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect, HttpResponse
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView, View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.core.urlresolvers import reverse_lazy
@@ -49,6 +47,7 @@ from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory,
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
     bulk_upload_wimax_ss_inventory
 from activity_stream.models import UserAction
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 logger = logging.getLogger(__name__)
 
@@ -64,19 +63,13 @@ def inventory(request):
     return render(request, 'inventory/inventory.html')
 
 
-class InventoryListing(ListView):
+class InventoryListing(PermissionsRequiredMixin, ListView):
     """
     Class Based Inventory View to render list page.
     """
     model = Inventory
     template_name = 'inventory/inventory_list.html'
-
-    @method_decorator(permission_required('inventory.view_inventory', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(InventoryListing, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_inventory',)
 
     def get_context_data(self, **kwargs):
         """
@@ -97,12 +90,13 @@ class InventoryListing(ListView):
         return context
 
 
-class InventoryListingTable(BaseDatatableView):
+class InventoryListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Inventory Data table.
     """
 
     model = Inventory
+    required_permissions = ('inventory.view_inventory',)
     columns = ['alias', 'user_group__name', 'organization__name', 'description']
     order_columns = ['alias', 'user_group__name', 'organization__name', 'description']
 
@@ -186,7 +180,7 @@ class InventoryListingTable(BaseDatatableView):
         return ret
 
 
-class InventoryCreate(CreateView):
+class InventoryCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Inventory.
     """
@@ -195,13 +189,7 @@ class InventoryCreate(CreateView):
     model = Inventory
     form_class = InventoryForm
     success_url = reverse_lazy('InventoryList')
-
-    @method_decorator(permission_required('inventory.add_inventory', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(InventoryCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_inventory',)
 
     def form_valid(self, form):
         """
@@ -211,7 +199,7 @@ class InventoryCreate(CreateView):
         return HttpResponseRedirect(InventoryCreate.success_url)
 
 
-class InventoryUpdate(UpdateView):
+class InventoryUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update new Inventory.
     """
@@ -219,13 +207,7 @@ class InventoryUpdate(UpdateView):
     model = Inventory
     form_class = InventoryForm
     success_url = reverse_lazy('InventoryList')
-
-    @method_decorator(permission_required('inventory.change_inventory', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(InventoryUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_inventory',)
 
     def form_valid(self, form):
         """
@@ -235,7 +217,7 @@ class InventoryUpdate(UpdateView):
         return HttpResponseRedirect(InventoryCreate.success_url)
 
 
-class InventoryDelete(DeleteView):
+class InventoryDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Inventory
 
@@ -243,19 +225,13 @@ class InventoryDelete(DeleteView):
     model = Inventory
     template_name = 'inventory/inventory_delete.html'
     success_url = reverse_lazy('InventoryList')
+    required_permissions = ('inventory.delete_inventory',)
 
-    @method_decorator(permission_required('inventory.delete_inventory', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(InventoryDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_inventory', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity.
         """
+
         try:
             obj = self.get_object()
             action='A inventory is deleted - {}'.format(obj.alias)
@@ -288,19 +264,13 @@ def inventory_details_wrt_organization(request):
 
 
 #**************************************** Antenna *********************************************
-class AntennaList(ListView):
+class AntennaList(PermissionsRequiredMixin, ListView):
     """
     Class based view to render Antenna list page.
     """
     model = Antenna
     template_name = 'antenna/antenna_list.html'
-
-    @method_decorator(permission_required('inventory.view_antenna', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(AntennaList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_antenna',)
 
     def get_queryset(self):
         """
@@ -332,13 +302,14 @@ class AntennaList(ListView):
         return context
 
 
-class AntennaListingTable(BaseDatatableView):
+class AntennaListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Antenna Data table.
     """
     model = Antenna
     columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
     order_columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
+    required_permissions = ('inventory.view_antenna',)
 
     def filter_queryset(self, qs):
         """
@@ -431,15 +402,16 @@ class AntennaListingTable(BaseDatatableView):
         return ret
 
 
-class AntennaDetail(DetailView):
+class AntennaDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the antenna detail.
     """
     model = Antenna
     template_name = 'antenna/antenna_detail.html'
+    required_permissions = ('inventory.view_antenna',)
 
 
-class AntennaCreate(CreateView):
+class AntennaCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Antenna.
     """
@@ -447,13 +419,15 @@ class AntennaCreate(CreateView):
     model = Antenna
     form_class = AntennaForm
     success_url = reverse_lazy('antennas_list')
+    required_permissions = ('inventory.add_antenna',)
 
-    @method_decorator(permission_required('inventory.add_antenna', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
+    def get_form_kwargs(self):
         """
-        The request dispatch method restricted with the permissions.
+        Returns the keyword arguments with the request object for instantiating the form.
         """
-        return super(AntennaCreate, self).dispatch(*args, **kwargs)
+        kwargs = super(AntennaCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -464,7 +438,7 @@ class AntennaCreate(CreateView):
         return HttpResponseRedirect(AntennaCreate.success_url)
 
 
-class AntennaUpdate(UpdateView):
+class AntennaUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Antenna .
     """
@@ -472,13 +446,7 @@ class AntennaUpdate(UpdateView):
     model = Antenna
     form_class = AntennaForm
     success_url = reverse_lazy('antennas_list')
-
-    @method_decorator(permission_required('inventory.change_antenna', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(AntennaUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_antenna',)
 
     def get_queryset(self):
         return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
@@ -510,22 +478,15 @@ class AntennaUpdate(UpdateView):
         return HttpResponseRedirect(AntennaUpdate.success_url)
 
 
-class AntennaDelete(DeleteView):
+class AntennaDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Antenna.
     """
     model = Antenna
     template_name = 'antenna/antenna_delete.html'
     success_url = reverse_lazy('antennas_list')
+    required_permissions = ('inventory.delete_antenna',)
 
-    @method_decorator(permission_required('inventory.delete_antenna', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(AntennaDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_antenna', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -540,19 +501,13 @@ class AntennaDelete(DeleteView):
 
 
 #****************************************** Base Station ********************************************
-class BaseStationList(ListView):
+class BaseStationList(PermissionsRequiredMixin, ListView):
     """
     Class based View to render Base Station Data table.
     """
     model = BaseStation
     template_name = 'base_station/base_stations_list.html'
-
-    @method_decorator(permission_required('inventory.view_basestation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(BaseStationList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_basestation',)
 
     def get_queryset(self):
         """
@@ -586,11 +541,12 @@ class BaseStationList(ListView):
         return context
 
 
-class BaseStationListingTable(BaseDatatableView):
+class BaseStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Base Station Data table.
     """
     model = BaseStation
+    required_permissions = ('inventory.view_basestation',)
     columns = ['alias', 'bs_site_id',
                'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
     order_columns = ['alias', 'bs_site_id',
@@ -693,15 +649,16 @@ class BaseStationListingTable(BaseDatatableView):
         return ret
 
 
-class BaseStationDetail(DetailView):
+class BaseStationDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Base Station detail.
     """
     model = BaseStation
     template_name = 'base_station/base_station_detail.html'
+    required_permissions = ('inventory.view_basestation',)
 
 
-class BaseStationCreate(CreateView):
+class BaseStationCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Base Station.
     """
@@ -709,13 +666,15 @@ class BaseStationCreate(CreateView):
     model = BaseStation
     form_class = BaseStationForm
     success_url = reverse_lazy('base_stations_list')
+    required_permissions = ('inventory.add_basestation',)
 
-    @method_decorator(permission_required('inventory.add_basestation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
+    def get_form_kwargs(self):
         """
-        The request dispatch method restricted with the permissions.
+        Returns the keyword arguments with the request object for instantiating the form.
         """
-        return super(BaseStationCreate, self).dispatch(*args, **kwargs)
+        kwargs = super(BaseStationCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -726,7 +685,7 @@ class BaseStationCreate(CreateView):
         return HttpResponseRedirect(BaseStationCreate.success_url)
 
 
-class BaseStationUpdate(UpdateView):
+class BaseStationUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Base Station.
     """
@@ -734,14 +693,7 @@ class BaseStationUpdate(UpdateView):
     model = BaseStation
     form_class = BaseStationForm
     success_url = reverse_lazy('base_stations_list')
-
-
-    @method_decorator(permission_required('inventory.change_basestation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(BaseStationUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_basestation',)
 
     def get_queryset(self):
         return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
@@ -773,22 +725,15 @@ class BaseStationUpdate(UpdateView):
         return HttpResponseRedirect(BaseStationUpdate.success_url)
 
 
-class BaseStationDelete(DeleteView):
+class BaseStationDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Base Station.
     """
     model = BaseStation
     template_name = 'base_station/base_station_delete.html'
     success_url = reverse_lazy('base_stations_list')
+    required_permissions = ('inventory.delete_basestation',)
 
-    @method_decorator(permission_required('inventory.delete_basestation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(BaseStationDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_basestation', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -805,19 +750,13 @@ class BaseStationDelete(DeleteView):
 
 
 #**************************************** Backhaul *********************************************
-class BackhaulList(ListView):
+class BackhaulList(PermissionsRequiredMixin, ListView):
     """
     Class based View to render Backhaul Listing page..
     """
     model = Backhaul
     template_name = 'backhaul/backhauls_list.html'
-
-    @method_decorator(permission_required('inventory.view_backhaul', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(BackhaulList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_backhaul',)
 
     def get_queryset(self):
         """
@@ -853,11 +792,12 @@ class BackhaulList(ListView):
         return context
 
 
-class BackhaulListingTable(BaseDatatableView):
+class BackhaulListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Backhaul Data table.
     """
     model = Backhaul
+    required_permissions = ('inventory.view_backhaul',)
     columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id', 'pop_port',
                'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
     order_columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id',
@@ -971,15 +911,16 @@ class BackhaulListingTable(BaseDatatableView):
         return ret
 
 
-class BackhaulDetail(DetailView):
+class BackhaulDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Backhaul detail.
     """
     model = Backhaul
+    required_permissions = ('inventory.view_backhaul',)
     template_name = 'backhaul/backhaul_detail.html'
 
 
-class BackhaulCreate(CreateView):
+class BackhaulCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new backhaul..
     """
@@ -987,13 +928,15 @@ class BackhaulCreate(CreateView):
     model = Backhaul
     form_class = BackhaulForm
     success_url = reverse_lazy('backhauls_list')
+    required_permissions = ('inventory.add_backhaul',)
 
-    @method_decorator(permission_required('inventory.add_backhaul', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
+    def get_form_kwargs(self):
         """
-        The request dispatch method restricted with the permissions.
+        Returns the keyword arguments with the request object for instantiating the form.
         """
-        return super(BackhaulCreate, self).dispatch(*args, **kwargs)
+        kwargs = super(BackhaulCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -1004,7 +947,7 @@ class BackhaulCreate(CreateView):
         return HttpResponseRedirect(BackhaulCreate.success_url)
 
 
-class BackhaulUpdate(UpdateView):
+class BackhaulUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Backhaul.
     """
@@ -1012,14 +955,7 @@ class BackhaulUpdate(UpdateView):
     model = Backhaul
     form_class = BackhaulForm
     success_url = reverse_lazy('backhauls_list')
-
-
-    @method_decorator(permission_required('inventory.change_backhaul', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(BackhaulUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_backhaul',)
 
     def get_queryset(self):
         return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
@@ -1052,22 +988,15 @@ class BackhaulUpdate(UpdateView):
         return HttpResponseRedirect(BackhaulUpdate.success_url)
 
 
-class BackhaulDelete(DeleteView):
+class BackhaulDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Backhaul.
     """
     model = Backhaul
     template_name = 'backhaul/backhaul_delete.html'
     success_url = reverse_lazy('backhauls_list')
+    required_permissions = ('inventory.delete_backhaul',)
 
-    @method_decorator(permission_required('inventory.delete_backhaul', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(BackhaulDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_backhaul', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -1083,19 +1012,13 @@ class BackhaulDelete(DeleteView):
 
 
 #**************************************** Sector *********************************************
-class SectorList(ListView):
+class SectorList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render Sector List Page.
     """
     model = Sector
     template_name = 'sector/sectors_list.html'
-
-    @method_decorator(permission_required('inventory.view_sector', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(SectorList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_sector',)
 
     def get_queryset(self):
         """
@@ -1133,11 +1056,12 @@ class SectorList(ListView):
         return context
 
 
-class SectorListingTable(BaseDatatableView):
+class SectorListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Sector Data Table.
     """
     model = Sector
+    required_permissions = ('inventory.view_sector',)
     columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
                'base_station__alias', 'sector_configured_on_port__alias', 'antenna__alias', 'mrc', 'description']
     order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
@@ -1244,15 +1168,16 @@ class SectorListingTable(BaseDatatableView):
         return ret
 
 
-class SectorDetail(DetailView):
+class SectorDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Sector detail.
     """
     model = Sector
+    required_permissions = ('inventory.view_sector',)
     template_name = 'sector/sector_detail.html'
 
 
-class SectorCreate(CreateView):
+class SectorCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Sector.
     """
@@ -1260,13 +1185,15 @@ class SectorCreate(CreateView):
     model = Sector
     form_class = SectorForm
     success_url = reverse_lazy('sectors_list')
+    required_permissions = ('inventory.add_sector',)
 
-    @method_decorator(permission_required('inventory.add_sector', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
+    def get_form_kwargs(self):
         """
-        The request dispatch method restricted with the permissions.
+        Returns the keyword arguments with the request object for instantiating the form.
         """
-        return super(SectorCreate, self).dispatch(*args, **kwargs)
+        kwargs = super(SectorCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -1277,7 +1204,7 @@ class SectorCreate(CreateView):
         return HttpResponseRedirect(SectorCreate.success_url)
 
 
-class SectorUpdate(UpdateView):
+class SectorUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Sector.
     """
@@ -1285,13 +1212,7 @@ class SectorUpdate(UpdateView):
     model = Sector
     form_class = SectorForm
     success_url = reverse_lazy('sectors_list')
-
-    @method_decorator(permission_required('inventory.change_sector', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(SectorUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_sector',)
 
     def get_queryset(self):
         return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
@@ -1323,22 +1244,15 @@ class SectorUpdate(UpdateView):
         return HttpResponseRedirect(SectorUpdate.success_url)
 
 
-class SectorDelete(DeleteView):
+class SectorDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Sector.
     """
     model = Sector
     template_name = 'sector/sector_delete.html'
     success_url = reverse_lazy('sectors_list')
+    required_permissions = ('inventory.delete_sector',)
 
-    @method_decorator(permission_required('inventory.delete_sector', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(SectorDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_sector', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -1354,19 +1268,13 @@ class SectorDelete(DeleteView):
 
 
 #**************************************** Customer *********************************************
-class CustomerList(ListView):
+class CustomerList(PermissionsRequiredMixin, ListView):
     """
     Class based View to render Customer listing page.
     """
     model = Customer
     template_name = 'customer/customers_list.html'
-
-    @method_decorator(permission_required('inventory.view_customer', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(CustomerList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_customer',)
 
     def get_queryset(self):
         """
@@ -1392,11 +1300,12 @@ class CustomerList(ListView):
         return context
 
 
-class CustomerListingTable(BaseDatatableView):
+class CustomerListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Customer Data table.
     """
     model = Customer
+    required_permissions = ('inventory.view_customer',)
     columns = ['alias', 'address', 'description']
     order_columns = ['alias']
 
@@ -1493,15 +1402,16 @@ class CustomerListingTable(BaseDatatableView):
         return ret
 
 
-class CustomerDetail(DetailView):
+class CustomerDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the customer detail.
     """
     model = Customer
+    required_permissions = ('inventory.view_customer',)
     template_name = 'customer/customer_detail.html'
 
 
-class CustomerCreate(CreateView):
+class CustomerCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new customer.
     """
@@ -1509,13 +1419,15 @@ class CustomerCreate(CreateView):
     model = Customer
     form_class = CustomerForm
     success_url = reverse_lazy('customers_list')
+    required_permissions = ('inventory.add_customer',)
 
-    @method_decorator(permission_required('inventory.add_customer', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
+    def get_form_kwargs(self):
         """
-        The request dispatch method restricted with the permissions.
+        Returns the keyword arguments with the request object for instantiating the form.
         """
-        return super(CustomerCreate, self).dispatch(*args, **kwargs)
+        kwargs = super(CustomerCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -1526,7 +1438,7 @@ class CustomerCreate(CreateView):
         return HttpResponseRedirect(CustomerCreate.success_url)
 
 
-class CustomerUpdate(UpdateView):
+class CustomerUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Customer.
     """
@@ -1534,13 +1446,7 @@ class CustomerUpdate(UpdateView):
     model = Customer
     form_class = CustomerForm
     success_url = reverse_lazy('customers_list')
-
-    @method_decorator(permission_required('inventory.change_customer', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CustomerUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_customer',)
 
     def get_queryset(self):
         return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
@@ -1572,22 +1478,15 @@ class CustomerUpdate(UpdateView):
         return HttpResponseRedirect(CustomerUpdate.success_url)
 
 
-class CustomerDelete(DeleteView):
+class CustomerDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Customer.
     """
     model = Customer
     template_name = 'customer/customer_delete.html'
     success_url = reverse_lazy('customers_list')
+    required_permissions = ('inventory.delete_customer',)
 
-    @method_decorator(permission_required('inventory.delete_customer', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CustomerDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_customer', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -1602,19 +1501,13 @@ class CustomerDelete(DeleteView):
 
 
 #**************************************** Sub Station *********************************************
-class SubStationList(ListView):
+class SubStationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render Sub Station List Page.
     """
     model = SubStation
     template_name = 'sub_station/sub_stations_list.html'
-
-    @method_decorator(permission_required('inventory.view_substation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(SubStationList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_substation',)
 
     def get_queryset(self):
         """
@@ -1653,11 +1546,12 @@ class SubStationList(ListView):
         return context
 
 
-class SubStationListingTable(BaseDatatableView):
+class SubStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Sub Station Data table.
     """
     model = SubStation
+    required_permissions = ('inventory.view_substation',)
     columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                'tower_height', 'city', 'state', 'address', 'description']
     order_columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
@@ -1766,15 +1660,16 @@ class SubStationListingTable(BaseDatatableView):
         return ret
 
 
-class SubStationDetail(DetailView):
+class SubStationDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Sub Station detail.
     """
     model = SubStation
+    required_permissions = ('inventory.view_substation',)
     template_name = 'sub_station/sub_station_detail.html'
 
 
-class SubStationCreate(CreateView):
+class SubStationCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Sub Station.
     """
@@ -1782,13 +1677,15 @@ class SubStationCreate(CreateView):
     model = SubStation
     form_class = SubStationForm
     success_url = reverse_lazy('sub_stations_list')
+    required_permissions = ('inventory.add_substation',)
 
-    @method_decorator(permission_required('inventory.add_substation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
+    def get_form_kwargs(self):
         """
-        The request dispatch method restricted with the permissions.
+        Returns the keyword arguments with the request object for instantiating the form.
         """
-        return super(SubStationCreate, self).dispatch(*args, **kwargs)
+        kwargs = super(SubStationCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -1799,7 +1696,7 @@ class SubStationCreate(CreateView):
         return HttpResponseRedirect(SubStationCreate.success_url)
 
 
-class SubStationUpdate(UpdateView):
+class SubStationUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update the Sub Station.
     """
@@ -1807,13 +1704,7 @@ class SubStationUpdate(UpdateView):
     model = SubStation
     form_class = SubStationForm
     success_url = reverse_lazy('sub_stations_list')
-
-    @method_decorator(permission_required('inventory.change_substation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(SubStationUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_substation',)
 
     def get_queryset(self):
         return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
@@ -1845,22 +1736,15 @@ class SubStationUpdate(UpdateView):
         return HttpResponseRedirect(SubStationUpdate.success_url)
 
 
-class SubStationDelete(DeleteView):
+class SubStationDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Sub Station.
     """
     model = SubStation
     template_name = 'sub_station/sub_station_delete.html'
     success_url = reverse_lazy('sub_stations_list')
+    required_permissions = ('inventory.delete_substation',)
 
-    @method_decorator(permission_required('inventory.delete_substation', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(SubStationDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_substation', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -1877,19 +1761,13 @@ class SubStationDelete(DeleteView):
 
 
 #**************************************** Circuit *********************************************
-class CircuitList(ListView):
+class CircuitList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render Circuit List Page.
     """
     model = Circuit
     template_name = 'circuit/circuits_list.html'
-
-    @method_decorator(permission_required('inventory.view_circuit', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(CircuitList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_circuit',)
 
     def get_queryset(self):
         """
@@ -1924,11 +1802,12 @@ class CircuitList(ListView):
         return context
 
 
-class CircuitListingTable(BaseDatatableView):
+class CircuitListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Circuit Data table.
     """
     model = Circuit
+    required_permissions = ('inventory.view_circuit',)
     columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
                'sub_station__alias', 'date_of_acceptance', 'description']
     order_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
@@ -2136,15 +2015,16 @@ class CircuitListingTable(BaseDatatableView):
         return ret
 
 
-class CircuitDetail(DetailView):
+class CircuitDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Circuit detail.
     """
     model = Circuit
+    required_permissions = ('inventory.view_circuit',)
     template_name = 'circuit/circuit_detail.html'
 
 
-class CircuitCreate(CreateView):
+class CircuitCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Circuit.
     """
@@ -2153,13 +2033,15 @@ class CircuitCreate(CreateView):
     model = Circuit
     form_class = CircuitForm
     success_url = reverse_lazy('circuits_list')
+    required_permissions = ('inventory.add_circuit',)
 
-    @method_decorator(permission_required('inventory.add_circuit', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
+    def get_form_kwargs(self):
         """
-        The request dispatch method restricted with the permissions.
+        Returns the keyword arguments with the request object for instantiating the form.
         """
-        return super(CircuitCreate, self).dispatch(*args, **kwargs)
+        kwargs = super(CircuitCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -2170,7 +2052,7 @@ class CircuitCreate(CreateView):
         return HttpResponseRedirect(CircuitCreate.success_url)
 
 
-class CircuitUpdate(UpdateView):
+class CircuitUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Cicuit.
     """
@@ -2178,13 +2060,7 @@ class CircuitUpdate(UpdateView):
     model = Circuit
     form_class = CircuitForm
     success_url = reverse_lazy('circuits_list')
-
-    @method_decorator(permission_required('inventory.change_circuit', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CircuitUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_circuit',)
 
     def get_queryset(self):
         return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
@@ -2216,22 +2092,15 @@ class CircuitUpdate(UpdateView):
         return HttpResponseRedirect(CircuitUpdate.success_url)
 
 
-class CircuitDelete(DeleteView):
+class CircuitDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Circuit.
     """
     model = Circuit
     template_name = 'circuit/circuit_delete.html'
     success_url = reverse_lazy('circuits_list')
+    required_permissions = ('inventory.delete_circuit',)
 
-    @method_decorator(permission_required('inventory.delete_circuit', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CircuitDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_circuit', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -2466,19 +2335,13 @@ class CircuitL2ReportDelete(DeleteView):
         return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
 
 #**************************************** IconSettings *********************************************
-class IconSettingsList(ListView):
+class IconSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render IconSettings List Page.
     """
     model = IconSettings
     template_name = 'icon_settings/icon_settings_list.html'
-
-    @method_decorator(permission_required('inventory.view_iconsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(IconSettingsList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_iconsettings',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2497,11 +2360,12 @@ class IconSettingsList(ListView):
         return context
 
 
-class IconSettingsListingTable(BaseDatatableView):
+class IconSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render IconSettings Data table.
     """
     model = IconSettings
+    required_permissions = ('inventory.view_iconsettings',)
     columns = ['alias', 'upload_image']
     order_columns = ['alias', 'upload_image']
 
@@ -2589,15 +2453,16 @@ class IconSettingsListingTable(BaseDatatableView):
         return ret
 
 
-class IconSettingsDetail(DetailView):
+class IconSettingsDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the IconSettings detail.
     """
     model = IconSettings
+    required_permissions = ('inventory.view_iconsettings',)
     template_name = 'icon_settings/icon_settings_detail.html'
 
 
-class IconSettingsCreate(CreateView):
+class IconSettingsCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new IconSettings.
     """
@@ -2605,13 +2470,7 @@ class IconSettingsCreate(CreateView):
     model = IconSettings
     form_class = IconSettingsForm
     success_url = reverse_lazy('icon_settings_list')
-
-    @method_decorator(permission_required('inventory.add_iconsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(IconSettingsCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_iconsettings',)
 
     def form_valid(self, form):
         """
@@ -2622,7 +2481,7 @@ class IconSettingsCreate(CreateView):
         return HttpResponseRedirect(IconSettingsCreate.success_url)
 
 
-class IconSettingsUpdate(UpdateView):
+class IconSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update IconSettings.
     """
@@ -2630,13 +2489,7 @@ class IconSettingsUpdate(UpdateView):
     model = IconSettings
     form_class = IconSettingsForm
     success_url = reverse_lazy('icon_settings_list')
-
-    @method_decorator(permission_required('inventory.change_iconsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(IconSettingsUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_iconsettings',)
 
     def form_valid(self, form):
         """
@@ -2657,22 +2510,15 @@ class IconSettingsUpdate(UpdateView):
         return HttpResponseRedirect(IconSettingsUpdate.success_url)
 
 
-class IconSettingsDelete(DeleteView):
+class IconSettingsDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the machine
     """
     model = IconSettings
     template_name = 'icon_settings/icon_settings_delete.html'
     success_url = reverse_lazy('icon_settings_list')
+    required_permissions = ('inventory.delete_iconsettings',)
 
-    @method_decorator(permission_required('inventory.delete_iconsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(IconSettingsDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_iconsettings', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -2687,19 +2533,13 @@ class IconSettingsDelete(DeleteView):
 
 
 #**************************************** LivePollingSettings *********************************************
-class LivePollingSettingsList(ListView):
+class LivePollingSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render LivePollingSettings List Page.
     """
     model = LivePollingSettings
     template_name = 'live_polling_settings/live_polling_settings_list.html'
-
-    @method_decorator(permission_required('inventory.view_livepollingsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(LivePollingSettingsList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_livepollingsettings',)
 
     def get_context_data(self, **kwargs):
         """
@@ -2721,11 +2561,12 @@ class LivePollingSettingsList(ListView):
         return context
 
 
-class LivePollingSettingsListingTable(BaseDatatableView):
+class LivePollingSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render LivePollingSettings Data table.
     """
     model = LivePollingSettings
+    required_permissions = ('inventory.view_livepollingsettings',)
     columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
     order_columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
 
@@ -2806,15 +2647,16 @@ class LivePollingSettingsListingTable(BaseDatatableView):
         return ret
 
 
-class LivePollingSettingsDetail(DetailView):
+class LivePollingSettingsDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the LivePollingSettings detail.
     """
     model = LivePollingSettings
+    required_permissions = ('inventory.view_livepollingsettings',)
     template_name = 'live_polling_settings/live_polling_settings_detail.html'
 
 
-class LivePollingSettingsCreate(CreateView):
+class LivePollingSettingsCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new LivePollingSettings.
     """
@@ -2822,13 +2664,7 @@ class LivePollingSettingsCreate(CreateView):
     model = LivePollingSettings
     form_class = LivePollingSettingsForm
     success_url = reverse_lazy('live_polling_settings_list')
-
-    @method_decorator(permission_required('inventory.add_livepollingsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(LivePollingSettingsCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_livepollingsettings',)
 
     def form_valid(self, form):
         """
@@ -2839,7 +2675,7 @@ class LivePollingSettingsCreate(CreateView):
         return HttpResponseRedirect(LivePollingSettingsCreate.success_url)
 
 
-class LivePollingSettingsUpdate(UpdateView):
+class LivePollingSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update LivePollingSettings.
     """
@@ -2847,13 +2683,7 @@ class LivePollingSettingsUpdate(UpdateView):
     model = LivePollingSettings
     form_class = LivePollingSettingsForm
     success_url = reverse_lazy('live_polling_settings_list')
-
-    @method_decorator(permission_required('inventory.change_livepollingsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(LivePollingSettingsUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_livepollingsettings',)
 
     def form_valid(self, form):
         """
@@ -2874,22 +2704,15 @@ class LivePollingSettingsUpdate(UpdateView):
         return HttpResponseRedirect(LivePollingSettingsUpdate.success_url)
 
 
-class LivePollingSettingsDelete(DeleteView):
+class LivePollingSettingsDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the LivePollingSettings
     """
     model = LivePollingSettings
     template_name = 'live_polling_settings/live_polling_settings_delete.html'
     success_url = reverse_lazy('live_polling_settings_list')
+    required_permissions = ('inventory.delete_livepollingsettings',)
 
-    @method_decorator(permission_required('inventory.delete_livepollingsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(LivePollingSettingsDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_livepollingsettings', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -2904,19 +2727,13 @@ class LivePollingSettingsDelete(DeleteView):
 
 
 #**************************************** ThresholdConfiguration *********************************************
-class ThresholdConfigurationList(ListView):
+class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render ThresholdConfiguration List Page.
     """
     model = ThresholdConfiguration
     template_name = 'threshold_configuration/threshold_configuration_list.html'
-
-    @method_decorator(permission_required('inventory.view_thresholdconfiguration', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ThresholdConfigurationList, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.view_thresholdconfiguration',)
 
 
     def get_context_data(self, **kwargs):
@@ -2937,11 +2754,12 @@ class ThresholdConfigurationList(ListView):
         return context
 
 
-class ThresholdConfigurationListingTable(BaseDatatableView):
+class ThresholdConfigurationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render ThresholdConfiguration Data table.
     """
     model = ThresholdConfiguration
+    required_permissions = ('inventory.view_thresholdconfiguration',)
     columns = ['alias', 'live_polling_template__alias']
     order_columns = ['alias', 'live_polling_template__alias']
 
@@ -3023,15 +2841,16 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
         return ret
 
 
-class ThresholdConfigurationDetail(DetailView):
+class ThresholdConfigurationDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Threshold Configuration detail.
     """
     model = ThresholdConfiguration
+    required_permissions = ('inventory.view_thresholdconfiguration',)
     template_name = 'threshold_configuration/threshold_configuration_detail.html'
 
 
-class ThresholdConfigurationCreate(CreateView):
+class ThresholdConfigurationCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Threshold Configuration.
     """
@@ -3039,13 +2858,7 @@ class ThresholdConfigurationCreate(CreateView):
     model = ThresholdConfiguration
     form_class = ThresholdConfigurationForm
     success_url = reverse_lazy('threshold_configuration_list')
-
-    @method_decorator(permission_required('inventory.add_threshold_configuration', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThresholdConfigurationCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_threshold_configuration',)
 
     def form_valid(self, form):
         """
@@ -3056,7 +2869,7 @@ class ThresholdConfigurationCreate(CreateView):
         return HttpResponseRedirect(ThresholdConfigurationCreate.success_url)
 
 
-class ThresholdConfigurationUpdate(UpdateView):
+class ThresholdConfigurationUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Threshold Configuration.
     """
@@ -3064,13 +2877,7 @@ class ThresholdConfigurationUpdate(UpdateView):
     model = ThresholdConfiguration
     form_class = ThresholdConfigurationForm
     success_url = reverse_lazy('threshold_configuration_list')
-
-    @method_decorator(permission_required('inventory.change_threshold_configuration', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThresholdConfigurationUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_threshold_configuration',)
 
     def form_valid(self, form):
         """
@@ -3091,22 +2898,15 @@ class ThresholdConfigurationUpdate(UpdateView):
         return HttpResponseRedirect(ThresholdConfigurationUpdate.success_url)
 
 
-class ThresholdConfigurationDelete(DeleteView):
+class ThresholdConfigurationDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Threshold Configuration.
     """
     model = ThresholdConfiguration
     template_name = 'threshold_configuration/threshold_configuration_delete.html'
     success_url = reverse_lazy('threshold_configuration_list')
+    required_permissions = ('inventory.delete_threshold_configuration',)
 
-    @method_decorator(permission_required('inventory.delete_threshold_configuration', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThresholdConfigurationDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_threshold_configuration', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -3122,20 +2922,13 @@ class ThresholdConfigurationDelete(DeleteView):
 
 
 #**************************************** ThematicSettings *********************************************
-class ThematicSettingsList(ListView):
+class ThematicSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render ThematicSettings List Page.
     """
     model = ThematicSettings
     template_name = 'thematic_settings/thematic_settings_list.html'
-
-    @method_decorator(permission_required('inventory.view_thematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ThematicSettingsList, self).dispatch(*args, **kwargs)
-
+    required_permissions = ('inventory.view_thematicsettings',)
 
     def get_context_data(self, **kwargs):
         """
@@ -3165,11 +2958,12 @@ class ThematicSettingsList(ListView):
         return context
 
 
-class ThematicSettingsListingTable(BaseDatatableView):
+class ThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
     model = ThematicSettings
+    required_permissions = ('inventory.view_thematicsettings',)
     columns = ['alias', 'threshold_template', 'icon_settings']
     order_columns = ['alias', 'threshold_template']
     def filter_queryset(self, qs):
@@ -3288,15 +3082,16 @@ class ThematicSettingsListingTable(BaseDatatableView):
         return ret
 
 
-class ThematicSettingsDetail(DetailView):
+class ThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Thematic Settings detail.
     """
     model = ThematicSettings
+    required_permissions = ('inventory.view_thematicsettings',)
     template_name = 'thematic_settings/thematic_settings_detail.html'
 
 
-class ThematicSettingsCreate(CreateView):
+class ThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new ThematicSettings.
     """
@@ -3304,13 +3099,7 @@ class ThematicSettingsCreate(CreateView):
     model = ThematicSettings
     form_class = ThematicSettingsForm
     success_url = reverse_lazy('thematic_settings_list')
-
-    @method_decorator(permission_required('inventory.add_thematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThematicSettingsCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_thematicsettings',)
 
     def form_valid(self, form):
         """
@@ -3325,7 +3114,7 @@ class ThematicSettingsCreate(CreateView):
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
 
-class ThematicSettingsUpdate(UpdateView):
+class ThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Thematic Settings.
     """
@@ -3333,13 +3122,7 @@ class ThematicSettingsUpdate(UpdateView):
     model = ThematicSettings
     form_class = ThematicSettingsForm
     success_url = reverse_lazy('thematic_settings_list')
-
-    @method_decorator(permission_required('inventory.change_thematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThematicSettingsUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_thematicsettings',)
 
     def form_valid(self, form):
         """
@@ -3365,22 +3148,15 @@ class ThematicSettingsUpdate(UpdateView):
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
 
 
-class ThematicSettingsDelete(DeleteView):
+class ThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Thematic Settings.
     """
     model = ThematicSettings
     template_name = 'thematic_settings/thematic_settings_delete.html'
     success_url = reverse_lazy('thematic_settings_list')
+    required_permissions = ('inventory.delete_thematicsettings',)
 
-    @method_decorator(permission_required('inventory.delete_thematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(ThematicSettingsDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_thematicsettings', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.
@@ -4229,7 +4005,7 @@ class PingThematicSettingsDetail(DetailView):
     template_name = 'ping_thematic_settings/ping_thematic_settings_detail.html'
 
 
-class PingThematicSettingsCreate(CreateView):
+class PingThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new PingThematicSettings.
     """
@@ -4237,13 +4013,7 @@ class PingThematicSettingsCreate(CreateView):
     model = PingThematicSettings
     form_class = PingThematicSettingsForm
     success_url = reverse_lazy('ping_thematic_settings_list')
-
-    @method_decorator(permission_required('inventory.add_pingthematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(PingThematicSettingsCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.add_pingthematicsettings',)
 
     def form_valid(self, form):
         """
@@ -4263,7 +4033,7 @@ class PingThematicSettingsCreate(CreateView):
         return HttpResponseRedirect(PingThematicSettingsCreate.success_url)
 
 
-class PingThematicSettingsUpdate(UpdateView):
+class PingThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update Thematic Settings.
     """
@@ -4271,13 +4041,7 @@ class PingThematicSettingsUpdate(UpdateView):
     model = PingThematicSettings
     form_class = PingThematicSettingsForm
     success_url = reverse_lazy('ping_thematic_settings_list')
-
-    @method_decorator(permission_required('inventory.change_pingthematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(PingThematicSettingsUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('inventory.change_pingthematicsettings',)
 
     def form_valid(self, form):
         """
@@ -4308,22 +4072,15 @@ class PingThematicSettingsUpdate(UpdateView):
         return HttpResponseRedirect(PingThematicSettingsUpdate.success_url)
 
 
-class PingThematicSettingsDelete(DeleteView):
+class PingThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Thematic Settings.
     """
     model = PingThematicSettings
     template_name = 'ping_thematic_settings/ping_thematic_settings_delete.html'
     success_url = reverse_lazy('ping_thematic_settings_list')
+    required_permissions = ('inventory.delete_pingthematicsettings',)
 
-    @method_decorator(permission_required('inventory.delete_pingthematicsettings', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(PingThematicSettingsDelete, self).dispatch(*args, **kwargs)
-
-    @method_decorator(permission_required('inventory.delete_pingthematicsettings', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity on deletion.

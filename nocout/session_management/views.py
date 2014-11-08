@@ -12,24 +12,17 @@ from session_management.models import Visitor
 from django.contrib import auth
 from user_profile.models import UserProfile
 from django.db.models import Q
-from django.utils.decorators import method_decorator
-from django.contrib.auth.decorators import permission_required
-
+from nocout.mixins.permissions import PermissionsRequiredMixin
 from django.views.decorators.csrf import csrf_exempt
 
-class UserStatusList(ListView):
+
+class UserStatusList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to list the User Status of logged in.
     """
     model = UserProfile
     template_name = 'session_management/users_status_list.html'
-
-    @method_decorator(permission_required('user_profile.view_userprofile', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(UserStatusList, self).dispatch(*args, **kwargs)
+    required_permissions = ('user_profile.view_userprofile',)
 
     def get_context_data(self, **kwargs):
         """

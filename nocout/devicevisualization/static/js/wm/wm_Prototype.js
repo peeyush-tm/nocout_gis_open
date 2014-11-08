@@ -60,11 +60,33 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			featureclick: function(e) { 
 				that.onFeatureSelect(e); 
 				return false; 
-			}, 
-			onFeatureUnselect: function(e) { 
-				that.noFeatureClick(e); 
-			} 
+			}
 		};
+
+		//vector Layer for Search Icon
+		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Markers Layer");
+
+		layers.searchMarkerLayer.display(false);
+
+		//Set searchMarkerLayer
+		this.searchMarkerLayer = layers.searchMarkerLayer;
+
+		//Add layer to the map
+		ccpl_map.addLayer(layers.searchMarkerLayer);
+
+		// var kmlFileExample = new OpenLayers.Layer.Vector("kml layer", {
+		// 	projection: new OpenLayers.Projection("EPSG:4326"),
+		// 	strategies: [new OpenLayers.Strategy.Fixed()],
+		// 	protocol: new OpenLayers.Protocol.HTTP({
+		// 		url: base_url+'/static/06112014-9nwcx5b.kml',
+		// 		format: new OpenLayers.Format.KML({
+		// 			extractStyles: true,
+		// 			extractAttributes: true
+		// 		})
+		// 	})
+		// });
+
+		// ccpl_map.addLayer(kmlFileExample);
 
 		//Create a Vector Layer which will hold Sectors
 		layers.sectorsLayer = new OpenLayers.Layer.Vector('Sectors Layers', {eventListeners: featureEventListener});
@@ -85,7 +107,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map.addLayer(layers.linesLayer);
 
 		//vector Layer for Devices Marker
-		layers.markerDevicesLayer = new OpenLayers.Layer.Vector("Devices Marker Layer", {visible: false, eventListeners: featureEventListener});
+		layers.markerDevicesLayer = new OpenLayers.Layer.Vector("Devices Marker Layer", {eventListeners: featureEventListener});
 
 		//Set markerDevicesLayer
 		this.markerDevicesLayer = layers.markerDevicesLayer;
@@ -146,10 +168,32 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 					return feature.cluster.length > 1 ? clusterImg(feature.cluster.length) : feature.cluster[0].style.externalGraphic;
 				},
 				graphicWidth: function(feature) {
-					return feature.cluster.length > 1 ? 55 : feature.cluster[0].style.graphicWidth;
+					if(feature.cluster.length > 1) {
+						return 55;
+					} else {
+						var iconSizeSelected = $("#icon_Size_Select_In_Tools").val();
+						if(iconSizeSelected=== 'small') {
+							return 20;
+						} else if (iconSizeSelected === 'medium') {
+							return whiteMapSettings.size.medium.width;
+						} else {
+							return 32;
+						}
+					}
 				},
 				graphicHeight: function(feature) {
-					return feature.cluster.length > 1 ? 55 : feature.cluster[0].style.graphicHeight;
+					if(feature.cluster.length > 1) {
+						return 55;
+					} else {
+						var iconSizeSelected = $("#icon_Size_Select_In_Tools").val();
+						if(iconSizeSelected=== 'small') {
+							return 20;
+						} else if (iconSizeSelected === 'medium') {
+							return whiteMapSettings.size.medium.height;
+						} else {
+							return 32;
+						}
+					}
 				}
 			}
 		});
@@ -177,7 +221,9 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 				clickout: true, toggle: true, multiple: false, hover: false,
 				eventListeners: {
 					//on feature click
-					featurehighlighted: function(feature) {that.markerClick(feature); selectCtrl.unselectAll(); return false;}
+					featurehighlighted: function(feature) {that.markerClick(feature); 
+						selectCtrl.unselectAll(); 
+						return false;}
 				}
 			}
 		);
@@ -202,20 +248,12 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//Live Poll Polygon Control
 		this.livePollingPolygonControl = new OpenLayers.Control.DrawFeature(layers.livePollFeatureLayer, OpenLayers.Handler.Polygon, {eventListeners: {"featureadded": this.livePollingPolygonAdded}});
 
-		//vector Layer for Search Icon
-		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Markers Layer");
-
-		layers.searchMarkerLayer.display(false);
-
-		//Set searchMarkerLayer
-		this.searchMarkerLayer = layers.searchMarkerLayer;
-
-		//Add layer to the map
-		// ccpl_map.addLayer(layers.searchMarkerLayer);
+		ccpl_map.addControl(this.livePollingPolygonControl);
 
 		var panel = new OpenLayers.Control.Panel();
 
 		panel.addControls([new OpenLayers.Control.FullScreen()]);
+
 		
 		ccpl_map.addControl(panel);
 		
@@ -229,7 +267,7 @@ WhiteMapClass.prototype.createOpenLayerVectorMarker= function(size, iconUrl, lon
 		var point = new OpenLayers.Geometry.Point(lon, lat);
 		var feature = new OpenLayers.Feature.Vector(point,
 			{description: 'This is description'},
-			{externalGraphic: iconUrl, graphicHeight: size.h, graphicWidth: size.w, graphicXOffset:-12, graphicYOffset:-size.h});
+			{externalGraphic: iconUrl, graphicHeight: size.h, graphicWidth: size.w});
 		// feature.attributes = { icon: iconUrl, label: "myVector", importance: 10, size: size };
 		for(var key in additionalInfo) {
 		if(additionalInfo.hasOwnProperty(key)) {

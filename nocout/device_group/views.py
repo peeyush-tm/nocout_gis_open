@@ -1,9 +1,7 @@
 import json
 from operator import itemgetter
-from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
 from django.http.response import HttpResponseRedirect, HttpResponse
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -14,21 +12,16 @@ from forms import DeviceGroupForm
 from django.db.models import Q
 from nocout.utils.util import DictDiffer
 from organization.models import Organization
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
-class DeviceGroupList(ListView):
+class DeviceGroupList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render DeviceGroup List Page.
     """
     model = DeviceGroup
     template_name = 'device_group/dg_list.html'
-
-    @method_decorator(permission_required('device_group.view_devicegroup', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(DeviceGroupList, self).dispatch(*args, **kwargs)
+    required_permissions = ('device_group.view_devicegroup',)
 
     def get_context_data(self, **kwargs):
         """
@@ -48,11 +41,13 @@ class DeviceGroupList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class DeviceGroupListingTable(BaseDatatableView):
+
+class DeviceGroupListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class based View to render Device Group Data table.
     """
     model = DeviceGroup
+    required_permissions = ('device_group.view_devicegroup',)
     columns = ['name', 'alias', 'parent__name','organization__name']
     order_columns = ['name', 'alias', 'parent__name','organization__name']
 
@@ -164,15 +159,17 @@ class DeviceGroupListingTable(BaseDatatableView):
                }
         return ret
 
-class DeviceGroupDetail(DetailView):
+
+class DeviceGroupDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Device group detail.
     """
     model = DeviceGroup
+    required_permissions = ('device_group.view_devicegroup',)
     template_name = 'device_group/dg_detail.html'
 
 
-class DeviceGroupCreate(CreateView):
+class DeviceGroupCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based view to create new Device group.
     """
@@ -180,13 +177,7 @@ class DeviceGroupCreate(CreateView):
     model = DeviceGroup
     form_class = DeviceGroupForm
     success_url = reverse_lazy('dg_list')
-
-    @method_decorator(permission_required('device_group.add_devicegroup', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(DeviceGroupCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device_group.add_devicegroup',)
 
     def form_valid( self, form ):
         """
@@ -196,7 +187,7 @@ class DeviceGroupCreate(CreateView):
         return HttpResponseRedirect( DeviceGroupCreate.success_url )
 
 
-class DeviceGroupUpdate(UpdateView):
+class DeviceGroupUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based view to update machine.
     """
@@ -204,13 +195,7 @@ class DeviceGroupUpdate(UpdateView):
     model = DeviceGroup
     form_class = DeviceGroupForm
     success_url = reverse_lazy('dg_list')
-
-    @method_decorator(permission_required('device_group.change_devicegroup', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(DeviceGroupUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('device_group.change_devicegroup',)
 
     def form_valid( self, form ):
         """
@@ -261,27 +246,21 @@ class DeviceGroupUpdate(UpdateView):
         return HttpResponseRedirect( DeviceGroupCreate.success_url )
 
 
-
-class DeviceGroupDelete(DeleteView):
+class DeviceGroupDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the Device Group
     """
     model = DeviceGroup
     template_name = 'device_group/dg_delete.html'
     success_url = reverse_lazy('dg_list')
-
-    @method_decorator(permission_required('device_group.delete_devicegroup', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(DeviceGroupDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('device_group.delete_devicegroup',)
 
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity.
         """
         return super(DeviceGroupDelete, self).delete(request, *args, **kwargs)
+
 
 def device_group_devices_wrt_organization(request):
     """
@@ -295,6 +274,3 @@ def device_group_devices_wrt_organization(request):
         response_string+='<option value={0}>{1}</option>'.format(*map(str, devices[index]))
 
     return HttpResponse(json.dumps({'response': response_string }), mimetype='application/json')
-
-
-

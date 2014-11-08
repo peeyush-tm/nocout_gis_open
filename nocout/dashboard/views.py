@@ -8,8 +8,6 @@ from django.http import HttpResponse
 from django.views.generic import ListView, DetailView
 from django.views.generic.base import View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.utils.decorators import method_decorator
-from django.contrib.auth.decorators import user_passes_test
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from nocout.utils import logged_in_user_organizations
@@ -21,6 +19,7 @@ from dashboard.forms import DashboardSettingForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
 from dashboard.config import dashboards
 from activity_stream.models import UserAction
+from nocout.mixins.permissions import SuperUserRequiredMixin
 
 
 class DashbaordSettingsListView(ListView):
@@ -171,7 +170,7 @@ class DashbaordSettingsListingTable(BaseDatatableView):
         return ret
 
 
-class DashbaordSettingsCreateView(CreateView):
+class DashbaordSettingsCreateView(SuperUserRequiredMixin, CreateView):
     """
     Class based view to create new Dashboard Setting.
     """
@@ -179,13 +178,6 @@ class DashbaordSettingsCreateView(CreateView):
     form_class = DashboardSettingForm
     template_name = "dashboard/dashboard_settings_new.html"
     success_url = reverse_lazy('dashboard-settings')
-
-    @method_decorator(user_passes_test(lambda u: u.is_superuser))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(DashbaordSettingsCreateView, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(DashbaordSettingsCreateView, self).get_context_data(**kwargs)
@@ -203,7 +195,7 @@ class DashbaordSettingsDetailView(DetailView):
     template_name = 'dashboard/dashboard_detail.html'
 
 
-class DashbaordSettingsUpdateView(UpdateView):
+class DashbaordSettingsUpdateView(SuperUserRequiredMixin, UpdateView):
     """
     Class based view to update Dashboard Setting.
     """
@@ -211,13 +203,6 @@ class DashbaordSettingsUpdateView(UpdateView):
     form_class = DashboardSettingForm
     template_name = "dashboard/dashboard_settings_update.html"
     success_url = reverse_lazy('dashboard-settings')
-
-    @method_decorator(user_passes_test(lambda u: u.is_superuser))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(DashbaordSettingsUpdateView, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(DashbaordSettingsUpdateView, self).get_context_data(**kwargs)
@@ -227,7 +212,7 @@ class DashbaordSettingsUpdateView(UpdateView):
         return context
 
 
-class DashbaordSettingsDeleteView(DeleteView):
+class DashbaordSettingsDeleteView(SuperUserRequiredMixin, DeleteView):
     """
     Class based View to delete the Dashboard Setting.
 
@@ -236,14 +221,6 @@ class DashbaordSettingsDeleteView(DeleteView):
     template_name = 'dashboard/dashboard_settings_delete.html'
     success_url = reverse_lazy('dashboard-settings')
 
-    @method_decorator(user_passes_test(lambda u: u.is_superuser))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(DashbaordSettingsDeleteView, self).dispatch(*args, **kwargs)
-
-    @method_decorator(user_passes_test(lambda u: u.is_superuser))
     def delete(self, request, *args, **kwargs):
         """
         Overriding the delete method to log the user activity.

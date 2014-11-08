@@ -121,11 +121,44 @@
             $("#id_bs_switch").parent().children().find('a span')[0].innerHTML = "Select";
         });
 
+        // to call the dajax function on bs_switch search.
+        var bsswitchTimeout = null;
+        $("#id_bs_switch").on("select2-open", function() {
+            $("#select2-drop .select2-search input").keypress(function() {
+                if(bsswitchTimeout != null) clearTimeout(bsswitchTimeout);
+                    bsswitchTimeout = setTimeout(list_device_on_bs_switch_search, 50);
+            });
+        });
+
+        function list_device_on_bs_switch_search(){
+            Dajaxice.inventory.bs_switch_on_searching(Dajax.process, {
+                'search_string': $("#select2-drop .select2-search input").val(),
+                'organisation_id': $('#id_organization option:selected').val()
+            });
+        }
+
         $("#id_organization").change(function () {
 
             Dajaxice.inventory.update_backhaul(Dajax.process, {'option': $('#id_organization').val()});
             $("#id_backhaul").val("");
             $("#id_backhaul").parent().children().find('a span')[0].innerHTML = "Select";
         });
+
+        // to call the dajax function on bs_switch search.
+        var backhaulTimeout = null;
+        $("#id_backhaul").on("select2-open", function() {
+            $("#select2-drop .select2-search input").keypress(function() {
+                if(backhaulTimeout != null) clearTimeout(backhaulTimeout);
+                    backhaulTimeout = setTimeout(list_device_on_backhaul_search, 50);
+            });
+        });
+
+        function list_device_on_backhaul_search(){
+            Dajaxice.inventory.backhaul_on_searching(Dajax.process, {
+                'search_string': $("#select2-drop .select2-search input").val(),
+                'organisation_id': $('#id_organization option:selected').val()
+            });
+        }
+
     </script>
 {% endblock %}
