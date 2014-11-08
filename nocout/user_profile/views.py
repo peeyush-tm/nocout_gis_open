@@ -20,6 +20,7 @@ from django.template.loader import render_to_string
 from django.db.models import Q
 from nocout.utils import logged_in_user_organizations
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.user_action import UserLogDeleteMixin
 
 
 class UserList(PermissionsRequiredMixin, ListView):
@@ -397,7 +398,7 @@ class UserUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(UserCreate.success_url)
 
 
-class UserDelete(PermissionsRequiredMixin, DeleteView):
+class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the User.
     """
@@ -405,6 +406,7 @@ class UserDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'user_profile/user_delete.html'
     success_url = reverse_lazy('user_list')
     required_permissions = ('user_profile.delete_userprofile',)
+    obj_alias = 'first_name'
 
     def get(self, *args, **kwargs):
         """
@@ -415,12 +417,6 @@ class UserDelete(PermissionsRequiredMixin, DeleteView):
     def get_queryset(self):
         return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
 
-    def delete(self, request, *args, **kwargs):
-        """
-        To Log the activity before deleting the user.
-        """
-
-        return super(UserDelete, self).delete(request, *args, **kwargs)
 
 class CurrentUserProfileUpdate(UpdateView):
     """
