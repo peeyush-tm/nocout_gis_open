@@ -936,24 +936,55 @@ class CircuitForm(forms.ModelForm):
 
         if self.request is not None:
             '''
-            Checks if organization field is selected or not. if organization field is selected then
-            organization dependent fields will be of selected organization. else it will be of user's organization.
+            If user submits form and returned with an error, then get selected values from POST data.
+            If user requests to edit an instance, then get instance values.
+            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
             '''
-            organization = self.request.user.userprofile.organization
-            if kwargs['instance'] is not None:
-                instance_organization = kwargs['instance'].organization
-                self.fields['sector'].queryset = self.fields['sector'].queryset.filter(organization=instance_organization)
-                self.fields['customer'].queryset = self.fields['customer'].queryset.filter(organization=instance_organization)
-                self.fields['sub_station'].queryset = self.fields['sub_station'].queryset.filter(organization=instance_organization)
-            else:
-                self.fields['sector'].queryset = self.fields['sector'].queryset.filter(organization=organization)
-                self.fields['customer'].queryset = self.fields['customer'].queryset.filter(organization=organization)
-                self.fields['sub_station'].queryset = self.fields['sub_station'].queryset.filter(organization=organization)
+            request = self.request
 
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            if request.method == 'POST':
+                organization = request.POST.get('organization')
+                sector = request.POST.get('sector')
+                customer = request.POST.get('customer')
+                sub_station = request.POST.get('sub_station')
+            elif kwargs['instance'] is not None: # request.method == 'GET'
+                instance = kwargs['instance']
+                organization = instance.organization
+                sector = instance.sector.id if instance.sector else None
+                customer = instance.customer.id if instance.customer else None
+                sub_station = instance.sub_station.id if instance.sub_station else None
+            else: # request.method == 'GET' and instance is None
+                organization = request.user.userprofile.organization
+                sector = None
+                customer = None
+                sub_station = None
+
+            sectors_set = Sector.objects.values_list('id', flat=True)
+            customers_set = Customer.objects.values_list('id', flat=True)
+            sub_stations_set = SubStation.objects.values_list('id', flat=True)
+            if organization:
+                sectors_set = sectors_set.filter(organization=organization)
+                customers_set = customers_set.filter(organization=organization)
+                sub_stations_set = sub_stations_set.filter(organization=organization)
+
+            sector_ids = list(sectors_set[:50])
+            customer_ids = list(customers_set[:50])
+            sub_station_ids = list(sub_stations_set[:50])
+            if sector: # Not None or ''
+                sector_ids.append(sector)
+            if customer: # Not None or ''
+                customer_ids.append(customer)
+            if sub_station: # Not None or ''
+                sub_station_ids.append(sub_station)
+
+            self.fields['sector'].queryset = self.fields['sector'].queryset.filter(id__in=sector_ids)
+            self.fields['customer'].queryset = self.fields['customer'].queryset.filter(id__in=customer_ids)
+            self.fields['sub_station'].queryset = self.fields['sub_station'].queryset.filter(id__in=sub_station_ids)
+
+            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
             else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
+                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
