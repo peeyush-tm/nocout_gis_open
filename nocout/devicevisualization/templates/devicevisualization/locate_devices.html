@@ -78,7 +78,41 @@
         <div id="advSearchContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Advance Search</h4>
 
-            <div id="advSearchFormContainer" class="col-md-8 col-md-offset-2"></div>
+            <div id="advSearchFormContainer" class="col-md-8 col-md-offset-2">
+                <div id="gmap_search" class="advanceSearchContainer">
+                    <form id="gmap_search_form" method="post">
+                        <div class="form-horizontal">
+                            <div class="form-group">
+                                <label for="name" class="col-sm-4 control-label">BS Name</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="search_name">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sector_configured_on" class="col-sm-4 control-label">IP Address</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="search_sector_configured_on">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="circuit_ids" class="col-sm-4 control-label">Circut ID</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="search_circuit_ids">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="city" class="col-sm-4 control-label">BS City</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="search_city">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
             <div class="clearfix"></div>
 
             <div class="col-md-8 col-md-offset-2">
@@ -98,7 +132,41 @@
         <div id="advFilterContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Advance Filters</h4>
 
-            <div id="advFilterFormContainer" class="col-md-8 col-md-offset-2"></div>
+            <div id="advFilterFormContainer" class="col-md-8 col-md-offset-2">
+                <div id="gmap_advFilter" class="advanceFiltersContainer">
+                    <form id="advFilter_form">
+                        <div class="form-group form-horizontal">
+                            <div class="form-group">
+                                <label for="technology" class="col-sm-4 control-label">Technology</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="filter_technology">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="vendor" class="col-sm-4 control-label">Vendor</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="filter_vendor">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="state" class="col-sm-4 control-label">State</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="filter_state">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="city" class="col-sm-4 control-label">City</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="filter_city">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
             <div class="clearfix"></div>
 
             <div class="col-md-8 col-md-offset-2">
@@ -271,6 +339,7 @@
                                 <div class="divide-10"></div>
                                 <div class="">
                                     <button type="button" class="btn btn-primary hide" data-complete-text="Poll Now" data-loading-text="Please Wait..." id="fetch_polling">Poll Now <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i></button>
+                                    <input type="checkbox" name="isPing" id="isPing" value="1"> Poll Ping Service
                                     <button type="button" class="btn btn-primary pull-right hide" data-complete-text="Tabular View" data-loading-text="Please Wait..." id="polling_tabular_view"><i class="fa fa-table"></i> Tabular View</button>
                                 </div>
                                 <div class="divide-20 clearfix"></div>
@@ -306,31 +375,33 @@
     <script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
     <!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
     <script type="text/javascript" src={% static "js/oms.min.js" %}></script>
-    <script type="text/javascript" src={% static "js/gisPerformance.js" %}></script>
-    <!-- Our Library to plot the devices on map & performs functionality accordingly-->
-    <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
-    <!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
-    <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
-
-    <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>
-    <!-- SPARKLINES -->
-    <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
-    <!-- Custon Script for this template-->
-    <script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
     <!-- Script for full screen google maps-->
     <script type="text/javascript" src={% static "js/fullScreenControl.js" %}></script>
-
-      
+    <!--LOKIJS for Javascript Database-->
+    <script type="text/javascript" src={% static "js/lokijs.min.js" %}></script>
     <!--Flot Chart Library for Fresnel zone-->
     <script src={% static "js/flot/jquery.flot.min.js" %}></script>
-    <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %}></script>
+    <!-- SPARKLINES -->
+    <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
+    <!-- Our Library to plot the devices on map & performs functionality accordingly-->
+    <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
+    <!-- Custon Script for this template-->
+    <script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
+    <!-- GIS Performancer Custom Library-->
+    <script type="text/javascript" src={% static "js/gisPerformance.js" %}></script>
+    <!-- Advance Filters Custom Library-->
+    <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
+    <!--Advance Search Custom Library-->
+    <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>
+
     <script type="text/javascript">
 
         var networkMapInstance = "",
-                getFilterApi = "",
-                setFilterApi = "",
-                advSearch = "",
-                deviceName = "", advJustSearch= "";
+            getFilterApi = "",
+            setFilterApi = "",
+            advSearch = "",
+            deviceName = "",
+            advJustSearch= "";
 
         $(document).ready(function (e) {
 
