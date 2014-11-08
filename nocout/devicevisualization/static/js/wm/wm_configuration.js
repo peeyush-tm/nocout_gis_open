@@ -13,7 +13,8 @@ var whiteMapSettings = {
 	devices_size: {
 		medium: {width: 32, height: 37}
 	},
-	zoomLevelAfterLineAppears: 6
+	zoomLevelAfterLineAppears: 6,
+	latLngPrefixLabel: 'Longitude, Latitude: '
 }
 
 var clustererSettings = {

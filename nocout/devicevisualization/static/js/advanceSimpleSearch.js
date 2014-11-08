@@ -107,7 +107,7 @@ function advanceSearchMainClass() {
 
         } else if (window.location.pathname.indexOf("white_background") > -1) {
 
-            var size, icon, additionalInfo= {}, size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height);
+            var size, icon, additionalInfo= {}, size = new OpenLayers.Size(71, 77);
             //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
             searchedInputs= this.getInputArray();
 
@@ -123,7 +123,7 @@ function advanceSearchMainClass() {
                         icon = this.constants.search_bs_icon
                     }
             }
-
+            
             searchMarker = whiteMapClass.createOpenLayerVectorMarker(size, icon, long, lat, additionalInfo);
 
             whiteMapClass.searchMarkerLayer.display(true);

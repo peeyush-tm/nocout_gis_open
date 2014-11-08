@@ -830,6 +830,8 @@ function showWmapFilteredData(dataArray) {
         filtered_devices_data = [],
         filtered_line_data = [];
 
+    var bsDeviceObj = {};
+
     for(var i=0;i<dataArray.length;i++) {        
         var sectorsArray = dataArray[i].data.param.sector;
         var bsName = dataArray[i].name ? $.trim(dataArray[i].name) : "";
@@ -864,8 +866,13 @@ function showWmapFilteredData(dataArray) {
                 }
             }
 
+            if(!bsDeviceObj[bsName]) {
+                bsDeviceObj[bsName] = [];
+            }
+
             if(sector_device) {
                 filtered_devices_data.push(sector_device);
+                bsDeviceObj[bsName].push(sector_device);
             }
 
             if(sector_polygon) {
@@ -873,6 +880,6 @@ function showWmapFilteredData(dataArray) {
             }
         }
     }
-    whiteMapClass.applyAdvanceFilter({data_for_filters: dataArray, filtered_Features: filtered_bs_ss_data, line_Features: filtered_line_data, sector_Features: filtered_sector_data});
+    whiteMapClass.applyAdvanceFilter({data_for_filters: dataArray, filtered_Devices: bsDeviceObj, filtered_Features: filtered_bs_ss_data, line_Features: filtered_line_data, sector_Features: filtered_sector_data});
 }
 
