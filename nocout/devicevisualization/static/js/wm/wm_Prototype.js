@@ -56,7 +56,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map.addLayer(layers.india_Layer);
 
 		//vector Layer for Search Icon
-		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Markers Layer");
+		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Layer");
 
 		//Set searchMarkerLayer
 		this.searchMarkerLayer = layers.searchMarkerLayer;

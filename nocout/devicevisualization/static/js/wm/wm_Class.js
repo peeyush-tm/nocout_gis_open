@@ -79,7 +79,7 @@ function WhiteMapClass() {
 		var filtered_Features = {markers: [], lines: [], sectors: []};
 		var main_devices_marker_features_wmaps = [], filtered_lines_main_devices_marker_features_wmaps= [];
 		var main_lines_sectors_features_wmaps= {'lines': [], 'sectors': []}, filtered_lines_sectors_features = [];
-
+		var devicesMarkersArray= [];
 		var bsDevicesObj = {};
 
 		var pollableDevices = [];
@@ -167,8 +167,6 @@ function WhiteMapClass() {
 				lineLayers.display(false);
 			}
 		}
-
-
 	/**
 	*
 	* Map Events Section
@@ -1130,50 +1128,83 @@ function WhiteMapClass() {
 		/*
 		This function toggles all Station Markers size based on the Value selected in the dropdown.
 		 */
-		this.toggleIconSize = function() {
+		this.toggleIconSize = function(iconSize) {
+
+			var largeur= 32, hauteur= 37,largeur_bs = 32, hauteur_bs= 37, divideBy;
+			var anchorX, i, markerImage, markerImage2, icon;
+			if(iconSize=== 'small') {
+				divideBy= 1.4;
+				anchorX= 0.4;
+			} else if(iconSize=== 'medium') {
+				divideBy= 1;
+				anchorX= 0;
+			} else {
+				divideBy= 0.8;
+				anchorX= -0.2;
+			}
+
+			//Loop through the sector markers
+			for(i=0; i< devicesMarkersArray.length; i++) {
+				(function updateSectMarker(marker) {
+					var newGraphicHeight = 0, newGraphicWidth = 0, newGraphicXOffset = 0, newGraphicYOffset = 0;
+					newGraphicWidth = Math.ceil(largeur/divideBy);
+					newGraphicHeight = Math.ceil(hauteur/divideBy);
+					newGraphicXOffset = Math.ceil(16-(16*anchorX));
+					newGraphicYOffset = Math.ceil(hauteur/divideBy);
+
+					marker.style.graphicWidth = newGraphicWidth;
+					marker.style.graphicHeight = newGraphicHeight;
+					// marker.style.graphicXOffset = newGraphicXOffset;
+					// marker.style.graphicYOffset = newGraphicYOffset;
+					
+					// 
+					global_this.markerDevicesLayer.drawFeature(marker);
+				})(devicesMarkersArray[i]);
+			}
+			//End of Loop through the sector markers
+
+			global_this.markerDevicesLayer.redraw();
+
+
+			// Loop through the Master Markers
+			for(var i=0; i< bs_ss_features_list.length; i++ ) {
+				(function updateMasterMarker(marker) {
+
+					var newGraphicHeight = 0, newGraphicWidth = 0, newGraphicXOffset = 0, newGraphicYOffset = 0;
+					if(marker.attributes.pointType=== "base_station") {
+						newGraphicHeight= Math.ceil(hauteur_bs/divideBy)+5;
+						newGraphicWidth = Math.ceil(largeur_bs/divideBy)-5;
+						newGraphicXOffset = Math.ceil(16-(16*anchorX));
+						newGraphicYOffset = Math.ceil(hauteur_bs/divideBy);
+
+						marker.style.graphicWidth = newGraphicWidth;
+						marker.style.graphicHeight = newGraphicHeight;
+						// marker.style.graphicXOffset = newGraphicXOffset;
+						// marker.style.graphicYOffset = newGraphicYOffset;
+						
+						// 
+						global_this.markersLayer.drawFeature(marker);
+					} else if (marker.attributes.pointType === "sub_station") {
+						newGraphicWidth = Math.ceil(largeur/divideBy);
+						newGraphicHeight = Math.ceil(hauteur/divideBy);
+						newGraphicXOffset = Math.ceil(16-(16*anchorX));
+						newGraphicYOffset = Math.ceil(hauteur/divideBy);
+
+						marker.style.graphicWidth = newGraphicWidth;
+						marker.style.graphicHeight = newGraphicHeight;
+						// marker.style.graphicXOffset = newGraphicXOffset;
+						// marker.style.graphicYOffset = newGraphicYOffset;
+						
+						// 
+						global_this.markersLayer.drawFeature(marker);
+					}
+				})(bs_ss_features_list[i]);
+			}
+			//End of Loop through the Master Markers
+			//
+			global_this.markersLayer.redraw();
 
 			global_this.markersLayerStrategy.recluster();
-			// //Selected value of the icon size in the dropdown
-			// var iconSizeSelected = $("#icon_Size_Select_In_Tools").val();
-
-			// var size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height);
-			// var newSize= "";
-
-			// if(iconSizeSelected=== "large") {
-			// 	newSize = new OpenLayers.Size(size.w + 6, size.h + 9);
-			// } else if (iconSizeSelected === "small") {
-			// 	newSize = new OpenLayers.Size(size.w - 6, size.h - 9);
-			// } else {
-			// 	newSize = size;
-			// }
-
-			// global_this.markersLayerStrategy.deactivate();
-			// for (var i=0; i<global_this.markersLayer.features.length; i++) {
-			// 	var clusteredFeatures = global_this.markersLayer.features[i];
-			// 	if(clusteredFeatures && clusteredFeatures.cluster) {
-			// 		for(var j=0; j< clusteredFeatures.cluster.length; j++) {
-			// 			global_this.markersLayer.features[i].cluster[j].style.graphicWidth = newSize.w;
-			// 			global_this.markersLayer.features[i].cluster[j].style.graphicHeight = newSize.h;
-			// 			global_this.markersLayer.features[i].cluster[j].style.graphicYOffset = -newSize.h;
-			// 			global_this.markersLayer.features[i].cluster[j].style.graphicXOffset = -newSize.w;						
-			// 			// global_this.markersLayer.drawFeature(global_this.markersLayer.features[i].cluster[j]);
-			// 		}
-			// 	}
-
-			// 	if(i === global_this.markersLayer.features.length-1) {
-			// 		global_this.markersLayer.redraw();
-			// 		global_this.markersLayerStrategy.activate();
-			// 		global_this.markersLayerStrategy.recluster();
-			// 	}
-			// }
-			//Loop through all markers
-			// for (var i = 0; i < bs_ss_features_list.length; i++) {
-			// 	resizeFeatures(newScale, bs_ss_features_list[i]);
-			// 	console.log(bs_ss_features_list[i]);
-			// 	if(i === bs_ss_features_list.length -1) {
-			// 		global_this.markersLayer.redraw();					
-			// 	}
-			// }
 		}
 		/*
 		This function is triggered when Lat Lng Search is done.Validate the point, if LatLng is valid, zoom to the given lat lng.
@@ -1239,215 +1270,12 @@ function WhiteMapClass() {
 		}
 
 		/*
-		This function reset Advance Search
-		 */
-		this.resetAdvanceSearch = function() {
-
-			//reset adv class
-			// wmAdvanceSearchClass.resetAdvanceSearch();
-
-			//set hasAdvSearch = 0
-			// hasAdvSearch = 0;
-
-			//remove search markers
-			this.searchMarkerLayer.removeAllFeatures();
-
-			//update get status
-			// get_page_status();
-		}
-
-		/*
-		This function applies Advance Search
-		 */
-		this.applyAdvanceSearch = function() {
-			//apply adv Search
-			wmAdvanceSearchClass.applyAdvanceSearch(function() {
-				hideSpinner();
-			});
-		}
-
-		/*
-		This function populate Advance Search Dropdowns
-		 */
-		this.showAdvanceSearch = function() {
-			var advSearchData= [];
-			var bsNameData = { 'element_type':'multiselect', 'field_type':'string', 'key':'name', 'title':'Bs Name', 'values':[] };
-			//Loop through the technology for the devices
-			if (bs_name.length) {
-				for (var i = 0; i < bs_name.length; i++) {
-					//bs_name[i] is a valid value
-					if (bs_name[i]) {
-						bsNameData.values.push(bs_name[i]);
-					}
-				}
-			}
-			advSearchData.push(bsNameData);
-
-			var ipData = { 'element_type':'multiselect', 'field_type':'string', 'key':'ip', 'title':'IP', 'values':[] };
-			//Loop through the vendor for the devices
-			if (ip.length) {
-				for (var i = 0; i < ip.length; i++) {
-					//ip[i] is a valid value
-					if (ip[i]) {
-						ipData.values.push(ip[i]);
-					}
-				}
-			}
-			advSearchData.push(ipData);
-
-			var cktIdData = { 'element_type':'multiselect', 'field_type':'string', 'key':'cktId', 'title':'Circuit ID', 'values':[] };
-			//Loop through the cktId for the devices
-			if (cktId.length) {
-				for (var i = 0; i < cktId.length; i++) {
-					//cktId[i] is a valid value
-					if (cktId[i]) {
-						cktIdData.values.push(cktId[i]);
-					}
-				}
-			}
-			advSearchData.push(cktIdData);
-
-			var cityData = { 'element_type':'multiselect', 'field_type':'string', 'key':'city', 'title':'City', 'values':[] }
-			//Loop through the city for the devices
-			if (city.length) {
-				for (var i = 0; i < city.length; i++) {
-					//city[i] is a valid value
-					if (city[i]) {
-						cityData.values.push(city[i]);
-					}
-				}
-			}
-			advSearchData.push(cityData);
-			wmAdvanceSearchClass.createAdvanceSearchMarkup(advSearchData);
-		}
-
-		this.hideAdvanceSearch = function() {
-			
-			wmAdvanceSearchClass.destroyAdvanceSearch();
-		}
-		/*
-		This function applies Basic Filter
-		 */
-		this.applyBasicFilter = function() {
-
-			var filterArray = gmap_self.makeFiltersArray('white_background');
-
-			var technologyValue = $("#technology").val(), vendorValue = $("#vendor").val(), stateValue = $("#state").val(), cityValue = $("#city").val();
-			
-			global_this.markersLayer.removeAllFeatures();
-			global_this.linesLayer.removeAllFeatures();
-			global_this.sectorsLayer.removeAllFeatures();
-
-			if(technologyValue == "" && vendorValue == "" && stateValue == "" && cityValue == "") {
-
-				global_this.markersLayer.addFeatures(filtered_Features.markers);
-				global_this.linesLayer.addFeatures(filtered_Features.lines);
-				global_this.sectorsLayer.addFeatures(filtered_Features.sectors);
-				global_this.markersLayerStrategy.recluster();
-
-				return;
-			} else {
-				var basic_filtered_features = {markers: [], lines: [], sectors: []}, i= 0;
-				
-				bsLoop: for(i=0; i< data_for_filter_wmap.length; i++) {
-					var bs = data_for_filter_wmap[i], j=0, k=0;
-					if(technologyValue != "") {
-						var bsTechnologies = bs.sector_ss_technology;
-						if(bsTechnologies) {
-							bsTechnologies = $.trim(bsTechnologies.toLowerCase());
-							technologyValue = $.trim(technologyValue.toLowerCase());
-							if(bsTechnologies.indexOf(technologyValue) == -1) {
-								continue bsLoop;
-							}
-						}
-					} else {
-						continue bsLoop;
-					}
-
-					if(vendorValue != "") {
-						var bsVendors = bs.sector_ss_vendor;
-						if(bsVendors) {
-							bsVendors = $.trim(bsVendors.toLowerCase());
-							vendorValue = $.trim(vendorValue.toLowerCase());
-							if(bsVendors.indexOf(vendorValue) == -1) {
-								continue bsLoop;
-							}
-						}
-					} else {
-						continue bsLoop;
-					}
-
-					if(stateValue != "") {
-						var bsState = bs.data.state;
-						if(bsState) {
-							bsState = $.trim(bsState.toLowerCase());
-							stateValue = $.trim(stateValue.toLowerCase());
-							if(bsState.indexOf(stateValue) == -1) {
-								continue bsLoop;
-							}
-						}
-					} else {
-						continue bsLoop;
-					}
-
-					if(cityValue != "") {
-						var bsCity = bs.data.city;
-						if(bsCity) {
-							bsCity = $.trim(bsCity.toLowerCase());
-							cityValue = $.trim(cityValue.toLowerCase());
-							if(bsCity.indexOf(cityValue) == -1) {
-								continue bsLoop;
-							}
-						}
-					} else {
-						continue bsLoop;
-					}
-
-					basic_filtered_features.markers.push(wm_obj.features[bs.name]);
-
-					for(j=0; j< bs.data.param.sector.length; j++) {
-						var bsSector = bs.data.param.sector[j];
-						if($.trim(bsSector.technology.toLowerCase()) == $.trim(technologyValue.toLowerCase())) {
-							if(wm_obj.sectors[bsSector.sector_configured_on_device]) {
-								basic_filtered_features.sectors.push(wm_obj.sectors[bsSector.sector_configured_on_device]);
-							}
-							if(wm_obj.lines[bsSector.sector_configured_on_device]) {
-								basic_filtered_features.lines.push(wm_obj.lines[bsSector.sector_configured_on_device]);
-							}
-
-							for(k=0; k< bsSector.sub_station.length; k++) {
-								var sub_Station = bsSector.sub_station[k];
-								basic_filtered_features.markers.push(wm_obj.features[sub_Station.name]);
-							}
-						}
-					}
-				}
-
-				global_this.markersLayer.addFeatures(basic_filtered_features.markers);	
-				global_this.linesLayer.addFeatures(basic_filtered_features.lines);
-				global_this.sectorsLayer.addFeatures(basic_filtered_features.sectors);
-				global_this.markersLayerStrategy.recluster();
-			}
-		}
-
-		/*
 		This function populates basic filter dropdowns
 		 */
 		this.populateBasicFilterDropdowns = function() {
 			gmap_self.getBasicFilters();
 		}
 
-		/*
-		Reset Filters
-		 */
-		this.resetBasicFilter = function() {
-			$("#technology").val('');
-			$("#vendor").val('');
-			$("#state").val('');
-			$("#city").val('');
-
-			this.applyBasicFilter();
-		}
 	/**
 	 * End of Search and Filter Functions
 	 */	
@@ -1670,6 +1498,8 @@ function WhiteMapClass() {
 							}
 
 							bsDevicesObj[name].push(deviceMarker);
+
+							devicesMarkersArray.push(deviceMarker);
 
 
 							if(sectorMarkerConfiguredOn.indexOf(device.sector_configured_on) == -1) {
