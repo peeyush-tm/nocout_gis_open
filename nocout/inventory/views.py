@@ -231,6 +231,7 @@ class InventoryDelete(PermissionsRequiredMixin, DeleteView):
         """
         overriding the delete method to log the user activity.
         """
+
         try:
             obj = self.get_object()
             action='A inventory is deleted - {}'.format(obj.alias)
@@ -419,6 +420,14 @@ class AntennaCreate(PermissionsRequiredMixin, CreateView):
     form_class = AntennaForm
     success_url = reverse_lazy('antennas_list')
     required_permissions = ('inventory.add_antenna',)
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(AntennaCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -658,6 +667,14 @@ class BaseStationCreate(PermissionsRequiredMixin, CreateView):
     form_class = BaseStationForm
     success_url = reverse_lazy('base_stations_list')
     required_permissions = ('inventory.add_basestation',)
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(BaseStationCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -913,6 +930,14 @@ class BackhaulCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('backhauls_list')
     required_permissions = ('inventory.add_backhaul',)
 
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(BackhaulCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1162,6 +1187,14 @@ class SectorCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('sectors_list')
     required_permissions = ('inventory.add_sector',)
 
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(SectorCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1387,6 +1420,14 @@ class CustomerCreate(PermissionsRequiredMixin, CreateView):
     form_class = CustomerForm
     success_url = reverse_lazy('customers_list')
     required_permissions = ('inventory.add_customer',)
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(CustomerCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -1637,6 +1678,14 @@ class SubStationCreate(PermissionsRequiredMixin, CreateView):
     form_class = SubStationForm
     success_url = reverse_lazy('sub_stations_list')
     required_permissions = ('inventory.add_substation',)
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(SubStationCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -1985,6 +2034,14 @@ class CircuitCreate(PermissionsRequiredMixin, CreateView):
     form_class = CircuitForm
     success_url = reverse_lazy('circuits_list')
     required_permissions = ('inventory.add_circuit',)
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(CircuitCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
 
     def form_valid(self, form):
         """

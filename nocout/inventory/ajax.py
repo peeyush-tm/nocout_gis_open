@@ -371,129 +371,150 @@ def gt_critical_initial_choices(request):
     dajax.assign('#id_gt_critical', 'innerHTML', ''.join(out))
     return dajax.json()
 
-
 @dajaxice_register(method='GET')
-def update_bh_configured_on(request, option):
+def update_related_field(request, option):
     dajax = Dajax()
     out = list()
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        device_list = Device.objects.filter(organization=int(option))[:50]
+        for device in device_list:
+            out.append("<option value={}>{}</option>".format(device.id, device) )
+
+        dajax.assign('#id_bh_configured_on', 'innerHTML', ''.join(out))
+        dajax.assign('#id_bh_switch', 'innerHTML', ''.join(out))
+        dajax.assign('#id_pop', 'innerHTML', ''.join(out))
+        dajax.assign('#id_aggregator', 'innerHTML', ''.join(out))
         return dajax.json()
+    except Organization.DoesNotExist as e:
+        pass
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        bh_configured_on = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        bh_configured_on = Device.objects.filter(organization=int(option))
+@dajaxice_register(method='GET')
+def bh_configured_on_searching(request, search_string, organisation_id):
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
 
-    for bh in bh_configured_on:
-        out.append("<option value='#'>%s</option>" % bh)
+    bh_config_on = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
+
+    for device in bh_config_on:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_bh_configured_on', 'innerHTML', ''.join(out))
     return dajax.json()
 
-
 @dajaxice_register(method='GET')
-def update_bh_switch(request, option):
+def bh_switch_on_searching(request, search_string, organisation_id):
     dajax = Dajax()
     out = list()
     out.append("<option value=''>Select</option>")
-    try:
-        org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
-        return dajax.json()
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        bh_switch = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        bh_switch = Device.objects.filter(organization=int(option))
+    bh_switch_device_list = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
 
-    for bh in bh_switch:
-        out.append("<option value='#'>%s</option>" % bh)
+    for device in bh_switch_device_list:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_bh_switch', 'innerHTML', ''.join(out))
     return dajax.json()
 
-
 @dajaxice_register(method='GET')
-def update_pop(request, option):
+def pop_on_searching(request, search_string, organisation_id):
     dajax = Dajax()
     out = list()
     out.append("<option value=''>Select</option>")
-    try:
-        org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
-        return dajax.json()
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        pop = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        pop = Device.objects.filter(organization=int(option))
+    pop_device_list = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
 
-    for p in pop :
-        out.append("<option value='#'>%s</option>" % p)
+    for device in pop_device_list:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_pop', 'innerHTML', ''.join(out))
     return dajax.json()
 
-
-
 @dajaxice_register(method='GET')
-def update_aggregator(request, option):
+def aggregator_on_searching(request, search_string, organisation_id):
     dajax = Dajax()
     out = list()
     out.append("<option value=''>Select</option>")
-    try:
-        org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
-        return dajax.json()
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        aggregators = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        aggregators = Device.objects.filter(organization=int(option))
+    pop_device_list = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
 
-    for aggregator in aggregators :
-        out.append("<option value='#'>%s</option>" % aggregator)
+    for device in pop_device_list:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_aggregator', 'innerHTML', ''.join(out))
     return dajax.json()
 
 @dajaxice_register(method='GET')
 def update_bs_switch(request, option):
+    """
+    update bs switch on change of the organisation,
+    And return only fifty result.
+    """
     dajax = Dajax()
     out = list()
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        bs_switch = Device.objects.filter(organization=int(option))[:50]
+        for device in bs_switch:
+            out.append("<option value={}>{}</option>".format(device.id, device) )
+        dajax.assign('#id_bs_switch', 'innerHTML', ''.join(out))
         return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        bs_switch = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        bs_switch = Device.objects.filter(organization=int(option))
+@dajaxice_register(method='GET')
+def bs_switch_on_searching(request, search_string, organisation_id):
+    """
+    update the bs switch on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
 
-    for switch in bs_switch:
-        out.append("<option value='#'>%s</option>" % switch)
+    bh_switch_device_list = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
+
+    for device in bh_switch_device_list:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_bs_switch', 'innerHTML', ''.join(out))
     return dajax.json()
 
-
 @dajaxice_register(method='GET')
 def update_backhaul(request, option):
+    """
+    update bs backhaul on change of the organisation,
+    And return only fifty result.
+    """
     dajax = Dajax()
     out = list()
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        backhauls = Backhaul.objects.filter(organization=int(option))[:50]
+        for backhaul in backhauls:
+            out.append("<option value={}>{}</option>" .format(backhaul.id, backhaul) )
+        dajax.assign('#id_backhaul', 'innerHTML', ''.join(out))
         return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        backhauls = Backhaul.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        backhauls = Backhaul.objects.filter(organization=int(option))
+@dajaxice_register(method='GET')
+def backhaul_on_searching(request, search_string, organisation_id):
+    """
+    update the bs switch on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
 
-    for backhaul in backhauls:
-        out.append("<option value='#'>%s</option>" % backhaul)
+    backhaul_list = Backhaul.objects.filter(organization__id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for backhaul in backhaul_list:
+        out.append("<option value={}>{}</option>".format(backhaul.id, backhaul) )
     dajax.assign('#id_backhaul', 'innerHTML', ''.join(out))
     return dajax.json()
 
@@ -504,16 +525,28 @@ def update_sector_configured_on(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        sector_confs = Device.objects.filter(organization=int(option))[:50]
+        for sector in sector_confs:
+            out.append("<option value={}>{}</option>".format(sector.id, sector) )
+        dajax.assign('#id_sector_configured_on', 'innerHTML', ''.join(out))
         return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        sector_confs = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        sector_confs = Device.objects.filter(organization=int(option))
+@dajaxice_register(method='GET')
+def sector_config_on_searching(request, search_string, organisation_id):
+    """
+    update the sector_config on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
 
-    for sector in sector_confs:
-        out.append("<option value='#'>%s</option>" % sector)
+    sector_config_list = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
+
+    for device in sector_config_list:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_sector_configured_on', 'innerHTML', ''.join(out))
     return dajax.json()
 
@@ -524,19 +557,30 @@ def update_base_station(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        basestations = BaseStation.objects.filter(organization=int(option))[:50]
+        for basestation in basestations:
+            out.append("<option value={}>{}</option>".format(basestation.id, basestation) )
+        dajax.assign('#id_base_station', 'innerHTML', ''.join(out))
         return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        basestations = BaseStation.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        basestations = BaseStation.objects.filter(organization=int(option))
+@dajaxice_register(method='GET')
+def base_station_on_searching(request, search_string, organisation_id):
+    """
+    update the base station on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
 
-    for basestation in basestations:
-        out.append("<option value='#'>%s</option>" % basestation)
+    base_station_list = BaseStation.objects.filter(organization__id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for base_station in base_station_list:
+        out.append("<option value={}>{}</option>".format(base_station.id, base_station) )
     dajax.assign('#id_base_station', 'innerHTML', ''.join(out))
     return dajax.json()
-
 
 @dajaxice_register(method='GET')
 def update_device(request, option):
@@ -545,19 +589,30 @@ def update_device(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        devices = Device.objects.filter(organization=int(option))[:50]
+        for device in devices:
+            out.append("<option value={}>{}</option>".format(device.id, device) )
+        dajax.assign('#id_device', 'innerHTML', ''.join(out))
         return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        devices = Device.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        devices = Device.objects.filter(organization=int(option))
+@dajaxice_register(method='GET')
+def device_on_searching(request, search_string, organisation_id):
+    """
+    update the device on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
 
-    for device in devices:
-        out.append("<option value='#'>%s</option>" % device)
+    device_list = Device.objects.filter(organization__id=organisation_id).\
+                    filter(device_name__icontains=search_string)[:50]
+
+    for device in device_list:
+        out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_device', 'innerHTML', ''.join(out))
     return dajax.json()
-
 
 @dajaxice_register(method='GET')
 def update_antenna(request, option):
@@ -566,16 +621,28 @@ def update_antenna(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        antennas = Antenna.objects.filter(organization=int(option))[:50]
+        for antenna in antennas:
+            out.append("<option value={}>{}</option>".format(antenna.id, antenna) )
+        dajax.assign('#id_antenna', 'innerHTML', ''.join(out))
         return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        antennas = Antenna.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        antennas = Antenna.objects.filter(organization=int(option))
+@dajaxice_register(method='GET')
+def antenna_on_searching(request, search_string, organisation_id):
+    """
+    update the antenna on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
 
-    for antenna in antennas:
-        out.append("<option value='#'>%s</option>" % antenna)
+    antenna_list = Antenna.objects.filter(organization_id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for antenna in antenna_list:
+        out.append("<option value={}>{}</option>".format(antenna.id, antenna) )
     dajax.assign('#id_antenna', 'innerHTML', ''.join(out))
     return dajax.json()
 
@@ -586,16 +653,28 @@ def update_sector(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        sectors = Sector.objects.filter(organization=int(option))[:50]
+        for sector in sectors:
+            out.append("<option value={}>{}</option>".format(sector.id, sector) )
+        dajax.assign('#id_sector', 'innerHTML', ''.join(out))
         return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        sectors = Sector.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        sectors = Sector.objects.filter(organization=int(option))
+@dajaxice_register(method='GET')
+def sector_on_searching(request, search_string, organisation_id):
+    """
+    update the sector on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
 
-    for sector in sectors:
-        out.append("<option value='#'>%s</option>" % sector)
+    sector_list = Sector.objects.filter(organization_id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for sector in sector_list:
+        out.append("<option value={}>{}</option>".format(sector.id, sector) )
     dajax.assign('#id_sector', 'innerHTML', ''.join(out))
     return dajax.json()
 
@@ -606,16 +685,28 @@ def update_customer(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        customers = Customer.objects.filter(organization=int(option))[:50]
+        for customer in customers:
+            out.append("<option value={}>{}</option>".format(customer.id, customer) )
+        dajax.assign('#id_customer', 'innerHTML', ''.join(out))
         return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        customers = Customer.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        customers = Customer.objects.filter(organization=int(option))
+@dajaxice_register(method='GET')
+def customer_on_searching(request, search_string, organisation_id):
+    """
+    update the customer on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
 
-    for customer in customers:
-        out.append("<option value='#'>%s</option>" % customer)
+    customer_list = Customer.objects.filter(organization_id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for customer in customer_list:
+        out.append("<option value={}>{}</option>".format(customer.id, customer) )
     dajax.assign('#id_customer', 'innerHTML', ''.join(out))
     return dajax.json()
 
@@ -626,19 +717,30 @@ def update_sub_station(request, option):
     out.append("<option value=''>Select</option>")
     try:
         org = Organization.objects.get(id=int(option))
-    except Organization.DoesNotExist as e:
+        substations = SubStation.objects.filter(organization=int(option))[:50]
+        for substation in substations:
+            out.append("<option value={}>{}</option>".format(substation.id, substation) )
+        dajax.assign('#id_sub_station', 'innerHTML', ''.join(out))
         return dajax.json()
+    except Organization.DoesNotExist:
+        pass
 
-    if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-        substations = SubStation.objects.filter(organization__in=org.get_descendants(include_self=True))
-    else:
-        substations = SubStation.objects.filter(organization=int(option))
+@dajaxice_register(method='GET')
+def sub_station_on_searching(request, search_string, organisation_id):
+    """
+    update the sub station on the basis of the user search.
+    """
+    dajax = Dajax()
+    out = list()
+    out.append("<option value=''>Select</option>")
 
-    for substation in substations:
-        out.append("<option value='#'>%s</option>" % substation)
+    sub_station_list = SubStation.objects.filter(organization_id=organisation_id).\
+                    filter(name__icontains=search_string)[:50]
+
+    for substation in sub_station_list:
+        out.append("<option value={}>{}</option>".format(substation.id, substation) )
     dajax.assign('#id_sub_station', 'innerHTML', ''.join(out))
     return dajax.json()
-
 
 # @dajaxice_register(method='GET')
 # def load_sheet_no_select_menu(request, uploaded_file):
