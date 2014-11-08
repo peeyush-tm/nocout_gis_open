@@ -8084,8 +8084,14 @@ def update_topology(polled_sectors=None, polled_circuits=None, topo_sectors=None
                     connected_circuit = polled_circuits.get(
                         sub_station__device__ip_address=topo.connected_device_ip
                     )
-                    connected_circuit.sector=poll_sector
-                    count += connected_circuit.save()
+                    try:  ##previously some sector exists
+                        if connected_circuit.sector.id != poll_sector.id:
+                            connected_circuit.sector=poll_sector
+                            connected_circuit.save()
+                            count += 1
+                    except:  #no sector exists
+                        connected_circuit.sector=poll_sector
+                        count += 1
         except Exception as e:
             logger.exception(e)
             continue
@@ -8122,8 +8128,8 @@ def get_topology(technology):
     topology_old = []
     for machine in machine_dict:
         #this is complete topology for the device set
-        topology = (Topology.objects.filter(device_name__in=machine_dict[machine],
-                                           data_source='topology').using(alias=machine))
+        topology = Topology.objects.filter(device_name__in=machine_dict[machine],
+                                           data_source='topology').using(alias=machine)
 
         #topology fields
         # device_name
