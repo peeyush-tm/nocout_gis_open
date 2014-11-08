@@ -84,9 +84,9 @@
             <div class="clearfix"></div>
 
             <div class="col-md-8 col-md-offset-2">
-                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvSearchBtn" onclick="whiteMapClass.hideAdvanceSearch();">Cancel
+                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvSearchBtn">Cancel
                 </button>
-                <button type="button" class="pull-right btn btn-danger hide" id="resetSearchForm" style="margin-left:10px;" onclick="whiteMapClass.resetAdvanceSearch();">
+                <button type="button" class="pull-right btn btn-danger hide" id="resetSearchForm" style="margin-left:10px;">
                         <i class="fa fa-times"></i> Reset Search
                     </button>
                 <button type="button" class="pull-right btn btn-success" id="setAdvSearchBtn">Search</button>
@@ -104,9 +104,8 @@
             <div class="clearfix"></div>
 
             <div class="col-md-8 col-md-offset-2">
-                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn" onclick="whiteMapClass.hideAdvanceFilter();">Cancel
+                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn">Cancel
                 </button>
-                <button type="button" class="pull-right btn btn-warning hide" style="margin-left:10px;" id="resetAdvFilterBtn" onclick="whiteMapClass.resetAdvanceFilter();">Reset Filter</button>
                 <button type="button" class="pull-right btn btn-success" id="setAdvFilterBtn">Filter</button>
             </div>
             <div class="clearfix"></div>
@@ -118,9 +117,9 @@
         <div id="selectDeviceContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Select Devices</h4>
             <ul class="list-unstyled list-inline">
-                <li class="hide">Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS"
+                <!-- <li class="hide">Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS"
                                                           onclick="networkMapInstance.plotAllDevice_gmap()"
-                                                          style="vertical-align: text-top;" checked="checked"/></li>
+                                                          style="vertical-align: text-top;" checked="checked"/></li> -->
                 <!-- <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
                                                    onclick="networkMapInstance.showConnectionLines_gmap()"
                                                    style="vertical-align: text-top;" checked="checked"/></li> -->
@@ -132,30 +131,7 @@
         <!-- Tools Content Start-->
         <div id="toolsContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Gmap Tools</h4>
-            <ul class="list-unstyled list-inline">
-                <li>
-                    <button type="button" id="ruler_select" class="btn btn-info">Select Ruler</button>
-                    <button type="button" id="ruler_remove" class="btn btn-danger hide">Remove Ruler</button>
-                </li>
-                <li>
-                    <button type="button" id="point_select" class="btn btn-info">Add Point</button>
-                    <!-- <button type="button" id="point_remove" class="btn btn-danger hide">Remove Points</button> -->
-                    <ul class="list-unstyled list-inline hide" id="point_icons_container">
-                    <!-- If loggedin user is super admin then only show maintainance icon -->
-                        {% if user.is_superuser %}
-                            <li class="selected_icon"><img src="../../static/img/icons/tools/point/caution.png"/></li>
-                        {% endif %}
-                        <li><img src="../../static/img/icons/tools/point/icon1.png"/></li>
-                        <li><img src="../../static/img/icons/tools/point/icon2.png"/></li>
-                        <li><img src="../../static/img/icons/tools/point/icon3.png"/></li>
-                        <li><img src="../../static/img/icons/tools/point/icon4.png"/></li>
-                        <li class="close_box"><i class="fa fa-times" id="close_points_icon"> </i> </li>
-                    </ul>
-                </li>
-                <!-- <li>
-                    <button type="button" id="line_select" class="btn btn-info">Select Line</button>
-                    <button type="button" id="line_remove" class="btn btn-danger hide">Remove Line</button>
-                </li> -->
+            <ul class="list-unstyled list-inline">               
                 <li>
                     <button type="button" id="freeze_select" class="btn btn-info">Freeze</button>
                     <button type="button" id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
@@ -166,9 +142,7 @@
                 <li>
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
                 </li>
-                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
-                                                   onchange="whiteMapClass.toggleLineLayer()"
-                                                   style="vertical-align: text-top;" checked=0/></li>
+                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines" onchange="whiteMapClass.refreshLineLayers()" style="vertical-align: text-top;"/></li>
                 <li class="fright">
                     <form action="#" class="form-horizontal">
                         <div class="form-group">

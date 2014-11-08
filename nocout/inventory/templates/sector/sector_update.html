@@ -78,11 +78,44 @@
             $("#id_sector_configured_on").parent().children().find('a span')[0].innerHTML = "Select";
         });
 
+        // to call the dajax function on sector_config_on search.
+        var sector_configTimeout = null;
+        $("#id_sector_configured_on").on("select2-open", function() {
+            $("#select2-drop .select2-search input").keypress(function() {
+                if(sector_configTimeout != null) clearTimeout(sector_configTimeout);
+                    sector_configTimeout = setTimeout(list_device_on_sector_config_search, 50);
+            });
+        });
+
+        function list_device_on_sector_config_search(){
+            Dajaxice.inventory.sector_config_on_searching(Dajax.process, {
+                'search_string': $("#select2-drop .select2-search input").val(),
+                'organisation_id': $('#id_organization option:selected').val()
+            });
+        }
+
         $("#id_organization").change(function () {
 
             Dajaxice.inventory.update_base_station(Dajax.process, {'option': $('#id_organization').val()});
             $("#id_base_station").val("");
             $("#id_base_station").parent().children().find('a span')[0].innerHTML = "Select";
         });
+
+        // to call the dajax function on base station search.
+        var base_stationTimeout = null;
+        $("#id_base_station").on("select2-open", function() {
+            $("#select2-drop .select2-search input").keypress(function() {
+                if(base_stationTimeout != null) clearTimeout(base_stationTimeout);
+                    base_stationTimeout = setTimeout(list_bs_on_base_station_search, 50);
+            });
+        });
+
+        function list_bs_on_base_station_search(){
+            Dajaxice.inventory.base_station_on_searching(Dajax.process, {
+                'search_string': $("#select2-drop .select2-search input").val(),
+                'organisation_id': $('#id_organization option:selected').val()
+            });
+        }
+
     </script>
 {% endblock %}
