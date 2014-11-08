@@ -3465,7 +3465,7 @@ function devicePlottingClass_gmap() {
 			data_for_filters = filteredData;
 			isCallCompleted = 1;
 			mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
-			mapInstance.setZoom(8);
+			mapInstance.setZoom(5);
 			gmap_self.showStateWiseData_gmap(filteredData);
 		} else {
 			$.gritter.add({
