@@ -1,6 +1,7 @@
-/*
-This function creates a Open Layer Map and loads it in dom. Return callback when map is finished creating.
-@param callback {Function} Return function when completed.
+/**
+ * This function creates a Open Layer Map and loads it in dom. Return callback when map is finished creating.
+ * @param  {Function} callback Return function when completed.
+ * @return {[undefined]}
  */
 WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
@@ -9,14 +10,14 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		format = whiteMapSettings.format; 
 		domEl= whiteMapSettings.domElement;		
 
-		//Options for our White Map
-		var options = { controls: [
+		//Options for our White Map. Add navigation, panZoombar bar and mouse position
+		var wmap_options = { 
+			controls: [
 				new OpenLayers.Control.Navigation({ dragPanOptions: { enableKinetic: true } }),
 				new OpenLayers.Control.PanZoomBar(),
-				new OpenLayers.Control.LayerSwitcher({'ascending':false}),
-				// new OpenLayers.Control.ScaleLine(), 
-				new OpenLayers.Control.MousePosition(),
-				new OpenLayers.Control.KeyboardDefaults()
+				new OpenLayers.Control.MousePosition({
+					prefix: whiteMapSettings.latLngPrefixLabel
+				})
 			],
 			//Bounds for our Open layer.
 			maxExtent: new OpenLayers.Bounds(whiteMapSettings.initial_bounds),
@@ -28,12 +29,12 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			units: whiteMapSettings.units
 		};
 
-		//Create Open Layer map on '#map' with our options
-		ccpl_map = new OpenLayers.Map(domEl, options);
+		//Create Open Layer map on '#map' with our wmap_options
+		ccpl_map = new OpenLayers.Map(domEl, wmap_options);
 
-		//Map Zoom event of trigger mapZoomChangeEvent in events file.
-		ccpl_map.events.register("moveend", ccpl_map, function(){
-			that.mapZoomChangeEvent(arguments);
+		//Map moveend event
+		ccpl_map.events.register("moveend", ccpl_map, function(e){
+			that.mapChangedEvent();
 			return;
 		});
 
@@ -48,25 +49,14 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		layers.india_Layer = new OpenLayers.Layer.WMS(
 			"india_Layer", whiteMapSettings.geoserver_url_India, {
 				layers: whiteMapSettings.layer
-			}, {
-				isBaseLayer: true
-		});
+			}
+		);
 
 		//Add layer to Map
 		ccpl_map.addLayer(layers.india_Layer);
 
-		//Event listener of Features (Line, Sector)
-		var featureEventListener = { 
-			featureclick: function(e) { 
-				that.onFeatureSelect(e); 
-				return false; 
-			}
-		};
-
 		//vector Layer for Search Icon
 		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Markers Layer");
-
-		layers.searchMarkerLayer.display(false);
 
 		//Set searchMarkerLayer
 		this.searchMarkerLayer = layers.searchMarkerLayer;
@@ -74,6 +64,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//Add layer to the map
 		ccpl_map.addLayer(layers.searchMarkerLayer);
 
+		//KML FILE CODE
+		//
 		// var kmlFileExample = new OpenLayers.Layer.Vector("kml layer", {
 		// 	projection: new OpenLayers.Projection("EPSG:4326"),
 		// 	strategies: [new OpenLayers.Strategy.Fixed()],
@@ -85,11 +77,18 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		// 		})
 		// 	})
 		// });
-
 		// ccpl_map.addLayer(kmlFileExample);
 
+		//Event listener of Features (Line, Sector, Devices)
+		var featureEventListener = {
+			featureclick: function(e) { 
+				that.onFeatureSelect(e); 
+				return false; 
+			}
+		};
+
 		//Create a Vector Layer which will hold Sectors
-		layers.sectorsLayer = new OpenLayers.Layer.Vector('Sectors Layers', {eventListeners: featureEventListener});
+		layers.sectorsLayer = new OpenLayers.Layer.Vector('Sectors', {eventListeners: featureEventListener});
 
 		//Store sectorsLayer
 		this.sectorsLayer = layers.sectorsLayer;
@@ -98,7 +97,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map.addLayer(layers.sectorsLayer);
 
 		//Create a Vector Layer which will hold Lines
-		layers.linesLayer = new OpenLayers.Layer.Vector('Lines Layer', {eventListeners: featureEventListener});
+		layers.linesLayer = new OpenLayers.Layer.Vector('Lines', {eventListeners: featureEventListener});
 
 		//Store linesLayer
 		this.linesLayer= layers.linesLayer;
@@ -107,7 +106,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map.addLayer(layers.linesLayer);
 
 		//vector Layer for Devices Marker
-		layers.markerDevicesLayer = new OpenLayers.Layer.Vector("Devices Marker Layer", {eventListeners: featureEventListener});
+		layers.markerDevicesLayer = new OpenLayers.Layer.Vector("Devices", {eventListeners: featureEventListener});
 
 		//Set markerDevicesLayer
 		this.markerDevicesLayer = layers.markerDevicesLayer;
@@ -200,14 +199,14 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//OpenLayr Style Map for Markers Layer
 		styleMap = new OpenLayers.StyleMap({
-			'default': clusterStyle,
+			'default': clusterStyle
 		});
 
 		//Create a OpenLayer Strategy Cluster
 		strategy= new OpenLayers.Strategy.Cluster({distance: clustererSettings.clustererDistance});
 
 		//Create a Vector Layer for Markers with styleMap and strategy
-		layers.markersLayer = new OpenLayers.Layer.Vector("Markers Layer", {styleMap  : styleMap,strategies: [strategy]});
+		layers.markersLayer = new OpenLayers.Layer.Vector("Markers", {styleMap  : styleMap, strategies: [strategy]});
 
 		//Set strategy 
 		this.markersLayerStrategy = strategy;
@@ -215,15 +214,17 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//Set markersLayer
 		this.markersLayer = layers.markersLayer;
 
-		//Click control for Marker Layer feature to call markerClick()
+		//Click control for Marker Layer feature to call markerClicked()
 		var selectCtrl = new OpenLayers.Control.SelectFeature(
 			layers.markersLayer, {
-				clickout: true, toggle: true, multiple: false, hover: false,
+				clickout: true,
 				eventListeners: {
 					//on feature click
-					featurehighlighted: function(feature) {that.markerClick(feature); 
-						selectCtrl.unselectAll(); 
-						return false;}
+					featurehighlighted: function(feature) {
+						that.markerClicked(feature); 
+						selectCtrl.unselectAll();
+						return false;
+					}
 				}
 			}
 		);
@@ -238,31 +239,49 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map.addLayer(layers.markersLayer);
 
 		//vector Layer for Live Poll Polygon, before Adding feature, remove any previous feature created.
-		layers.livePollFeatureLayer= new OpenLayers.Layer.Vector("Live Poll Features Layer", {
-			eventListeners: {"beforefeatureadded": function() {layers.livePollFeatureLayer.destroyFeatures();}}
+		layers.livePollFeatureLayer= new OpenLayers.Layer.Vector("Livepolling", {
+			eventListeners: {
+				"beforefeatureadded": function() {
+					layers.livePollFeatureLayer.destroyFeatures();
+				}
+			}
 		});
 
 		//Set livePollFeatureLayer
 		this.livePollFeatureLayer = layers.livePollFeatureLayer;
 
 		//Live Poll Polygon Control
-		this.livePollingPolygonControl = new OpenLayers.Control.DrawFeature(layers.livePollFeatureLayer, OpenLayers.Handler.Polygon, {eventListeners: {"featureadded": this.livePollingPolygonAdded}});
+		this.livePollingPolygonControl = new OpenLayers.Control.DrawFeature(layers.livePollFeatureLayer, OpenLayers.Handler.Polygon, {
+			eventListeners: {
+				"featureadded": this.livePollingPolygonAdded
+			}
+		});
 
 		ccpl_map.addControl(this.livePollingPolygonControl);
 
+		
 		var panel = new OpenLayers.Control.Panel();
 
 		panel.addControls([new OpenLayers.Control.FullScreen()]);
-
 		
 		ccpl_map.addControl(panel);
 		
 		//Map set Extend to our bounds
 		ccpl_map.zoomToExtent(new OpenLayers.Bounds(whiteMapSettings.initial_bounds));
+
 		//return
 		callback();
 }
 
+/**
+ * This function creates Open Layer Vector Feature Marker
+ * @param  {[Openlayer Size Object]} size   Size for Feature
+ * @param  {String} iconUrl        Url for the Icon
+ * @param  {Number} lon            Longitude of Marker
+ * @param  {Number} lat            Latitude of Marker
+ * @param  {Object} additionalInfo Additional Info to add in the Marker
+ * @return {OpenLayer Vector}      OpenLayer Vector feature created
+ */
 WhiteMapClass.prototype.createOpenLayerVectorMarker= function(size, iconUrl, lon, lat, additionalInfo) {
 		var point = new OpenLayers.Geometry.Point(lon, lat);
 		var feature = new OpenLayers.Feature.Vector(point,

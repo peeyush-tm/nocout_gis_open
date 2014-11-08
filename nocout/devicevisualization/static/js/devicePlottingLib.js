@@ -494,16 +494,16 @@ function devicePlottingClass_gmap() {
                bounds.extend(place.geometry.location);
             }
             mapInstance.fitBounds(bounds);
-            
-	    		/*Listener to reset zoom level if it exceeds to particular value*/
-	         var listener = google.maps.event.addListener(mapInstance, "idle", function() {
-	            /*check for current zoom level*/
-	            if(mapInstance.getZoom() >= 15) {
-	         		mapInstance.setZoom(15);
-	            }
-	      		google.maps.event.removeListener(listener);
-	         });
-         });
+
+            /*Listener to reset zoom level if it exceeds to particular value*/
+            var listener = google.maps.event.addListener(mapInstance, "idle", function() {
+            	/*check for current zoom level*/
+            	if(mapInstance.getZoom() >= 15) {
+            		mapInstance.setZoom(15);
+            	}
+            	google.maps.event.removeListener(listener);
+            });
+        });
 
 
 			var fullScreenCustomDiv = document.createElement('div');
