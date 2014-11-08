@@ -148,8 +148,10 @@ $("#technology").change(function(e) {
     }
 
     var vendor_option = "<option value=''> Select Vendor</option>";
-    for(var i=0;i<vendor_array.length;i++) {
-        vendor_option += "<option value='"+ i+1 +"'> "+vendor_array[i]+"</option>";
+    if(vendor_array) {
+        for(var i=0;i<vendor_array.length;i++) {
+            vendor_option += "<option value='"+ i+1 +"'> "+vendor_array[i]+"</option>";
+        }
     }
 
     $("#vendor").html(vendor_option);
@@ -197,35 +199,39 @@ $("#resetFilters").click(function(e) {
         data_for_filter_wmap = main_devices_data_wmap;
 
         showWmapFilteredData(main_devices_data_wmap);
-
-        // $("#resetFilters").button("completed");
     } else {
 
         /*Reset filter object variable*/
         appliedFilterObj_gmaps = {};
         
-        data_for_filters = main_devices_data_gmaps;
+        /*Clear Existing Labels & Reset Counters*/
+        gmap_self.clearStateCounters();
 
-        // gmap_self.hide_all_elements_gmap();
-        gmap_self.show_all_elements_gmap();
-
-        // /*Reset markers, polyline & filters*/
-        // networkMapInstance.clearGmapElements();
-
-
-        // /*Reset Global Variables & Filters*/
-        // networkMapInstance.resetVariables_gmap();            
-        // /*Call the make network to create the BS-SS network on the google map*/
-        // networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+        isCallCompleted = 1;
+        mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+        mapInstance.setZoom(5);
+        // Load all counters
+        gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
     }
 });
 
 function showAdvSearch() {
     showSpinner();
-    $("#advFilterContainerBlock").hide();
-    $("#advSearchContainerBlock").show();
     // advJustSearch.getFilterInfofrompagedata("searchInfoModal", "advSearchBtn");
-    advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        $("#advFilterContainerBlock").hide();
+        $("#advSearchContainerBlock").show();
+        advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
+    } else if (window.location.pathname.indexOf("white_background") > -1) {
+        $("#advFilterContainerBlock").hide();
+        $("#advSearchContainerBlock").show();
+        advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
+    } else {
+        if($("#advSearchContainerBlock").hasClass("hide")) {
+            $("#advSearchContainerBlock").removeClass("hide");
+        }
+        hideSpinner();
+    }
 }
 
 $("#setAdvSearchBtn").click(function(e) {
@@ -237,12 +243,17 @@ $("#setAdvSearchBtn").click(function(e) {
     } else if (window.location.pathname.indexOf("white_background") > -1) {
         advJustSearch.searchAndCenterData(data_for_filter_wmap);
     } else {
-        advJustSearch.searchAndCenterData(data_for_filters);
-    }        
+        gmap_self.advanceSearchFunc();
+    }
 });
 
 $("#cancelAdvSearchBtn").click(function(e) {
-    $("#advFilterFormContainer").html("");
+    
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        $("#advFilterSearchContainerBlock").html("");
+    } else if (window.location.pathname.indexOf("white_background") > -1) {
+        $("#advFilterSearchContainerBlock").html("");
+    }
 
     if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
         $("#advSearchContainerBlock").addClass("hide");
@@ -278,24 +289,56 @@ $("#resetSearchForm").click(function(e) {
 function showAdvFilters() {
     /*Show the spinner*/
     showSpinner();
-    $("#advSearchContainerBlock").hide();
-    $("#advFilterContainerBlock").show();
-//  advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
-    advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
+    
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        $("#advSearchContainerBlock").hide();
+        $("#advFilterContainerBlock").show();
+        advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
+    } else if (window.location.pathname.indexOf("white_background") > -1) {
+        $("#advSearchContainerBlock").hide();
+        $("#advFilterContainerBlock").show();
+        advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
+    } else {
+        if($("#advFilterContainerBlock").hasClass("hide")) {
+            $("#advFilterContainerBlock").removeClass("hide");
+        }
+        hideSpinner();
+    }
 }
     
 /*If 'Filter' button of advance filter is clicked*/
 $("#setAdvFilterBtn").click(function(e) {
 
-// if(window.location.pathname.indexOf("white_background") > -1) {
-//     return;
-//     }
     /*Show spinner*/
     showSpinner();
 
     /*Reset advance filter status flag*/
     hasAdvFilter = 1;
-    advSearch.callSetFilter();
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        advSearch.callSetFilter();
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        advSearch.callSetFilter();
+    } else {
+        
+        var filtered_data = [],
+            technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
+            vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
+            city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
+            state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
+            total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length;
+
+        // If any value is selected in filter
+        if(total_selected_items > 0) {
+            // Call function to plot the data on map as per the applied filters
+            gmap_self.applyAdvanceFilters(technology_filter,vendor_filter,state_filter,city_filter);
+        } else {
+            /*Hide the spinner*/
+            hideSpinner();
+
+            bootbox.alert("Please select any filter");
+        }
+
+    }
 
     /*Call get_page_status function to show the current status*/
     get_page_status();
@@ -308,7 +351,12 @@ $("#cancelAdvFilterBtn").click(function(e) {
 if(window.location.pathname.indexOf("white_background") > -1) {
     return;
     }
-    $("#advFilterFormContainer").html("");
+
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        $("#advFilterFormContainer").html("");
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        $("#advFilterFormContainer").html("");
+    }
 
     if(!($("#advFilterContainerBlock").hasClass("hide"))) {
         $("#advFilterContainerBlock").addClass("hide");
@@ -322,8 +370,8 @@ if(window.location.pathname.indexOf("white_background") > -1) {
  * @method removeAdvFilters
  */
 function removeAdvFilters() {
-if(window.location.pathname.indexOf("white_background") > -1) {
-    return;
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        return;
     }
     /*Reset advance filter status flag*/
     hasAdvFilter = 0;
