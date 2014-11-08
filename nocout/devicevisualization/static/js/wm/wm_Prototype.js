@@ -13,7 +13,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		var options = { controls: [
 				new OpenLayers.Control.Navigation({ dragPanOptions: { enableKinetic: true } }),
 				new OpenLayers.Control.PanZoomBar(),
-				// new OpenLayers.Control.LayerSwitcher({'ascending':false}),
+				new OpenLayers.Control.LayerSwitcher({'ascending':false}),
 				// new OpenLayers.Control.ScaleLine(), 
 				new OpenLayers.Control.MousePosition(),
 				new OpenLayers.Control.KeyboardDefaults()
@@ -60,11 +60,33 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			featureclick: function(e) { 
 				that.onFeatureSelect(e); 
 				return false; 
-			}, 
-			onFeatureUnselect: function(e) { 
-				that.noFeatureClick(e); 
-			} 
+			}
 		};
+
+		//vector Layer for Search Icon
+		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Markers Layer");
+
+		layers.searchMarkerLayer.display(false);
+
+		//Set searchMarkerLayer
+		this.searchMarkerLayer = layers.searchMarkerLayer;
+
+		//Add layer to the map
+		ccpl_map.addLayer(layers.searchMarkerLayer);
+
+		// var kmlFileExample = new OpenLayers.Layer.Vector("kml layer", {
+		// 	projection: new OpenLayers.Projection("EPSG:4326"),
+		// 	strategies: [new OpenLayers.Strategy.Fixed()],
+		// 	protocol: new OpenLayers.Protocol.HTTP({
+		// 		url: base_url+'/static/06112014-9nwcx5b.kml',
+		// 		format: new OpenLayers.Format.KML({
+		// 			extractStyles: true,
+		// 			extractAttributes: true
+		// 		})
+		// 	})
+		// });
+
+		// ccpl_map.addLayer(kmlFileExample);
 
 		//Create a Vector Layer which will hold Sectors
 		layers.sectorsLayer = new OpenLayers.Layer.Vector('Sectors Layers', {eventListeners: featureEventListener});
@@ -85,7 +107,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map.addLayer(layers.linesLayer);
 
 		//vector Layer for Devices Marker
-		layers.markerDevicesLayer = new OpenLayers.Layer.Vector("Devices Marker Layer", {visible: false, eventListeners: featureEventListener});
+		layers.markerDevicesLayer = new OpenLayers.Layer.Vector("Devices Marker Layer", {eventListeners: featureEventListener});
 
 		//Set markerDevicesLayer
 		this.markerDevicesLayer = layers.markerDevicesLayer;
@@ -153,7 +175,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 						if(iconSizeSelected=== 'small') {
 							return 20;
 						} else if (iconSizeSelected === 'medium') {
-							return 26;
+							return whiteMapSettings.size.medium.width;
 						} else {
 							return 32;
 						}
@@ -167,7 +189,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 						if(iconSizeSelected=== 'small') {
 							return 20;
 						} else if (iconSizeSelected === 'medium') {
-							return 26;
+							return whiteMapSettings.size.medium.height;
 						} else {
 							return 32;
 						}
@@ -199,7 +221,9 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 				clickout: true, toggle: true, multiple: false, hover: false,
 				eventListeners: {
 					//on feature click
-					featurehighlighted: function(feature) {that.markerClick(feature); selectCtrl.unselectAll(); return false;}
+					featurehighlighted: function(feature) {that.markerClick(feature); 
+						selectCtrl.unselectAll(); 
+						return false;}
 				}
 			}
 		);
@@ -226,17 +250,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		ccpl_map.addControl(this.livePollingPolygonControl);
 
-		//vector Layer for Search Icon
-		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Markers Layer");
-
-		layers.searchMarkerLayer.display(false);
-
-		//Set searchMarkerLayer
-		this.searchMarkerLayer = layers.searchMarkerLayer;
-
-		//Add layer to the map
-		// ccpl_map.addLayer(layers.searchMarkerLayer);
-
 		var panel = new OpenLayers.Control.Panel();
 
 		panel.addControls([new OpenLayers.Control.FullScreen()]);
@@ -254,7 +267,7 @@ WhiteMapClass.prototype.createOpenLayerVectorMarker= function(size, iconUrl, lon
 		var point = new OpenLayers.Geometry.Point(lon, lat);
 		var feature = new OpenLayers.Feature.Vector(point,
 			{description: 'This is description'},
-			{externalGraphic: iconUrl, graphicHeight: size.h, graphicWidth: size.w, graphicXOffset:-size.w, graphicYOffset:-size.h});
+			{externalGraphic: iconUrl, graphicHeight: size.h, graphicWidth: size.w});
 		// feature.attributes = { icon: iconUrl, label: "myVector", importance: 10, size: size };
 		for(var key in additionalInfo) {
 		if(additionalInfo.hasOwnProperty(key)) {
