@@ -8107,7 +8107,8 @@ def get_topology(technology):
     ##technology comes as a list
     create_topology = False  ##when we would be creating topology for first time
     ## next time onwards it would be update
-
+    count = False
+    
     create_topology = bool(Topology.objects.all().count())
 
     network_devices = get_devices(technology)
@@ -8174,6 +8175,8 @@ def get_topology(technology):
     if count:
         #reset cache
         #SOB
+        from django.core.cache import cache
+        cache.clear()
         pass
 
     return True
