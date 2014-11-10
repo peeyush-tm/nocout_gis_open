@@ -129,6 +129,42 @@
                 formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
             });
 
+            $("#id_backhaul").select2({
+                placeholder: "Search for a backhaul.",
+                minimumInputLength: 2,
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/backhaul/list/backhaul/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/backhaul/select/backhaul/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, name: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoBackhaulFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoBackhaulFormatSelection,  // omitted for brevity, see the source of this page
+            });
 
     });//end ready
     // update 'states' on selecting 'country'
@@ -159,27 +195,12 @@
           return device.device_name;
         }
 
-        $("#id_organization").change(function () {
+        function repoBackhaulFormatResult(backhaul) {
+          return backhaul.name;
+        }
 
-            Dajaxice.inventory.update_backhaul(Dajax.process, {'option': $('#id_organization').val()});
-            $("#id_backhaul").val("");
-            $("#id_backhaul").parent().children().find('a span')[0].innerHTML = "Select";
-        });
-
-        // to call the dajax function on bs_switch search.
-        var backhaulTimeout = null;
-        $("#id_backhaul").on("select2-open", function() {
-            $("#select2-drop .select2-search input").keypress(function() {
-                if(backhaulTimeout != null) clearTimeout(backhaulTimeout);
-                    backhaulTimeout = setTimeout(list_device_on_backhaul_search, 50);
-            });
-        });
-
-        function list_device_on_backhaul_search(){
-            Dajaxice.inventory.backhaul_on_searching(Dajax.process, {
-                'search_string': $("#select2-drop .select2-search input").val(),
-                'organisation_id': $('#id_organization option:selected').val()
-            });
+        function repoBackhaulFormatSelection(backhaul) {
+          return backhaul.name;
         }
 
     </script>

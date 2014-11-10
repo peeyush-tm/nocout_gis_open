@@ -790,6 +790,26 @@ class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_backhaul',)
 
 
+def list_backhaul(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    backhauls = Backhaul.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": backhauls.count(),
+        "incomplete_results": False,
+        "items": list(backhauls)
+    }))
+
+def select_backhaul(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Backhaul.objects.get(id=pk).name]))
+
+
 #**************************************** Sector *********************************************
 class SectorList(PermissionsRequiredMixin, ListView):
     """

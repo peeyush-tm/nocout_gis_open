@@ -494,6 +494,7 @@ def bs_switch_on_searching(request, search_string, organisation_id):
     return dajax.json()
 '''
 
+'''
 @dajaxice_register(method='GET')
 def update_backhaul(request, option):
     """
@@ -529,6 +530,7 @@ def backhaul_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(backhaul.id, backhaul) )
     dajax.assign('#id_backhaul', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 @dajaxice_register(method='GET')
 def update_sector_configured_on(request, option):
