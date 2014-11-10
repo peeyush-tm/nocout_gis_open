@@ -21,7 +21,7 @@ from django.db.models import Q
 from nocout.utils import logged_in_user_organizations
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
 
 
 class UserList(PermissionsRequiredMixin, ListView):
@@ -55,7 +55,7 @@ class UserList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class UserListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class UserListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class Based View for the User data table rendering.
     """
@@ -67,25 +67,9 @@ class UserListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatat
                      'phone_number', 'last_login']
     search_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number']
-
-    def logged_in_user_organization_ids(self):
-        """
-        to return logged in user organization and organization descendants
-        """
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True)[0] =='admin':
-            return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
-        else:
-            return list(str(self.request.user.userprofile.organization.id))
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= self.logged_in_user_organization_ids()
-        return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=0)\
-               .values(*self.columns+['id'])
+    extra_qs_kwargs = {
+        'is_deleted': 0
+    }
 
     def prepare_results(self, qs):
         """
@@ -113,39 +97,8 @@ class UserListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatat
                           )
         return qs
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
 
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
-
-class UserArchivedListingTable(DatatableSearchMixin, BaseDatatableView):
+class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilterMixin, BaseDatatableView):
     """
     Class Based View for the Archived User data table rendering.
     """
@@ -156,19 +109,9 @@ class UserArchivedListingTable(DatatableSearchMixin, BaseDatatableView):
                      'parent__last_name', 'organization__name','phone_number', 'last_login']
     search_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                      'parent__last_name', 'organization__name','phone_number']
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-            organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
-                                           .values_list('id', flat=True))
-        else:
-            organization_descendants_ids= list(str(self.request.user.userprofile.organization.id))
-        return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=1).values(*self.columns+['id'])
+    extra_qs_kwargs = {
+        'is_deleted':1
+    }
 
     def prepare_results(self, qs):
         """
@@ -194,37 +137,6 @@ class UserArchivedListingTable(DatatableSearchMixin, BaseDatatableView):
 
         return qs
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
 
 class UserDetail(PermissionsRequiredMixin, DetailView):
     """
