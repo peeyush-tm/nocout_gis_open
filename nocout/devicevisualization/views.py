@@ -22,7 +22,6 @@ from devicevisualization.models import GISPointTool, KMZReport
 from django.views.decorators.csrf import csrf_exempt
 from django.core.urlresolvers import reverse_lazy
 import re, ast
-from actstream import action
 from activity_stream.models import UserAction
 logger=logging.getLogger(__name__)
 
@@ -834,7 +833,6 @@ class KmzCreate(CreateView):
         self.object.user =  UserProfile.objects.get(id=self.request.user.id)
 
         self.object.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(reverse_lazy('kmz_list'))
 
 

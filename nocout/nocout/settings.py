@@ -189,10 +189,8 @@ INSTALLED_APPS = (
     'dajaxice',
     'dajax',
     'django.contrib.admin',
-    'actstream',
     'session_management',
     'corsheaders',
-    'actstream',
     'activity_stream',
     'jsonify',
     'djcelery'
@@ -336,29 +334,6 @@ TCLPTPPOP = DEVICE_TECHNOLOGY('TCLPTPPOP', '9')
 MPTT_TREE= namedtuple('MPTT_TREE', 'lft rght level')
 
 ISOLATED_NODE= MPTT_TREE(lft=1, rght=2, level=0)
-
-
-ACTSTREAM_SETTINGS = {
-    'MODELS': ('auth.user', 'auth.group', 'sites.site', 'comments.comment','user_profile.userprofile', 'user_group.usergroup',
-                'device.device', 'device_group.devicegroup', 'device.devicetypefields','device.devicetechnology',
-                'device.devicevendor', 'device.devicemodel', 'device.devicetype','site_instance.siteinstance','service.service',
-                'service.serviceparameters','command.command','organization.organization','inventory.inventory',
-                'inventory.antenna', 'inventory.basestation', 'inventory.sector', 'inventory.backhaul', 'inventory.customer',
-                'inventory.substation', 'inventory.circuit', 'machine.machine', 'service.servicedatasource', 'device.deviceport',
-                'device.devicefrequency', 'service.protocol', 'inventory.iconsettings', 'inventory.livepollingsettings',
-                'inventory.thresholdconfiguration', 'inventory.thematicsettings', 'inventory.circuitl2report','devicevisualization.kmzreport',
-                'inventory.pingthematicsettings'),
-
-
-
-
-    'MANAGER': 'actstream.managers.ActionManager',
-    'FETCH_RELATIONS': True,
-    'USE_PREFETCH': True,
-    'USE_JSONFIELD': True,
-    'GFK_FETCH_DEPTH': 1,
-
-}
 
 # Default PING parameters
 PING_PACKETS = 60

@@ -250,6 +250,25 @@ def inventory_details_wrt_organization(request):
         json.dumps({'response': {'device_groups': response_device_groups, 'user_groups': response_user_group}}), \
         mimetype='application/json')
 
+def list_device(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    devices = Device.objects.filter(organization_id=org_id).\
+            filter(device_name__icontains=sSearch).values('id', 'device_name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": devices.count(),
+        "incomplete_results": False,
+        "items": list(devices)
+    }))
+
+def select_device(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Device.objects.get(id=pk).device_name]))
+
 
 #**************************************** Antenna *********************************************
 class AntennaList(PermissionsRequiredMixin, ListView):
@@ -412,6 +431,26 @@ class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     template_name = 'antenna/antenna_delete.html'
     success_url = reverse_lazy('antennas_list')
     required_permissions = ('inventory.delete_antenna',)
+
+
+def list_antenna(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    antennas = Antenna.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": antennas.count(),
+        "incomplete_results": False,
+        "items": list(antennas)
+    }))
+
+def select_antenna(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Antenna.objects.get(id=pk).name]))
 
 
 #****************************************** Base Station ********************************************
@@ -584,6 +623,26 @@ class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView
     template_name = 'base_station/base_station_delete.html'
     success_url = reverse_lazy('base_stations_list')
     required_permissions = ('inventory.delete_basestation',)
+
+
+def list_base_station(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    base_stations = BaseStation.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": base_stations.count(),
+        "incomplete_results": False,
+        "items": list(base_stations)
+    }))
+
+def select_base_station(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([BaseStation.objects.get(id=pk).name]))
 
 
 #**************************************** Backhaul *********************************************
@@ -771,6 +830,26 @@ class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_backhaul',)
 
 
+def list_backhaul(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    backhauls = Backhaul.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": backhauls.count(),
+        "incomplete_results": False,
+        "items": list(backhauls)
+    }))
+
+def select_backhaul(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Backhaul.objects.get(id=pk).name]))
+
+
 #**************************************** Sector *********************************************
 class SectorList(PermissionsRequiredMixin, ListView):
     """
@@ -949,6 +1028,25 @@ class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     success_url = reverse_lazy('sectors_list')
     required_permissions = ('inventory.delete_sector',)
 
+def list_sector(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    sectors = Sector.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": sectors.count(),
+        "incomplete_results": False,
+        "items": list(sectors)
+    }))
+
+def select_sector(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Sector.objects.get(id=pk).name]))
+
 
 #**************************************** Customer *********************************************
 class CustomerList(PermissionsRequiredMixin, ListView):
@@ -1104,6 +1202,25 @@ class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     template_name = 'customer/customer_delete.html'
     success_url = reverse_lazy('customers_list')
     required_permissions = ('inventory.delete_customer',)
+
+def list_customer(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    customers = Customer.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": customers.count(),
+        "incomplete_results": False,
+        "items": list(customers)
+    }))
+
+def select_customer(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Customer.objects.get(id=pk).name]))
 
 
 #**************************************** Sub Station *********************************************
@@ -1286,6 +1403,25 @@ class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView)
     success_url = reverse_lazy('sub_stations_list')
     required_permissions = ('inventory.delete_substation',)
 
+
+def list_sub_station(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    sub_stations = SubStation.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": sub_stations.count(),
+        "incomplete_results": False,
+        "items": list(sub_stations)
+    }))
+
+def select_sub_station(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([SubStation.objects.get(id=pk).name]))
 
 #**************************************** Circuit *********************************************
 class CircuitList(PermissionsRequiredMixin, ListView):
@@ -1652,7 +1788,6 @@ class CircuitL2ReportCreate(CreateView):
         self.object.circuit_id =  Circuit.objects.get(id=self.kwargs['circuit_id'])
 
         self.object.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
 
 class CircuitL2ReportDelete(DeleteView):
