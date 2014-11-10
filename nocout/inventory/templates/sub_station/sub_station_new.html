@@ -88,6 +88,7 @@
             $("#id_device").select2({
                 placeholder: "Search for a device.",
                 minimumInputLength: 2,
+                width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
                     url: "/inventory/list/device/",
                     dataType: 'json',
@@ -125,6 +126,7 @@
             $("#id_antenna").select2({
                 placeholder: "Search for a antenna.",
                 minimumInputLength: 2,
+                width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
                     url: "/antenna/list/antenna/",
                     dataType: 'json',

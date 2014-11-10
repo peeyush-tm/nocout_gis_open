@@ -97,6 +97,7 @@
             $("#id_bs_switch").select2({
                 placeholder: "Search for a device.",
                 minimumInputLength: 2,
+                width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
                     url: "/inventory/list/device/",
                     dataType: 'json',
@@ -134,6 +135,7 @@
             $("#id_backhaul").select2({
                 placeholder: "Search for a backhaul.",
                 minimumInputLength: 2,
+                width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
                     url: "/backhaul/list/backhaul/",
                     dataType: 'json',

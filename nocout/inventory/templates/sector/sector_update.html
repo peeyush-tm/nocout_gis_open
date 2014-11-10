@@ -73,6 +73,7 @@
             $("#id_sector_configured_on").select2({
                 placeholder: "Search for a sector config on.",
                 minimumInputLength: 2,
+                width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
                     url: "/sector/list/sector/",
                     dataType: 'json',
@@ -110,6 +111,7 @@
             $("#id_base_station").select2({
                 placeholder: "Search for a base station.",
                 minimumInputLength: 2,
+                width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
                     url: "/base_station/list/base_station/",
                     dataType: 'json',

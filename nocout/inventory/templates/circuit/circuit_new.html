@@ -82,6 +82,7 @@
             $("#id_sector").select2({
                 placeholder: "Search for a sector.",
                 minimumInputLength: 2,
+                width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
                     url: "/sector/list/sector/",
                     dataType: 'json',
@@ -119,6 +120,7 @@
             $("#id_customer").select2({
                 placeholder: "Search for a customer.",
                 minimumInputLength: 2,
+                width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
                     url: "/customer/list/customer/",
                     dataType: 'json',
@@ -156,6 +158,7 @@
             $("#id_sub_station").select2({
                 placeholder: "Search for a sub_station.",
                 minimumInputLength: 2,
+                width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
                     url: "/sub_station/list/sub_station/",
                     dataType: 'json',
