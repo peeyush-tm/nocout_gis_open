@@ -1,5 +1,4 @@
 import json
-from actstream.models import Action
 from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView

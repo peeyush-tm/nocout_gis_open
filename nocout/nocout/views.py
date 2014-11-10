@@ -1,5 +1,4 @@
 import json
-from actstream import action
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib import auth

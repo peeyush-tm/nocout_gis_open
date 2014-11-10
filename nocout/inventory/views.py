@@ -1652,7 +1652,6 @@ class CircuitL2ReportCreate(CreateView):
         self.object.circuit_id =  Circuit.objects.get(id=self.kwargs['circuit_id'])
 
         self.object.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
 
 class CircuitL2ReportDelete(DeleteView):
