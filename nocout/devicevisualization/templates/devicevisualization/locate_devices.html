@@ -226,7 +226,7 @@
                     <button type="button" id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
                 </li>
                 <li>
-                    <button type="button" class="btn btn-info">Export Data</button>
+                    <button type="button" class="btn btn-info" id="export_data_gmap">Export Data</button>
                 </li>
                 <li>
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
@@ -319,7 +319,7 @@
             <!--Info Window Content Container END-->
 
             <!--SideInfo Panel Start-->
-            <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:200;">
+            <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:199;">
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3 class="panel-title">
@@ -334,12 +334,15 @@
                                 </select>
                                 <div class="divide-10"></div>
                                 <button type="button" class="btn btn-primary" data-complete-text="Send" data-loading-text="Please Wait..." id="tech_send">Send</button>
+                                <div class="pull-right">
+                                    <input type="checkbox" name="isPing" id="isPing" value="1"> Poll Ping Service
+                                    <div class="clearfix"></div>
+                                </div>
                                 <div class="divide-20 clearfix"></div>
                                 <div class="template_container"></div>
                                 <div class="divide-10"></div>
                                 <div class="">
                                     <button type="button" class="btn btn-primary hide" data-complete-text="Poll Now" data-loading-text="Please Wait..." id="fetch_polling">Poll Now <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i></button>
-                                    <input type="checkbox" name="isPing" id="isPing" value="1"> Poll Ping Service
                                     <button type="button" class="btn btn-primary pull-right hide" data-complete-text="Tabular View" data-loading-text="Please Wait..." id="polling_tabular_view"><i class="fa fa-table"></i> Tabular View</button>
                                 </div>
                                 <div class="divide-20 clearfix"></div>
@@ -385,6 +388,8 @@
     <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
     <!-- Our Library to plot the devices on map & performs functionality accordingly-->
     <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
+    <!-- State boundries Loki object Lib -->
+    <script type="text/javascript" src={% static "js/stateBoundriesLib.js" %}></script>
     <!-- Custon Script for this template-->
     <script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
     <!-- GIS Performancer Custom Library-->
