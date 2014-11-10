@@ -7983,7 +7983,7 @@ def get_devices(technology='WiMAX'):
     technology = DeviceTechnology.objects.get(name__icontains=technology).id
     network_devices = organization_network_devices(organizations=organizations,
                                                    technology=technology
-    ).values_list(
+    ).values(
             'id',
             'device_name',
             'machine__name'
@@ -8001,7 +8001,6 @@ def get_sectors(sectors=None):
     sector_id_list = []
     for sector in sectors:
         sector_id_list.append(sector)
-
     #query?
     polled_sectors = Sector.objects.filter(sector_id__in=sector_id_list
                             ).prefetch_related('circuit_set','sector_configured_on')
@@ -8020,7 +8019,6 @@ def get_substations(sectors=None):
     connected_ip = {}
     #list of polled ips
     connected_ip_list = []
-
     for sector in sectors:
         for sector_devices in sectors[sector]:
             for topology in sectors[sector][sector_devices]:
@@ -8046,7 +8044,6 @@ def get_circuits(substations=None):
     :return:
     """
     polled_circuits = Circuit.objects.filter(id__in=substations.values_list('circuit',flat=True))
-
     return polled_circuits
 
 
@@ -8083,31 +8080,38 @@ def update_topology(polled_sectors=None, polled_circuits=None, topo_sectors=None
         try:
             poll_sector = polled_sectors.get(sector_id=sector_id)
             for sector_device in topo_sectors[sector_id]:
-                for topo in sector_device:
+                for topo in topo_sectors[sector_id][sector_device]:
                     connected_circuit = polled_circuits.get(
                         sub_station__device__ip_address=topo.connected_device_ip
                     )
-                    connected_circuit.sector=poll_sector.id
-                    count += connected_circuit.save()
+                    try:  ##previously some sector exists
+                        if connected_circuit.sector.id != poll_sector.id:
+                            connected_circuit.sector=poll_sector
+                            connected_circuit.save()
+                            count += 1
+                    except:  #no sector exists
+                        connected_circuit.sector=poll_sector
+                        count += 1
         except Exception as e:
             logger.exception(e)
             continue
     return bool(count)
 
 @task()
-def get_topology(technology='WiMAX'):
+def get_topology(technology):
     """
     Get the current topology per technology WiMAX/PMP
     :param technology:
     :return:
     """
+    ##technology comes as a list
     create_topology = False  ##when we would be creating topology for first time
     ## next time onwards it would be update
-
+    count = False
+    
     create_topology = bool(Topology.objects.all().count())
 
     network_devices = get_devices(technology)
-
     device_list = []
     for device in network_devices:
         device_list.append(
@@ -8125,8 +8129,8 @@ def get_topology(technology='WiMAX'):
     topology_old = []
     for machine in machine_dict:
         #this is complete topology for the device set
-        topology.append(Topology.objects.filter(device_name__in=machine_dict[machine],
-                                           data_source='topology').using(alias=machine))
+        topology = Topology.objects.filter(device_name__in=machine_dict[machine],
+                                           data_source='topology').using(alias=machine)
 
         #topology fields
         # device_name
@@ -8142,17 +8146,22 @@ def get_topology(technology='WiMAX'):
         # sys_timestamp
         # check_timestamp
 
-    if create_topology:  ##create topology if not already exists
+
+    if not create_topology:  ##create topology if not already exists
         Topology.objects.bulk_create(topology)
         count = bool(1)
 
     else:  ##update the topology
         sectors = {}
         for topo_data in topology:
-            if topo_data.sector_id not in sectors:
-                sectors[topo_data.sector_id] = {sectors[topo_data.device_name]: []}
-            sectors[topo_data.sector_id][sectors[topo_data.device_name]].append(topo_data)
-
+            try:
+                if topo_data.sector_id not in sectors:
+                    device_name = topo_data.device_name
+                    sectors[topo_data.sector_id] = {device_name: []}
+                sectors[topo_data.sector_id][device_name].append(topo_data)
+            except Exception as e:
+                logger.exception(e)
+                continue
         polled_sectors = get_sectors(sectors)
         polled_substations = get_substations(sectors)
         polled_circuits = get_circuits(polled_substations)
@@ -8166,6 +8175,8 @@ def get_topology(technology='WiMAX'):
     if count:
         #reset cache
         #SOB
+        from django.core.cache import cache
+        cache.clear()
         pass
 
     return True
@@ -8182,10 +8193,15 @@ def update_sector_devices(sectors=None,polled_sectors=None):
         sector_id = sector.sector_id
         ##updating the sector device mac address
         try:
-            device_name = sectors[sector_id].keys()[0]
+            device_name = sectors[sector_id.lower()].keys()[0]
+            sector_id = sector_id.lower()
+        except:
+            device_name = sectors[sector_id.upper()].keys()[0]
+            sector_id = sector_id.upper()
+        try:
             sector_device = sector.sector_configured_on
-            mac = sectors[sector_id][device_name][0]['mac_address']
-            if sector_device.ip_address == sectors[sector_id][device_name][0]['ip_address']\
+            mac = sectors[sector_id][device_name][0].mac_address
+            if sector_device.ip_address == sectors[sector_id][device_name][0].ip_address\
                     and sector_device.mac_address != mac and len(mac):
                 sector_device.mac_address = mac
                 sector_device.save()
@@ -8193,7 +8209,6 @@ def update_sector_devices(sectors=None,polled_sectors=None):
         except Exception as e:
             logger.exception(e)
             continue
-
     return bool(count)
 
 @task()
