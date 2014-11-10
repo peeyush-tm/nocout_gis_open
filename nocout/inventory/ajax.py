@@ -698,6 +698,7 @@ def sector_on_searching(request, search_string, organisation_id):
     return dajax.json()
 '''
 
+'''
 @dajaxice_register(method='GET')
 def update_customer(request, option):
     dajax = Dajax()
@@ -729,6 +730,7 @@ def customer_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(customer.id, customer) )
     dajax.assign('#id_customer', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 @dajaxice_register(method='GET')
 def update_sub_station(request, option):

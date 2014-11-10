@@ -1183,6 +1183,25 @@ class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     success_url = reverse_lazy('customers_list')
     required_permissions = ('inventory.delete_customer',)
 
+def list_customer(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    customers = Customer.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": customers.count(),
+        "incomplete_results": False,
+        "items": list(customers)
+    }))
+
+def select_customer(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Customer.objects.get(id=pk).name]))
+
 
 #**************************************** Sub Station *********************************************
 class SubStationList(PermissionsRequiredMixin, ListView):
