@@ -566,6 +566,7 @@ def sector_config_on_searching(request, search_string, organisation_id):
     return dajax.json()
 '''
 
+'''
 @dajaxice_register(method='GET')
 def update_base_station(request, option):
     dajax = Dajax()
@@ -597,6 +598,7 @@ def base_station_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(base_station.id, base_station) )
     dajax.assign('#id_base_station', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 @dajaxice_register(method='GET')
 def update_device(request, option):

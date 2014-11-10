@@ -605,6 +605,26 @@ class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView
     required_permissions = ('inventory.delete_basestation',)
 
 
+def list_base_station(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    base_stations = BaseStation.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": base_stations.count(),
+        "incomplete_results": False,
+        "items": list(base_stations)
+    }))
+
+def select_base_station(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([BaseStation.objects.get(id=pk).name]))
+
+
 #**************************************** Backhaul *********************************************
 class BackhaulList(PermissionsRequiredMixin, ListView):
     """
