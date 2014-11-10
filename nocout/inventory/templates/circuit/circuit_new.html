@@ -109,7 +109,7 @@
                         $.ajax("/sector/select/sector/" + id, {
                             dataType: "json"
                         }).done(function(data) {
-                            callback({id: id, name: data[0]});
+                            callback({id: id, alias: data[0]});
                             });
                     }
                 },
@@ -147,7 +147,7 @@
                         $.ajax("/customer/select/customer/" + id, {
                             dataType: "json"
                         }).done(function(data) {
-                            callback({id: id, name: data[0]});
+                            callback({id: id, alias: data[0]});
                             });
                     }
                 },
@@ -185,7 +185,7 @@
                         $.ajax("/customer/select/customer/" + id, {
                             dataType: "json"
                         }).done(function(data) {
-                            callback({id: id, name: data[0]});
+                            callback({id: id, alias: data[0]});
                             });
                     }
                 },
@@ -195,11 +195,11 @@
         });
 
         function repoFormatResult(result) {
-          return result.name;
+          return result.alias;
         }
 
         function repoFormatSelection(result) {
-          return result.name;
+          return result.alias;
         }
 
     </script>

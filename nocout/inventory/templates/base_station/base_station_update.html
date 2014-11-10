@@ -122,7 +122,7 @@
                         $.ajax("/inventory/select/device/" + id, {
                             dataType: "json"
                         }).done(function(data) {
-                            callback({id: id, device_name: data[0]});
+                            callback({id: id, device_alias: data[0]});
                             });
                     }
                 },
@@ -160,7 +160,7 @@
                         $.ajax("/backhaul/select/backhaul/" + id, {
                             dataType: "json"
                         }).done(function(data) {
-                            callback({id: id, name: data[0]});
+                            callback({id: id, alias: data[0]});
                             });
                     }
                 },
@@ -190,19 +190,19 @@
         });
 
         function repoFormatResult(device) {
-          return device.device_name;
+          return device.device_alias;
         }
 
         function repoFormatSelection(device) {
-          return device.device_name;
+          return device.device_alias;
         }
 
         function repoBackhaulFormatResult(backhaul) {
-          return backhaul.name;
+          return backhaul.alias;
         }
 
         function repoBackhaulFormatSelection(backhaul) {
-          return backhaul.name;
+          return backhaul.alias;
         }
 
     </script>
