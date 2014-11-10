@@ -3098,7 +3098,7 @@ class PingThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class PingThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class PingThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -3106,30 +3106,6 @@ class PingThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableVi
     columns = ['alias', 'service', 'data_source', 'icon_settings']
     order_columns = ['alias', 'service', 'data_source']
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        # get tab technology
-        technology = DeviceTechnology.objects.filter(name__icontains=self.kwargs['technology'])[0].name
-
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").filter(technology__name='"+technology+"').values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
 
     def get_initial_queryset(self, technology="P2P"):
         """
@@ -3151,9 +3127,8 @@ class PingThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableVi
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify 'icon_setting' field for display in datatables i.e. format: "start_range > icon > end_range"
             icon_settings_display_field = ""
 
@@ -3208,43 +3183,7 @@ class PingThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableVi
                 actions='<a href="/ping_thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/ping_thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                     dct.pop('id')))
-        return qs
-
-    def get_context_data(self, technology):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-
-        # self.initialize(*args, **kwargs)
-        self.initialize()
-
-        qs = self.get_initial_queryset(technology)
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-
-        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
-        # Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class PingThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
