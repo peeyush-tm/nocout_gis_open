@@ -63,7 +63,9 @@ function advanceSearchMainClass() {
                 }
             }
         } else if(window.location.pathname.indexOf("white_background") > -1) {
-            whiteMapClass.searchMarkerLayer.removeAllFeatures();
+            ccpl_map.getLayersByName("Search Layer")[0].removeAllFeatures();
+            ccpl_map.getLayersByName("Search Layer")[0].setVisibility(false);
+            // whiteMapClass.searchMarkerLayer.removeAllFeatures();
         } else {
             var markers = this.searchMarkers;
             for(var i=0; i< markers.length; i++) {
@@ -107,7 +109,7 @@ function advanceSearchMainClass() {
 
         } else if (window.location.pathname.indexOf("white_background") > -1) {
 
-            var size, icon, additionalInfo= {}, size = new OpenLayers.Size(71, 77);
+            var icon;
             //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
             searchedInputs= this.getInputArray();
 
@@ -124,10 +126,11 @@ function advanceSearchMainClass() {
                     }
             }
             
-            searchMarker = whiteMapClass.createOpenLayerVectorMarker(size, icon, long, lat, additionalInfo);
-
-            whiteMapClass.searchMarkerLayer.display(true);
-            whiteMapClass.searchMarkerLayer.addFeatures([searchMarker]);
+            searchMarker = whiteMapClass.createOpenLayerVectorMarker(undefined, undefined, long, lat, {icon: icon});
+            searchMarker.icon = iconUrl;
+            ccpl_map.getLayersByName("Search Layer")[0].setVisibility(true);
+            // whiteMapClass.searchMarkerLayer.display(true);
+            ccpl_map.getLayersByName("Search Layer")[0].addFeatures([searchMarker]);
         } else {
 
             //create a new marker

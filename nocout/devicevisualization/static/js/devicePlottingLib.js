@@ -1890,7 +1890,7 @@ function devicePlottingClass_gmap() {
 			} else {
 				startPtInfo = contentObject.dataset;	
 			}
-			
+console.log(contentObject);			
 			for(var i=0;i<startPtInfo.length;i++) {
 				if(startPtInfo[i].title && $.trim(startPtInfo[i].title.toLowerCase()) === 'circuit id') {
 					ss_circuit_id = startPtInfo[i].value;
