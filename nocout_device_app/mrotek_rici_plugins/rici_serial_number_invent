@@ -1,0 +1,75 @@
+#!/usr/bin/python
+import binascii
+"""
+Link Ethernet Poller script.
+
+This is part of device application. 
+Poller script determines the all ports ethernet status. 
+poller script takes the snmp value of OID .1.3.6.1.2.1.2.2.1.8 from snmp agent of device at specific interval.
+all ports status are sent to device application 
+
+"""
+
+# ####################################################################################
+# Function : check_rici_serial_number_invent
+#
+#Parameters: info (SNMP output ) _no_params ( No Parameters)
+#
+#Output: plugin output ,service state,performance data
+#####################################################################################
+
+
+def check_rici_serial_number_invent(item, _no_params, info):
+    """
+                check_rici_serial_number_invent function calculates the link ethernet status of the port 
+
+                Args:
+                        item (str) Specific item on SNMP output on which we want to filter results
+                
+                Kwargs:
+                        params (tuple) Check parameters for critical and warning state of service
+
+                Returns:
+                        state (int) :
+                                        0 : OK
+                                        1 : Warning
+                                        2: Critical
+                    3: unknown
+                        infotext(string):
+                                        plugin output
+                                        Example : [Management_Port_on_Odu]up [Radio_Interface]up
+
+                        performance_data  (list):
+                                        performance data
+                                        Example: Management_Port_on_Odu=up;;;; Radio_Interface=up;;;;
+                        Raises:
+                                ValueError ,Exception
+    """
+    state = 3
+    temperature = None
+    infotext = "unknown_value"
+    try:
+	if info[0][0]:
+		serial_number = info[0][0]
+		ss_mac = binascii.b2a_hex(serial_number)
+                n = 2
+                serial_number=(':').join([ss_mac[i:i+2] for i in range(0, len(ss_mac), n)])
+		state = 0
+		infotext = "%s" % serial_number
+    except ValueError :	
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext)
+
+
+check_info["rici_serial_number_invent"] = {
+    'check_function': check_rici_serial_number_invent,
+    'service_description': 'rici_serial_number_invent',
+    'snmp_info': ( ".1.3.6.1.2.1.2.2.1.6", ["21"] ),
+}
+
+#####################################################################
+#snmp OID corrosponding to ports ethernet status.
+######################################################################
