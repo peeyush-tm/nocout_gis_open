@@ -60,7 +60,7 @@ def live_query_modulation_ul_fec(mac):
                         if query_output[0][0]:
                                 plugin_output = str(query_output[0][0].split('OK -')[1])
                                 plugin_output = [entry for entry in plugin_output.split(' ')]
-                                entry=filter(lambda x: mac.upper() in x, plugin_output)
+                                entry=filter(lambda x: mac in x.lower(), plugin_output)
                                 modulation_ul_fec = entry[0].split('=')[1].split(',')[7]
 
 	except:
