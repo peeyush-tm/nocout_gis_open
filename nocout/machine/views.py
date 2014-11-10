@@ -10,7 +10,7 @@ from machine.forms import MachineForm
 from models import Machine
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
-from activity_stream.models import UserAction
+from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
@@ -186,7 +186,7 @@ class MachineUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect( MachineUpdate.success_url )
 
 
-class MachineDelete(PermissionsRequiredMixin, DeleteView):
+class MachineDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the machine
     """
@@ -194,15 +194,3 @@ class MachineDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'machine/machine_delete.html'
     success_url = reverse_lazy('machines_list')
     required_permissions = ('machine.delete_machine',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity.
-        """
-        try:
-            machine_obj = self.get_object()
-            action='A machine is deleted - {}(Machine Ip - {})'.format(machine_obj.alias, machine_obj.machine_ip)
-            UserAction.objects.create(user_id=self.request.user.id, module='Machine', action=action)
-        except:
-            pass
-        return super(MachineDelete, self).delete(request, *args, **kwargs)

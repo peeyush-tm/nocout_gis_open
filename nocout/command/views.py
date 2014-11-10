@@ -9,7 +9,7 @@ from models import Command
 from .forms import CommandForm
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
-from activity_stream.models import UserAction
+from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
@@ -189,7 +189,7 @@ class CommandUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect( CommandUpdate.success_url )
 
 
-class CommandDelete(PermissionsRequiredMixin, DeleteView):
+class CommandDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete Command
 
@@ -198,15 +198,3 @@ class CommandDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'command/command_delete.html'
     success_url = reverse_lazy('commands_list')
     required_permissions = ('command.delete_command',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            obj = self.get_object()
-            action='A command is deleted - {}'.format(obj.name)
-            UserAction.objects.create(user_id=self.request.user.id, module='Command', action=action)
-        except:
-            pass
-        return super(CommandDelete, self).delete(request, *args, **kwargs)

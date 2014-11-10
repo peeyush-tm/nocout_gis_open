@@ -18,7 +18,7 @@ from dashboard.models import DashboardSetting
 from dashboard.forms import DashboardSettingForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
 from dashboard.config import dashboards
-from activity_stream.models import UserAction
+from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
 
 
@@ -212,7 +212,7 @@ class DashbaordSettingsUpdateView(SuperUserRequiredMixin, UpdateView):
         return context
 
 
-class DashbaordSettingsDeleteView(SuperUserRequiredMixin, DeleteView):
+class DashbaordSettingsDeleteView(SuperUserRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Dashboard Setting.
 
@@ -220,21 +220,7 @@ class DashbaordSettingsDeleteView(SuperUserRequiredMixin, DeleteView):
     model = DashboardSetting
     template_name = 'dashboard/dashboard_settings_delete.html'
     success_url = reverse_lazy('dashboard-settings')
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            obj = self.get_object()
-            technology = DeviceTechnology.objects.get(id=obj.technology.id).alias
-            action='A dashboard settings is deleted - {}(Technology- {})'.format(obj.name, technology)
-            UserAction.objects.create(user_id=self.request.user.id, module='Dashboard Setting', action=action)
-        except:
-            pass
-        return super(DashbaordSettingsDeleteView, self).delete(request, *args, **kwargs)
-
-
+    obj_alias = 'name'
 
 #****************************************** RF PERFORMANCE DASHBOARD ********************************************
 
