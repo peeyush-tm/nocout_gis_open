@@ -693,42 +693,7 @@ class SubStationForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
-            '''
-            If user submits form and returned with an error, then get selected values from POST data.
-            If user requests to edit an instance, then get instance values.
-            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
-            '''
             request = self.request
-
-            if request.method == 'POST':
-                organization = request.POST.get('organization')
-                device = request.POST.get('device')
-                antenna = request.POST.get('antenna')
-            elif kwargs['instance'] is not None: # request.method == 'GET'
-                instance = kwargs['instance']
-                organization = instance.organization
-                device = instance.device.id if instance.device else None
-                antenna = instance.antenna.id if instance.antenna else None
-            else: # request.method == 'GET' and instance is None
-                organization = request.user.userprofile.organization
-                device = None
-                antenna = None
-
-            devices_set = Device.objects.values_list('id', flat=True)
-            antennas_set = Antenna.objects.values_list('id', flat=True)
-            if organization:
-                devices_set = devices_set.filter(organization=organization)
-                antennas_set = antennas_set.filter(organization=organization)
-
-            device_ids = list(devices_set[:50])
-            antenna_ids = list(antennas_set[:50])
-            if device: # Not None or ''
-                device_ids.append(device)
-            if antenna: # Not None or ''
-                antenna_ids.append(antenna)
-
-            self.fields['device'].queryset = self.fields['device'].queryset.filter(id__in=device_ids)
-            self.fields['antenna'].queryset = self.fields['antenna'].queryset.filter(id__in=antenna_ids)
 
             if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
