@@ -569,6 +569,7 @@ class SectorForm(forms.ModelForm):
 
         self.fields['sector_configured_on'].widget = forms.HiddenInput()
         self.fields['base_station'].widget = forms.HiddenInput()
+        self.fields['antenna'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id

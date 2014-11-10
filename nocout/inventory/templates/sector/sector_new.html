@@ -145,6 +145,44 @@
                 formatResult: repoBSFormatResult, // omitted for brevity, see the source of this page
                 formatSelection: repoBSFormatSelection,  // omitted for brevity, see the source of this page
             });
+
+            $("#id_antenna").select2({
+                placeholder: "Search for a antenna.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/antenna/list/antenna/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/antenna/select/antenna/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, name: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoAntennaFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoAntennaFormatSelection,  // omitted for brevity, see the source of this page
+            });
         });
 
         function repoSectorFormatResult(sector) {
@@ -161,6 +199,14 @@
 
         function repoBSFormatSelection(basestation) {
           return basestation.name;
+        }
+
+        function repoAntennaFormatResult(antenna) {
+          return antenna.name;
+        }
+
+        function repoAntennaFormatSelection(antenna) {
+          return antenna.name;
         }
 
     </script>
