@@ -76,75 +76,129 @@
 
             /*Initialize Datepicker*/
 			$(".datepicker").datepicker();
+
+            $("#id_sector").select2({
+                placeholder: "Search for a sector.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/sector/list/sector/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/sector/select/sector/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, name: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_customer").select2({
+                placeholder: "Search for a customer.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/customer/list/customer/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/customer/select/customer/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, name: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_sub_station").select2({
+                placeholder: "Search for a sub_station.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/sub_station/list/sub_station/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/customer/select/customer/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, name: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
         });
 
-        $("#id_organization").change(function () {
+        function repoFormatResult(result) {
+          return result.name;
+        }
 
-            Dajaxice.inventory.update_sector(Dajax.process, {'option': $('#id_organization').val()});
-            $("#id_sector").val("");
-            $("#id_sector").parent().children().find('a span')[0].innerHTML = "Select";
-            });
+        function repoFormatSelection(result) {
+          return result.name;
+        }
 
-            // to call the dajax function on device search.
-            var sectorTimeout = null;
-            $("#id_sector").on("select2-open", function() {
-                $("#select2-drop .select2-search input").keypress(function() {
-                    if(sectorTimeout != null) clearTimeout(sectorTimeout);
-                        sectorTimeout = setTimeout(list_device_on_sector_search, 50);
-                });
-            });
-
-            function list_device_on_sector_search(){
-                Dajaxice.inventory.sector_on_searching(Dajax.process, {
-                    'search_string': $("#select2-drop .select2-search input").val(),
-                    'organisation_id': $('#id_organization option:selected').val()
-                });
-            }
-
-            $("#id_organization").change(function () {
-
-            Dajaxice.inventory.update_customer(Dajax.process, {'option': $('#id_organization').val()});
-            $("#id_customer").val("");
-            $("#id_customer").parent().children().find('a span')[0].innerHTML = "Select";
-            });
-
-            // to call the dajax function on device search.
-            var customerTimeout = null;
-            $("#id_customer").on("select2-open", function() {
-                $("#select2-drop .select2-search input").keypress(function() {
-                    if(customerTimeout != null) clearTimeout(customerTimeout);
-                        customerTimeout = setTimeout(list_device_on_customer_search, 50);
-                });
-            });
-
-            function list_device_on_customer_search(){
-                Dajaxice.inventory.customer_on_searching(Dajax.process, {
-                    'search_string': $("#select2-drop .select2-search input").val(),
-                    'organisation_id': $('#id_organization option:selected').val()
-                });
-            }
-
-            $("#id_organization").change(function () {
-
-            Dajaxice.inventory.update_sub_station(Dajax.process, {'option': $('#id_organization').val()});
-            $("#id_sub_station").val("");
-            $("#id_sub_station").parent().children().find('a span')[0].innerHTML = "Select";
-            });
-
-            // to call the dajax function on substation search.
-            var sub_stationTimeout = null;
-            $("#id_sub_station").on("select2-open", function() {
-                $("#select2-drop .select2-search input").keypress(function() {
-                    if(sub_stationTimeout != null) clearTimeout(sub_stationTimeout);
-                        sub_stationTimeout = setTimeout(list_sub_station_on_device_search, 50);
-                });
-            });
-
-            function list_sub_station_on_device_search(){
-                Dajaxice.inventory.sub_station_on_searching(Dajax.process, {
-                    'search_string': $("#select2-drop .select2-search input").val(),
-                    'organisation_id': $('#id_organization option:selected').val()
-                });
-            }
     </script>
 {% endblock %}
