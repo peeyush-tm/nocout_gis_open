@@ -49,6 +49,7 @@ def check_wimax_pmp2_sector_id_invent(item, _no_params, info):
 		bs_mac = binascii.b2a_hex(bs_mac)
                 n = 2
                 new_bs_mac=(':').join([bs_mac[i:i+2] for i in range(0, len(bs_mac), n)])
+		new_bs_mac = new_bs_mac.lower()
                 state = 0
                 infotext = "%s" % new_bs_mac
     except:
