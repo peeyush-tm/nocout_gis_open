@@ -233,24 +233,6 @@
             });
         });
 
-        $("#id_organization").change(function () {
-
-            Dajaxice.inventory.update_related_field(Dajax.process, {
-                'option': $('#id_organization').val()
-            });
-            $("#id_bh_configured_on").val("");
-            $("#id_bh_configured_on").parent().children().find('a span')[0].innerHTML = "Select";
-
-            $("#id_bh_switch").val("");
-            $("#id_bh_switch").parent().children().find('a span')[0].innerHTML = "Select";
-
-            $("#id_pop").val("");
-            $("#id_pop").parent().children().find('a span')[0].innerHTML = "Select";
-
-            $("#id_aggregator").val("");
-            $("#id_aggregator").parent().children().find('a span')[0].innerHTML = "Select";
-        });
-
         function repoFormatResult(device) {
           return device.device_name;
         }

@@ -371,6 +371,7 @@ def gt_critical_initial_choices(request):
     dajax.assign('#id_gt_critical', 'innerHTML', ''.join(out))
     return dajax.json()
 
+'''
 @dajaxice_register(method='GET')
 def update_related_field(request, option):
     dajax = Dajax()
@@ -389,6 +390,7 @@ def update_related_field(request, option):
         return dajax.json()
     except Organization.DoesNotExist as e:
         pass
+'''
 
 '''
 @dajaxice_register(method='GET')
