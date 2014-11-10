@@ -48,6 +48,5 @@ class DatatableSearchMixin(object):
             query_object = Q()
             for column in search_columns:
                 query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
-            qs = qs.filter(query_object)
-
+            qs = qs.filter(query_object).distinct()
         return qs
