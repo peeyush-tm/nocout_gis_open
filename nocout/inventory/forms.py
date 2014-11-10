@@ -265,6 +265,10 @@ class BackhaulForm(forms.ModelForm):
         self.fields['aggregator'].empty_label = 'Select'
         self.fields['bh_configured_on'].required = True
 
+        self.fields['bh_configured_on'].widget = forms.HiddenInput()
+        self.fields['bh_switch'].widget = forms.HiddenInput()
+        self.fields['pop'].widget = forms.HiddenInput()
+        self.fields['aggregator'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
@@ -273,46 +277,7 @@ class BackhaulForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
-            '''
-            If user submits form and returned with an error, then get selected values from POST data.
-            If user requests to edit an instance, then get instance values.
-            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
-            '''
             request = self.request
-
-            if request.method == 'POST':
-                organization = request.POST.get('organization')
-                bh_configured_on = request.POST.get('bh_configured_on')
-                aggregator = request.POST.get('aggregator')
-                bh_switch = request.POST.get('bh_switch')
-                pop = request.POST.get('pop')
-            elif kwargs['instance'] is not None: # request.method == 'GET'
-                instance = kwargs['instance']
-                organization = instance.organization
-                bh_configured_on = instance.bh_configured_on.id if instance.bh_configured_on else None
-                aggregator = instance.aggregator.id if instance.aggregator else None
-                bh_switch = instance.bh_switch.id if instance.bh_switch else None
-                pop = instance.pop.id if instance.pop else None
-            else: # request.method == 'GET' and instance is None
-                organization = request.user.userprofile.organization
-                bh_configured_on = None
-                aggregator = None
-                bh_switch = None
-                pop = None
-
-            devices_set = Device.objects.values_list('id', flat=True)
-            if organization:
-                devices_set = devices_set.filter(organization=organization)
-
-            device_ids = set(list(devices_set[:50]) + [bh_configured_on, aggregator, bh_switch, pop])
-
-            if None in device_ids: device_ids.remove(None)
-            if '' in device_ids: device_ids.remove('')
-
-            self.fields['bh_configured_on'].queryset = self.fields['bh_configured_on'].queryset.filter(id__in=device_ids)
-            self.fields['aggregator'].queryset = self.fields['aggregator'].queryset.filter(id__in=device_ids)
-            self.fields['bh_switch'].queryset = self.fields['bh_switch'].queryset.filter(id__in=device_ids)
-            self.fields['pop'].queryset = self.fields['pop'].queryset.filter(id__in=device_ids)
 
             if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
@@ -343,11 +308,6 @@ class BackhaulForm(forms.ModelForm):
         Meta Information
         """
         model = Backhaul
-        fields = (
-            'name', 'alias', 'organization', 'bh_configured_on', 'bh_port_name', 'bh_port', 'bh_type', 'bh_switch', 'switch_port_name',
-            'switch_port', 'pop', 'pop_port_name', 'pop_port', 'aggregator', 'aggregator_port_name', 'aggregator_port', 'pe_hostname',
-            'pe_ip', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity', 'ttsl_circuit_id', 'dr_site', 'description',
-        )
 
     def clean_name(self):
         """
@@ -428,6 +388,8 @@ class BaseStationForm(forms.ModelForm):
         self.fields['state'].required = True
         self.fields['city'].required = True
 
+        self.fields['bs_switch'].widget = forms.HiddenInput()
+        self.fields['backhaul'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
@@ -436,42 +398,7 @@ class BaseStationForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
-            '''
-            If user submits form and returned with an error, then get selected values from POST data.
-            If user requests to edit an instance, then get instance values.
-            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
-            '''
             request = self.request
-
-            if request.method == 'POST':
-                organization = request.POST.get('organization')
-                bs_switch = request.POST.get('bs_switch')
-                backhaul = request.POST.get('backhaul')
-            elif kwargs['instance'] is not None: # request.method == 'GET'
-                instance = kwargs['instance']
-                organization = instance.organization
-                bs_switch = instance.bs_switch.id if instance.bs_switch else None
-                backhaul = instance.backhaul.id if instance.backhaul else None
-            else: # request.method == 'GET' and instance is None
-                organization = request.user.userprofile.organization
-                bs_switch = None
-                backhaul = None
-
-            devices_set = Device.objects.values_list('id', flat=True)
-            backhauls_set = Backhaul.objects.values_list('id', flat=True)
-            if organization:
-                devices_set = devices_set.filter(organization=organization)
-                backhauls_set = backhauls_set.filter(organization=organization)
-
-            device_ids = list(devices_set[:50])
-            backhaul_ids = list(backhauls_set[:50])
-            if bs_switch: # Not None or ''
-                device_ids.append(bs_switch)
-            if backhaul: # Not None or ''
-                backhaul_ids.append(backhaul)
-
-            self.fields['bs_switch'].queryset = self.fields['bs_switch'].queryset.filter(id__in=device_ids)
-            self.fields['backhaul'].queryset = self.fields['backhaul'].queryset.filter(id__in=backhaul_ids)
 
             if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
@@ -502,12 +429,6 @@ class BaseStationForm(forms.ModelForm):
         Meta Information
         """
         model = BaseStation
-
-        fields = (
-            'name', 'alias', 'organization', 'bs_site_id', 'bs_site_type', 'bs_switch', 'backhaul', 'bh_port_name', 'bh_port',
-            'bh_capacity', 'bs_type', 'bh_bso', 'hssu_used', 'latitude', 'longitude', 'infra_provider', 'gps_type',
-            'building_height', 'tower_height', 'country', 'state', 'city', 'address', 'description',
-        )
 
     def clean_name(self):
         """
@@ -572,6 +493,9 @@ class SectorForm(forms.ModelForm):
         self.fields['frequency'].empty_label = 'Select'
         self.fields['sector_id'].empty_label = True
 
+        self.fields['sector_configured_on'].widget = forms.HiddenInput()
+        self.fields['base_station'].widget = forms.HiddenInput()
+        self.fields['antenna'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
@@ -580,42 +504,7 @@ class SectorForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
-            '''
-            If user submits form and returned with an error, then get selected values from POST data.
-            If user requests to edit an instance, then get instance values.
-            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
-            '''
             request = self.request
-
-            if request.method == 'POST':
-                organization = request.POST.get('organization')
-                sector_configured_on = request.POST.get('sector_configured_on')
-                base_station = request.POST.get('base_station')
-            elif kwargs['instance'] is not None: # request.method == 'GET'
-                instance = kwargs['instance']
-                organization = instance.organization
-                sector_configured_on = instance.sector_configured_on.id if instance.sector_configured_on else None
-                base_station = instance.base_station.id if instance.base_station else None
-            else: # request.method == 'GET' and instance is None
-                organization = request.user.userprofile.organization
-                sector_configured_on = None
-                base_station = None
-
-            devices_set = Device.objects.values_list('id', flat=True)
-            base_stations_set = BaseStation.objects.values_list('id', flat=True)
-            if organization:
-                devices_set = devices_set.filter(organization=organization)
-                base_stations_set = base_stations_set.filter(organization=organization)
-
-            device_ids = list(devices_set[:50])
-            base_station_ids = list(base_stations_set[:50])
-            if sector_configured_on: # Not None or ''
-                device_ids.append(sector_configured_on)
-            if base_station: # Not None or ''
-                base_station_ids.append(base_station)
-
-            self.fields['sector_configured_on'].queryset = self.fields['sector_configured_on'].queryset.filter(id__in=device_ids)
-            self.fields['base_station'].queryset = self.fields['base_station'].queryset.filter(id__in=base_station_ids)
 
             if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
@@ -646,12 +535,6 @@ class SectorForm(forms.ModelForm):
         Meta Information
         """
         model = Sector
-
-        fields = (
-            'name', 'alias', 'organization', 'sector_id', 'base_station', 'bs_technology', 'sector_configured_on', 'sector_configured_on_port', 'antenna',
-            'dr_site', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency',
-            'modulation', 'description',
-        )
 
     def clean_name(self):
         """
@@ -801,6 +684,8 @@ class SubStationForm(forms.ModelForm):
         self.fields['longitude'].required = True
         self.fields['mac_address'].required = True
 
+        self.fields['device'].widget = forms.HiddenInput()
+        self.fields['antenna'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
@@ -808,42 +693,7 @@ class SubStationForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
-            '''
-            If user submits form and returned with an error, then get selected values from POST data.
-            If user requests to edit an instance, then get instance values.
-            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
-            '''
             request = self.request
-
-            if request.method == 'POST':
-                organization = request.POST.get('organization')
-                device = request.POST.get('device')
-                antenna = request.POST.get('antenna')
-            elif kwargs['instance'] is not None: # request.method == 'GET'
-                instance = kwargs['instance']
-                organization = instance.organization
-                device = instance.device.id if instance.device else None
-                antenna = instance.antenna.id if instance.antenna else None
-            else: # request.method == 'GET' and instance is None
-                organization = request.user.userprofile.organization
-                device = None
-                antenna = None
-
-            devices_set = Device.objects.values_list('id', flat=True)
-            antennas_set = Antenna.objects.values_list('id', flat=True)
-            if organization:
-                devices_set = devices_set.filter(organization=organization)
-                antennas_set = antennas_set.filter(organization=organization)
-
-            device_ids = list(devices_set[:50])
-            antenna_ids = list(antennas_set[:50])
-            if device: # Not None or ''
-                device_ids.append(device)
-            if antenna: # Not None or ''
-                antenna_ids.append(antenna)
-
-            self.fields['device'].queryset = self.fields['device'].queryset.filter(id__in=device_ids)
-            self.fields['antenna'].queryset = self.fields['antenna'].queryset.filter(id__in=antenna_ids)
 
             if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
@@ -874,11 +724,6 @@ class SubStationForm(forms.ModelForm):
         Meta Information
         """
         model = SubStation
-        fields = (
-            'name', 'alias', 'organization', 'device', 'antenna', 'version', 'serial_no', 'building_height', 'tower_height',
-            'ethernet_extender', 'cable_length', 'latitude', 'longitude', 'mac_address', 'country', 'state', 'city',
-            'address', 'description',
-        )
 
     def clean_name(self):
         """
@@ -928,6 +773,9 @@ class CircuitForm(forms.ModelForm):
         self.fields['sub_station'].empty_label = 'Select'
         self.fields['date_of_acceptance'].required = True
 
+        self.fields['sector'].widget = forms.HiddenInput()
+        self.fields['customer'].widget = forms.HiddenInput()
+        self.fields['sub_station'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
@@ -935,51 +783,7 @@ class CircuitForm(forms.ModelForm):
             logger.info(e.message)
 
         if self.request is not None:
-            '''
-            If user submits form and returned with an error, then get selected values from POST data.
-            If user requests to edit an instance, then get instance values.
-            If user requests to create new entry, then return non-selected values [first 50 sliced values.]
-            '''
             request = self.request
-
-            if request.method == 'POST':
-                organization = request.POST.get('organization')
-                sector = request.POST.get('sector')
-                customer = request.POST.get('customer')
-                sub_station = request.POST.get('sub_station')
-            elif kwargs['instance'] is not None: # request.method == 'GET'
-                instance = kwargs['instance']
-                organization = instance.organization
-                sector = instance.sector.id if instance.sector else None
-                customer = instance.customer.id if instance.customer else None
-                sub_station = instance.sub_station.id if instance.sub_station else None
-            else: # request.method == 'GET' and instance is None
-                organization = request.user.userprofile.organization
-                sector = None
-                customer = None
-                sub_station = None
-
-            sectors_set = Sector.objects.values_list('id', flat=True)
-            customers_set = Customer.objects.values_list('id', flat=True)
-            sub_stations_set = SubStation.objects.values_list('id', flat=True)
-            if organization:
-                sectors_set = sectors_set.filter(organization=organization)
-                customers_set = customers_set.filter(organization=organization)
-                sub_stations_set = sub_stations_set.filter(organization=organization)
-
-            sector_ids = list(sectors_set[:50])
-            customer_ids = list(customers_set[:50])
-            sub_station_ids = list(sub_stations_set[:50])
-            if sector: # Not None or ''
-                sector_ids.append(sector)
-            if customer: # Not None or ''
-                customer_ids.append(customer)
-            if sub_station: # Not None or ''
-                sub_station_ids.append(sub_station)
-
-            self.fields['sector'].queryset = self.fields['sector'].queryset.filter(id__in=sector_ids)
-            self.fields['customer'].queryset = self.fields['customer'].queryset.filter(id__in=customer_ids)
-            self.fields['sub_station'].queryset = self.fields['sub_station'].queryset.filter(id__in=sub_station_ids)
 
             if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
                 self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
@@ -1010,11 +814,6 @@ class CircuitForm(forms.ModelForm):
         Meta Information
         """
         model = Circuit
-        fields = (
-            'name', 'alias', 'organization', 'circuit_type', 'circuit_id', 'sector', 'customer', 'sub_station', 'qos_bandwidth',
-            'dl_rssi_during_acceptance', 'dl_cinr_during_acceptance', 'jitter_value_during_acceptance', 'throughput_during_acceptance', 'date_of_acceptance', 'description',
-        )
-
 
     def clean_name(self):
         """

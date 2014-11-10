@@ -22,7 +22,6 @@ from devicevisualization.models import GISPointTool, KMZReport
 from django.views.decorators.csrf import csrf_exempt
 from django.core.urlresolvers import reverse_lazy
 import re, ast
-from actstream import action
 from activity_stream.models import UserAction
 logger=logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ def locate_devices(request , device_name = "default_device_name"):
                     }
 
     return render_to_response('devicevisualization/locate_devices.html',
-                                template_data, 
+                                template_data,
                                 context_instance=RequestContext(request))
 
 def load_google_earth(request, device_name = "default_device_name"):
@@ -51,9 +50,9 @@ def load_google_earth(request, device_name = "default_device_name"):
                     'get_filter_api': get_url(request, 'GET'),
                     'set_filter_api': get_url(request, 'POST')
                     }
-                    
+
     return render_to_response('devicevisualization/google_earth_template.html',
-                                template_data, 
+                                template_data,
                                 context_instance=RequestContext(request))
 
 def load_earth(request):
@@ -61,10 +60,10 @@ def load_earth(request):
     Returns the Context Variable for google earth.
     """
     template_data = {}
-                    
+
     return render_to_response('devicevisualization/locate_devices_earth.html',
-                                template_data, 
-                                context_instance=RequestContext(request))    
+                                template_data,
+                                context_instance=RequestContext(request))
 
 
 def load_white_background(request , device_name = "default_device_name"):
@@ -78,10 +77,10 @@ def load_white_background(request , device_name = "default_device_name"):
                     }
 
     return render_to_response('devicevisualization/locate_devices_white_map.html',
-                                template_data, 
+                                template_data,
                                 context_instance=RequestContext(request))
 
-    
+
 def get_url(req, method):
     """
     Return Url w.r.t to the request type.
@@ -571,7 +570,7 @@ class GetToolsData(View):
                 data_object['connected_lon'] = point_data['connected_lon']
                 data_object['connected_point_type'] = point_data['connected_point_type']
                 data_object['connected_point_info'] = point_data['connected_point_info']
-                
+
                 #Append data to point list
                 result["data"]["points"].append(data_object)
 
@@ -591,12 +590,12 @@ class GetToolsData(View):
 ##************************************* KMZ Report****************************************##
 
 class KmzListing(ListView):
-   
+
     model = KMZReport
     template_name = 'devicevisualization/kmz.html'
 
     def get_context_data(self, **kwargs):
-        
+
         context = super(KmzListing, self).get_context_data(**kwargs)
         table_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
@@ -614,7 +613,7 @@ class KmzListing(ListView):
 
 
 class Kmzreport_listingtable(BaseDatatableView):
-   
+
     model = KMZReport
     columns = ['name', 'filename', 'added_on', 'user']
     order_columns = ['name', 'filename', 'added_on', 'user']
@@ -644,12 +643,12 @@ class Kmzreport_listingtable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        
+
         # condition to fetch KMZ Report data from database
-        condition = (Q(user=self.request.user) | Q(is_public=1)) 
+        condition = (Q(user=self.request.user) | Q(is_public=1))
         # Query to fetch L2 reports data from db
         kmzreportresult = KMZReport.objects.filter(condition).values(*self.columns + ['id'])
-       
+
         report_resultset = []
         for data in kmzreportresult:
             report_object = {}
@@ -668,9 +667,9 @@ class Kmzreport_listingtable(BaseDatatableView):
         """
         Preparing  Initial Queryset for the for rendering the data table.
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             dct.update(actions='<a style="cursor:pointer;" url="{0}" class="delete_kmzreport" title="Delete kmz" >\
                 <i class="fa fa-trash-o text-danger"></i></a>\
                 <a href="view/gmap/{0}/" title="view on google map">\
@@ -682,7 +681,7 @@ class Kmzreport_listingtable(BaseDatatableView):
                 '.format(dct.pop('id')),
                added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
 
-        return qs
+        return json_data
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause
@@ -728,7 +727,7 @@ class Kmzreport_listingtable(BaseDatatableView):
         request = self.request
         self.initialize(*args, **kwargs)
 
-        
+
         qs = self.get_initial_queryset()
 
         # number of records before filtering
@@ -782,12 +781,12 @@ class KmzDelete(DeleteView):
         KMZReport.objects.filter(id=report_id).delete()
         return HttpResponseRedirect(reverse_lazy('kmz_list'))
 
-# class for view kmz file on google map , google earth , white background 
+# class for view kmz file on google map , google earth , white background
 
 class KmzViewAction(View):
-    
+
     template = ''
-    
+
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -808,9 +807,9 @@ class KmzViewAction(View):
             template = 'devicevisualization/kmz_earth.html'
         else:
             template = 'devicevisualization/kmz_gmap.html'
-        
+
         return render_to_response(template,
-                context_data, 
+                context_data,
                 context_instance=RequestContext(request))
 
 ##************************************ Create KMZ File class **************************************##
@@ -818,7 +817,7 @@ class KmzCreate(CreateView):
 
     template_name = 'devicevisualization/kmzuploadnew.html'
     model = KMZReport
-    form_class = KmzReportForm 
+    form_class = KmzReportForm
 
     def dispatch(self, *args, **kwargs):
         """
@@ -832,9 +831,8 @@ class KmzCreate(CreateView):
         """
         self.object = form.save(commit=False)
         self.object.user =  UserProfile.objects.get(id=self.request.user.id)
-        
+
         self.object.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(reverse_lazy('kmz_list'))
 
 
@@ -845,7 +843,7 @@ class PointListingInit(ListView):
     template_name = 'devicevisualization/points_listing.html'
 
     def get_context_data(self, **kwargs):
-        
+
         context = super(PointListingInit, self).get_context_data(**kwargs)
         table_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
@@ -862,7 +860,7 @@ class PointListingInit(ListView):
 
 
 class PointListingTable(BaseDatatableView):
-   
+
     model = GISPointTool
     columns = ['name', 'description', 'icon_url', 'latitude', 'longitude', 'connected_lat', 'connected_lon']
     order_columns = ['name', 'description', 'latitude', 'longitude', 'connected_lat', 'connected_lon']
@@ -964,7 +962,7 @@ class PointListingTable(BaseDatatableView):
         request = self.request
         self.initialize(*args, **kwargs)
 
-        
+
         qs = self.get_initial_queryset()
 
         # number of records before filtering

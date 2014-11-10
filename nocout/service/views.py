@@ -9,8 +9,9 @@ from models import Service, ServiceParameters, ServiceDataSource, Protocol, Devi
 from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
-from activity_stream.models import UserAction
+from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.datatable import DatatableSearchMixin
 
 # ########################################################
 from django.conf import settings
@@ -49,7 +50,7 @@ class ServiceList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Service Listing Table.
     """
@@ -57,26 +58,6 @@ class ServiceListingTable(PermissionsRequiredMixin, BaseDatatableView):
     required_permissions = ('service.view_service',)
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
     order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
 
     def get_initial_queryset(self):
         """
@@ -94,67 +75,11 @@ class ServiceListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-
-        #in correct behaviour on GUI. need to be redone. @TODO
-        # ##joining the multiple data sources in one
-        # new_qs = []
-        # temp_dict = {}
-        # delete_list = []
-        # for ds in qs:
-        #     if ds["id"] not in temp_dict:
-        #         temp_dict[ds["id"]] = []
-        #     temp_dict[ds["id"]].append(ds["service_data_sources__alias"])
-        #
-        # for q in qs:
-        #     if q["id"] not in delete_list:
-        #         delete_list.append(q["id"])
-        #         for sid in temp_dict:
-        #             if sid == q["id"]:
-        #                 q["service_data_sources__alias"] = ", ".join(temp_dict[sid])
-        #                 new_qs.append(q)
-        # ##joining the multiple data sources in one.
-        # ## replacing old one
-        # qs = new_qs
-        # ## replacing old one
-
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             dct.update(actions='<a href="/service/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/service/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class ServiceDetail(PermissionsRequiredMixin, DetailView):
@@ -214,7 +139,7 @@ class ServiceUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(ServiceUpdate.success_url)
 
 
-class ServiceDelete(PermissionsRequiredMixin, DeleteView):
+class ServiceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the Service.
     """
@@ -222,17 +147,6 @@ class ServiceDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'service/service_delete.html'
     success_url = reverse_lazy('services_list')
     required_permissions = ('service.delete_service',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            UserAction.objects.create(user_id=self.request.user.id, module='Service',
-                         action='A service is deleted - {}'.format(self.get_object().alias) )
-        except:
-            pass
-        return super(ServiceDelete, self).delete(request, *args, **kwargs)
 
 
 #************************************* Service Parameters *****************************************
@@ -409,7 +323,7 @@ class ServiceParametersUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(ServiceParametersUpdate.success_url)
 
 
-class ServiceParametersDelete(PermissionsRequiredMixin, DeleteView):
+class ServiceParametersDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the ServiceParameters.
     """
@@ -417,17 +331,7 @@ class ServiceParametersDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'service_parameter/service_parameter_delete.html'
     success_url = reverse_lazy('services_parameter_list')
     required_permissions = ('service.delete_serviceparameters',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Log the user activity before deleting the Service Parameters.
-        """
-        try:
-            UserAction.objects.create(user_id=self.request.user.id, module='Service Parameters',
-                         action='A service parameters is deleted - {}'.format(self.get_object().parameter_description) )
-        except:
-            pass
-        return super(ServiceParametersDelete, self).delete(request, *args, **kwargs)
+    obj_alias = 'parameter_description'
 
 
 #********************************** Service Data Source ***************************************
@@ -594,7 +498,7 @@ class ServiceDataSourceUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(ServiceDataSourceUpdate.success_url)
 
 
-class ServiceDataSourceDelete(PermissionsRequiredMixin, DeleteView):
+class ServiceDataSourceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the Service Data Source.
     """
@@ -602,17 +506,6 @@ class ServiceDataSourceDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'service_data_source/service_data_source_delete.html'
     success_url = reverse_lazy('service_data_sources_list')
     required_permissions = ('service.delete_servicedatasource',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding delete method to log the user activity.
-        """
-        try:
-            UserAction.objects.create(user_id=self.request.user.id, module='Service Data Source',
-                         action='A service sata source is deleted - {}'.format(self.get_object().alias) )
-        except:
-            pass
-        return super(ServiceDataSourceDelete, self).delete(request, *args, **kwargs)
 
 
 #********************************** Protocol ***************************************
@@ -790,7 +683,7 @@ class ProtocolUpdate(PermissionsRequiredMixin, UpdateView):
             self.object = form.save()
         return HttpResponseRedirect(ProtocolUpdate.success_url)
 
-class ProtocolDelete(PermissionsRequiredMixin, DeleteView):
+class ProtocolDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to delete the protocol.
     """
@@ -798,19 +691,7 @@ class ProtocolDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'protocol/protocol_delete.html'
     success_url = reverse_lazy('protocols_list')
     required_permissions = ('service.delete_protocol',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            protocol_obj = self.get_object()
-            UserAction.objects.create(user_id=self.request.user.id, module='Protocol',
-                         action='A protocol is deleted - {}(port - {}, version - {})'.format(protocol_obj.protocol_name,
-                                                protocol_obj.port, protocol_obj.version) )
-        except:
-            pass
-        return super(ProtocolDelete, self).delete( request, *args, **kwargs)
+    obj_alias = 'protocol_name'
 
 
 #**************************************** DeviceServiceConfiguration *********************************************

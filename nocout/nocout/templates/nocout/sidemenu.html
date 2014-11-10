@@ -235,7 +235,7 @@
                             {% if perms.command.view_command %}
                             <li><a class="" href="/command/"><span class="sub-menu-text">Commands</span></a></li>
                             {% endif %}
-                        </ul> 
+                        </ul>
                     </li>
                     {% endif %}
 
@@ -290,8 +290,8 @@
                         <li><a class="" href="/user/"><span class="sub-menu-text">Users</span></a></li>
                         <li><a class="" href="/sm/"><span class="sub-menu-text">User Session</span></a></li>
                         <li><a class="" href="/organization/"><span class="sub-menu-text">Organization</span></a></li>
-                        
-                        {% if perms.actstream.view_action %}
+
+                        {% if perms.activity_stream.view_useraction %}
                             <li><a class="" href="/logs/actions/"><span class="sub-menu-text">User Logs</span></a></li>
                         {% endif %}
                     </ul>

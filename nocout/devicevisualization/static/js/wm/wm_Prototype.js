@@ -17,7 +17,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 				new OpenLayers.Control.PanZoomBar(),
 				new OpenLayers.Control.MousePosition({
 					prefix: whiteMapSettings.latLngPrefixLabel
-				})
+				}),
+				new OpenLayers.Control.LayerSwitcher()
 			],
 			//Bounds for our Open layer.
 			maxExtent: new OpenLayers.Bounds(whiteMapSettings.initial_bounds),
@@ -64,19 +65,40 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//Add layer to the map
 		ccpl_map.addLayer(layers.searchMarkerLayer);
 
-		//KML FILE CODE
-		//
+		// KML 	FILE CODE
+		 // var kmlUrl = base_url+'/static/doc.kml';
+		 // var groundOverlay = new OpenLayers.Layer.Vector("KML2", {
+		 // 	renderers: location.search.indexOf('Canvas') >= 0 ? ['Canvas', 'SVG', 'VML'] : ['SVG', 'VML', 'Canvas'],
+		 // 	projection: ccpl_map.displayProjection,
+		 // 	strategies: [new OpenLayers.Strategy.Fixed()],
+		 // 	protocol: new OpenLayers.Protocol.HTTP({
+		 // 		url: kmlUrl,
+		 // 		format: new OpenLayers.Format.KML({
+		 // 			maxDepth: 1,
+		 // 			baseUrl: kmlUrl,
+		 // 			extractStyles: true,
+		 // 			extractAttributes: true
+		 // 		})
+		 // 	})
+		 // });
+
+		 // ccpl_map.addLayer(groundOverlay);
+		
 		// var kmlFileExample = new OpenLayers.Layer.Vector("kml layer", {
-		// 	projection: new OpenLayers.Projection("EPSG:4326"),
+		// 	// projection: new OpenLayers.Projection("EPSG:4326"),
+		// 	sphericalMercator: true,
 		// 	strategies: [new OpenLayers.Strategy.Fixed()],
 		// 	protocol: new OpenLayers.Protocol.HTTP({
-		// 		url: base_url+'/static/06112014-9nwcx5b.kml',
+		// 		url: base_url+'/static/doc.kml',
 		// 		format: new OpenLayers.Format.KML({
 		// 			extractStyles: true,
-		// 			extractAttributes: true
+		// 			extractAttributes: true,
+		// 			maxDepth: 10
 		// 		})
-		// 	})
+		// 	}),
+		// 	visible: true
 		// });
+		// kmlFileExample.setVisibility(true);
 		// ccpl_map.addLayer(kmlFileExample);
 
 		//Event listener of Features (Line, Sector, Devices)
