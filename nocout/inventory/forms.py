@@ -914,6 +914,7 @@ class CircuitForm(forms.ModelForm):
         self.fields['sub_station'].empty_label = 'Select'
         self.fields['date_of_acceptance'].required = True
 
+        self.fields['sector'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id

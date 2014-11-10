@@ -664,6 +664,7 @@ def antenna_on_searching(request, search_string, organisation_id):
     dajax.assign('#id_antenna', 'innerHTML', ''.join(out))
     return dajax.json()
 
+'''
 @dajaxice_register(method='GET')
 def update_sector(request, option):
     dajax = Dajax()
@@ -695,6 +696,7 @@ def sector_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(sector.id, sector) )
     dajax.assign('#id_sector', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 @dajaxice_register(method='GET')
 def update_customer(request, option):
