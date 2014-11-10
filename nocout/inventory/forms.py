@@ -792,6 +792,7 @@ class SubStationForm(forms.ModelForm):
         self.fields['longitude'].required = True
         self.fields['mac_address'].required = True
 
+        self.fields['device'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
