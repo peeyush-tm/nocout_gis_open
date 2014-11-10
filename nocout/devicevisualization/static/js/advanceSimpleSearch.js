@@ -107,7 +107,7 @@ function advanceSearchMainClass() {
 
         } else if (window.location.pathname.indexOf("white_background") > -1) {
 
-            var size, icon, additionalInfo= {}, size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height);
+            var size, icon, additionalInfo= {}, size = new OpenLayers.Size(71, 77);
             //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
             searchedInputs= this.getInputArray();
 
@@ -123,7 +123,7 @@ function advanceSearchMainClass() {
                         icon = this.constants.search_bs_icon
                     }
             }
-
+            
             searchMarker = whiteMapClass.createOpenLayerVectorMarker(size, icon, long, lat, additionalInfo);
 
             whiteMapClass.searchMarkerLayer.display(true);
@@ -133,30 +133,21 @@ function advanceSearchMainClass() {
             //create a new marker
             searchMarker = new google.maps.Marker({position: new google.maps.LatLng(lat, long), zIndex: 999});
 
-            //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
-            searchedInputs= this.getInputArray();
-
-            if(searchedInputs['BS Name'].length || searchedInputs['Circuit Id'].length || searchedInputs['IP'].length) {
-                isOnlyStateorCityIsApplied= false;
+            if(iconUrl) {
+                //set icon from global object
+                searchMarker.setIcon(iconUrl);  
+            } else {
+                //set icon from global object
+                searchMarker.setIcon(this.constants.search_bs_icon);
             }
-
-            if(!isOnlyStateorCityIsApplied) {
-                    if(iconUrl) {
-                        //set icon from global object
-                        searchMarker.setIcon(iconUrl);  
-                    } else {
-                        //set icon from global object
-                        searchMarker.setIcon(this.constants.search_bs_icon);
-                    }
-                    //set animation to marker bounce
-                    if(searchMarker.getAnimation() != null) {
-                        searchMarker.setAnimation(null);
-                    } else {
-                        searchMarker.setAnimation(google.maps.Animation.BOUNCE);
-                    }
-                    //show the marker on map.
-                    searchMarker.setMap(mapInstance);
+            //set animation to marker bounce
+            if(searchMarker.getAnimation() != null) {
+                searchMarker.setAnimation(null);
+            } else {
+                searchMarker.setAnimation(google.maps.Animation.BOUNCE);
             }
+            //show the marker on map.
+            // searchMarker.setMap(mapInstance);
 
             google.maps.event.addListener(searchMarker, 'click', function() {
                 if(iconUrl) {
@@ -194,6 +185,7 @@ function advanceSearchMainClass() {
                 if($.trim(currentItem["element_type"]== "multiselect")) {
                     if(currentItem["values"].length) {
                         formElement+= '<select multiple class="multiSelectBox col-md-12" id="search_'+currentItem.key+'">';
+                        
                         for(j=0; j< currentItem["values"].length; j++) {
                             if(currentItem["key"]=== "sector_configured_on") {
                                 var sector_config_val = currentItem["values"][j]["value"];
@@ -512,6 +504,7 @@ function advanceSearchMainClass() {
         this.filtersList= [];
         this.appliedSearch= [];
         this.searchMarkers= [];
+        searchMarkers_global = [];
         this.searchedCircuitLines= [];
         this.search_marker_count = 0;
     };

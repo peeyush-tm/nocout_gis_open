@@ -133,7 +133,7 @@ def build_data(doc):
 	if not entry:
 		continue
 	check_time_epoch = utility_module.get_epoch_time(entry.get('time'))
-    	local_time_epoch += 300
+    	local_time_epoch = check_time_epoch
         t = (
             #uuid,
             doc.get('host'),
@@ -151,6 +151,7 @@ def build_data(doc):
             check_time_epoch,
 	    doc.get('ip_address'),
 	    doc.get('severity'),
+	    doc.get('age')
 	)
         values_list.append(t)
         t = ()
@@ -170,7 +171,7 @@ def insert_data(table, data_values, **kwargs):
 	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
 		query = "SELECT * FROM %s " % table +\
-                	"WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][3],data_values[i][1])
+                	"WHERE `device_name`='%s' AND  `service_name`='%s' AND `data_source` ='%s'" %(str(data_values[i][0]),data_values[i][1],data_values[i][4])
 		cursor = db.cursor()
         	try:
                 	cursor.execute(query)
@@ -188,11 +189,11 @@ def insert_data(table, data_values, **kwargs):
 		`machine_name`=%s, `site_name`=%s, `data_source`=%s, `current_value`=%s,
 		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
-		`ip_address`=%s,`severity`=%s
-		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s
+		`ip_address`=%s,`age`=%s, `severity`=%s
+		WHERE `device_name`=%s AND `service_name`=%s AND `data_source` = %s
 		"""
 		try:
-			data_values = map(lambda x: x + (x[0], x[3], x[1],), insert_dict.get('1'))
+			data_values = map(lambda x: x + (x[0], x[1],x[4]), insert_dict.get('1'))
                 	cursor.executemany(query, data_values)
 		except mysql.connector.Error as err:
         		raise mysql.connector.Error, err
@@ -204,8 +205,8 @@ def insert_data(table, data_values, **kwargs):
  		query+= """(device_name, service_name, machine_name, 
             	site_name, data_source, current_value, min_value, 
             	max_value, avg_value, warning_threshold, 
-            	critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
-           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s)
+            	critical_threshold, sys_timestamp, check_timestamp,ip_address,severity,age) 
+           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s,%s)
 		"""
     		cursor = db.cursor()
     		try:

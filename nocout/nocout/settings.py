@@ -235,13 +235,13 @@ CELERY_TIMEZONE = 'Asia/Calcutta'
 CELERYBEAT_SCHEDULE = {
     'wimax-topology': {
         'task': 'inventory.tasks.get_topology',
-        'schedule': timedelta(seconds=600),
-        'args': ('WiMAX')
+        'schedule': timedelta(seconds=300),
+        'args': ['WiMAX']
     },
     'pmp-topology': {
         'task': 'inventory.tasks.get_topology',
-        'schedule': timedelta(seconds=600),
-        'args': ('PMP')
+        'schedule': timedelta(seconds=300),
+        'args': ['PMP']
     },
 }
 

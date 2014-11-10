@@ -7,7 +7,7 @@ from django.db.models import Q, Count
 from django.views.generic.base import View
 from django.http import HttpResponse
 from inventory.models import BaseStation, Sector, Circuit, SubStation, Customer, LivePollingSettings, \
-    ThresholdConfiguration, ThematicSettings
+    ThresholdConfiguration, ThematicSettings, PingThematicSettings
 from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, DeviceModel, State, Country, City
 import requests
@@ -625,13 +625,16 @@ class FetchThematicSettingsApi(View):
         # result dictionary to be returned as output of api
         result = {
             "success": 0,
-            "message": "Failed to fetch live polling settings.",
+            "message": "Failed to fetch thematic settings.",
             "data": {
             }
         }
 
         # initializing 'lp_templates' list containing live setting templates
         result['data']['thematic_settings'] = list()
+
+        # service type
+        service_type = self.request.GET.get('service_type', None)
 
         # converting 'json' into python object
         technology_id = int(self.request.GET.get('technology', None))
@@ -645,21 +648,30 @@ class FetchThematicSettingsApi(View):
             lps = LivePollingSettings.objects.filter(technology=technology)
         except Exception as e:
             logger.info(e.message)
-
-        if lps:
-            tc_temp = dict()
-            for lp in lps:
-                threshold_configurations = ThresholdConfiguration.objects.filter(live_polling_template=lp)
-                if threshold_configurations:
-                    for tc in threshold_configurations:
-                        thematic_settings = ThematicSettings.objects.filter(threshold_template=tc)
-                        if thematic_settings:
-                            for ts in thematic_settings:
-                                ts_temp = dict()
-                                ts_temp['id'] = ts.id
-                                ts_temp['value'] = ts.alias
-                                result['data']['thematic_settings'].append(ts_temp)
-                                print "********************************* ts_temp - ", ts_temp
+        if service_type == 'ping':
+            thematic_settings = PingThematicSettings.objects.filter(technology=technology)
+            for ts in thematic_settings:
+                ts_temp = dict()
+                ts_temp['id'] = ts.id
+                ts_temp['value'] = ts.alias
+                result['data']['thematic_settings'].append(ts_temp)
+                print "********************************* ts_temp - ", ts_temp
+            result['message'] = "Successfully fetched thematic settings."
+            result['success'] = 1
+        else:
+            if lps:
+                for lp in lps:
+                    threshold_configurations = ThresholdConfiguration.objects.filter(live_polling_template=lp)
+                    if threshold_configurations:
+                        for tc in threshold_configurations:
+                            thematic_settings = ThematicSettings.objects.filter(threshold_template=tc)
+                            if thematic_settings:
+                                for ts in thematic_settings:
+                                    ts_temp = dict()
+                                    ts_temp['id'] = ts.id
+                                    ts_temp['value'] = ts.alias
+                                    result['data']['thematic_settings'].append(ts_temp)
+                                    print "********************************* ts_temp - ", ts_temp
             result['message'] = "Successfully fetched thematic settings."
             result['success'] = 1
         return HttpResponse(json.dumps(result))
@@ -737,6 +749,7 @@ class BulkFetchLPDataApi(View):
         """Returns json containing live polling values and icon urls for bulk devices"""
 
         # converting 'json' into python object
+        service_type = self.request.GET.get('service_type', None)
         devices = eval(str(self.request.GET.get('devices', None)))
         ts_template_id = int(self.request.GET.get('ts_template', None))
         exceptional_services = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
@@ -747,30 +760,40 @@ class BulkFetchLPDataApi(View):
 
         service = ""
         data_source = ""
-        # Responsed form multiprocessing
+        lp_template_id = ""
 
         # selected thematic setting
-        ts = ThematicSettings.objects.get(pk=ts_template_id)
+        if service_type == 'ping':
+            ts = PingThematicSettings.objects.get(pk=ts_template_id)
+            service = ts.service
+            data_source = ts.data_source
 
-        # getting live polling template
-        lp_template_id = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id).live_polling_template.id
-
-        # getting service and data source form live polling settings
-        try:
-            service = LivePollingSettings.objects.get(pk=lp_template_id).service
-            data_source = LivePollingSettings.objects.get(pk=lp_template_id).data_source
-
-        except Exception as e:
-            logger.info("No service and data source corresponding to this live pollig setting template.")
-
-        # result dictionary to be returned as output of ap1
-        result = {
-            "success": 0,
-            "message": "Failed to fetch live polling data.",
-            "data": {
+            # result dictionary to be returned as output of api
+            result = {
+                "success": 0,
+                "message": "Failed to fetch thematic settings.",
+                "data": {}
             }
-        }
-        bs_device, site_name = None, None
+        else:
+            ts = ThematicSettings.objects.get(pk=ts_template_id)
+
+            # getting live polling template
+            lp_template_id = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id).live_polling_template.id
+
+            # getting service and data source from live polling settings
+            try:
+                service = LivePollingSettings.objects.get(pk=lp_template_id).service
+                data_source = LivePollingSettings.objects.get(pk=lp_template_id).data_source
+            except Exception as e:
+                logger.info("No service and data source corresponding to this live pollig setting template.")
+
+            # result dictionary to be returned as output of api
+            result = {
+                "success": 0,
+                "message": "Failed to fetch live polling data.",
+                "data": {}
+            }
+            bs_device, site_name = None, None
 
         result['data']['devices'] = dict()
         # get machines associated with current devices
@@ -789,8 +812,10 @@ class BulkFetchLPDataApi(View):
                     'value': []
                 }
                 responses = []
+
                 # live polling setting
-                lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
+                if service_type != "ping":
+                    lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
 
                 # current machine devices
                 current_devices_list = []
@@ -850,8 +875,12 @@ class BulkFetchLPDataApi(View):
                     lp_data['bs_name_ss_mac_mapping'] = bs_name_ss_mac_mapping
                     lp_data['ss_name_mac_mapping'] = ss_name_mac_mapping
                     lp_data['device_list'] = devices_in_current_site
-                    lp_data['service_list'] = [str(lp_template.service.name)]
-                    lp_data['ds'] = [str(lp_template.data_source.name)]
+                    if service_type == 'ping':
+                        lp_data['service_list'] = [str(service)]
+                        lp_data['ds'] = [str(data_source)]
+                    else:
+                        lp_data['service_list'] = [str(lp_template.service.name)]
+                        lp_data['ds'] = [str(lp_template.data_source.name)]
                     site = SiteInstance.objects.get(pk=int(site_id))
                     site_list.append({
                         'username': site.username,
@@ -904,7 +933,10 @@ class BulkFetchLPDataApi(View):
                         result['data']['devices'][device_name]['value'] = device_value
 
                         # threshold configuration for getting warning, critical comparison values
-                        tc = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id)
+                        if service_type == 'ping':
+                            tc = ts
+                        else:
+                            tc = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id)
 
                         #default image to be loaded
                         image_partial = "icons/mobilephonetower10.png"
@@ -1056,5 +1088,3 @@ def nocout_live_polling(q, site):
             q.put(response_dict)
     except Exception as e:
         logger.info(e.message)
-
-

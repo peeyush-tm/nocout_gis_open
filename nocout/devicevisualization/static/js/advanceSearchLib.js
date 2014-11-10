@@ -842,7 +842,18 @@ function advanceSearchClass() {
 		appliedAdvFilter = [];
 		appliedAdvFilter_Active = [];
         result_plot_device=[]
-		$("#advFilterFormContainer").html("");
+
+        // Not to clear the html for gmap page
+        if(window.location.pathname.indexOf("googleEarth") > -1) {
+	        $("#advFilterFormContainer").html("");
+	    } else if(window.location.pathname.indexOf("white_background") > -1) {
+	        $("#advFilterFormContainer").html("");
+	    } else {
+	    	$("#filter_technology").select2("val","");
+	    	$("#filter_vendor").select2("val","");
+	    	$("#filter_state").select2("val","");
+	    	$("#filter_city").select2("val","");
+	    }
 
 		if(!($("#advFilterContainerBlock").hasClass("hide"))) {
 			$("#advFilterContainerBlock").addClass("hide");
