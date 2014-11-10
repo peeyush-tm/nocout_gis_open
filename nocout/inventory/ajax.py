@@ -406,6 +406,7 @@ def bh_configured_on_searching(request, search_string, organisation_id):
     return dajax.json()
 '''
 
+'''
 @dajaxice_register(method='GET')
 def bh_switch_on_searching(request, search_string, organisation_id):
     dajax = Dajax()
@@ -419,6 +420,7 @@ def bh_switch_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_bh_switch', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 @dajaxice_register(method='GET')
 def pop_on_searching(request, search_string, organisation_id):

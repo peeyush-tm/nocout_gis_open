@@ -123,6 +123,43 @@
                 formatResult: repoFormatResult, // omitted for brevity, see the source of this page
                 formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
             });
+
+            $("#id_bh_switch").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_name: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
         });
 
         $("#id_organization").change(function () {
@@ -149,22 +186,6 @@
 
         function repoFormatSelection(device) {
           return device.device_name;
-        }
-
-        // to call the dajax function on bh_switch search.
-        var switchTimeout = null;
-        $("#id_bh_switch").on("select2-open", function() {
-            $("#select2-drop .select2-search input").keypress(function() {
-                if(switchTimeout != null) clearTimeout(switchTimeout);
-                    switchTimeout = setTimeout(list_device_on_switch_search_basis, 50);
-            });
-        });
-
-        function list_device_on_switch_search_basis(){
-            Dajaxice.inventory.bh_switch_on_searching(Dajax.process, {
-                'search_string': $("#select2-drop .select2-search input").val(),
-                'organisation_id': $('#id_organization option:selected').val()
-            });
         }
 
         // to call the dajax function on pop search.
