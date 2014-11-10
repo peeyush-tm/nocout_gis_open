@@ -11,7 +11,7 @@ from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 # ########################################################
 from django.conf import settings
@@ -50,7 +50,7 @@ class ServiceList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class ServiceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Service Listing Table.
     """
@@ -58,14 +58,6 @@ class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDa
     required_permissions = ('service.view_service',)
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
     order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Service.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -177,7 +169,7 @@ class ServiceParametersList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceParametersListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class ServiceParametersListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View to render ServiceParameters Data table.
     """
@@ -187,35 +179,6 @@ class ServiceParametersListingTable(PermissionsRequiredMixin, BaseDatatableView)
                'max_check_attempts']
     order_columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval',
                      'max_check_attempts']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ServiceParameters.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -232,38 +195,6 @@ class ServiceParametersListingTable(PermissionsRequiredMixin, BaseDatatableView)
                 <a href="/service_parameter/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
         return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
 
 
 class ServiceParametersDetail(PermissionsRequiredMixin, DetailView):
@@ -361,39 +292,11 @@ class ServiceDataSourceList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceDataSourceListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class ServiceDataSourceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     model = ServiceDataSource
     required_permissions = ('service.view_servicedatasource',)
     columns = ['name', 'alias', 'warning', 'critical']
     order_columns = ['name', 'alias', 'warning', 'critical']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ServiceDataSource.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -403,45 +306,13 @@ class ServiceDataSourceListingTable(PermissionsRequiredMixin, BaseDatatableView)
         :return qs
 
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             dct.update(actions='<a href="/service_data_source/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/service_data_source/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class ServiceDataSourceDetail(PermissionsRequiredMixin, DetailView):
@@ -542,7 +413,7 @@ class ProtocolList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ProtocolListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class ProtocolListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class Based View to render the protocol Data table.
     """
@@ -553,35 +424,6 @@ class ProtocolListingTable(PermissionsRequiredMixin, BaseDatatableView):
     order_columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
                      'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Protocol.objects.values(*self.columns + ['id'])
-
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -589,44 +431,12 @@ class ProtocolListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             dct.update(actions='<a href="/protocol/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/protocol/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class ProtocolDetail(PermissionsRequiredMixin, DetailView):
@@ -732,7 +542,7 @@ class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View render the Device Service Configuration Table.
     """
@@ -744,35 +554,9 @@ class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, BaseDatat
     order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
                      'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
                      'critical', 'added_on', 'modified_on']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-2]:
-                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceServiceConfiguration.objects.values(*self.columns+['id'])
+    search_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
+               'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
+               'critical']
 
     def prepare_results(self, qs):
         """
@@ -782,9 +566,9 @@ class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, BaseDatat
         :return qs
         """
 
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-        for dct in qs:
+
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in json_data:
             dct.update(actions='<a href="#" onclick="Dajaxice.device.edit_single_service_form(get_single_service_edit_form,\
                                {{\'dsc_id\': {0}}})"><i class="fa fa-pencil text-dark"></i></a>\
                                 <a href="#" onclick="Dajaxice.device.delete_single_service_form(get_single_service_delete_form,\
@@ -792,36 +576,4 @@ class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, BaseDatat
                        added_on=dct['added_on'].strftime("%Y-%m-%d %H:%M:%S"),
                        modified_on=dct['modified_on'].strftime("%Y-%m-%d %H:%M:%S"))
 
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
+        return json_data
