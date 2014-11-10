@@ -205,6 +205,10 @@ CACHES = {
     }
 }
 
+ALLOWED_APPS_TO_CLEAR_CACHE = [
+    'inventory',
+]
+
 '''
 # RabbitMQ configuration for django-celery
 BROKER_HOST = "localhost"

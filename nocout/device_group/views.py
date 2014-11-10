@@ -13,6 +13,7 @@ from django.db.models import Q
 from nocout.utils.util import DictDiffer
 from organization.models import Organization
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.datatable import DatatableSearchMixin
 
 
 class DeviceGroupList(PermissionsRequiredMixin, ListView):
@@ -42,7 +43,7 @@ class DeviceGroupList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class DeviceGroupListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class DeviceGroupListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Device Group Data table.
     """
@@ -50,24 +51,7 @@ class DeviceGroupListingTable(PermissionsRequiredMixin, BaseDatatableView):
     required_permissions = ('device_group.view_devicegroup',)
     columns = ['name', 'alias', 'parent__name','organization__name']
     order_columns = ['name', 'alias', 'parent__name','organization__name']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            result_list=list()
-            for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        break
-            return result_list
-        return qs
+    search_columns = ['name', 'alias', 'parent__name','organization__name']
 
     def get_initial_queryset(self):
         """
@@ -86,12 +70,12 @@ class DeviceGroupListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-        for dct in qs:
+
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in json_data:
             dct.update(actions='<a href="/device_group/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="#" onclick="Dajaxice.device_group.device_group_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
+        return json_data
 
     def ordering(self, qs):
         """ Get parameters from the request and prepare order by clause

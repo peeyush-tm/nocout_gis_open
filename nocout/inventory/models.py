@@ -48,6 +48,7 @@ class Antenna(models.Model):
     """
     name = models.CharField('Antenna Name', max_length=250, unique=True)
     alias = models.CharField('Antenna Alias', max_length=250)
+    organization = models.ForeignKey(Organization, default=get_default_org)
     antenna_type = models.CharField('Antenna Type', max_length=100, null=True, blank=True)
     height = models.FloatField('Antenna Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     polarization = models.CharField('Polarization', max_length=50, null=True, blank=True)
@@ -61,7 +62,6 @@ class Antenna(models.Model):
     sync_splitter_used = models.CharField('Sync Splitter User', max_length=4, null=True, blank=True)
     make_of_antenna = models.CharField('Make Of Antenna', max_length=40, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -74,6 +74,7 @@ class Backhaul(models.Model):
     """
     name = models.CharField('Backhaul Name', max_length=250, unique=True)
     alias = models.CharField('Backhaul Alias', max_length=250)
+    organization = models.ForeignKey(Organization, default=get_default_org)
     bh_configured_on = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul')
     bh_port_name = models.CharField(max_length=40, verbose_name=" BH Port Name", null=True, blank=True)
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
@@ -95,7 +96,6 @@ class Backhaul(models.Model):
     ttsl_circuit_id = models.CharField('TTSL Circuit ID', max_length=250, null=True, blank=True)
     dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -108,6 +108,7 @@ class BaseStation(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
+    organization = models.ForeignKey(Organization, default=get_default_org)
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
     bs_site_type = models.CharField('BS Site Type', max_length=100, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
@@ -129,7 +130,6 @@ class BaseStation(models.Model):
     city = models.IntegerField('City', null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -145,6 +145,7 @@ class Sector(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
+    organization = models.ForeignKey(Organization, default=get_default_org)
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=True)
     base_station = models.ForeignKey(BaseStation, null=True, blank=True, related_name='sector')
     bs_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
@@ -161,7 +162,6 @@ class Sector(models.Model):
     frequency = models.ForeignKey(DeviceFrequency, null=True, blank=True)
     modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -174,9 +174,9 @@ class Customer(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
+    organization = models.ForeignKey(Organization, default=get_default_org)
     address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -189,6 +189,7 @@ class SubStation(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
+    organization = models.ForeignKey(Organization, default=get_default_org)
     device = models.ForeignKey(Device)
     antenna = models.ForeignKey(Antenna, null=True, blank=True)
     version = models.CharField('Version', max_length=40, null=True, blank=True)
@@ -205,7 +206,6 @@ class SubStation(models.Model):
     city = models.IntegerField('City', null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -218,6 +218,7 @@ class Circuit(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
+    organization = models.ForeignKey(Organization, default=get_default_org)
     circuit_type = models.CharField('Type', max_length=250, null=True, blank=True)
     circuit_id = models.CharField('Circuit ID', max_length=250, null=True, blank=True)
     sector = models.ForeignKey(Sector, null=True, blank=True)
@@ -230,7 +231,6 @@ class Circuit(models.Model):
     throughput_during_acceptance = models.CharField('Throughput During Acceptance', max_length=100, null=True, blank=True)
     date_of_acceptance = models.DateField('Date of Acceptance', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
