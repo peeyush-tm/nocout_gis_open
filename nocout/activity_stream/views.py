@@ -38,7 +38,7 @@ class ActionList(PermissionsRequiredMixin, ListView):
     """
     model = UserAction
     template_name = 'activity_stream/actions_logs.html'
-    required_permissions = ('actstream.view_action',)
+    required_permissions = ('activity_stream.view_useraction',)
 
     def get_context_data(self, **kwargs):
         """
@@ -53,12 +53,13 @@ class ActionList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ActionListingTable(BaseDatatableView):
+class ActionListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     A generic class based view for the user log activity data table rendering.
 
     """
     model = UserAction
+    required_permissions = ('activity_stream.view_useraction',)
     columns = [ 'logged_at']
     order_columns = ['-logged_at']
 
