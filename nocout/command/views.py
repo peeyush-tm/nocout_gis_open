@@ -11,7 +11,7 @@ from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 
 class CommandList(PermissionsRequiredMixin, ListView):
@@ -40,7 +40,7 @@ class CommandList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class CommandListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class CommandListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     A generic class based view for the command data table rendering.
 
@@ -49,16 +49,6 @@ class CommandListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDa
     required_permissions = ('command.view_command',)
     columns = ['name', 'alias', 'command_line']
     order_columns = ['name', 'alias', 'command_line']
-    search_columns = ['name', 'alias', 'command_line']
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Command.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         """
