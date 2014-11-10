@@ -438,6 +438,7 @@ def pop_on_searching(request, search_string, organisation_id):
     return dajax.json()
 '''
 
+'''
 @dajaxice_register(method='GET')
 def aggregator_on_searching(request, search_string, organisation_id):
     dajax = Dajax()
@@ -451,6 +452,7 @@ def aggregator_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_aggregator', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 @dajaxice_register(method='GET')
 def update_bs_switch(request, option):

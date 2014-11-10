@@ -268,6 +268,7 @@ class BackhaulForm(forms.ModelForm):
         self.fields['bh_configured_on'].widget = forms.HiddenInput()
         self.fields['bh_switch'].widget = forms.HiddenInput()
         self.fields['pop'].widget = forms.HiddenInput()
+        self.fields['aggregator'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
