@@ -456,6 +456,7 @@ def aggregator_on_searching(request, search_string, organisation_id):
     return dajax.json()
 '''
 
+'''
 @dajaxice_register(method='GET')
 def update_bs_switch(request, option):
     """
@@ -491,6 +492,7 @@ def bs_switch_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_bs_switch', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 @dajaxice_register(method='GET')
 def update_backhaul(request, option):

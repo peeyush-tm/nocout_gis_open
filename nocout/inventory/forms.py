@@ -427,6 +427,7 @@ class BaseStationForm(forms.ModelForm):
         self.fields['state'].required = True
         self.fields['city'].required = True
 
+        self.fields['bs_switch'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id

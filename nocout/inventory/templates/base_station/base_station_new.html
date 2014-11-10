@@ -94,6 +94,43 @@
                 Dajaxice.inventory.update_cities_after_invalid_form(Dajax.process, {'option': $("#id_state").val(), 'city_id': $("#id_city").val()});
             }
 
+            $("#id_bs_switch").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_name: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
 
     });//end ready
     // update 'states' on selecting 'country'
@@ -110,34 +147,19 @@
             }
         });
 
+        function repoFormatResult(device) {
+          return device.device_name;
+        }
+
+        function repoFormatSelection(device) {
+          return device.device_name;
+        }
+
         // update 'cities' on selecting 'state'
         $("#id_state").change(function () {
             $("#id_city").select2("val","");
             Dajaxice.inventory.update_cities(Dajax.process, {'option': $("#id_state").val()});
         });
-
-        $("#id_organization").change(function () {
-
-            Dajaxice.inventory.update_bs_switch(Dajax.process, {'option': $('#id_organization').val()});
-            $("#id_bs_switch").val("");
-            $("#id_bs_switch").parent().children().find('a span')[0].innerHTML = "Select";
-        });
-
-        // to call the dajax function on bs_switch search.
-        var bsswitchTimeout = null;
-        $("#id_bs_switch").on("select2-open", function() {
-            $("#select2-drop .select2-search input").keypress(function() {
-                if(bsswitchTimeout != null) clearTimeout(bsswitchTimeout);
-                    bsswitchTimeout = setTimeout(list_device_on_bs_switch_search, 50);
-            });
-        });
-
-        function list_device_on_bs_switch_search(){
-            Dajaxice.inventory.bs_switch_on_searching(Dajax.process, {
-                'search_string': $("#select2-drop .select2-search input").val(),
-                'organisation_id': $('#id_organization option:selected').val()
-            });
-        }
 
         $("#id_organization").change(function () {
 
