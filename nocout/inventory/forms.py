@@ -265,6 +265,7 @@ class BackhaulForm(forms.ModelForm):
         self.fields['aggregator'].empty_label = 'Select'
         self.fields['bh_configured_on'].required = True
 
+        self.fields['bh_configured_on'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id

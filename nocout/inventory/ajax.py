@@ -390,6 +390,7 @@ def update_related_field(request, option):
     except Organization.DoesNotExist as e:
         pass
 
+'''
 @dajaxice_register(method='GET')
 def bh_configured_on_searching(request, search_string, organisation_id):
     dajax = Dajax()
@@ -403,6 +404,7 @@ def bh_configured_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_bh_configured_on', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 @dajaxice_register(method='GET')
 def bh_switch_on_searching(request, search_string, organisation_id):

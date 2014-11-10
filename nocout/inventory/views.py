@@ -250,6 +250,25 @@ def inventory_details_wrt_organization(request):
         json.dumps({'response': {'device_groups': response_device_groups, 'user_groups': response_user_group}}), \
         mimetype='application/json')
 
+def list_device(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    devices = Device.objects.filter(organization_id=org_id).\
+            filter(device_name__icontains=sSearch).values('id', 'device_name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": devices.count(),
+        "incomplete_results": False,
+        "items": list(devices)
+    }))
+
+def select_device(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Device.objects.get(id=pk).device_name]))
+
 
 #**************************************** Antenna *********************************************
 class AntennaList(PermissionsRequiredMixin, ListView):
