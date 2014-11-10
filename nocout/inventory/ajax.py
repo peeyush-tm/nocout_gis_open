@@ -532,6 +532,7 @@ def backhaul_on_searching(request, search_string, organisation_id):
     return dajax.json()
 '''
 
+'''
 @dajaxice_register(method='GET')
 def update_sector_configured_on(request, option):
     dajax = Dajax()
@@ -563,6 +564,7 @@ def sector_config_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(device.id, device) )
     dajax.assign('#id_sector_configured_on', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 @dajaxice_register(method='GET')
 def update_base_station(request, option):

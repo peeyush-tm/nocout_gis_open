@@ -69,29 +69,51 @@
                 placement: 'right',
                 trigger: 'focus'
             });
-        });
 
-        $("#id_organization").change(function () {
-
-            Dajaxice.inventory.update_sector_configured_on(Dajax.process, {'option': $('#id_organization').val()});
-            $("#id_sector_configured_on").val("");
-            $("#id_sector_configured_on").parent().children().find('a span')[0].innerHTML = "Select";
-        });
-
-        // to call the dajax function on sector_config_on search.
-        var sector_configTimeout = null;
-        $("#id_sector_configured_on").on("select2-open", function() {
-            $("#select2-drop .select2-search input").keypress(function() {
-                if(sector_configTimeout != null) clearTimeout(sector_configTimeout);
-                    sector_configTimeout = setTimeout(list_device_on_sector_config_search, 50);
+            $("#id_sector_configured_on").select2({
+                placeholder: "Search for a sector config on.",
+                minimumInputLength: 2,
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/sector/list/sector/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/sector/select/sector/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, name: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoSectorFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoSectorFormatSelection,  // omitted for brevity, see the source of this page
             });
         });
 
-        function list_device_on_sector_config_search(){
-            Dajaxice.inventory.sector_config_on_searching(Dajax.process, {
-                'search_string': $("#select2-drop .select2-search input").val(),
-                'organisation_id': $('#id_organization option:selected').val()
-            });
+        function repoSectorFormatResult(sector) {
+          return sector.name;
+        }
+
+        function repoSectorFormatSelection(sector) {
+          return sector.name;
         }
 
         $("#id_organization").change(function () {

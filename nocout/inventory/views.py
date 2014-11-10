@@ -988,6 +988,25 @@ class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     success_url = reverse_lazy('sectors_list')
     required_permissions = ('inventory.delete_sector',)
 
+def list_sector(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    sectors = Sector.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": sectors.count(),
+        "incomplete_results": False,
+        "items": list(sectors)
+    }))
+
+def select_sector(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Sector.objects.get(id=pk).name]))
+
 
 #**************************************** Customer *********************************************
 class CustomerList(PermissionsRequiredMixin, ListView):

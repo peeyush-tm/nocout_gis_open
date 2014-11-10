@@ -567,6 +567,7 @@ class SectorForm(forms.ModelForm):
         self.fields['frequency'].empty_label = 'Select'
         self.fields['sector_id'].empty_label = True
 
+        self.fields['sector_configured_on'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
