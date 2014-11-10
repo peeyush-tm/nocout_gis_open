@@ -256,7 +256,7 @@ def list_device(request):
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
     devices = Device.objects.filter(organization_id=org_id).\
-            filter(device_name__icontains=sSearch).values('id', 'device_name')[:50]
+            filter(device_alias__icontains=sSearch).values('id', 'device_alias')[:50]
 
     return HttpResponse(json.dumps({
         "total_count": devices.count(),
@@ -267,7 +267,7 @@ def list_device(request):
 def select_device(request, pk):
     """
     """
-    return HttpResponse(json.dumps([Device.objects.get(id=pk).device_name]))
+    return HttpResponse(json.dumps([Device.objects.get(id=pk).device_alias]))
 
 
 #**************************************** Antenna *********************************************
@@ -439,7 +439,7 @@ def list_antenna(request):
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
     antennas = Antenna.objects.filter(organization__id=org_id).\
-            filter(name__icontains=sSearch).values('id', 'name')[:50]
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
     return HttpResponse(json.dumps({
         "total_count": antennas.count(),
@@ -450,7 +450,7 @@ def list_antenna(request):
 def select_antenna(request, pk):
     """
     """
-    return HttpResponse(json.dumps([Antenna.objects.get(id=pk).name]))
+    return HttpResponse(json.dumps([Antenna.objects.get(id=pk).alias]))
 
 
 #****************************************** Base Station ********************************************
@@ -631,7 +631,7 @@ def list_base_station(request):
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
     base_stations = BaseStation.objects.filter(organization__id=org_id).\
-            filter(name__icontains=sSearch).values('id', 'name')[:50]
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
     return HttpResponse(json.dumps({
         "total_count": base_stations.count(),
@@ -642,7 +642,7 @@ def list_base_station(request):
 def select_base_station(request, pk):
     """
     """
-    return HttpResponse(json.dumps([BaseStation.objects.get(id=pk).name]))
+    return HttpResponse(json.dumps([BaseStation.objects.get(id=pk).alias]))
 
 
 #**************************************** Backhaul *********************************************
@@ -836,7 +836,7 @@ def list_backhaul(request):
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
     backhauls = Backhaul.objects.filter(organization__id=org_id).\
-            filter(name__icontains=sSearch).values('id', 'name')[:50]
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
     return HttpResponse(json.dumps({
         "total_count": backhauls.count(),
@@ -847,7 +847,7 @@ def list_backhaul(request):
 def select_backhaul(request, pk):
     """
     """
-    return HttpResponse(json.dumps([Backhaul.objects.get(id=pk).name]))
+    return HttpResponse(json.dumps([Backhaul.objects.get(id=pk).alias]))
 
 
 #**************************************** Sector *********************************************
@@ -1034,7 +1034,7 @@ def list_sector(request):
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
     sectors = Sector.objects.filter(organization__id=org_id).\
-            filter(name__icontains=sSearch).values('id', 'name')[:50]
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
     return HttpResponse(json.dumps({
         "total_count": sectors.count(),
@@ -1045,7 +1045,7 @@ def list_sector(request):
 def select_sector(request, pk):
     """
     """
-    return HttpResponse(json.dumps([Sector.objects.get(id=pk).name]))
+    return HttpResponse(json.dumps([Sector.objects.get(id=pk).alias]))
 
 
 #**************************************** Customer *********************************************
@@ -1209,7 +1209,7 @@ def list_customer(request):
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
     customers = Customer.objects.filter(organization__id=org_id).\
-            filter(name__icontains=sSearch).values('id', 'name')[:50]
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
     return HttpResponse(json.dumps({
         "total_count": customers.count(),
@@ -1220,7 +1220,7 @@ def list_customer(request):
 def select_customer(request, pk):
     """
     """
-    return HttpResponse(json.dumps([Customer.objects.get(id=pk).name]))
+    return HttpResponse(json.dumps([Customer.objects.get(id=pk).alias]))
 
 
 #**************************************** Sub Station *********************************************
@@ -1410,7 +1410,7 @@ def list_sub_station(request):
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
     sub_stations = SubStation.objects.filter(organization__id=org_id).\
-            filter(name__icontains=sSearch).values('id', 'name')[:50]
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
     return HttpResponse(json.dumps({
         "total_count": sub_stations.count(),
@@ -1421,7 +1421,7 @@ def list_sub_station(request):
 def select_sub_station(request, pk):
     """
     """
-    return HttpResponse(json.dumps([SubStation.objects.get(id=pk).name]))
+    return HttpResponse(json.dumps([SubStation.objects.get(id=pk).alias]))
 
 #**************************************** Circuit *********************************************
 class CircuitList(PermissionsRequiredMixin, ListView):

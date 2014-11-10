@@ -102,7 +102,7 @@
                         $.ajax("/sector/select/sector/" + id, {
                             dataType: "json"
                         }).done(function(data) {
-                            callback({id: id, name: data[0]});
+                            callback({id: id, alias: data[0]});
                             });
                     }
                 },
@@ -140,7 +140,7 @@
                         $.ajax("/base_station/select/base_station/" + id, {
                             dataType: "json"
                         }).done(function(data) {
-                            callback({id: id, name: data[0]});
+                            callback({id: id, alias: data[0]});
                             });
                     }
                 },
@@ -178,7 +178,7 @@
                         $.ajax("/antenna/select/antenna/" + id, {
                             dataType: "json"
                         }).done(function(data) {
-                            callback({id: id, name: data[0]});
+                            callback({id: id, alias: data[0]});
                             });
                     }
                 },
@@ -188,27 +188,27 @@
         });
 
         function repoSectorFormatResult(sector) {
-          return sector.name;
+          return sector.alias;
         }
 
         function repoSectorFormatSelection(sector) {
-          return sector.name;
+          return sector.alias;
         }
 
         function repoBSFormatResult(basestation) {
-          return basestation.name;
+          return basestation.alias;
         }
 
         function repoBSFormatSelection(basestation) {
-          return basestation.name;
+          return basestation.alias;
         }
 
         function repoAntennaFormatResult(antenna) {
-          return antenna.name;
+          return antenna.alias;
         }
 
         function repoAntennaFormatSelection(antenna) {
-          return antenna.name;
+          return antenna.alias;
         }
 
     </script>
