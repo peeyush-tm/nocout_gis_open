@@ -11,6 +11,7 @@ from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.datatable import DatatableSearchMixin
 
 
 class CommandList(PermissionsRequiredMixin, ListView):
@@ -39,7 +40,7 @@ class CommandList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class CommandListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class CommandListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     A generic class based view for the command data table rendering.
 
@@ -48,26 +49,7 @@ class CommandListingTable(PermissionsRequiredMixin, BaseDatatableView):
     required_permissions = ('command.view_command',)
     columns = ['name', 'alias', 'command_line']
     order_columns = ['name', 'alias', 'command_line']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
-            exec exec_query
-
-        return qs
+    search_columns = ['name', 'alias', 'command_line']
 
     def get_initial_queryset(self):
         """
@@ -85,45 +67,12 @@ class CommandListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-        for dct in qs:
+
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in json_data:
             dct.update(actions='<a href="/command/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/command/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
-
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
+        return json_data
 
 
 class CommandDetail(PermissionsRequiredMixin, DetailView):

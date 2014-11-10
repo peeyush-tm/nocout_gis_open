@@ -20,6 +20,7 @@ from dashboard.utils import get_service_status_results, get_dashboard_status_ran
 from dashboard.config import dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
+from nocout.mixins.datatable import DatatableSearchMixin
 
 
 class DashbaordSettingsListView(ListView):
@@ -67,7 +68,7 @@ class DashbaordSettingsListView(ListView):
         return context
 
 
-class DashbaordSettingsListingTable(BaseDatatableView):
+class DashbaordSettingsListingTable(DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Dashboard Settings Data table.
     """
@@ -75,27 +76,8 @@ class DashbaordSettingsListingTable(BaseDatatableView):
     columns = ['page_name', 'name', 'technology__name', 'range1', 'range2', 'range3', 'range4', 'range5', 'range6', 'range7', 'range8', 'range9', 'range10']
     keys = ['page_name', 'technology__name', 'name', 'range1_start', 'range2_start', 'range3_start', 'range4_start', 'range5_start', 'range6_start', 'range7_start', 'range8_start', 'range9_start', 'range10_start', 'range1_end', 'range2_end', 'range3_end', 'range4_end', 'range5_end', 'range6_end', 'range7_end', 'range8_end', 'range9_end', 'range10_end', 'range1_color_hex_value', 'range2_color_hex_value', 'range3_color_hex_value', 'range4_color_hex_value', 'range5_color_hex_value', 'range6_color_hex_value', 'range7_color_hex_value', 'range8_color_hex_value', 'range9_color_hex_value', 'range10_color_hex_value']
     order_columns = ['page_name', 'name', 'technology__name']
+    search_columns = ['page_name', 'name', 'technology__name', 'range1', 'range2', 'range3', 'range4', 'range5', 'range6', 'range7', 'range8', 'range9', 'range10']
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.keys[:-1]:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.keys + ['id']) + ")"
-            exec exec_query
-
-        return qs
 
     def get_initial_queryset(self):
         """
@@ -113,29 +95,27 @@ class DashbaordSettingsListingTable(BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs_dict_list = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-            for obj in qs_dict_list:
-                for i in range(1, 11):
-                    range_start = obj.pop('range%d_start' %i)
-                    range_end = obj.pop('range%d_end' %i)
-                    color_hex_value = obj.pop('range%d_color_hex_value' %i)
-                    range_color = "<div style='display:block; height:20px; width:20px;\
-                            background:{0}'></div>".format(color_hex_value)
-                    if range_start:
-                        obj.update({'range%d' %i : "(%s -<br>%s)<br>%s" % (range_start, range_end, range_color)})
-                    else:
-                        obj.update({'range%d' %i : ""})
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for obj in json_data:
+            for i in range(1, 11):
+                range_start = obj.pop('range%d_start' %i)
+                range_end = obj.pop('range%d_end' %i)
+                color_hex_value = obj.pop('range%d_color_hex_value' %i)
+                range_color = "<div style='display:block; height:20px; width:20px;\
+                        background:{0}'></div>".format(color_hex_value)
+                if range_start:
+                    obj.update({'range%d' %i : "(%s -<br>%s)<br>%s" % (range_start, range_end, range_color)})
+                else:
+                    obj.update({'range%d' %i : ""})
 
                 # Add actions to obj.
-                obj_id = obj.pop('id')
-                edit_url = reverse_lazy('dashboard-settings-update', kwargs={'pk': obj_id})
-                delete_url = reverse_lazy('dashboard-settings-delete', kwargs={'pk': obj_id})
-                edit_action = '<a href="%s"><i class="fa fa-pencil text-dark"></i></a>' % edit_url
-                delete_action = '<a href="%s"><i class="fa fa-trash-o text-danger"></i></a>' % delete_url
-                obj.update({'actions': edit_action + ' ' + delete_action})
-            return qs_dict_list
-        return qs
+            obj_id = obj.pop('id')
+            edit_url = reverse_lazy('dashboard-settings-update', kwargs={'pk': obj_id})
+            delete_url = reverse_lazy('dashboard-settings-delete', kwargs={'pk': obj_id})
+            edit_action = '<a href="%s"><i class="fa fa-pencil text-dark"></i></a>' % edit_url
+            delete_action = '<a href="%s"><i class="fa fa-trash-o text-danger"></i></a>' % delete_url
+            obj.update({'actions': edit_action + ' ' + delete_action})
+        return json_data
 
     def get_context_data(self, *args, **kwargs):
         """

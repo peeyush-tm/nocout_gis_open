@@ -12,6 +12,7 @@ from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.datatable import DatatableSearchMixin
 
 
 #************************************** Machine *****************************************
@@ -42,7 +43,7 @@ class MachineList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class MachineListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class MachineListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Machine Data table.
     """
@@ -51,26 +52,6 @@ class MachineListingTable(PermissionsRequiredMixin, BaseDatatableView):
     columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
     order_columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
-            exec exec_query
-
-        return qs
 
     def get_initial_queryset(self):
         """
@@ -88,45 +69,12 @@ class MachineListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-        for dct in qs:
+
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in json_data:
             dct.update(actions='<a href="/machine/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/machine/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
+        return json_data
 
 
 class MachineDetail(PermissionsRequiredMixin, DetailView):
