@@ -49,11 +49,11 @@ def get_host_services_name(site_name=None, mongo_host=None, mongo_db=None, mongo
 			    "last_check service_last_state_change service_perf_data\nFilter: service_description ~ _invent\n"+\
 			    "Filter: service_description ~ _status\nFilter: service_description ~ Check_MK\nOr: 3\nNegate:\nOutputFormat: json\n"
             nw_qry_output = json.loads(get_from_socket(site_name, network_perf_query))
-	    print 'NW qry OUT --'
-	    print nw_qry_output
+	    #print 'NW qry OUT --'
+	    #print nw_qry_output
             serv_qry_output = json.loads(get_from_socket(site_name, service_perf_query))
-	    print 'Serv qry OUT --'
-	    print serv_qry_output
+	    #print 'Serv qry OUT --'
+	    #print serv_qry_output
 	    # Group service perf data host-wise
 	    serv_qry_output = sorted(serv_qry_output, key=lambda k: k[0])
 	    for host, group in groupby(serv_qry_output, key=lambda e: e[0]):
