@@ -433,6 +433,26 @@ class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_antenna',)
 
 
+def list_antenna(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    antennas = Antenna.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": antennas.count(),
+        "incomplete_results": False,
+        "items": list(antennas)
+    }))
+
+def select_antenna(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Antenna.objects.get(id=pk).name]))
+
+
 #****************************************** Base Station ********************************************
 class BaseStationList(PermissionsRequiredMixin, ListView):
     """

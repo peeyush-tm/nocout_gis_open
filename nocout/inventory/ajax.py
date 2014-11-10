@@ -634,6 +634,7 @@ def device_on_searching(request, search_string, organisation_id):
     return dajax.json()
 '''
 
+'''
 @dajaxice_register(method='GET')
 def update_antenna(request, option):
     dajax = Dajax()
@@ -665,6 +666,7 @@ def antenna_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(antenna.id, antenna) )
     dajax.assign('#id_antenna', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 '''
 @dajaxice_register(method='GET')
