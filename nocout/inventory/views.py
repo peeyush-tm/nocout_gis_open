@@ -46,8 +46,9 @@ from nocout.utils import logged_in_user_organizations
 from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
     bulk_upload_wimax_ss_inventory
-from activity_stream.models import UserAction
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.user_action import UserLogDeleteMixin
+from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +218,7 @@ class InventoryUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(InventoryCreate.success_url)
 
 
-class InventoryDelete(PermissionsRequiredMixin, DeleteView):
+class InventoryDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Inventory
 
@@ -226,19 +227,6 @@ class InventoryDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'inventory/inventory_delete.html'
     success_url = reverse_lazy('InventoryList')
     required_permissions = ('inventory.delete_inventory',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity.
-        """
-
-        try:
-            obj = self.get_object()
-            action='A inventory is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Inventory', action=action)
-        except:
-            pass
-        return super(InventoryDelete, self).delete(request, *args, **kwargs)
 
 
 def inventory_details_wrt_organization(request):
@@ -261,6 +249,25 @@ def inventory_details_wrt_organization(request):
     return HttpResponse(
         json.dumps({'response': {'device_groups': response_device_groups, 'user_groups': response_user_group}}), \
         mimetype='application/json')
+
+def list_device(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    devices = Device.objects.filter(organization_id=org_id).\
+            filter(device_alias__icontains=sSearch).values('id', 'device_alias')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": devices.count(),
+        "incomplete_results": False,
+        "items": list(devices)
+    }))
+
+def select_device(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Device.objects.get(id=pk).device_alias]))
 
 
 #**************************************** Antenna *********************************************
@@ -302,7 +309,11 @@ class AntennaList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class AntennaListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class AntennaListingTable(PermissionsRequiredMixin,
+        DatatableOrganizationFilterMixin,
+        DatatableSearchMixin,
+        BaseDatatableView,
+    ):
     """
     Class based View to render Antenna Data table.
     """
@@ -310,39 +321,6 @@ class AntennaListingTable(PermissionsRequiredMixin, BaseDatatableView):
     columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
     order_columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
     required_permissions = ('inventory.view_antenna',)
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        qs = super(AntennaListingTable, self).filter_queryset(qs)
-        if not self.request.user.is_superuser:
-            qs = qs.filter(organization__in=logged_in_user_organizations(self))
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            exec_query = "qs = qs.filter("
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Antenna.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -352,10 +330,9 @@ class AntennaListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
-        for dct in qs:
+        for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_antenna'):
                 edit_action = '<a href="/antenna/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
@@ -367,39 +344,7 @@ class AntennaListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 delete_action = ''
             if edit_action or delete_action:
                 dct.update(actions= edit_action+delete_action)
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class AntennaDetail(PermissionsRequiredMixin, DetailView):
@@ -478,7 +423,7 @@ class AntennaUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(AntennaUpdate.success_url)
 
 
-class AntennaDelete(PermissionsRequiredMixin, DeleteView):
+class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Antenna.
     """
@@ -487,17 +432,25 @@ class AntennaDelete(PermissionsRequiredMixin, DeleteView):
     success_url = reverse_lazy('antennas_list')
     required_permissions = ('inventory.delete_antenna',)
 
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A antenna is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Antenna', action=action)
-        except:
-            pass
-        return super(AntennaDelete, self).delete(request, *args, **kwargs)
+
+def list_antenna(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    antennas = Antenna.objects.filter(organization__id=org_id).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": antennas.count(),
+        "incomplete_results": False,
+        "items": list(antennas)
+    }))
+
+def select_antenna(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Antenna.objects.get(id=pk).alias]))
 
 
 #****************************************** Base Station ********************************************
@@ -541,7 +494,11 @@ class BaseStationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class BaseStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class BaseStationListingTable(PermissionsRequiredMixin,
+        DatatableOrganizationFilterMixin,
+        DatatableSearchMixin,
+        BaseDatatableView,
+    ):
     """
     Class based View to render Base Station Data table.
     """
@@ -552,48 +509,13 @@ class BaseStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     order_columns = ['alias', 'bs_site_id',
                      'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        qs = super(BaseStationListingTable, self).filter_queryset(qs)
-        if not self.request.user.is_superuser:
-            qs = qs.filter(organization__in=logged_in_user_organizations(self))
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            exec_query = "qs = qs.filter("
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        return BaseStation.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
-
 
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'bs_switch__id' in dct:
@@ -614,39 +536,7 @@ class BaseStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 delete_action = ''
             if edit_action or delete_action:
                 dct.update(actions= edit_action+delete_action)
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class BaseStationDetail(PermissionsRequiredMixin, DetailView):
@@ -725,7 +615,7 @@ class BaseStationUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(BaseStationUpdate.success_url)
 
 
-class BaseStationDelete(PermissionsRequiredMixin, DeleteView):
+class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Base Station.
     """
@@ -734,19 +624,25 @@ class BaseStationDelete(PermissionsRequiredMixin, DeleteView):
     success_url = reverse_lazy('base_stations_list')
     required_permissions = ('inventory.delete_basestation',)
 
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A base station is deleted - {}(latitude: {}, longitude: {})'.format(obj.alias,
-                                                obj.latitude, obj.longitude)
-            UserAction.objects.create(user_id=self.request.user.id, module='BaseStation', action=action)
-        except:
-            pass
-        return super(BaseStationDelete, self).delete(request, *args, **kwargs)
 
+def list_base_station(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    base_stations = BaseStation.objects.filter(organization__id=org_id).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": base_stations.count(),
+        "incomplete_results": False,
+        "items": list(base_stations)
+    }))
+
+def select_base_station(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([BaseStation.objects.get(id=pk).alias]))
 
 
 #**************************************** Backhaul *********************************************
@@ -792,7 +688,11 @@ class BackhaulList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class BackhaulListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class BackhaulListingTable(PermissionsRequiredMixin,
+        DatatableOrganizationFilterMixin,
+        DatatableSearchMixin,
+        BaseDatatableView,
+    ):
     """
     Class based View to render Backhaul Data table.
     """
@@ -803,41 +703,6 @@ class BackhaulListingTable(PermissionsRequiredMixin, BaseDatatableView):
     order_columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id',
                      'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        qs = super(BackhaulListingTable, self).filter_queryset(qs)
-        if not self.request.user.is_superuser:
-            qs = qs.filter(organization__in=logged_in_user_organizations(self))
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            exec_query = "qs = qs.filter("
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        return Backhaul.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
-
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -845,9 +710,8 @@ class BackhaulListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'bh_configured_on__id' in dct:
@@ -876,39 +740,7 @@ class BackhaulListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 delete_action = ''
             if edit_action or delete_action:
                 dct.update(actions= edit_action+delete_action)
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class BackhaulDetail(PermissionsRequiredMixin, DetailView):
@@ -988,7 +820,7 @@ class BackhaulUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(BackhaulUpdate.success_url)
 
 
-class BackhaulDelete(PermissionsRequiredMixin, DeleteView):
+class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Backhaul.
     """
@@ -997,18 +829,25 @@ class BackhaulDelete(PermissionsRequiredMixin, DeleteView):
     success_url = reverse_lazy('backhauls_list')
     required_permissions = ('inventory.delete_backhaul',)
 
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A backhaul is deleted - {}(BH port name- {}, BH port- {}))'.format(obj.alias,
-                    obj.bh_port_name, obj.bh_port)
-            UserAction.objects.create(user_id=self.request.user.id, module='Backhaul', action=action)
-        except:
-            pass
-        return super(BackhaulDelete, self).delete(request, *args, **kwargs)
+
+def list_backhaul(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    backhauls = Backhaul.objects.filter(organization__id=org_id).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": backhauls.count(),
+        "incomplete_results": False,
+        "items": list(backhauls)
+    }))
+
+def select_backhaul(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Backhaul.objects.get(id=pk).alias]))
 
 
 #**************************************** Sector *********************************************
@@ -1056,7 +895,11 @@ class SectorList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class SectorListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class SectorListingTable(PermissionsRequiredMixin,
+        DatatableOrganizationFilterMixin,
+        DatatableSearchMixin,
+        BaseDatatableView,
+    ):
     """
     Class based View to render Sector Data Table.
     """
@@ -1067,41 +910,6 @@ class SectorListingTable(PermissionsRequiredMixin, BaseDatatableView):
     order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
                      'base_station__alias', 'sector_configured_on_port__alias', 'antenna__alias', 'mrc', 'description']
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        qs = super(SectorListingTable, self).filter_queryset(qs)
-        if not self.request.user.is_superuser:
-            qs = qs.filter(organization__in=logged_in_user_organizations(self))
-
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            exec_query = "qs = qs.filter("
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        return Sector.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -1110,9 +918,8 @@ class SectorListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'sector_configured_on__id' in dct:
@@ -1133,39 +940,7 @@ class SectorListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 delete_action = ''
             if edit_action or delete_action:
                 dct.update(actions= edit_action+delete_action)
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class SectorDetail(PermissionsRequiredMixin, DetailView):
@@ -1244,7 +1019,7 @@ class SectorUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(SectorUpdate.success_url)
 
 
-class SectorDelete(PermissionsRequiredMixin, DeleteView):
+class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Sector.
     """
@@ -1253,18 +1028,24 @@ class SectorDelete(PermissionsRequiredMixin, DeleteView):
     success_url = reverse_lazy('sectors_list')
     required_permissions = ('inventory.delete_sector',)
 
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            technology = DeviceTechnology.objects.get(name=obj.bs_technology).alias
-            action='A sector is deleted - {}(Technology- {})'.format(obj.alias, technology)
-            UserAction.objects.create(user_id=self.request.user.id, module='Sector', action=action)
-        except:
-            pass
-        return super(SectorDelete, self).delete(request, *args, **kwargs)
+def list_sector(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    sectors = Sector.objects.filter(organization__id=org_id).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": sectors.count(),
+        "incomplete_results": False,
+        "items": list(sectors)
+    }))
+
+def select_sector(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Sector.objects.get(id=pk).alias]))
 
 
 #**************************************** Customer *********************************************
@@ -1300,7 +1081,11 @@ class CustomerList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class CustomerListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class CustomerListingTable(PermissionsRequiredMixin,
+        DatatableOrganizationFilterMixin,
+        DatatableSearchMixin,
+        BaseDatatableView,
+    ):
     """
     Class based View to render Customer Data table.
     """
@@ -1308,41 +1093,6 @@ class CustomerListingTable(PermissionsRequiredMixin, BaseDatatableView):
     required_permissions = ('inventory.view_customer',)
     columns = ['alias', 'address', 'description']
     order_columns = ['alias']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        qs = super(CustomerListingTable, self).filter_queryset(qs)
-        if not self.request.user.is_superuser:
-            qs = qs.filter(organization__in=logged_in_user_organizations(self))
-
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            exec_query = "qs = qs.filter("
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Customer.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -1352,9 +1102,8 @@ class CustomerListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_customer'):
                 edit_action = '<a href="/customer/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
@@ -1366,40 +1115,7 @@ class CustomerListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 delete_action = ''
             if edit_action or delete_action:
                 dct.update(actions= edit_action+delete_action)
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class CustomerDetail(PermissionsRequiredMixin, DetailView):
@@ -1478,7 +1194,7 @@ class CustomerUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(CustomerUpdate.success_url)
 
 
-class CustomerDelete(PermissionsRequiredMixin, DeleteView):
+class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Customer.
     """
@@ -1487,17 +1203,24 @@ class CustomerDelete(PermissionsRequiredMixin, DeleteView):
     success_url = reverse_lazy('customers_list')
     required_permissions = ('inventory.delete_customer',)
 
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A customer is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Customer', action=action)
-        except:
-            pass
-        return super(CustomerDelete, self).delete(request, *args, **kwargs)
+def list_customer(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    customers = Customer.objects.filter(organization__id=org_id).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": customers.count(),
+        "incomplete_results": False,
+        "items": list(customers)
+    }))
+
+def select_customer(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([Customer.objects.get(id=pk).alias]))
 
 
 #**************************************** Sub Station *********************************************
@@ -1546,7 +1269,11 @@ class SubStationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class SubStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class SubStationListingTable(PermissionsRequiredMixin,
+        DatatableOrganizationFilterMixin,
+        DatatableSearchMixin,
+        BaseDatatableView,
+    ):
     """
     Class based View to render Sub Station Data table.
     """
@@ -1557,42 +1284,6 @@ class SubStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     order_columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        qs = super(SubStationListingTable, self).filter_queryset(qs)
-        if not self.request.user.is_superuser:
-            qs = qs.filter(organization__in=logged_in_user_organizations(self))
-
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            exec_query = "qs = qs.filter("
-            for column in self.columns[:-1]:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        return SubStation.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
-
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -1600,9 +1291,8 @@ class SubStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device__id' in dct:
@@ -1625,39 +1315,7 @@ class SubStationListingTable(PermissionsRequiredMixin, BaseDatatableView):
                 delete_action = ''
             if edit_action or delete_action:
                 dct.update(actions= edit_action+delete_action)
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class SubStationDetail(PermissionsRequiredMixin, DetailView):
@@ -1736,7 +1394,7 @@ class SubStationUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(SubStationUpdate.success_url)
 
 
-class SubStationDelete(PermissionsRequiredMixin, DeleteView):
+class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Sub Station.
     """
@@ -1745,20 +1403,25 @@ class SubStationDelete(PermissionsRequiredMixin, DeleteView):
     success_url = reverse_lazy('sub_stations_list')
     required_permissions = ('inventory.delete_substation',)
 
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A sub station is deleted - {}(Latitude- {}, Longitude- {}, Mac Address- {})'.format(obj.alias,
-                            obj.latitude, obj.longitude, obj.mac_address)
-            UserAction.objects.create(user_id=self.request.user.id, module='Sub Station', action=action)
-        except:
-            pass
-        return super(SubStationDelete, self).delete(request, *args, **kwargs)
 
+def list_sub_station(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    sub_stations = SubStation.objects.filter(organization__id=org_id).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
+    return HttpResponse(json.dumps({
+        "total_count": sub_stations.count(),
+        "incomplete_results": False,
+        "items": list(sub_stations)
+    }))
+
+def select_sub_station(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([SubStation.objects.get(id=pk).alias]))
 
 #**************************************** Circuit *********************************************
 class CircuitList(PermissionsRequiredMixin, ListView):
@@ -1802,7 +1465,11 @@ class CircuitList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class CircuitListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class CircuitListingTable(PermissionsRequiredMixin,
+        DatatableOrganizationFilterMixin,
+        DatatableSearchMixin,
+        BaseDatatableView,
+    ):
     """
     Class based View to render Circuit Data table.
     """
@@ -1812,122 +1479,15 @@ class CircuitListingTable(PermissionsRequiredMixin, BaseDatatableView):
                'sub_station__alias', 'date_of_acceptance', 'description']
     order_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
                      'sub_station__alias', 'date_of_acceptance', 'description']
-
-    def filter_queryset(self, qs):
-        """ Filter datatable as per requested value
-
-        Args:
-            self (class 'inventory.views.CircuitListingTable'): <inventory.views.CircuitListingTable object>
-            qs (class 'django.db.models.query.ValuesQuerySet'):
-                                                [
-                                                    {
-                                                        'name': u'091pond030008938479',
-                                                        'customer__name': u'roots_corporation_ltd',
-                                                        'date_of_acceptance': None,
-                                                        'circuit_id': u'091POND030008938479',
-                                                        'alias': u'091POND030008938479',
-                                                        'sector__name': u'115.111.183.115',
-                                                        'sub_station__name': u'091pond030008938479',
-                                                        'sector__base_station__name': u'mission_street__ttsl',
-                                                        'id': 13136L,
-                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
-                                                    },
-                                                    {
-                                                        'name': u'091newd623009151684',
-                                                        'customer__name': u'usha_international_limited',
-                                                        'date_of_acceptance': None,
-                                                        'circuit_id': u'091NEWD623009151684',
-                                                        'alias': u'091NEWD623009151684',
-                                                        'sector__name': u'10.75.164.19',
-                                                        'sub_station__name': u'091newd623009151684',
-                                                        'sector__base_station__name': u'alipur_ii',
-                                                        'id': 13137L,
-                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
-                                                    },
-                                                    {
-                                                        'name': u'091prak623008993022',
-                                                        'customer__name': u'itc_limited',
-                                                        'date_of_acceptance': None,
-                                                        'circuit_id': u'091PRAK623008993022',
-                                                        'alias': u'091PRAK623008993022',
-                                                        'sector__name': None,
-                                                        'sub_station__name': u'091prak623008993022',
-                                                        'sector__base_station__name': None,
-                                                        'id': 13138L,
-                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
-                                                    },
-                                                    {
-                                                        'name': u'091hyde623009000750',
-                                                        'customer__name': u'nufuture_digital__india__limited',
-                                                        'date_of_acceptance': None,
-                                                        'circuit_id': u'091HYDE623009000750',
-                                                        'alias': u'091HYDE623009000750',
-                                                        'sector__name': u'172.25.117.187',
-                                                        'sub_station__name': u'091hyde623009000750',
-                                                        'sector__base_station__name': u'fern_hills',
-                                                        'id': 13139L,
-                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
-                                                    }
-                                                ]
-        Returns:
-            qs (class 'django.db.models.query.ValuesQuerySet'):
-                                                            [
-                                                                {
-                                                                    'name': u'091agra623006651037',
-                                                                    'customer__name': u'fortis_health_management',
-                                                                    'date_of_acceptance': None,
-                                                                    'circuit_id': u'091AGRA623006651037',
-                                                                    'alias': u'091AGRA623006651037',
-                                                                    'sector__name': None,
-                                                                    'sub_station__name': u'091agra623006651037',
-                                                                    'sector__base_station__name': None,
-                                                                    'id': 15013L,
-                                                                    'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
-                                                                }
-                                                            ]
-
-        """
-        qs = super(CircuitListingTable, self).filter_queryset(qs)
-        if not self.request.user.is_superuser:
-            qs = qs.filter(organization__in=logged_in_user_organizations(self))
-
-        sSearch = self.request.GET.get('sSearch', None)
-
-        # self.columns is a list of columns e.g. ['name', 'alias', 'circuit_id', 'sector__base_station__name',
-        # 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
-
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            exec_query = "qs = qs.filter("
-            for column in self.columns[:-1]:
-                # avoid search on 'date_of_acceptance'
-                if column == 'date_of_acceptance':
-                    continue
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        return Circuit.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
+    search_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
+               'sub_station__alias']
 
     def prepare_results(self, qs):
         """
         Preparing  Initial Queryset for the for rendering the data table.
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_circuit'):
                 edit_action = '<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
@@ -1945,74 +1505,7 @@ class CircuitListingTable(PermissionsRequiredMixin, BaseDatatableView):
                             alt="View L2 reports for circuit"></i></a>'.format(device_id)
             dct.update(actions=actions, date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
 
-        return qs
-
-    def ordering(self, qs):
-        """ Get parameters from the request and prepare order by clause
-        """
-        request = self.request
-        # Number of columns that are used in sorting
-        try:
-            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
-        except Exception:
-            i_sorting_cols = 0
-
-        order = []
-        order_columns = self.get_order_columns()
-        for i in range(i_sorting_cols):
-            # sorting column
-            try:
-                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
-            except Exception:
-                i_sort_col = 0
-            # sorting order
-            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
-
-            sdir = '-' if s_sort_dir == 'desc' else ''
-
-            sortcol = order_columns[i_sort_col]
-            if isinstance(sortcol, list):
-                for sc in sortcol:
-                    order.append('%s%s' % (sdir, sc))
-            else:
-                order.append('%s%s' % (sdir, sortcol))
-        if order:
-            key_name=order[0][1:] if '-' in order[0] else order[0]
-            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
-            return sorted_device_data
-        return qs
-
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class CircuitDetail(PermissionsRequiredMixin, DetailView):
@@ -2092,7 +1585,7 @@ class CircuitUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(CircuitUpdate.success_url)
 
 
-class CircuitDelete(PermissionsRequiredMixin, DeleteView):
+class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Circuit.
     """
@@ -2100,18 +1593,6 @@ class CircuitDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'circuit/circuit_delete.html'
     success_url = reverse_lazy('circuits_list')
     required_permissions = ('inventory.delete_circuit',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A circuit is deleted - {}(Circuit ID- {})'.format(obj.alias, obj.circuit_id)
-            UserAction.objects.create(user_id=self.request.user.id, module='Circuit', action=action)
-        except:
-            pass
-        return super(CircuitDelete, self).delete(request, *args, **kwargs)
 
 
 #********************************* Circuit L2 Reports*******************************************
@@ -2307,7 +1788,6 @@ class CircuitL2ReportCreate(CreateView):
         self.object.circuit_id =  Circuit.objects.get(id=self.kwargs['circuit_id'])
 
         self.object.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
 
 class CircuitL2ReportDelete(DeleteView):
@@ -2360,7 +1840,7 @@ class IconSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class IconSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render IconSettings Data table.
     """
@@ -2368,27 +1848,6 @@ class IconSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     required_permissions = ('inventory.view_iconsettings',)
     columns = ['alias', 'upload_image']
     order_columns = ['alias', 'upload_image']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
 
     def get_initial_queryset(self):
         """
@@ -2405,9 +1864,8 @@ class IconSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             try:
                 img_url = "/media/"+ (dct['upload_image']) if \
                     "uploaded" in dct['upload_image'] \
@@ -2418,39 +1876,7 @@ class IconSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
 
             dct.update(actions='<a href="/icon_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/icon_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class IconSettingsDetail(PermissionsRequiredMixin, DetailView):
@@ -2510,7 +1936,7 @@ class IconSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(IconSettingsUpdate.success_url)
 
 
-class IconSettingsDelete(PermissionsRequiredMixin, DeleteView):
+class IconSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the machine
     """
@@ -2518,18 +1944,6 @@ class IconSettingsDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'icon_settings/icon_settings_delete.html'
     success_url = reverse_lazy('icon_settings_list')
     required_permissions = ('inventory.delete_iconsettings',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A icon setting is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Icon Setting', action=action)
-        except:
-            pass
-        return super(IconSettingsDelete, self).delete(request, *args, **kwargs)
 
 
 #**************************************** LivePollingSettings *********************************************
@@ -2561,7 +1975,10 @@ class LivePollingSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class LivePollingSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class LivePollingSettingsListingTable(PermissionsRequiredMixin,
+        DatatableSearchMixin,
+        BaseDatatableView
+    ):
     """
     Class based View to render LivePollingSettings Data table.
     """
@@ -2569,28 +1986,6 @@ class LivePollingSettingsListingTable(PermissionsRequiredMixin, BaseDatatableVie
     required_permissions = ('inventory.view_livepollingsettings',)
     columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
     order_columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -2607,44 +2002,11 @@ class LivePollingSettingsListingTable(PermissionsRequiredMixin, BaseDatatableVie
         :return qs
 
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             dct.update(actions='<a href="/live_polling_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/live_polling_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
 class LivePollingSettingsDetail(PermissionsRequiredMixin, DetailView):
@@ -2704,7 +2066,7 @@ class LivePollingSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(LivePollingSettingsUpdate.success_url)
 
 
-class LivePollingSettingsDelete(PermissionsRequiredMixin, DeleteView):
+class LivePollingSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the LivePollingSettings
     """
@@ -2712,18 +2074,6 @@ class LivePollingSettingsDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'live_polling_settings/live_polling_settings_delete.html'
     success_url = reverse_lazy('live_polling_settings_list')
     required_permissions = ('inventory.delete_livepollingsettings',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A live polling setting is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Live Polling Setting', action=action)
-        except:
-            pass
-        return super(LivePollingSettingsDelete, self).delete(request, *args, **kwargs)
 
 
 #**************************************** ThresholdConfiguration *********************************************
@@ -2754,7 +2104,7 @@ class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThresholdConfigurationListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render ThresholdConfiguration Data table.
     """
@@ -2762,27 +2112,7 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, BaseDatatable
     required_permissions = ('inventory.view_thresholdconfiguration',)
     columns = ['alias', 'live_polling_template__alias']
     order_columns = ['alias', 'live_polling_template__alias']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
+    search_columns = ['alias', 'live_polling_template__alias']
 
     def get_initial_queryset(self, technology="no"):
         """
@@ -2800,12 +2130,11 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, BaseDatatable
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             dct.update(actions='<a href="/threshold_configuration/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/threshold_configuration/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
+        return json_data
 
     def get_context_data(self, technology):
         """
@@ -2839,6 +2168,7 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, BaseDatatable
                'aaData': aaData
         }
         return ret
+
 
 
 class ThresholdConfigurationDetail(PermissionsRequiredMixin, DetailView):
@@ -2898,7 +2228,7 @@ class ThresholdConfigurationUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(ThresholdConfigurationUpdate.success_url)
 
 
-class ThresholdConfigurationDelete(PermissionsRequiredMixin, DeleteView):
+class ThresholdConfigurationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Threshold Configuration.
     """
@@ -2906,19 +2236,6 @@ class ThresholdConfigurationDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'threshold_configuration/threshold_configuration_delete.html'
     success_url = reverse_lazy('threshold_configuration_list')
     required_permissions = ('inventory.delete_threshold_configuration',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A threshold configuration is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Threshold Configuration', action=action)
-        except:
-            pass
-        return super(ThresholdConfigurationDelete, self).delete(request, *args, **kwargs)
-
 
 
 #**************************************** ThematicSettings *********************************************
@@ -2958,7 +2275,7 @@ class ThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class ThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -2966,27 +2283,7 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     required_permissions = ('inventory.view_thematicsettings',)
     columns = ['alias', 'threshold_template', 'icon_settings']
     order_columns = ['alias', 'threshold_template']
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
+    search_columns = ['alias', 'icon_settings']
 
     def get_initial_queryset(self, technology="P2P"):
         """
@@ -3082,6 +2379,7 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
         return ret
 
 
+
 class ThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Thematic Settings detail.
@@ -3148,7 +2446,7 @@ class ThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
 
 
-class ThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
+class ThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Thematic Settings.
     """
@@ -3156,19 +2454,6 @@ class ThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'thematic_settings/thematic_settings_delete.html'
     success_url = reverse_lazy('thematic_settings_list')
     required_permissions = ('inventory.delete_thematicsettings',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action='A thematic settings is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Thematic Settings', action=action)
-        except:
-            pass
-        return super(ThematicSettingsDelete, self).delete(request, *args, **kwargs)
-
 
 
 class Get_Threshold_Ranges_And_Icon_For_Thematic_Settings(View):
@@ -3568,7 +2853,7 @@ class GISInventoryBulkImportList(ListView):
         return context
 
 
-class GISInventoryBulkImportListingTable(BaseDatatableView):
+class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 
@@ -3576,26 +2861,6 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
     model = GISInventoryBulkImport
     columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
     order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
-            exec exec_query
-
-        return qs
 
     def get_initial_queryset(self):
         """
@@ -3725,39 +2990,6 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
                 logger.info()
         return qs
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
-
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
-
 
 class GISInventoryBulkImportDelete(DeleteView):
     """
@@ -3806,7 +3038,7 @@ class GISInventoryBulkImportUpdate(UpdateView):
 
 
 #**************************************** Ping Thematic Settings *********************************************
-class PingThematicSettingsList(ListView):
+class PingThematicSettingsList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render PingThematicSettings List Page.
     """
@@ -3848,7 +3080,7 @@ class PingThematicSettingsList(ListView):
         return context
 
 
-class PingThematicSettingsListingTable(BaseDatatableView):
+class PingThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -3856,30 +3088,6 @@ class PingThematicSettingsListingTable(BaseDatatableView):
     columns = ['alias', 'service', 'data_source', 'icon_settings']
     order_columns = ['alias', 'service', 'data_source']
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        # get tab technology
-        technology = DeviceTechnology.objects.filter(name__icontains=self.kwargs['technology'])[0].name
-
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").filter(technology__name='"+technology+"').values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
 
     def get_initial_queryset(self, technology="P2P"):
         """
@@ -3901,9 +3109,8 @@ class PingThematicSettingsListingTable(BaseDatatableView):
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify 'icon_setting' field for display in datatables i.e. format: "start_range > icon > end_range"
             icon_settings_display_field = ""
 
@@ -3958,46 +3165,10 @@ class PingThematicSettingsListingTable(BaseDatatableView):
                 actions='<a href="/ping_thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/ping_thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                     dct.pop('id')))
-        return qs
-
-    def get_context_data(self, technology):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-
-        # self.initialize(*args, **kwargs)
-        self.initialize()
-
-        qs = self.get_initial_queryset(technology)
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-
-        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
-        # Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
-class PingThematicSettingsDetail(DetailView):
+class PingThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the Thematic Settings detail.
     """
@@ -4072,7 +3243,7 @@ class PingThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(PingThematicSettingsUpdate.success_url)
 
 
-class PingThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
+class PingThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to delete the Thematic Settings.
     """
@@ -4080,19 +3251,6 @@ class PingThematicSettingsDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'ping_thematic_settings/ping_thematic_settings_delete.html'
     success_url = reverse_lazy('ping_thematic_settings_list')
     required_permissions = ('inventory.delete_pingthematicsettings',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        overriding the delete method to log the user activity on deletion.
-        """
-        try:
-            obj = self.get_object()
-            action = 'A thematic settings is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Thematic Settings', action=action)
-        except Exception as e:
-            logger.info("User Ping Thematic Settings delete error. Exception: ", e.message)
-
-        return super(PingThematicSettingsDelete, self).delete(request, *args, **kwargs)
 
 
 class Ping_Update_User_Thematic_Setting(View):

@@ -20,6 +20,8 @@ from django.template.loader import render_to_string
 from django.db.models import Q
 from nocout.utils import logged_in_user_organizations
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.user_action import UserLogDeleteMixin
+from nocout.mixins.datatable import DatatableSearchMixin
 
 
 class UserList(PermissionsRequiredMixin, ListView):
@@ -53,7 +55,7 @@ class UserList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class UserListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class UserListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class Based View for the User data table rendering.
     """
@@ -63,6 +65,8 @@ class UserListingTable(PermissionsRequiredMixin, BaseDatatableView):
                'parent__last_name', 'organization__name','phone_number', 'last_login']
     order_columns = ['username' , 'first_name', 'email', 'organization__name', 'role__role_name', 'parent__first_name',
                      'phone_number', 'last_login']
+    search_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+               'parent__last_name', 'organization__name','phone_number']
 
     def logged_in_user_organization_ids(self):
         """
@@ -72,28 +76,6 @@ class UserListingTable(PermissionsRequiredMixin, BaseDatatableView):
             return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
         else:
             return list(str(self.request.user.userprofile.organization.id))
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query=[]
-            organization_descendants_ids= self.logged_in_user_organization_ids()
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query) + ", organization__in = %s)"%organization_descendants_ids + \
-                          ".values(*"+str(self.columns+['id'])+")"
-            exec exec_query
-
-        return qs
 
     def get_initial_queryset(self):
         """
@@ -163,7 +145,7 @@ class UserListingTable(PermissionsRequiredMixin, BaseDatatableView):
                }
         return ret
 
-class UserArchivedListingTable(BaseDatatableView):
+class UserArchivedListingTable(DatatableSearchMixin, BaseDatatableView):
     """
     Class Based View for the Archived User data table rendering.
     """
@@ -172,34 +154,8 @@ class UserArchivedListingTable(BaseDatatableView):
                'parent__last_name', 'organization__name','phone_number', 'last_login']
     order_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                      'parent__last_name', 'organization__name','phone_number', 'last_login']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                organization_descendants_ids = list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
-            else:
-                organization_descendants_ids = list(str(self.request.user.userprofile.organization.id))
-            for column in self.columns[:-1]:
-                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
-
-            archieve_query = ", is_deleted = 1"
-            exec_query += " | ".join(query) + archieve_query + ", organization__in = %s)"%organization_descendants_ids + \
-                          ".values(*"+str(self.columns+['id'])+")"
-
-            exec exec_query
-
-        return qs
+    search_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+                     'parent__last_name', 'organization__name','phone_number']
 
     def get_initial_queryset(self):
         """
@@ -277,6 +233,9 @@ class UserDetail(PermissionsRequiredMixin, DetailView):
     model = UserProfile
     required_permissions = ('user_profile.view_userprofile',)
     template_name = 'user_profile/user_detail.html'
+
+    def get_queryset(self):
+        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
 
 
 class UserCreate(PermissionsRequiredMixin, CreateView):
@@ -397,7 +356,7 @@ class UserUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(UserCreate.success_url)
 
 
-class UserDelete(PermissionsRequiredMixin, DeleteView):
+class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the User.
     """
@@ -405,6 +364,7 @@ class UserDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'user_profile/user_delete.html'
     success_url = reverse_lazy('user_list')
     required_permissions = ('user_profile.delete_userprofile',)
+    obj_alias = 'first_name'
 
     def get(self, *args, **kwargs):
         """
@@ -415,12 +375,6 @@ class UserDelete(PermissionsRequiredMixin, DeleteView):
     def get_queryset(self):
         return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
 
-    def delete(self, request, *args, **kwargs):
-        """
-        To Log the activity before deleting the user.
-        """
-
-        return super(UserDelete, self).delete(request, *args, **kwargs)
 
 class CurrentUserProfileUpdate(UpdateView):
     """

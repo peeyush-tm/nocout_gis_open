@@ -8,4 +8,6 @@ urlpatterns = patterns('',
   url(r'^edit/(?P<pk>\d+)$', views.BackhaulUpdate.as_view(), name='backhaul_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.BackhaulDelete.as_view(), name='backhaul_delete'),
   url(r'^Backhaullistingtable/', views.BackhaulListingTable.as_view(), name='BackhaulListingTable'),
+  url(r'^list/backhaul/$', views.list_backhaul, name='list_-backhaul'),
+  url(r'^select/backhaul/(?P<pk>\d+)/$', views.select_backhaul, name='select-backhaul'),
 )

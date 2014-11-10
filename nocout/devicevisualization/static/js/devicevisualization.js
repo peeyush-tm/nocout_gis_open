@@ -263,14 +263,33 @@ function resetAdvanceSearch() {
 }
 
 $("#resetSearchForm").click(function(e) {
-    $("form#searchInfoModal_form").find('select').each(function(i, el) {
-        $(el).select2("val", [])
-        if(i== $("form#searchInfoModal_form").find('select').length-1) {
-            //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
-            //     $("#advSearchContainerBlock").addClass("hide");
-            // } 
-        }
-    });
+    
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        $("form#searchInfoModal_form").find('select').each(function(i, el) {
+            $(el).select2("val", [])
+            if(i== $("form#searchInfoModal_form").find('select').length-1) {
+                //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
+                //     $("#advSearchContainerBlock").addClass("hide");
+                // } 
+            }
+        });
+    } else if (window.location.pathname.indexOf("white_background") > -1) {
+        $("form#searchInfoModal_form").find('select').each(function(i, el) {
+            $(el).select2("val", [])
+            if(i== $("form#searchInfoModal_form").find('select').length-1) {
+                //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
+                //     $("#advSearchContainerBlock").addClass("hide");
+                // } 
+            }
+        });
+    } else {
+        // Reset Search Fields
+        $("#search_name").select2("val","");
+        $("#search_sector_configured_on").select2("val","");
+        $("#search_circuit_ids").select2("val","");
+        $("#search_city").select2("val","");
+    }
+
     advJustSearch.removeSearchMarkers();
     advJustSearch.resetVariables();
     // mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
@@ -373,7 +392,7 @@ function removeAdvFilters() {
     } else if(window.location.pathname.indexOf("white_background") > -1) {
         data_for_filters = main_devices_data_wmap;
     } else {
-        data_for_filters = main_devices_data_gmaps;
+        
     }
 
     /*Call get_page_status function to show the current status*/
@@ -1029,4 +1048,15 @@ $("#point_icons_container li").click(function(e) {
 $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
     $('#infoWindowContainer').html("");
     $('#infoWindowContainer').addClass("hide");
+});
+
+/**
+ * This event trigger when export data button is clicked
+ */
+$("#export_data_gmap").click(function(e) {
+
+    //enable the flag
+    isExportDataActive = 1;
+    // call function to select data to be export & then export selected data
+    networkMapInstance.exportData_gmap();
 });

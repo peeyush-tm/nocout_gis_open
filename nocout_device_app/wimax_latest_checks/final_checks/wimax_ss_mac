@@ -103,6 +103,7 @@ def check_wimax_ss_mac(item, params, info):
 		a=binascii.b2a_hex(ss_mac)
 		n = 2
 		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
+		ss_mac = ss_mac.lower()
         	infotext = "%s" % ss_mac
 		state = 0
     except ValueError:

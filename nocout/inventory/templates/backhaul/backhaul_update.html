@@ -83,88 +83,166 @@
                 placement: 'right',
                 trigger: 'focus'
             });
-        })
 
-        $("#id_organization").change(function () {
-
-            Dajaxice.inventory.update_related_field(Dajax.process, {
-                'option': $('#id_organization').val()
+            $("#id_bh_configured_on").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
             });
-            $("#id_bh_configured_on").val("");
-            $("#id_bh_configured_on").parent().children().find('a span')[0].innerHTML = "Select";
 
-            $("#id_bh_switch").val("");
-            $("#id_bh_switch").parent().children().find('a span')[0].innerHTML = "Select";
+            $("#id_bh_switch").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
 
-            $("#id_pop").val("");
-            $("#id_pop").parent().children().find('a span')[0].innerHTML = "Select";
+            $("#id_pop").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
 
-            $("#id_aggregator").val("");
-            $("#id_aggregator").parent().children().find('a span')[0].innerHTML = "Select";
+            $("#id_aggregator").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id, {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
         });
 
-        // to call the dajax function on bh_configured_on search.
-        var globalTimeout = null;
-        $("#id_bh_configured_on").on("select2-open", function() {
-            $("#select2-drop .select2-search input").keypress(function() {
-                if(globalTimeout != null) clearTimeout(globalTimeout);
-                    globalTimeout = setTimeout(list_device_on_bh_config_search_basis, 50);
-            });
-        });
-
-        function list_device_on_bh_config_search_basis(){
-            Dajaxice.inventory.bh_configured_on_searching(Dajax.process, {
-                'search_string': $("#select2-drop .select2-search input").val(),
-                'organisation_id': $('#id_organization option:selected').val()
-            });
+        function repoFormatResult(device) {
+          return device.device_alias;
         }
 
-        // to call the dajax function on bh_switch search.
-        var switchTimeout = null;
-        $("#id_bh_switch").on("select2-open", function() {
-            $("#select2-drop .select2-search input").keypress(function() {
-                if(switchTimeout != null) clearTimeout(switchTimeout);
-                    switchTimeout = setTimeout(list_device_on_switch_search_basis, 50);
-            });
-        });
-
-        function list_device_on_switch_search_basis(){
-            Dajaxice.inventory.bh_switch_on_searching(Dajax.process, {
-                'search_string': $("#select2-drop .select2-search input").val(),
-                'organisation_id': $('#id_organization option:selected').val()
-            });
-        }
-
-        // to call the dajax function on pop search.
-        var popTimeout = null;
-        $("#id_pop").on("select2-open", function() {
-            $("#select2-drop .select2-search input").keypress(function() {
-                if(popTimeout != null) clearTimeout(popTimeout);
-                    popTimeout = setTimeout(list_device_on_pop_search_basis, 50);
-            });
-        });
-
-        function list_device_on_pop_search_basis(){
-            Dajaxice.inventory.pop_on_searching(Dajax.process, {
-                'search_string': $("#select2-drop .select2-search input").val(),
-                'organisation_id': $('#id_organization option:selected').val()
-            });
-        }
-
-        // to call the dajax function on aggregator search.
-        var aggregatorTimeout = null;
-        $("#id_aggregator").on("select2-open", function() {
-            $("#select2-drop .select2-search input").keypress(function() {
-                if(aggregatorTimeout != null) clearTimeout(aggregatorTimeout);
-                    aggregatorTimeout = setTimeout(list_device_on_aggregator_search_basis, 50);
-            });
-        });
-
-        function list_device_on_aggregator_search_basis(){
-            Dajaxice.inventory.aggregator_on_searching(Dajax.process, {
-                'search_string': $("#select2-drop .select2-search input").val(),
-                'organisation_id': $('#id_organization option:selected').val()
-            });
+        function repoFormatSelection(device) {
+          return device.device_alias;
         }
 
     </script>
