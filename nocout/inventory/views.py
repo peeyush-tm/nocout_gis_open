@@ -2096,7 +2096,7 @@ class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThresholdConfigurationListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render ThresholdConfiguration Data table.
     """
@@ -2104,27 +2104,7 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, BaseDatatable
     required_permissions = ('inventory.view_thresholdconfiguration',)
     columns = ['alias', 'live_polling_template__alias']
     order_columns = ['alias', 'live_polling_template__alias']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
+    search_columns = ['alias', 'live_polling_template__alias']
 
     def get_initial_queryset(self, technology="no"):
         """
@@ -2300,7 +2280,7 @@ class ThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class ThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -2308,28 +2288,7 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, BaseDatatableView):
     required_permissions = ('inventory.view_thematicsettings',)
     columns = ['alias', 'threshold_template', 'icon_settings']
     order_columns = ['alias', 'threshold_template']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
+    search_columns = ['alias', 'icon_settings']
 
     def get_initial_queryset(self, technology="P2P"):
         """
