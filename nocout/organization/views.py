@@ -15,7 +15,7 @@ from user_group.models import UserGroup
 from nocout.utils import logged_in_user_organizations
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
 
 
 class OrganizationList(PermissionsRequiredMixin, ListView):
@@ -48,7 +48,7 @@ class OrganizationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class OrganizationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class OrganizationListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Organization Data table.
     """
@@ -57,25 +57,7 @@ class OrganizationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, B
     columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
     order_columns = ['name',  'alias', 'parent__name', 'city', 'state', 'country']
     search_columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
-
-    def logged_in_user_organization_ids(self):
-        """
-        return the logged in user descendants organization ids.
-        """
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-            return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
-        else:
-            return list(str(self.request.user.userprofile.organization.id))
-
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= self.logged_in_user_organization_ids()
-        return Organization.objects.filter(pk__in=organization_descendants_ids).values(*self.columns + ['id'])
+    organization_field = 'id'
 
     def prepare_results(self, qs):
         """
