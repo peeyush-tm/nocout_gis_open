@@ -61,13 +61,16 @@ def connection_telnet_bs_for_topology(hostname, port,pmp1_sec_id,pmp2_sec_id):
         	for i,row in enumerate(final_mac_matches):
                 	params =[ r for r in row.split()]
                 	ss_mac =params[2]
+			ss_mac = ss_mac.lower()
                 	ss_ip = filter(lambda x: ss_mac in x, ip_matches)
                 	ss_ip = ss_ip[0].split()[3]
                 	sector_id = int(params[1])
 			if sector_id == 1:
 				sector_id = pmp1_sec_id
+				sector_id = sector_id.lower()
 			elif sector_id == 2:
 				sector_id = pmp2_sec_id
+				sector_id = sector_id.lower()
                         dl_rssi = int(params[8])
                 	dl_rssi = int(params[8])
 

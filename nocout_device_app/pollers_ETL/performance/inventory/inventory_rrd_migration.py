@@ -79,7 +79,6 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	invent_check_list = []
 	invent_service_dict = {}
 	matching_criteria = {}
-	interface_oriented_service = ["cambium_ss_connected_bs_ip_invent"]
 	multiple_ds_services = []
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 	for host in hostlist:
@@ -119,12 +118,6 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 			except:
 				continue
 			current_time = int(time.time())
-			if interface_oriented_service[0] in service:
-				contiune
-				interface = service.split(' ')[1]
-				service = service.split(' ')[0]
-				replaced_host = get_ss(host=host[0], interface=interface)
-				host_ip = replaced_host 	
 
 			plugin_output = plugin_output.split(' ')
 			if len(plugin_output) > 1:
@@ -140,7 +133,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 						critical_threshold=0,ip_address=host_ip)
 						
 						matching_criteria.update({'device_name':str(host[0]),'service_name':service,
-						'site_name':site,'data_source':ds_list[index]})
+						'data_source':ds_list[index]})
 						
 						mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
 						mongo_module.mongo_db_insert(db,invent_service_dict,"inventory_services")
@@ -151,11 +144,11 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 						service_name=service,current_value=plugin_output[0],min_value=0,max_value=0,avg_value=0,
 						data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
 						critical_threshold=0,ip_address=host_ip)
-			matching_criteria.update({'device_name':replaced_host,'service_name':service,'site_name':site})
-			mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
-			mongo_module.mongo_db_insert(db,invent_service_dict,"inventory_services")
-			matching_criteria ={}
-			invent_service_dict = {}
+				matching_criteria.update({'device_name':replaced_host,'service_name':service,'data_source':ds})
+				mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
+				mongo_module.mongo_db_insert(db,invent_service_dict,"inventory_services")
+				matching_criteria ={}
+				invent_service_dict = {}
 		invent_check_list = []
 
 

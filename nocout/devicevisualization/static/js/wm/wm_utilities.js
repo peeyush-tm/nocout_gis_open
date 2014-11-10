@@ -883,3 +883,18 @@ function showWmapFilteredData(dataArray) {
     whiteMapClass.applyAdvanceFilter({data_for_filters: dataArray, filtered_Devices: bsDeviceObj, filtered_Features: filtered_bs_ss_data, line_Features: filtered_line_data, sector_Features: filtered_sector_data});
 }
 
+OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.KML, {
+    CLASS_NAME: "OpenLayers.Format.KML",
+    parseStyle: function(node) {
+        console.log(node);
+        var baseURI = node.baseURI.split("?")[0]; // remove query, if any
+        if (baseURI.lastIndexOf("/") != baseURI.length - 1) {
+            baseURI = baseURI.substr(0, baseURI.lastIndexOf("/") + 1);
+        }
+        var style = OpenLayers.Format.KML.prototype.parseStyle.call(this, node);
+        if (typeof style.externalGraphic != "undefined" && style.externalGraphic.match(new RegExp("(^/)|(://)")) == null) {
+            style.externalGraphic = baseURI + style.externalGraphic;
+        }
+        return style;
+    }
+});

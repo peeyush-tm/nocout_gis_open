@@ -343,11 +343,6 @@ class BackhaulForm(forms.ModelForm):
         Meta Information
         """
         model = Backhaul
-        fields = (
-            'name', 'alias', 'organization', 'bh_configured_on', 'bh_port_name', 'bh_port', 'bh_type', 'bh_switch', 'switch_port_name',
-            'switch_port', 'pop', 'pop_port_name', 'pop_port', 'aggregator', 'aggregator_port_name', 'aggregator_port', 'pe_hostname',
-            'pe_ip', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity', 'ttsl_circuit_id', 'dr_site', 'description',
-        )
 
     def clean_name(self):
         """
@@ -503,12 +498,6 @@ class BaseStationForm(forms.ModelForm):
         """
         model = BaseStation
 
-        fields = (
-            'name', 'alias', 'organization', 'bs_site_id', 'bs_site_type', 'bs_switch', 'backhaul', 'bh_port_name', 'bh_port',
-            'bh_capacity', 'bs_type', 'bh_bso', 'hssu_used', 'latitude', 'longitude', 'infra_provider', 'gps_type',
-            'building_height', 'tower_height', 'country', 'state', 'city', 'address', 'description',
-        )
-
     def clean_name(self):
         """
         Name unique validation
@@ -646,12 +635,6 @@ class SectorForm(forms.ModelForm):
         Meta Information
         """
         model = Sector
-
-        fields = (
-            'name', 'alias', 'organization', 'sector_id', 'base_station', 'bs_technology', 'sector_configured_on', 'sector_configured_on_port', 'antenna',
-            'dr_site', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency',
-            'modulation', 'description',
-        )
 
     def clean_name(self):
         """
@@ -874,11 +857,6 @@ class SubStationForm(forms.ModelForm):
         Meta Information
         """
         model = SubStation
-        fields = (
-            'name', 'alias', 'organization', 'device', 'antenna', 'version', 'serial_no', 'building_height', 'tower_height',
-            'ethernet_extender', 'cable_length', 'latitude', 'longitude', 'mac_address', 'country', 'state', 'city',
-            'address', 'description',
-        )
 
     def clean_name(self):
         """
@@ -1010,11 +988,6 @@ class CircuitForm(forms.ModelForm):
         Meta Information
         """
         model = Circuit
-        fields = (
-            'name', 'alias', 'organization', 'circuit_type', 'circuit_id', 'sector', 'customer', 'sub_station', 'qos_bandwidth',
-            'dl_rssi_during_acceptance', 'dl_cinr_during_acceptance', 'jitter_value_during_acceptance', 'throughput_during_acceptance', 'date_of_acceptance', 'description',
-        )
-
 
     def clean_name(self):
         """
