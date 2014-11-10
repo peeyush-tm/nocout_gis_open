@@ -8,4 +8,6 @@ urlpatterns = patterns('',
   url(r'^edit/(?P<pk>\d+)$', views.SubStationUpdate.as_view(), name='sub_station_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.SubStationDelete.as_view(), name='sub_station_delete'),
   url(r'^SubStationlistingtable/', views.SubStationListingTable.as_view(), name='SubStationListingTable'),
+  url(r'^list/sub_station/$', views.list_sub_station, name='list-sub_station'),
+  url(r'^select/sub_station/(?P<pk>\d+)/$', views.select_sub_station, name='select-sub_station'),
 )

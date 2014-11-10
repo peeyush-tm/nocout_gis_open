@@ -1384,6 +1384,25 @@ class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView)
     required_permissions = ('inventory.delete_substation',)
 
 
+def list_sub_station(request):
+    """
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    sub_stations = SubStation.objects.filter(organization__id=org_id).\
+            filter(name__icontains=sSearch).values('id', 'name')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": sub_stations.count(),
+        "incomplete_results": False,
+        "items": list(sub_stations)
+    }))
+
+def select_sub_station(request, pk):
+    """
+    """
+    return HttpResponse(json.dumps([SubStation.objects.get(id=pk).name]))
+
 #**************************************** Circuit *********************************************
 class CircuitList(PermissionsRequiredMixin, ListView):
     """

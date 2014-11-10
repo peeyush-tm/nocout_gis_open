@@ -732,6 +732,7 @@ def customer_on_searching(request, search_string, organisation_id):
     return dajax.json()
 '''
 
+'''
 @dajaxice_register(method='GET')
 def update_sub_station(request, option):
     dajax = Dajax()
@@ -763,6 +764,7 @@ def sub_station_on_searching(request, search_string, organisation_id):
         out.append("<option value={}>{}</option>".format(substation.id, substation) )
     dajax.assign('#id_sub_station', 'innerHTML', ''.join(out))
     return dajax.json()
+'''
 
 # @dajaxice_register(method='GET')
 # def load_sheet_no_select_menu(request, uploaded_file):

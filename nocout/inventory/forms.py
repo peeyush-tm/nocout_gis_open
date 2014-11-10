@@ -916,6 +916,7 @@ class CircuitForm(forms.ModelForm):
 
         self.fields['sector'].widget = forms.HiddenInput()
         self.fields['customer'].widget = forms.HiddenInput()
+        self.fields['sub_station'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
