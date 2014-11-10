@@ -13,7 +13,7 @@ def logged_in_user_organizations(self_object):
     if logged_in_user.role.values_list( 'role_name', flat=True )[0] =='admin':
         organizations= logged_in_user.organization.get_descendants( include_self=True )
     else:
-        organizations= [ logged_in_user.organization ]
+        organizations= [ logged_in_user.organization.id ]
 
     return organizations
 
