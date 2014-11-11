@@ -2419,8 +2419,8 @@ function devicePlottingClass_gmap() {
 					colors: [{ opacity: 0.8 }, { brightness: 0.6, opacity: 0.8 } ]
 				},
 				grid: { hoverable: true, clickable: true, autoHighlight: true, backgroundColor: { colors: ["#ccc", "#fff"] }},
-				yaxis: { min:minYChart, max:  maxYChart },
-				xaxis: { min: 0, max:  latLongArray[arrayCounter - 1][3]},
+				yaxis: { min:minYChart, max:  maxYChart, label : "Y-Axis Label" },
+				xaxis: { min: 0, max:  latLongArray[arrayCounter - 1][3], label : "X-Axis Label" },
 				colors: [pinPointsColor,altitudeColor,losColor,fresnel1Color,fresnel2Color]
 			}
 		);
@@ -4029,6 +4029,8 @@ function devicePlottingClass_gmap() {
 
     	if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
 
+    		var service_type = $("#isPing")[0].checked ? "ping" : "other";
+
     		$("#getDevicesPollingData").button("loading");
 
     		/*Disable service templates dropdown*/
@@ -4042,7 +4044,7 @@ function devicePlottingClass_gmap() {
 			}
 
 	    	$.ajax({
-				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 				// url : base_url+"/"+"static/services.json",
 				success : function(results) {
 					var result = "";
