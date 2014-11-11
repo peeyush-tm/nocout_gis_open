@@ -353,13 +353,6 @@ class AntennaCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     success_url = reverse_lazy('antennas_list')
     required_permissions = ('inventory.add_antenna',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(AntennaCreate.success_url)
-
 
 class AntennaUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
@@ -373,13 +366,6 @@ class AntennaUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
     def get_queryset(self):
         return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(AntennaUpdate.success_url)
 
 
 class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -517,13 +503,6 @@ class BaseStationCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     success_url = reverse_lazy('base_stations_list')
     required_permissions = ('inventory.add_basestation',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(BaseStationCreate.success_url)
-
 
 class BaseStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
@@ -537,13 +516,6 @@ class BaseStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
     def get_queryset(self):
         return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(BaseStationUpdate.success_url)
 
 
 class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -693,13 +665,6 @@ class BackhaulCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     success_url = reverse_lazy('backhauls_list')
     required_permissions = ('inventory.add_backhaul',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(BackhaulCreate.success_url)
-
 
 class BackhaulUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
@@ -713,13 +678,6 @@ class BackhaulUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
     def get_queryset(self):
         return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(BackhaulUpdate.success_url)
 
 
 class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -864,13 +822,6 @@ class SectorCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     success_url = reverse_lazy('sectors_list')
     required_permissions = ('inventory.add_sector',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(SectorCreate.success_url)
-
 
 class SectorUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
@@ -884,13 +835,6 @@ class SectorUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
     def get_queryset(self):
         return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(SectorUpdate.success_url)
 
 
 class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1011,13 +955,6 @@ class CustomerCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     success_url = reverse_lazy('customers_list')
     required_permissions = ('inventory.add_customer',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(CustomerCreate.success_url)
-
 
 class CustomerUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
@@ -1031,13 +968,6 @@ class CustomerUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
     def get_queryset(self):
         return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(CustomerUpdate.success_url)
 
 
 class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1183,13 +1113,6 @@ class SubStationCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     success_url = reverse_lazy('sub_stations_list')
     required_permissions = ('inventory.add_substation',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(SubStationCreate.success_url)
-
 
 class SubStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
@@ -1203,13 +1126,6 @@ class SubStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
     def get_queryset(self):
         return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(SubStationUpdate.success_url)
 
 
 class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1346,13 +1262,6 @@ class CircuitCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     success_url = reverse_lazy('circuits_list')
     required_permissions = ('inventory.add_circuit',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(CircuitCreate.success_url)
-
 
 class CircuitUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
@@ -1366,13 +1275,6 @@ class CircuitUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
 
     def get_queryset(self):
         return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(CircuitUpdate.success_url)
 
 
 class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
