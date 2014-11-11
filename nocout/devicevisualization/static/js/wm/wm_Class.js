@@ -2,7 +2,8 @@ var ccpl_map,
 	base_url, 
 	main_devices_data_wmap= [],
 	wm_obj = {'features': {}, 'data': {}, 'devices': {}, 'lines': {}, 'sectors': {}},
-	data_for_filter_wmap= [];
+	data_for_filter_wmap= [],
+	filtered_devices_array= [];
 
 var state_city_obj= {}, 
 	all_cities_array= [], 
@@ -11,6 +12,8 @@ var state_city_obj= {},
 	sectorMarkerConfiguredOn= [], 
 	sectorMarkersMasterObj = {};
 
+var bsDevicesObj = {};
+var tempbsDeviceObj = {};
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
 	base_url = window.location.origin;
@@ -60,7 +63,7 @@ function WhiteMapClass() {
 		var main_devices_marker_features_wmaps = [], filtered_lines_main_devices_marker_features_wmaps= [];
 		var main_lines_sectors_features_wmaps= {'lines': [], 'sectors': []}, filtered_lines_sectors_features = [];
 		var devicesMarkersArray= [];
-		var bsDevicesObj = {};
+		
 
 		var pollableDevices = [];
 		var polled_devices_names= [];
@@ -93,6 +96,8 @@ function WhiteMapClass() {
 		this.unSpiderifyBsMarker= function() {
 			if(markerSpiderfied) {
 				ccpl_map.getLayersByName("Devices")[0].removeAllFeatures();
+				var finalLatLong = new OpenLayers.LonLat(markerSpiderfied.attributes.ptLon, markerSpiderfied.attributes.ptLat);
+				markerSpiderfied.move(finalLatLong);
 				markerSpiderfied= "";
 			}
 			return true;
@@ -107,42 +112,72 @@ function WhiteMapClass() {
 
 			}
 			var bsData = wm_obj.data[feature.attributes.bs_name];
-			var bsSectorLength = bsData.data.param.sector.length;
-			if(bsSectorLength) {
-				console.log(bsSectorLength);
+			var bsSectors = bsDevicesObj[bsData.name];
+			// var bsSectorLength = bsData.data.param.sector.length;
+			if(bsSectors && bsSectors.length) {
 				var currentAngle = 0;
-				for(var i=0; i< bsSectorLength; i++) {
-					var sector = bsData.data.param.sector[i];
-					var sectorMarker = wm_obj['devices']['sector_'+sector.sector_configured_on];
-					var xyDirection= "";
-					if(ccpl_map.getZoom() < 9) {
-						xyDirection = getAtXYDirection(currentAngle, 7, feature.attributes.ptLon, feature.attributes.ptLat);
-					} else {
-						if(ccpl_map.getZoom() >= 12) {
-							if(ccpl_map.getZoom() >= 14) {
-								xyDirection = getAtXYDirection(currentAngle, 0.7, feature.attributes.ptLon, feature.attributes.ptLat);		
-							} else {
-								xyDirection = getAtXYDirection(currentAngle, 2, feature.attributes.ptLon, feature.attributes.ptLat);		
-							}
+				for(var i=0; i<= bsSectors.length; i++) {
+					if(i=== bsSectors.length) {
+						var bsMarker = wm_obj['features'][bsData.name];						
+						var xyDirection= "";
+						if(ccpl_map.getZoom() < 9) {
+							xyDirection = getAtXYDirection(currentAngle, 7, feature.attributes.ptLon, feature.attributes.ptLat);
 						} else {
-							xyDirection = getAtXYDirection(currentAngle, 3, feature.attributes.ptLon, feature.attributes.ptLat);	
-						}
-						
-					}					
+							if(ccpl_map.getZoom() >= 12) {
+								if(ccpl_map.getZoom() >= 14) {
+									xyDirection = getAtXYDirection(currentAngle, 0.3, feature.attributes.ptLon, feature.attributes.ptLat);		
+								} else {
+									xyDirection = getAtXYDirection(currentAngle, 1, feature.attributes.ptLon, feature.attributes.ptLat);		
+								}
+							} else {
+								xyDirection = getAtXYDirection(currentAngle, 3, feature.attributes.ptLon, feature.attributes.ptLat);	
+							}
+							
+						}					
 
-					var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat);
-										
-					var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
-					var end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
+						var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat);
+											
+						var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
+						var end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
 
-					ccpl_map.getLayersByName("Devices")[0].addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
-					ccpl_map.getLayersByName("Devices")[0].addFeatures([sectorMarker]);
-					sectorMarker.move(finalLatLong);
-					sectorMarker.style.externalGraphic = sectorMarker.attributes.pollingIcon ? sectorMarker.attributes.pollingIcon : sectorMarker.attributes.clusterIcon;
-					markerSpiderfied = feature;
-					currentAngle= currentAngle+60;
+						ccpl_map.getLayersByName("Devices")[0].addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
+
+						bsMarker.move(finalLatLong);
+						markerSpiderfied = feature;
+					} else {
+						var sector = bsData.data.param.sector[i];
+						var sectorMarker = wm_obj['devices']['sector_'+sector.sector_configured_on];
+						var xyDirection= "";
+						if(ccpl_map.getZoom() < 9) {
+							xyDirection = getAtXYDirection(currentAngle, 7, feature.attributes.ptLon, feature.attributes.ptLat);
+						} else {
+							if(ccpl_map.getZoom() >= 12) {
+								if(ccpl_map.getZoom() >= 14) {
+									xyDirection = getAtXYDirection(currentAngle, 0.3, feature.attributes.ptLon, feature.attributes.ptLat);		
+								} else {
+									xyDirection = getAtXYDirection(currentAngle, 1, feature.attributes.ptLon, feature.attributes.ptLat);		
+								}
+							} else {
+								xyDirection = getAtXYDirection(currentAngle, 3, feature.attributes.ptLon, feature.attributes.ptLat);	
+							}
+							
+						}					
+
+						var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat);
+											
+						var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
+						var end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
+
+						ccpl_map.getLayersByName("Devices")[0].addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
+						ccpl_map.getLayersByName("Devices")[0].addFeatures([sectorMarker]);
+						sectorMarker.move(finalLatLong);
+						sectorMarker.style.externalGraphic = sectorMarker.attributes.pollingIcon ? sectorMarker.attributes.pollingIcon : sectorMarker.attributes.clusterIcon;
+					}
+					currentAngle= currentAngle+(360/(bsSectors.length+1));
 				}
 				ccpl_map.getLayersByName("Devices")[0].redraw();
+			} else {
+				return true;
 			}
 			return false;
 		}
@@ -181,7 +216,7 @@ function WhiteMapClass() {
 		 * This function show Features[Markers, Lines, Sector, Devices] in currentBounds
 		 */
 		this.showFeatuesInCurrentBounds = function() {
-			console.log('hi');
+			
 		}
 
 		function updateBsMarker() {}
@@ -211,7 +246,7 @@ function WhiteMapClass() {
 				if(pointType === 'sub_station') {
 					sector_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.sector_ip];
 				} else {
-					sector_marker = wm_obj['devices']['sector_'+polygonSelectedDevices[i].attributes.sectorName]
+					sector_marker = wm_obj['devices']['sector_'+polygonSelectedDevices[i].attributes.sectorName];
 				}
 
 				if(ss_marker) {
@@ -225,13 +260,14 @@ function WhiteMapClass() {
 			ccpl_map.getLayersByName('Markers')[0].redraw();
 			ccpl_map.getLayersByName("Devices")[0].redraw();
 
-			ccpl_map.getLayersByName('Livepolling')[0].removeAllFeatures();
+			ccpl_map.getLayersByName('Polling')[0].removeAllFeatures();
 
 			if(global_this.livePollingPolygonControl) {
 				global_this.livePollingPolygonControl.deactivate();
 			}
 
-			ccpl_map.addLayer(ccpl_map.getLayersByName('Livepolling')[0]);
+			// ccpl_map.addLayer(ccpl_map.getLayersByName('Polling')[0]);
+			ccpl_map.getLayersByName('Polling')[0].setVisibility(true);
 
 			isPollingActive = 1;
 
@@ -316,7 +352,8 @@ function WhiteMapClass() {
 
 							$("#tech_send").button("complete");
 
-							ccpl_map.addLayer(ccpl_map.getLayersByName('Livepolling')[0]);
+							// ccpl_map.addLayer(ccpl_map.getLayersByName('Polling')[0]);
+							ccpl_map.getLayersByName('Polling')[0].setVisibility(true);
 
 							global_this.livePollingPolygonControl.activate();
 						}
@@ -352,21 +389,21 @@ function WhiteMapClass() {
 			for(var i=0;i<polygonSelectedDevices.length;i++) {
 
 				var ss_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.name],
-					pointType = ss_marker.attributes.pointType,
-					sector_marker = "";
+            		sector_ip = "";
+            
+		        if(polygonSelectedDevices[i].attributes.pointType && ($.trim(polygonSelectedDevices[i].attributes.pointType) == 'sub_station')) {
+		        	sector_ip = polygonSelectedDevices[i].attributes.sector_ip;
+		        } else {
+		        	sector_ip = polygonSelectedDevices[i].attributes.sectorName;
+		        }
 
-				if(pointType === 'sub_station') {
-					sector_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.sector_ip];
-				} else {
-					sector_marker = wm_obj['devices']['sector_'+polygonSelectedDevices[i].attributes.sectorName]
-				}
+		        var sector_marker = wm_obj['devices']['sector_'+sector_ip];
 
 				if(ss_marker) {
 					ss_marker.style.externalGraphic = ss_marker.attributes.icon;
-					
 				} else if(sector_marker) {
-					sector_marker.style.externalGraphic = sector_marker.attributes.icon
-					
+					sector_marker.attributes.pollingIcon = "";
+					sector_marker.style.externalGraphic = sector_marker.attributes.icon;
 				}
 			}
 			ccpl_map.getLayersByName('Markers')[0].redraw();
@@ -374,8 +411,8 @@ function WhiteMapClass() {
 
 			if(global_this.livePollingPolygonControl) {
 				global_this.livePollingPolygonControl.deactivate();
-				ccpl_map.getLayersByName('Livepolling')[0].removeAllFeatures();
-				ccpl_map.removeLayer(ccpl_map.getLayersByName('Livepolling')[0]);
+				ccpl_map.getLayersByName('Polling')[0].removeAllFeatures();
+				ccpl_map.getLayersByName('Polling')[0].setVisibility(false);
 			}
 
 			if(!$("#sideInfoContainer").hasClass("hide")) {
@@ -433,25 +470,26 @@ function WhiteMapClass() {
 			var selected_polling_technology = $("#polling_tech option:selected").text();
 
 			for(var k=0;k<allSS.length;k++) {
-				if(polygon && allSS[k].attributes.ptLon && allSS[k].attributes.ptLat) {
-					if(displayBounds(polygon, allSS[k].attributes.ptLon, allSS[k].attributes.ptLat) === 'in') {
-						if($.trim(allSS[k].attributes.technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-							
-							if($.trim(allSS[k].attributes.technology.toLowerCase()) == "ptp" || $.trim(allSS[k].attributes.technology.toLowerCase()) == "p2p") {
-								if(allSS[k].attributes.device_name && (allSSIds.indexOf(allSS[k].attributes.device_name) == -1)) {
-									allSSIds.push(allSS[k].attributes.device_name);
-									polygonSelectedDevices.push(allSS[k]);
-								}
-							} else {
-								if(allSS[k].attributes.pointType == 'sub_station') {
+				if(filtered_devices_array.indexOf(allSS[k]) > -1 || filtered_Features.markers.indexOf(allSS[k]) > -1) {
+					if(polygon && allSS[k].attributes.ptLon && allSS[k].attributes.ptLat) {
+						if(displayBounds(polygon, allSS[k].attributes.ptLon, allSS[k].attributes.ptLat) === 'in') {
+							if($.trim(allSS[k].attributes.technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
+								
+								if($.trim(allSS[k].attributes.technology.toLowerCase()) == "ptp" || $.trim(allSS[k].attributes.technology.toLowerCase()) == "p2p") {
 									if(allSS[k].attributes.device_name && (allSSIds.indexOf(allSS[k].attributes.device_name) == -1)) {
 										allSSIds.push(allSS[k].attributes.device_name);
 										polygonSelectedDevices.push(allSS[k]);
 									}
+								} else {
+									if(allSS[k].attributes.pointType == 'sub_station') {
+										if(allSS[k].attributes.device_name && (allSSIds.indexOf(allSS[k].attributes.device_name) == -1)) {
+											allSSIds.push(allSS[k].attributes.device_name);
+											polygonSelectedDevices.push(allSS[k]);
+										}
+									}
 								}
 							}
 						}
-						
 					}
 				}
 			}
@@ -464,7 +502,7 @@ function WhiteMapClass() {
 				
 				if(polygon) {
 					/*Remove the current polygon from the map*/
-					ccpl_map.getLayersByName('Livepolling')[0].removeAllFeatures();
+					ccpl_map.getLayersByName('Polling')[0].removeAllFeatures();
 				}
 
 				/*Remove current polygon from map*/
@@ -483,7 +521,7 @@ function WhiteMapClass() {
 				
 				if(polygon) {
 					/*Remove the current polygon from the map*/
-					ccpl_map.getLayersByName('Livepolling')[0].removeAllFeatures();
+					ccpl_map.getLayersByName('Polling')[0].removeAllFeatures();
 				}
 
 				/*Remove current polygon from map*/
@@ -606,7 +644,7 @@ function WhiteMapClass() {
 						}
 						
 						if(result.success == 1) {
-
+							
 							$("#getDevicesPollingData").button("complete");
 
 
@@ -725,6 +763,7 @@ function WhiteMapClass() {
 									if(ss_marker) {
 										ss_marker.style.externalGraphic = newIcon;
 										ccpl_map.getLayersByName('Markers')[0].drawFeature(ss_marker);
+										ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 									} else if(sector_marker) {
 										sector_marker.attributes.pollingIcon = newIcon;
 										sector_marker.style.externalGraphic = newIcon;
@@ -851,8 +890,22 @@ function WhiteMapClass() {
 
 			for(var i=0;i<polled_devices_names.length;i++) {
 
-				var ss_marker = wm_obj['features'][polled_devices_names[i]],
-					sector_marker = wm_obj['devices']['sector_'+polled_devices_names[i]],
+				var marker_name = "",
+					sector_ip = "";
+
+				for(var x=0;x<polygonSelectedDevices.length;x++) {
+					if(polygonSelectedDevices[x].attributes.device_name === polled_devices_names[i]) {
+						marker_name = polygonSelectedDevices[x].attributes.name;
+						if(polygonSelectedDevices[x].attributes.pointType === 'sub_station') {
+							sector_ip = polygonSelectedDevices[x].attributes.sector_ip ? polygonSelectedDevices[x].attributes.sector_ip : "";
+						} else {
+							sector_ip = polygonSelectedDevices[x].attributes.sectorName ? polygonSelectedDevices[x].attributes.sectorName : "";
+						}
+					}
+				}
+
+				var ss_marker = wm_obj['features'][marker_name],
+					sector_marker = wm_obj['devices']['sector_'+sector_ip],
 					new_device_name = "";
 
 				if(polled_devices_names[i] && polled_devices_names[i].indexOf(".") != -1) {
@@ -870,10 +923,10 @@ function WhiteMapClass() {
 
 				if(ss_marker) {
 					ss_marker.style.externalGraphic = newIcon;
-
 				} else if(sector_marker) {
-					sector_Marker.style.externalGraphic = newIcon;
+					sector_marker.style.externalGraphic = newIcon;
 				}
+
 				$("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className = $("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className+' text-info';
 			}
 			ccpl_map.getLayersByName('Markers')[0].redraw();
@@ -900,8 +953,22 @@ function WhiteMapClass() {
 
 			for(var i=0;i<polled_devices_names.length;i++) {
 
-				var ss_marker = wm_obj['features'][polled_devices_names[i]],
-					sector_marker = wm_obj['devices']['sector_'+polled_devices_names[i]],
+				var marker_name = "",
+					sector_ip = "";
+
+				for(var x=0;x<polygonSelectedDevices.length;x++) {
+					if(polygonSelectedDevices[x].attributes.device_name === polled_devices_names[i]) {
+						marker_name = polygonSelectedDevices[x].attributes.name;
+						if(polygonSelectedDevices[x].attributes.pointType === 'sub_station') {
+							sector_ip = polygonSelectedDevices[x].attributes.sector_ip ? polygonSelectedDevices[x].attributes.sector_ip : "";
+						} else {
+							sector_ip = polygonSelectedDevices[x].attributes.sectorName ? polygonSelectedDevices[x].attributes.sectorName : "";
+						}
+					}
+				}
+
+				var ss_marker = wm_obj['features'][marker_name],
+					sector_marker = wm_obj['devices']['sector_'+sector_ip],
 					new_device_name = "";
 
 				if(polled_devices_names[i] && polled_devices_names[i].indexOf(".") != -1) {
@@ -921,10 +988,12 @@ function WhiteMapClass() {
 					ss_marker.style.externalGraphic = newIcon;
 					
 				} else if(sector_marker) {
-					sector_Marker.style.externalGraphic = newIcon;
+					sector_marker.style.externalGraphic = newIcon;
 				}
 				$("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className = $("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className+' text-info';
 			}
+			ccpl_map.getLayersByName('Markers')[0].redraw();
+			ccpl_map.getLayersByName("Devices")[0].redraw();
 
 			if((nav_click_counter+1) > total_polled_occurence) {
 				/*Disable next button*/
@@ -957,7 +1026,7 @@ function WhiteMapClass() {
 					var x= cktLinesBsObj[key];
 					if(x && x.length) {
 						for(var i=0; i< x.length; i++) {
-							// console.log(x[i].filteredLine);
+							
 							if(x[i].filteredLine) {
 								x[i].style.display = 'block';
 								linesFeaturesList.push(x[i]);
@@ -976,8 +1045,8 @@ function WhiteMapClass() {
 		/*
 		This function toggles all Station Markers size based on the Value selected in the dropdown.
 		 */
-		this.toggleIconSize = function(iconSize) {
-
+		this.updateMarkersSize = function(iconSize) {
+			global_this.unSpiderifyBsMarker();
 			var largeur= 32, hauteur= 37,largeur_bs = 32, hauteur_bs= 37, divideBy;
 			var anchorX, i, markerImage, markerImage2, icon;
 			if(iconSize=== 'small') {
@@ -1012,6 +1081,7 @@ function WhiteMapClass() {
 			//End of Loop through the sector markers
 
 			ccpl_map.getLayersByName("Devices")[0].redraw();
+			ccpl_map.getLayersByName("Devices")[0].removeAllFeatures();
 
 
 			// Loop through the Master Markers
@@ -1095,6 +1165,7 @@ function WhiteMapClass() {
 
 			bsDevicesObj = appliedFilterData.filtered_Devices;
 			
+
 			//remove lines from linesLayer and add filteredLine
 			ccpl_map.getLayersByName("Lines")[0].removeAllFeatures();
 			ccpl_map.getLayersByName("Lines")[0].addFeatures(appliedFilterData.line_Features);
@@ -1320,7 +1391,7 @@ function WhiteMapClass() {
 								poll_info 			: [],
 								sectorName: device.sector_configured_on,
 								device_name : device.sector_configured_on_device,
-								name: name,
+								name: device.sector_configured_on_device,
 								filter_data 	    : {"bs_name" : name, "sector_name" : device.sector_configured_on},
 								sector_lat  		: startEndObj["startLat"],
 								sector_lon  		: startEndObj["startLon"],
@@ -1339,9 +1410,16 @@ function WhiteMapClass() {
 								bsDevicesObj[name]= [];
 							}
 
+							if(!tempbsDeviceObj[name]) {
+								tempbsDeviceObj[name]= [];
+							}
+							
+							tempbsDeviceObj[name].push(deviceMarker);
 							bsDevicesObj[name].push(deviceMarker);
 
 							devicesMarkersArray.push(deviceMarker);
+
+							filtered_devices_array.push(deviceMarker);
 
 
 							if(sectorMarkerConfiguredOn.indexOf(device.sector_configured_on) == -1) {
@@ -1497,7 +1575,7 @@ function WhiteMapClass() {
 								filteredLine: true
 							}
 
-							// console.log(startEndObj);
+							
 							var line = global_this.plotLines_wmap(startEndObj.startLon,startEndObj.startLat, startEndObj.endLon,startEndObj.endLat, linkColor, lineAdditionalInfo);
 
 							filtered_Features.lines.push(line);
@@ -1627,7 +1705,7 @@ function WhiteMapClass() {
 		This function shows all Filtered Features for marker, line and sector layers.
 		 */
 		this.showAllFeatures = function() {
-
+			bsDevicesObj = tempbsDeviceObj;
 			ccpl_map.getLayersByName('Markers')[0].addFeatures(bs_ss_features_list);
 			ccpl_map.getLayersByName("Lines")[0].addFeatures(main_lines_sectors_features_wmaps.lines);
 			ccpl_map.getLayersByName("Sectors")[0].addFeatures(main_lines_sectors_features_wmaps.sectors);

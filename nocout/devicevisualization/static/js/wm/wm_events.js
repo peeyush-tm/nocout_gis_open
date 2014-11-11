@@ -24,7 +24,7 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
 
     trigger: function(e) {
     	whiteMapClass.unSpiderifyBsMarker();
-        // console.log(e);
+        
     }
 });
 
@@ -46,6 +46,9 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
 	//do condition doesnt run when map is panned
 	if(lastZoomLevel !== ccpl_map.getZoom()) {
+
+		this.unSpiderifyBsMarker();
+
 		if((lastZoomLevel < whiteMapSettings.zoomLevelAfterLineAppears && ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAfterLineAppears) || (lastZoomLevel >= whiteMapSettings.zoomLevelAfterLineAppears && ccpl_map.getZoom() < whiteMapSettings.zoomLevelAfterLineAppears)) {
 			isEventRepeated = false;
 		}
@@ -108,7 +111,6 @@ WhiteMapClass.prototype.layerFeatureClicked = function(e) {
 		$("#infoWindowContainer").find('ul.list-unstyled.list-inline').remove();
 		$("#infoWindowContainer").removeClass('hide');
 	}
-
 	if(feature) {
 		//if cluster is present
 		if(feature.cluster) {

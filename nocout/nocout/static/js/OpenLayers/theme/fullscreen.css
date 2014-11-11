@@ -11,6 +11,8 @@
     width: 20px;
     background-image: url(fullscreen.png);
     cursor: pointer;
+    margin-left: 65px;
+    margin-top: 20px;
 }
 
 .olControlFullScreenItemActive {
