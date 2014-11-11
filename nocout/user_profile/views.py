@@ -22,6 +22,7 @@ from nocout.utils import logged_in_user_organizations
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.generics import FormRequestMixin
 
 
 class UserList(PermissionsRequiredMixin, ListView):
@@ -150,7 +151,7 @@ class UserDetail(PermissionsRequiredMixin, DetailView):
         return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
 
 
-class UserCreate(PermissionsRequiredMixin, CreateView):
+class UserCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class Based View to Create a User.
     """
@@ -159,14 +160,6 @@ class UserCreate(PermissionsRequiredMixin, CreateView):
     form_class = UserForm
     success_url = reverse_lazy('user_list')
     required_permissions = ('user_profile.add_userprofile',)
-
-    def get_form_kwargs(self):
-        """
-        Updating Kwargs, required request object to validate the user logged in.
-        """
-        kwargs = super(UserCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request.user })
-        return kwargs
 
     def form_valid(self, form):
         """
@@ -183,7 +176,7 @@ class UserCreate(PermissionsRequiredMixin, CreateView):
         self.object.groups.add(project_group)
         return super(ModelFormMixin, self).form_valid(form)
 
-class UserUpdate(PermissionsRequiredMixin, UpdateView):
+class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class Based View to Update the user.
     """
@@ -196,14 +189,6 @@ class UserUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(UserUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request.user })
-        return kwargs
 
     def form_valid(self, form):
         """
@@ -243,7 +228,7 @@ class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
         return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
 
 
-class CurrentUserProfileUpdate(UpdateView):
+class CurrentUserProfileUpdate(FormRequestMixin, UpdateView):
     """
     Class Based view to update the current logged in user profile.
     """
@@ -251,14 +236,6 @@ class CurrentUserProfileUpdate(UpdateView):
     template_name = 'user_profile/user_myprofile.html'
     form_class = UserForm
     success_url = reverse_lazy('current_user_profile_update')
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(CurrentUserProfileUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request.user })
-        return kwargs
 
     def get_object(self, queryset=None):
         """

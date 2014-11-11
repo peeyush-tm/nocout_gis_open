@@ -47,6 +47,7 @@ from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory,
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
     bulk_upload_wimax_ss_inventory
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
 
@@ -342,7 +343,7 @@ class AntennaDetail(PermissionsRequiredMixin, DetailView):
     required_permissions = ('inventory.view_antenna',)
 
 
-class AntennaCreate(PermissionsRequiredMixin, CreateView):
+class AntennaCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new Antenna.
     """
@@ -352,14 +353,6 @@ class AntennaCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('antennas_list')
     required_permissions = ('inventory.add_antenna',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(AntennaCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -368,7 +361,7 @@ class AntennaCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(AntennaCreate.success_url)
 
 
-class AntennaUpdate(PermissionsRequiredMixin, UpdateView):
+class AntennaUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Antenna .
     """
@@ -380,14 +373,6 @@ class AntennaUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(AntennaUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
     def form_valid(self, form):
         """
@@ -522,7 +507,7 @@ class BaseStationDetail(PermissionsRequiredMixin, DetailView):
     required_permissions = ('inventory.view_basestation',)
 
 
-class BaseStationCreate(PermissionsRequiredMixin, CreateView):
+class BaseStationCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new Base Station.
     """
@@ -532,14 +517,6 @@ class BaseStationCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('base_stations_list')
     required_permissions = ('inventory.add_basestation',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(BaseStationCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -548,7 +525,7 @@ class BaseStationCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(BaseStationCreate.success_url)
 
 
-class BaseStationUpdate(PermissionsRequiredMixin, UpdateView):
+class BaseStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Base Station.
     """
@@ -560,14 +537,6 @@ class BaseStationUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(BaseStationUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
     def form_valid(self, form):
         """
@@ -714,7 +683,7 @@ class BackhaulDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'backhaul/backhaul_detail.html'
 
 
-class BackhaulCreate(PermissionsRequiredMixin, CreateView):
+class BackhaulCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new backhaul..
     """
@@ -724,14 +693,6 @@ class BackhaulCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('backhauls_list')
     required_permissions = ('inventory.add_backhaul',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(BackhaulCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -740,7 +701,7 @@ class BackhaulCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(BackhaulCreate.success_url)
 
 
-class BackhaulUpdate(PermissionsRequiredMixin, UpdateView):
+class BackhaulUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Backhaul.
     """
@@ -752,14 +713,6 @@ class BackhaulUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(BackhaulUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
     def form_valid(self, form):
         """
@@ -901,7 +854,7 @@ class SectorDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'sector/sector_detail.html'
 
 
-class SectorCreate(PermissionsRequiredMixin, CreateView):
+class SectorCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new Sector.
     """
@@ -911,14 +864,6 @@ class SectorCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('sectors_list')
     required_permissions = ('inventory.add_sector',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(SectorCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -927,7 +872,7 @@ class SectorCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(SectorCreate.success_url)
 
 
-class SectorUpdate(PermissionsRequiredMixin, UpdateView):
+class SectorUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Sector.
     """
@@ -939,14 +884,6 @@ class SectorUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(SectorUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
     def form_valid(self, form):
         """
@@ -1064,7 +1001,7 @@ class CustomerDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'customer/customer_detail.html'
 
 
-class CustomerCreate(PermissionsRequiredMixin, CreateView):
+class CustomerCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new customer.
     """
@@ -1074,14 +1011,6 @@ class CustomerCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('customers_list')
     required_permissions = ('inventory.add_customer',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(CustomerCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1090,7 +1019,7 @@ class CustomerCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(CustomerCreate.success_url)
 
 
-class CustomerUpdate(PermissionsRequiredMixin, UpdateView):
+class CustomerUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Customer.
     """
@@ -1102,14 +1031,6 @@ class CustomerUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(CustomerUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
     def form_valid(self, form):
         """
@@ -1252,7 +1173,7 @@ class SubStationDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'sub_station/sub_station_detail.html'
 
 
-class SubStationCreate(PermissionsRequiredMixin, CreateView):
+class SubStationCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new Sub Station.
     """
@@ -1262,14 +1183,6 @@ class SubStationCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('sub_stations_list')
     required_permissions = ('inventory.add_substation',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(SubStationCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1278,7 +1191,7 @@ class SubStationCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(SubStationCreate.success_url)
 
 
-class SubStationUpdate(PermissionsRequiredMixin, UpdateView):
+class SubStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update the Sub Station.
     """
@@ -1290,14 +1203,6 @@ class SubStationUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(SubStationUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
     def form_valid(self, form):
         """
@@ -1430,7 +1335,7 @@ class CircuitDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'circuit/circuit_detail.html'
 
 
-class CircuitCreate(PermissionsRequiredMixin, CreateView):
+class CircuitCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new Circuit.
     """
@@ -1441,14 +1346,6 @@ class CircuitCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('circuits_list')
     required_permissions = ('inventory.add_circuit',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(CircuitCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1457,7 +1354,7 @@ class CircuitCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(CircuitCreate.success_url)
 
 
-class CircuitUpdate(PermissionsRequiredMixin, UpdateView):
+class CircuitUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Cicuit.
     """
@@ -1469,14 +1366,6 @@ class CircuitUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(CircuitUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
     def form_valid(self, form):
         """
