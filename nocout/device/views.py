@@ -27,6 +27,7 @@ from django.contrib.staticfiles.templatetags.staticfiles import static
 from nocout.utils import logged_in_user_organizations
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.generics import FormRequestMixin
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -1429,7 +1430,7 @@ class DeviceDetail(PermissionsRequiredMixin, DetailView):
         return context
 
 
-class DeviceCreate(PermissionsRequiredMixin, CreateView):
+class DeviceCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Render device create view
     """
@@ -1439,19 +1440,10 @@ class DeviceCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('device_list')
     required_permissions = ('device.add_device',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(DeviceCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
     def form_valid(self, form):
         """
         If the form is valid, redirect to the supplied URL.
         """
-        print "Form Clean Data ---------------------------------------------", form.cleaned_data
         # post_fields: it contains form post data
         # for e.g. <QueryDict: {u'tower_height': [u''], u'qos_bw': [u'fevefvef']}>
         post_fields = self.request.POST
@@ -1537,7 +1529,7 @@ class DeviceCreate(PermissionsRequiredMixin, CreateView):
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 
-class DeviceUpdate(PermissionsRequiredMixin, UpdateView):
+class DeviceUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Render device update view
     """
@@ -1549,14 +1541,6 @@ class DeviceUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Device.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(DeviceUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
     def form_valid(self, form):
         """
