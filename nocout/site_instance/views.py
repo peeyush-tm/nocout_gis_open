@@ -11,7 +11,7 @@ from nocout.utils.util import DictDiffer
 import json
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 
 class SiteInstanceList(PermissionsRequiredMixin, ListView):
@@ -40,7 +40,7 @@ class SiteInstanceList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View to render Site Instance Data table.
     """
@@ -48,15 +48,6 @@ class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, B
     required_permissions = ('site_instance.view_siteinstance',)
     columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
     order_columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
-    search_columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return SiteInstance.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         """

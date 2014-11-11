@@ -12,7 +12,7 @@ from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 
 #************************************** Machine *****************************************
@@ -43,7 +43,7 @@ class MachineList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class MachineListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class MachineListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Machine Data table.
     """
@@ -51,15 +51,6 @@ class MachineListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDa
     required_permissions = ('machine.view_machine',)
     columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
     order_columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
-
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Machine.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         """

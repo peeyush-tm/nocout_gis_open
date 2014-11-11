@@ -1,4 +1,4 @@
-
+from organization.models import Organization
 
 
 def logged_in_user_organizations(self_object):
@@ -8,12 +8,14 @@ def logged_in_user_organizations(self_object):
     :params self_object:
     :return organization_list:
     """
-    logged_in_user= self_object.request.user.userprofile
+    if self_object.request.user.is_superuser:
+        return Organization.objects.all()
 
-    if logged_in_user.role.values_list( 'role_name', flat=True )[0] =='admin':
-        organizations= logged_in_user.organization.get_descendants( include_self=True )
+    logged_in_user = self_object.request.user.userprofile
+
+    if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
+        organizations = logged_in_user.organization.get_descendants(include_self=True)
     else:
-        organizations= [ logged_in_user.organization ]
+        organizations = Organization.objects.filter(id=logged_in_user.organization.id)
 
     return organizations
-

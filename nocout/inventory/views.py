@@ -48,7 +48,7 @@ from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory,
     bulk_upload_wimax_ss_inventory
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
-from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin
+from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
 
 logger = logging.getLogger(__name__)
 
@@ -1840,7 +1840,7 @@ class IconSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View to render IconSettings Data table.
     """
@@ -1848,14 +1848,6 @@ class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, B
     required_permissions = ('inventory.view_iconsettings',)
     columns = ['alias', 'upload_image']
     order_columns = ['alias', 'upload_image']
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return IconSettings.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -1976,6 +1968,7 @@ class LivePollingSettingsList(PermissionsRequiredMixin, ListView):
 
 
 class LivePollingSettingsListingTable(PermissionsRequiredMixin,
+        ValuesQuerySetMixin,
         DatatableSearchMixin,
         BaseDatatableView
     ):
@@ -1986,13 +1979,6 @@ class LivePollingSettingsListingTable(PermissionsRequiredMixin,
     required_permissions = ('inventory.view_livepollingsettings',)
     columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
     order_columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return LivePollingSettings.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -2104,7 +2090,7 @@ class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View to render ThresholdConfiguration Data table.
     """
@@ -2112,16 +2098,10 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSear
     required_permissions = ('inventory.view_thresholdconfiguration',)
     columns = ['alias', 'live_polling_template__alias']
     order_columns = ['alias', 'live_polling_template__alias']
-    search_columns = ['alias', 'live_polling_template__alias']
-
-    def get_initial_queryset(self, technology="no"):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        # return ThresholdConfiguration.objects.values(*self.columns + ['id'])
-        return ThresholdConfiguration.objects.filter(live_polling_template__id__in=LivePollingSettings.objects.filter(technology__name=technology).values('id')).values(*self.columns + ['id'])
+    tab_search = {
+                   "tab_kwarg": 'technology',
+                   "tab_attr": "live_polling_template__technology__name",
+                 }
 
     def prepare_results(self, qs):
         """
@@ -2135,40 +2115,6 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSear
             dct.update(actions='<a href="/threshold_configuration/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/threshold_configuration/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return json_data
-
-    def get_context_data(self, technology):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        # self.initialize(*args, **kwargs)
-        self.initialize()
-
-        qs = self.get_initial_queryset(technology)
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
-
 
 
 class ThresholdConfigurationDetail(PermissionsRequiredMixin, DetailView):
@@ -2275,7 +2221,7 @@ class ThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class ThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -2285,21 +2231,19 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixi
     order_columns = ['alias', 'threshold_template']
     search_columns = ['alias', 'icon_settings']
 
-    def get_initial_queryset(self, technology="P2P"):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+    tab_search = {
+        "tab_kwarg": 'technology',
+        "tab_attr": "threshold_template__live_polling_template__technology__name",
+    }
 
+    def get_initial_queryset(self):
         is_global = 1
         if self.request.GET.get('admin'):
             is_global = 0
 
-        return ThematicSettings.objects.filter(
-        threshold_template__in=ThresholdConfiguration.objects.filter(
-            live_polling_template__id__in=LivePollingSettings.objects.filter(
-                technology__name=technology).values('id')).values('id')).filter(is_global=is_global).values(*self.columns + ['id'])
+        qs = super(ThematicSettingsListingTable, self).get_initial_queryset()
+
+        return qs.filter(is_global=is_global)
 
     def prepare_results(self, qs):
         """
@@ -2343,41 +2287,6 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixi
                 actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
-
-    def get_context_data(self, technology):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-
-        # self.initialize(*args, **kwargs)
-        self.initialize()
-
-        qs = self.get_initial_queryset(technology)
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
-
 
 
 class ThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
@@ -2853,7 +2762,7 @@ class GISInventoryBulkImportList(ListView):
         return context
 
 
-class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView):
+class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 
@@ -2861,15 +2770,7 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView
     model = GISInventoryBulkImport
     columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
     order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return GISInventoryBulkImport.objects.values(*self.columns+['id'])
+    search_columns = ['sheet_name', 'technology', 'description', 'uploaded_by']
 
     def prepare_results(self, qs):
         """
@@ -2878,9 +2779,9 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             try:
                 excel_green = static("img/ms-office-icons/excel_2013_green.png")
                 excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
@@ -2988,7 +2889,7 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView
                         dct.update(bulk_upload_actions='')
             except Exception as e:
                 logger.info()
-        return qs
+        return json_data
 
 
 class GISInventoryBulkImportDelete(DeleteView):
@@ -3080,27 +2981,26 @@ class PingThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class PingThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class PingThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
     model = PingThematicSettings
     columns = ['alias', 'service', 'data_source', 'icon_settings']
     order_columns = ['alias', 'service', 'data_source']
+    tab_search = {
+        "tab_kwarg": 'technology',
+        "tab_attr": "technology__name",
+    }
 
-
-    def get_initial_queryset(self, technology="P2P"):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
+    def get_initial_queryset(self):
         is_global = 1
         if self.request.GET.get('admin'):
             is_global = 0
 
-        return PingThematicSettings.objects.filter(technology=DeviceTechnology.objects.filter(name=technology)).filter(is_global=is_global).values(*self.columns + ['id'])
+        qs = super(PingThematicSettingsListingTable, self).get_initial_queryset()
+
+        return qs.filter(is_global=is_global)
 
     def prepare_results(self, qs):
         """
@@ -3291,9 +3191,3 @@ class Ping_Update_User_Thematic_Setting(View):
                 id=int(thematic_setting_id)).name
 
         return HttpResponse(json.dumps(result))
-
-
-
-
-
-

@@ -1439,6 +1439,14 @@ class DeviceCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('device_list')
     required_permissions = ('device.add_device',)
 
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        kwargs = super(DeviceCreate, self).get_form_kwargs()
+        kwargs.update({'request':self.request })
+        return kwargs
+
     def form_valid(self, form):
         """
         If the form is valid, redirect to the supplied URL.
