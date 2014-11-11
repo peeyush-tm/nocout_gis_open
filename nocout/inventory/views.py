@@ -1417,12 +1417,6 @@ class CircuitL2ReportCreate(CreateView):
     model = CircuitL2Report
     form_class = CircuitL2ReportForm
 
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CircuitL2ReportCreate, self).dispatch(*args, **kwargs)
-
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -2493,18 +2487,12 @@ class GISInventoryBulkImportUpdate(UpdateView):
 
 
 #**************************************** Ping Thematic Settings *********************************************
-class PingThematicSettingsList(PermissionsRequiredMixin, ListView):
+class PingThematicSettingsList(ListView):
     """
     Class Based View to render PingThematicSettings List Page.
     """
     model = PingThematicSettings
     template_name = 'ping_thematic_settings/ping_thematic_settings_list.html'
-
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(PingThematicSettingsList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -2535,7 +2523,7 @@ class PingThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class PingThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -2622,7 +2610,7 @@ class PingThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetM
         return json_data
 
 
-class PingThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
+class PingThematicSettingsDetail(DetailView):
     """
     Class based view to render the Thematic Settings detail.
     """
