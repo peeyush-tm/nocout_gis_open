@@ -12,7 +12,6 @@ config_mod = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.
 configs = config_mod.parse_config_obj(historical_conf=True)
 desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
 desired_config = configs.get(desired_site)
-print desired_config
 
 mongo_configs = {
 		'host': desired_config.get('host'),
@@ -37,24 +36,22 @@ def main():
         # Grouping based on hosts names
         group_hosts = groupby(docs, key=itemgetter('device_name'))
 	for host, services in group_hosts:
-		print "$$$$$$$$$$$$$$$$$$$$$$$$$"
-		print host
+		#print "$$$$$$$$$$$$$$$$$$$$$$$$$"
+		#print host
 		# Sort based on services
 		host_services = sorted(list(services), key=itemgetter('service_name'))
 		# Grouping based on service types, for a particular host
 		group_services = groupby(host_services, key=itemgetter('service_name'))
                 for serv_name, serv_data in group_services:
-			print serv_name
+			#print serv_name
 			# Docs for a particular service, to be aggregated
 			service_doc_list = list(serv_data)
-			pprint(service_doc_list)
+			#pprint(service_doc_list)
 			service_doc_list = sorted(service_doc_list, key=itemgetter('data_source'))
 			service_data_source_grouping = groupby(service_doc_list, key=itemgetter('data_source'))
 			for data_source, values in service_data_source_grouping:
-				print data_source
-				print 'DS Values'
+				#print data_source
 				data_source_values = list(values)
-				print pprint(data_source_values)
 				if data_source_values:
 				        make_interface_perf_daily_data(data_source_values)
 
@@ -67,7 +64,6 @@ def read_data(start_time, end_time, **configs):
 			port=configs.get('configs').get('port'),
 			db_name='nocout'
 			)
-	print start_time, end_time
 	if db:
 	    cur = db.status_perf.find(
 			    {'sys_timestamp': {'$gt': start_time, '$lt': end_time}})
@@ -106,8 +102,6 @@ def make_interface_perf_daily_data(docs):
 	if existing_doc:
 		value_frequencies.append(existing_doc[0].get('max'))
 		value_frequencies.append(existing_doc[0].get('min'))
-	print 'value_frequencies'
-	print value_frequencies
 	# Count the highest and lowest frequency values
 	# Use defaultdict in place of Counter [for python < 2.7]
 	occur = defaultdict(int)
