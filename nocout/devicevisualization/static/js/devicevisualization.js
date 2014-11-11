@@ -461,7 +461,7 @@ $("#polling_tech").change(function(e) {
 
 /*When "Tabular View" button for polling widget clicked*/
 $("#polling_tabular_view").click(function(e) {
-    if(window.location.pathname.indexOf("white_background")) {
+    if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.show_polling_datatable_wmaps();
     } else {
         networkMapInstance.show_polling_datatable();
@@ -1009,7 +1009,7 @@ $("#show_hide_label").click(function(e) {
  * This event trigger when previous navigation button on polling widget clicked
  */
 $("#navigation_container button#previous_polling_btn").click(function(e) {
-    if(window.location.pathname.indexOf("white_background")) {
+    if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.show_previous_polled_icon_wmaps();
     } else {
         networkMapInstance.show_previous_polled_icon();
@@ -1020,7 +1020,7 @@ $("#navigation_container button#previous_polling_btn").click(function(e) {
  * This event trigger when next navigation button on polling widget clicked
  */
 $("#navigation_container button#next_polling_btn").click(function(e) {
-   if(window.location.pathname.indexOf("white_background")) {
+   if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.show_next_polled_icon_wmaps();
     } else {
         networkMapInstance.show_next_polled_icon();
@@ -1054,6 +1054,11 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
  * This event trigger when export data button is clicked
  */
 $("#export_data_gmap").click(function(e) {
+
+    if($("#export_data_gmap").hasClass('btn-info')) {
+        $("#export_data_gmap").removeClass('btn-info');
+        $("#export_data_gmap").addClass('btn-warning');
+    }
 
     //enable the flag
     isExportDataActive = 1;
