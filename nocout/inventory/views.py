@@ -239,6 +239,7 @@ def inventory_details_wrt_organization(request):
 
 def list_device(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -253,6 +254,7 @@ def list_device(request):
 
 def select_device(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([Device.objects.get(id=pk).device_alias]))
 
@@ -372,6 +374,7 @@ class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
 
 def list_antenna(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -386,6 +389,7 @@ def list_antenna(request):
 
 def select_antenna(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([Antenna.objects.get(id=pk).alias]))
 
@@ -513,6 +517,7 @@ class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView
 
 def list_base_station(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -527,6 +532,7 @@ def list_base_station(request):
 
 def select_base_station(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([BaseStation.objects.get(id=pk).alias]))
 
@@ -666,6 +672,7 @@ class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
 
 def list_backhaul(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -680,6 +687,7 @@ def list_backhaul(request):
 
 def select_backhaul(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([Backhaul.objects.get(id=pk).alias]))
 
@@ -813,6 +821,7 @@ class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
 
 def list_sector(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -827,6 +836,7 @@ def list_sector(request):
 
 def select_sector(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([Sector.objects.get(id=pk).alias]))
 
@@ -937,6 +947,7 @@ class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
 
 def list_customer(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -951,6 +962,7 @@ def list_customer(request):
 
 def select_customer(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([Customer.objects.get(id=pk).alias]))
 
@@ -1087,6 +1099,7 @@ class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView)
 
 def list_sub_station(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -1101,6 +1114,7 @@ def list_sub_station(request):
 
 def select_sub_station(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([SubStation.objects.get(id=pk).alias]))
 
