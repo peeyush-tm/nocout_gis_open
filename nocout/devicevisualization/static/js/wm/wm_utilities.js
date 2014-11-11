@@ -526,7 +526,9 @@ function showWmapFilteredData(dataArray) {
         filtered_devices_data = [],
         filtered_line_data = [];
 
-    var bsDeviceObj = {};
+    var bsDeviceObj_Filtered = {};
+
+    filtered_devices_array= [];
 
     for(var i=0;i<dataArray.length;i++) {        
         var sectorsArray = dataArray[i].data.param.sector;
@@ -562,13 +564,14 @@ function showWmapFilteredData(dataArray) {
                 }
             }
 
-            if(!bsDeviceObj[bsName]) {
-                bsDeviceObj[bsName] = [];
+            if(!bsDeviceObj_Filtered[bsName]) {
+                bsDeviceObj_Filtered[bsName] = [];
             }
 
             if(sector_device) {
                 filtered_devices_data.push(sector_device);
-                bsDeviceObj[bsName].push(sector_device);
+                bsDeviceObj_Filtered[bsName].push(sector_device);
+                filtered_devices_array.push(sector_device);
             }
 
             if(sector_polygon) {
@@ -576,13 +579,12 @@ function showWmapFilteredData(dataArray) {
             }
         }
     }
-    whiteMapClass.applyAdvanceFilter({data_for_filters: dataArray, filtered_Devices: bsDeviceObj, filtered_Features: filtered_bs_ss_data, line_Features: filtered_line_data, sector_Features: filtered_sector_data});
+    whiteMapClass.applyAdvanceFilter({data_for_filters: dataArray, filtered_Devices: bsDeviceObj_Filtered, filtered_Features: filtered_bs_ss_data, line_Features: filtered_line_data, sector_Features: filtered_sector_data});
 }
 
 OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.KML, {
     CLASS_NAME: "OpenLayers.Format.KML",
     parseStyle: function(node) {
-        console.log(node);
         var baseURI = node.baseURI.split("?")[0]; // remove query, if any
         if (baseURI.lastIndexOf("/") != baseURI.length - 1) {
             baseURI = baseURI.substr(0, baseURI.lastIndexOf("/") + 1);
@@ -643,4 +645,51 @@ function getIconSize() {
             'graphicYOffset': bs_newGraphicYOffset  
         }
     }
+}
+
+function getDistance() {
+    var mapZoom = ccpl_map.getZoom();
+    var distance = "";
+    switch(mapZoom) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+            
+            break;
+        case 9:
+            break;
+        case 10:
+            break;
+        case 11:
+            break;
+        case 12:
+            break;
+        case 13;
+            break;
+        case 14:
+            break;
+        case 15:
+            break;
+        default:
+
+
+    }
+    if(ccpl_map.getZoom() < 9) {
+        xyDirection = getAtXYDirection(currentAngle, 7, feature.attributes.ptLon, feature.attributes.ptLat);
+    } else {
+        if(ccpl_map.getZoom() >= 12) {
+            if(ccpl_map.getZoom() >= 14) {
+                xyDirection = getAtXYDirection(currentAngle, 0.3, feature.attributes.ptLon, feature.attributes.ptLat);
+            } else {
+                xyDirection = getAtXYDirection(currentAngle, 1, feature.attributes.ptLon, feature.attributes.ptLat);        
+            }
+        } else {
+            xyDirection = getAtXYDirection(currentAngle, 3, feature.attributes.ptLon, feature.attributes.ptLat);    
+        }
+    }   
 }

@@ -228,6 +228,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//Create a OpenLayer Strategy Cluster
 		strategy= new OpenLayers.Strategy.Cluster({distance: clustererSettings.clustererDistance});
 
+
 		//Create a Vector Layer for Markers with styleMap and strategy
 		layers.markersLayer = new OpenLayers.Layer.Vector("Markers", {styleMap  : styleMap, strategies: [strategy]});
 
@@ -241,7 +242,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 				eventListeners: {
 					//on feature click
 					featurehighlighted: function(feature) {
-						console.log(feature);
 						that.layerFeatureClicked(feature);
 						selectCtrl.unselectAll();
 						return false;
@@ -257,7 +257,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		selectCtrl.activate();
 
 		//vector Layer for Live Poll Polygon, before Adding feature, remove any previous feature created.
-		layers.livePollFeatureLayer= new OpenLayers.Layer.Vector("Livepolling", {
+		layers.livePollFeatureLayer= new OpenLayers.Layer.Vector("Polling", {
 			eventListeners: {
 				"beforefeatureadded": function() {
 					if(this.features.length) {
@@ -266,6 +266,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 				}
 			}
 		});
+
+		ccpl_map.addLayer(layers.livePollFeatureLayer);
 
 		//Live Poll Polygon Control
 		var polygonControl = new OpenLayers.Control.DrawFeature(layers.livePollFeatureLayer, OpenLayers.Handler.Polygon, {
