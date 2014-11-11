@@ -90,10 +90,14 @@ class UserListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixi
             datatable_headers= self.request.GET.get('datatable_headers','').replace('false',"\"False\"")
 
             for dct in qs:
-                dct.update( actions='''<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                if dct['id'] == self.request.user.id:
+                    actions = '<a href="/user/myprofile/"><i class="fa fa-pencil text-dark"></i></a>'
+                else:
+                    actions = '''<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                             <a href="#UserListing" onclick='Dajaxice.user_profile.user_soft_delete_form( get_soft_delete_form,\
                             {{ \"value\": {0} , \"datatable_headers\": {1} }})'><i class="fa fa-trash-o text-danger">\
-                            </i></a>'''.format(dct['id'], datatable_headers),
+                            </i></a>'''.format(dct['id'], datatable_headers)
+                dct.update( actions=actions,
                             last_login=dct['last_login'].strftime("%Y-%m-%d %H:%M:%S")
                           )
         return qs
@@ -188,20 +192,25 @@ class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     required_permissions = ('user_profile.change_userprofile',)
 
     def get_queryset(self):
-        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
+        queryset = super(UserUpdate, self).get_queryset()
+        queryset = queryset.filter(organization__in=logged_in_user_organizations(self))
+        queryset = queryset.exclude(id=self.request.user.id)
+        return queryset
 
     def form_valid(self, form):
         """
         To update the form before submitting and log the user activity.
         """
-        self.object= form.save(commit=False)
+        self.object = form.save(commit=False)
         if form.cleaned_data["password2"]:
             self.object.set_password(form.cleaned_data["password2"])
-        role= form.cleaned_data['role'][0]
-        project_group_name= project_group_role_dict_mapper[role.role_name]
-        project_group= Group.objects.get( name = project_group_name)
+
+        role = form.cleaned_data['role'][0]
+        project_group_name = project_group_role_dict_mapper[role.role_name]
+        project_group = Group.objects.get(name=project_group_name)
         UserProfile.groups.through.objects.filter(user_id=self.object.id).delete()
         self.object.groups.add(project_group)
+
         self.object.save()
         form.save_m2m()
 
