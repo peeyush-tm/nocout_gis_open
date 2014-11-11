@@ -324,15 +324,15 @@ def get_threshold(perf_data):
 	if param.partition('=')[2]:
         	if ';' in param.split("=")[1]:
             		threshold_values[param.split("=")[0]] = {
-                	"war": re.sub('[ms]', '', param.split("=")[1].split(";")[1]),
-                	"cric": re.sub('[ms]', '', param.split("=")[1].split(";")[2]),
-                	"cur": re.sub('[ms]', '', param.split("=")[1].split(";")[0])
+                	"war": re.sub('ms', '', param.split("=")[1].split(";")[1]),
+                	"cric": re.sub('ms', '', param.split("=")[1].split(";")[2]),
+                	"cur": re.sub('ms', '', param.split("=")[1].split(";")[0])
             		}
         	else:
             		threshold_values[param.split("=")[0]] = {
                 	"war": None,
                 	"cric": None,
-                	"cur": re.sub('[ms]', '', param.split("=")[1].strip("\n"))
+                	"cur": re.sub('ms', '', param.split("=")[1].strip("\n"))
             		}
 	else:
 		threshold_values[param.split("=")[0]] = {

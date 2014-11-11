@@ -37,27 +37,7 @@ function WhiteMapClass() {
 	/*
 	 *
 	 * Public Variables
-	*/
-		//vector Layer for Sector
-		this.sectorsLayer = "";
-
-		//vector Layer for Lines
-		this.linesLayer = "";
-		
-		//vector Layer for Markers
-		this.markersLayer = "";
-
-		//CLuster Strategy for Markers Layer
-		this.markersLayerStrategy = "";
-
-		//vector Layer for Marker Devices
-		this.markerDevicesLayer = "";
-
-		//vector Layer for Live Poll Features
-		this.livePollFeatureLayer = "";
-
-		//vector Layer for Search Markers
-		this.searchMarkerLayer = "";
+	*/		
 
 		//Live Poll Polygon on off control
 		this.livePollingPolygonControl = "";
@@ -104,59 +84,67 @@ function WhiteMapClass() {
 		this.toStartPerformance = false;
 		this.controls = "";
 
-	
+
+		/*
+		Marker Spidifier For BS
+		 */
 
 		var markerSpiderfied= "";
 		this.unSpiderifyBsMarker= function() {
 			if(markerSpiderfied) {
-				markerSpiderfied.attributes.isMarkerSpiderfied = false;
-				global_this.markerDevicesLayer.removeAllFeatures();
+				ccpl_map.getLayersByName("Devices")[0].removeAllFeatures();
 				markerSpiderfied= "";
 			}
+			return true;
 		}
 
-		function spiderifyMarker(feature, otherfeatures) {
-			global_this.unSpiderifyBsMarker();
-			if(feature && otherfeatures && otherfeatures.length) {
-				var totalLen = 1+ otherfeatures.length;
-				var totalAngle = 360;
-				var angleToIncrase = totalAngle/totalLen;
+		this.spiderifyMarker = function(feature) {
+			if(markerSpiderfied) {
+				if(markerSpiderfied === feature) {
+					return true;
+				}
+				global_this.unSpiderifyBsMarker();
+
+			}
+			var bsData = wm_obj.data[feature.attributes.bs_name];
+			var bsSectorLength = bsData.data.param.sector.length;
+			if(bsSectorLength) {
+				console.log(bsSectorLength);
 				var currentAngle = 0;
-				var zoomLevel = ccpl_map.getZoom();	
-				for(var i=0; i< otherfeatures.length; i++) {
-					if(isPollingActive) {
-						otherfeatures[i].style.externalGraphic = otherfeatures[i].attributes.pollingIcon;
+				for(var i=0; i< bsSectorLength; i++) {
+					var sector = bsData.data.param.sector[i];
+					var sectorMarker = wm_obj['devices']['sector_'+sector.sector_configured_on];
+					var xyDirection= "";
+					if(ccpl_map.getZoom() < 9) {
+						xyDirection = getAtXYDirection(currentAngle, 7, feature.attributes.ptLon, feature.attributes.ptLat);
 					} else {
-						otherfeatures[i].style.externalGraphic = otherfeatures[i].attributes.clusterIcon;						
-					}
-					if(zoomLevel> 8) {
-						if(zoomLevel> 11) {
-							var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
-							var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
-							
+						if(ccpl_map.getZoom() >= 12) {
+							if(ccpl_map.getZoom() >= 14) {
+								xyDirection = getAtXYDirection(currentAngle, 0.7, feature.attributes.ptLon, feature.attributes.ptLat);		
+							} else {
+								xyDirection = getAtXYDirection(currentAngle, 2, feature.attributes.ptLon, feature.attributes.ptLat);		
+							}
 						} else {
-							var xy = getAtXYDirection(currentAngle, 1, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
-							var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
+							xyDirection = getAtXYDirection(currentAngle, 3, feature.attributes.ptLon, feature.attributes.ptLat);	
 						}
 						
-					} else {
-						var xy = getAtXYDirection(currentAngle, 3, otherfeatures[i].attributes.ptLon, otherfeatures[i].attributes.ptLat);
-						var newLatLong = new OpenLayers.LonLat(xy.lon, xy.lat);
-					}
+					}					
+
+					var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat);
+										
 					var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
-					var end_point = new OpenLayers.Geometry.Point(xy.lon,xy.lat);
+					var end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
 
-					// var vector = new OpenLayers.Layer.Vector();
-					global_this.markerDevicesLayer.addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
-					global_this.markerDevicesLayer.addFeatures(otherfeatures[i]);
-					otherfeatures[i].move(newLatLong);
-					currentAngle+= angleToIncrase;
+					ccpl_map.getLayersByName("Devices")[0].addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
+					ccpl_map.getLayersByName("Devices")[0].addFeatures([sectorMarker]);
+					sectorMarker.move(finalLatLong);
+					sectorMarker.style.externalGraphic = sectorMarker.attributes.pollingIcon ? sectorMarker.attributes.pollingIcon : sectorMarker.attributes.clusterIcon;
+					markerSpiderfied = feature;
+					currentAngle= currentAngle+60;
 				}
-
-				markerSpiderfied = feature;
-				global_this.markerDevicesLayer.redraw();
-				feature.attributes.isMarkerSpiderfied = true;
+				ccpl_map.getLayersByName("Devices")[0].redraw();
 			}
+			return false;
 		}
 
 		this.refreshLineLayers = function() {
@@ -167,156 +155,7 @@ function WhiteMapClass() {
 				lineLayers.display(false);
 			}
 		}
-	/**
-	*
-	* Map Events Section
-	*/
 
-		/**
-		 * This function is triggered after Openlayer map has finished is Zoomed, moved or paned.
-		 * @return {[type]} [description]
-		 */
-		var lastZoomValue = 1;
-		var lastIconSize = "medium";
-		this.mapChangedEvent = function() {
-
-			//check if lines are to be toggled and recluster strategy based on zoom level
-			if(ccpl_map.getZoom() > whiteMapSettings.zoomLevelAfterLineAppears) {
-				if(lastZoomValue <= whiteMapSettings.zoomLevelAfterLineAppears) {
-					$("#showConnLines").prop('checked', true);
-					global_this.markersLayerStrategy.distance = 40;
-					global_this.markersLayerStrategy.threshold = 10;
-					setTimeout(function(){
-						// global_this.showLinesInBounds();
-						// global_this.showSubStaionsInBounds();
-						// global_this.showBaseStaionsInBounds();
-						// global_this.showSectorDevicesInBounds();
-						// global_this.showSectorPolygonInBounds();
-						global_this.refreshLineLayers();
-						global_this.markersLayerStrategy.recluster();
-					},350);
-				}
-			} else {
-				$("#showConnLines").prop('checked', false);
-				global_this.markersLayerStrategy.distance = 70;
-				global_this.markersLayerStrategy.threshold = "";
-				global_this.refreshLineLayers();
-				global_this.markersLayerStrategy.recluster();
-			}
-
-			if(lastZoomValue !== ccpl_map.getZoom()) {
-				global_this.unSpiderifyBsMarker();
-			}
-
-			lastZoomValue= ccpl_map.getZoom();
-
-			//check for need to change icons
-			if($("#icon_Size_Select_In_Tools").val() !== lastIconSize) {
-				lastIconSize = $("#icon_Size_Select_In_Tools").val();
-				global_this.updateIconSize();
-			}
-
-			//gis performce calling
-			setTimeout(function() {
-				var bs_list = getMarkerInCurrentBound();
-				if(bs_list.length > 0 && isCallCompleted == 1) {
-					if(recallPerf != "") {
-						clearTimeout(recallPerf);
-						recallPerf = "";
-					}
-					// gisPerformanceClass.start(bs_list);
-				}
-			},1000);
-		}
-
-		/*
-		This event is Triggered when Click on Map is done.
-		@param e {Event Object} Mouse event
-		Here, we closeInfoWindow. If infoWindow was present, just close window. Else, if no window was there, unSpiderify Markers too.
-		 */
-		this.mapClickEvent = function(e) {
-			// console.log(e);
-			// this.unSpiderifyBsMarker();
-		}
-
-		var oldFeature = "";
-		this.removePopupWindow = function() {
-			if(oldFeature) {
-				ccpl_map.removePopup(oldFeature.popup);
-				oldFeature.popup.destroy();
-				oldFeature.popup = null;
-			}
-		}
-
-		this.onFeatureSelect = function(e) {
-			var infoWindowContent;
-			// console.log(e.feature.attributes);
-			if(e.feature.attributes && e.feature.attributes.pointType === "sector_Marker") {
-				infoWindowContent = gmap_self.makeWindowContent(e.feature.attributes);
-			} else {
-				infoWindowContent = gmap_self.makeWindowContent(e.feature);
-			}
-
-			$("#infoWindowContainer").html(infoWindowContent);
-			$("#infoWindowContainer").find('ul.list-unstyled.list-inline').remove();
-			$("#infoWindowContainer").removeClass('hide');
-			// var feature = e.feature;
-			// oldFeature= feature;
-			// var popup = new OpenLayers.Popup.FramedCloud("popup", feature.geometry.getBounds().getCenterLonLat(), null, infoWindowContent, null, true);
-			// popup.autoSize= true;
-			// popup.maxSize= new OpenLayers.Size(500, 350);
-			// feature.popup = popup;
-			// ccpl_map.addPopup(popup);
-			// /*Update window content to show less items*/
-			// gmap_self.show_hide_info();
-		}
-		this.markerClicked= function(event) {
-			var feature = event.feature;
-			if(feature.cluster && feature.cluster.length) {
-				var f = event.feature;
-				if (f.cluster.length >= 2){
-					//Click on Cluster
-					clusterpoints = [];
-					for(var i = 0; i<f.cluster.length; i++){
-						clusterpoints.push(f.cluster[i].geometry);
-					}
-					var linestring = new OpenLayers.Geometry.LineString(clusterpoints);
-					ccpl_map.zoomToExtent(linestring.getBounds());
-				} else {
-					var infoWindowContent = gmap_self.makeWindowContent(event.feature.cluster[0].attributes);
-					$("#infoWindowContainer").html(infoWindowContent);
-					$("#infoWindowContainer").find('ul.list-unstyled.list-inline').remove();
-					$("#infoWindowContainer").removeClass('hide');
-				}
-			} else {
-				var f = event.feature;
-				if(f.attributes.type=== "base_station" && f.attributes.isMarkerSpiderfied === false && bsDevicesObj[f.attributes.name]) {
-					spiderifyMarker(f, bsDevicesObj[f.attributes.name]);
-				} else {
-
-					var infoWindowContent = gmap_self.makeWindowContent(f.attributes);
-					$("#infoWindowContainer").html(infoWindowContent);
-					$("#infoWindowContainer").find('ul.list-unstyled.list-inline').remove();
-					$("#infoWindowContainer").removeClass('hide');				
-				}
-			}
-		}
-		/*
-		This function is triggered on click of Bs Marker
-		 */
-		this.bsMarkerClick = function(e, featureMarker) {
-			var marker = featureMarker.cluster[0].attributes;
-			if(marker.isSpiderfied) {
-				global_this.spiderfyBsMarker(marker);
-			} else {
-				global_this.openInfoWindow(e, marker, wm_obj.data[marker.name]);
-			}
-		}
-	/**
-	 *
-	 * End of Map Events Section
-	 */
-	
 
 	/**
 	 *
@@ -335,6 +174,14 @@ function WhiteMapClass() {
 				}
 			}
 			return bsMarkersInBound;
+		}
+
+
+		/**
+		 * This function show Features[Markers, Lines, Sector, Devices] in currentBounds
+		 */
+		this.showFeatuesInCurrentBounds = function() {
+			console.log('hi');
 		}
 
 		function updateBsMarker() {}
@@ -375,16 +222,16 @@ function WhiteMapClass() {
 					
 				}
 			}
-			global_this.markersLayer.redraw();
-			global_this.markerDevicesLayer.redraw();
+			ccpl_map.getLayersByName('Markers')[0].redraw();
+			ccpl_map.getLayersByName("Devices")[0].redraw();
 
-			global_this.livePollFeatureLayer.removeAllFeatures();
+			ccpl_map.getLayersByName('Livepolling')[0].removeAllFeatures();
 
 			if(global_this.livePollingPolygonControl) {
 				global_this.livePollingPolygonControl.deactivate();
 			}
 
-			ccpl_map.addLayer(global_this.livePollFeatureLayer);
+			ccpl_map.addLayer(ccpl_map.getLayersByName('Livepolling')[0]);
 
 			isPollingActive = 1;
 
@@ -469,7 +316,7 @@ function WhiteMapClass() {
 
 							$("#tech_send").button("complete");
 
-							ccpl_map.addLayer(global_this.livePollFeatureLayer);
+							ccpl_map.addLayer(ccpl_map.getLayersByName('Livepolling')[0]);
 
 							global_this.livePollingPolygonControl.activate();
 						}
@@ -522,13 +369,13 @@ function WhiteMapClass() {
 					
 				}
 			}
-			global_this.markersLayer.redraw();
-			global_this.markerDevicesLayer.redraw();
+			ccpl_map.getLayersByName('Markers')[0].redraw();
+			ccpl_map.getLayersByName("Devices")[0].redraw();
 
 			if(global_this.livePollingPolygonControl) {
 				global_this.livePollingPolygonControl.deactivate();
-				global_this.livePollFeatureLayer.removeAllFeatures();
-				ccpl_map.removeLayer(global_this.livePollFeatureLayer);
+				ccpl_map.getLayersByName('Livepolling')[0].removeAllFeatures();
+				ccpl_map.removeLayer(ccpl_map.getLayersByName('Livepolling')[0]);
 			}
 
 			if(!$("#sideInfoContainer").hasClass("hide")) {
@@ -571,6 +418,7 @@ function WhiteMapClass() {
 		}
 
 		var polygon = "";
+
 		this.livePollingPolygonAdded = function(e) {
 			global_this.livePollingPolygonControl.deactivate();
 			polygon = e.feature;
@@ -616,7 +464,7 @@ function WhiteMapClass() {
 				
 				if(polygon) {
 					/*Remove the current polygon from the map*/
-					global_this.livePollFeatureLayer.removeAllFeatures();
+					ccpl_map.getLayersByName('Livepolling')[0].removeAllFeatures();
 				}
 
 				/*Remove current polygon from map*/
@@ -635,7 +483,7 @@ function WhiteMapClass() {
 				
 				if(polygon) {
 					/*Remove the current polygon from the map*/
-					global_this.livePollFeatureLayer.removeAllFeatures();
+					ccpl_map.getLayersByName('Livepolling')[0].removeAllFeatures();
 				}
 
 				/*Remove current polygon from map*/
@@ -876,11 +724,11 @@ function WhiteMapClass() {
 									/*Update the marker icons*/
 									if(ss_marker) {
 										ss_marker.style.externalGraphic = newIcon;
-										global_this.markersLayer.drawFeature(ss_marker);
+										ccpl_map.getLayersByName('Markers')[0].drawFeature(ss_marker);
 									} else if(sector_marker) {
 										sector_marker.attributes.pollingIcon = newIcon;
 										sector_marker.style.externalGraphic = newIcon;
-										global_this.markerDevicesLayer.redraw();
+										ccpl_map.getLayersByName("Devices")[0].redraw();
 									}
 
 									/*total Polled Occurence*/
@@ -1028,8 +876,8 @@ function WhiteMapClass() {
 				}
 				$("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className = $("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className+' text-info';
 			}
-			global_this.markersLayer.redraw();
-			global_this.markerDevicesLayer.redraw();
+			ccpl_map.getLayersByName('Markers')[0].redraw();
+			ccpl_map.getLayersByName("Devices")[0].redraw();
 
 			if((nav_click_counter-1) <= 0) {
 				/*Disable next button*/
@@ -1117,11 +965,11 @@ function WhiteMapClass() {
 						}
 					}
 				}
-				global_this.linesLayer.removeAllFeatures();
+				// ccpl_map.getLayersByName("Lines")[0].removeAllFeatures();
 				if(selectedValue) {
-					global_this.linesLayer.addFeatures(linesFeaturesList);
+					// ccpl_map.getLayersByName("Lines")[0].addFeatures(linesFeaturesList);
 				}
-				global_this.linesLayer.redraw();
+				// ccpl_map.getLayersByName("Lines")[0].redraw();
 				previousValue= selectedValue;
 			}
 		}
@@ -1158,12 +1006,12 @@ function WhiteMapClass() {
 					// marker.style.graphicYOffset = newGraphicYOffset;
 					
 					// 
-					global_this.markerDevicesLayer.drawFeature(marker);
+					ccpl_map.getLayersByName("Devices")[0].drawFeature(marker);
 				})(devicesMarkersArray[i]);
 			}
 			//End of Loop through the sector markers
 
-			global_this.markerDevicesLayer.redraw();
+			ccpl_map.getLayersByName("Devices")[0].redraw();
 
 
 			// Loop through the Master Markers
@@ -1183,7 +1031,7 @@ function WhiteMapClass() {
 						// marker.style.graphicYOffset = newGraphicYOffset;
 						
 						// 
-						global_this.markersLayer.drawFeature(marker);
+						ccpl_map.getLayersByName('Markers')[0].drawFeature(marker);
 					} else if (marker.attributes.pointType === "sub_station") {
 						newGraphicWidth = Math.ceil(largeur/divideBy);
 						newGraphicHeight = Math.ceil(hauteur/divideBy);
@@ -1196,15 +1044,15 @@ function WhiteMapClass() {
 						// marker.style.graphicYOffset = newGraphicYOffset;
 						
 						// 
-						global_this.markersLayer.drawFeature(marker);
+						ccpl_map.getLayersByName('Markers')[0].drawFeature(marker);
 					}
 				})(bs_ss_features_list[i]);
 			}
 			//End of Loop through the Master Markers
 			//
-			global_this.markersLayer.redraw();
+			ccpl_map.getLayersByName('Markers')[0].redraw();
 
-			global_this.markersLayerStrategy.recluster();
+			ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 		}
 		/*
 		This function is triggered when Lat Lng Search is done.Validate the point, if LatLng is valid, zoom to the given lat lng.
@@ -1241,24 +1089,24 @@ function WhiteMapClass() {
 			data_for_filter_wmap = appliedFilterData.data_for_filters;
 
 			//remove features from markersLayer and add filteredFeatures
-			this.markersLayer.removeAllFeatures();
-			this.markersLayer.addFeatures(appliedFilterData.filtered_Features);
+			ccpl_map.getLayersByName('Markers')[0].removeAllFeatures();
+			ccpl_map.getLayersByName('Markers')[0].addFeatures(appliedFilterData.filtered_Features);
 			filtered_Features.markers = appliedFilterData.filtered_Features;
 
 			bsDevicesObj = appliedFilterData.filtered_Devices;
 			
 			//remove lines from linesLayer and add filteredLine
-			this.linesLayer.removeAllFeatures();
-			this.linesLayer.addFeatures(appliedFilterData.line_Features);
+			ccpl_map.getLayersByName("Lines")[0].removeAllFeatures();
+			ccpl_map.getLayersByName("Lines")[0].addFeatures(appliedFilterData.line_Features);
 			filtered_Features.lines = appliedFilterData.line_Features;
 
 			//remove sectors from sectorsLayer and add filtered sectors
-			this.sectorsLayer.removeAllFeatures();
-			this.sectorsLayer.addFeatures(appliedFilterData.sector_Features);
+			ccpl_map.getLayersByName("Sectors")[0].removeAllFeatures();
+			ccpl_map.getLayersByName("Sectors")[0].addFeatures(appliedFilterData.sector_Features);
 			filtered_Features.sectors = appliedFilterData.sector_Features;
 						
 			//rescluster the strategy
-			global_this.markersLayerStrategy.recluster();
+			ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 
 			//update page status
 			get_page_status();
@@ -1267,13 +1115,6 @@ function WhiteMapClass() {
 
 			/*Enable Reset Button*/
 			global_this.hideLoading();
-		}
-
-		/*
-		This function populates basic filter dropdowns
-		 */
-		this.populateBasicFilterDropdowns = function() {
-			gmap_self.getBasicFilters();
 		}
 
 	/**
@@ -1438,7 +1279,7 @@ function WhiteMapClass() {
 
 							wm_obj.sectors["poly_"+device.sector_configured_on+"_"+rad+"_"+device.azimuth_angle+"_"+device.beam_width] = plottedSector;
 
-							global_this.sectorsLayer.addFeatures([plottedSector]);
+							ccpl_map.getLayersByName("Sectors")[0].addFeatures([plottedSector]);
 
 							startEndObj["startLat"] = sectorPoints[halfPt].lat;
 							startEndObj["startLon"] = sectorPoints[halfPt].lon;
@@ -1470,6 +1311,7 @@ function WhiteMapClass() {
 								icon: base_url+'/static/img/icons/1x1.png',
 								oldIcon: base_url+'/static/img/icons/1x1.png',
 								clusterIcon: base_url+"/"+device.markerUrl,
+								pollingIcon: '',
 								pointType 		 	: 'sector_Marker',
 								technology: device.technology,
 								vendor 				: device.vendor,
@@ -1660,7 +1502,7 @@ function WhiteMapClass() {
 
 							filtered_Features.lines.push(line);
 
-							global_this.linesLayer.addFeatures([line]);
+							ccpl_map.getLayersByName("Lines")[0].addFeatures([line]);
 
 							main_lines_sectors_features_wmaps.lines.push(line);
 
@@ -1721,23 +1563,13 @@ function WhiteMapClass() {
 									filtered_Features.markers = bs_ss_features_list;									
 
 									//add markers to the vector Layer
-									global_this.markersLayer.addFeatures(filtered_Features.markers);
+									ccpl_map.getLayersByName('Markers')[0].addFeatures(filtered_Features.markers);
 
 									//activate cluster strategy
-									global_this.markersLayerStrategy.activate();
-
-									// //initiate advance filter class
-									// wmAdvanceFilterClass = new WmAdvanceFilter(bs_data_list, wm_obj.features, wm_obj.features, bs_ss_features_list, cktLinesBsObj, sectorsBsObj);
-									
-									// //initiate advance search class
-									// wmAdvanceSearchClass = new WmAdvanceSearch(data_for_filter_wmap);
+									ccpl_map.getLayersByName('Markers')[0].strategies[0].activate();
 
 									//populate basic filter dropdown
-									global_this.populateBasicFilterDropdowns();
-
-									//hide linesLayer by default.
-									global_this.linesLayer.display(false);
-
+									gmap_self.getBasicFilters();
 
 									return;
 								}
@@ -1786,9 +1618,9 @@ function WhiteMapClass() {
 		This function removes all Features from marker, line and sector layers.
 		 */
 		this.hideAllFeatures = function() {
-			global_this.markersLayer.removeAllFeatures();
-			global_this.linesLayer.removeAllFeatures();
-			global_this.sectorsLayer.removeAllFeatures();
+			ccpl_map.getLayersByName('Markers')[0].removeAllFeatures();
+			ccpl_map.getLayersByName("Lines")[0].removeAllFeatures();
+			ccpl_map.getLayersByName("Sectors")[0].removeAllFeatures();
 		}
 
 		/*
@@ -1796,10 +1628,10 @@ function WhiteMapClass() {
 		 */
 		this.showAllFeatures = function() {
 
-			global_this.markersLayer.addFeatures(bs_ss_features_list);
-			global_this.linesLayer.addFeatures(main_lines_sectors_features_wmaps.lines);
-			global_this.sectorsLayer.addFeatures(main_lines_sectors_features_wmaps.sectors);
-			global_this.markersLayerStrategy.recluster();
+			ccpl_map.getLayersByName('Markers')[0].addFeatures(bs_ss_features_list);
+			ccpl_map.getLayersByName("Lines")[0].addFeatures(main_lines_sectors_features_wmaps.lines);
+			ccpl_map.getLayersByName("Sectors")[0].addFeatures(main_lines_sectors_features_wmaps.sectors);
+			ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 		}
 
 		/*

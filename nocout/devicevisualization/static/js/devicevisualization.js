@@ -133,9 +133,6 @@ $("#vendor").change(function(e) {
 /*This event trigger when technology dropdown value is changes*/
 $("#technology").change(function(e) {
 
-// if(window.location.pathname.indexOf("white_background") > -1) {
-//     return;
-//     }
     getPageType();
     var tech_id = $(this).val(),
         tech_value= $('#technology option:selected').text();
@@ -519,7 +516,7 @@ $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $(this).val();
     defaultIconSize= val;
     if(window.location.pathname.indexOf("white_background") > -1) {
-        whiteMapClass.toggleIconSize(val);
+        // whiteMapClass.toggleIconSize(val);
     } else {
         networkMapInstance.updateAllMarkersWithNewIcon(val);
         
