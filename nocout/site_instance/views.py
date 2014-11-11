@@ -83,13 +83,6 @@ class SiteInstanceCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('site_instance_list')
     required_permissions = ('site_instance.add_siteinstance',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        self.object=form.save()
-        return HttpResponseRedirect(SiteInstanceCreate.success_url)
-
 class SiteInstanceUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to Update the Site Instance.
