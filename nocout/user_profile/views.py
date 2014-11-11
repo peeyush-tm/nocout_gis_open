@@ -235,7 +235,10 @@ class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
         return self.post(*args, **kwargs)
 
     def get_queryset(self):
-        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
+        queryset = super(UserDelete, self).get_queryset()
+        queryset = queryset.filter(organization__in=logged_in_user_organizations(self))
+        queryset = queryset.exclude(id=self.request.user.id)
+        return queryset
 
 
 class CurrentUserProfileUpdate(FormRequestMixin, UpdateView):
