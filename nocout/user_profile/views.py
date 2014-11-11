@@ -277,3 +277,14 @@ def organisation_user_list(request):
         return HttpResponse( parent_list_option )
     else:
         return HttpResponse("Invalid Url")
+
+def organisation_user_select(request):
+    """
+    return the user if parent is selected
+    while creation and updation of the user-profile.
+    """
+    parent_id = request.GET['parent_id']
+    parent_select = UserProfile.objects.get(id=parent_id)
+    html = "<option value=>Select</option>"
+    html += "<option value={0}>{1}</option>".format(parent_select.id, parent_select.username)
+    return HttpResponse( html )
