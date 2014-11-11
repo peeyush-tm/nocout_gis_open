@@ -13,8 +13,9 @@ from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from nocout.utils.util import date_handler, DictDiffer
 from user_group.models import UserGroup
 from nocout.utils import logged_in_user_organizations
-from activity_stream.models import UserAction
+from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.datatable import DatatableSearchMixin
 
 
 class OrganizationList(PermissionsRequiredMixin, ListView):
@@ -47,7 +48,7 @@ class OrganizationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class OrganizationListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class OrganizationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Organization Data table.
     """
@@ -55,6 +56,7 @@ class OrganizationListingTable(PermissionsRequiredMixin, BaseDatatableView):
     required_permissions = ('organization.view_organization',)
     columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
     order_columns = ['name',  'alias', 'parent__name', 'city', 'state', 'country']
+    search_columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
 
     def logged_in_user_organization_ids(self):
         """
@@ -65,26 +67,6 @@ class OrganizationListingTable(PermissionsRequiredMixin, BaseDatatableView):
         else:
             return list(str(self.request.user.userprofile.organization.id))
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            sSearch = sSearch.replace("\\", "")
-            query=[]
-            organization_descendants_ids= self.logged_in_user_organization_ids()
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query) + ", id__in = %s"%organization_descendants_ids + \
-                          ").values(*"+str(self.columns+['id'])+")"
-            exec exec_query
-        return qs
 
     def get_initial_queryset(self):
         """
@@ -103,44 +85,11 @@ class OrganizationListingTable(PermissionsRequiredMixin, BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-        for dct in qs:
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in json_data:
             dct.update(actions='<a href="/organization/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/organization/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
+        return json_data
 
 
 class OrganizationDetail(PermissionsRequiredMixin, DetailView):
@@ -205,7 +154,7 @@ class OrganizationUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect( OrganizationUpdate.success_url )
 
 
-class OrganizationDelete(PermissionsRequiredMixin, DeleteView):
+class OrganizationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to Delete the Organization.
     """
@@ -216,16 +165,3 @@ class OrganizationDelete(PermissionsRequiredMixin, DeleteView):
 
     def get_queryset(self):
         return logged_in_user_organizations(self)
-
-    def delete(self, *args, **kwargs):
-        """
-        Log the user action as the organisation is deleted.
-        """
-        try:
-            organization_obj = self.get_object()
-            action ='A organization is deleted - {}(country- {}, State- {}, City- {})'.format(organization_obj.alias,
-                    organization_obj.country, organization_obj.state, organization_obj.city)
-            UserAction.objects.create(user_id=self.request.user.id, module='Organization', action=action )
-        except:
-            pass
-        return super(OrganizationDelete, self).delete(*args, **kwargs)

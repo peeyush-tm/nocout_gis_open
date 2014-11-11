@@ -334,6 +334,10 @@
                             </select>
                             <div class="divide-10"></div>
                             <button type="button" class="btn btn-primary" data-complete-text="Send" data-loading-text="Please Wait..." id="tech_send">Send</button>
+                            <div class="pull-right">
+                                <input type="checkbox" name="isPing" id="isPing" value="1"> Poll Ping Service
+                                <div class="clearfix"></div>
+                            </div>
                             <div class="divide-20 clearfix"></div>
                             <div class="template_container"></div>
                             <div class="divide-10"></div>
@@ -374,16 +378,21 @@
     <script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
     <!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
     <script type="text/javascript" src={% static "js/oms.min.js" %}></script>
+    <!--LOKIJS for Javascript Database-->
+    <script type="text/javascript" src={% static "js/lokijs.min.js" %}></script>
     <!-- Our Library to plot the devices on map & performs functionality accordingly-->
     <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
     <!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
     <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
-
+    <!-- State boundries Loki object Lib -->
+    <script type="text/javascript" src={% static "js/stateBoundriesLib.js" %}></script>
+    <!--Search Lib-->
     <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>
     <!-- SPARKLINES -->
     <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
     <!-- Custon Script for this template-->
     <script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
+    <!-- GIS Performance Lib-->
     <script type="text/javascript" src={% static "js/gisPerformance.js" %}></script>    
     <!-- Script for full screen google maps-->
     <script type="text/javascript" src={% static "js/fullScreenControl.js" %}></script>

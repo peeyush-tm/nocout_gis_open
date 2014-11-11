@@ -25,7 +25,7 @@ from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from nocout.utils import logged_in_user_organizations
-from activity_stream.models import UserAction
+from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
@@ -216,15 +216,6 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, BaseDatatableView)
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    # def logged_in_user_organization_ids(self):
-    #     """
-    #     Get logged in user's descendants organizations id's
-    #     """
-    #     organization_descendants_ids = list(
-    #         self.request.user.userprofile.organization.get_descendants(include_self=True) )
-    #     print '..................',organization_descendants_ids
-    #     return organization_descendants_ids
-
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -245,9 +236,9 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, BaseDatatableView)
         """
         Preparing the final result after fetching from the data base to render on the data table.
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
@@ -380,7 +371,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, BaseDatatableView)
                         logger.exception(e.message)
             except Exception as e:
                 logger.exception("Device is not a substation. %s" % e.message)
-        return qs
+        return json_data
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -516,15 +507,6 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    # def logged_in_user_organization_ids(self):
-    #     """
-    #     Get logged in user's descendants organizations id's
-    #     """
-    #     organization_descendants_ids = list(
-    #         self.request.user.userprofile.organization.get_descendants(include_self=True)
-    #         .values_list('id', flat=True))
-    #     return organization_descendants_ids
-
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -547,9 +529,9 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
         """
         Preparing the final result after fetching from the data base to render on the data table.
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
@@ -632,7 +614,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
                         dct['id']))
             except Exception as e:
                 logger.exception("Device is not a substation. %s" % e.message)
-        return qs
+        return json_data
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -789,9 +771,9 @@ class DisabledDeviceListingTable(BaseDatatableView):
         """
         Preparing the final result after fetching from the data base to render on the data table.
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
@@ -876,7 +858,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
             #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             # except:
             #     logger.info("Device is not substation.")
-        return qs
+        return json_data
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1012,14 +994,7 @@ class ArchivedDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    # def logged_in_user_organization_ids(self):
-    #     """
-    #     Get logged in user's descendants organizations id's
-    #     """
-    #     organization_descendants_ids = list(
-    #         self.request.user.userprofile.organization.get_descendants(include_self=True)
-    #         .values_list('id', flat=True))
-    #     return organization_descendants_ids
+
 
     def get_initial_queryset(self):
         """
@@ -1040,9 +1015,9 @@ class ArchivedDeviceListingTable(BaseDatatableView):
         """
         Preparing the final result after fetching from the data base to render on the data table.
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
@@ -1131,7 +1106,7 @@ class ArchivedDeviceListingTable(BaseDatatableView):
             #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             # except:
             #     logger.info("Device is not substation.")
-        return qs
+        return json_data
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1267,15 +1242,6 @@ class AllDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    # def logged_in_user_organization_ids(self):
-    #     """
-    #     Get logged in user's descendants organizations id's
-    #     """
-    #     organization_descendants_ids = list(
-    #         self.request.user.userprofile.organization.get_descendants(include_self=True)
-    #         .values_list('id', flat=True))
-    #     return organization_descendants_ids
-
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -1295,9 +1261,9 @@ class AllDeviceListingTable(BaseDatatableView):
         """
         Preparing the final result after fetching from the data base to render on the data table.
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'device_name' in dct:
@@ -1395,7 +1361,7 @@ class AllDeviceListingTable(BaseDatatableView):
                         dct['id']))
             except:
                 logger.exception("Device is not substation.")
-        return qs
+        return json_data
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1765,7 +1731,7 @@ class DeviceUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 
-class DeviceDelete(PermissionsRequiredMixin, DeleteView):
+class DeviceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Render device delete view
     """
@@ -1773,18 +1739,7 @@ class DeviceDelete(PermissionsRequiredMixin, DeleteView):
     required_permissions = ('device.delete_device',)
     template_name = 'device/device_delete.html'
     success_url = reverse_lazy('device_list')
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            obj = self.get_object()
-            action='A device is deleted - {}'.format(obj.device_alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Device', action=action)
-        except:
-            pass
-        return super(DeviceDelete, self).delete(request, *args, **kwargs)
+    obj_alias = 'device_alias'
 
 
 # ******************************** Device Type Form Fields Views ************************************
@@ -2005,7 +1960,7 @@ class DeviceTypeFieldsUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 
-class DeviceTypeFieldsDelete(PermissionsRequiredMixin, DeleteView):
+class DeviceTypeFieldsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Render device type field delete view
     """
@@ -2013,18 +1968,7 @@ class DeviceTypeFieldsDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'device_extra_fields/device_extra_field_delete.html'
     success_url = reverse_lazy('device_extra_field_list')
     required_permissions = ('device.delete_devicetypefieldsvalue',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            obj = self.get_object()
-            action='A device field is deleted - {}'.format(obj.field_display_name)
-            UserAction.objects.create(user_id=self.request.user.id, module='Device Field', action=action)
-        except:
-            pass
-        return super(DeviceTypeFieldsDelete, self).delete(request, *args, **kwargs)
+    obj_alias = 'field_display_name'
 
 
 # **************************************** Device Technology ****************************************
@@ -2285,7 +2229,7 @@ class DeviceTechnologyUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(DeviceTechnologyUpdate.success_url)
 
 
-class DeviceTechnologyDelete(PermissionsRequiredMixin, DeleteView):
+class DeviceTechnologyDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Render device technology delete view
     """
@@ -2293,18 +2237,6 @@ class DeviceTechnologyDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'device_technology/device_technology_delete.html'
     success_url = reverse_lazy('device_technology_list')
     required_permissions = ('device.delete_devicetechnology',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            obj = self.get_object()
-            action='A device technology is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Device Technology', action=action)
-        except:
-            pass
-        return super(DeviceTechnologyDelete, self).delete(self, request, *args, **kwargs)
 
 
 # ************************************* Device Vendor ***********************************************
@@ -2563,7 +2495,7 @@ class DeviceVendorUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(DeviceVendorUpdate.success_url)
 
 
-class DeviceVendorDelete(PermissionsRequiredMixin, DeleteView):
+class DeviceVendorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Render device vendor delete view
     """
@@ -2571,18 +2503,6 @@ class DeviceVendorDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'device_vendor/device_vendor_delete.html'
     success_url = reverse_lazy('device_vendor_list')
     required_permissions = ('device.delete_devicevendor',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            obj = self.get_object()
-            action='A device vendor is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Device Vendor', action=action)
-        except:
-            pass
-        return super(DeviceVendorDelete, self).delete(request, *args, **kwargs)
 
 
 # ****************************************** Device Model *******************************************
@@ -2840,7 +2760,7 @@ class DeviceModelUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(DeviceModelUpdate.success_url)
 
 
-class DeviceModelDelete(PermissionsRequiredMixin, DeleteView):
+class DeviceModelDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Render device model delete view
     """
@@ -2848,18 +2768,6 @@ class DeviceModelDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'device_model/device_model_delete.html'
     success_url = reverse_lazy('device_model_list')
     required_permissions = ('device.delete_devicemodel',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            obj = self.get_object()
-            action='A device model is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Device Model', action=action)
-        except:
-            pass
-        return super(DeviceModelDelete, self).delete(request, *args, **kwargs)
 
 
 # ****************************************** Device Type *******************************************
@@ -3100,7 +3008,7 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(DeviceTypeUpdate.success_url)
 
 
-class DeviceTypeDelete(PermissionsRequiredMixin, DeleteView):
+class DeviceTypeDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Render device type delete view
     """
@@ -3108,18 +3016,6 @@ class DeviceTypeDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'device_type/device_type_delete.html'
     success_url = reverse_lazy('device_type_list')
     required_permissions = ('device.delete_devicetype',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            obj = self.get_object()
-            action='A device type is deleted - {}'.format(obj.alias)
-            UserAction.objects.create(user_id=self.request.user.id, module='Device Type', action=action)
-        except:
-            pass
-        return super(DeviceTypeDelete, self).delete(request, *args, **kwargs)
 
 
 # ****************************************** Device Type *******************************************
@@ -3286,7 +3182,7 @@ class DevicePortUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(DevicePortUpdate.success_url)
 
 
-class DevicePortDelete(PermissionsRequiredMixin, DeleteView):
+class DevicePortDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Render device port delete view
     """
@@ -3294,18 +3190,6 @@ class DevicePortDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'device_port/device_port_delete.html'
     success_url = reverse_lazy('device_ports_list')
     required_permissions = ('device.delete_deviceport',)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        try:
-            obj = self.get_object()
-            action='A device port is deleted - {}(value- {})'.format(obj.alias, obj.value)
-            UserAction.objects.create(user_id=self.request.user.id, module='Device Port', action=action)
-        except:
-            pass
-        return super(DevicePortDelete, self).delete(request, *args, **kwargs)
 
 
 class DeviceFrequencyListing(PermissionsRequiredMixin, ListView):
@@ -3463,7 +3347,7 @@ class DeviceFrequencyUpdate(PermissionsRequiredMixin, UpdateView):
         return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)
 
 
-class DeviceFrequencyDelete(PermissionsRequiredMixin, DeleteView):
+class DeviceFrequencyDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Render device frequency delete view
     """
@@ -3471,9 +3355,5 @@ class DeviceFrequencyDelete(PermissionsRequiredMixin, DeleteView):
     template_name = 'device_frequency/device_frequency_delete.html'
     success_url = reverse_lazy('device_frequency_list')
     required_permissions = ('device.delete_devicefrequency',)
+    obj_alias = 'value'
 
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        return super(DeviceFrequencyDelete, self).delete(request, *args, **kwargs)

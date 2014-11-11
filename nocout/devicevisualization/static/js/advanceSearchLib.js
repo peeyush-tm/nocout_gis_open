@@ -843,6 +843,15 @@ function advanceSearchClass() {
 		appliedAdvFilter_Active = [];
         result_plot_device=[]
 
+        if(!($("#advFilterContainerBlock").hasClass("hide"))) {
+			$("#advFilterContainerBlock").addClass("hide");
+		}
+
+		/*Hide Remove Filters button*/
+		if(!$("#removeFilterBtn").hasClass("hide")) {
+			$("#removeFilterBtn").addClass("hide");
+		}
+
         // Not to clear the html for gmap page
         if(window.location.pathname.indexOf("googleEarth") > -1) {
 	        $("#advFilterFormContainer").html("");
@@ -854,15 +863,6 @@ function advanceSearchClass() {
 	    	$("#filter_state").select2("val","");
 	    	$("#filter_city").select2("val","");
 	    }
-
-		if(!($("#advFilterContainerBlock").hasClass("hide"))) {
-			$("#advFilterContainerBlock").addClass("hide");
-		}
-
-		/*Hide Remove Filters button*/
-		if(!$("#removeFilterBtn").hasClass("hide")) {
-			$("#removeFilterBtn").addClass("hide");
-		}
 
 		/*Call the resetVariables function to reset all global variables*/
 		advSearch_self.resetVariables();

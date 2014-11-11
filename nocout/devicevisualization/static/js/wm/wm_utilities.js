@@ -1,33 +1,3 @@
-/*Map Control Click*/
-OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
-    defaultHandlerOptions: {
-        'single': true,
-        'double': false,
-        'pixelTolerance': 0,
-        'stopSingle': false,
-        'stopDouble': false
-    },
-
-    initialize: function(options) {
-        this.handlerOptions = OpenLayers.Util.extend(
-            {}, this.defaultHandlerOptions
-            );
-        OpenLayers.Control.prototype.initialize.apply(
-            this, arguments
-            );
-        this.handler = new OpenLayers.Handler.Click(
-            this, {
-                'click': this.trigger
-            }, this.handlerOptions
-            );
-    },
-
-    trigger: function(e) {
-        console.log(e);
-        whiteMapClass.mapClickEvent(e);
-    }
-});
-
 Number.prototype.toRad = function() {
     return this * Math.PI / 180;
 }
@@ -38,6 +8,7 @@ Number.prototype.toDeg = function() {
 
 /*This function gets the Points Lat lng at specific angle and radius */
 function getAtXYDirection(brng, dist, lon, lat) {
+    dist = dist/10;
     dist = dist / 6371;
     brng = brng.toRad();
     var lat1 = lat.toRad(), lon1 = lon.toRad();
@@ -883,3 +854,87 @@ function showWmapFilteredData(dataArray) {
     whiteMapClass.applyAdvanceFilter({data_for_filters: dataArray, filtered_Devices: bsDeviceObj, filtered_Features: filtered_bs_ss_data, line_Features: filtered_line_data, sector_Features: filtered_sector_data});
 }
 
+OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.KML, {
+    CLASS_NAME: "OpenLayers.Format.KML",
+    parseStyle: function(node) {
+        console.log(node);
+        var baseURI = node.baseURI.split("?")[0]; // remove query, if any
+        if (baseURI.lastIndexOf("/") != baseURI.length - 1) {
+            baseURI = baseURI.substr(0, baseURI.lastIndexOf("/") + 1);
+        }
+        var style = OpenLayers.Format.KML.prototype.parseStyle.call(this, node);
+        if (typeof style.externalGraphic != "undefined" && style.externalGraphic.match(new RegExp("(^/)|(://)")) == null) {
+            style.externalGraphic = baseURI + style.externalGraphic;
+        }
+        return style;
+    }
+});
+
+/*
+This function returns Size of the Markers to show accroding to the value selected in tools option
+ */
+var previousIconValue = "small";
+var newGraphicHeight = 0, newGraphicWidth = 0, newGraphicXOffset = 0, newGraphicYOffset = 0, bs_newGraphicHeight = 0, bs_newGraphicWidth = 0, bs_newGraphicXOffset = 0, bs_newGraphicYOffset = 0;
+function getIconSize() {
+    var iconSize = $("#icon_Size_Select_In_Tools").val();
+    if(previousIconValue !== iconSize) {
+        var largeur= 32, hauteur= 37,largeur_bs = 32, hauteur_bs= 37, divideBy;
+        var anchorX, i;
+        if(iconSize=== 'small') {
+            divideBy= 1.4;
+            anchorX= 0.4;
+        } else if(iconSize=== 'medium') {
+            divideBy= 1;
+            anchorX= 0;
+        } else {
+            divideBy= 0.8;
+            anchorX= -0.2;
+        }
+
+        
+        newGraphicWidth = Math.ceil(largeur/divideBy);
+        newGraphicHeight = Math.ceil(hauteur/divideBy);
+        newGraphicXOffset = Math.ceil(16-(16*anchorX));
+        newGraphicYOffset = Math.ceil(hauteur/divideBy);
+
+        bs_newGraphicHeight= Math.ceil(hauteur_bs/divideBy)+5;
+        bs_newGraphicWidth = Math.ceil(largeur_bs/divideBy)-5;
+        bs_newGraphicXOffset = Math.ceil(16-(16*anchorX));
+        bs_newGraphicYOffset = Math.ceil(hauteur_bs/divideBy);        
+        previousIconValue = iconSize;
+    }
+
+    return {
+        'ss_devices_size': {
+            'graphicWidth': newGraphicWidth,
+            'graphicHeight': newGraphicHeight,
+            'graphicXOffset': newGraphicXOffset,
+            'graphicYOffset': newGraphicYOffset
+        },
+        'bs_devices_size': {
+            'graphicWidth': bs_newGraphicWidth,
+            'graphicHeight': bs_newGraphicHeight,
+            'graphicXOffset': bs_newGraphicXOffset,
+            'graphicYOffset': bs_newGraphicYOffset  
+        }
+    }
+}
+
+function getPointAtInterval( p1, p2, t) {
+    console.log(p1, p2, t);
+    var x3 = p2.x - p1.x;
+    var y3 = p2.y - p1.y;
+    console.log(x3, y3);
+    var length = Math.sqrt( x3 * x3 + y3 * y3 );
+    console.log(length);
+    x3 /= length;
+    y3 /= length;
+    console.log(x3, y3);
+    x3 *= t;
+    y3 *= t;
+    console.log(x3, y3);
+    x3 /= 10;
+    y3 /= 10;
+    console.log(p1.x+x3, p1.y+y3);
+    return new OpenLayers.LonLat( p1.x + x3, p1.y + y3 );
+}
