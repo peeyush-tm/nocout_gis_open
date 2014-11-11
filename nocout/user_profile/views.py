@@ -220,51 +220,6 @@ class UserUpdate(PermissionsRequiredMixin, UpdateView):
         self.object.save()
         form.save_m2m()
 
-        try:
-            #User Activity Logs
-
-            initial_field_dict={}
-            for field in form.initial.keys():
-                if field in ('organization','parent'):
-                    initial_field_dict[field]= form.initial[field].id
-                else:
-                    initial_field_dict[field]= form.initial[field]
-
-            cleaned_data_field_dict={}
-            for field in form.cleaned_data.keys():
-                if field =='role':
-                    cleaned_data_field_dict[field]= form.cleaned_data[field][0].id
-                elif field in ('organization','parent'):
-                    cleaned_data_field_dict[field]= form.cleaned_data[field].id
-                else:
-                    cleaned_data_field_dict[field]=form.cleaned_data[field]
-
-
-
-            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-
-            if changed_fields_dict:
-
-                initial_field_dict['role']= Roles.objects.get(id= initial_field_dict['role']).role_name
-                initial_field_dict['parent']= UserProfile.objects.get(id= initial_field_dict['parent']).username
-                initial_field_dict['organization'] = Organization.objects.get(id= initial_field_dict['organization']).name
-
-                cleaned_data_field_dict['role'] = Roles.objects.get(id= cleaned_data_field_dict['role']).role_name
-                cleaned_data_field_dict['parent'] = UserProfile.objects.get(id= cleaned_data_field_dict['parent']).username
-                cleaned_data_field_dict['organization'] = Organization.objects.get(id= cleaned_data_field_dict['organization']).name
-
-
-                verb_string = 'Changed values of user %s from initial values '%(self.object.username) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k,cleaned_data_field_dict[k]) for k in changed_fields_dict])
-                if len(verb_string)>=255:
-                    verb_string=verb_string[:250] + '...'
-
-
-        except Exception as activity:
-            pass
-
         return HttpResponseRedirect(UserCreate.success_url)
 
 
@@ -324,22 +279,6 @@ class CurrentUserProfileUpdate(UpdateView):
             #Adding the user log for the password change
         if  form.cleaned_data['password2']:
             kwargs.update({'password': make_password(form.cleaned_data['password2'])})
-
-        try:
-
-            changed_fields=DictDiffer(form.cleaned_data, form.initial).changed() - set(['role','username','user_group','organization'])
-            if changed_fields:
-
-                initial_field_dict = { field : form.initial[field] for field in changed_fields }
-                changed_field_dict = { field : form.cleaned_data[field] for field in changed_fields }
-
-                verb_string = 'Changed values from initial values ' + ', '.join(['%s: %s' %(k,v) for k,v in initial_field_dict.iteritems()])+\
-                              ' to '+', '.join(['%s: %s' %(k,v) for k,v in changed_field_dict.iteritems()])
-                if len(verb_string)>=255:
-                    verb_string=verb_string[:250] + '...'
-                #Adding the user log for the number of fileds and with the values changed.
-        except Exception as activity:
-            pass
 
         UserProfile.objects.filter(id=self.object.id).update(**kwargs)
         return super(ModelFormMixin, self).form_valid(form)

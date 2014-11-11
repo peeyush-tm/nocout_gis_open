@@ -192,13 +192,6 @@ class InventoryCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('InventoryList')
     required_permissions = ('inventory.add_inventory',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(InventoryCreate.success_url)
-
 
 class InventoryUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -209,13 +202,6 @@ class InventoryUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = InventoryForm
     success_url = reverse_lazy('InventoryList')
     required_permissions = ('inventory.change_inventory',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(InventoryCreate.success_url)
 
 
 class InventoryDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -379,7 +365,6 @@ class AntennaCreate(PermissionsRequiredMixin, CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        verb_string = "Create Antenna : %s" %(self.object.alias)
         return HttpResponseRedirect(AntennaCreate.success_url)
 
 
@@ -408,18 +393,7 @@ class AntennaUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Antenna : %s, ' % (self.object.alias) + ', ' .join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
+        self.object = form.save()
         return HttpResponseRedirect(AntennaUpdate.success_url)
 
 
@@ -571,7 +545,6 @@ class BaseStationCreate(PermissionsRequiredMixin, CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        verb_string = "Create Base Station : %s" %(self.object.alias)
         return HttpResponseRedirect(BaseStationCreate.success_url)
 
 
@@ -600,18 +573,7 @@ class BaseStationUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Base Station : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
+        self.object = form.save()
         return HttpResponseRedirect(BaseStationUpdate.success_url)
 
 
@@ -775,7 +737,6 @@ class BackhaulCreate(PermissionsRequiredMixin, CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        verb_string = "Create Backhaul : %s" %(self.object.alias)
         return HttpResponseRedirect(BackhaulCreate.success_url)
 
 
@@ -804,19 +765,7 @@ class BackhaulUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Updated Backhaul : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
+        self.object = form.save()
         return HttpResponseRedirect(BackhaulUpdate.success_url)
 
 
@@ -975,7 +924,6 @@ class SectorCreate(PermissionsRequiredMixin, CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        verb_string = "Create Sector : %s" %(self.object.alias)
         return HttpResponseRedirect(SectorCreate.success_url)
 
 
@@ -1004,18 +952,7 @@ class SectorUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Sector : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
+        self.object = form.save()
         return HttpResponseRedirect(SectorUpdate.success_url)
 
 
@@ -1150,7 +1087,6 @@ class CustomerCreate(PermissionsRequiredMixin, CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        verb_string = "Create Customer : %s" %(self.object.alias)
         return HttpResponseRedirect(CustomerCreate.success_url)
 
 
@@ -1179,18 +1115,7 @@ class CustomerUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Customer : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
+        self.object = form.save()
         return HttpResponseRedirect(CustomerUpdate.success_url)
 
 
@@ -1350,7 +1275,6 @@ class SubStationCreate(PermissionsRequiredMixin, CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        verb_string = "Create Sub Station : %s" %(self.object.alias)
         return HttpResponseRedirect(SubStationCreate.success_url)
 
 
@@ -1379,18 +1303,7 @@ class SubStationUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Updaete Sub Station : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
+        self.object = form.save()
         return HttpResponseRedirect(SubStationUpdate.success_url)
 
 
@@ -1541,7 +1454,6 @@ class CircuitCreate(PermissionsRequiredMixin, CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        verb_string = "Create Circuit : %s" %(self.object.alias)
         return HttpResponseRedirect(CircuitCreate.success_url)
 
 
@@ -1570,18 +1482,7 @@ class CircuitUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Circuit : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
+        self.object = form.save()
         return HttpResponseRedirect(CircuitUpdate.success_url)
 
 
@@ -1890,14 +1791,6 @@ class IconSettingsCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('icon_settings_list')
     required_permissions = ('inventory.add_iconsettings',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Icon Setting : %s" %(self.object.alias)
-        return HttpResponseRedirect(IconSettingsCreate.success_url)
-
 
 class IconSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -1908,24 +1801,6 @@ class IconSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = IconSettingsForm
     success_url = reverse_lazy('icon_settings_list')
     required_permissions = ('inventory.change_iconsettings',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Icon Settings : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(IconSettingsUpdate.success_url)
 
 
 class IconSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -2014,14 +1889,6 @@ class LivePollingSettingsCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('live_polling_settings_list')
     required_permissions = ('inventory.add_livepollingsettings',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Live Polling Setting : %s" %(self.object.alias)
-        return HttpResponseRedirect(LivePollingSettingsCreate.success_url)
-
 
 class LivePollingSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -2032,24 +1899,6 @@ class LivePollingSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = LivePollingSettingsForm
     success_url = reverse_lazy('live_polling_settings_list')
     required_permissions = ('inventory.change_livepollingsettings',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Live Polling Settings : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(LivePollingSettingsUpdate.success_url)
 
 
 class LivePollingSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -2136,14 +1985,6 @@ class ThresholdConfigurationCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('threshold_configuration_list')
     required_permissions = ('inventory.add_threshold_configuration',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Threshold Configuration : %s" %(self.object.alias)
-        return HttpResponseRedirect(ThresholdConfigurationCreate.success_url)
-
 
 class ThresholdConfigurationUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -2154,24 +1995,6 @@ class ThresholdConfigurationUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = ThresholdConfigurationForm
     success_url = reverse_lazy('threshold_configuration_list')
     required_permissions = ('inventory.change_threshold_configuration',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Threshold Configuration : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(ThresholdConfigurationUpdate.success_url)
 
 
 class ThresholdConfigurationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -2317,7 +2140,6 @@ class ThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         self.object = form.save()
         self.object.icon_settings=icon_settings_values_list
         self.object.save()
-        verb_string = "Create Thematic Settings : %s" %(self.object.alias)
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
 
@@ -2335,23 +2157,12 @@ class ThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
         icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
         self.object = form.save()
         self.object.icon_settings=icon_settings_values_list
         self.object.save()
         # self.object = form.save()
-        if changed_fields_dict:
-            verb_string = 'Update Thematic Settings : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
 
 
@@ -3100,7 +2911,6 @@ class PingThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         self.object = form.save()
         self.object.icon_settings = icon_settings_values_list
         self.object.save()
-        verb_string = "Create Thematic Settings : %s" % self.object.alias
         return HttpResponseRedirect(PingThematicSettingsCreate.success_url)
 
 
@@ -3118,9 +2928,6 @@ class PingThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         icon_settings_keys = list(set(form.data.keys()) - set(
             [key for key in form.cleaned_data.keys() if "icon" not in key] + ['csrfmiddlewaretoken']))
 
@@ -3132,14 +2939,6 @@ class PingThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         self.object.icon_settings = icon_settings_values_list
         self.object.save()
         # self.object = form.save()
-        if changed_fields_dict:
-            verb_string = 'Update Thematic Settings : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
         return HttpResponseRedirect(PingThematicSettingsUpdate.success_url)
 
 

@@ -120,19 +120,8 @@ class OrganizationUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of Organization : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-
-            self.object=form.save()
-            self.model.objects.rebuild()
+        self.object=form.save()
+        self.model.objects.rebuild()
         return HttpResponseRedirect( OrganizationUpdate.success_url )
 
 

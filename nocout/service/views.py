@@ -94,13 +94,6 @@ class ServiceCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('services_list')
     required_permissions = ('service.add_service',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(ServiceCreate.success_url)
-
 
 class ServiceUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -111,24 +104,6 @@ class ServiceUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
     required_permissions = ('service.change_service',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of Service : %s from initial values ' % (self.object.name) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(ServiceUpdate.success_url)
 
 
 class ServiceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -216,14 +191,6 @@ class ServiceParametersCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('services_parameter_list')
     required_permissions = ('service.add_serviceparameters',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(ServiceParametersCreate.success_url)
-
 
 class ServiceParametersUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -234,24 +201,6 @@ class ServiceParametersUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
     required_permissions = ('service.change_serviceparameters',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of Service Paramters: %s from initial values ' % (
-                self.object.parameter_description) \
-                          + ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) \
-                          + ' to ' \
-                          + ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            self.object = form.save()
-        return HttpResponseRedirect(ServiceParametersUpdate.success_url)
 
 
 class ServiceParametersDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -334,13 +283,6 @@ class ServiceDataSourceCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('service_data_sources_list')
     required_permissions = ('service.add_servicedatasource',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(ServiceDataSourceCreate.success_url)
-
 
 class ServiceDataSourceUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -351,22 +293,6 @@ class ServiceDataSourceUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = ServiceDataSourceForm
     success_url = reverse_lazy('service_data_sources_list')
     required_permissions = ('service.change_servicedatasource',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of ServiceDataSource : %s from initial values ' % (
-                self.object.name) + ', '.join(['%s: %s' % (k, initial_field_dict[k]) \
-                                               for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            self.object = form.save()
-        return HttpResponseRedirect(ServiceDataSourceUpdate.success_url)
 
 
 class ServiceDataSourceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -459,14 +385,6 @@ class ProtocolCreate(PermissionsRequiredMixin, CreateView):
     required_permissions = ('service.add_protocol',)
 
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(ProtocolCreate.success_url)
-
-
 class ProtocolUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to update the protocol.
@@ -477,21 +395,6 @@ class ProtocolUpdate(PermissionsRequiredMixin, UpdateView):
     success_url = reverse_lazy('protocols_list')
     required_permissions = ('service.change_protocol',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of Protocol : %s from initial values ' % (self.object.name) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            self.object = form.save()
-        return HttpResponseRedirect(ProtocolUpdate.success_url)
 
 class ProtocolDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """

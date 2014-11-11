@@ -210,31 +210,6 @@ class UserGroupUpdate(PermissionsRequiredMixin, UpdateView):
     success_url = reverse_lazy('ug_list')
     required_permissions = ('user_group.change_usergroup',)
 
-    def form_valid(self, form):
-        """
-        To log the user activity after submitting.
-        """
-        #IntegrityError: (1062, "Duplicate entry 'test_group4' for key 'name'")
-        #TODO:Disable the edit of name from the UI (name should be unique)
-        self.object = form.save()
-
-        #User Activity log
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of User group : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-
-            self.object=form.save()
-
-        return super(ModelFormMixin, self).form_valid(form)
-
-
 
 class UserGroupDelete(PermissionsRequiredMixin, DeleteView):
     """
