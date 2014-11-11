@@ -258,22 +258,14 @@ def select_device(request, pk):
 
 
 #**************************************** Antenna *********************************************
-class AntennaList(PermissionsRequiredMixin, ListView):
+class AntennaList(PermissionsRequiredMixin, TemplateView):
     """
-    Class based view to render Antenna list page.
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = Antenna
+
     template_name = 'antenna/antenna_list.html'
     required_permissions = ('inventory.view_antenna',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(AntennaList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -399,22 +391,13 @@ def select_antenna(request, pk):
 
 
 #****************************************** Base Station ********************************************
-class BaseStationList(PermissionsRequiredMixin, ListView):
+class BaseStationList(PermissionsRequiredMixin, TemplateView):
     """
-    Class based View to render Base Station Data table.
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = BaseStation
     template_name = 'base_station/base_stations_list.html'
     required_permissions = ('inventory.view_basestation',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(BaseStationList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -549,22 +532,13 @@ def select_base_station(request, pk):
 
 
 #**************************************** Backhaul *********************************************
-class BackhaulList(PermissionsRequiredMixin, ListView):
+class BackhaulList(PermissionsRequiredMixin, TemplateView):
     """
-    Class based View to render Backhaul Listing page..
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = Backhaul
     template_name = 'backhaul/backhauls_list.html'
     required_permissions = ('inventory.view_backhaul',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(BackhaulList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -711,22 +685,13 @@ def select_backhaul(request, pk):
 
 
 #**************************************** Sector *********************************************
-class SectorList(PermissionsRequiredMixin, ListView):
+class SectorList(PermissionsRequiredMixin, TemplateView):
     """
-    Class Based View to render Sector List Page.
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = Sector
     template_name = 'sector/sectors_list.html'
     required_permissions = ('inventory.view_sector',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(SectorList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -867,22 +832,13 @@ def select_sector(request, pk):
 
 
 #**************************************** Customer *********************************************
-class CustomerList(PermissionsRequiredMixin, ListView):
+class CustomerList(PermissionsRequiredMixin, TemplateView):
     """
-    Class based View to render Customer listing page.
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = Customer
     template_name = 'customer/customers_list.html'
     required_permissions = ('inventory.view_customer',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(CustomerList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         context = super(CustomerList, self).get_context_data(**kwargs)
@@ -1000,22 +956,13 @@ def select_customer(request, pk):
 
 
 #**************************************** Sub Station *********************************************
-class SubStationList(PermissionsRequiredMixin, ListView):
+class SubStationList(PermissionsRequiredMixin, TemplateView):
     """
-    Class Based View to render Sub Station List Page.
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = SubStation
     template_name = 'sub_station/sub_stations_list.html'
     required_permissions = ('inventory.view_substation',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(SubStationList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -1158,22 +1105,13 @@ def select_sub_station(request, pk):
     return HttpResponse(json.dumps([SubStation.objects.get(id=pk).alias]))
 
 #**************************************** Circuit *********************************************
-class CircuitList(PermissionsRequiredMixin, ListView):
+class CircuitList(PermissionsRequiredMixin, TemplateView):
     """
-    Class Based View to render Circuit List Page.
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = Circuit
     template_name = 'circuit/circuits_list.html'
     required_permissions = ('inventory.view_circuit',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(CircuitList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """

@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, TemplateView
 from django.views.generic.base import View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -23,21 +23,12 @@ from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 
-class DashbaordSettingsListView(ListView):
+class DashbaordSettingsListView(TemplateView):
     """
-    Class Based Dashboard-Settings View to render list page.
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = DashboardSetting
     template_name = 'dashboard/dashboard_settings_list.html'
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(DashbaordSettingsListView, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
