@@ -89,3 +89,5 @@ def resize_icon_size(sender, instance=None, **kwargs):
         instance.upload_image = content
     except ValueError:
         pass
+    except IOError:
+        pass
