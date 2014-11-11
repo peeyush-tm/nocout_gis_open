@@ -1901,13 +1901,6 @@ class DeviceTypeFieldsCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('device_extra_field_list')
     required_permissions = ('device.add_devicetypefieldsvalue',)
 
-    def form_valid(self, form):
-        """
-        If the form is valid, redirect to the supplied URL.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
-
 
 class DeviceTypeFieldsUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -1918,38 +1911,6 @@ class DeviceTypeFieldsUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = DeviceTypeFieldsUpdateForm
     success_url = reverse_lazy('device_extra_field_list')
     required_permissions = ('device.change_devicetypefieldsvalue',)
-
-    def form_valid(self, form):
-        """
-        If the form is valid, redirect to the supplied URL.
-        """
-
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-
-        cleaned_data_field_dict = {field: form.cleaned_data[field].pk
-        if field in ('device_type') and form.cleaned_data[field] else form.cleaned_data[field] for field in
-                                   form.cleaned_data.keys()}
-
-        try:
-            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-            if changed_fields_dict:
-                initial_field_dict['device_type'] = DeviceType.objects.get(pk=initial_field_dict['device_type']).name if \
-                    initial_field_dict['device_type'] else str(None)
-                cleaned_data_field_dict['device_type'] = DeviceType.objects.get(
-                    pk=cleaned_data_field_dict['device_type']).name if cleaned_data_field_dict['device_type'] else str(None)
-
-                verb_string = 'Changed values of Device Fields: %s from initial values ' % (
-                    self.object.field_name) + ', '.join(['%s: %s' % (k, initial_field_dict[k]) \
-                                                         for k in changed_fields_dict]) + \
-                              ' to ' + \
-                              ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-                if len(verb_string) >= 255:
-                    verb_string = verb_string[:250] + '...'
-        except Exception as activity:
-            pass
-
-        self.object = form.save()
-        return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 
 class DeviceTypeFieldsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -2724,31 +2685,6 @@ class DeviceModelUpdate(PermissionsRequiredMixin, UpdateView):
             mt.type = device_type
             mt.save()
 
-        try:
-            initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-
-            cleaned_data_field_dict = {field: map(lambda obj: obj.pk, form.cleaned_data[field])
-            if field in ('device_types') and form.cleaned_data[field] else form.cleaned_data[field]
-                                       for field in form.cleaned_data.keys()}
-
-            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-            if changed_fields_dict:
-                initial_field_dict['device_types'] = ', '.join(
-                    [DeviceType.objects.get(pk=vendor).name for vendor in initial_field_dict['device_types']])
-                cleaned_data_field_dict['device_types'] = ', '.join(
-                    [DeviceType.objects.get(pk=vendor).name for vendor in cleaned_data_field_dict['device_types']])
-
-                verb_string = 'Changed values of Device Models : %s from initial values ' % self.object.name \
-                              + ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) \
-                              + ' to ' + \
-                              ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-
-                if len(verb_string) >= 255:
-                    verb_string = verb_string[:250] + '...'
-
-        except Exception as activity:
-            pass
-
         return HttpResponseRedirect(DeviceModelUpdate.success_url)
 
 
@@ -2958,13 +2894,6 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('device_type_list')
     required_permissions = ('device.add_devicetype',)
 
-    def form_valid(self, form):
-        """
-        If the form is valid, redirect to the supplied URL.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(DeviceTypeCreate.success_url)
-
 
 class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -2975,29 +2904,6 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
     required_permissions = ('device.change_devicetype',)
-
-    def form_valid(self, form):
-        """
-        If the form is valid, redirect to the supplied URL.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        try:
-            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-            if changed_fields_dict:
-
-                verb_string = 'Changed values of Device Type: %s from initial values ' % (self.object.name) + ', '.join(
-                    ['%s: %s' % (k, initial_field_dict[k]) \
-                     for k in changed_fields_dict]) + \
-                              ' to ' + \
-                              ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-                if len(verb_string) >= 255:
-                    verb_string = verb_string[:250] + '...'
-        except Exception as activity:
-            pass
-        self.object = form.save()
-        return HttpResponseRedirect(DeviceTypeUpdate.success_url)
 
 
 class DeviceTypeDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -3133,13 +3039,6 @@ class DevicePortCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('device_ports_list')
     required_permissions = ('device.add_deviceport',)
 
-    def form_valid(self, form):
-        """
-        If the form is valid, redirect to the supplied URL.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(DevicePortCreate.success_url)
-
 
 class DevicePortUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -3150,28 +3049,6 @@ class DevicePortUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = DevicePortForm
     success_url = reverse_lazy('device_ports_list')
     required_permissions = ('device.change_deviceport',)
-
-    def form_valid(self, form):
-        """
-        If the form is valid, redirect to the supplied URL.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        try:
-            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-            if changed_fields_dict:
-
-                verb_string = 'Changed values of DevicePort: %s from initial values ' % self.object.name + \
-                              ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) + \
-                              ' to ' + \
-                              ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-                if len(verb_string) >= 255:
-                    verb_string = verb_string[:250] + '...'
-        except Exception as activity:
-            pass
-        self.object = form.save()
-        return HttpResponseRedirect(DevicePortUpdate.success_url)
 
 
 class DevicePortDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -3313,13 +3190,6 @@ class DeviceFrequencyCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('device_frequency_list')
     required_permissions = ('device.add_devicefrequency',)
 
-    def form_valid(self, form):
-        """
-        If the form is valid, redirect to the supplied URL.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(DeviceFrequencyCreate.success_url)
-
 
 class DeviceFrequencyUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -3330,13 +3200,6 @@ class DeviceFrequencyUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = DeviceFrequencyForm
     success_url = reverse_lazy('device_frequency_list')
     required_permissions = ('device.change_devicefrequency',)
-
-    def form_valid(self, form):
-        """
-        If the form is valid, redirect to the supplied URL.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)
 
 
 class DeviceFrequencyDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
