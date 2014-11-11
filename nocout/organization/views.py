@@ -16,6 +16,7 @@ from nocout.utils import logged_in_user_organizations
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.generics import FormRequestMixin
 
 
 class OrganizationList(PermissionsRequiredMixin, ListView):
@@ -83,7 +84,7 @@ class OrganizationDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'organization/organization_detail.html'
 
 
-class OrganizationCreate(PermissionsRequiredMixin, CreateView):
+class OrganizationCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new organization.
     """
@@ -103,7 +104,7 @@ class OrganizationCreate(PermissionsRequiredMixin, CreateView):
         return super(ModelFormMixin, self).form_valid(form)
 
 
-class OrganizationUpdate(PermissionsRequiredMixin, UpdateView):
+class OrganizationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update organization.
     """

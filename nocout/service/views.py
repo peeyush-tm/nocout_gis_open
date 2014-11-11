@@ -163,13 +163,12 @@ class ServiceParametersListingTable(PermissionsRequiredMixin, DatatableSearchMix
         :return qs
 
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             dct.update(actions='<a href="/service_parameter/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/service_parameter/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
-        return qs
+        return json_data
 
 
 class ServiceParametersDetail(PermissionsRequiredMixin, DetailView):

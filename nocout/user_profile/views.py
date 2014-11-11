@@ -80,27 +80,28 @@ class UserListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixi
         :return qs
         """
 
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-            sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
-            OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
-            qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
-        #if the user role is Admin then the action column_values will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers= self.request.GET.get('datatable_headers','').replace('false',"\"False\"")
 
-            for dct in qs:
-                if dct['id'] == self.request.user.id:
-                    actions = '<a href="/user/myprofile/"><i class="fa fa-pencil text-dark"></i></a>'
-                else:
-                    actions = '''<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                            <a href="#UserListing" onclick='Dajaxice.user_profile.user_soft_delete_form( get_soft_delete_form,\
-                            {{ \"value\": {0} , \"datatable_headers\": {1} }})'><i class="fa fa-trash-o text-danger">\
-                            </i></a>'''.format(dct['id'], datatable_headers)
-                dct.update( actions=actions,
-                            last_login=dct['last_login'].strftime("%Y-%m-%d %H:%M:%S")
-                          )
-        return qs
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
+        OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
+        if json_data:
+            json_data, qs_headers = Datatable_Generation( json_data, sanity_dicts_list ).main()
+            #if the user role is Admin then the action column_values will appear on the datatable
+            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+                datatable_headers= self.request.GET.get('datatable_headers','').replace('false',"\"False\"")
+
+                for dct in json_data:
+                    if dct['id'] == self.request.user.id:
+                        actions = '<a href="/user/myprofile/"><i class="fa fa-pencil text-dark"></i></a>'
+                    else:
+                        actions = '''<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="#UserListing" onclick='Dajaxice.user_profile.user_soft_delete_form( get_soft_delete_form,\
+                                {{ \"value\": {0} , \"datatable_headers\": {1} }})'><i class="fa fa-trash-o text-danger">\
+                                </i></a>'''.format(dct['id'], datatable_headers)
+                    dct.update( actions=actions,
+                                last_login=dct['last_login'].strftime("%Y-%m-%d %H:%M:%S")
+                              )
+        return json_data
 
 
 class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilterMixin, BaseDatatableView):
@@ -126,21 +127,21 @@ class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilter
         :return qs
         """
 
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-            sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
-            OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
-            qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
+        OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
+        if json_data:
+            json_data, qs_headers = Datatable_Generation( json_data, sanity_dicts_list ).main()
 
-        #if the user role is Admin then the action column_values will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            for dct in qs:
+            #if the user role is Admin then the action column_values will appear on the datatable
+            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+                for dct in json_data:
 
-                dct.update( actions= '<a href="#UserArchivedListing" onclick= "add_confirmation(id={0})"<i class="fa fa-plus text-success"></i></a>'
-                                     '<a href="#UserArchivedListing" onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'])
-                )
+                    dct.update( actions= '<a href="#UserArchivedListing" onclick= "add_confirmation(id={0})"<i class="fa fa-plus text-success"></i></a>'
+                                         '<a href="#UserArchivedListing" onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'])
+                    )
 
-        return qs
+        return json_data
 
 
 class UserDetail(PermissionsRequiredMixin, DetailView):
@@ -234,7 +235,10 @@ class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
         return self.post(*args, **kwargs)
 
     def get_queryset(self):
-        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
+        queryset = super(UserDelete, self).get_queryset()
+        queryset = queryset.filter(organization__in=logged_in_user_organizations(self))
+        queryset = queryset.exclude(id=self.request.user.id)
+        return queryset
 
 
 class CurrentUserProfileUpdate(FormRequestMixin, UpdateView):

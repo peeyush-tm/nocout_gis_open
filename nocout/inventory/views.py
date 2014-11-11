@@ -262,6 +262,8 @@ def select_device(request, pk):
 #**************************************** Antenna *********************************************
 class AntennaList(PermissionsRequiredMixin, TemplateView):
     """
+    Class Based View for the Antenna data table rendering.
+
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
     """
@@ -397,6 +399,8 @@ def select_antenna(request, pk):
 #****************************************** Base Station ********************************************
 class BaseStationList(PermissionsRequiredMixin, TemplateView):
     """
+    Class Based View for the Base Station data table rendering.
+
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
     """
@@ -540,6 +544,8 @@ def select_base_station(request, pk):
 #**************************************** Backhaul *********************************************
 class BackhaulList(PermissionsRequiredMixin, TemplateView):
     """
+    Class Based View for the Backhaul data table rendering.
+
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
     """
@@ -695,6 +701,8 @@ def select_backhaul(request, pk):
 #**************************************** Sector *********************************************
 class SectorList(PermissionsRequiredMixin, TemplateView):
     """
+    Class Based View for the Sector data table rendering.
+
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
     """
@@ -844,6 +852,8 @@ def select_sector(request, pk):
 #**************************************** Customer *********************************************
 class CustomerList(PermissionsRequiredMixin, TemplateView):
     """
+    Class Based View for the Customer data table rendering.
+
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
     """
@@ -970,6 +980,8 @@ def select_customer(request, pk):
 #**************************************** Sub Station *********************************************
 class SubStationList(PermissionsRequiredMixin, TemplateView):
     """
+    Class Based View for the Sub Station data table rendering.
+
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
     """
@@ -1121,6 +1133,8 @@ def select_sub_station(request, pk):
 #**************************************** Circuit *********************************************
 class CircuitList(PermissionsRequiredMixin, TemplateView):
     """
+    Class Based View for the Circuit data table rendering.
+
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
     """
@@ -1812,9 +1826,9 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             threshold_config = ThresholdConfiguration.objects.get(id=int(dct['threshold_template']))
             image_string, range_text, full_string='','',''
             if dct['icon_settings'] and dct['icon_settings'] !='NULL':
@@ -1846,7 +1860,7 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin
                 user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
                 actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
+        return json_data
 
 
 class ThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
