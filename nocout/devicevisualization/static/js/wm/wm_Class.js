@@ -316,8 +316,9 @@ function WhiteMapClass() {
 		this.fetchPollingTemplate_wmap = function() {
 
 			var selected_technology = $("#polling_tech").val(),
-			pathArray = [],
-			polygon = "";
+				pathArray = [],
+				polygon = "",
+				service_type = $("#isPing")[0].checked ? "ping" : "other";
 
 
 			/*Re-Initialize the polling*/
@@ -330,7 +331,7 @@ function WhiteMapClass() {
 				$("#tech_send").button("loading");
 				/*ajax call for services & datasource*/
 				$.ajax({
-					url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology),
+					url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&service_type="+service_type,
 					success : function(results) {
 
 						result = JSON.parse(results);
@@ -619,6 +620,8 @@ function WhiteMapClass() {
 
 			if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
 
+				var service_type = $("#isPing")[0].checked ? "ping" : "other";
+				
 				$("#getDevicesPollingData").button("loading");
 
 				/*Disable service templates dropdown*/
@@ -632,7 +635,7 @@ function WhiteMapClass() {
 				}
 
 				$.ajax({
-					url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+					url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 					// url : base_url+"/"+"static/services.json",
 					success : function(results) {
 						var result = "";
