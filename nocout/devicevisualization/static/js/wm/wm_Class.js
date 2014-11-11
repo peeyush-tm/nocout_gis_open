@@ -644,10 +644,7 @@ function WhiteMapClass() {
 						}
 						
 						if(result.success == 1) {
-							result.data.devices[7624].value = Math.ceil(Math.random()*50);
-							result.data.devices[7625].value = Math.ceil(Math.random()*50);
-							result.data.devices[7624].icon =  "static/img/marker/marker"+Math.ceil(Math.random()*5)+".png";
-							result.data.devices[7625].icon =  "static/img/marker/marker"+Math.ceil(Math.random()*5)+".png";
+							
 							$("#getDevicesPollingData").button("complete");
 
 
@@ -1049,7 +1046,7 @@ function WhiteMapClass() {
 		This function toggles all Station Markers size based on the Value selected in the dropdown.
 		 */
 		this.updateMarkersSize = function(iconSize) {
-
+			global_this.unSpiderifyBsMarker();
 			var largeur= 32, hauteur= 37,largeur_bs = 32, hauteur_bs= 37, divideBy;
 			var anchorX, i, markerImage, markerImage2, icon;
 			if(iconSize=== 'small') {
@@ -1084,6 +1081,7 @@ function WhiteMapClass() {
 			//End of Loop through the sector markers
 
 			ccpl_map.getLayersByName("Devices")[0].redraw();
+			ccpl_map.getLayersByName("Devices")[0].removeAllFeatures();
 
 
 			// Loop through the Master Markers
