@@ -11,7 +11,8 @@ import os
 from multiprocessing import Process, Queue
 from ast import literal_eval
 #import Queue
-from nocout_live import get_current_value, nocout_log
+from nocout_live import get_current_value
+from nocout_logger import nocout_log
 
 
 logger = nocout_log()

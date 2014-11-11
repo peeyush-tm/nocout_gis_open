@@ -12,7 +12,7 @@ from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 
 #************************************** Machine *****************************************
@@ -43,7 +43,7 @@ class MachineList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class MachineListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class MachineListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Machine Data table.
     """
@@ -51,15 +51,6 @@ class MachineListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDa
     required_permissions = ('machine.view_machine',)
     columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
     order_columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
-
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Machine.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         """
@@ -96,14 +87,6 @@ class MachineCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('machines_list')
     required_permissions = ('machine.add_machine',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-
-        self.object=form.save()
-        return HttpResponseRedirect(MachineCreate.success_url)
-
 
 class MachineUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -114,24 +97,6 @@ class MachineUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = MachineForm
     success_url = reverse_lazy('machines_list')
     required_permissions = ('machine.change_machine',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of Machine : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-
-            self.object=form.save()
-        return HttpResponseRedirect( MachineUpdate.success_url )
 
 
 class MachineDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):

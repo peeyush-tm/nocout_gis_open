@@ -755,12 +755,6 @@ class Kmzreport_listingtable(BaseDatatableView):
 
 class KmzDelete(DeleteView):
 
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(KmzDelete, self).dispatch(*args, **kwargs)
-
     def get(self, request, *args, **kwargs):
         report_id = self.kwargs['kmz_id']
         filename = lambda x: MEDIA_ROOT + x
@@ -787,12 +781,6 @@ class KmzViewAction(View):
 
     template = ''
 
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(KmzViewAction, self).dispatch(*args, **kwargs)
-
     def get(self, request, *args, **kwargs):
         context_data = {}
         page_type = self.kwargs['page_type']
@@ -818,12 +806,6 @@ class KmzCreate(CreateView):
     template_name = 'devicevisualization/kmzuploadnew.html'
     model = KMZReport
     form_class = KmzReportForm
-
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(KmzCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         """
