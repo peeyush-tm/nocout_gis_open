@@ -15,7 +15,8 @@ from user_group.models import UserGroup
 from nocout.utils import logged_in_user_organizations
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.generics import FormRequestMixin
 
 
 class OrganizationList(PermissionsRequiredMixin, ListView):
@@ -48,7 +49,7 @@ class OrganizationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class OrganizationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class OrganizationListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Organization Data table.
     """
@@ -57,25 +58,7 @@ class OrganizationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, B
     columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
     order_columns = ['name',  'alias', 'parent__name', 'city', 'state', 'country']
     search_columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
-
-    def logged_in_user_organization_ids(self):
-        """
-        return the logged in user descendants organization ids.
-        """
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-            return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
-        else:
-            return list(str(self.request.user.userprofile.organization.id))
-
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= self.logged_in_user_organization_ids()
-        return Organization.objects.filter(pk__in=organization_descendants_ids).values(*self.columns + ['id'])
+    organization_field = 'id'
 
     def prepare_results(self, qs):
         """
@@ -101,7 +84,7 @@ class OrganizationDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'organization/organization_detail.html'
 
 
-class OrganizationCreate(PermissionsRequiredMixin, CreateView):
+class OrganizationCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new organization.
     """
@@ -121,7 +104,7 @@ class OrganizationCreate(PermissionsRequiredMixin, CreateView):
         return super(ModelFormMixin, self).form_valid(form)
 
 
-class OrganizationUpdate(PermissionsRequiredMixin, UpdateView):
+class OrganizationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update organization.
     """
@@ -138,19 +121,8 @@ class OrganizationUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of Organization : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-
-            self.object=form.save()
-            self.model.objects.rebuild()
+        self.object=form.save()
+        self.model.objects.rebuild()
         return HttpResponseRedirect( OrganizationUpdate.success_url )
 
 

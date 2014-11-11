@@ -8,7 +8,7 @@ References :
     - https://django-braces.readthedocs.org/en/latest/
 """
 
-from django.http import HttpResponseForbidden
+from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 
@@ -37,7 +37,7 @@ class PermissionsRequiredMixin(object):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         if not request.user.has_perms(self.required_permissions):
-            return HttpResponseForbidden()
+            raise PermissionDenied
         return super(PermissionsRequiredMixin, self).dispatch(request, *args, **kwargs)
 
 
@@ -50,5 +50,5 @@ class SuperUserRequiredMixin(object):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_superuser:
-            return HttpResponseForbidden()
+            raise PermissionDenied
         return super(SuperUserRequiredMixin, self).dispatch(request, *args, **kwargs)

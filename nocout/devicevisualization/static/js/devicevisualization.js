@@ -1055,6 +1055,11 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
  */
 $("#export_data_gmap").click(function(e) {
 
+    if($("#export_data_gmap").hasClass('btn-info')) {
+        $("#export_data_gmap").removeClass('btn-info');
+        $("#export_data_gmap").addClass('btn-warning');
+    }
+
     //enable the flag
     isExportDataActive = 1;
     // call function to select data to be export & then export selected data

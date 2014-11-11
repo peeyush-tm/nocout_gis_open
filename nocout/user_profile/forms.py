@@ -17,7 +17,7 @@ class UserForm(forms.ModelForm):
 
 
     def __init__(self, *args, **kwargs):
-        self.request=kwargs.pop('request', None)
+        self.request = kwargs.pop('request', None)
         initial = kwargs.setdefault('initial',{})
 
         # removing help text for username 'select' field
@@ -34,8 +34,8 @@ class UserForm(forms.ModelForm):
         super(UserForm, self).__init__(*args, **kwargs)
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
-        if not self.request.is_superuser:
-            logged_in_user_organization_list = self.request.userprofile.organization.get_descendants( include_self=True )
+        if not self.request.user.is_superuser:
+            logged_in_user_organization_list = self.request.user.userprofile.organization.get_descendants( include_self=True )
             self.fields['organization'].queryset = logged_in_user_organization_list
         else:
             self.fields['organization'].queryset = Organization.objects.all()
@@ -43,7 +43,7 @@ class UserForm(forms.ModelForm):
         if self.instance.pk:
             self.fields['password1'].required = False
             self.fields['password2'].required = False
-            if self.instance.pk == self.request.pk:
+            if self.instance.pk == self.request.user.pk:
                 self.fields['username'].widget.attrs['readonly'] = True
                 self.fields['parent'].widget.attrs['disabled'] = 'disabled'
                 self.fields['role'].widget.attrs['disabled'] = 'disabled'
@@ -117,7 +117,7 @@ class UserForm(forms.ModelForm):
         Restrict the user other than super user to create the admin.
         """
         role = self.cleaned_data['role']
-        if not self.request.is_superuser and len(role) == 1:
+        if not self.request.user.is_superuser and len(role) == 1:
             if role[0].role_name == 'admin':
                 raise forms.ValidationError("Not permitted to create admin")
             else:

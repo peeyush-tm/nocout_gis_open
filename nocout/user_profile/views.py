@@ -21,7 +21,8 @@ from django.db.models import Q
 from nocout.utils import logged_in_user_organizations
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.generics import FormRequestMixin
 
 
 class UserList(PermissionsRequiredMixin, ListView):
@@ -55,7 +56,7 @@ class UserList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class UserListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class UserListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class Based View for the User data table rendering.
     """
@@ -67,25 +68,9 @@ class UserListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatat
                      'phone_number', 'last_login']
     search_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number']
-
-    def logged_in_user_organization_ids(self):
-        """
-        to return logged in user organization and organization descendants
-        """
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True)[0] =='admin':
-            return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
-        else:
-            return list(str(self.request.user.userprofile.organization.id))
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= self.logged_in_user_organization_ids()
-        return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=0)\
-               .values(*self.columns+['id'])
+    extra_qs_kwargs = {
+        'is_deleted': 0
+    }
 
     def prepare_results(self, qs):
         """
@@ -95,57 +80,31 @@ class UserListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatat
         :return qs
         """
 
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-            sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
-            OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
-            qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
-        #if the user role is Admin then the action column_values will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers= self.request.GET.get('datatable_headers','').replace('false',"\"False\"")
 
-            for dct in qs:
-                dct.update( actions='''<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                            <a href="#UserListing" onclick='Dajaxice.user_profile.user_soft_delete_form( get_soft_delete_form,\
-                            {{ \"value\": {0} , \"datatable_headers\": {1} }})'><i class="fa fa-trash-o text-danger">\
-                            </i></a>'''.format(dct['id'], datatable_headers),
-                            last_login=dct['last_login'].strftime("%Y-%m-%d %H:%M:%S")
-                          )
-        return qs
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
+        OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
+        if json_data:
+            json_data, qs_headers = Datatable_Generation( json_data, sanity_dicts_list ).main()
+            #if the user role is Admin then the action column_values will appear on the datatable
+            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+                datatable_headers= self.request.GET.get('datatable_headers','').replace('false',"\"False\"")
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
+                for dct in json_data:
+                    if dct['id'] == self.request.user.id:
+                        actions = '<a href="/user/myprofile/"><i class="fa fa-pencil text-dark"></i></a>'
+                    else:
+                        actions = '''<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="#UserListing" onclick='Dajaxice.user_profile.user_soft_delete_form( get_soft_delete_form,\
+                                {{ \"value\": {0} , \"datatable_headers\": {1} }})'><i class="fa fa-trash-o text-danger">\
+                                </i></a>'''.format(dct['id'], datatable_headers)
+                    dct.update( actions=actions,
+                                last_login=dct['last_login'].strftime("%Y-%m-%d %H:%M:%S")
+                              )
+        return json_data
 
-        qs = self.get_initial_queryset()
 
-        # number of records before filtering
-        total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
-
-class UserArchivedListingTable(DatatableSearchMixin, BaseDatatableView):
+class UserArchivedListingTable(DatatableSearchMixin, DatatableOrganizationFilterMixin, BaseDatatableView):
     """
     Class Based View for the Archived User data table rendering.
     """
@@ -156,19 +115,9 @@ class UserArchivedListingTable(DatatableSearchMixin, BaseDatatableView):
                      'parent__last_name', 'organization__name','phone_number', 'last_login']
     search_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                      'parent__last_name', 'organization__name','phone_number']
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-            organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
-                                           .values_list('id', flat=True))
-        else:
-            organization_descendants_ids= list(str(self.request.user.userprofile.organization.id))
-        return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=1).values(*self.columns+['id'])
+    extra_qs_kwargs = {
+        'is_deleted':1
+    }
 
     def prepare_results(self, qs):
         """
@@ -178,53 +127,22 @@ class UserArchivedListingTable(DatatableSearchMixin, BaseDatatableView):
         :return qs
         """
 
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-            sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
-            OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
-            qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
+        OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
+        if json_data:
+            json_data, qs_headers = Datatable_Generation( json_data, sanity_dicts_list ).main()
 
-        #if the user role is Admin then the action column_values will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            for dct in qs:
+            #if the user role is Admin then the action column_values will appear on the datatable
+            if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+                for dct in json_data:
 
-                dct.update( actions= '<a href="#UserArchivedListing" onclick= "add_confirmation(id={0})"<i class="fa fa-plus text-success"></i></a>'
-                                     '<a href="#UserArchivedListing" onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'])
-                )
+                    dct.update( actions= '<a href="#UserArchivedListing" onclick= "add_confirmation(id={0})"<i class="fa fa-plus text-success"></i></a>'
+                                         '<a href="#UserArchivedListing" onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'])
+                    )
 
-        return qs
+        return json_data
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
 
 class UserDetail(PermissionsRequiredMixin, DetailView):
     """
@@ -238,7 +156,7 @@ class UserDetail(PermissionsRequiredMixin, DetailView):
         return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
 
 
-class UserCreate(PermissionsRequiredMixin, CreateView):
+class UserCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class Based View to Create a User.
     """
@@ -247,14 +165,6 @@ class UserCreate(PermissionsRequiredMixin, CreateView):
     form_class = UserForm
     success_url = reverse_lazy('user_list')
     required_permissions = ('user_profile.add_userprofile',)
-
-    def get_form_kwargs(self):
-        """
-        Updating Kwargs, required request object to validate the user logged in.
-        """
-        kwargs = super(UserCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request.user })
-        return kwargs
 
     def form_valid(self, form):
         """
@@ -271,7 +181,7 @@ class UserCreate(PermissionsRequiredMixin, CreateView):
         self.object.groups.add(project_group)
         return super(ModelFormMixin, self).form_valid(form)
 
-class UserUpdate(PermissionsRequiredMixin, UpdateView):
+class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class Based View to Update the user.
     """
@@ -283,75 +193,27 @@ class UserUpdate(PermissionsRequiredMixin, UpdateView):
     required_permissions = ('user_profile.change_userprofile',)
 
     def get_queryset(self):
-        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(UserUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request.user })
-        return kwargs
+        queryset = super(UserUpdate, self).get_queryset()
+        queryset = queryset.filter(organization__in=logged_in_user_organizations(self))
+        queryset = queryset.exclude(id=self.request.user.id)
+        return queryset
 
     def form_valid(self, form):
         """
         To update the form before submitting and log the user activity.
         """
-        self.object= form.save(commit=False)
+        self.object = form.save(commit=False)
         if form.cleaned_data["password2"]:
             self.object.set_password(form.cleaned_data["password2"])
-        role= form.cleaned_data['role'][0]
-        project_group_name= project_group_role_dict_mapper[role.role_name]
-        project_group= Group.objects.get( name = project_group_name)
+
+        role = form.cleaned_data['role'][0]
+        project_group_name = project_group_role_dict_mapper[role.role_name]
+        project_group = Group.objects.get(name=project_group_name)
         UserProfile.groups.through.objects.filter(user_id=self.object.id).delete()
         self.object.groups.add(project_group)
+
         self.object.save()
         form.save_m2m()
-
-        try:
-            #User Activity Logs
-
-            initial_field_dict={}
-            for field in form.initial.keys():
-                if field in ('organization','parent'):
-                    initial_field_dict[field]= form.initial[field].id
-                else:
-                    initial_field_dict[field]= form.initial[field]
-
-            cleaned_data_field_dict={}
-            for field in form.cleaned_data.keys():
-                if field =='role':
-                    cleaned_data_field_dict[field]= form.cleaned_data[field][0].id
-                elif field in ('organization','parent'):
-                    cleaned_data_field_dict[field]= form.cleaned_data[field].id
-                else:
-                    cleaned_data_field_dict[field]=form.cleaned_data[field]
-
-
-
-            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-
-            if changed_fields_dict:
-
-                initial_field_dict['role']= Roles.objects.get(id= initial_field_dict['role']).role_name
-                initial_field_dict['parent']= UserProfile.objects.get(id= initial_field_dict['parent']).username
-                initial_field_dict['organization'] = Organization.objects.get(id= initial_field_dict['organization']).name
-
-                cleaned_data_field_dict['role'] = Roles.objects.get(id= cleaned_data_field_dict['role']).role_name
-                cleaned_data_field_dict['parent'] = UserProfile.objects.get(id= cleaned_data_field_dict['parent']).username
-                cleaned_data_field_dict['organization'] = Organization.objects.get(id= cleaned_data_field_dict['organization']).name
-
-
-                verb_string = 'Changed values of user %s from initial values '%(self.object.username) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k,cleaned_data_field_dict[k]) for k in changed_fields_dict])
-                if len(verb_string)>=255:
-                    verb_string=verb_string[:250] + '...'
-
-
-        except Exception as activity:
-            pass
 
         return HttpResponseRedirect(UserCreate.success_url)
 
@@ -373,10 +235,13 @@ class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
         return self.post(*args, **kwargs)
 
     def get_queryset(self):
-        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
+        queryset = super(UserDelete, self).get_queryset()
+        queryset = queryset.filter(organization__in=logged_in_user_organizations(self))
+        queryset = queryset.exclude(id=self.request.user.id)
+        return queryset
 
 
-class CurrentUserProfileUpdate(UpdateView):
+class CurrentUserProfileUpdate(FormRequestMixin, UpdateView):
     """
     Class Based view to update the current logged in user profile.
     """
@@ -384,14 +249,6 @@ class CurrentUserProfileUpdate(UpdateView):
     template_name = 'user_profile/user_myprofile.html'
     form_class = UserForm
     success_url = reverse_lazy('current_user_profile_update')
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(CurrentUserProfileUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request.user })
-        return kwargs
 
     def get_object(self, queryset=None):
         """
@@ -413,22 +270,6 @@ class CurrentUserProfileUpdate(UpdateView):
         if  form.cleaned_data['password2']:
             kwargs.update({'password': make_password(form.cleaned_data['password2'])})
 
-        try:
-
-            changed_fields=DictDiffer(form.cleaned_data, form.initial).changed() - set(['role','username','user_group','organization'])
-            if changed_fields:
-
-                initial_field_dict = { field : form.initial[field] for field in changed_fields }
-                changed_field_dict = { field : form.cleaned_data[field] for field in changed_fields }
-
-                verb_string = 'Changed values from initial values ' + ', '.join(['%s: %s' %(k,v) for k,v in initial_field_dict.iteritems()])+\
-                              ' to '+', '.join(['%s: %s' %(k,v) for k,v in changed_field_dict.iteritems()])
-                if len(verb_string)>=255:
-                    verb_string=verb_string[:250] + '...'
-                #Adding the user log for the number of fileds and with the values changed.
-        except Exception as activity:
-            pass
-
         UserProfile.objects.filter(id=self.object.id).update(**kwargs)
         return super(ModelFormMixin, self).form_valid(form)
 
@@ -449,3 +290,14 @@ def organisation_user_list(request):
         return HttpResponse( parent_list_option )
     else:
         return HttpResponse("Invalid Url")
+
+def organisation_user_select(request):
+    """
+    return the user if parent is selected
+    while creation and updation of the user-profile.
+    """
+    parent_id = request.GET['parent_id']
+    parent_select = UserProfile.objects.get(id=parent_id)
+    html = "<option value=>Select</option>"
+    html += "<option value={0}>{1}</option>".format(parent_select.id, parent_select.username)
+    return HttpResponse( html )

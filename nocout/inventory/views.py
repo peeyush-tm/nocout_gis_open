@@ -47,8 +47,9 @@ from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory,
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
     bulk_upload_wimax_ss_inventory
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
-from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin
+from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
 
 logger = logging.getLogger(__name__)
 
@@ -192,13 +193,6 @@ class InventoryCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('InventoryList')
     required_permissions = ('inventory.add_inventory',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(InventoryCreate.success_url)
-
 
 class InventoryUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -209,13 +203,6 @@ class InventoryUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = InventoryForm
     success_url = reverse_lazy('InventoryList')
     required_permissions = ('inventory.change_inventory',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        return HttpResponseRedirect(InventoryCreate.success_url)
 
 
 class InventoryDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -252,6 +239,7 @@ def inventory_details_wrt_organization(request):
 
 def list_device(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -266,27 +254,22 @@ def list_device(request):
 
 def select_device(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([Device.objects.get(id=pk).device_alias]))
 
 
 #**************************************** Antenna *********************************************
-class AntennaList(PermissionsRequiredMixin, ListView):
+class AntennaList(PermissionsRequiredMixin, TemplateView):
     """
-    Class based view to render Antenna list page.
+    Class Based View for the Antenna data table rendering.
+
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = Antenna
+
     template_name = 'antenna/antenna_list.html'
     required_permissions = ('inventory.view_antenna',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(AntennaList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -356,7 +339,7 @@ class AntennaDetail(PermissionsRequiredMixin, DetailView):
     required_permissions = ('inventory.view_antenna',)
 
 
-class AntennaCreate(PermissionsRequiredMixin, CreateView):
+class AntennaCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new Antenna.
     """
@@ -366,24 +349,8 @@ class AntennaCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('antennas_list')
     required_permissions = ('inventory.add_antenna',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(AntennaCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Antenna : %s" %(self.object.alias)
-        return HttpResponseRedirect(AntennaCreate.success_url)
-
-
-class AntennaUpdate(PermissionsRequiredMixin, UpdateView):
+class AntennaUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Antenna .
     """
@@ -395,32 +362,6 @@ class AntennaUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(AntennaUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Antenna : %s, ' % (self.object.alias) + ', ' .join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(AntennaUpdate.success_url)
 
 
 class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -435,6 +376,7 @@ class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
 
 def list_antenna(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -449,27 +391,21 @@ def list_antenna(request):
 
 def select_antenna(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([Antenna.objects.get(id=pk).alias]))
 
 
 #****************************************** Base Station ********************************************
-class BaseStationList(PermissionsRequiredMixin, ListView):
+class BaseStationList(PermissionsRequiredMixin, TemplateView):
     """
-    Class based View to render Base Station Data table.
+    Class Based View for the Base Station data table rendering.
+
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = BaseStation
     template_name = 'base_station/base_stations_list.html'
     required_permissions = ('inventory.view_basestation',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(BaseStationList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -548,7 +484,7 @@ class BaseStationDetail(PermissionsRequiredMixin, DetailView):
     required_permissions = ('inventory.view_basestation',)
 
 
-class BaseStationCreate(PermissionsRequiredMixin, CreateView):
+class BaseStationCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new Base Station.
     """
@@ -558,24 +494,8 @@ class BaseStationCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('base_stations_list')
     required_permissions = ('inventory.add_basestation',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(BaseStationCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Base Station : %s" %(self.object.alias)
-        return HttpResponseRedirect(BaseStationCreate.success_url)
-
-
-class BaseStationUpdate(PermissionsRequiredMixin, UpdateView):
+class BaseStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Base Station.
     """
@@ -587,32 +507,6 @@ class BaseStationUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(BaseStationUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Base Station : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(BaseStationUpdate.success_url)
 
 
 class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -627,6 +521,7 @@ class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView
 
 def list_base_station(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -641,27 +536,21 @@ def list_base_station(request):
 
 def select_base_station(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([BaseStation.objects.get(id=pk).alias]))
 
 
 #**************************************** Backhaul *********************************************
-class BackhaulList(PermissionsRequiredMixin, ListView):
+class BackhaulList(PermissionsRequiredMixin, TemplateView):
     """
-    Class based View to render Backhaul Listing page..
+    Class Based View for the Backhaul data table rendering.
+
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = Backhaul
     template_name = 'backhaul/backhauls_list.html'
     required_permissions = ('inventory.view_backhaul',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(BackhaulList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -752,7 +641,7 @@ class BackhaulDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'backhaul/backhaul_detail.html'
 
 
-class BackhaulCreate(PermissionsRequiredMixin, CreateView):
+class BackhaulCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new backhaul..
     """
@@ -762,24 +651,8 @@ class BackhaulCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('backhauls_list')
     required_permissions = ('inventory.add_backhaul',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(BackhaulCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Backhaul : %s" %(self.object.alias)
-        return HttpResponseRedirect(BackhaulCreate.success_url)
-
-
-class BackhaulUpdate(PermissionsRequiredMixin, UpdateView):
+class BackhaulUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Backhaul.
     """
@@ -791,33 +664,6 @@ class BackhaulUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(BackhaulUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Updated Backhaul : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(BackhaulUpdate.success_url)
 
 
 class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -832,6 +678,7 @@ class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
 
 def list_backhaul(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -846,27 +693,21 @@ def list_backhaul(request):
 
 def select_backhaul(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([Backhaul.objects.get(id=pk).alias]))
 
 
 #**************************************** Sector *********************************************
-class SectorList(PermissionsRequiredMixin, ListView):
+class SectorList(PermissionsRequiredMixin, TemplateView):
     """
-    Class Based View to render Sector List Page.
+    Class Based View for the Sector data table rendering.
+
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = Sector
     template_name = 'sector/sectors_list.html'
     required_permissions = ('inventory.view_sector',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(SectorList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -952,7 +793,7 @@ class SectorDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'sector/sector_detail.html'
 
 
-class SectorCreate(PermissionsRequiredMixin, CreateView):
+class SectorCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new Sector.
     """
@@ -962,24 +803,8 @@ class SectorCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('sectors_list')
     required_permissions = ('inventory.add_sector',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(SectorCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Sector : %s" %(self.object.alias)
-        return HttpResponseRedirect(SectorCreate.success_url)
-
-
-class SectorUpdate(PermissionsRequiredMixin, UpdateView):
+class SectorUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Sector.
     """
@@ -991,32 +816,6 @@ class SectorUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(SectorUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Sector : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(SectorUpdate.success_url)
 
 
 class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1030,6 +829,7 @@ class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
 
 def list_sector(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -1044,27 +844,21 @@ def list_sector(request):
 
 def select_sector(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([Sector.objects.get(id=pk).alias]))
 
 
 #**************************************** Customer *********************************************
-class CustomerList(PermissionsRequiredMixin, ListView):
+class CustomerList(PermissionsRequiredMixin, TemplateView):
     """
-    Class based View to render Customer listing page.
+    Class Based View for the Customer data table rendering.
+
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = Customer
     template_name = 'customer/customers_list.html'
     required_permissions = ('inventory.view_customer',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(CustomerList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         context = super(CustomerList, self).get_context_data(**kwargs)
@@ -1127,7 +921,7 @@ class CustomerDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'customer/customer_detail.html'
 
 
-class CustomerCreate(PermissionsRequiredMixin, CreateView):
+class CustomerCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new customer.
     """
@@ -1137,24 +931,8 @@ class CustomerCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('customers_list')
     required_permissions = ('inventory.add_customer',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(CustomerCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Customer : %s" %(self.object.alias)
-        return HttpResponseRedirect(CustomerCreate.success_url)
-
-
-class CustomerUpdate(PermissionsRequiredMixin, UpdateView):
+class CustomerUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Customer.
     """
@@ -1166,32 +944,6 @@ class CustomerUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(CustomerUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Customer : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(CustomerUpdate.success_url)
 
 
 class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1205,6 +957,7 @@ class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
 
 def list_customer(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -1219,27 +972,21 @@ def list_customer(request):
 
 def select_customer(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([Customer.objects.get(id=pk).alias]))
 
 
 #**************************************** Sub Station *********************************************
-class SubStationList(PermissionsRequiredMixin, ListView):
+class SubStationList(PermissionsRequiredMixin, TemplateView):
     """
-    Class Based View to render Sub Station List Page.
+    Class Based View for the Sub Station data table rendering.
+
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = SubStation
     template_name = 'sub_station/sub_stations_list.html'
     required_permissions = ('inventory.view_substation',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(SubStationList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -1327,7 +1074,7 @@ class SubStationDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'sub_station/sub_station_detail.html'
 
 
-class SubStationCreate(PermissionsRequiredMixin, CreateView):
+class SubStationCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new Sub Station.
     """
@@ -1337,24 +1084,8 @@ class SubStationCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('sub_stations_list')
     required_permissions = ('inventory.add_substation',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(SubStationCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Sub Station : %s" %(self.object.alias)
-        return HttpResponseRedirect(SubStationCreate.success_url)
-
-
-class SubStationUpdate(PermissionsRequiredMixin, UpdateView):
+class SubStationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update the Sub Station.
     """
@@ -1366,32 +1097,6 @@ class SubStationUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(SubStationUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Updaete Sub Station : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(SubStationUpdate.success_url)
 
 
 class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1406,6 +1111,7 @@ class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView)
 
 def list_sub_station(request):
     """
+    Used to return the list to the select2 element using ajax call.
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
@@ -1420,26 +1126,20 @@ def list_sub_station(request):
 
 def select_sub_station(request, pk):
     """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
     """
     return HttpResponse(json.dumps([SubStation.objects.get(id=pk).alias]))
 
 #**************************************** Circuit *********************************************
-class CircuitList(PermissionsRequiredMixin, ListView):
+class CircuitList(PermissionsRequiredMixin, TemplateView):
     """
-    Class Based View to render Circuit List Page.
+    Class Based View for the Circuit data table rendering.
+
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = Circuit
     template_name = 'circuit/circuits_list.html'
     required_permissions = ('inventory.view_circuit',)
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(CircuitList, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -1517,7 +1217,7 @@ class CircuitDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'circuit/circuit_detail.html'
 
 
-class CircuitCreate(PermissionsRequiredMixin, CreateView):
+class CircuitCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new Circuit.
     """
@@ -1528,24 +1228,8 @@ class CircuitCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('circuits_list')
     required_permissions = ('inventory.add_circuit',)
 
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(CircuitCreate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Circuit : %s" %(self.object.alias)
-        return HttpResponseRedirect(CircuitCreate.success_url)
-
-
-class CircuitUpdate(PermissionsRequiredMixin, UpdateView):
+class CircuitUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update Cicuit.
     """
@@ -1557,32 +1241,6 @@ class CircuitUpdate(PermissionsRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
-
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments with the request object for instantiating the form.
-        """
-        kwargs = super(CircuitUpdate, self).get_form_kwargs()
-        kwargs.update({'request':self.request })
-        return kwargs
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Circuit : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(CircuitUpdate.success_url)
 
 
 class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1773,12 +1431,6 @@ class CircuitL2ReportCreate(CreateView):
     model = CircuitL2Report
     form_class = CircuitL2ReportForm
 
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(CircuitL2ReportCreate, self).dispatch(*args, **kwargs)
-
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1840,7 +1492,7 @@ class IconSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View to render IconSettings Data table.
     """
@@ -1848,14 +1500,6 @@ class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, B
     required_permissions = ('inventory.view_iconsettings',)
     columns = ['alias', 'upload_image']
     order_columns = ['alias', 'upload_image']
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return IconSettings.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -1898,14 +1542,6 @@ class IconSettingsCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('icon_settings_list')
     required_permissions = ('inventory.add_iconsettings',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Icon Setting : %s" %(self.object.alias)
-        return HttpResponseRedirect(IconSettingsCreate.success_url)
-
 
 class IconSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -1916,24 +1552,6 @@ class IconSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = IconSettingsForm
     success_url = reverse_lazy('icon_settings_list')
     required_permissions = ('inventory.change_iconsettings',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Icon Settings : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(IconSettingsUpdate.success_url)
 
 
 class IconSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -1976,6 +1594,7 @@ class LivePollingSettingsList(PermissionsRequiredMixin, ListView):
 
 
 class LivePollingSettingsListingTable(PermissionsRequiredMixin,
+        ValuesQuerySetMixin,
         DatatableSearchMixin,
         BaseDatatableView
     ):
@@ -1986,13 +1605,6 @@ class LivePollingSettingsListingTable(PermissionsRequiredMixin,
     required_permissions = ('inventory.view_livepollingsettings',)
     columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
     order_columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return LivePollingSettings.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -2028,14 +1640,6 @@ class LivePollingSettingsCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('live_polling_settings_list')
     required_permissions = ('inventory.add_livepollingsettings',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Live Polling Setting : %s" %(self.object.alias)
-        return HttpResponseRedirect(LivePollingSettingsCreate.success_url)
-
 
 class LivePollingSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -2046,24 +1650,6 @@ class LivePollingSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = LivePollingSettingsForm
     success_url = reverse_lazy('live_polling_settings_list')
     required_permissions = ('inventory.change_livepollingsettings',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Live Polling Settings : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(LivePollingSettingsUpdate.success_url)
 
 
 class LivePollingSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -2104,7 +1690,7 @@ class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View to render ThresholdConfiguration Data table.
     """
@@ -2112,16 +1698,10 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSear
     required_permissions = ('inventory.view_thresholdconfiguration',)
     columns = ['alias', 'live_polling_template__alias']
     order_columns = ['alias', 'live_polling_template__alias']
-    search_columns = ['alias', 'live_polling_template__alias']
-
-    def get_initial_queryset(self, technology="no"):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        # return ThresholdConfiguration.objects.values(*self.columns + ['id'])
-        return ThresholdConfiguration.objects.filter(live_polling_template__id__in=LivePollingSettings.objects.filter(technology__name=technology).values('id')).values(*self.columns + ['id'])
+    tab_search = {
+                   "tab_kwarg": 'technology',
+                   "tab_attr": "live_polling_template__technology__name",
+                 }
 
     def prepare_results(self, qs):
         """
@@ -2135,40 +1715,6 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSear
             dct.update(actions='<a href="/threshold_configuration/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/threshold_configuration/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return json_data
-
-    def get_context_data(self, technology):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        # self.initialize(*args, **kwargs)
-        self.initialize()
-
-        qs = self.get_initial_queryset(technology)
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
-
 
 
 class ThresholdConfigurationDetail(PermissionsRequiredMixin, DetailView):
@@ -2190,14 +1736,6 @@ class ThresholdConfigurationCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('threshold_configuration_list')
     required_permissions = ('inventory.add_threshold_configuration',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        self.object = form.save()
-        verb_string = "Create Threshold Configuration : %s" %(self.object.alias)
-        return HttpResponseRedirect(ThresholdConfigurationCreate.success_url)
-
 
 class ThresholdConfigurationUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -2208,24 +1746,6 @@ class ThresholdConfigurationUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = ThresholdConfigurationForm
     success_url = reverse_lazy('threshold_configuration_list')
     required_permissions = ('inventory.change_threshold_configuration',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and to log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Update Threshold Configuration : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-        return HttpResponseRedirect(ThresholdConfigurationUpdate.success_url)
 
 
 class ThresholdConfigurationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -2275,7 +1795,7 @@ class ThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class ThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
@@ -2285,21 +1805,19 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixi
     order_columns = ['alias', 'threshold_template']
     search_columns = ['alias', 'icon_settings']
 
-    def get_initial_queryset(self, technology="P2P"):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+    tab_search = {
+        "tab_kwarg": 'technology',
+        "tab_attr": "threshold_template__live_polling_template__technology__name",
+    }
 
+    def get_initial_queryset(self):
         is_global = 1
         if self.request.GET.get('admin'):
             is_global = 0
 
-        return ThematicSettings.objects.filter(
-        threshold_template__in=ThresholdConfiguration.objects.filter(
-            live_polling_template__id__in=LivePollingSettings.objects.filter(
-                technology__name=technology).values('id')).values('id')).filter(is_global=is_global).values(*self.columns + ['id'])
+        qs = super(ThematicSettingsListingTable, self).get_initial_queryset()
+
+        return qs.filter(is_global=is_global)
 
     def prepare_results(self, qs):
         """
@@ -2308,9 +1826,9 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixi
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             threshold_config = ThresholdConfiguration.objects.get(id=int(dct['threshold_template']))
             image_string, range_text, full_string='','',''
             if dct['icon_settings'] and dct['icon_settings'] !='NULL':
@@ -2342,42 +1860,7 @@ class ThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixi
                 user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
                 actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
-
-    def get_context_data(self, technology):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-
-        # self.initialize(*args, **kwargs)
-        self.initialize()
-
-        qs = self.get_initial_queryset(technology)
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
-
+        return json_data
 
 
 class ThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
@@ -2408,7 +1891,6 @@ class ThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         self.object = form.save()
         self.object.icon_settings=icon_settings_values_list
         self.object.save()
-        verb_string = "Create Thematic Settings : %s" %(self.object.alias)
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
 
@@ -2426,23 +1908,12 @@ class ThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
         icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
         self.object = form.save()
         self.object.icon_settings=icon_settings_values_list
         self.object.save()
         # self.object = form.save()
-        if changed_fields_dict:
-            verb_string = 'Update Thematic Settings : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
 
 
@@ -2853,7 +2324,7 @@ class GISInventoryBulkImportList(ListView):
         return context
 
 
-class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView):
+class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     A generic class based view for the gis inventory bulk import data table rendering.
 
@@ -2861,15 +2332,7 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView
     model = GISInventoryBulkImport
     columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
     order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return GISInventoryBulkImport.objects.values(*self.columns+['id'])
+    search_columns = ['sheet_name', 'technology', 'description', 'uploaded_by']
 
     def prepare_results(self, qs):
         """
@@ -2878,9 +2341,9 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
             try:
                 excel_green = static("img/ms-office-icons/excel_2013_green.png")
                 excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
@@ -2988,7 +2451,7 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, BaseDatatableView
                         dct.update(bulk_upload_actions='')
             except Exception as e:
                 logger.info()
-        return qs
+        return json_data
 
 
 class GISInventoryBulkImportDelete(DeleteView):
@@ -3038,18 +2501,12 @@ class GISInventoryBulkImportUpdate(UpdateView):
 
 
 #**************************************** Ping Thematic Settings *********************************************
-class PingThematicSettingsList(PermissionsRequiredMixin, ListView):
+class PingThematicSettingsList(ListView):
     """
     Class Based View to render PingThematicSettings List Page.
     """
     model = PingThematicSettings
     template_name = 'ping_thematic_settings/ping_thematic_settings_list.html'
-
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(PingThematicSettingsList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -3080,27 +2537,26 @@ class PingThematicSettingsList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class PingThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class PingThematicSettingsListingTable(ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Thematic Settings Data table.
     """
     model = PingThematicSettings
     columns = ['alias', 'service', 'data_source', 'icon_settings']
     order_columns = ['alias', 'service', 'data_source']
+    tab_search = {
+        "tab_kwarg": 'technology',
+        "tab_attr": "technology__name",
+    }
 
-
-    def get_initial_queryset(self, technology="P2P"):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
+    def get_initial_queryset(self):
         is_global = 1
         if self.request.GET.get('admin'):
             is_global = 0
 
-        return PingThematicSettings.objects.filter(technology=DeviceTechnology.objects.filter(name=technology)).filter(is_global=is_global).values(*self.columns + ['id'])
+        qs = super(PingThematicSettingsListingTable, self).get_initial_queryset()
+
+        return qs.filter(is_global=is_global)
 
     def prepare_results(self, qs):
         """
@@ -3168,7 +2624,7 @@ class PingThematicSettingsListingTable(PermissionsRequiredMixin, DatatableSearch
         return json_data
 
 
-class PingThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
+class PingThematicSettingsDetail(DetailView):
     """
     Class based view to render the Thematic Settings detail.
     """
@@ -3200,7 +2656,6 @@ class PingThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         self.object = form.save()
         self.object.icon_settings = icon_settings_values_list
         self.object.save()
-        verb_string = "Create Thematic Settings : %s" % self.object.alias
         return HttpResponseRedirect(PingThematicSettingsCreate.success_url)
 
 
@@ -3218,9 +2673,6 @@ class PingThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         icon_settings_keys = list(set(form.data.keys()) - set(
             [key for key in form.cleaned_data.keys() if "icon" not in key] + ['csrfmiddlewaretoken']))
 
@@ -3232,14 +2684,6 @@ class PingThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         self.object.icon_settings = icon_settings_values_list
         self.object.save()
         # self.object = form.save()
-        if changed_fields_dict:
-            verb_string = 'Update Thematic Settings : %s, ' % (self.object.alias) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
         return HttpResponseRedirect(PingThematicSettingsUpdate.success_url)
 
 
@@ -3291,9 +2735,3 @@ class Ping_Update_User_Thematic_Setting(View):
                 id=int(thematic_setting_id)).name
 
         return HttpResponse(json.dumps(result))
-
-
-
-
-
-

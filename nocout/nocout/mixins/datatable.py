@@ -3,6 +3,36 @@ from django.db.models import Q
 from nocout.utils import logged_in_user_organizations
 
 
+class ValuesQuerySetMixin(object):
+    """
+    class ExampleDatatableListing(ValuesQuerySetMixin, BaseDatatableView):
+        tab_search = {
+            "tab_kwarg": 'technology',
+            "tab_attr": "live_polling_template__technology__name",
+        }
+        extra_qs_kwargs = {
+            "is_deleted": 0,
+            "is_added_to_nms": 1,
+        }
+    """
+
+    tab_search = None
+    extra_qs_kwargs = None
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        qs = self.model.objects.values(*self.columns + ['id'])
+        if self.tab_search:
+            tab_kwarg = self.tab_search['tab_kwarg']
+            qs = qs.filter(**{self.tab_search['tab_attr']: self.kwargs[tab_kwarg]})
+
+        if self.extra_qs_kwargs:
+            qs = qs.filter(**self.extra_qs_kwargs)
+        return qs
+
+
 class DatatableOrganizationFilterMixin(object):
     """
     Limit data as per organization level access.
@@ -11,6 +41,7 @@ class DatatableOrganizationFilterMixin(object):
     """
     organization_field = 'organization'
     values_queryset = True
+    extra_qs_kwargs = None
 
     def get_initial_queryset(self):
         """
@@ -24,6 +55,10 @@ class DatatableOrganizationFilterMixin(object):
 
         if self.values_queryset:
             qs = qs.values(*self.columns + ['id'])
+
+        if self.extra_qs_kwargs:
+            qs = qs.filter(**self.extra_qs_kwargs)
+
         return qs
 
 
