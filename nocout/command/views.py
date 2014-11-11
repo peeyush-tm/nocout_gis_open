@@ -96,14 +96,6 @@ class CommandCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('commands_list')
     required_permissions = ('command.add_command',)
 
-    def form_valid(self, form):
-        """
-        to check the validation of the form before submit.
-        and to log the activity in the user log
-        """
-        self.object=form.save()
-        return HttpResponseRedirect(CommandCreate.success_url)
-
 
 class CommandUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -115,27 +107,6 @@ class CommandUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = CommandForm
     success_url = reverse_lazy('commands_list')
     required_permissions = ('command.change_command',)
-
-    def form_valid(self, form):
-        """
-        to check the validation of the form before submit.
-        and to log the activity in the user log
-        """
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-
-            verb_string = 'Changed values of Command: %s from initial values '%(self.object.command_name) +\
-                          ', '.join(['%s: %s' %(k, initial_field_dict[k]) for k in changed_fields_dict])+\
-                          ' to '+\
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-            self.object=form.save()
-        return HttpResponseRedirect( CommandUpdate.success_url )
 
 
 class CommandDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
