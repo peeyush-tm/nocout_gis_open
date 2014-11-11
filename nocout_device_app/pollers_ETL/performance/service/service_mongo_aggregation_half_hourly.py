@@ -1,10 +1,21 @@
+"""
+service_mongo_aggregation_half_hourly.py
+=======================================
+
+Usage ::
+python service_mongo_aggregation_half_hourly -p network_perf -s network_perf_half_hourly
+python service_mongo_aggregation_half_hourly -p service_perf -s service_perf_half_hourly
+"""
+
 from nocout_site_name import *
 import imp
+import sys
 from datetime import datetime, timedelta
 from itertools import groupby
 from operator import itemgetter
 from pprint import pprint, pformat
 import collections
+import optparse
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_mod = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
@@ -18,6 +29,16 @@ mongo_configs = {
 		'port': int(desired_config.get('port')),
 		'db_name': desired_config.get('nosql_db')
 		}
+parser = optparse.OptionParser()
+parser.add_option('-p', '--perf', dest='perf', type='choice', choices=['service_perf', 'network_perf'])
+parser.add_option('-s', '--historical', dest='hist', type='choice', choices=['service_perf_half_hourly', 'network_perf_half_hourly'])
+options, remainder = parser.parse_args(sys.argv[1:])
+if options.perf and options.hist:
+	perf_table=options.perf
+	hist_perf_table=options.hist
+else:
+	usage()
+	sys.exit(2)
 
 def mongo_main():
 	global mongo_configs
@@ -63,7 +84,10 @@ def read_data(start_time, end_time, **configs):
 			)
 	print start_time, end_time
 	if db:
-		cur = db.service_perf.find({"check_time": {"$gt": start_time, "$lt": end_time}})
+		if perf_table == 'network_perf':
+		        cur = db.network_perf.find({"check_time": {"$gt": start_time, "$lt": end_time}})
+		elif perf_table == 'service_perf':
+		        cur = db.service_perf.find({"check_time": {"$gt": start_time, "$lt": end_time}})
         
 	for doc in cur:
 		docs.append(doc)
@@ -173,8 +197,8 @@ def make_half_hourly_data(docs):
 		#print "-- second half data --"
 		#print second_half_data
 		if second_half_data:
-			print 'second_half_data ------'
-			print second_half_data
+			#print 'second_half_data ------'
+			#print second_half_data
 		        second_half_data_values = map(lambda e: e.get('value'), second_half_data)
 			#print 'second_half_data_values--'
 			#print second_half_data_values
@@ -266,7 +290,10 @@ def upsert_aggregated_data(find_query, doc):
 			db_name=mongo_configs.get('db_name')
 			)
 	if db:
-		db.service_perf_half_hourly.update(find_query, doc,upsert=True)
+		if hist_perf_table == 'network_perf_half_hourly':
+			db.network_perf_half_hourly.update(find_query, doc,upsert=True)
+		elif hist_perf_table == 'service_perf_half_hourly':
+			db.service_perf_half_hourly.update(find_query, doc,upsert=True)
 
 def find_existing_entry(find_query):
 	"""
@@ -283,11 +310,30 @@ def find_existing_entry(find_query):
 			db_name=mongo_configs.get('db_name')
 			)
 	if db:
-		cur = db.service_perf_half_hourly.find(find_query)
+		if hist_perf_table == 'network_perf_half_hourly':
+		        cur = db.network_perf_half_hourly.find(find_query)
+		elif hist_perf_table == 'service_perf_half_hourly':
+		        cur = db.service_perf_half_hourly.find(find_query)
 	for doc in cur:
 		docs.append(doc)
 
 	return docs
+
+
+#def main(argv):
+#	parser = optparse.OptionParser()
+#	parser.add_option('-p', '--perf', dest='perf', type='choice', choices=['service_perf', 'network_perf'])
+#	parser.add_option('-s', '--historical', dest='hist', type='choice', choices=['service_perf_half_hourly', 'network_perf_half_hourly'])
+#	options, remainder = parser.parse_args(argv)
+#	if options.perf and options.hist:
+#	        mongo_main(perf_table=options.perf, hist_perf_table=options.hist)
+#	else:
+#		usage()
+#		sys.exit(2)
+
+
+def usage():
+	print "Usage: service_mongo_aggregation_half_hourly.py [options]"
 
 
 if __name__ == '__main__':
