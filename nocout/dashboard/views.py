@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, TemplateView
 from django.views.generic.base import View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -20,24 +20,15 @@ from dashboard.utils import get_service_status_results, get_dashboard_status_ran
 from dashboard.config import dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 
-class DashbaordSettingsListView(ListView):
+class DashbaordSettingsListView(TemplateView):
     """
-    Class Based Dashboard-Settings View to render list page.
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
     """
-    model = DashboardSetting
     template_name = 'dashboard/dashboard_settings_list.html'
-
-    def get_queryset(self):
-        """
-        In this view no data is passed to datatable while rendering template.
-        Another ajax call is made to fill in datatable.
-        """
-        queryset = super(DashbaordSettingsListView, self).get_queryset()
-        queryset = queryset.none()
-        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -68,7 +59,7 @@ class DashbaordSettingsListView(ListView):
         return context
 
 
-class DashbaordSettingsListingTable(DatatableSearchMixin, BaseDatatableView):
+class DashbaordSettingsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View to render Dashboard Settings Data table.
     """
@@ -76,16 +67,7 @@ class DashbaordSettingsListingTable(DatatableSearchMixin, BaseDatatableView):
     columns = ['page_name', 'name', 'technology__name', 'range1', 'range2', 'range3', 'range4', 'range5', 'range6', 'range7', 'range8', 'range9', 'range10']
     keys = ['page_name', 'technology__name', 'name', 'range1_start', 'range2_start', 'range3_start', 'range4_start', 'range5_start', 'range6_start', 'range7_start', 'range8_start', 'range9_start', 'range10_start', 'range1_end', 'range2_end', 'range3_end', 'range4_end', 'range5_end', 'range6_end', 'range7_end', 'range8_end', 'range9_end', 'range10_end', 'range1_color_hex_value', 'range2_color_hex_value', 'range3_color_hex_value', 'range4_color_hex_value', 'range5_color_hex_value', 'range6_color_hex_value', 'range7_color_hex_value', 'range8_color_hex_value', 'range9_color_hex_value', 'range10_color_hex_value']
     order_columns = ['page_name', 'name', 'technology__name']
-    search_columns = ['page_name', 'name', 'technology__name', 'range1', 'range2', 'range3', 'range4', 'range5', 'range6', 'range7', 'range8', 'range9', 'range10']
-
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DashboardSetting.objects.values(*self.keys + ['id'])
+    columns = ['page_name', 'technology__name', 'name', 'range1_start', 'range2_start', 'range3_start', 'range4_start', 'range5_start', 'range6_start', 'range7_start', 'range8_start', 'range9_start', 'range10_start', 'range1_end', 'range2_end', 'range3_end', 'range4_end', 'range5_end', 'range6_end', 'range7_end', 'range8_end', 'range9_end', 'range10_end', 'range1_color_hex_value', 'range2_color_hex_value', 'range3_color_hex_value', 'range4_color_hex_value', 'range5_color_hex_value', 'range6_color_hex_value', 'range7_color_hex_value', 'range8_color_hex_value', 'range9_color_hex_value', 'range10_color_hex_value']
 
     def prepare_results(self, qs):
         """
@@ -116,38 +98,6 @@ class DashbaordSettingsListingTable(DatatableSearchMixin, BaseDatatableView):
             delete_action = '<a href="%s"><i class="fa fa-trash-o text-danger"></i></a>' % delete_url
             obj.update({'actions': edit_action + ' ' + delete_action})
         return json_data
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main method call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
 
 
 class DashbaordSettingsCreateView(SuperUserRequiredMixin, CreateView):

@@ -11,7 +11,7 @@ from nocout.utils.util import DictDiffer
 import json
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
-from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 
 class SiteInstanceList(PermissionsRequiredMixin, ListView):
@@ -40,7 +40,7 @@ class SiteInstanceList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View to render Site Instance Data table.
     """
@@ -48,15 +48,6 @@ class SiteInstanceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, B
     required_permissions = ('site_instance.view_siteinstance',)
     columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
     order_columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
-    search_columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return SiteInstance.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         """
@@ -92,13 +83,6 @@ class SiteInstanceCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('site_instance_list')
     required_permissions = ('site_instance.add_siteinstance',)
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        self.object=form.save()
-        return HttpResponseRedirect(SiteInstanceCreate.success_url)
-
 class SiteInstanceUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to Update the Site Instance.
@@ -108,26 +92,6 @@ class SiteInstanceUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = SiteInstanceForm
     success_url = reverse_lazy('site_instance_list')
     required_permissions = ('site_instance.change_siteinstance',)
-
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-        changed_fields_dict = DictDiffer( initial_field_dict, cleaned_data_field_dict ).changed()
-
-        if changed_fields_dict:
-
-            verb_string = 'Changed values of Site Instance: %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-
-            self.object=form.save()
-        return HttpResponseRedirect(SiteInstanceUpdate.success_url)
 
 
 class SiteInstanceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):

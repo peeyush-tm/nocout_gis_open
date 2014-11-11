@@ -69,7 +69,7 @@
                 list_parent_according_to_organisation()
             }
             else{
-                list_parent_according_to_organisation()
+                select_parent_already_selected()
             }
 
             //on change of the organisation list the parent list.
@@ -99,6 +99,33 @@
                         },
                         error : function(xhr,errmsg,err) {
                             alert(xhr.status + ": " + xhr.responseText);
+                        }
+                    });
+                    return false;
+                }
+            }
+
+            function select_parent_already_selected(){
+                var organization_id = $('#id_organization option:selected').val()
+                var parent_id = $('#id_parent option:selected').val()
+                //if no organisation is selected.
+                if(organization_id == '' ){
+                    $('#id_parent').html("<option value=>Select</option>").change();
+                }
+                else{
+                    $.ajax({
+                        url : "/user/organisation/user/select/",
+                        type : "GET",
+                        dataType: "html",
+                        data: {
+                            parent_id : parent_id,
+                        },
+                        success : function(parent_select) {
+                            $('#id_parent').empty();
+                            $('#id_parent').html(parent_select);
+                        },
+                        error : function(xhr,errmsg,err) {
+                            console.log(xhr.status + ": " + xhr.responseText);
                         }
                     });
                     return false;
