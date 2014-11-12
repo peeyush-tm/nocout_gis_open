@@ -862,6 +862,8 @@ function advanceSearchClass() {
 	    	$("#filter_vendor").select2("val","");
 	    	$("#filter_state").select2("val","");
 	    	$("#filter_city").select2("val","");
+	    	$("#filter_frequency").select2("val","");
+	    	$("#filter_polarization").select2("val","");
 	    }
 
 		/*Call the resetVariables function to reset all global variables*/
