@@ -1210,3 +1210,191 @@ class Topology(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+############################################################################################################
+############################################################################################################
+#####################      Sector//Backhaul Utilization            #########################################
+############################################################################################################
+############################################################################################################
+
+## Creating Separate Tables because these are KPI reports
+## which does not instantly affect the system
+## but are pre calculated based on various fields
+## and formulas defined by any user
+## TODO: create a separate app for holding this
+## that would ensure easy removal
+## we will user "refer" varaible as SECTOR ID in case of PMP and WiMAX
+## we will use "refer variable as PORT Number in case of BAckhaul
+
+class Utilization(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+
+class UtilizationDaily(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+
+class UtilizationWeekly(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+
+class UtilizationMonthly(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+
+class UtilizationYearly(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+
+class UtilizationStatus(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name

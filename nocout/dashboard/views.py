@@ -25,6 +25,8 @@ from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 
 class DashbaordSettingsListView(TemplateView):
     """
+    Class Based View for the Dashboard data table rendering.
+
     In this view no data is passed to datatable while rendering template.
     Another ajax call is made to fill in datatable.
     """

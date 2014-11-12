@@ -518,7 +518,7 @@ $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $(this).val();
     defaultIconSize= val;
     if(window.location.pathname.indexOf("white_background") > -1) {
-        // whiteMapClass.toggleIconSize(val);
+        whiteMapClass.updateMarkersSize(val);
     } else {
         networkMapInstance.updateAllMarkersWithNewIcon(val);
         

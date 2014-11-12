@@ -14,7 +14,7 @@ var whiteMapSettings = {
 		medium: {width: 32, height: 37}
 	},
 	zoomLevelAfterLineAppears: 7,
-	zoomLevelAtClusterUpdates: 9,
+	zoomLevelAtClusterUpdates: 7,
 	latLngPrefixLabel: 'Longitude, Latitude: '
 }
 

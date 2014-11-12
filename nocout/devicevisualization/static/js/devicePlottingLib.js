@@ -3615,7 +3615,7 @@ function devicePlottingClass_gmap() {
 
 		    	whiteMapClass.hideAllFeatures();
 		    	data_for_filter_wmap = main_devices_data_wmap;
-
+		    	
 		    	whiteMapClass.showAllFeatures();
         	} else {
 
