@@ -341,12 +341,14 @@ $("#setAdvFilterBtn").click(function(e) {
             vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
             city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
             state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
-            total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length;
+            frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
+            polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
+            total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length + frequency_filter.length + polarization_filter.length;
 
         // If any value is selected in filter
         if(total_selected_items > 0) {
             // Call function to plot the data on map as per the applied filters
-            gmap_self.applyAdvanceFilters(technology_filter,vendor_filter,state_filter,city_filter);
+            gmap_self.applyAdvanceFilters();
         } else {
             /*Hide the spinner*/
             hideSpinner();
