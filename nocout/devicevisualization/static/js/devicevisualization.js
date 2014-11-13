@@ -203,8 +203,7 @@ $("#resetFilters").click(function(e) {
         
         /*Clear Existing Labels & Reset Counters*/
         gmap_self.clearStateCounters();
-
-        isCallCompleted = 1;
+        isApiResponse = 0;
         mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
         mapInstance.setZoom(5);
         // Load all counters
