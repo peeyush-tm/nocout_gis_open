@@ -101,14 +101,14 @@ function GisPerformance() {
         if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0) {
             var gisPerformance_this = this;
             //Call waitAndSend function with BS Json Data and counter value
-            gisPerformance_this.waitAndSend(this.createRequestData(this.bsNamesList[counter]), counter);
+            gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
         }
     }
 
     /*
      This function sends a Ajax request based on param and counter provided. If All the calls for BS is completed, then we resetVariables and start Performance again in 5 mins.
      */
-    this.waitAndSend = function (getBsRequestData, counter) {
+    this.waitAndSend = function (bs_id, counter) {
 
         var gisPerformance_this = this;
         counter++;
@@ -134,16 +134,15 @@ function GisPerformance() {
 
         //Ajax Request
         $.ajax({
-            url: base_url + '/network_maps/performance_data/?freeze_time=' + freezedAt,
-            data: JSON.stringify(getBsRequestData),
-            type: 'POST',
+            url: base_url + '/network_maps/performance_data/?base_stations=['+bs_id+']&freeze_time=' + freezedAt,
+            type: 'GET',
             dataType: 'json',
             //In success
             success: function (data) {
                 //If data is there
-                if (data) {
+                if(data){
                     //Store data in gisData
-                    gisPerformance_this.gisData = data;
+                    gisPerformance_this.gisData = data.length ? data[0] : data;
                     var current_bs_list = getMarkerInCurrentBound();
                     /*Check that the bsname is present in current bounds or not*/
                     if (current_bs_list.indexOf(data.basestation_name) >= 0) {
