@@ -359,6 +359,7 @@ def prepare_raw_sector(basestations):
     sector_ss_vendor = []
     sector_ss_technology = []
     sector_configured_on_devices = []
+    sector_planned_frequencies = []
     circuit_ids = []
 
     if basestations:
@@ -385,7 +386,8 @@ def prepare_raw_sector(basestations):
                                                                  )
                     )
                     circuit_ids += circuit_id
-                    sector_configured_on_devices+=substation_ip
+                    sector_configured_on_devices += substation_ip
+                    sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_FREQUENCY']))
                     sector_info.append(
                         {
                             "color": format_value(format_this=sector['SECTOR_FREQUENCY_COLOR'],type_of='frequency_color'),
@@ -393,6 +395,7 @@ def prepare_raw_sector(basestations):
                             #sector.cell_radius if sector.cell_radius else 0,
                             'azimuth_angle': format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE'],type_of='integer'),
                             'beam_width': format_value(format_this=sector['SECTOR_BEAM_WIDTH'],type_of='integer'),
+                            'planned_frequency': format_value(format_this=sector['SECTOR_FREQUENCY']),
                             # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
                             'orientation': format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'],type_of='antenna'),
                             'technology':format_value(format_this=sector['SECTOR_TECH']),
@@ -477,7 +480,7 @@ def prepare_raw_sector(basestations):
                             'sub_station': substation
                         }
                     )
-    return (sector_info, sector_ss_vendor, sector_ss_technology, sector_configured_on_devices, circuit_ids)
+    return (sector_info, sector_ss_vendor, sector_ss_technology, sector_configured_on_devices, circuit_ids, sector_planned_frequencies)
 
 def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
     """
@@ -665,6 +668,7 @@ def prepare_raw_bs_result(bs_result=None):
     sector_ss_technology = []
     sector_configured_on_devices = []
     circuit_ids = []
+    sector_planned_frequencies = []
 
     if bs_result:
 
@@ -692,13 +696,15 @@ def prepare_raw_bs_result(bs_result=None):
         sector_ss_vendor, \
         sector_ss_technology, \
         sector_configured_on_devices, \
-        circuit_ids = prepare_raw_sector(basestations=bs_result)
+        circuit_ids, \
+        sector_planned_frequencies = prepare_raw_sector(basestations=bs_result)
 
         base_station_info['data']['param']['sector'] = sector_info
         base_station_info['sector_ss_vendor'] = "|".join(sector_ss_vendor)
         base_station_info['sector_ss_technology'] = "|".join(sector_ss_technology)
         base_station_info['sector_configured_on_devices'] = "|".join(sector_configured_on_devices)
         base_station_info['circuit_ids'] = "|".join(circuit_ids)
+        base_station_info['sector_planned_frequencies'] = "|".join(sector_planned_frequencies)
 
         return base_station_info
 
