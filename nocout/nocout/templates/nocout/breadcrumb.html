@@ -1,0 +1,88 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+
+{% endblock %}
+{% block load_js %}
+    <script>
+        $(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}
+{% block load_breadcrumb %}
+<script>
+    jQuery(document).ready(function () {
+
+        var wrkLocation = location.href;
+        var wrkLength = wrkLocation.indexOf("#");  // Find the begining of any anchor reference
+        if (wrkLength != -1) {
+            wrkLocation = wrkLocation.substr(0,wrkLength);  // Remove the anchor reference
+        }
+        var wrkLength = wrkLocation.indexOf("?");  // Find the begining of the query string
+        if (wrkLength != -1) {
+            wrkLocation = wrkLocation.substr(0,wrkLength);  // Remove the query string
+        }
+        wrkLocation = unescape(wrkLocation);
+
+        //var re = /<\S[^>]*>/g; // Remove html tags from a string
+        var re = /<.*/g; // remove < and anything after
+        wrkLocation = wrkLocation.replace(re, "");
+
+        //to use if there is tabination in page
+        var current_page_url = wrkLocation;
+
+        var arrURL = wrkLocation.split("/"); // Array containing the current location, split at the slashes
+
+        var output = '<a href="/home/">Home</a>'; // The string which will be output to the browser, starts with a link to the home page
+
+        // To get the location from the side-menu bar
+        if ($('.sidebar-menu .current').parents('.has-sub').length ){
+            var has_sub = $('.sidebar-menu .current').parents('.has-sub').find('.menu-text').text()
+            output += ' > <a href="#">'+ has_sub +'</a>';
+            if ($('.sidebar-menu .current').parents('.has-sub-sub').length ){
+                var has_sub_sub = $('.sidebar-menu .current').parents('.has-sub-sub').find('a[href="javascript:;"]')
+                if (has_sub_sub.length > 1){
+                    has_sub_sub = has_sub_sub.children().first().text()
+                }
+                else{
+                    has_sub_sub = has_sub_sub.find('.sub-menu-text').text()
+                }
+                output += ' > <a href="#">'+ has_sub_sub +'</a>';
+            }
+        }
+
+        var path = '/'; // Link for the crumbs
+
+        // If last item is blank or index.* or default.*, remove it
+        if (arrURL[arrURL.length-1] == '' || arrURL[arrURL.length-1].match(/^index\.|^default\./i) ) {
+            arrURL.length--;
+        }
+
+        if (arrURL.length > 3) {
+            for (counter = 3;counter < arrURL.length-1;counter++) {  // Loop to display the links
+                path += arrURL[counter] + '/';  // always end links to folder with '/'
+                output += ' > <a href="' + path + '">' + (arrURL[counter].replace(/_/g,' ')) + '</a>';
+            }
+
+            var current_page = (arrURL[arrURL.length-1].replace(/_/g,' ').replace(/\.\w{3,5}$/,''));
+            var tab = $('.nav li').filter('.active').find('.hidden-inline-mobile')
+
+            if (tab.length){
+                output += ' > <a href="'+ current_page_url +'">'+ current_page +'</a>';
+                // Display the name of the current tab in bold
+                output += ' > <strong><span id="nav_tab_name">' + tab.text() + '</span>';
+            }
+            else{
+                // Display the name of the current page in bold
+                output += ' > <strong>' + current_page + '</strong>';
+            }
+            $(".breadcrumb").append(output)
+        }
+
+        // to change the name of the tab in bredcrumb display using ajax success.
+        $( document ).ajaxComplete(function() { $("#nav_tab_name").text($('.nav li').filter('.active').find('.hidden-inline-mobile').text()); });
+    });
+
+</script>
+{% endblock %}
