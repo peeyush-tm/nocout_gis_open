@@ -16,12 +16,23 @@ import subprocess
 import pymongo
 import imp
 import time
+import socket
+import json
+from itertools import groupby
+
+try:
+        import nocout_settings
+        from nocout_settings import _LIVESTATUS, _DATABASES
+except Exception, exp:
+        print exp
 
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
-# Logger would write all activities to rrd_migration.log file
+network_data_values = []
+service_data_values = []
+
 
 def build_export(site, host, ip, nw_qry_output, serv_qry_output, mongo_host, mongo_db, mongo_port):
 	"""
@@ -35,8 +46,8 @@ def build_export(site, host, ip, nw_qry_output, serv_qry_output, mongo_host, mon
         Raises:
 	    Exception: None
 	"""
-	network_data_values = []
-	service_data_values = []
+	global network_data_values
+	global service_data_values
         age = None
 	rt_min, rt_max = None, None
 	rta_dict = {}
@@ -109,12 +120,13 @@ def build_export(site, host, ip, nw_qry_output, serv_qry_output, mongo_host, mon
 			mongo_module.mongo_db_update(db, matching_criteria, data_dict, 'network_perf_data')
 			network_data_values.append(data_dict)
 			data_dict = {}
-	print 'network_data_values'
-	print network_data_values
-	try:
-		mongo_module.mongo_db_insert(db, network_data_values, 'network_perf_data')
-	except Exception, e:
-		print e.message
+	#if host_severity == 'UP':
+	#	print 'network_data_values'
+	#	print network_data_values
+	#try:
+	#	mongo_module.mongo_db_insert(db, network_data_values, 'network_perf_data')
+	#except Exception, e:
+	#	print e.message
 	# If host is Down, do not process its service perf data
 	if host_severity == 'DOWN':
 		return
@@ -123,9 +135,10 @@ def build_export(site, host, ip, nw_qry_output, serv_qry_output, mongo_host, mon
 	for entry in serv_qry_output:
 		if not len(entry[-1]):
 			continue
+		print entry[-1]
 		threshold_values = get_threshold(entry[-1])
-		print '-- threshold_values'
-		print threshold_values
+		#print '-- threshold_values'
+		#print threshold_values
 		severity = calculate_severity(entry[3])
 		# Age of last service state change
 		last_state_change = entry[-2]
@@ -164,13 +177,34 @@ def build_export(site, host, ip, nw_qry_output, serv_qry_output, mongo_host, mon
 			mongo_module.mongo_db_update(db, matching_criteria, data_dict, 'serv_perf_data')
 			service_data_values.append(data_dict)
 			data_dict = {}
-	print 'service_data_values'
-	print pformat(service_data_values)
+	#print 'service_data_values'
+	#print service_data_values
 	# Bulk insert the values into Mongodb
+	#try:
+	#	mongo_module.mongo_db_insert(db, service_data_values, 'serv_perf_data')
+	#except Exception, e:
+	#	print e.message
+
+
+def insert_bulk_perf(net_values, serv_values, mongo_host, mongo_port, mongo_db):
+	db = mongo_module.mongo_conn(
+	    host=mongo_host,
+	    port=int(mongo_port),
+	    db_name=mongo_db
+	)
+
 	try:
-		mongo_module.mongo_db_insert(db, service_data_values, 'serv_perf_data')
+		mongo_module.mongo_db_insert(db, net_values, 'network_perf_data')
 	except Exception, e:
+		print 'Insert error in NW perf values'
 		print e.message
+
+	try:
+		mongo_module.mongo_db_insert(db, serv_values, 'serv_perf_data')
+	except Exception, e:
+		print 'Insert error in Serv values'
+		print e.message
+
 
 def calculate_severity(severity_bit):
 	"""
@@ -185,6 +219,110 @@ def calculate_severity(severity_bit):
 		severity = 'CRITICAL'
 
 	return severity
+
+
+def get_host_services_name(site_name=None, mongo_host=None, mongo_db=None, mongo_port=None):
+        """
+        Function_name : get_host_services_name (extracts the services monitotred on that poller)
+
+        Args: site_name (poller on which monitoring data is to be collected)
+
+        Kwargs: mongo_host(host on which we have to monitor services and collect the data),mongo_db(mongo_db connection),
+                mongo_port( port for the mongodb database)
+        Return : None
+
+        raise
+             Exception: SyntaxError,socket error
+        """
+        try:
+            network_perf_query = "GET hosts\nColumns: host_name host_address host_state last_check host_last_state_change host_perf_data\nOutputFormat: json\n"
+            service_perf_query = "GET services\nColumns: host_name host_address service_description service_state "+\
+                            "last_check service_last_state_change service_perf_data\nFilter: service_description ~ _invent\n"+\
+                            "Filter: service_description ~ _status\nFilter: service_description ~ Check_MK\nOr: 3\nNegate:\nOutputFormat: json\n"
+            nw_qry_output = json.loads(get_from_socket(site_name, network_perf_query))
+            #print 'NW qry OUT --'
+            #print nw_qry_output
+            serv_qry_output = json.loads(get_from_socket(site_name, service_perf_query))
+            #print 'Serv qry OUT --'
+            #print serv_qry_output
+            # Group service perf data host-wise
+            serv_qry_output = sorted(serv_qry_output, key=lambda k: k[0])
+            #i = 0
+            for host, group in groupby(serv_qry_output, key=lambda e: e[0]):
+                    #i += 1
+                    # Find the entry in network perf data, for this host
+                    nw_entry = filter(lambda t: host == t[0], nw_qry_output)
+                    #print 'nw_entry -----'
+                    #print nw_entry
+                    serv_entry = list(group)
+                    #if i == 500:
+                    #   break
+                    build_export(
+                            site_name,
+                            host,
+                            nw_entry[0][1],
+                            nw_entry,
+                            serv_entry,
+                            mongo_host,
+                            mongo_db,
+                            mongo_port
+                            )
+        except SyntaxError, e:
+            raise MKGeneralException(("Can not get performance data: %s") % (e))
+        except socket.error, msg:
+            raise MKGeneralException(("Failed to create socket. Error code %s Error Message %s:") % (str(msg[0]), msg[1]))
+        except ValueError, val_err:
+                print 'Error in serv/nw qry output'
+                print val_err.message
+
+def get_from_socket(site_name, query):
+    """
+        Function_name : get_from_socket (collect the query data from the socket)
+
+        Args: site_name (poller on which monitoring data is to be collected)
+
+        Kwargs: query (query for which data to be collectes from nagios.)
+
+        Return : None
+
+        raise
+             Exception: SyntaxError,socket error
+    """
+    socket_path = "/omd/sites/%s/tmp/run/live" % site_name
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    machine = site_name[:-8]
+    socket_ip = _LIVESTATUS[machine]['host']
+    socket_port = _LIVESTATUS[machine][site_name]['port']
+    print socket_ip, socket_port
+    s.connect((socket_ip, socket_port))
+    s.send(query)
+    s.shutdown(socket.SHUT_WR)
+    output = ''
+    while True:
+     out = s.recv(100000000)
+     out.strip()
+     if not len(out):
+        break
+     output += out
+
+    return output
+
+
+class MKGeneralException(Exception):
+    """
+        This is the Exception class handing exception in this file.
+        Args: Exception instance
+
+        Kwargs: None
+
+        return: class object
+
+    """
+    def __init__(self, reason):
+        self.reason = reason
+    def __str__(self):
+        return self.reason
+
 
 
 def get_ss(host=None, interface=None):
@@ -324,15 +462,15 @@ def get_threshold(perf_data):
 	if param.partition('=')[2]:
         	if ';' in param.split("=")[1]:
             		threshold_values[param.split("=")[0]] = {
-                	"war": re.sub('ms', '', param.split("=")[1].split(";")[1]),
-                	"cric": re.sub('ms', '', param.split("=")[1].split(";")[2]),
-                	"cur": re.sub('ms', '', param.split("=")[1].split(";")[0])
+                	"war": re.sub('[ms]', '', param.split("=")[1].split(";")[1]),
+                	"cric": re.sub('[ms]', '', param.split("=")[1].split(";")[2]),
+                	"cur": re.sub('[ms]', '', param.split("=")[1].split(";")[0])
             		}
         	else:
             		threshold_values[param.split("=")[0]] = {
                 	"war": None,
                 	"cric": None,
-                	"cur": re.sub('ms', '', param.split("=")[1].strip("\n"))
+                	"cur": re.sub('[ms]', '', param.split("=")[1].strip("\n"))
             		}
 	else:
 		threshold_values[param.split("=")[0]] = {
@@ -593,3 +731,25 @@ def collect_data_from_rrd(db,site,path,host,replaced_host,service,ds_index,start
 	if len(temp_dict):
 		status_dict.get('data').append(temp_dict)
 		status_dict.update({"local_timestamp":temp_dict.get('time'),"check_time":temp_dict.get('time')})
+
+
+if __name__ == '__main__':
+    """
+    main function for this file which is called in 5 minute interval.Every 5 min interval calculates the host configured on this poller
+    and extracts data
+
+    """
+    #global network_data_values
+    #global service_data_values
+    configs = config_module.parse_config_obj()
+    desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
+    desired_config = configs.get(desired_site)
+    site = desired_config.get('site')
+    get_host_services_name(
+    site_name=site,
+    mongo_host=desired_config.get('host'),
+    mongo_db=desired_config.get('nosql_db'),
+    mongo_port=desired_config.get('port')
+    )
+    insert_bulk_perf(network_data_values, service_data_values, desired_config.get('host'), desired_config.get('port'), desired_config.get('nosql_db'))
+
