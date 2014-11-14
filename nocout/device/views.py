@@ -2803,8 +2803,8 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
             except Exception as e:
                 logger.exception(e)
 
-            dct.update(actions='<a href="/type/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/type/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/type/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/type/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def ordering(self, qs):
