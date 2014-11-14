@@ -180,7 +180,7 @@ def get_settings():
                 if d_ports not in snmp_ports_db:
                     snmp_ports_db.append(d_ports) 
                 
-                d_community = service['community'], [service['devicetype']], ['@all']
+                d_community = str(service['community']), [str(service['devicetype'])], ['@all']
                 if d_community not in snmp_communities_db:
                     snmp_communities_db.append(d_community)
 
