@@ -900,11 +900,11 @@ class CustomerListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_customer'):
-                edit_action = '<a href="/customer/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/customer/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_customer'):
-                delete_action = '<a href="/customer/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/customer/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
