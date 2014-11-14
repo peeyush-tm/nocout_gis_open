@@ -463,11 +463,11 @@ class BaseStationListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_basestation'):
-                edit_action = '<a href="/base_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/base_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_basestation'):
-                delete_action = '<a href="/base_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
