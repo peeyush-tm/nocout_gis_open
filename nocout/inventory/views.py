@@ -1201,7 +1201,7 @@ class CircuitListingTable(PermissionsRequiredMixin,
                 actions = edit_action + delete_action
             else:
                 actions = ''
-            actions = actions + '<a href="/circuit/l2_reports/{0}/"><i class="fa fa-sign-in text-info" title="View L2 reports for circuit"\
+            actions = actions + '<a href="/circuit/{0}/l2_reports/"><i class="fa fa-sign-in text-info" title="View L2 reports for circuit"\
                             alt="View L2 reports for circuit"></i></a>'.format(device_id)
             dct.update(actions=actions, date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
 
@@ -1346,7 +1346,7 @@ class L2ReportListingTable(BaseDatatableView):
         for dct in qs:
             dct.update(actions='<a href="../../../media/'+dct['file_url']+'" target="_blank" title="Download Report">\
                 <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
-                <a class="delete_l2report" style="cursor:pointer;" title="Delete Report" url="delete/{0}/">\
+                <a class="delete_l2report" style="cursor:pointer;" title="Delete Report" url="{0}/delete/">\
                 <i class="fa fa-trash-o text-danger"></i></a>\
                 '.format(dct.pop('id')),
                added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
