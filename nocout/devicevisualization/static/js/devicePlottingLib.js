@@ -429,7 +429,7 @@ function devicePlottingClass_gmap() {
 			disableAdvanceButton();
 
 			/*style for state wise counter label*/
-			counter_div_style = "margin-left:-30px;margin-top:-30px;cursor:pointer;background:url("+base_url+"/static/js/OpenLayers/img/m3.png) top center no-repeat;text-align:center;width:65px;height:65px;";
+			counter_div_style = "margin-left:-30px;margin-top:-30px;cursor:pointer;background:url("+base_url+"/static/js/OpenLayers/img/state_cluster.png) top center no-repeat;text-align:center;width:65px;height:65px;";
 
 			/*Initialize Loki db for bs,ss,sector,line,polygon*/
 			// Create the database:
