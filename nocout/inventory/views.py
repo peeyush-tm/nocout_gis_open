@@ -1190,11 +1190,11 @@ class CircuitListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_circuit'):
-                edit_action = '<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
+                edit_action = '<a href="/circuit/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_circuit'):
-                delete_action = '<a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
+                delete_action = '<a href="/circuit/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:

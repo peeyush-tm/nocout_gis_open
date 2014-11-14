@@ -3,10 +3,10 @@ from inventory import views
 
 urlpatterns = patterns('',
   url(r'^$', views.CircuitList.as_view(), name='circuits_list'),
-  url(r'^(?P<pk>\d+)$', views.CircuitDetail.as_view(), name='circuit_detail'),
+  url(r'^(?P<pk>\d+)/$', views.CircuitDetail.as_view(), name='circuit_detail'),
   url(r'^new/$', views.CircuitCreate.as_view(), name='circuit_new'),
-  url(r'^edit/(?P<pk>\d+)$', views.CircuitUpdate.as_view(), name='circuit_edit'),
-  url(r'^delete/(?P<pk>\d+)$', views.CircuitDelete.as_view(), name='circuit_delete'),
+  url(r'^(?P<pk>\d+)/edit/$', views.CircuitUpdate.as_view(), name='circuit_edit'),
+  url(r'^(?P<pk>\d+)/delete/$', views.CircuitDelete.as_view(), name='circuit_delete'),
   url(r'^Circuitlistingtable/', views.CircuitListingTable.as_view(), name='CircuitListingTable'),
   url(r'^l2_reports/(?P<circuit_id>\d+)/$', views.CircuitL2Report_Init.as_view(), name='circuit_l2_report'),
   url(r'^L2listingtable/(?P<circuit_id>\d+)$', views.L2ReportListingTable.as_view(), name='L2ReportListingTable'),
