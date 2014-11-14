@@ -165,8 +165,8 @@ class ServiceParametersListingTable(PermissionsRequiredMixin, DatatableSearchMix
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            dct.update(actions='<a href="/service_parameter/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/service_parameter/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+            dct.update(actions='<a href="/service_parameter/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/service_parameter/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
         return json_data
 
