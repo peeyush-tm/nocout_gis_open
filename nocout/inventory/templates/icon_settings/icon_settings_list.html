@@ -1,17 +1,14 @@
-{% extends "inventory/inventory.html" %}
+{% extends "nocout/breadcrumb.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Settings</li>
-    <li>Icon Settings</li>
-{% endblock %}
+
 {% block content_title %}Icon Settings Management{% endblock %}
 {% block content_description %}List of icons settings{% endblock %}
 {% block content %}
-    
+
         {% if perms.inventory.add_iconsettings %}
             <p><a href="/icon_settings/new"><i class="fa fa-plus">&nbsp;</i> Create Icon Settings</a></p>
         {% endif %}
-    
+
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>ICON SETTINGS LISTING</h4>
