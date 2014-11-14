@@ -847,6 +847,9 @@ $("#ruler_remove").click(function(e) {
     $(this).addClass("hide");
     $("#ruler_select").removeClass("hide");
 
+    // Change map cursor
+    mapInstance.setOptions({'draggableCursor' : ''});
+
     networkMapInstance.clearRulerTool_gmap();
 });
 
