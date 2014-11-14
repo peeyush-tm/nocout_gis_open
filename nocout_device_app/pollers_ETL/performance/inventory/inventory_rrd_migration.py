@@ -77,79 +77,109 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	"""
 
 	invent_check_list = []
+	invent_data_list = []
 	invent_service_dict = {}
 	matching_criteria = {}
 	multiple_ds_services = []
+	interface_oriented_service= ['cambium_ss_connected_bs_ip_invent']
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
-	for host in hostlist:
-		query = "GET hosts\nColumns: host_services\nFilter: host_name = %s\n" %(host[0])
-		query_output = utility_module.get_from_socket(site,query).strip()
-		service_list = [service_name for service_name in query_output.split(',')]
-		for service in service_list:
-			if service.endswith('_invent') or ('_invent' in service and ":" in service):
-				invent_check_list.append(service)
-		for service in invent_check_list:
-			replaced_host = host[0]
-			query_string = "GET services\nColumns: service_state plugin_output host_address\nFilter: " + \
-			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 	 	% (service,host[0])
-			query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-			try:
-				if query_output[0][1]:
-					plugin_output = str(query_output[0][1].split('- ')[1])
-					service_state = (query_output[0][0])
-					if service_state == 0:
-						service_state = "OK"
-					elif service_state == 1:
-						service_state = "WARNING"
-					elif service_state == 2:
-						service_state = "CRITICAL"
-					elif service_state == 3:
-						service_state = "UNKNOWN"
-					host_ip = str(query_output[0][2])
-				else:
-					continue
-				if interface_oriented_service[0] in service:
-					ds= "bs_ip"
-				else: 
-					ds=service.split('_')[1:-1]
-					ds = ('_').join(ds)
-					if 'frequency' in ds:
-						ds= 'frequency'
-			except:
-				continue
-			current_time = int(time.time())
+	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output\n"+\
+                            "Filter: service_description ~ _invent\n"+\
+                            "OutputFormat: json\n" 
+	query_output = json.loads(get_from_socket(site,query).strip())
+	for entry in query_output:
+		if int(entry[2]) == 1:
+			continue
+		service_state = entry[4]
+		host = entry[0]
+		if service_state == 0:
+			service_state = "OK"
+		elif service_state == 1:
+			service_state = "WARNING"
+		elif service_state == 2:
+			service_state = "CRITICAL"
+		elif service_state == 3:
+			service_state = "UNKNOWN"
+		host_ip = entry[1] 
+		service = entry[3]
+		try:				
+			plugin_output = str(entry[5].split('- ')[1])
+		except Exception as e:
+			print e
+			continue
 
-			plugin_output = plugin_output.split(' ')
-			if len(plugin_output) > 1:
-				ds_list = map(lambda x: x.split("=")[0],plugin_output)
-				value_list = map(lambda x: x.split("=")[1],plugin_output)
+		if interface_oriented_service[0] in service:
+			ds= "bs_ip"
+		else: 
+			ds=service.split('_')[1:-1]
+			ds = ('_').join(ds)
+			if 'frequency' in ds:
+				ds= 'frequency'
+		
+		current_time = int(time.time())
+		plugin_output = plugin_output.split(' ')
+		if len(plugin_output) > 1:
+			ds_list = map(lambda x: x.split("=")[0],plugin_output)
+			value_list = map(lambda x: x.split("=")[1],plugin_output)
 
-				for index in range(len(ds_list)):
-					if value_list[index]:
-						invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,
-						device_name=replaced_host,
-						service_name=service,current_value=value_list[index],min_value=0,max_value=0,avg_value=0,
-						data_source=ds_list[index],severity=service_state,site_name=site,warning_threshold=0,
-						critical_threshold=0,ip_address=host_ip)
-						
-						matching_criteria.update({'device_name':str(host[0]),'service_name':service,
-						'data_source':ds_list[index]})
-						
-						mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
-						mongo_module.mongo_db_insert(db,invent_service_dict,"inventory_services")
-						matching_criteria ={}
-						invent_service_dict = {}
-			else:
-				invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=replaced_host,
-						service_name=service,current_value=plugin_output[0],min_value=0,max_value=0,avg_value=0,
-						data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
-						critical_threshold=0,ip_address=host_ip)
-				matching_criteria.update({'device_name':replaced_host,'service_name':service,'data_source':ds})
-				mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
-				mongo_module.mongo_db_insert(db,invent_service_dict,"inventory_services")
-				matching_criteria ={}
-				invent_service_dict = {}
-		invent_check_list = []
+			for index in range(len(ds_list)):
+				if value_list[index]:
+					invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,
+					device_name=host,
+					service_name=service,current_value=value_list[index],min_value=0,max_value=0,avg_value=0,
+					data_source=ds_list[index],severity=service_state,site_name=site,warning_threshold=0,
+					critical_threshold=0,ip_address=host_ip)
+				
+					matching_criteria.update({'device_name':str(host),'service_name':service,
+					'data_source':ds_list[index]})
+					
+					mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
+					invent_data_list.append(invent_service_dict)
+					matching_criteria ={}
+					invent_service_dict = {}
+		else:
+			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=host,
+					service_name=service,current_value=plugin_output[0],min_value=0,max_value=0,avg_value=0,
+					data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
+					critical_threshold=0,ip_address=host_ip)
+			matching_criteria.update({'device_name':host,'service_name':service,'data_source':ds})
+			mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
+			invent_data_list.append(invent_service_dict)
+			matching_criteria ={}
+			invent_service_dict = {}
+	mongo_module.mongo_db_insert(db,invent_data_list,"inventory_services")
+
+
+
+def get_from_socket(site_name, query):
+    """
+        Function_name : get_from_socket (collect the query data from the socket)
+
+        Args: site_name (poller on which monitoring data is to be collected)
+
+        Kwargs: query (query for which data to be collectes from nagios.)
+
+        Return : None
+
+        raise 
+             Exception: SyntaxError,socket error 
+    """
+    socket_path = "/omd/sites/%s/tmp/run/live" % site_name
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.connect(socket_path)
+    s.send(query)
+    s.shutdown(socket.SHUT_WR)
+    output = ''
+    while True:
+     out = s.recv(100000000)
+     out.strip()
+     if not len(out):
+        break
+     output += out
+
+    return output
+
+
 
 
 def inventory_perf_data_main():
