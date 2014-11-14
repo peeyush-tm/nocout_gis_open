@@ -1,9 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Network Maps</li>
-    <li>KMZ Reports</li>
-{% endblock %}
+
 {% block content_title %}KMZ Reports Management{% endblock %}
 {% block content_description %}List of KMZ Reports{% endblock %}
 {% block content %}
@@ -34,12 +31,12 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ table_headers|safe }}');
             /*Ajax url to get grid data*/
-            
+
             var ajax_url = '{% url "Kmzreport_listingtable" %}';
             // Call createDataTable function of ourDataTableWidget class
             var destroy=false;
             dataTableInstance.createDataTable("KMZListingTable", gridHeadersObj, ajax_url, destroy);
-            
+
             $('#KMZContainer').delegate('.delete_kmzreport','click',function(e){
                 var delete_btn = this;
                 bootbox.confirm("Are you sure you want to delete this kmz file?",function(result){
@@ -49,7 +46,7 @@
                     }
                 });
             });
-            
+
         });
     </script>
 {% endblock %}

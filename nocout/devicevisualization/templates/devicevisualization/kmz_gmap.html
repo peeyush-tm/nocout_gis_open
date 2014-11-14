@@ -1,9 +1,5 @@
-{% extends "nocout/base.html" %}
-{% block breadcrumb_title %}
-    <li>Network Maps</li>
-    <li>KMZ</li>
-    <li>Google Maps</li>
-{% endblock %}
+{% extends "nocout/breadcrumb.html" %}
+
 {% block content_title %}Google Maps{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
@@ -62,7 +58,7 @@
             }
 
             var map = new google.maps.Map(document.getElementById("deviceMap"), mapOptions);
-            var kmzLayer = new google.maps.KmlLayer({ 
+            var kmzLayer = new google.maps.KmlLayer({
                 url : 'https://noc-out.net'+'/media/'+kmz_file_url,
                 suppressInfoWindows: true,
                 map: map

@@ -1,8 +1,6 @@
-{% extends "nocout/base.html" %}
-{% block breadcrumb_title %}
-    <li>Network Maps</li>
-    <li>White Background</li>
-{% endblock %}
+{% extends "nocout/breadcrumb.html" %}
+
+
 {% block content_title %}White Background{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
@@ -131,7 +129,7 @@
         <!-- Tools Content Start-->
         <div id="toolsContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Gmap Tools</h4>
-            <ul class="list-unstyled list-inline">               
+            <ul class="list-unstyled list-inline">
                 <li>
                     <button type="button" id="freeze_select" class="btn btn-info">Freeze</button>
                     <button type="button" id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
@@ -276,8 +274,8 @@
     <!-- // <script type="text/javascript" src={% static "js/oms.min.js" %}></script> -->
     <!-- SPARKLINES -->
     <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
-    
-      
+
+
     <!--Flot Chart Library for Fresnel zone-->
     <script src={% static "js/flot/jquery.flot.min.js" %}></script>
     <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %}></script>
@@ -293,7 +291,7 @@
     <script type="text/javascript" src={% static "js/wm/wm_Class.js" %}></script>
     <script type="text/javascript" src={% static "js/wm/wm_Prototype.js" %}></script>
     <script type="text/javascript" src={% static "js/wm/wm_events.js" %}></script>
-    
+
 
     <script type="text/javascript" src={% static "js/wm/wm_AdvanceFilter.js" %}></script>
     <script type="text/javascript" src={% static "js/wm/wm_AdvanceSearch.js" %}></script>
@@ -342,7 +340,7 @@
         function removetoolsPanel() {
          $("#showToolsBtn").removeClass("hide");
             $("#removeToolsBtn").addClass("hide");
-            $("#toolsContainerBlock").addClass("hide");   
+            $("#toolsContainerBlock").addClass("hide");
         }
     </script>
 {% endblock %}
