@@ -789,6 +789,7 @@ class BulkFetchLPDataApi(View):
             bs_device, site_name = None, None
 
         result['data']['devices'] = dict()
+
         # get machines associated with current devices
         machine_list = []
         for device in devices:
@@ -862,6 +863,7 @@ class BulkFetchLPDataApi(View):
                                 devices_in_current_site.append(device.device_name)
                         except Exception as e:
                             logger.info(e.message)
+
                     # live polling data dictionary (payload for nocout.py api call)
                     lp_data = dict()
                     lp_data['mode'] = "live"
@@ -1041,7 +1043,6 @@ class BulkFetchLPDataApi(View):
                             logger.info(e.message)
 
                         result['data']['devices'][device_name]['icon'] = icon
-
                         # if response_dict doesn't have key 'success'
                         if not response_dict.get('success'):
                             logger.info(response_dict.get('error_message'))
