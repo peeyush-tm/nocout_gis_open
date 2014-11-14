@@ -415,7 +415,8 @@ function devicePlottingClass_gmap() {
 					mapTypeControlOptions: {
 						mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.TERRAIN,google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID],
 						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
-					}
+					},
+					draggableCursor : ''
 				};
 			}
 
@@ -1318,7 +1319,7 @@ function devicePlottingClass_gmap() {
 				bhInfo 			   : 	bs_ss_devices[i].data.param.backhual,
 				bs_name 		   : 	bs_ss_devices[i].name,
 				name 		 	   : 	bs_ss_devices[i].name,
-				filter_data 	   : 	{"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].id},
+				filter_data 	   : 	{"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId},
 				antenna_height     : 	bs_ss_devices[i].data.antenna_height,
 				zIndex 			   : 	250,
 				optimized 		   : 	false,
@@ -1413,7 +1414,7 @@ function devicePlottingClass_gmap() {
 							sectorName  		: sector_array[j].sector_configured_on,
 							device_name  		: sector_array[j].sector_configured_on_device,
 							name  				: sector_array[j].sector_configured_on_device,
-							filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "bs_id" : bs_ss_devices[i].id},
+							filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "bs_id" : bs_ss_devices[i].originalId},
 							sector_lat  		: startEndObj["startLat"],
 							sector_lon  		: startEndObj["startLon"],
 							zIndex 				: 200,
@@ -1479,7 +1480,7 @@ function devicePlottingClass_gmap() {
 				    	name 		 	 : 	ss_marker_obj.name,
 				    	bs_name 		 :  bs_ss_devices[i].name,
 				    	bs_sector_device :  sector_array[j].sector_configured_on_device,
-				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].id},
+				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId},
 				    	device_name 	 : 	ss_marker_obj.device_name,
 				    	ss_ip 	 		 : 	ss_marker_obj.data.substation_device_ip_address,
 				    	sector_ip 		 :  sector_array[j].sector_configured_on,
@@ -4744,6 +4745,7 @@ function devicePlottingClass_gmap() {
     Here we clear All The Variables and Point related to Rulers in tools
      */
     this.clearRulerTool_gmap= function() {
+
     	//Remove Ruler markers
     	for(var i=0;i<ruler_array.length;i++) {
     		ruler_array[i].setMap(null);
@@ -4817,6 +4819,7 @@ function devicePlottingClass_gmap() {
        
         //first clear the click listners. point tool might be in use
         google.maps.event.clearListeners(mapInstance,'click');
+        mapInstance.setOptions({'draggableCursor' : 'default'});
 
 		google.maps.event.addListener(mapInstance,'click',function(e) {
 
