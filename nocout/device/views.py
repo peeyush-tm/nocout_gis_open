@@ -2019,8 +2019,8 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/technology/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/technology/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+            dct.update(actions='<a href="/technology/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/technology/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
         return qs
 
