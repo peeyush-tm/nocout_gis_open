@@ -53,7 +53,6 @@ function GisPerformance() {
 
         //Reset Variable
         gisPerformance_this.resetVariable();
-
         this.bsNamesList = uncommon_bs_list;
         //Store Length of Total BS
         this.bsLength = this.bsNamesList.length;
@@ -134,7 +133,7 @@ function GisPerformance() {
 
         //Ajax Request
         $.ajax({
-            url: base_url + '/network_maps/performance_data/?base_stations=['+bs_id+']&freeze_time=' + freezedAt,
+            url: base_url + '/network_maps/perf_data/?base_stations=['+bs_id+']&freeze_time=' + freezedAt,
             type: 'GET',
             dataType: 'json',
             //In success
