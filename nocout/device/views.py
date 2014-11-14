@@ -2982,8 +2982,8 @@ class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/device_port/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/device_port/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/device_port/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/device_port/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
