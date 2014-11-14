@@ -11,18 +11,13 @@ import pymongo
 from pymongo import Connection
 import pprint
 import os
-import sys
 import ast
 from itertools import ifilterfalse
 from nocout_logger import nocout_log
 import mysql.connector
+import make_hosts, make_rules
 
 logger = nocout_log()
-sys.path.insert(0, '/apps/omd/sites/master_UA/nocout')
-try:
-	from device_interface import *
-except Exception, e:
-	logger.debug('Syntax error in device_interface: ' + pprint.pformat(e))
 
 
 hosts_file = root_dir + "hosts.mk"
@@ -186,7 +181,7 @@ def addhost():
 
     give_permissions(hosts_file)
     load_file(hosts_file)
-    add_default_checks(default_checks_file)
+    #add_default_checks(default_checks_file)
 
     #if len(g_host_vars['all_hosts']) > 1000:
     #    response.update({
@@ -1027,13 +1022,6 @@ def write_new_host_rules():
 
 def sync():
     logger.debug('[-- sync --]')
-    # Set flag for sync in mysql db
-    toggle_sync_flag()
-    # First read all the new configs from db and write to rules.mk and hosts.mk
-    try:
-    	sync_device_conf_db = entry()
-    except Exception, e:
-    	logger.debug('Error in device_interface:' + pprint.pformat(e))
     sites_affected = []
     response = {
         "success": 1,
@@ -1043,10 +1031,39 @@ def sync():
     #nocout_create_snapshot()
 
     # Create backup for the hosts and rules file
-    if os.path.exists(hosts_file):
-        os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
-    if os.path.exists(rules_file):
-        os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
+    #if os.path.exists(hosts_file):
+    #    os.system('rsync -a %s /omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
+    #if os.path.exists(rules_file):
+    #    os.system('rsync -a %s /omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
+
+    # Make hosts.mk and rules.mk which takes configurations from db
+    make_hosts.main()
+    make_rules.main()
+    # Switch to check_mk base dir
+    os.chdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato')
+    # Use latest hosts file
+    all_hosts_files = filter(lambda f: os.path.isfile and 'hosts' in f, os.listdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/'))
+    all_hosts_files = sorted(all_hosts_files, key=os.path.getmtime, reverse=True)
+
+    latest_hosts_file = all_hosts_files[0]
+    logger.info('latest_hosts_file: ' + pprint.pformat(latest_hosts_file))
+    if len(all_hosts_files) == 1:
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
+    elif len(all_hosts_files) > 1:
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_hosts')
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', '/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file)
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_hosts', '/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
+    # Use latest rules file
+    all_rules_files = filter(lambda f: os.path.isfile and 'rules' in f, os.listdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/'))
+    all_rules_files = sorted(all_rules_files, key=os.path.getmtime, reverse=True)
+    latest_rules_file = all_rules_files[0]
+    logger.info('latest_rules_file: ' + pprint.pformat(latest_rules_file))
+    if len(all_rules_files) == 1:
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
+    elif len(all_rules_files) > 1:
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_rules')
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', '/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file)
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_rules', '/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
 
     nocout_create_sync_snapshot()
     nocout_sites = nocout_distributed_sites()
@@ -1057,32 +1074,45 @@ def sync():
         logger.error('[sync]' + pprint.pformat(e))
     if f == 0:
         sites_affected.append(defaults.omd_site)
-    for site, attrs in nocout_sites.items():
-	logger.debug('site :' + pprint.pformat(site))
-        response_text = nocout_synchronize_site(site, attrs, True)
-        if response_text is True:
-            sites_affected.append(site)
-    if len(sites_affected) == len(nocout_sites):
-        response.update({
-            "message": "Config pushed to " + ','.join(sites_affected)
-        })
+	# Update the configuration database
+	make_hosts.update_configuration_db()
+    # Some syntax error with hosts.mk or rules.mk
     else:
-        if os.path.exists('/apps/omd/sites/%s/nocout/rules.mk' % defaults.omd_site):
-            os.system('cp /apps/omd/sites/%s/nocout/rules.mk %s' % (defaults.omd_site, rules_file))
+	    logger.info("Could not cmk -R master_UA")
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
+	    # Generate a fresh snapshot
+            nocout_create_sync_snapshot()
             for site, attrs in nocout_sites.items():
                 response_text = nocout_synchronize_site(site, attrs, True)
             response.update({
                 "message": "Problem with the new config, old config retained",
                 "success": 1
             })
-        else:
+	    return response
+    for site, attrs in nocout_sites.items():
+	logger.debug('site :' + pprint.pformat(site))
+        response_text = nocout_synchronize_site(site, attrs, True)
+        if response_text is True:
+            sites_affected.append(site)
+    logger.info('sites_affected: ' + pprint.pformat(sites_affected))
+    if len(sites_affected) == len(nocout_sites):
+        response.update({
+            "message": "Config pushed to " + ','.join(sites_affected)
+        })
+    else:
+	    logger.info("Length of sites_affected and nocout_sites doesn't match")
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
+	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
+	    # Generate a fresh snapshot
+            nocout_create_sync_snapshot()
+            for site, attrs in nocout_sites.items():
+                response_text = nocout_synchronize_site(site, attrs, True)
             response.update({
-                "message": "Config not pushed",
-                "success": 0
+                "message": "Problem with the new config, old config retained",
+                "success": 1
             })
     logger.debug('[-- sync finish --]')
-    # Reset the sync flag in mysql db
-    toggle_sync_flag(mode=False)
     return response
 
 

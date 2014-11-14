@@ -89,7 +89,7 @@ def get_current_value_old(current_values, device=None, service=None, data_source
     response = []
     # Teramatrix poller on which this device is being monitored
     site_name = get_site_name()
-    cmd = '/apps/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (site_name, service, device)
+    cmd = '/opt/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (site_name, service, device)
     # Fork a subprocess
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     check_output, error = p.communicate()
@@ -159,7 +159,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 		         ip = get_parent(host=device, db=False, get_ip=True)
 		     except Exception, e:
 		     	logger.info('Error in get_parent : ' + pformat(e))
-		     cmd = 'ping -c 1 %s' % ip
+		     cmd = 'ping -w 2 -c 1 %s' % ip
 	     logger.info('cmd: ' + pformat(cmd))
 	     #start = datetime.datetime.now()
              # Fork a subprocess
@@ -221,7 +221,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 			 		q.put(data_dict)
 			 	return
 		elif old_service.lower() == 'ping':
-			check_output = check_output.split('\n')[4:]
+			check_output = check_output.split('\n')[-3:]
 			pl_info, rta_info = check_output[0], check_output[1]
 			if pl_info:
 			        pl = pl_info.split(',')[-2].split()[0]
