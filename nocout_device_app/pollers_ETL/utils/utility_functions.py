@@ -22,8 +22,13 @@ def get_from_socket(site_name, query):
     s.connect(socket_path)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
-    output = s.recv(100000000)
-    output.strip("\n")
+    out = ''
+    while True:
+        out = s.recv(100000000)
+        out.strip()
+        if not len(out):
+	    break
+        output += out
     return output
 
 
