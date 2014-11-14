@@ -288,7 +288,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, BaseDatatableView)
             # c. sub-station configured on (from model SubStation)
             detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
             else:
                 edit_action = ''
             if self.request.user.has_perm('device.delete_device'):
@@ -580,7 +580,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             #     dct['id']))
             detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
             else:
                 edit_action = ''
             if self.request.user.has_perm('device.delete_device'):
@@ -822,7 +822,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
             #     dct['id']))
             detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
             else:
                 edit_action = ''
             if self.request.user.has_perm('device.delete_device'):
@@ -1070,7 +1070,7 @@ class ArchivedDeviceListingTable(BaseDatatableView):
                 add_action = ''
             detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(dct['id'])
             else:
                 edit_action = ''
             if self.request.user.has_perm('device.delete_device'):
@@ -1325,7 +1325,7 @@ class AllDeviceListingTable(BaseDatatableView):
             #     dct['id']))
             detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
             else:
                 edit_action = ''
             if self.request.user.has_perm('device.delete_device'):
