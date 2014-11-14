@@ -998,6 +998,10 @@ function devicePlottingClass_gmap() {
 						if(google.maps.geometry.poly.containsLocation(bs_point, state_polygon)) {
 							//Update json with state name
 							dataset[i]['data']['state'] = current_state_name;
+							state = current_state_name;
+                            state_lat_lon_obj = state_lat_lon_db.find({"name" : state}).length > 0 ? state_lat_lon_db.find({"name" : state})[0] : false;
+                            state_param = state_lat_lon_obj ? JSON.stringify(state_lat_lon_obj) : false;
+                            state_click_event = "onClick='gmap_self.state_label_clicked("+state_param+")'";
 
 							var new_lat_lon_obj = state_lat_lon_db.where(function(obj) {
 								return obj.name === current_state_name;
