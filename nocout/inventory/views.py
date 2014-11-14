@@ -1518,8 +1518,8 @@ class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, V
             except Exception as e:
                 logger.info(e)
 
-            dct.update(actions='<a href="/icon_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/icon_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/icon_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/icon_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return json_data
 
 
