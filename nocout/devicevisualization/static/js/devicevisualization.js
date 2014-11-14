@@ -1067,3 +1067,12 @@ $("#export_data_gmap").click(function(e) {
     // call function to select data to be export & then export selected data
     networkMapInstance.exportData_gmap();
 });
+
+
+function isPointInPoly(poly, pt){
+    for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
+        ((poly[i].lat <= pt.lat && pt.lat < poly[j].lat) || (poly[j].lat <= pt.lat && pt.lat < poly[i].lat))
+        && (pt.lon < (poly[j].lon - poly[i].lon) * (pt.lat - poly[i].lat) / (poly[j].lat - poly[i].lat) + poly[i].lon)
+        && (c = !c);
+    return c;
+}

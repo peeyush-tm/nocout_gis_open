@@ -20,7 +20,13 @@ var earth_self = "",
 	devicesCount = 0,
 	counter = -999,
 	marker_count = 0;
-
+var allMarkersObject_earth= {
+	'base_station': {},
+	'path': {},
+	'sub_station': {},
+	'sector_device': {},
+	'sector_polygon': {}
+};
 var counter_div_style = "",
 	state_lat_lon_db= [],
 	bs_loki_db = [],
@@ -36,6 +42,8 @@ var counter_div_style = "",
 	all_vendor_array = [],
 	state_city_obj = {},
 	all_cities_array = [];
+var plottedBsIds = [], allMarkersArray_earth= [];
+var isApiResponse = 1;
 
 /**
  * This class is used to plot the BS & SS on the google earth & performs their functionality.
@@ -100,6 +108,180 @@ function googleEarthClass() {
 		ge.getLayerRoot().enableLayerById(ge.LAYER_BORDERS, true);
 		ge.getLayerRoot().enableLayerById(ge.LAYER_ROADS, true);
 
+
+		google.earth.addEventListener(ge.getView(), 'viewchangeend', function(){
+			if(timer){
+				clearTimeout(timer);
+			}
+			function eventHandler() {
+				// get the globe bounds (method 1)
+				var globeBounds = ge.getView().getViewportGlobeBounds();
+
+				if (globeBounds) {
+					var poly = [
+							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()},
+							{lat: globeBounds.getNorth(), lon: globeBounds.getEast()},
+							{lat: globeBounds.getSouth(), lon: globeBounds.getEast()},
+							{lat: globeBounds.getSouth(), lon: globeBounds.getWest()},
+							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()}]
+					var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+
+					if(lookAt.getRange() <= 400540) {
+						var states_with_bounds = state_lat_lon_db.where(function(obj) {
+							return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
+						});
+
+						var states_array = [];
+
+	            		// Hide State Labels which are in current bounds
+	            		for(var i=states_with_bounds.length;i--;) {
+	            			if(state_wise_device_labels[states_with_bounds[i].name]) {
+	            				states_array.push(states_with_bounds[i].name);
+		            			if(!(state_wise_device_labels[states_with_bounds[i].name].isHidden_)) {
+			            			// Hide Label
+									state_wise_device_labels[states_with_bounds[i].name].setVisibility(false);
+		            			}
+	            			}
+	            		}
+
+	            		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
+							vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
+							city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
+							state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
+							frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
+							polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
+							filterObj = {
+								"technology" : $.trim($("#technology option:selected").text()),
+								"vendor" : $.trim($("#vendor option:selected").text()),
+								"state" : $.trim($("#state option:selected").text()),
+								"city" : $.trim($("#city option:selected").text())
+							},
+							isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+							isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City',
+							advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+							basic_filter_condition = $.trim($("#technology").val()) || $.trim($("#vendor").val()),
+							data_to_plot = [];
+
+						if(searchResultData.length > 0) {
+	            			data_to_plot = searchResultData;
+	            		} else {
+
+	            			var filtered_devices = [],
+	            				current_bound_devices = [];
+
+	            			if(isAdvanceFilterApplied || isBasicFilterApplied) {
+	            				filtered_devices = gmap_self.getFilteredData_gmap();
+            				} else {
+            					filtered_devices = all_devices_loki_db.data;
+            				}
+            				// IF any states exists
+            				if(states_array.length > 0) {
+	            				for(var i=filtered_devices.length;i--;) {
+									var current_bs = filtered_devices[i];
+									if(states_array.indexOf(current_bs.data.state) > -1) {
+										current_bound_devices.push(current_bs);
+									}
+	            				}
+            				} else {
+            					current_bound_devices = filtered_devices;
+            				}
+
+							if(advance_filter_condition || basic_filter_condition) {
+								data_to_plot = gmap_self.getFilteredBySectors(current_bound_devices);
+							} else {
+		            			data_to_plot = current_bound_devices;
+							}
+
+							// If any data exists
+		            		if(data_to_plot.length > 0) {
+		            			if(lastZoomLevel > lookAt.getRange()) {
+				            		/*Clear all everything from map*/
+									$.grep(allMarkersArray_earth,function(marker) {
+										marker.setVisibility(false);
+									});
+									// Reset Variables
+									allMarkersArray_earth = [];
+									main_devices_data_earth = [];
+									currentlyPlottedDevices = [];
+									allMarkersObject_earth= {
+										'base_station': {},
+										'path': {},
+										'sub_station': {},
+										'sector_device': {},
+										'sector_polygon': {}
+									};
+
+									/*Clear master marker cluster objects*/
+									
+		            			}
+
+								main_devices_data_earth = data_to_plot;
+								
+								var inBoundData = earth_self.getNewBoundsDevices();
+
+								currentlyPlottedDevices = inBoundData;
+								// Call function to plot devices on gmap
+								earth_self.plotDevices_earth(inBoundData,"base_station");
+		            		}
+
+		            		// Show points line if exist
+		            		for(key in line_data_obj) {
+		            			line_data_obj[key].setMap(mapInstance);
+		            		}
+	            		}
+					} else if(lookAt.getRange() > 400540) {
+						/*Clear all everything from map*/
+						$.grep(allMarkersArray_earth,function(marker) {
+							marker.isActive= 0;
+							marker.setVisibility(false);
+						});
+						// Reset Variables
+						allMarkersArray_earth = [];
+						main_devices_data_earth = [];
+						plottedBsIds = [];
+						currentlyPlottedDevices = [];
+						allMarkersObject_earth= {
+							'base_station': {},
+							'path': {},
+							'sub_station': {},
+							'sector_device': {},
+							'sector_polygon': {}
+						};
+
+	                    // Reset labels array 
+	                    labelsArray = [];
+
+
+						var states_with_bounds = state_lat_lon_db.where(function(obj) {
+							return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
+	            		});
+						for(var i=states_with_bounds.length;i--;) {
+							if(state_wise_device_labels[states_with_bounds[i].name]) {
+								if(state_wise_device_labels[states_with_bounds[i].name].isHidden_) {
+									state_wise_device_labels[states_with_bounds[i].name].setVisibility(true);
+								}
+							}
+						}
+
+						state_lat_lon_db.where(function(obj) {
+							if(state_wise_device_labels[obj.name]) {
+								state_wise_device_labels[obj.name].setVisibility(true);return ;
+							}
+						});
+
+						// Hide points line if exist
+	            		for(key in line_data_obj) {
+	            			line_data_obj[key].setVisibility(false);
+	            		}
+		            }
+
+		            // Save last Zoom Value
+		            lastZoomLevel = lookAt.getRange();
+				}
+			}
+			timer = setTimeout(eventHandler, 100);
+		}
+		);
 
 		/*style for state wise counter label*/
 		counter_div_style = "margin-left:-30px;margin-top:-30px;cursor:pointer;background:url("+base_url+"/static/js/OpenLayers/img/m3.png) top center no-repeat;text-align:center;width:65px;height:65px;";
@@ -209,26 +391,26 @@ function googleEarthClass() {
 
 							hitCounter = hitCounter + 1;
 							/*First call case*/
-							// if(devicesObject.data == undefined) {
+							// if(devicesObject_earth.data == undefined) {
 
 							// 	/*Save the result json to the global variable for global access*/
-							// 	devicesObject = result;
+							devicesObject_earth = result;
 							// 	This will update if any filer is applied
-							// 	devices_gmaps = devicesObject.data.objects.children;
+							// 	devices_earth = devicesObject_earth.data.objects.children;
 
 							// } else {
 
-							// 	devices_gmaps = devices_gmaps.concat(result.data.objects.children);
+							// 	devices_earth = devices_earth.concat(result.data.objects.children);
 							// }
 
 							main_devices_data_earth = main_devices_data_earth.concat(result.data.objects.children);;
 							data_for_filters_earth = main_devices_data_earth;
 
-							if(devicesObject.data.objects.children.length > 0) {
+							if(devicesObject_earth.data.objects.children.length > 0) {
 
 								/*Update the device count with the received data*/
 								if(devicesCount == 0) {
-									devicesCount = devicesObject.data.meta.total_count;
+									devicesCount = devicesObject_earth.data.meta.total_count;
 								}
 
 								/*Update showLimit with the received data*/
@@ -244,21 +426,21 @@ function googleEarthClass() {
 								// if(appliedAdvFilter.length <= 0) {
 
 								// 	/*applied basic filters count*/
-								// 	var appliedFilterLength_gmaps = Object.keys(appliedFilterObj_gmaps).length;
+								// 	var appliedFilterLength_earth = Object.keys(appliedFilterObj_earth).length;
 
 								// 	/*Check that any basic filter is applied or not*/
-								// 	if(appliedFilterLength_gmaps > 0) {
+								// 	if(appliedFilterLength_earth > 0) {
 								// 		/*If any filter is applied then plot the fetch data as per the filters*/
-								// 		earth_self.applyFilter_gmaps(appliedFilterObj_gmaps);
+								// 		earth_self.applyFilter_earth(appliedFilterObj_earth);
 								// 	} else {
 									
-								// 		/*Call the plotDevices_gmap to show the markers on the map*/
+								// 		/*Call the plotDevices_earth to show the markers on the map*/
 								// 		earth_self.plotDevices_earth(result.data.objects.children,"base_station");
 										
 								// 	}
 
 								// } else {
-        //                             /*Call the plotDevices_gmap to show the markers on the map*/
+        //                             /*Call the plotDevices_earth to show the markers on the map*/
 								// 	earth_self.plotDevices_earth(result.data.objects.children,"base_station");
         //                         }
 
@@ -410,52 +592,46 @@ function googleEarthClass() {
 				if(state_wise_device_counters[state]) {
 					state_wise_device_counters[state] += 1;
 					if(state_lat_lon_obj) {
-
-// 						// Create the placemark.
-// var placemark = ge.createPlacemark('');
-// placemark.setName("placemark");
-
-// // Set the placemark's location.  
-// var point = ge.createPoint('');
-// point.setLatitude(12.345);
-// point.setLongitude(54.321);
-// placemark.setGeometry(point);
-
-// // Add the placemark to Earth.
-// ge.getFeatures().appendChild(placemark);
-
-					
-
 						// Update the content of state counter label as per devices count
-						state_wise_device_labels[state].setContent("<div "+state_click_event+" style='"+counter_div_style+"'><p style='position:relative;padding-top:24px;font-weight:bold;' title='Load "+state+" Data.'>"+state_wise_device_counters[state]+"</p></div>");
+						state_wise_device_labels[state].setName(String(state_wise_device_counters[state]));
 					}
 				} else {
 					state_wise_device_counters[state] = 1;
-					if(state_lat_lon_obj) {
-						var device_counter_label = new InfoBox({
-				            content: "<div "+state_click_event+" style='"+counter_div_style+"'><p style='position:relative;padding-top:24px;font-weight:bold;' title='Load "+state+" Data.'>"+state_wise_device_counters[state]+"</p></div>",
-				            boxStyle: {
-				                textAlign: "center",
-				                fontSize: "8pt",
-				                color: "black",
-				                width : "100px"
-				            },
-				            disableAutoPan: true,
-				            position: new google.maps.LatLng(state_lat_lon_obj.lat, state_lat_lon_obj.lon),
-				            closeBoxURL: "",
-				            enableEventPropagation: true,
-				            zIndex: 80
-				        });
-			        	device_counter_label.open(mapInstance);
-					}
+					if(state_lat_lon_obj) {	  
+			   			//Create the placemark
+			   			var device_counter_label = ge.createPlacemark('');
+			   			device_counter_label.setName(String(state_wise_device_counters[state]));
 
+			   			var icon = ge.createIcon('');
+						icon.setHref(base_url+"/static/js/OpenLayers/img/m3.png");
+						var style = ge.createStyle(''); //create a new style
+						style.getIconStyle().setIcon(icon); //apply the icon to the style
+						device_counter_label.setStyleSelector(style); //apply the style to the placemark
+						style.getIconStyle().setScale(6.0);
+
+			   			//Set the placemark location;
+			   			var point = ge.createPoint('');
+			   			point.setLatitude(state_lat_lon_obj.lat);
+			   			point.setLongitude(state_lat_lon_obj.lon);
+			   			device_counter_label.setGeometry(point);
+
+						ge.getFeatures().appendChild(device_counter_label);
+
+						(function(state_param) {
+							google.earth.addEventListener(device_counter_label, 'click', function(event) {
+			   					event.preventDefault();
+								earth_self.state_label_clicked(state_param);
+				   			});
+
+						}(state_param));
+					}
 			        state_wise_device_labels[state] = device_counter_label;
 				}
 			} else {
 				var lat = current_bs.data.lat,
 					lon = current_bs.data.lon,
-					allStateBoundries = state_boundries_db.data,
-					bs_point = new google.maps.LatLng(lat,lon);
+					allStateBoundries = state_boundries_db.data;
+					// bs_point = new google.maps.LatLng(lat,lon);
 
 				// Loop to find that the lat lon of BS lies in which state.
 				for(var y=allStateBoundries.length;y--;) {
@@ -464,37 +640,56 @@ function googleEarthClass() {
 						latLonArray = [];;
 					if(current_state_boundries.length > 0) {
 						for(var z=current_state_boundries.length;z--;) {
-							latLonArray.push(new google.maps.LatLng(current_state_boundries[z].lat,current_state_boundries[z].lon));
+							latLonArray.push({lat: current_state_boundries[z].lat, lon: current_state_boundries[z].lon});
 						}
-						var state_polygon = new google.maps.Polygon({"path" : latLonArray});
-						if(google.maps.geometry.poly.containsLocation(bs_point, state_polygon)) {
+						// var state_polygon = new google.maps.Polygon({"path" : latLonArray});
+						if(isPointInPoly(latLonArray, {lat: lat, lon: lon})) {
 							//Update json with state name
 							dataset[i]['data']['state'] = current_state_name;
+							state = current_state_name;
+							state_lat_lon_obj = state_lat_lon_db.find({"name" : state}).length > 0 ? state_lat_lon_db.find({"name" : state})[0] : false;
+							state_param = state_lat_lon_obj ? JSON.stringify(state_lat_lon_obj) : false;
 
 							var new_lat_lon_obj = state_lat_lon_db.where(function(obj) {
 								return obj.name === current_state_name;
 							});
+
 							if(state_wise_device_counters[current_state_name]) {
 								state_wise_device_counters[current_state_name] += 1;
-								state_wise_device_labels[current_state_name].setContent("<div "+state_click_event+" style='"+counter_div_style+"'><p style='position:relative;padding-top:24px;font-weight:bold;' title='Load "+state+" Data.'>"+state_wise_device_counters[current_state_name]+"</p></div>");
+								state_wise_device_labels[current_state_name].setName(String(state_wise_device_counters[state]));
 							} else {
 								state_wise_device_counters[current_state_name] = 1;
-								var device_counter_label = new InfoBox({
-						            content: "<div "+state_click_event+" style='"+counter_div_style+"'><p style='position:relative;padding-top:24px;font-weight:bold;' title='Load "+state+" Data.'>"+state_wise_device_counters[current_state_name]+"</p></div>",
-						            boxStyle: {
-						                textAlign: "center",
-						                fontSize: "8pt",
-						                color: "black",
-						                width : "100px"
-						            },
-						            disableAutoPan: true,
-						            position: new google.maps.LatLng(new_lat_lon_obj[0].lat, new_lat_lon_obj[0].lon),
-						            closeBoxURL: "",
-						            enableEventPropagation: true,
-						            zIndex: 80
-						        });
-					        	device_counter_label.open(mapInstance);
-						        state_wise_device_labels[current_state_name] = device_counter_label;
+							
+						        //Create the placemark
+					   			var device_counter_label = ge.createPlacemark('');
+					   			device_counter_label.setName(String(state_wise_device_counters[state]));
+
+					   			var icon = ge.createIcon('');
+								icon.setHref(base_url+"/static/js/OpenLayers/img/m3.png");
+								var style = ge.createStyle(''); //create a new style
+								style.getIconStyle().setIcon(icon); //apply the icon to the style
+								device_counter_label.setStyleSelector(style); //apply the style to the placemark
+								style.getIconStyle().setScale(6.0);
+
+					   			//Set the placemark location;
+					   			var point = ge.createPoint('');
+					   			point.setLatitude(new_lat_lon_obj[0].lat);
+					   			point.setLongitude(new_lat_lon_obj[0].lon);
+
+					   			device_counter_label.setGeometry(point);
+
+					   			(function(state_param) {
+									google.earth.addEventListener(device_counter_label, 'click', function(event) {
+					   					event.preventDefault();
+										earth_self.state_label_clicked(state_param);
+						   			});
+
+								}(state_param));
+
+								//Add the placemark to Earth.
+								ge.getFeatures().appendChild(device_counter_label);
+
+								state_wise_device_labels[current_state_name] = device_counter_label;
 							}
 
 							// Break for loop if state found
@@ -524,8 +719,9 @@ function googleEarthClass() {
 				// state_wise_device_counters[state] += 1;
 				state_wise_device_counters[state] += total_ss;
 				if(state_lat_lon_obj) {
+
 					// Update the content of state counter label as per devices count
-					state_wise_device_labels[state].setContent("<div "+state_click_event+" style='"+counter_div_style+"'><p style='position:relative;padding-top:24px;font-weight:bold;' title='Load "+state+" Data.'>"+state_wise_device_counters[state]+"</p></div>");
+					state_wise_device_labels[state].setName(String(state_wise_device_counters[state]));
 				}
 			}
 		}
@@ -544,6 +740,80 @@ function googleEarthClass() {
 		}
 	};
 
+
+	/**
+	 * This function trigger when state label is clicked & loads the state wise data.
+	 * @method state_label_clicked
+	 * @param state_obj, It contains the name of state which is clicked.
+	 */
+	this.state_label_clicked = function(state_obj) {
+		if(isExportDataActive == 0) {
+			var clicked_state = state_obj ? JSON.parse(state_obj).name : "",
+				selected_state_devices = [];
+
+			if(clicked_state) {
+
+				// Get the current view.
+				var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+
+				// Pan to state latitude and longitude values.
+				lookAt.setLatitude(JSON.parse(state_obj).lat);
+				lookAt.setLongitude(JSON.parse(state_obj).lon);
+
+				// Update the view in Google Earth.
+				ge.getView().setAbstractView(lookAt);
+
+				// Zoom out to 8times the current range.
+				lookAt.setRange(400000);		
+		
+				ge.getView().setAbstractView(lookAt);
+	
+				// Hide Clicked state Label
+				if(!(state_wise_device_labels[clicked_state].isHidden_)) {
+        			// Hide Label
+					state_wise_device_labels[clicked_state].setVisibility(false);
+					// state_wise_device_labels[clicked_state].hide();
+    			}
+			}
+		}
+	};
+
+	/**
+     * This function is used to get devices which are in changed bounds.
+     * @method getNewBoundsDevices
+     * @return newInBoundDevices {Array}, It returns the devices which are in current bound & not plotted yet.
+	 */
+	this.getNewBoundsDevices = function() {
+
+		var newInBoundDevices = [];
+
+		for(var i=main_devices_data_earth.length;i--;) {
+			var current_device_set = main_devices_data_earth[i];
+			if(plottedBsIds.indexOf(current_device_set.id) === -1) {
+
+				var globeBounds = ge.getView().getViewportGlobeBounds();
+
+				if (globeBounds) {
+					var poly = [
+							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()},
+							{lat: globeBounds.getNorth(), lon: globeBounds.getEast()},
+							{lat: globeBounds.getSouth(), lon: globeBounds.getEast()},
+							{lat: globeBounds.getSouth(), lon: globeBounds.getWest()},
+							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()}]
+
+					var isDeviceInBound =  isPointInPoly(poly, {lat: current_device_set.data.lat, lon: current_device_set.data.lon});
+					if(isDeviceInBound) {
+						newInBoundDevices.push(current_device_set);
+						plottedBsIds.push(current_device_set.id);
+					}
+				}
+			}
+		}
+		// Return devices which are in current bounds
+		return newInBoundDevices;
+	};
+
+
 	/**
      * This function is used to populate the BS & SS on the google earth
      * @method plotDevices_earth
@@ -551,7 +821,6 @@ function googleEarthClass() {
      * @uses gmap_devicePlottingLib
 	 */
 	this.plotDevices_earth = function(resultantMarkers,station_type) {
-
 		for(var i=0;i<resultantMarkers.length;i++) {
 
 			var window_name = "Base Station Info",
@@ -596,6 +865,8 @@ function googleEarthClass() {
 			var bs_marker = earth_self.makePlacemark(bs_marker_icon,resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,'bs_'+resultantMarkers[i].id,bs_windowContent);
 			/*Push BS placemark to bs placemark array*/
 			plotted_bs_earth.push(bs_marker);
+
+			allMarkersArray_earth.push(bs_marker);
 
 			// google.earth.addEventListener(bs_placemark, 'click', function(event) {
 
@@ -692,6 +963,8 @@ function googleEarthClass() {
 					var sector_marker = earth_self.makePlacemark(sectorMarkerIcon,resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,sectorsArray[j].sector_configured_on+"_"+j,sector_windowContent);
 					/*Push Sector placemark to sector placemark array*/
 					plotted_sector_earth.push(sector_marker);
+
+					allMarkersArray_earth.push(sector_marker);
 				}
 
 				for(var k=0;k<sectorsArray[j].sub_station.length;k++) {
@@ -721,6 +994,7 @@ function googleEarthClass() {
 						var ss_marker = earth_self.makePlacemark(ssMarkerIcon,ssDataObj.data.lat,ssDataObj.data.lon,'ss_'+ssDataObj.id,ss_windowContent);
 						/*Push SS placemark to sector placemark array*/
 						plotted_ss_earth.push(ss_marker);
+						allMarkersArray_earth.push(ss_marker);
 
 						/*Create link between bs & ss or sector & ss*/
 						if(ssDataObj.data.show_link == 1) {
@@ -736,6 +1010,7 @@ function googleEarthClass() {
 							var bs_info = resultantMarkers[i].data.param.base_station;
 							var ss_info = ssDataObj.data.param.sub_station;
 							var linkLinePlacemark = earth_self.createLink_earth(startEndObj,linkColor,bs_info,ss_info);
+							allMarkersArray_earth.push(linkLinePlacemark);
 							plottedLinks_earth.push(linkLinePlacemark);
 						}
 					}

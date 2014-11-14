@@ -415,7 +415,8 @@ function devicePlottingClass_gmap() {
 					mapTypeControlOptions: {
 						mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.TERRAIN,google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID],
 						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
-					}
+					},
+					// draggableCursor : "pointer"
 				};
 			}
 
