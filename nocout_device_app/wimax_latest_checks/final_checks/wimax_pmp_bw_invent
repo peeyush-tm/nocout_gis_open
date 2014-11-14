@@ -91,8 +91,8 @@ def check_wimax_pmp_bw_invent(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     try:
-	if info[1]:
-                bs_ip = info[1][0]
+	if info[0][0]:
+                bs_ip = info[0][0]
                 if bs_ip:
                 	pmp1_bw,pmp2_bw =connection_telnet_for_pmp_bw(bs_ip, 23)
 			if pmp1_bw or pmp2_bw:

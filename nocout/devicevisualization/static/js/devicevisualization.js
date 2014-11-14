@@ -203,8 +203,7 @@ $("#resetFilters").click(function(e) {
         
         /*Clear Existing Labels & Reset Counters*/
         gmap_self.clearStateCounters();
-
-        isCallCompleted = 1;
+        isApiResponse = 0;
         mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
         mapInstance.setZoom(5);
         // Load all counters
@@ -341,12 +340,14 @@ $("#setAdvFilterBtn").click(function(e) {
             vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
             city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
             state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
-            total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length;
+            frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
+            polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
+            total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length + frequency_filter.length + polarization_filter.length;
 
         // If any value is selected in filter
         if(total_selected_items > 0) {
             // Call function to plot the data on map as per the applied filters
-            gmap_self.applyAdvanceFilters(technology_filter,vendor_filter,state_filter,city_filter);
+            gmap_self.applyAdvanceFilters();
         } else {
             /*Hide the spinner*/
             hideSpinner();
@@ -461,7 +462,7 @@ $("#polling_tech").change(function(e) {
 
 /*When "Tabular View" button for polling widget clicked*/
 $("#polling_tabular_view").click(function(e) {
-    if(window.location.pathname.indexOf("white_background")) {
+    if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.show_polling_datatable_wmaps();
     } else {
         networkMapInstance.show_polling_datatable();
@@ -516,7 +517,7 @@ $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $(this).val();
     defaultIconSize= val;
     if(window.location.pathname.indexOf("white_background") > -1) {
-        // whiteMapClass.toggleIconSize(val);
+        whiteMapClass.updateMarkersSize(val);
     } else {
         networkMapInstance.updateAllMarkersWithNewIcon(val);
         
@@ -1009,7 +1010,7 @@ $("#show_hide_label").click(function(e) {
  * This event trigger when previous navigation button on polling widget clicked
  */
 $("#navigation_container button#previous_polling_btn").click(function(e) {
-    if(window.location.pathname.indexOf("white_background")) {
+    if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.show_previous_polled_icon_wmaps();
     } else {
         networkMapInstance.show_previous_polled_icon();
@@ -1020,7 +1021,7 @@ $("#navigation_container button#previous_polling_btn").click(function(e) {
  * This event trigger when next navigation button on polling widget clicked
  */
 $("#navigation_container button#next_polling_btn").click(function(e) {
-   if(window.location.pathname.indexOf("white_background")) {
+   if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.show_next_polled_icon_wmaps();
     } else {
         networkMapInstance.show_next_polled_icon();
@@ -1054,6 +1055,11 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
  * This event trigger when export data button is clicked
  */
 $("#export_data_gmap").click(function(e) {
+
+    if($("#export_data_gmap").hasClass('btn-info')) {
+        $("#export_data_gmap").removeClass('btn-info');
+        $("#export_data_gmap").addClass('btn-warning');
+    }
 
     //enable the flag
     isExportDataActive = 1;

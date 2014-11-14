@@ -15,7 +15,10 @@ urlpatterns = patterns('',
   # url(r'^stats/$', cache_page(60 * 60)(api.DeviceStatsApi.as_view())),
   url(r'^stats/$', api.DeviceStatsApi.as_view()),
 
-  url(r'^filter/$', api.DeviceFilterApi.as_view()),
+  #cache the Filters. they dont change
+  url(r'^filter/$', cache_page(60 * 60)(api.DeviceFilterApi.as_view())),
+  #cache the Filters. they dont change
+
   url(r'^lp_services/', api.LPServicesApi.as_view()),
   url(r'^lp_service_data/', api.FetchLPDataApi.as_view()),
   url(r'^lp_bulk_data/', api.BulkFetchLPDataApi.as_view()),
