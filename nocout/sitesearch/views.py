@@ -658,6 +658,7 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
 
     return (substation_info, circuit_ids, substation_ip)
 
+
 def prepare_raw_bs_result(bs_result=None):
     """
 

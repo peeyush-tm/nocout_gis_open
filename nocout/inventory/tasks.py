@@ -2400,7 +2400,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     ws_bulk_upload_errors.write(0, i, col.decode('utf-8', 'ignore').strip(), style_errors)
         except Exception as e:
             pass
-
+        print "************************* Headers: ", headers
+        print "************************* Error Rows: ", error_rows_list
         try:
             for i, l in enumerate(error_rows_list):
                 i += 1

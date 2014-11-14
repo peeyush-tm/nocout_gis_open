@@ -29,6 +29,9 @@ var isFreeze = 0,
 
 /*Global data objects & arrays of map data & filters*/
 var main_devices_data_gmaps = [],
+	currentlyPlottedDevices = [],
+	plottedBsIds = [],
+	lastZoomLevel = 5,
 	all_devices_loki_db = [],
 	state_wise_device_counters = {},
 	state_wise_device_labels = {},
@@ -502,7 +505,7 @@ function devicePlottingClass_gmap() {
 	            		var states_array = [];
 
 	            		// Hide State Labels which are in current bounds
-	            		for(var i=0;i<states_with_bounds.length;i++) {
+	            		for(var i=states_with_bounds.length;i--;) {
 	            			if(state_wise_device_labels[states_with_bounds[i].name]) {
 	            				states_array.push(states_with_bounds[i].name);
 		            			if(!(state_wise_device_labels[states_with_bounds[i].name].isHidden_)) {
@@ -533,6 +536,7 @@ function devicePlottingClass_gmap() {
 	            		if(searchResultData.length > 0) {
 	            			data_to_plot = searchResultData;
 	            		} else {
+
 	            			var filtered_devices = [],
 	            				current_bound_devices = [];
 
@@ -562,21 +566,37 @@ function devicePlottingClass_gmap() {
 
 	            		// If any data exists
 	            		if(data_to_plot.length > 0) {
+	            			if(lastZoomLevel < mapInstance.getZoom()) {
+			            		/*Clear all everything from map*/
+								$.grep(allMarkersArray_gmap,function(marker) {
+									marker.setMap(null);
+								});
+								// Reset Variables
+								allMarkersArray_gmap = [];
+								main_devices_data_gmaps = [];
+								currentlyPlottedDevices = [];
+								allMarkersObject_gmap= {
+									'base_station': {},
+									'path': {},
+									'sub_station': {},
+									'sector_device': {},
+									'sector_polygon': {}
+								};
 
-		            		/*Clear all everything from map*/
-							$.grep(allMarkersArray_gmap,function(marker) {
-								marker.setMap(null);
-							});
+								/*Clear master marker cluster objects*/
+								if(masterClusterInstance) {
+									masterClusterInstance.clearMarkers();
+								}
+	            			}
 
-							allMarkersArray_gmap = [];
+							main_devices_data_gmaps = data_to_plot;
+							
+							var inBoundData = gmap_self.getNewBoundsDevices();
 
-							/*Clear master marker cluster objects*/
-							if(masterClusterInstance) {
-								masterClusterInstance.clearMarkers();
-							}
+							currentlyPlottedDevices = inBoundData;
 
 							// Call function to plot devices on gmap
-							gmap_self.plotDevices_gmap(data_to_plot,"base_station");
+							gmap_self.plotDevices_gmap(inBoundData,"base_station");
 	            		}
 
 	            		// Show points line if exist
@@ -585,6 +605,7 @@ function devicePlottingClass_gmap() {
 	            		}
             		// 8 LEVEL ZOOM CONDITION
             		} else {
+
     					gmap_self.showLinesInBounds();
 						gmap_self.showSubStaionsInBounds();
 						gmap_self.showBaseStaionsInBounds();
@@ -602,7 +623,7 @@ function devicePlottingClass_gmap() {
 		            		}
 		            		gisPerformanceClass.start(bs_id_list);
 		            	}
-	            	},1500);
+	            	},500);
 
 	            } else if(mapInstance.getZoom() <= 7) {
 					/*Clear all everything from map*/
@@ -610,9 +631,18 @@ function devicePlottingClass_gmap() {
 						marker.setOptions({"isActive" : 0});
 						marker.setMap(null);
 					});
-
+					// Reset Variables
 					allMarkersArray_gmap = [];
-					allMarkersObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}, 'sector_polygon': {}}
+					main_devices_data_gmaps = [];
+					plottedBsIds = [];
+					currentlyPlottedDevices = [];
+					allMarkersObject_gmap= {
+						'base_station': {},
+						'path': {},
+						'sub_station': {},
+						'sector_device': {},
+						'sector_polygon': {}
+					};
 
 					/*Clear master marker cluster objects*/
 					if(masterClusterInstance) {
@@ -661,6 +691,9 @@ function devicePlottingClass_gmap() {
             			line_data_obj[key].setMap(null);
             		}
 	            }
+
+	            // Save last Zoom Value
+	            lastZoomLevel = mapInstance.getZoom();
             });
 
 			/*Search text box object*/
@@ -1052,6 +1085,12 @@ function devicePlottingClass_gmap() {
 				//Zoom in to selected state
 				mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(state_obj.lat,state_obj.lon)));
 				mapInstance.setZoom(8);
+
+				// Hide Clicked state Label
+				if(!(state_wise_device_labels[clicked_state].isHidden_)) {
+        			// Hide Label
+					state_wise_device_labels[clicked_state].hide();
+    			}
 			}
 		}
 	};
@@ -1069,7 +1108,7 @@ function devicePlottingClass_gmap() {
 			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [];
 
 		// Remove unmatched sectors
-		for(var x=0;x<dataset.length;x++) {
+		for(var x=dataset.length;x--;) {
 			var sectors = dataset[x].data.param.sector,
 				delete_index = [];
 			for(var y=0;y<sectors.length;y++) {
@@ -1154,7 +1193,7 @@ function devicePlottingClass_gmap() {
         	// If any basic filter is applied
         	if(isBasicFilterApplied) {
 
-				for(var i=0;i<sectors.length;i++) {
+				for(var i=sectors.length;i--;) {
 
 					var basic_filter_condition3 = $.trim($("#technology").val()) ? sectors[i].technology ===  filterObj['technology'] : true,
 						basic_filter_condition4 = $.trim($("#vendor").val()) ? sectors[i].vendor ===  filterObj['vendor'] : true;
@@ -1202,7 +1241,55 @@ function devicePlottingClass_gmap() {
     	});
 
 		return filtered_Data;
-	}
+	};
+
+	/**
+     * This function is used to get the devices which are in bound from given data set.
+     * @method getInBoundDevices
+     * @param dataset {Array}, It contains array of bs-sector-ss heirarchy devices.
+     * @return inBoundDevices {Array}, It returns the devices which are in current bound.
+	 */
+	this.getInBoundDevices = function(dataset) {
+
+		var inBoundDevices = [];
+
+		for(var i=dataset.length;i--;) {
+
+			var current_device_set = dataset[i],
+				isDeviceInBound = mapInstance.getBounds().contains(new google.maps.LatLng(current_device_set.data.lat,current_device_set.data.lon));
+			if(isDeviceInBound) {
+				inBoundDevices.push(current_device_set);
+				plottedBsIds.push(current_device_set.id);
+			}
+		}
+		// Return devices which are in current bounds
+		return inBoundDevices;
+	};
+
+	/**
+     * This function is used to get devices which are in changed bounds.
+     * @method getNewBoundsDevices
+     * @return newInBoundDevices {Array}, It returns the devices which are in current bound & not plotted yet.
+	 */
+	this.getNewBoundsDevices = function() {
+
+		var newInBoundDevices = [];
+
+		for(var i=main_devices_data_gmaps.length;i--;) {
+			var current_device_set = main_devices_data_gmaps[i];
+
+			if(plottedBsIds.indexOf(current_device_set.id) === -1) {
+				var isDeviceInBound = mapInstance.getBounds().contains(new google.maps.LatLng(current_device_set.data.lat,current_device_set.data.lon));
+				if(isDeviceInBound) {
+					newInBoundDevices.push(current_device_set);
+					plottedBsIds.push(current_device_set.id);
+				}
+
+			}
+		}
+		// Return devices which are in current bounds
+		return newInBoundDevices;
+	};
 
 	/**
      * This function is used to plot BS or SS devices & their respective elements on the google maps
@@ -1499,7 +1586,7 @@ function devicePlottingClass_gmap() {
 				oms_ss_markers = oms_ss.getMarkers();			
 
 			/*Loop to change the icon for same location BS markers(to cluster icon)*/
-			for(var k=0;k<oms_bs_markers.length;k++) {
+			for(var k=oms_bs_markers.length;k--;) {
 				
 				if(oms_bs_markers[k] != undefined) {
 	
@@ -1881,7 +1968,7 @@ function devicePlottingClass_gmap() {
 		var startLat = pointsArray[halfPt].lat;
 		var startLon = pointsArray[halfPt].lon;
 
-		for(var i=0;i<pointsArray.length;i++) {
+		for(var i=pointsArray.length;i--;) {
 			var pt = new google.maps.LatLng(pointsArray[i].lat,pointsArray[i].lon);
 			polyPathArray.push(pt);
 		}
@@ -1929,7 +2016,7 @@ function devicePlottingClass_gmap() {
         allMarkersObject_gmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+rad+"_"+azimuth+"_"+beam_width] = poly;
 
 		if(sector_child) {
-			for(var i=0;i<sector_child.length;i++) {
+			for(var i=sector_child.length;i--;) {
 				markersMasterObj['Poly'][sector_child[i]["device_name"]]= poly;
 			}			
 		}
@@ -2729,7 +2816,7 @@ function devicePlottingClass_gmap() {
 		var state_option = "";
 		state_option = "<option value=''>Select State</option>";
 
-		for(var i=0;i<state_array.length;i++) {
+		for(var i=state_array.length;i--;) {
 			state_option += "<option value='"+i+1+"'>"+state_array[i]+"</option>";
 		}
 
@@ -2738,7 +2825,7 @@ function devicePlottingClass_gmap() {
 		var city_option = "";
 		city_option = "<option value=''>Select City</option>";
 
-		for(var i=0;i<all_cities_array.length;i++) {
+		for(var i=all_cities_array.length;i--;) {
 			city_option += "<option value='"+i+1+"'>"+all_cities_array[i]+"</option>";
 		}
 
@@ -2750,7 +2837,7 @@ function devicePlottingClass_gmap() {
 		var tech_option = "";
 		tech_option = "<option value=''>Select Technology</option>";
 
-		for(var i=0;i<technology_array.length;i++) {
+		for(var i=technology_array.length;i--;) {
 			tech_option += "<option value='"+i+1+"'>"+technology_array[i]+"</option>";
 		}
 
@@ -2760,7 +2847,7 @@ function devicePlottingClass_gmap() {
 		var vendor_option = "";
 		vendor_option = "<option value=''>Select Vendor</option>";
 
-		for(var i=0;i<all_vendor_array.length;i++) {
+		for(var i=all_vendor_array.length;i--;) {
 			vendor_option += "<option value='"+i+1+"'>"+all_vendor_array[i]+"</option>";
 		}
 
@@ -2827,7 +2914,7 @@ function devicePlottingClass_gmap() {
 	        		gisPerformanceClass.start(bs_list);
 	        	}
         	}
-    	},600);
+    	},500);
 	}
 
 	/**
@@ -2852,7 +2939,7 @@ function devicePlottingClass_gmap() {
 		}
 
 
-        for(var i=0;i<current_data.length;i++) {
+        for(var i=current_data.length;i--;) {
 
             /*Deep Copy of the current_data*/
             var bs_data= $.extend( true, {}, current_data[i]);
@@ -3034,13 +3121,11 @@ function devicePlottingClass_gmap() {
         		var bs_technology_array = [];
         		var searchPattern = new RegExp('^' + query.term, 'i');
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var technology_array = obj.sector_ss_technology.split("|");
-        			for(var i=0;i<technology_array.length;i++) {
-	        			if(searchPattern.test(technology_array[i])) {
-	        				return true;
-	        			} else {
-	        				return false;
-	        			}
+        			var technologies = obj.sector_ss_technology;
+        			if(technologies.search(query.term) > -1) {
+	        			return true;
+        			} else {
+        				return false;
         			}
         		});
 
@@ -3069,13 +3154,11 @@ function devicePlottingClass_gmap() {
         			searchPattern = new RegExp('^' + query.term, 'i');
 
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var vendor_array = obj.sector_ss_vendor.split("|");
-        			for(var i=0;i<vendor_array.length;i++) {
-	        			if(searchPattern.test(vendor_array[i])) {
-	        				return true;
-	        			} else {
-	        				return false;
-	        			}
+        			var vendors = obj.sector_ss_vendor;
+        			if(vendors.search(query.term) > -1) {
+	        			return true;
+        			} else {
+        				return false;
         			}
         		});
 
@@ -3165,13 +3248,11 @@ function devicePlottingClass_gmap() {
         			searchPattern = new RegExp('^' + query.term, 'i');
 
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var vendor_array = obj.sector_planned_frequencies.split("|");
-        			for(var i=0;i<vendor_array.length;i++) {
-	        			if(searchPattern.test(vendor_array[i])) {
-	        				return true;
-	        			} else {
-	        				return false;
-	        			}
+        			var frequencies = obj.sector_planned_frequencies;
+        			if(frequencies.search(query.term) > -1) {
+	        			return true;
+        			} else {
+        				return false;
         			}
         		});
 
@@ -3269,16 +3350,14 @@ function devicePlottingClass_gmap() {
         	query: function (query) {
         		var searchPattern = new RegExp('^' + query.term, 'i'),
         			ip_address_array = [];
+
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var ipsArray = obj.sector_configured_on_devices.split("|");
-        			for(var j=0;j<ipsArray.length;j++) {
-						var condition = searchPattern.test(ipsArray[j]);
-						if(condition) {
-							return true;
-						} else {
-							return false;
-						}
-        			}
+        			var ipAddress = obj.sector_configured_on_devices;
+        			if(ipAddress.search(query.term) > -1) {
+        				return true;
+					} else {
+						return false;
+					}
         		});
 
 		        var data = {results: []}, i, j, s;
@@ -3305,15 +3384,12 @@ function devicePlottingClass_gmap() {
         		var searchPattern = new RegExp('^' + query.term, 'i'),
         			circuit_id_array = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var circuit_Ids_array = obj.circuit_ids.split("|");
-        			for(var j=0;j<circuit_Ids_array.length;j++) {
-						var condition = searchPattern.test(circuit_Ids_array[j]);
-						if(condition) {
-							return true;
-						} else {
-							return false;
-						}
-        			}
+        			var circuit_Ids = obj.circuit_ids;
+        			if(circuit_Ids.search(query.term) > -1) {
+        				return true;
+        			} else {
+						return false;
+					}
         		});
 
 		        var data = {results: []}, i, j, s;
@@ -3321,13 +3397,11 @@ function devicePlottingClass_gmap() {
 		        for (i = 0; i < limit; i++) {
 		        	var circuit_ids = filtered_data[i].circuit_ids.split("|");
 		        	for(var j=0;j<circuit_ids.length;j++) {
-		        		if(circuit_ids[j]) {
-			        		if(searchPattern.test(circuit_ids[j])) {
-			        			if(circuit_id_array.indexOf(circuit_ids[j]) < 0) {
-			        				circuit_id_array.push(circuit_ids[j]);
-			            			data.results.push({id: circuit_ids[j], text: circuit_ids[j], value : circuit_ids[j]});
-			        			}
-			        		}
+		        		if(searchPattern.test(circuit_ids[j])) {
+		        			if(circuit_id_array.indexOf(circuit_ids[j]) === -1) {
+		        				circuit_id_array.push(circuit_ids[j]);
+		            			data.results.push({id: circuit_ids[j], text: circuit_ids[j], value : circuit_ids[j]});
+		        			}
 		        		}
 		        	}
 		        }
@@ -3405,7 +3479,7 @@ function devicePlottingClass_gmap() {
     		var plotted_search_markers = [],
     			isSearched = 0;
 
-	    	for(var i=0;i<data_to_plot.length;i++) {
+	    	for(var i=data_to_plot.length;i--;) {
 	    		if(isSearched > 0) {
 	    			break;
 	    		}
@@ -3434,7 +3508,7 @@ function devicePlottingClass_gmap() {
 		advJustSearch.removeSearchMarkers();
     	advJustSearch.resetVariables();
 
-	    for(var i=0;i<data_to_plot.length;i++) {
+	    for(var i=data_to_plot.length;i--;) {
 	    	if(selected_bs_city.length <= 0) {
 	    		if(selected_bs_alias.length > 0) {
 		    		var bs_alias = data_to_plot[i].alias,
@@ -3514,8 +3588,39 @@ function devicePlottingClass_gmap() {
 			if(mapInstance.getZoom() > 15) {
                 mapInstance.setZoom(15);
             }
+
+            if(lastZoomLevel < 8) {
+            	/*Clear all everything from map*/
+				$.grep(allMarkersArray_gmap,function(marker) {
+					marker.setMap(null);
+				});
+
+				// Reset variables
+				allMarkersArray_gmap = [];
+				main_devices_data_gmaps = [];
+				currentlyPlottedDevices = [];
+				allMarkersObject_gmap= {
+					'base_station': {},
+					'path': {},
+					'sub_station': {},
+					'sector_device': {},
+					'sector_polygon': {}
+				};
+
+				/*Clear master marker cluster objects*/
+				if(masterClusterInstance) {
+					masterClusterInstance.clearMarkers();
+				}
+            }
+
+			main_devices_data_gmaps = data_to_plot;
+
+            var inBoundData = gmap_self.getNewBoundsDevices();
+
+			currentlyPlottedDevices = inBoundData;
+
             // Plot devices
-            gmap_self.plotDevices_gmap(data_to_plot,"base_station");
+            gmap_self.plotDevices_gmap(inBoundData,"base_station");
 
 			// Show search marker after some timeout
 			setTimeout(function() {
@@ -3910,7 +4015,7 @@ function devicePlottingClass_gmap() {
 
 							var selected_polling_technology = $("#polling_tech option:selected").text();
 
-							for(var k=0;k<allSS.length;k++) {
+							for(var k=allSS.length;k--;) {
 								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
 								if(point) {
 									if (google.maps.geometry.poly.containsLocation(point, polygon)) {
@@ -4148,7 +4253,7 @@ function devicePlottingClass_gmap() {
 							$(".devices_container").removeClass("hide");
 						}
 						var hasPolledInfo = true;
-						for(var i=0;i<allSSIds.length;i++) {
+						for(var i=allSSIds.length;i--;) {
 
 							var new_device_name = "";
 							if(allSSIds[i] && allSSIds[i].indexOf(".") != -1) {
@@ -4328,7 +4433,7 @@ function devicePlottingClass_gmap() {
     	/*Remove 'text-info' class from all li's*/
     	$(".deviceWellContainer div div ul li").removeClass("text-info");
 
-    	for(var i=0;i<polled_devices_names.length;i++) {
+    	for(var i=polled_devices_names.length;i--;) {
 
     		var marker_name = "",
 				sector_ip = "";
@@ -4394,7 +4499,7 @@ function devicePlottingClass_gmap() {
     	$(".deviceWellContainer div div ul li").removeClass("text-info");
 
 
-    	for(var i=0;i<polled_devices_names.length;i++) {
+    	for(var i=polled_devices_names.length;i--;) {
 
 			var marker_name = "",
 				sector_ip = "";

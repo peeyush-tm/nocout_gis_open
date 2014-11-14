@@ -13,7 +13,7 @@ from device.models import Device, DeviceType, DeviceVendor, \
 import requests
 from nocout.utils import logged_in_user_organizations
 from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value, \
-    query_all_gis_inventory, cached_all_gis_inventory
+    query_all_gis_inventory, cached_all_gis_inventory, cache_for
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
@@ -30,7 +30,30 @@ global gis_information
 gis_information = cached_all_gis_inventory(query_all_gis_inventory())
 
 
+@cache_for(600)
+def prepare_raw_result(bs_dict = []):
+    """
+
+    :param bs_dict: dictionary of base-station objects
+    :return: API formatted result
+    """
+
+    bs_list = []
+    bs_result = {}
+    #preparing result by pivoting via basestation id
+    if len(bs_dict):
+        for bs in bs_dict:
+            BSID = bs['BSID']
+            if BSID not in bs_list:
+                bs_list.append(BSID)
+                bs_result[BSID] = []
+            bs_result[BSID].append(bs)
+    return bs_result
+
+
 class DeviceStatsApi(View):
+
+    raw_result = prepare_raw_result(gis_information)
 
     def get(self, request):
 
@@ -45,9 +68,7 @@ class DeviceStatsApi(View):
         # page_number= request.GET['page_number']
         # limit= request.GET['limit']
 
-        organizations= logged_in_user_organizations(self)
-
-        processed_bs = gis_information
+        organizations = logged_in_user_organizations(self)
 
         if organizations:
             # for organization in organizations:
@@ -84,43 +105,15 @@ class DeviceStatsApi(View):
                                             }
             self.result['data']['objects']['children']= list()
 
-            ##TODO: optimise looping here
-            extract_info = []
             for bs in bs_id:
-                for result in processed_bs[:]:
-                    if int(bs) == int(result['BSID']):
-                        extract_info.append(result)
-
-            raw_result = prepare_raw_result(extract_info)
-            ##TODO: optimise looping here
-
-            for basestation in raw_result:
-                base_station_info= prepare_raw_bs_result(raw_result[basestation])
-                self.result['data']['objects']['children'].append(base_station_info)
+                if bs in self.raw_result:
+                    base_station_info= prepare_raw_bs_result(self.raw_result[bs])
+                    self.result['data']['objects']['children'].append(base_station_info)
 
             self.result['data']['meta']['device_count']= len(self.result['data']['objects']['children'])
-            self.result['message']='Data Fetched Successfully.'
-            self.result['success']=1
+            self.result['message'] = 'Data Fetched Successfully.'
+            self.result['success'] = 1
         return HttpResponse(json.dumps(self.result))
-
-def prepare_raw_result(bs_dict = []):
-    """
-
-    :param bs_dict: dictionary of base-station objects
-    :return: API formatted result
-    """
-
-    bs_list = []
-    bs_result = {}
-    #preparing result by pivoting via basestation id
-    if len(bs_dict):
-        for bs in bs_dict:
-            BSID = bs['BSID']
-            if BSID not in bs_list:
-                bs_list.append(BSID)
-                bs_result[BSID] = []
-            bs_result[BSID].append(bs)
-    return bs_result
 
 
 class DeviceFilterApi(View):
@@ -140,15 +133,15 @@ class DeviceFilterApi(View):
         for device_technology in DeviceTechnology.objects.all():
             technology_data.append({ 'id':device_technology.id,
                                      'value':device_technology.name })
-            vendors = device_technology.device_vendors.all()
-            for vendor in vendors:
-                if vendor not in vendor_list:
-                    vendor_list.append(vendor.id)
-                    vendor_data.append({ 'id':vendor.id,
-                                         'value':vendor.name,
-                                         'tech_id': device_technology.id,
-                                         'tech_name': device_technology.name
-                    })
+            # vendors = device_technology.device_vendors.all()
+            # for vendor in vendors:
+            #     if vendor not in vendor_list:
+            #         vendor_list.append(vendor.id)
+            #         vendor_data.append({ 'id':vendor.id,
+            #                              'value':vendor.name,
+            #                              'tech_id': device_technology.id,
+            #                              'tech_name': device_technology.name
+            #         })
         # for vendor in DeviceVendor.objects.all():
         #     vendor_data.append({ 'id':vendor.id,
         #                              'value':vendor.name })
@@ -156,21 +149,21 @@ class DeviceFilterApi(View):
         # for state in State.objects.all():
         #     state_data.append({ 'id':state.id,
         #                              'value':state.state_name })
-        state_list = []
-        for city in City.objects.all():
-            city_data.append({'id':city.id,
-                             'value':city.city_name,
-                             'state_id': city.state.id,
-                             'state_name': city.state.state_name }
-            )
-            if city.state.id not in state_list:
-                state_list.append(city.state.id)
-                state_data.append({ 'id':city.state.id,'value':city.state.state_name })
+        # state_list = []
+        # for city in City.objects.all():
+        #     city_data.append({'id':city.id,
+        #                      'value':city.city_name,
+        #                      'state_id': city.state.id,
+        #                      'state_name': city.state.state_name }
+        #     )
+        #     if city.state.id not in state_list:
+        #         state_list.append(city.state.id)
+        #         state_data.append({ 'id':city.state.id,'value':city.state.state_name })
 
         self.result['data']['objects']['technology']={'data':technology_data}
-        self.result['data']['objects']['vendor']={'data':vendor_data}
-        self.result['data']['objects']['state']={'data':state_data}
-        self.result['data']['objects']['city']={'data':city_data}
+        # self.result['data']['objects']['vendor']={'data':vendor_data}
+        # self.result['data']['objects']['state']={'data':state_data}
+        # self.result['data']['objects']['city']={'data':city_data}
         self.result['message']='Data Fetched Successfully.'
         self.result['success']=1
 
@@ -796,6 +789,7 @@ class BulkFetchLPDataApi(View):
             bs_device, site_name = None, None
 
         result['data']['devices'] = dict()
+
         # get machines associated with current devices
         machine_list = []
         for device in devices:
@@ -869,6 +863,7 @@ class BulkFetchLPDataApi(View):
                                 devices_in_current_site.append(device.device_name)
                         except Exception as e:
                             logger.info(e.message)
+
                     # live polling data dictionary (payload for nocout.py api call)
                     lp_data = dict()
                     lp_data['mode'] = "live"
@@ -1048,7 +1043,6 @@ class BulkFetchLPDataApi(View):
                             logger.info(e.message)
 
                         result['data']['devices'][device_name]['icon'] = icon
-
                         # if response_dict doesn't have key 'success'
                         if not response_dict.get('success'):
                             logger.info(response_dict.get('error_message'))
