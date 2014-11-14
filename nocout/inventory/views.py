@@ -2439,8 +2439,8 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
             except Exception as e:
                 logger.info(e)
 
-            dct.update(actions='<a href="/bulk_import/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                                <a href="/bulk_import/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
+            dct.update(actions='<a href="/bulk_import/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="/bulk_import/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
             try:
                 sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS']
                 if dct.get('sheet_name'):
