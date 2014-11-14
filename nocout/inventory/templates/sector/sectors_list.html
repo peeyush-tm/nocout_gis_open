@@ -1,17 +1,14 @@
-{% extends "inventory/inventory.html" %}
+{% extends "nocout/breadcrumb.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Sector</li>
-{% endblock %}
+
 {% block content_title %}Sector Management{% endblock %}
 {% block content_description %}List of sector{% endblock %}
 {% block content %}
-    
+
         {% if perms.inventory.add_sector %}
             <p><a href="/sector/new"><i class="fa fa-plus">&nbsp;</i> Create Sector</a></p>
         {% endif %}
-    
+
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>SECTOR LISTING</h4>

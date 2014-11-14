@@ -1,13 +1,9 @@
-{% extends "inventory/inventory.html" %}
+{% extends "nocout/breadcrumb.html" %}
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
 {% endblock %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Antenna</li>
-    <li>Detail</li>
-{% endblock %}
+
 {% block content_title %}Antenna Detail{% endblock %}
 {% block content_description %}Detail of antenna{% endblock %}
 {% block content %}
