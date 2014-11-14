@@ -92,9 +92,9 @@ class UserListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixi
 
                 for dct in json_data:
                     if dct['id'] == self.request.user.id:
-                        actions = '<a href="/user/myprofile/"><i class="fa fa-pencil text-dark"></i></a>'
+                        actions = '<a href="/myprofile/"><i class="fa fa-pencil text-dark"></i></a>'
                     else:
-                        actions = '''<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                        actions = '''<a href="/user/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                                 <a href="#UserListing" onclick='Dajaxice.user_profile.user_soft_delete_form( get_soft_delete_form,\
                                 {{ \"value\": {0} , \"datatable_headers\": {1} }})'><i class="fa fa-trash-o text-danger">\
                                 </i></a>'''.format(dct['id'], datatable_headers)
