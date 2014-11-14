@@ -1,13 +1,9 @@
-{% extends "inventory/inventory.html" %}
+{% extends "nocout/breadcrumb.html" %}
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/site_instance.css" %}>
 {% endblock %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Site Instance</li>
-    <li>Detail</li>
-{% endblock %}
+
 {% block content_title %}Site Instance Detial{% endblock %}
 {% block content_description %}Detail of site instance{% endblock %}
 {% block content %}
