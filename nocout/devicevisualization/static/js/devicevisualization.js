@@ -790,6 +790,7 @@ function showToolsPanel() {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
 
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
     }
@@ -801,7 +802,7 @@ function removetoolsPanel() {
     is_ruler_active= -1;
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
     }    
