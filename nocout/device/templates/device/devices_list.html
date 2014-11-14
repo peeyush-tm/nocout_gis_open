@@ -1,8 +1,5 @@
 {% extends "inventory/inventory.html" %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Device</li>
-{% endblock %}
+
 {% block content_title %}Device Management{% endblock %}
 {% block content_description %}List of devices{% endblock %}
 {% block page_setting_block %}
@@ -17,7 +14,7 @@
         {% if perms.device.add_device %}
             <p><a href="/device/new"><i class="fa fa-plus"></i> Create Device</a></p>
         {% endif %}
-    
+
     <p><a href="/device/treeview"><i class="fa fa-sitemap"></i> Devices Tree View</a></p>
 
     <div class="box border lite">
@@ -85,25 +82,25 @@
     <!-- Custom Script for soft delete-->
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
-        
+
         var dataTableInstance = "";
 
         $(document).ready(function() {
-            
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
-            
-            /*Grid headers object*/            
+
+            /*Grid headers object*/
             // var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             // var gridHeadersObj_no_nms_actions = $.parseJSON('{{ datatable_headers_no_nms_actions|safe }}');
-            
+
             /*Ajax url to get grid data*/
             var ajax_url_operational_listing = '{% url "OperationalDeviceListingTable" %}';
             var ajax_url_nonoperational_listing = '{% url "NonOperationalDeviceListingTable" %}';
             var ajax_url_disabled_listing = '{% url "DisabledDeviceListingTable" %}';
             var ajax_url_archived_listing = '{% url "ArchivedDeviceListingTable" %}';
             var ajax_url_all_listing = '{% url "AllDeviceListingTable" %}';
-                
+
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
             $("#operationalDeviceListing_tab").attr("data_url",ajax_url_operational_listing);
