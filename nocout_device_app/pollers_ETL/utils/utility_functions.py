@@ -22,7 +22,7 @@ def get_from_socket(site_name, query):
     s.connect(socket_path)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
-    out = ''
+    output = ''
     while True:
         out = s.recv(100000000)
         out.strip()
