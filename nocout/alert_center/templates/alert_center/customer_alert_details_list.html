@@ -1,9 +1,5 @@
-{% extends "nocout/base.html" %}
-{% block breadcrumb_title %}
-    <li>Alert Center</li>
-    <li>Alert Details</li>
-    <li>Customer Details</li>
-{% endblock %}
+{% extends "capacity_management/capacity_mgmt_breadcrumb.html" %}
+
 {% block content_title %}Customer Details{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
@@ -66,7 +62,7 @@
         var dataTableInstance = "",
             base_url = "",
             excel_columns = [];
-            
+
         $(document).ready(function (e) {
 
             /*Set the base url of application for ajax calls*/

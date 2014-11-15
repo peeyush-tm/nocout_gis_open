@@ -1,9 +1,5 @@
-{% extends "nocout/base.html" %}
-{% block breadcrumb_title %}
-    <li>Alert Center</li>
-    <li>Customer Alerts</li>
-    <li>{{ data_source }}</li>
-{% endblock %}
+{% extends "capacity_management/capacity_mgmt_breadcrumb.html" %}
+
 {% block content_title %}Customer Alerts{% endblock %}
 {% block content_description %}Customer Alerts List{% endblock %}
 {% load staticfiles %}
@@ -59,7 +55,7 @@
         excel_columns = [];
     /*This is a temporary code which is replace when data for data table is provided*/
     $(document).ready(function (e) {
-        
+
         /*Set the base url of application for ajax calls*/
         if(window.location.origin) {
             base_url = window.location.origin;
@@ -152,7 +148,7 @@
             var ajax_url_wifi= '{% url "CustomerAlertListingTable" %}'+'?data_source='+ ajax_url_get_parameter+'&data_tab=' + 'WiMAX';
             var ajax_url_pmp=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'PMP';
             var ajax_url_p2p=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'P2P';
-                
+
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
             $("#customer_wifi_tab").attr("data_url",ajax_url_wifi);
