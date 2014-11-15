@@ -62,7 +62,7 @@ $(".nav-tabs li a").click(function (e,isFirst) {
 		if(anchor_id.indexOf('pmp') > -1) {
 			tab_name = 'PMP';
 		} else if(anchor_id.indexOf('wifi') > -1) {
-			tab_name = 'Wimax';
+			tab_name = 'WiMAX';
 		} else {
 			tab_name = 'P2P';
 		}
