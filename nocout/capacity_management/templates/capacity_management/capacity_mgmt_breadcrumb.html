@@ -87,8 +87,9 @@ in for-loop (approx:line number 61 to 65)
             $(".breadcrumb").append(output)
         }
 
-        // to change the name of the tab in bredcrumb display using ajax success.
-        $( document ).ajaxComplete(function() { $("#nav_tab_name").text($('.nav li').filter('.active').find('.hidden-inline-mobile').text()); });
+        $(".nav-tabs li").click( function() {
+            $('#nav_tab_name').text($(this).text());
+        });
     });
 
 </script>
