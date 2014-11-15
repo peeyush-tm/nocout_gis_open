@@ -1,8 +1,5 @@
-{% extends "nocout/base.html" %}
-{% block breadcrumb_title %}
-	<li>Alert Detail</li>
-	<li>{{ page_type | title }} Alert</li>
-{% endblock %}
+{% extends "nocout/breadcrumb.html" %}
+
 {% block content_title %} {{ page_type | title  }} Alert{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
@@ -365,7 +362,7 @@
             } else {
                 res = str.replace(toReplace, replaceWith);
             }
-            
+
             return res;
         }
 
