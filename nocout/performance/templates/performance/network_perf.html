@@ -1,8 +1,5 @@
-{% extends "nocout/base.html" %}
-{% block breadcrumb_title %}
-	<li>Performance Reports</li>
-	<li>Network Live</li>
-{% endblock %}
+{% extends "nocout/breadcrumb.html" %}
+
 {% block content_title %}Network Live{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
@@ -25,7 +22,7 @@
 
         <div class="box-body">
             <div id="customerAlertContainer">
-                
+
                 <div class="tabbable header-tabs">
                     <ul class="nav nav-tabs">
                         <li><a href="#network_ptp_block" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
@@ -144,7 +141,7 @@
             </div>
             <div class="clearfix"></div>
         </div>
-    </div>	
+    </div>
 
 {% endblock %}
 
