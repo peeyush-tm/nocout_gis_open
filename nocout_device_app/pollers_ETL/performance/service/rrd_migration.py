@@ -238,7 +238,7 @@ def get_host_services_name(site_name=None, mongo_host=None, mongo_db=None, mongo
             network_perf_query = "GET hosts\nColumns: host_name host_address host_state last_check host_last_state_change host_perf_data\nOutputFormat: json\n"
             service_perf_query = "GET services\nColumns: host_name host_address service_description service_state "+\
                             "last_check service_last_state_change service_perf_data\nFilter: service_description ~ _invent\n"+\
-                            "Filter: service_description ~ _status\nFilter: service_description ~ Check_MK\nOr: 3\nNegate:\nOutputFormat: json\n"
+			    "Filter: service_description ~ _status\nFilter: service_description ~ Check_MK\nFilter: service_description ~ wimax_topology\nFilter: service_description ~ cambium_topology_discover\nOr: 5\nNegate:\nOutputFormat: json\n"
             nw_qry_output = json.loads(get_from_socket(site_name, network_perf_query))
             #print 'NW qry OUT --'
             #print nw_qry_output
