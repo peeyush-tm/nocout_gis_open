@@ -627,7 +627,27 @@ function devicePlottingClass_gmap() {
 	            	},500);
 
 	            } else if(mapInstance.getZoom() <= 7) {
-					/*Clear all everything from map*/
+					
+					/*Loop to hide Marker Labels*/
+        			for (var x = 0; x < labelsArray.length; x++) {
+                        var move_listener_obj = labelsArray[x].moveListener_;
+                        if (move_listener_obj) {
+                            var keys_array = Object.keys(move_listener_obj);
+                            for(var z=0;z<keys_array.length;z++) {
+                            	var label_marker = move_listener_obj[keys_array[z]];
+                                if(typeof label_marker === 'object') {
+                                   if((label_marker && label_marker["filter_data"]["bs_name"]) && (label_marker && label_marker["filter_data"]["sector_name"])) {
+                                   		labelsArray[x].close();
+                                   }
+                                }
+                            }
+                        }
+                    }
+
+                    // Reset labels array 
+                    labelsArray = [];
+
+                    /*Clear all everything from map*/
 					$.grep(allMarkersArray_gmap,function(marker) {
 						marker.setOptions({"isActive" : 0});
 						marker.setMap(null);
@@ -649,25 +669,6 @@ function devicePlottingClass_gmap() {
 					if(masterClusterInstance) {
 						masterClusterInstance.clearMarkers();
 					}
-
-					/*Loop to hide Marker Labels*/
-        			for (var x = 0; x < labelsArray.length; x++) {
-                        var move_listener_obj = labelsArray[x].moveListener_;
-                        if (move_listener_obj) {
-                            var keys_array = Object.keys(move_listener_obj);
-                            for(var z=0;z<keys_array.length;z++) {
-                            	var label_marker = move_listener_obj[keys_array[z]];
-                                if(typeof label_marker === 'object') {
-                                   if((label_marker && label_marker["filter_data"]["bs_name"]) && (label_marker && label_marker["filter_data"]["sector_name"])) {
-                                   		label_marker.hide();
-                                   }
-                                }
-                            }
-                        }
-                    }
-
-                    // Reset labels array 
-                    labelsArray = [];
 
 
 					var states_with_bounds = state_lat_lon_db.where(function(obj) {
@@ -1354,6 +1355,7 @@ function devicePlottingClass_gmap() {
 						"info" : sector_array[j].info,
 						"bs_name" : bs_ss_devices[i].name,
 						"sector_name" : sector_array[j].sector_configured_on,
+						"sector_id" : sector_array[j].sector_id,
 						"device_info" : sector_array[j].device_info,
 						"technology" : sector_array[j].technology,
 						"vendor" : sector_array[j].vendor
@@ -1418,7 +1420,7 @@ function devicePlottingClass_gmap() {
 							sectorName  		: sector_array[j].sector_configured_on,
 							device_name  		: sector_array[j].sector_configured_on_device,
 							name  				: sector_array[j].sector_configured_on_device,
-							filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "bs_id" : bs_ss_devices[i].originalId},
+							filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
 							sector_lat  		: startEndObj["startLat"],
 							sector_lon  		: startEndObj["startLon"],
 							zIndex 				: 200,
@@ -1484,7 +1486,7 @@ function devicePlottingClass_gmap() {
 				    	name 		 	 : 	ss_marker_obj.name,
 				    	bs_name 		 :  bs_ss_devices[i].name,
 				    	bs_sector_device :  sector_array[j].sector_configured_on_device,
-				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId},
+				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
 				    	device_name 	 : 	ss_marker_obj.device_name,
 				    	ss_ip 	 		 : 	ss_marker_obj.data.substation_device_ip_address,
 				    	sector_ip 		 :  sector_array[j].sector_configured_on,
@@ -1547,7 +1549,7 @@ function devicePlottingClass_gmap() {
 	    			
 	    			if(ss_marker_obj.data.show_link == 1) {
 	    				/*Create the link between BS & SS or Sector & SS*/
-				    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info,sect_height,sector_array[j].sector_configured_on,ss_marker_obj.name,bs_ss_devices[i].name);
+				    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info,sect_height,sector_array[j].sector_configured_on,ss_marker_obj.name,bs_ss_devices[i].name,bs_ss_devices[i].id,sector_array[j].sector_id);
 				    	ssLinkArray.push(ss_link_line);
 				    	ssLinkArray_filtered = ssLinkArray;
 
@@ -1639,9 +1641,11 @@ function devicePlottingClass_gmap() {
 	 * @param sector_name {String}, It contains the name of sector configured device.
 	 * @param ss_name {String}, It contains the name of sub-station.
 	 * @param bs_name {String}, It contains the name of base-station.
+	 * @param bs_id {Number}, It contains the id of connected base-station.
+	 * @param sector_id {Number}, It contains the id of connected sector.
 	 * @return {Object} pathConnector, It contains gmaps polyline object.
 	 */
-	this.createLink_gmaps = function(startEndObj,linkColor,bs_info,ss_info,sect_height,sector_name,ss_name,bs_name) {
+	this.createLink_gmaps = function(startEndObj,linkColor,bs_info,ss_info,sect_height,sector_name,ss_name,bs_name,bs_id,sector_id) {
 
 
 		var pathDataObject = [
@@ -1693,7 +1697,7 @@ function devicePlottingClass_gmap() {
 			ss_height 		: sect_height,
 			sector_lat 		: startEndObj.sectorLat,
 			sector_lon 		: startEndObj.sectorLon,
-			filter_data 	: {"bs_name" : bs_name, "sector_name" : sector_name, "ss_name" : ss_name},
+			filter_data 	: {"bs_name" : bs_name, "sector_name" : sector_name, "ss_name" : ss_name, "bs_id" : bs_id, "sector_id" : sector_id},
 			nearLat 		: startEndObj.nearEndLat,
 			nearLon 		: startEndObj.nearEndLon,
 			sectorName 	    : sector_name,
@@ -2018,7 +2022,7 @@ function devicePlottingClass_gmap() {
         // poly.setMap(mapInstance);
         allMarkersArray_gmap.push(poly);
 
-        allMarkersObject_gmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+rad+"_"+azimuth+"_"+beam_width] = poly;
+        allMarkersObject_gmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+sectorInfo.sector_id] = poly;
 
 		if(sector_child) {
 			for(var i=sector_child.length;i--;) {
@@ -2194,7 +2198,7 @@ function devicePlottingClass_gmap() {
 			if(contentObject.bsInfo != undefined) {
 				startPtInfo = contentObject.bsInfo;
 			} else {
-				startPtInfo = contentObject.dataset;	
+				startPtInfo = contentObject.dataset;
 			}
 
 			for(var i=0;i<startPtInfo.length;i++) {
@@ -5788,12 +5792,13 @@ function devicePlottingClass_gmap() {
 				var subStationsArray = sectorsArray[j].sub_station,
 					sectorName = sectorsArray[j].sector_configured_on ? $.trim(sectorsArray[j].sector_configured_on) : "",
 					radius = sectorsArray[j].radius,
+					sector_id = sectorsArray[j].sector_id,
 					azimuth = sectorsArray[j].azimuth_angle,
 					beamWidth = sectorsArray[j].beam_width,
 					bsName = dataArray[i].name ? $.trim(dataArray[i].name) : "",
 					bs_marker = allMarkersObject_gmap['base_station']["bs_"+bsName],
 					sector_device = allMarkersObject_gmap['sector_device']["sector_"+sectorName],
-					sector_polygon = allMarkersObject_gmap['sector_polygon']["poly_"+sectorName+"_"+radius+"_"+azimuth+"_"+beamWidth];
+					sector_polygon = allMarkersObject_gmap['sector_polygon']["poly_"+sectorName+"_"+sector_id];
 
 				for(var k=0;k<subStationsArray.length;k++) {
 					/*BS, SS & Sectors from filtered data array*/
