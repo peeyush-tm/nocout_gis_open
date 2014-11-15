@@ -128,6 +128,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                                  "current_value",
                                  "max_value",
                                  "sys_timestamp",
+                                 "age"
                                  # "description"
                                 ]
         # Unique machine from the sector_configured_on_devices
@@ -372,6 +373,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                                  "current_value",
                                  "max_value",
                                  "sys_timestamp",
+                                 "age"
                                  # "description"
                                 ]
 
@@ -642,19 +644,23 @@ class AlertListingTable(BaseDatatableView):
 
         data_sources_list = list()
 
-        extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
+        extra_query_condition = None
 
         if self.request.GET['data_source'] == 'latency':
+            extra_query_condition = ' AND (`{0}`.`current_value` > 0 ) '
+            extra_query_condition += ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
             data_sources_list = ['rta']
         elif self.request.GET['data_source'] == 'packet_drop':
             data_sources_list = ['pl']
-            extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
+            extra_query_condition = ' AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) '
+            extra_query_condition += ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
         elif self.request.GET['data_source'] == 'down':
             data_sources_list = ['pl']
-            extra_query_condition = "AND (`{0}`.`current_value` >= 100 ) "
+            extra_query_condition = ' AND (`{0}`.`current_value` >= 100 ) '
+            extra_query_condition += ' AND `{0}`.`severity` in ("down") '
             search_table = "performance_networkstatus"
         elif self.request.GET['data_source'] == 'service':
-            extra_query_condition = None
+            extra_query_condition = ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
             search_table = "performance_servicestatus"
 
         required_data_columns = ["id",
@@ -1084,7 +1090,8 @@ def prepare_query(table_name=None,
             table_name,
             (",".join(map(in_string, devices))),
             "AND original_table.data_source in ( {0} )".format(
-                (',').join(map(in_string, data_sources))) if data_sources else "",
+                (',').join(map(in_string, data_sources))
+            ) if data_sources else "",
             condition.format("original_table") if condition else "",
             )
         if limit is not None and offset is not None:
