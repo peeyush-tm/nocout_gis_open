@@ -40,32 +40,6 @@ global gis_information
 gis_information = cached_all_gis_inventory(query_all_gis_inventory())
 
 
-def getNetworkAlert(request):
-    """
-    get request to render the network alert list
-
-    :params request object:
-    :return Http response object:
-    """
-    return render_to_response('alert_center/network_alerts_list.html', context_instance=RequestContext(request))
-
-
-def getCustomerAlert(request, page_type="default_device_name"):
-    """
-    get request to render customer alert pages w.r.t page_type requested
-
-    :params request object:
-    :params page_type:
-    :return Http response object:
-    """
-    if (page_type == "latency"):
-        return render_to_response('alert_center/customer_latency_alerts_list.html',
-                                  context_instance=RequestContext(request))
-    else:
-        return render_to_response('alert_center/customer_packet_alerts_list.html',
-                                  context_instance=RequestContext(request))
-
-
 def getCustomerAlertDetail(request):
     """
     get request to render customer detail list
@@ -520,27 +494,33 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
 
 # **************************************** Latency *********************************************
-class AlertCenterNetworkListing(ListView):
+class AlertCenterListing(ListView):
     """
     Class Based View to render Alert Center Network Listing page with latency, packet drop
     down and service impact alert tabs.
 
     """
     model = EventNetwork
-    template_name = 'alert_center/network_alerts_list.html'
+    template_name = 'alert_center/alerts_list.html'
+
 
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
 
         """
-        context = super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
-        data_source=self.kwargs.get('data_source','')
+
+        context = super(AlertCenterListing, self).get_context_data(**kwargs)
+
+        page_type = self.kwargs.get('page_type')
+
+        data_source=self.kwargs.get('data_source')
+
         data_source_title = "Latency Avg (ms) " \
                             if data_source == "latency" \
                             else ("value".title() if data_source in ["service"] else "packet drop (%)".title())
 
-        data_tab = self.request.GET.get('data_tab','P2P')
+        data_tab=self.kwargs.get('data_tab')
 
         datatable_headers = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
@@ -557,16 +537,37 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
             ]
-        #TODO: conditional calling
-        datatable_headers += [{'mData': 'sector_id',
-                                       'sTitle': 'Sector ID',
-                                       'sWidth': 'auto',
-                                       'sClass': 'hidden-xs',
-                                       'bSortable': True},
-                             ]
+        if data_tab == 'P2P' or data_tab is None:
+            datatable_headers += [
+                {'mData': 'circuit_id',
+                'sTitle': 'Circuit ID',
+                'sWidth': 'auto',
+                'sClass': 'hidden-xs',
+                'bSortable': True
+                },
+            ]
+
+        if data_tab != 'P2P' or data_tab is not None:
+            datatable_headers += [
+                {'mData': 'sector_id',
+                'sTitle': 'Sector ID',
+                'sWidth': 'auto',
+                'sClass': 'hidden-xs',
+                'bSortable': True
+                },
+            ]
+
+        if page_type == 'customer' or data_tab == 'P2P' or data_tab is None:
+            datatable_headers += [
+                {
+                    'mData': 'customer_name',
+                    'sTitle': 'Customer Name',
+                    'sWidth': 'auto',
+                    'bSortable': True
+                },
+            ]
+
         if data_source == 'service':
             datatable_headers += [
             {'mData': 'data_source_name',
@@ -575,6 +576,7 @@ class AlertCenterNetworkListing(ListView):
              'sClass': 'hidden-xs',
              'bSortable': True }
             ]
+
         datatable_headers += [
             {'mData': 'current_value',
              'sTitle': '{0}'.format(data_source_title),
@@ -582,25 +584,32 @@ class AlertCenterNetworkListing(ListView):
              'sClass': 'hidden-xs',
              'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric" },
         ]
+
         if data_source == "latency":
             datatable_headers += [
-            {'mData': 'max_value',
-             'sTitle': 'Latency Max (ms)',
-             'sWidth': 'auto',
-             'sClass': 'hidden-xs',
-             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"  }
+                {
+                    'mData': 'max_value',
+                    'sTitle': 'Latency Max (ms)',
+                    'sWidth': 'auto',
+                    'sClass': 'hidden-xs',
+                    'bSortable': True,
+                    "sSortDataType": "dom-text",
+                    "sType": "numeric"
+                }
             ]
         datatable_headers += [
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Age', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
             ]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
+        context['page_type'] = page_type
         return context
 
 
-class AlertCenterNetworkListingTable(BaseDatatableView):
+class AlertListingTable(BaseDatatableView):
     """
     Generic Class Based View for the Alert Center Network Listing Tables.
 
@@ -611,25 +620,6 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
     order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                      'current_value', 'max_value', 'sys_timestamp', 'description']
 
-    def filter_queryset(self, qs):
-
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return result_list:
-        """
-
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            result_list = list()
-            for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        break
-            return result_list
-        return qs
 
     def get_initial_queryset(self):
         """
@@ -641,7 +631,10 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
         logged_in_user = self.request.user.userprofile
 
-        organization_devices = filter_devices(logged_in_user, self.request.GET.get('data_tab'), page_type="network")
+        organization_devices = filter_devices(logged_in_user,
+                                              self.request.GET.get('data_tab'),
+                                              page_type=self.request.GET.get('page_type')
+        )
 
         device_list, performance_data, data_sources_list = list(), list(), list()
 
@@ -672,6 +665,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                                  "current_value",
                                  "max_value",
                                  "sys_timestamp",
+                                 "age"
                                  # "description"
         ]
 
@@ -708,6 +702,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         :return queryset
         """
 
+        page_type=self.request.GET.get('page_type')
+
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
             data_unit = "%"
@@ -729,10 +725,10 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                     dct.update(current_value = float(dct["current_value"]))
                 except:
                     dct.update(current_value = dct["current_value"] + " " + data_unit)
-                dct.update(action='<a href="/alert_center/network/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
-                                       <a href="/performance/network_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                dct.update(action='<a href="/alert_center/{2}/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
+                                       <a href="/performance/{2}_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                                        <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
-                               format(device.id, service_tab ))
+                               format(device.id, service_tab, page_type ))
 
             return common_prepare_results(qs)
 
@@ -752,241 +748,11 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
-        qs = self.filter_queryset(qs)
-
         # number of records after filtering
         total_display_records = len(qs)
 
         # qs = self.ordering(qs)
         # qs = self.paging(qs) #Removing pagination as of now to render all the data at once.
-        # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
-
-
-class CustomerAlertList(ListView):
-    """
-    Class Based View to render Alert Center Customer Listing page.
-
-    """
-    model = EventNetwork
-    template_name = 'alert_center/customer_alerts_list.html'
-
-    def get_context_data(self, **kwargs):
-        """
-        Preparing the Context Variable required in the template rendering.
-
-        """
-
-        context = super(CustomerAlertList, self).get_context_data(**kwargs)
-        data_source=self.kwargs.get('data_source','')
-        datatable_headers = [
-            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-            #  'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            # {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-            #  'bSortable': True},
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'current_value', 'sTitle': 'Packet Drop (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"  }
-             if data_source.lower() in ['down','packet_drop'] else
-            {'mData': 'current_value', 'sTitle': 'Latency Avg (ms) ', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"  },
-        ]
-        if data_source.lower() == "latency":
-            datatable_headers += [
-            {'mData': 'max_value',
-             'sTitle': 'Latency Max (ms)',
-             'sWidth': 'auto',
-             'sClass': 'hidden-xs',
-             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"  }
-            ]
-        datatable_headers += [
-            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
-            ]
-
-        # if data_source.lower() =='latency' : datatable_headers.insert(len(datatable_headers)-2,
-        # {'mData': 'max_value', 'sTitle': 'Max Latency(ms)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-        # 'bSortable': True })
-
-        context['datatable_headers'] = json.dumps(datatable_headers)
-        context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
-        return context
-
-
-class CustomerAlertListingTable(BaseDatatableView):
-    """
-    Generic Class Based View for the Alert Center Customer Listing Tables.
-    """
-    model = EventNetwork
-    columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', 'sys_timestamp', 'description', 'customer_name']
-    order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'current_value', 'sys_timestamp', 'description', 'customer_name']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return result_list:
-
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            result_list = list()
-            for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-
-            return result_list
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        logged_in_user = self.request.user.userprofile
-
-        organization_devices = filter_devices(logged_in_user, self.request.GET.get('data_tab'), page_type="customer")
-
-        machine_dict = filter_machines(organization_devices)
-
-        data_sources_list = list()
-
-        extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
-
-
-        search_table = "performance_networkstatus"
-
-        if self.request.GET['data_source'] == 'latency':
-            data_sources_list = ['rta']
-        elif self.request.GET['data_source'] == 'packet_drop':
-            data_sources_list = ['pl']
-            extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
-        elif self.request.GET['data_source'] == 'down':
-            data_sources_list = ['pl']
-            extra_query_condition = "AND (`{0}`.`current_value` >= 100 ) "
-            search_table = "performance_networkstatus"
-
-        required_data_columns = ["id",
-                                 "data_source",
-                                 "ip_address",
-                                 "device_name",
-                                 "severity",
-                                 "current_value",
-                                 "max_value",
-                                 "sys_timestamp",
-                                 # "description"
-        ]
-
-        sorted_device_list = list()
-
-        for machine, machine_device_list in machine_dict.items():
-
-            device_list, performance_data = list(), list()
-
-            performance_data = raw_prepare_result(performance_data=performance_data,
-                                                  machine=machine,
-                                                  table_name=search_table,
-                                                  devices=machine_device_list,
-                                                  data_sources=data_sources_list,
-                                                  columns=required_data_columns,
-                                                  condition= extra_query_condition )
-
-            device_list = prepare_raw_alert_results(device_list,performance_data)
-
-            sorted_device_list += sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
-
-        return sorted_device_list
-
-    def prepare_results(self, qs):
-        """
-        Preparing the final result after fetching from the data base to render on the data table.
-
-        :param qs:
-        :return queryset
-        """
-
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-            data_unit = "%"
-            service_tab = 'down'
-            # figure out which tab call is made.
-            data_source = self.request.GET.get('data_source', '')
-            if 'latency' == data_source:
-                service_tab = 'latency'
-                data_unit = "ms"
-            elif 'packet_drop' == data_source:
-                service_tab = 'packet_drop'
-
-            for dct in qs:
-                device = Device.objects.get(device_name= dct['device_name'])
-                try:
-                    dct.update(current_value = float(dct["current_value"]))
-                except:
-                    dct.update(current_value = dct["current_value"] + " " + data_unit)
-                dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
-                                       <a href="/performance/customer_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                                       <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
-                               format(device.id, service_tab ))
-
-            return common_prepare_results(qs)
-
-        return []
-
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
-
-        """
-
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        # qs = self.ordering(qs)
-        # qs = self.paging(qs)
         # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
@@ -1402,25 +1168,25 @@ def common_prepare_results(qs):
                 or "CRITICAL" in dct['description'].upper() \
                 or dct['severity'].upper() == 'CRITICAL':
             dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
-            dct['current_value'] = '<span class="text-danger">%s</span>' % current_value
+            dct['current_value'] = current_value
             dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
         elif dct['severity'].upper() == 'WARNING' \
                 or "WARNING" in dct['description'].upper() \
                 or "WARN" in dct['description'].upper():
             dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
-            dct['current_value'] = '<span class="text-warning">%s</span>' % current_value
+            dct['current_value'] = current_value
             dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
 
         elif dct['severity'].upper() == 'UP' \
                 or "OK" in dct['description'].upper():
             dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
-            dct['current_value'] = '<span class="text-success">%s</span>' % current_value
+            dct['current_value'] = current_value
             dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
 
         else:
             dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
-            dct['current_value'] = '<span class="text-muted" >%s</span>' % current_value
+            dct['current_value'] = current_value
             dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
 
     return qs
@@ -1568,6 +1334,7 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
                             'max_value': data["max_value"],
                             'sys_timestamp': datetime.datetime.fromtimestamp(
                                 float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                            'age': data["age"],
                             'description': ''#data['description']
                         }
                         device_list.append(device_events)
@@ -1592,6 +1359,7 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
                             'max_value': data["max_value"],
                             'sys_timestamp': datetime.datetime.fromtimestamp(
                                 float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                            'age': data["age"],
                             'description': ''#data['description']
                         }
                         device_list.append(device_events)
