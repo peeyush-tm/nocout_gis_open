@@ -48,12 +48,15 @@ for(var i = 0; i < sideMenu.length; i++) {
         }
 
         /*If the routertext matches the hiperlink text then add the active & current classes at the desired element*/
-        if(currentRouter.indexOf('alert_center/customer/') > -1 && menuLink.indexOf('alert_center/customer/') > -1 && currentRouter != menuLink) {
-            var sub_tag = currentRouter.split("/");
-            if(menuLink.indexOf(sub_tag[sub_tag.length-1]) > -1) {
-                applySelectedClasses(sideMenu[i]);
-            }
-        } else if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
+        // if(currentRouter.indexOf('alert_center/customer/') > -1 && menuLink.indexOf('alert_center/customer/') > -1 && currentRouter != menuLink) {
+        //     var sub_tag = currentRouter.split("/");
+        //     if(menuLink.indexOf(sub_tag[sub_tag.length-1]) > -1) {
+        //         applySelectedClasses(sideMenu[i]);
+        //     }
+        // } else if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
+        //     applySelectedClasses(sideMenu[i]);
+        // }
+        if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
             applySelectedClasses(sideMenu[i]);
         }
     }

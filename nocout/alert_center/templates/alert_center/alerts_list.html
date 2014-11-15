@@ -74,19 +74,19 @@
         }
 
         /*Ajax url to get grid data*/
-            ajax_url_get_parameter = "";
+        var ajax_url_get_parameter = "";
 
-            if(/latency/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='latency'
-                sort_index = 10;
-            } else if(/packet_drop/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='packet_drop'
-            } else if(/down/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='down';
-            } else if(/service/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='service';
-                sort_index = 10;
-            }
+        if(/latency/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='latency'
+            sort_index = 10;
+        } else if(/packet_drop/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='packet_drop'
+        } else if(/down/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='down';
+        } else if(/service/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='service';
+            sort_index = 10;
+        }
 
           /* Removing the pagination in the datatable*/
             function ourDataTableWidget() {
@@ -185,6 +185,11 @@
 
                 /*Trigger click event on active tab to load its data*/
                 $("#network_ptp_tab").trigger('click',true);
+                var splitted_url = window.location.href.split("/"),
+                    last_val = splitted_url[splitted_url.length-1] != "" ? splitted_url[splitted_url.length-1] : splitted_url[splitted_url.length-2];
+                if(last_val != 'P2P') {
+                    window.location.href = "P2P/";
+                }
             }
 
             // var destroy=false;
