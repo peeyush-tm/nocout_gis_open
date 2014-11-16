@@ -403,6 +403,7 @@ def prepare_raw_sector(basestations):
                             'sector_configured_on': format_value(format_this=sector['SECTOR_CONF_ON_IP']),
                             'sector_configured_on_device': format_value(format_this=sector['SECTOR_CONF_ON']),
                             'circuit_id':None,
+                            'sector_id' : format_value(format_this=sector['SECTOR_ID']),
                             'antenna_height': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'], type_of='random'),
                             "markerUrl": format_value(format_this=sector['SECTOR_GMAP_ICON'], type_of='icon'),
                             'device_info':[

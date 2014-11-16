@@ -8,7 +8,6 @@ var last_clicked_tab = "",
 	timeOutId = "";
 
 $(".nav-tabs li a").click(function (e,isFirst) {
-
 	/*Initialize the timer in seconds.Right now its 1 year*/
 	/*86400 is 24 hrs miliseconds*/
 	var timer = 86400 * 30 * 12; /* 1 Year in seconds */
@@ -19,7 +18,7 @@ $(".nav-tabs li a").click(function (e,isFirst) {
 	var anchor_id = e.currentTarget.id,
 		browser_url_array = window.location.href.split("#"),
 		second_condition = "";
-	
+
 	if(isFirst) {
 		second_condition = 	isFirst;
 	} else {
@@ -27,12 +26,7 @@ $(".nav-tabs li a").click(function (e,isFirst) {
 	}	
 
 	/*Current Tab content id or anchor tab hyperlink*/
-	new_url = e.currentTarget.href;
-
-
-	if(!isFirst) {
-		window.location.href = new_url;
-	}
+	var new_url = e.currentTarget.href;
 
 	var destroy = false,
 		div_id = e.currentTarget.href.split("#")[1],
@@ -61,6 +55,32 @@ $(".nav-tabs li a").click(function (e,isFirst) {
 
 	/*Save the last clicked tab id in global variable for condition checks*/
 	last_clicked_tab = e.currentTarget.id;
+
+	if(window.location.pathname.search('alert_center') > -1) {
+		var tab_name = "";
+
+		if(anchor_id.indexOf('pmp') > -1) {
+			tab_name = 'PMP';
+		} else if(anchor_id.indexOf('wifi') > -1) {
+			tab_name = 'WiMAX';
+		} else {
+			tab_name = 'P2P';
+		}
+	}
+
+	if(!isFirst) {
+		if(window.location.pathname.search('alert_center') > -1) {
+			var splitted_url = window.location.pathname.split("/"),
+				tab_param_index = splitted_url[splitted_url.length-1] != "" ? splitted_url.length-1 : splitted_url.length-2,
+                last_val = splitted_url[splitted_url.length-1] != "" ? splitted_url[splitted_url.length-1] : splitted_url[splitted_url.length-2];
+            if(last_val != tab_name) {
+            	splitted_url[tab_param_index] = tab_name;
+                window.location.href = window.location.origin + splitted_url.join("/")+"#"+new_url.split("#")[1];
+            }
+		} else {
+			window.location.href = new_url;
+		}
+	}
 
 	/*Refresh the tab after every given timer. Right now it is 5 minutes*/
 	timeOutId = setTimeout(function() {

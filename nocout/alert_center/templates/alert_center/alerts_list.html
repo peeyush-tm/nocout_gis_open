@@ -1,11 +1,11 @@
 {% extends "nocout/base.html" %}
 {% block breadcrumb_title %}
     <li>Alert Center</li>
-    <li>Customer Alerts</li>
+    <li>{{ page_type|title }} Alerts</li>
     <li>{{ data_source }}</li>
 {% endblock %}
-{% block content_title %}Customer Alerts{% endblock %}
-{% block content_description %}Customer Alerts List{% endblock %}
+{% block content_title %}Alerts{% endblock %}
+{% block content_description %}{{ page_type|title }} Alerts List{% endblock %}
 {% load staticfiles %}
 {% block css %}
     <!-- JQUERY UI-->
@@ -16,31 +16,35 @@
 
     <div class="box border lite" style="background: #fff;">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-bell"></i>CUSTOMER ALERT - {{ data_source|upper }}</h4>
+            <h4><i class="fa fa-bell"></i>{{ page_type|upper }} ALERT - {{ data_source|upper }}</h4>
         </div>
 
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                        <li><a href="#customer_wifi_block" id="customer_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
-                        <li><a href="#customer_pmp_block" id="customer_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
-                        <li class="active"><a href="#customer_p2p_block" id="customer_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
+                        <li><a href="#network_wifi_block" id="network_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
+                        <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                        <li class="active"><a href="#network_ptp_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
                 </ul>
-                <div class="tab-content Tbl_FixHeight" style="overflow:auto;">
-                    <div class="tab-pane in active" id="customer_p2p_block">
-                        <table id="customer_p2p_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                <div class="tab-content" style="overflow:auto;">
+                    <!-- network_ptp_block Start -->
+                    <div class="tab-pane active" id="network_ptp_block">
+                        <table cellpadding="0" cellspacing="0" border="0"
+                               class="datatable table table-striped table-bordered table-hover"
+                               id="network_ptp_block_table">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
-                    <div class="tab-pane" id="customer_pmp_block">
-                        <table id="customer_pmp_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                    <!-- network_ptp_block End -->
+                    <div class="tab-pane" id="network_pmp_block">
+                        <table id="network_pmp_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
-                    <div class="tab-pane" id="customer_wifi_block">
-                        <table id="customer_wifi_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                    <div class="tab-pane" id="network_wifi_block">
+                        <table id="network_wifi_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -53,13 +57,15 @@
     </div>
 {% endblock %}
 {% block jquery %}
+<!-- Library to load tab content on tab click-->
 <script type="text/javascript">
     var dataTableInstance = "",
         base_url = "",
         excel_columns = [];
     /*This is a temporary code which is replace when data for data table is provided*/
     $(document).ready(function (e) {
-        
+        var sort_index = 9;
+
         /*Set the base url of application for ajax calls*/
         if(window.location.origin) {
             base_url = window.location.origin;
@@ -67,21 +73,23 @@
             base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
         }
 
-        var sort_index = 9;
-        /*Grid headers object*/
-        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
         /*Ajax url to get grid data*/
-        ajax_url_get_parameter = "";
+        var ajax_url_get_parameter = "";
 
         if(/latency/i.test(window.location.pathname)) {
-            ajax_url_get_parameter='latency';
+            ajax_url_get_parameter='latency'
             sort_index = 10;
         } else if(/packet_drop/i.test(window.location.pathname)) {
             ajax_url_get_parameter='packet_drop'
         } else if(/down/i.test(window.location.pathname)) {
-            ajax_url_get_parameter='down'
+            ajax_url_get_parameter='down';
+        } else if(/service/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='service';
+            sort_index = 10;
         }
-          function ourDataTableWidget() {
+
+          /* Removing the pagination in the datatable*/
+            function ourDataTableWidget() {
                 /**
                  * This function creates the jquery data table on given domElement
                  * @class ourDataTableWidget
@@ -90,7 +98,7 @@
                  * @param tableheaders {JSON Object} It contains the grid headers object
                  * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
                  */
-                this.createDataTable = function(tableId, tableheaders, ajax_url, destroy) {
+                this.createDataTable = function (tableId, tableheaders, ajax_url, destroy) {
                     /*Show the spinner*/
                     showSpinner();
 
@@ -112,11 +120,11 @@
                         var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
                         length_sel.addClass('form-control input-sm');
                     });
-                    if (destroy){
-                        $("#"+tableId).dataTable().fnDestroy();
+                    if (destroy) {
+                        $("#" + tableId).dataTable().fnDestroy();
                     }
 
-                    var dtable = $("#"+tableId).DataTable({
+                    var dtable = $("#" + tableId).DataTable({
                         sDom: 'T<"clear">lfrtip',
                         oTableTools: {
                             sSwfPath : base_url+"/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
@@ -132,52 +140,64 @@
                         bAutoWidth: false,
                         bDestroy : true,
                         bPaginate: true,
-                        bProcessing : true,
+                        bProcessing: true,
                         bServerSide: false,
                         sAjaxSource: ajax_url,
                         /*This is the callback funtion for data ajax call*/
-                        fnInitComplete : function(oSettings, json) {
+                        fnInitComplete: function (oSettings, json) {
                             /*Hide the spinner*/
                             hideSpinner();
                         },
-                        aoColumns:tableheaders,
-                        sPaginationType: "full_numbers",
-                        aaSorting: [[sort_index, 'desc'],[0, 'asc']]
+                        aoColumns: tableheaders,
+                        sPaginationType: "bs_full",
+                        aaSorting: [
+                            [sort_index, 'desc'],
+                            [0, 'asc']
+                        ]
                     });
                 };
             }
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
-            var ajax_url_wifi= '{% url "CustomerAlertListingTable" %}'+'?data_source='+ ajax_url_get_parameter+'&data_tab=' + 'WiMAX';
-            var ajax_url_pmp=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'PMP';
-            var ajax_url_p2p=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'P2P';
-                
+
+
+            var ajax_url_wifi= '{% url "AlertListingTable" %}'+'?data_source='+ ajax_url_get_parameter+'&data_tab=' + 'WiMAX'+'&page_type={{ page_type }}';
+            var ajax_url_pmp=  '{% url "AlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'PMP'+'&page_type={{ page_type }}';
+            var ajax_url_p2p=  '{% url "AlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'P2P'+'&page_type={{ page_type }}';
+
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
-            $("#customer_wifi_tab").attr("data_url",ajax_url_wifi);
-            $("#customer_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
+            $("#network_wifi_tab").attr("data_url",ajax_url_wifi);
+            $("#network_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
-            $("#customer_pmp_tab").attr("data_url",ajax_url_pmp);
-            $("#customer_pmp_tab").attr("data_header",'{{ datatable_headers|safe }}');
+            $("#network_pmp_tab").attr("data_url",ajax_url_pmp);
+            $("#network_pmp_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
-            $("#customer_ptp_tab").attr("data_url",ajax_url_p2p);
-            $("#customer_ptp_tab").attr("data_header",'{{ datatable_headers|safe }}');
+            $("#network_ptp_tab").attr("data_url",ajax_url_p2p);
+            $("#network_ptp_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
             var location_array = window.location.href.split("#");
 
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
 
                 /*Trigger click event on active tab to load its data*/
-                $("#customer_ptp_tab").trigger('click',true);
+                $("#network_ptp_tab").trigger('click',true);
+                var splitted_url = window.location.href.split("/"),
+                    last_val = splitted_url[splitted_url.length-1] != "" ? splitted_url[splitted_url.length-1] : splitted_url[splitted_url.length-2];
+                if(last_val != 'P2P') {
+                    window.location.href = "P2P/";
+                }
             }
 
             // var destroy=false;
             // /*Call createDataTable function of ourDataTableWidget class*/
 
-            // dataTableInstance.createDataTable("customer_wifi_alertlistingtable", gridHeadersObj, ajax_url_wifi, destroy);
-            // dataTableInstance.createDataTable("customer_pmp_alertlistingtable",  gridHeadersObj, ajax_url_pmp,  destroy);
-            // dataTableInstance.createDataTable("customer_p2p_alertlistingtable",  gridHeadersObj, ajax_url_p2p,  destroy);
+            // dataTableInstance.createDataTable("network_wifi_alertlistingtable", gridHeadersObj, ajax_url_wifi, destroy);
+            // dataTableInstance.createDataTable("network_pmp_alertlistingtable",  gridHeadersObj, ajax_url_pmp,  destroy);
+            // dataTableInstance.createDataTable("network_p2p_alertlistingtable",  gridHeadersObj, ajax_url_p2p,  destroy);
         });
 </script>
 <!-- Library to load tab content on tab click-->

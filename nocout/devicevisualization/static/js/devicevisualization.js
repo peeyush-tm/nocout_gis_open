@@ -790,6 +790,7 @@ function showToolsPanel() {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
 
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
     }
@@ -801,7 +802,7 @@ function removetoolsPanel() {
     is_ruler_active= -1;
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
     }    
@@ -845,6 +846,9 @@ $("#ruler_remove").click(function(e) {
 
     $(this).addClass("hide");
     $("#ruler_select").removeClass("hide");
+
+    // Change map cursor
+    mapInstance.setOptions({'draggableCursor' : ''});
 
     networkMapInstance.clearRulerTool_gmap();
 });
@@ -1066,3 +1070,12 @@ $("#export_data_gmap").click(function(e) {
     // call function to select data to be export & then export selected data
     networkMapInstance.exportData_gmap();
 });
+
+
+function isPointInPoly(poly, pt){
+    for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
+        ((poly[i].lat <= pt.lat && pt.lat < poly[j].lat) || (poly[j].lat <= pt.lat && pt.lat < poly[i].lat))
+        && (pt.lon < (poly[j].lon - poly[i].lon) * (pt.lat - poly[i].lat) / (poly[j].lat - poly[i].lat) + poly[i].lon)
+        && (c = !c);
+    return c;
+}
