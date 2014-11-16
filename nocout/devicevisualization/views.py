@@ -12,7 +12,7 @@ from django.views.generic import ListView, DetailView, TemplateView, View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from forms import KmzReportForm
 from django.views.generic.edit import CreateView, DeleteView
-from device.models import Device, DeviceFrequency, DeviceTechnology
+from device.models import Device, DeviceFrequency, DeviceTechnology, DeviceType
 from django.db.models import Q
 from inventory.models import ThematicSettings, UserThematicSettings, BaseStation, SubStation, UserPingThematicSettings, \
     PingThematicSettings
@@ -1050,58 +1050,244 @@ class GISPerfData(View):
         :Parameters:
             - 'base_stations' (str) - list of base stations in form of string i.e. [1, 2, 3, 4]
 
+        :URL:
+            - "/network_maps/perf_data/?base_stations=[3019]"
+
         :Returns:
-           - 'performance_data' (dictionary) - dictionary containing perf data
-                                                [
-                                                    {
-                                                        "basestation_name": "dharma_height_jai_raj",
+            - 'performance_data' (dictionary) - dictionary containing perf data
+                        [
+                            {
+                                "bs_id": 3019,
+                                "bs_name": "dharma_height_jai_raj",
+                                "message": "Successfully fetched performance data.",
+                                "param": {
+                                    "sector": [
+                                        {
+                                            "perf_info": [
+                                                {
+                                                    "title": "Uptime",
+                                                    "name": "uptime",
+                                                    "value": "6.0082333333",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "Frequency",
+                                                    "name": "frequency",
+                                                    "value": "5830",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "Packet Loss",
+                                                    "name": "pl",
+                                                    "value": "4",
+                                                    "show": 1
+                                                }
+                                            ],
+                                            "sector_id": 3097,
+                                            "color": "rgba(255,192,0,0.97)",
+                                            "polled_frequency": "5830",
+                                            "radius": 0.2,
+                                            "perf_value": "6.0082333333",
+                                            "ip_address": "10.75.165.227",
+                                            "beam_width": null,
+                                            "icon": "static/img/icons/mobilephonetower10.png",
+                                            "sub_station": [
+                                                {
+                                                    "device_name": "1",
+                                                    "data": {
+                                                        "substation_device_ip_address": "10.75.165.227",
+                                                        "lat": 26.9138611111111,
+                                                        "antenna_height": 33,
+                                                        "perf_value": "6.0082333333",
+                                                        "markerUrl": "/home/priyesh/Documents/Workspace/nocout_gis/
+                                                            nocout/media/uploaded/icons/2014/09/25/P2P-loading4_3.png",
+                                                        "link_color": "rgba(255,192,0,0.97)",
+                                                        "lon": 75.8075,
                                                         "param": {
-                                                            "sector": [
+                                                            "sub_station": [
                                                                 {
-                                                                    "performance_data": {
-                                                                        "device_info": [],
-                                                                        "performance_parameter": "radwin_uptime",
-                                                                        "frequency": "",
-                                                                        "pl": "",
-                                                                        "color": "",
-                                                                        "performance_value": [],
-                                                                        "sector_info": {
-                                                                            "frequency": "",
-                                                                            "radius": "",
-                                                                            "azimuth_angle": "",
-                                                                            "beam_width": ""
-                                                                        },
-                                                                        "performance_icon": "static/img/icons/mobilephonetower10.png"
-                                                                    },
-                                                                    "device_name": "1",
-                                                                    "sub_station": [],
-                                                                    "device_id": 15864
+                                                                    "title": "SS IP",
+                                                                    "name": "ss_ip",
+                                                                    "value": "10.75.165.227",
+                                                                    "show": 1
                                                                 },
                                                                 {
-                                                                    "performance_data": {
-                                                                        "device_info": [],
-                                                                        "performance_parameter": "radwin_uptime",
-                                                                        "frequency": "",
-                                                                        "pl": "",
-                                                                        "color": "",
-                                                                        "performance_value": [],
-                                                                        "sector_info": {
-                                                                            "frequency": "",
-                                                                            "radius": "",
-                                                                            "azimuth_angle": "",
-                                                                            "beam_width": ""
-                                                                        },
-                                                                        "performance_icon": "static/img/icons/mobilephonetower10.png"
-                                                                    },
-                                                                    "device_name": "35",
-                                                                    "sub_station": [],
-                                                                    "device_id": 15883
+                                                                    "title": "SS MAC",
+                                                                    "name": "ss_mac",
+                                                                    "value": "00:15:67:51:5e:34",
+                                                                    "show": 0
+                                                                },
+                                                                {
+                                                                    "title": "SS Name",
+                                                                    "name": "name",
+                                                                    "value": "091jaip623009280393",
+                                                                    "show": 0
+                                                                },
+                                                                {
+                                                                    "title": "Circuit ID",
+                                                                    "name": "cktid",
+                                                                    "value": "091JAIP623009280393",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "QOS(BW)",
+                                                                    "name": "qos_bandwidth",
+                                                                    "value": 512,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Latitude",
+                                                                    "name": "latitude",
+                                                                    "value": 26.9138611111111,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Longitude",
+                                                                    "name": "longitude",
+                                                                    "value": 75.8075,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Antenna Height",
+                                                                    "name": "antenna_height",
+                                                                    "value": 33,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Polarisation",
+                                                                    "name": "polarisation",
+                                                                    "value": null,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Technology",
+                                                                    "name": "ss_technology",
+                                                                    "value": "P2P",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Building Height",
+                                                                    "name": "building_height",
+                                                                    "value": null,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "tower_height",
+                                                                    "name": "tower_height",
+                                                                    "value": null,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "SS MountType",
+                                                                    "name": "mount_type",
+                                                                    "value": null,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Alias",
+                                                                    "name": "alias",
+                                                                    "value": "091JAIP623009280393",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "SS Device ID",
+                                                                    "name": "ss_device_id",
+                                                                    "value": 15864,
+                                                                    "show": 0
+                                                                },
+                                                                {
+                                                                    "title": "Antenna Type",
+                                                                    "name": "antenna_type",
+                                                                    "value": null,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Ethernet Extender",
+                                                                    "name": "ethernet_extender",
+                                                                    "value": null,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Cable Length",
+                                                                    "name": "cable_length",
+                                                                    "value": null,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Customer Address",
+                                                                    "name": "customer_address",
+                                                                    "value": "IDBI Federal Life Insurance Co. Ltd.
+                                                                        Office NO.802 at 8th Floor E-2, KJ Tower,,
+                                                                        Ashok Marg, C-Scheme,Jaipur,Rajasthan
+                                                                        India 302001",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Date of Acceptance",
+                                                                    "name": "date_of_acceptance",
+                                                                    "value": null,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "RSSI During Acceptance",
+                                                                    "name": "dl_rssi_during_acceptance",
+                                                                    "value": null,
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Planned Frequency",
+                                                                    "name": "planned_frequency",
+                                                                    "value": "",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Uptime",
+                                                                    "name": "uptime",
+                                                                    "value": "6.0082333333",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Frequency",
+                                                                    "name": "frequency",
+                                                                    "value": "5830",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Packet Loss",
+                                                                    "name": "pl",
+                                                                    "value": "4",
+                                                                    "show": 1
                                                                 }
                                                             ]
-                                                        },
-                                                        "basestation_id": 3019
-                                                    }
-                                                ]
+                                                        }
+                                                    },
+                                                    "id": 15864,
+                                                    "name": "091jaip623009280393"
+                                                }
+                                            ],
+                                            "device_name": "1",
+                                            "azimuth_angle": 0,
+                                            "pl": "4"
+                                        },
+                                        {
+                                            "perf_info": [],
+                                            "sector_id": 3104,
+                                            "color": "",
+                                            "polled_frequency": "",
+                                            "radius": "",
+                                            "perf_value": [],
+                                            "ip_address": "10.235.2.19",
+                                            "beam_width": null,
+                                            "icon": "static/img/icons/mobilephonetower10.png",
+                                            "sub_station": [],
+                                            "device_name": "35",
+                                            "azimuth_angle": 0,
+                                            "pl": ""
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
     """
 
     def get(self, request):
@@ -1112,74 +1298,123 @@ class GISPerfData(View):
         performance_data = list()
 
         # loop through all base stations having id's in bs_ids list
-        for bs_id in bs_ids:
-            # base station data dictionary
-            bs_dict = dict()
+        try:
+            for bs_id in bs_ids:
+                # base station data dictionary
+                bs_dict = dict()
 
-            # base station
-            bs = ""
-            try:
-                bs = BaseStation.objects.get(pk=bs_id)
-                bs_dict['basestation_name'] = bs.name
-                bs_dict['basestation_id'] = bs_id
-                bs_dict['param'] = dict()
-                bs_dict['param']['sector'] = list()
-            except Exception as e:
-                logger.info("Base Station not exist. Exception: ", e.message)
+                # base station
+                bs = ""
+                try:
+                    bs = BaseStation.objects.get(pk=bs_id)
+                    bs_dict['bs_name'] = bs.name
+                    bs_dict['bs_id'] = bs_id
+                    bs_dict['message'] = "Failed to fetch performance data."
+                    bs_dict['param'] = dict()
+                    bs_dict['param']['sector'] = list()
+                except Exception as e:
+                    logger.info("Base Station not exist. Exception: ", e.message)
 
-            # if base station exist
-            if bs:
-                # get all sectors associated with base station (bs)
-                sectors = bs.sector.all()
+                # if base station exist
+                if bs:
+                    # get all sectors associated with base station (bs)
+                    sectors = bs.sector.all()
 
-                # loop through all sectors
-                for sector_obj in sectors:
-                    # sector
-                    sector = sector_obj
+                    # loop through all sectors
+                    for sector_obj in sectors:
+                        # sector
+                        sector = sector_obj
 
-                    # sector configured on device
-                    device = sector.sector_configured_on
+                        # sector configured on device
+                        sector_device = sector.sector_configured_on
 
-                    # sector dictionary
-                    sector_dict = dict()
-                    sector_dict['device_name'] = device.device_name
-                    sector_dict['device_id'] = device.id
-                    sector_dict['performance_data'] = self.get_performance_info(device)
-                    sector_dict['sub_station'] = list()
+                        # get performance data
+                        sector_performance_data = self.get_sector_performance_info(sector_device)
 
-                    # get all substations associated with sector from 'Topology' model in performance
-                    topolopies_for_ss = Topology.objects.filter(sector_id=sector.sector_id)
+                        # sector dictionary
+                        sector_dict = dict()
+                        sector_dict['device_name'] = sector_device.device_name
+                        sector_dict['sector_id'] = sector.id
+                        sector_dict['ip_address'] = sector_device.ip_address
+                        sector_dict['azimuth_angle'] = sector_performance_data['azimuth_angle']
+                        sector_dict['beam_width'] = sector_performance_data['beam_width']
+                        sector_dict['radius'] = sector_performance_data['radius']
+                        sector_dict['color'] = sector_performance_data['color']
+                        sector_dict['polled_frequency'] = sector_performance_data['polled_frequency']
+                        sector_dict['pl'] = sector_performance_data['pl']
+                        sector_dict['perf_value'] = sector_performance_data['perf_value']
+                        sector_dict['icon'] = sector_performance_data['icon']
+                        sector_dict['perf_info'] = sector_performance_data['perf_info']
+                        sector_dict['sub_station'] = list()
 
-                    # list of all associated substations ip's
-                    substations_ips_list = list()
-                    for topology in topolopies_for_ss:
-                        substations_ips_list.append(topology.connected_device_ip)
+                        # get all substations associated with sector from 'Topology' model in performance
+                        topolopies_for_ss = Topology.objects.filter(sector_id=sector.id)
 
-                    # loop through all substations using ips in 'substations_ips_list'
-                    for ss_ip in substations_ips_list:
-                        # substation
-                        substation = ""
-                        try:
-                            substation = Device.objects.get(ip_address=ss_ip)
-                        except Exception as e:
-                            logger.info("Sub Station device not exist. Exception: ", e.message)
+                        # list of all associated substations ip's
+                        substations_ips_list = list()
+                        for topology in topolopies_for_ss:
+                            substations_ips_list.append(topology.connected_device_ip)
 
-                        ss_dict = dict()
-                        ss_dict['device_name'] = substation.device_name
-                        ss_dict['device_id'] = substation.id
-                        ss_dict['performance_data'] = self.get_performance_info(substation)
+                        # loop through all substations using ips in 'substations_ips_list'
+                        for ss_ip in substations_ips_list:
+                            # substation
+                            substation = ""
+                            try:
+                                substation = SubStation.objects.get(device__ip_address=ss_ip)
+                            except Exception as e:
+                                logger.info("Sub Station not exist. Exception: ", e.message)
 
-                        # append substation dictionary to 'sub_station' list
-                        sector_dict['sub_station'].append(ss_dict)
+                            # substation device
+                            substation_device = ""
+                            try:
+                                substation_device = Device.objects.get(ip_address=ss_ip)
+                            except Exception as e:
+                                logger.info("Sub Station device not exist. Exception: ", e.message)
 
-                    # append 'sector_dict' to 'sector' list
-                    bs_dict['param']['sector'].append(sector_dict)
-            if bs_dict:
-                performance_data.append(bs_dict)
+                            ss_dict = dict()
+                            if substation:
+                                ss_dict['device_name'] = substation_device.device_name
+                                ss_dict['id'] = substation_device.id
+                                ss_dict['name'] = substation.name
+                                ss_dict['data'] = self.get_substation_info(substation, substation_device)
+
+                            # append substation dictionary to 'sub_station' list
+                            sector_dict['sub_station'].append(ss_dict)
+
+                        # append 'sector_dict' to 'sector' list
+                        bs_dict['param']['sector'].append(sector_dict)
+                if bs_dict:
+                    bs_dict['message'] = "Successfully fetched performance data."
+                    performance_data.append(bs_dict)
+        except Exception as e:
+            performance_data = {'message': "No Base Station to fetch performance data."}
 
         return HttpResponse(json.dumps(eval(str(performance_data))))
 
-    def get_performance_info(self, device):
+    def get_sector_performance_info(self, device):
+        """ Get Sector performance info
+
+            :Parameters:
+                - 'device' (<class 'device.models.Device'>) - device name
+
+            :Returns:
+               - 'performance_data' (dictionary) - dictionary containing sector performance data
+                                                    {
+                                                        'perf_info': [
+
+                                                        ],
+                                                        'color': '',
+                                                        'polled_frequency': '',
+                                                        'radius': '',
+                                                        'beam_width': None,
+                                                        'icon': 'static/img/icons/mobilephonetower10.png',
+                                                        'azimuth_angle': 0.0,
+                                                        'pl': '',
+                                                        'perf_value': [
+
+                                                        ]
+                                                    }
+        """
         # device name
         device_name = device.device_name
 
@@ -1188,185 +1423,114 @@ class GISPerfData(View):
 
         # performance dictionary
         performance_data = dict()
-        performance_data['frequency'] = ""
-        performance_data['pl'] = ""
+        performance_data['azimuth_angle'] = ""
+        performance_data['beam_width'] = ""
+        performance_data['radius'] = ""
         performance_data['color'] = ""
-        performance_data['performance_parameter'] = ""
-        performance_data['performance_value'] = ""
-        performance_data['performance_icon'] = ""
-        performance_data['sector_info'] = dict()
-        performance_data['device_info'] = self.get_device_info(device.device_name,
-                                                               device.machine.name)
+        performance_data['polled_frequency'] = ""
+        performance_data['pl'] = ""
+        performance_data['perf_value'] = ""
+        performance_data['icon'] = ""
+        performance_data['perf_info'] = self.get_device_info(device_name, machine_name)
 
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
 
         # current user
-        current_user = UserProfile.objects.get(id=self.request.user.id)
+        try:
+            current_user = UserProfile.objects.get(id=self.request.user.id)
+        except Exception as e:
+            current_user = ""
+            logger.info("User Profile not exist. Exception: ", e.message)
 
         # device technology
-        device_technology = DeviceTechnology.objects.get(id=device.device_technology)
+        try:
+            device_technology = DeviceTechnology.objects.get(id=device.device_technology)
+        except Exception as e:
+            device_technology = ""
+            logger.info("Device technology not exist. Exception: ", e.message)
 
         # fetch thematic settings for current user
-        uts = UserThematicSettings.objects.get(user_profile=current_user,
-                                               thematic_technology=device_technology)
+        try:
+            uts = UserThematicSettings.objects.get(user_profile=current_user,
+                                                   thematic_technology=device_technology)
+        except Exception as e:
+            uts = ""
+            logger.info("User thematic settings not exist. Exception: ", e.message)
 
         # thematic settings
-        thematic_settings = uts.thematic_template
-
-        # threshold template
-        threshold_template = thematic_settings.threshold_template
-
-        # live polling tmplate
-        live_polling_template = threshold_template.live_polling_template
-
-        # service name
-        device_service_name = live_polling_template.service.name
-
-        # data source
-        device_service_data_source = live_polling_template.data_source.name
-
-        # update performance parameter
-        performance_data['performance_parameter'] = device_service_name
+        try:
+            thematic_settings = uts.thematic_template
+            # threshold template
+            threshold_template = thematic_settings.threshold_template
+            # live polling tmplate
+            live_polling_template = threshold_template.live_polling_template
+            # service name
+            device_service_name = live_polling_template.service.name
+            # data source
+            device_service_data_source = live_polling_template.data_source.name
+        except Exception as e:
+            device_service_name = ""
+            device_service_data_source = ""
+            logger.info("Thematic settings not exist. Exception: ", e.message)
 
         # device frequency
-        device_frequency = ""
-        try:
-            if int(freeze_time):
-                device_frequency = PerformanceInventory.objects.filter(device_name=device_name, data_source='frequency',
-                                                                       sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                       .using(alias=machine_name)\
-                                                                       .order_by('-sys_timestamp')[:1]
-                if len(device_frequency):
-                    device_frequency = device_frequency[0].current_value
-                else:
-                    device_frequency = ""
-            else:
-                device_frequency = InventoryStatus.objects.filter(device_name=device_name, data_source='frequency')\
-                                                                  .using(alias=machine_name)\
-                                                                  .order_by('-sys_timestamp')[:1]
-                if len(device_frequency):
-                    device_frequency = device_frequency[0].current_value
-                else:
-                    device_frequency = ""
-        except Exception as e:
-            logger.info("Device frequency not exist. Exception: ", e.message)
+        device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
 
         # update device frequency
-        performance_data['frequency'] = device_frequency
+        performance_data['polled_frequency'] = device_frequency
 
         # device pl
-        device_pl = ""
-        try:
-            if int(freeze_time):
-                device_pl = PerformanceNetwork.objects.filter(device_name=device_name, service_name='ping',
-                                                              data_source='pl',
-                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                              .using(alias=machine_name)\
-                                                              .order_by('-sys_timestamp')[:1]
-                if len(device_pl):
-                    device_pl = device_pl[0].current_value
-                else:
-                    device_pl = ""
-            else:
-                device_pl = NetworkStatus.objects.filter(device_name=device_name,
-                                                         service_name='ping',
-                                                         data_source='pl')\
-                                                         .using(alias=machine_name).order_by('-sys_timestamp')[:1]
-                if len(device_pl):
-                    device_pl = device_pl[0].current_value
-                else:
-                    device_pl = ""
-
-        except Exception as e:
-            logger.info("Device PL not exist. Exception: ", e.message)
+        device_pl = self.get_device_pl(device_name, machine_name, freeze_time)
 
         # update device pl
         performance_data['pl'] = device_pl
 
-        # device frequency color, azimuth angle, beam width and radius
-        device_link_color = ""
-        azimuth_angle = ""
-        beam_width = ""
-        radius = ""
-        try:
-            if len(device_frequency):
-                corrected_dev_freq = device_frequency
-                try:
-                    chek_dev_freq = ast.literal_eval(device_frequency)
-                    if int(chek_dev_freq) > 10:
-                        corrected_dev_freq = chek_dev_freq
-                except Exception as e:
-                    logger.info("Device frequency not exist. Exception: ", e.message)
-
-                device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
-                device_frequency_color = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))\
-                                                                        .values_list('color_hex_value', flat=True)
-                device_frequency_object = None
-                if len(device_frequency_objects):
-                    device_frequency_object = device_frequency_objects[0]
-                if len(device_frequency_color):
-                    device_link_color = device_frequency_color[0]
-
-                # if device is a 'sector configured on' device; than fetch antenna info too
-                if device.sector_configured_on.exists():
-                    # sector to which device is associated
-                    device_sector_objects = device.sector_configured_on.filter()
-
-                    if len(device_sector_objects):
-                        sector = device_sector_objects[0]
-                        # sector antenna
-                        antenna = sector.antenna
-                        # azimuth angle
-                        azimuth_angle = sector.antenna.azimuth_angle if antenna else 'N/A'
-                        # beam width
-                        beam_width = sector.antenna.beam_width if antenna else 'N/A'
-                        # radius
-                        radius = device_frequency_object.frequency_radius if (
-                            device_frequency_object
-                            and
-                            device_frequency_object.frequency_radius
-                        ) else 0
-
-            if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
-                device_link_color = 'rgb(0,0,0)'
-        except Exception as e:
-            if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
-                device_link_color = 'rgb(0,0,0)'
-            logger.info("Device is not sector configured on or not exist. Exception: ", e.message)
-
-        # update 'sector_info' dictionary
-        performance_data['sector_info']['azimuth_angle'] = azimuth_angle
-        performance_data['sector_info']['beam_width'] = beam_width
-        performance_data['sector_info']['radius'] = radius
-        performance_data['sector_info']['frequency'] = device_frequency
+        # device link/frequency color
+        device_link_color = self.get_frequency_color_and_radius(device_frequency, device_pl)[0]
 
         # update performance color
         performance_data['color'] = device_link_color
 
-        # performance value
-        performance_value = ""
+        # antenna polarization, azimuth angle, beam width and radius
+        polarization = ""
+        azimuth_angle = ""
+        beam_width = ""
+        radius = ""
         try:
-            if int(freeze_time):
-                performance_value = PerformanceService.objects.filter(device_name=device_name,
-                                                                      service_name=device_service_name,
-                                                                      data_source=device_service_data_source,
-                                                                      sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                      .using(alias=machine_name)\
-                                                                      .order_by('-sys_timestamp')[:1]
-                if len(performance_value):
-                    performance_value = performance_value[0].current_value
-            else:
-                performance_value = ServiceStatus.objects.filter(device_name=device_name,
-                                                                 service_name=device_service_name,
-                                                                 data_source=device_service_data_source)\
-                                                                 .using(alias=machine_name)\
-                                                                 .order_by('-sys_timestamp')[:1]
-                if len(performance_value):
-                    performance_value = performance_value[0].current_value
+            # if device is a 'sector configured on' device; than fetch antenna info too
+            if device.sector_configured_on.exists():
+                # sector to which device is associated
+                device_sector_objects = device.sector_configured_on.filter()
 
+                if len(device_sector_objects):
+                    sector = device_sector_objects[0]
+                    # sector antenna
+                    antenna = sector.antenna
+                    # azimuth angle
+                    azimuth_angle = sector.antenna.azimuth_angle if antenna else 'N/A'
+                    # beam width
+                    beam_width = sector.antenna.beam_width if antenna else 'N/A'
+                    # radius
+                    radius = self.get_frequency_color_and_radius(device_frequency, device_pl)[1]
         except Exception as e:
-            logger.info("Performance value not exist. Exception: ", e.message)
+            logger.info(logger.info("Device is not sector configured on or not exist. Exception: ", e.message))
+
+        # update azimuth_angle, beam_width, radius
+        performance_data['azimuth_angle'] = azimuth_angle
+        performance_data['beam_width'] = beam_width
+        performance_data['radius'] = radius
+
+        # performance value
+        perf_payload = {
+            'device_name': device_name,
+            'machine_name': machine_name,
+            'freeze_time': freeze_time,
+            'device_service_name': device_service_name,
+            'device_service_data_source': device_service_data_source
+
+        }
+        performance_value = self.get_performance_value(perf_payload)
 
         # fetch ping thematic settings for current user
         ping_uts = UserPingThematicSettings.objects.get(user_profile=current_user,
@@ -1379,7 +1543,7 @@ class GISPerfData(View):
         image_partial = "icons/mobilephonetower10.png"
 
         # icon
-        icon = ""
+        icon = str(image_partial)
 
         # comparing threshold values to get icon
         try:
@@ -1482,20 +1646,281 @@ class GISPerfData(View):
             # icon to be send in response
             icon = str(img_url)
         except Exception as e:
-            icon = str(image_partial)
             logger.info("Icon not exist. Exception: ", e.message)
 
         # update performance value
-        performance_data['performance_value'] = performance_value
+        performance_data['perf_value'] = performance_value
 
         # update performance icon
-        performance_data['performance_icon'] = icon
+        performance_data['icon'] = icon
 
         return performance_data
 
-    def get_device_info(self, device_name, machine_name):
+    def get_device_info(self, device_name, machine_name, substation=False):
+        """ Get Sector/Sub Station device information
+
+            :Parameters:
+                - 'device_name' (unicode) - device name
+                - 'machine_name' (unicode) - machine name
+                - 'substation' (bool) - tell whether device is substation device or not
+
+            :Returns:
+               - 'device_info' (list) - list of dictionaries containing device static or polled data
+                                                    [
+                                                        {
+                                                            'show': 1,
+                                                            'name': u'uptime',
+                                                            'value': u'6.0082333333',
+                                                            'title': u'Uptime'
+                                                        },
+                                                        {
+                                                            'show': 1,
+                                                            'name': u'frequency',
+                                                            'value': u'5830',
+                                                            'title': u'Frequency'
+                                                        },
+                                                        {
+                                                            'show': 1,
+                                                            'name': u'pl',
+                                                            'value': u'4',
+                                                            'title': 'PacketLoss'
+                                                        }
+                                                    ]
+        """
+
         # device info dictionary
         device_info = list()
+
+        # is device is a substation device than add static inventory parameters in list
+        if substation:
+            # substation
+            substation = ""
+            try:
+                substation = SubStation.objects.get(device__device_name=device_name)
+            except Exception as e:
+                logger.info("Sub Station not exist. Exception: ", e.message)
+
+            # substation device
+            substation_device = ""
+            try:
+                substation_device = Device.objects.get(device_name=device_name)
+            except Exception as e:
+                logger.info("Sub Station device not exist. Exception: ", e.message)
+
+            # substation technology
+            substation_technology = ""
+            try:
+                substation_technology = DeviceTechnology.objects.get(id=substation_device.device_technology).name
+            except Exception as e:
+                logger.info("Sub Station has no technology. Exception: ", e.message)
+
+            # circuit id
+            circuit_id = ""
+            try:
+                circuit_id = substation.ss_circuit.all()[0].circuit_id
+            except Exception as e:
+                logger.info("Circuit ID not exist. Exception: ", e.message)
+
+            # qos bandwidth
+            qos = ""
+            try:
+                qos = substation.ss_circuit.all()[0].qos_bandwidth
+            except Exception as e:
+                logger.info("QOS not exist. Exception: ", e.message)
+
+            # customer address
+            customer_address = ""
+            try:
+                customer_address = substation.ss_circuit.all()[0].customer.address
+            except Exception as e:
+                logger.info("Customer Address not exist. Exception: ", e.message)
+
+            # date of acceptance
+            date_of_acceptance = ""
+            try:
+                date_of_acceptance = substation.ss_circuit.all()[0].date_of_acceptance
+            except Exception as e:
+                logger.info("Date Of Acceptance not exist. Exception: ", e.message)
+
+            # dl rssi during acceptance
+            dl_rssi_during_acceptance = ""
+            try:
+                dl_rssi_during_acceptance = substation.ss_circuit.all()[0].dl_rssi_during_acceptance
+            except Exception as e:
+                logger.info("DL RSSI During Acceptance not exist. Exception: ", e.message)
+
+            # ss sector frequency
+            ss_sector_frequency = ""
+            try:
+                ss_sector_frequency = substation.ss_circuit.all()[0].sector.frequency.value
+            except Exception as e:
+                logger.info("SS Sector Frequency not exist. Exception: ", e.message)
+
+            # antenna height
+            antenna_height = ""
+            try:
+                antenna_height = substation.antenna.height
+            except Exception as e:
+                logger.info("Antenna Height not exist. Exception: ", e.message)
+
+            # antenna polarization
+            antenna_polarization = ""
+            try:
+                antenna_polarization = substation.antenna.polarization
+            except Exception as e:
+                logger.info("Antenna Polarization not exist. Exception: ", e.message)
+
+            # antenna mount type
+            antenna_mount_type = ""
+            try:
+                antenna_mount_type = substation.antenna.mount_type
+
+            except Exception as e:
+                logger.info("Antenna Type not exist. Exception: ", e.message)
+
+            # antenna type
+            antenna_type = ""
+            try:
+                antenna_type = substation.antenna.antenna_type
+
+            except Exception as e:
+                logger.info("Antenna Type not exist. Exception: ", e.message)
+
+            # adding gis inventory static parameters to device info
+            device_info = [
+                {
+                    'name': 'ss_ip',
+                    'title': 'SS IP',
+                    'show': 1,
+                    'value': substation_device.ip_address
+                },
+                {
+                    'name': 'ss_mac',
+                    'title': 'SS MAC',
+                    'show': 0,
+                    'value': substation_device.mac_address
+                },
+                {
+                    'name': 'name',
+                    'title': 'SS Name',
+                    'show': 0,
+                    'value': substation.name
+                },
+                {
+                    'name': 'cktid',
+                    'title': 'Circuit ID',
+                    'show': 1,
+                    'value': circuit_id
+                },
+                {
+                    'name': 'qos_bandwidth',
+                    'title': 'QOS(BW)',
+                    'show': 1,
+                    'value': qos
+                },
+                {
+                    'name': 'latitude',
+                    'title': 'Latitude',
+                    'show': 1,
+                    'value': substation.latitude
+                },
+                {
+                    'name': 'longitude',
+                    'title': 'Longitude',
+                    'show': 1,
+                    'value': substation.longitude
+                },
+                {
+                    'name': 'antenna_height',
+                    'title': 'Antenna Height',
+                    'show': 1,
+                    'value': antenna_height
+                },
+                {
+                    'name': 'polarisation',
+                    'title': 'Polarisation',
+                    'show': 1,
+                    'value': antenna_polarization
+                },
+                {
+                    'name': 'ss_technology',
+                    'title': 'Technology',
+                    'show': 1,
+                    'value': substation_technology
+                },
+                {
+                    'name': 'building_height',
+                    'title': 'Building Height',
+                    'show': 1,
+                    'value': substation.building_height
+                },
+                {
+                    'name': 'tower_height',
+                    'title': 'tower_height',
+                    'show': 1,
+                    'value': substation.tower_height
+                },
+                {
+                    'name': 'mount_type',
+                    'title': 'SS MountType',
+                    'show': 1,
+                    'value': antenna_mount_type
+                },
+                {
+                    'name': 'alias',
+                    'title': 'Alias',
+                    'show': 1,
+                    'value': substation.alias
+                },
+                {
+                    'name': 'ss_device_id',
+                    'title': 'SS Device ID',
+                    'show': 0,
+                    'value': substation_device.id
+                },
+                {
+                    'name': 'antenna_type',
+                    'title': 'Antenna Type',
+                    'show': 1,
+                    'value': antenna_type
+                },
+                {
+                    'name': 'ethernet_extender',
+                    'title': 'Ethernet Extender',
+                    'show': 1,
+                    'value': substation.ethernet_extender
+                },
+                {
+                    'name': 'cable_length',
+                    'title': 'Cable Length',
+                    'show': 1,
+                    'value': substation.cable_length
+                },
+                {
+                    'name': 'customer_address',
+                    'title': 'Customer Address',
+                    'show': 1,
+                    'value': customer_address
+                },
+                {
+                    'name': 'date_of_acceptance',
+                    'title': 'Date of Acceptance',
+                    'show': 1,
+                    'value': date_of_acceptance
+                },
+                {
+                    'name': 'dl_rssi_during_acceptance',
+                    'title': 'RSSI During Acceptance',
+                    'show': 1,
+                    'value': dl_rssi_during_acceptance
+                },
+                {
+                    'name': 'planned_frequency',
+                    'title': 'Planned Frequency',
+                    'show': 1,
+                    'value': ss_sector_frequency
+                }
+            ]
 
         # to update the info window with all the services
         # device performance info
@@ -1557,3 +1982,473 @@ class GISPerfData(View):
             device_info.append(perf_info)
 
         return device_info
+
+
+    def get_substation_info(self, substation, substation_device):
+        """ Get Sub Station information
+
+            :Parameters:
+                - 'substation' (<class 'inventory.models.SubStation'>) - substation object
+                - 'substation_device' (<class 'device.models.Device'>) - substation device object
+
+            :Returns:
+               - 'substation_info' (dict) - dictionary containing substation data
+                                                    {
+                                                        'antenna_height': 33.0,
+                                                        'link_color': u'rgba(255,
+                                                        192,
+                                                        0,
+                                                        0.97)',
+                                                        'lon': 75.8075,
+                                                        'param': {
+                                                            'sub_station': [
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'ss_ip',
+                                                                    'value': u'10.75.165.227',
+                                                                    'title': 'SSIP'
+                                                                },
+                                                                {
+                                                                    'show': 0,
+                                                                    'name': 'ss_mac',
+                                                                    'value': u'00: 15: 67: 51: 5e: 34',
+                                                                    'title': 'SSMAC'
+                                                                },
+                                                                {
+                                                                    'show': 0,
+                                                                    'name': 'name',
+                                                                    'value': u'091jaip623009280393',
+                                                                    'title': 'SSName'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'cktid',
+                                                                    'value': u'091JAIP623009280393',
+                                                                    'title': 'CircuitID'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'qos_bandwidth',
+                                                                    'value': 512.0,
+                                                                    'title': 'QOS(BW)'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'latitude',
+                                                                    'value': 26.9138611111111,
+                                                                    'title': 'Latitude'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'longitude',
+                                                                    'value': 75.8075,
+                                                                    'title': 'Longitude'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'antenna_height',
+                                                                    'value': 33.0,
+                                                                    'title': 'AntennaHeight'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'polarisation',
+                                                                    'value': None,
+                                                                    'title': 'Polarisation'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'ss_technology',
+                                                                    'value': u'P2P',
+                                                                    'title': 'Technology'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'building_height',
+                                                                    'value': None,
+                                                                    'title': 'BuildingHeight'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'tower_height',
+                                                                    'value': None,
+                                                                    'title': 'tower_height'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'mount_type',
+                                                                    'value': None,
+                                                                    'title': 'SSMountType'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'alias',
+                                                                    'value': u'091JAIP623009280393',
+                                                                    'title': 'Alias'
+                                                                },
+                                                                {
+                                                                    'show': 0,
+                                                                    'name': 'ss_device_id',
+                                                                    'value': 15864L,
+                                                                    'title': 'SSDeviceID'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'antenna_type',
+                                                                    'value': None,
+                                                                    'title': 'AntennaType'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'ethernet_extender',
+                                                                    'value': None,
+                                                                    'title': 'EthernetExtender'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'cable_length',
+                                                                    'value': None,
+                                                                    'title': 'CableLength'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'customer_address',
+                                                                    'value': u'IDBIFederalLifeInsuranceCo.Ltd.
+                                                                               OfficeNO.802at8thFloorE-2,
+                                                                               KJTower,, AshokMarg, C-Scheme,
+                                                                               Jaipur, RajasthanIndia302001',
+                                                                    'title': 'CustomerAddress'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'date_of_acceptance',
+                                                                    'value': None,
+                                                                    'title': 'DateofAcceptance'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'dl_rssi_during_acceptance',
+                                                                    'value': None,
+                                                                    'title': 'RSSIDuringAcceptance'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': 'planned_frequency',
+                                                                    'value': '',
+                                                                    'title': 'PlannedFrequency'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': u'uptime',
+                                                                    'value': u'6.0082333333',
+                                                                    'title': u'Uptime'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': u'frequency',
+                                                                    'value': u'5830',
+                                                                    'title': u'Frequency'
+                                                                },
+                                                                {
+                                                                    'show': 1,
+                                                                    'name': u'pl',
+                                                                    'value': u'4',
+                                                                    'title': 'PacketLoss'
+                                                                }
+                                                            ]
+                                                        },
+                                                        'substation_device_ip_address': u'10.75.165.227',
+                                                        'markerUrl': '/home/priyesh/Documents/Workspace/nocout_gis/
+                                                           nocout/media/uploaded/icons/2014/09/25/P2P-loading4_3.png',
+                                                        'perf_value': u'6.0082333333',
+                                                        'lat': 26.9138611111111
+                                                    }
+        """
+        # device name
+        device_name = substation_device.device_name
+
+        # machine name
+        machine_name = substation_device.machine.name
+
+        # freeze time (data fetched from freeze time to latest time)
+        freeze_time = self.request.GET.get('freeze_time', '0')
+
+        # current user
+        current_user = ""
+        try:
+            current_user = UserProfile.objects.get(id=self.request.user.id)
+        except Exception as e:
+            logger.info("User profile not exist. Exception: ", e.message)
+
+        # device technology
+        device_technology = ""
+        try:
+            device_technology = DeviceTechnology.objects.get(id=substation_device.device_technology)
+        except Exception as e:
+            logger.info("Device technology not exist. Exception: ", e.message)
+
+        # fetch thematic settings for current user
+        try:
+            uts = UserThematicSettings.objects.get(user_profile=current_user,
+                                                   thematic_technology=device_technology)
+
+            # thematic settings
+            thematic_settings = uts.thematic_template
+
+            # threshold template
+            threshold_template = thematic_settings.threshold_template
+
+            # live polling tmplate
+            live_polling_template = threshold_template.live_polling_template
+
+            # service name
+            device_service_name = live_polling_template.service.name
+
+            # data source
+            device_service_data_source = live_polling_template.data_source.name
+        except Exception as e:
+            device_service_name = ""
+            device_service_data_source = ""
+            logger.info("Thematic settings not exist. Exception: ", e.message)
+
+        # device frequency
+        device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
+
+        # device pl
+        device_pl = self.get_device_pl(device_name, machine_name, freeze_time)
+
+        # device link/frequency color
+        device_link_color = self.get_frequency_color_and_radius(device_frequency, device_pl)[0]
+
+        # performance value
+        perf_payload = {
+            'device_name': device_name,
+            'machine_name': machine_name,
+            'freeze_time': freeze_time,
+            'device_service_name': device_service_name,
+            'device_service_data_source': device_service_data_source
+
+        }
+        performance_value = self.get_performance_value(perf_payload)
+
+        # sector info dict
+        substation_info = dict()
+
+        substation_info['antenna_height'] = substation.antenna.height
+        substation_info['lat'] = substation.latitude
+        substation_info['lon'] = substation.longitude
+        substation_info['perf_value'] = performance_value
+        substation_info['link_color'] = device_link_color
+        substation_info['param'] = dict()
+        substation_info['param']['sub_station'] = self.get_device_info(device_name, machine_name, substation)
+
+        # marker url
+        marker_url = ""
+        try:
+            gmap_icon = str(DeviceType.objects.get(id=substation_device.device_type).device_gmap_icon)
+            icon_path = "".join(gmap_icon.split("/media"))
+            marker_url = MEDIA_ROOT + icon_path
+        except Exception as e:
+            logger.info("No GMAP Icon for device type. Exception: ", e.message)
+
+        substation_info['markerUrl'] = marker_url
+        substation_info['substation_device_ip_address'] = substation_device.ip_address
+
+        return substation_info
+
+    def get_device_polled_frequency(self, device_name, machine_name, freeze_time):
+        """ Get device polled frequency
+
+            :Parameters:
+                - 'device_name' (unicode) - device name
+                - 'machine_name' (unicode) - machine name
+                - 'freeze_time' (str) - freeze time i.e. '0'
+
+            :Returns:
+               - 'device_frequency' (str) - device frequency, e.g. "34525"
+        """
+
+        # device frequency
+        device_frequency = ""
+        try:
+            if int(freeze_time):
+                device_frequency = PerformanceInventory.objects.filter(device_name=device_name, data_source='frequency',
+                                                                       sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                       .using(alias=machine_name)\
+                                                                       .order_by('-sys_timestamp')[:1]
+                if len(device_frequency):
+                    device_frequency = device_frequency[0].current_value
+                else:
+                    device_frequency = ""
+            else:
+                device_frequency = InventoryStatus.objects.filter(device_name=device_name, data_source='frequency')\
+                                                                  .using(alias=machine_name)\
+                                                                  .order_by('-sys_timestamp')[:1]
+                if len(device_frequency):
+                    device_frequency = device_frequency[0].current_value
+                else:
+                    device_frequency = ""
+        except Exception as e:
+            logger.info("Device frequency not exist. Exception: ", e.message)
+
+        return device_frequency
+
+    def get_device_pl(self, device_name, machine_name, freeze_time):
+        """ Get device pl
+
+            :Parameters:
+                - 'device_name' (unicode) - device name
+                - 'machine_name' (unicode) - machine name
+                - 'freeze_time' (str) - freeze time i.e. '0'
+
+            :Returns:
+               - 'device_frequency' (str) - device frequency, e.g. "34525"
+        """
+
+        # device packet loss
+        device_pl = ""
+
+        try:
+            if int(freeze_time):
+                device_pl = PerformanceNetwork.objects.filter(device_name=device_name, service_name='ping',
+                                                              data_source='pl',
+                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                              .using(alias=machine_name)\
+                                                              .order_by('-sys_timestamp')[:1]
+                if len(device_pl):
+                    device_pl = device_pl[0].current_value
+                else:
+                    device_pl = ""
+            else:
+                device_pl = NetworkStatus.objects.filter(device_name=device_name,
+                                                         service_name='ping',
+                                                         data_source='pl')\
+                                                         .using(alias=machine_name).order_by('-sys_timestamp')[:1]
+                if len(device_pl):
+                    device_pl = device_pl[0].current_value
+                else:
+                    device_pl = ""
+
+        except Exception as e:
+            logger.info("Device PL not exist. Exception: ", e.message)
+
+        return device_pl
+
+    def get_frequency_color_and_radius(self, device_frequency, device_pl):
+        """ Get device pl
+
+            :Parameters:
+                - 'device_frequency' (unicode) - device frequency, e.g 5830
+                - 'device_pl' (unicode) - device pl (packet loss) value, e.g. 4
+
+            :Returns:
+                - 'device_link_color' (unicode) - device link color, e.g. rgba(255,192,0,0.97)
+                - 'radius' (float) - radius, e.g 2.0
+        """
+
+        # device link color
+        device_link_color = ""
+
+        # radius
+        radius = ""
+
+        try:
+            if len(device_frequency):
+                corrected_dev_freq = device_frequency
+                try:
+                    chek_dev_freq = ast.literal_eval(device_frequency)
+                    if int(chek_dev_freq) > 10:
+                        corrected_dev_freq = chek_dev_freq
+                except Exception as e:
+                    logger.info("Device frequency not exist. Exception: ", e.message)
+
+                device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
+                device_frequency_color = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))\
+                                                                        .values_list('color_hex_value', flat=True)
+                device_frequency_object = None
+                if len(device_frequency_objects):
+                    device_frequency_object = device_frequency_objects[0]
+                radius = device_frequency_object.frequency_radius if (
+                    device_frequency_object
+                    and
+                    device_frequency_object.frequency_radius
+                ) else 0
+                if len(device_frequency_color):
+                    device_link_color = device_frequency_color[0]
+            if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
+                device_link_color = 'rgb(0,0,0)'
+        except Exception as e:
+            if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
+                device_link_color = 'rgb(0,0,0)'
+            logger.info("Frequency color not exist. Exception: ", e.message)
+
+        return device_link_color, radius
+
+    def get_performance_value(self, perf_payload):
+        """ Get device pl
+
+            :Parameters:
+                - 'perf_payload' (dict) - performance payload dictionary
+                                            {
+                                                'device_service_name': u'radwin_uptime',
+                                                'machine_name': u'default',
+                                                'freeze_time': '0',
+                                                'device_service_data_source': u'uptime',
+                                                'device_name': u'1'
+                                            }
+
+            :Returns:
+               - 'performance_value' (unicode) - performance value, e.g. 6.0082333333
+        """
+
+        # device name
+        device_name = perf_payload['device_name']
+
+        # machine name
+        machine_name = perf_payload['machine_name']
+
+        # freeze time
+        freeze_time = perf_payload['freeze_time']
+
+        # service name
+        device_service_name = perf_payload['device_service_name']
+
+        # service data source
+        device_service_data_source = perf_payload['device_service_data_source']
+
+        try:
+            if int(freeze_time):
+                performance_value = PerformanceService.objects.filter(device_name=device_name,
+                                                                      service_name=device_service_name,
+                                                                      data_source=device_service_data_source,
+                                                                      sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                      .using(alias=machine_name)\
+                                                                      .order_by('-sys_timestamp')[:1]
+                if len(performance_value):
+                    performance_value = performance_value[0].current_value
+                else:
+                    performance_value = ""
+            else:
+                performance_value = ServiceStatus.objects.filter(device_name=device_name,
+                                                                 service_name=device_service_name,
+                                                                 data_source=device_service_data_source)\
+                                                                 .using(alias=machine_name)\
+                                                                 .order_by('-sys_timestamp')[:1]
+                if len(performance_value):
+                    performance_value = performance_value[0].current_value
+                else:
+                    performance_value = ""
+
+        except Exception as e:
+            performance_value = ""
+            logger.info("Performance value not exist. Exception: ", e.message)
+
+        return performance_value
+
+
+
+
+
+
+
+
