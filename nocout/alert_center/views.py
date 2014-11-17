@@ -1304,7 +1304,7 @@ def filter_machines(organization_devices):
 
     return machine_dict
 
-
+@cache_for(300)
 def prepare_raw_alert_results(device_list=[], performance_data=None):
     """
     prepare GIS result using raw query
