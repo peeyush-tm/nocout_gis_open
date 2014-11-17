@@ -11,7 +11,7 @@ from device.models import Device, City, State, DeviceTechnology, DeviceType
 from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 from performance.views import ptp_device_circuit_backhaul, organization_customer_devices, \
-    organization_network_devices, organization_backhaul_devices
+    organization_network_devices, organization_backhaul_devices, indexed_gis_devices
 from django.utils.dateformat import format
 from django.db.models import Q
 
@@ -1303,25 +1303,6 @@ def filter_machines(organization_devices):
                                   device['machine_name'] == machine ]
 
     return machine_dict
-
-
-def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
-    """
-
-    :return:
-    """
-
-    raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
-
-    indexed_raw_results = {}
-
-    for result in raw_results:
-        defined_index = result[indexed]
-        if defined_index not in indexed_raw_results:
-            indexed_raw_results[defined_index] = []
-        indexed_raw_results[defined_index].append(result)
-
-    return indexed_raw_results
 
 
 def prepare_raw_alert_results(device_list=[], performance_data=None):

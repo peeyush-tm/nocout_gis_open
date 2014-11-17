@@ -59,19 +59,19 @@ $(".nav-tabs li a").click(function (e, isFirst) {
 
     if (last_clicked_tab != e.currentTarget.id || second_condition) {
 
-//		if(table_id.toLowerCase().indexOf("p2p") > -1 || table_id.toLowerCase().indexOf("ptp") > -1) {
-//
-//			for(var i=0;i<grid_headers.length;i++) {
-//				var column = grid_headers[i];
-//				if(column.mData.indexOf("sector_id") > -1) {
-//					if(column.bVisible) {
-//						column.bVisible = false;
-//					} else {
-//						column["bVisible"] = false;
-//					}
-//				}
-//			}
-//		}
+        if (table_id.toLowerCase().indexOf("p2p") > -1 || table_id.toLowerCase().indexOf("ptp") > -1) {
+
+            for (var i = 0; i < grid_headers.length; i++) {
+                var column = grid_headers[i];
+                if (column.mData.indexOf("sector_id") > -1) {
+                    if (column.bVisible) {
+                        column.bVisible = false;
+                    } else {
+                        column["bVisible"] = false;
+                    }
+                }
+            }
+        }
 
         /*Call createDataTable function to create the data table for specified dom element with given data*/
         dataTableInstance.createDataTable(table_id, grid_headers, ajax_url, destroy);
