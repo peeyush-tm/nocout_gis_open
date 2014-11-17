@@ -1,4 +1,4 @@
-INSERT INTO `nocout_01_11_14`.`performance_networkstatus`
+INSERT INTO `performance_networkstatus`
 (
 	`device_name`,
 	`service_name`,
@@ -34,5 +34,5 @@ select
 	0,
 	0,
 	0,
-	0
+	FLOOR(RAND() * (100 - 0 + 1))
 from device_device;
