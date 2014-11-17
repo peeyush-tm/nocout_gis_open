@@ -133,8 +133,8 @@ function GisPerformance() {
 
         //Ajax Request
         $.ajax({
-            // url: base_url + '/network_maps/perf_data/?base_stations=['+bs_id+']&freeze_time=' + freezedAt,
-            url: base_url + '/static/new_perf_pmp.json',
+            url: base_url + '/network_maps/perf_data/?base_stations=['+bs_id+']&freeze_time=' + freezedAt,
+            // url: base_url + '/static/new_perf_pmp.json',
             type: 'GET',
             dataType: 'json',
             //In success
