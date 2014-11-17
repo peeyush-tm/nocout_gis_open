@@ -133,13 +133,13 @@ function GisPerformance() {
 
         //Ajax Request
         $.ajax({
-            url: base_url + '/network_maps/perf_data/?base_stations=['+bs_id+']&freeze_time=' + freezedAt,
-            // url: base_url + '/static/new_perf_pmp.json',
+            // url: base_url + '/network_maps/perf_data/?base_stations=['+bs_id+']&freeze_time=' + freezedAt,
+            url: base_url + '/static/new_perf_pmp.json',
             type: 'GET',
             dataType: 'json',
             //In success
             success: function (result) {
-                var data = result[0];
+                var data = result.length ? result[0] : result;
                 //If data is there
                 if(data){
                     //Store data in gisData
@@ -418,6 +418,40 @@ function GisPerformance() {
                 masterClusterInstance.clearMarkers();
                 masterClusterInstance.addMarkers(bs_markers_array);
                 masterClusterInstance.addMarkers(ss_markers_array);
+            } else {
+
+                if(sector_polygon) {
+                    var ss_marker_obj = allMarkersObject_gmap['sub_station'],
+                        ss_name_array = [];
+
+                    for(key in ss_marker_obj) {
+                        var current_old_ss = ss_marker_obj[key],
+                            condition1 = current_old_ss.filter_data.bs_id === gisData.bs_id,
+                            condition2 = current_old_ss.filter_data.sector_name === sector_ip,
+                            condition3 = current_old_ss.filter_data.sector_id === sector_id;
+
+                        if(condition1 && condition2 && condition3) {
+                            ss_name_array.push(current_old_ss.name);
+                        }
+                    }
+
+                    for(var x=0;x<ss_name_array.length;x++) {
+                        // Remove Line from map & array
+                        if(allMarkersObject_gmap['path']['line_'+ss_name_array[x]]) {
+                            if(startEndObj["startLat"] && startEndObj["startLon"]) {
+
+                                var current_line = allMarkersObject_gmap['path']['line_'+ss_name_array[x]],
+                                    new_path = [
+                                    new google.maps.LatLng(startEndObj["startLat"],startEndObj["startLon"]),
+                                    new google.maps.LatLng(current_line.ss_lat,current_line.ss_lon)
+                                ]
+                                current_line.setOptions({
+                                    path : new_path
+                                });
+                            }
+                        }
+                    }
+                }
             }
 
 
