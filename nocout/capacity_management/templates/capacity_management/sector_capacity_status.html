@@ -1,5 +1,10 @@
-{% extends "capacity_management/capacity_mgmt_breadcrumb.html" %}
-
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <a href="/home">Home</a> >
+    <li><a href="#">Capacity Management</a></li>
+    <li><a href="#">Daily Alerts</a></li>
+    <li><b>Sector Status</b></li>
+{% endblock %}
 {% block content_title %}Sector Status{% endblock %}
 {% block content_description %}Sector Status List {% endblock %}
 {% load staticfiles %}

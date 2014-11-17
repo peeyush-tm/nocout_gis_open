@@ -1,4 +1,10 @@
-{% extends "capacity_management/capacity_mgmt_breadcrumb.html" %}
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <a href="/home">Home</a> >
+    <li><a href="#">Performance Reports</a></li>
+    <li><a href="#">RF Performance Dashboard</a></li>
+    <li><b>PTP BH</b></li>
+{% endblock %}
 {% load staticfiles %}
 {% block page_setting_block %} {% endblock %}
 {% block content_title %} RF Performance Dashboard: PTP {% endblock %}
