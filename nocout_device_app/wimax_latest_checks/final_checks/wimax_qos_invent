@@ -61,6 +61,7 @@ def connection_telnet(host_name, port,mac):
 	dl_qos = None
 	ul_qos = None
 	svc_cls_index_list = []
+	match_string = '([a-fA-F0-9]{2}[:|\-]?){6}'
         try:
                 for i,row in enumerate(data.split("\n")):
                         if mac in row:
@@ -70,10 +71,10 @@ def connection_telnet(host_name, port,mac):
 				if len(svc_cls_index_list) == 2:
 					break
 		for i,row in enumerate(data.split("\n")):
-			if svc_cls_index_list[0] in row and not re.match(([a-fA-F0-9]{2}[:|\-]?){6},row):
+			if svc_cls_index_list[0] in row and not re.match(match_string,row):
 				params_list = [r for r in row.split()]
 				ul_qos = int(params_list[4])
-			if svc_cls_index_list[1] in row and not re.match(([a-fA-F0-9]{2}[:|\-]?){6},row):
+			if svc_cls_index_list[1] in row and not re.match(match_string,row):
 				params_list = [r for r in row.split()]
 				dl_qos = int(params_list[4])
 			if dl_qos and ul_qos:

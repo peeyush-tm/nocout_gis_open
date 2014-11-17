@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
 import sys
-from telnetlib import Telnet
 import socket
 import json
 import os
+
 
 """
 operating Frequency of ss device  Poller script.
@@ -24,37 +24,26 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def connection_telnet_for_port_speed_status(hostip, port,num_port):
+def extract_port_speed_status_from_live(hostname):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
     
         """
-        try:
-                tn = Telnet(hostip,port,timeout=3)
-        except socket.timeout:
-		pmp1_bw = None
-		pmp2_bw = None
-		return pmp1_bw,pmp2_bw
-	tn.read_until("Login:")
-        tn.write("admin" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("admin" + "\r\n")
-	for item in range(1,num_port):
-        	tn.write("show interface client %s\r\n" % (item+1))
-        tn.write("exit\r\n")
-        data = tn.read_all()
-	port_speed = None
-	try:
-		 for i,row in enumerate(data.split("\n")):
-                        if "c:%s" % item in row:
-				port_speed = int([r for r in row.split()])
-				port_speed = port_speed[3].split('/')[0]
-				break
-        except:
-		port_speed = None
-	return port_speed
+	port_speed_list = []
+        query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 
+			% ("mrotek_port_values",hostname)
+        
+	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(livestatus_unix_socket)
+	query_output = json.loads(s.send(query).strip())
+	if query_output:
+		query_output = [entry for entry in query_output.split()]
+		port_speed_list=filter(lambda x: x.split('=')[1],query_output)		
+	
+	return port_speed_list
                                 
 
 def check_mrotek_port_speed_status(item, _no_params, info):
@@ -82,15 +71,15 @@ def check_mrotek_port_speed_status(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
-    port_speed = None
     status_list = []
+    port_string = "FE_"
     try:
-	if info[0][0]:
-                ip = info[0][0]
-	        num_port = len(info)	
-		status_list =connection_telnet_for_port_speed_status(ip, 23,num_port)
-		for port,speed in status_list:
-			infotext = "%s=%s" % (port,speed)
+	infotext = ""	
+	speed_list =extract_port_speed_status_from_live(g_hostname, 23,num_port)
+	if speed_list:
+		for index in range(len(speed_list)):
+			status_list.append((port_string + str(index + 1),speed_list[index]))
+			infotext += "%s=%s " % (port_string + str(index + 1),speed_list[index])
 		state = 0
     except ValueError:
         infotext = "type_mismatch_value"
@@ -109,5 +98,5 @@ check_info["mrotek_port_speed_status"] = {
 #########################################################################
 #	SNMP OID for the operating ptx
 #########################################################################
-snmp_info["mrotek_port_speed_status"] = ( ".1.3.6.1", ["2.1.4.20.1.1","4.1.8886.6.1.4.1.1.6"] )
+snmp_info["mrotek_port_speed_status"] = ( ".1.3.6.1", ["2.1.4.20.1.1"] )
 

@@ -1,15 +1,30 @@
+"""
+service_mongo_aggregation_half_hourly.py
+=======================================
+
+Usage ::
+python service_mongo_aggregation_half_hourly.py -t 30 -s network_perf -d network_perf_half_hourly
+python service_mongo_aggregation_half_hourly.py -t 30 -s service_perf -d service_perf_half_hourly
+Options ::
+t - Time frame for which data to be read from Mongodb (minutes)
+s - Mongodb source collection name to read data from
+d - Mongodb historical collection to put data in
+"""
+
 from nocout_site_name import *
 import imp
+import sys
 from datetime import datetime, timedelta
 from itertools import groupby
 from operator import itemgetter
 from pprint import pprint, pformat
 import collections
+import optparse
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_mod = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
-configs = config_mod.parse_config_obj()
+configs = config_mod.parse_config_obj(historical_conf=True)
 desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
 desired_config = configs.get(desired_site)
 
@@ -18,13 +33,25 @@ mongo_configs = {
 		'port': int(desired_config.get('port')),
 		'db_name': desired_config.get('nosql_db')
 		}
+parser = optparse.OptionParser()
+parser.add_option('-s', '--source', dest='source_db', type='choice', choices=['service_perf', 'network_perf'])
+parser.add_option('-d', '--destination', dest='destination_db', type='choice', choices=['service_perf_half_hourly', 'network_perf_half_hourly'])
+parser.add_option('-t', '--timeframe', dest='mins', type='choice', choices=['30'])
+options, remainder = parser.parse_args(sys.argv[1:])
+if options.source_db and options.destination_db and options.mins:
+	perf_table=options.source_db
+	hist_perf_table=options.destination_db
+	time_frame = int(options.mins)
+else:
+	print "Usage: service_mongo_aggregation_half_hourly.py [options]"
+	sys.exit(2)
 
 def mongo_main():
 	global mongo_configs
 	docs = []
 	#end_time = datetime.now()
 	end_time = datetime.now()
-	start_time = end_time - timedelta(hours=1)
+	start_time = end_time - timedelta(minutes=time_frame)
 	# Read data from mongodb, performance live data
     	docs = sorted(read_data(start_time, end_time, configs=mongo_configs), key=itemgetter('host'))
 	print '## Doc len ##'
@@ -59,11 +86,15 @@ def read_data(start_time, end_time, **configs):
        	db = mongo_module.mongo_conn(
 		host=configs.get('configs').get('host'),
 			port=configs.get('configs').get('port'),
-			db_name=configs.get('configs').get('db_name')
+			db_name='nocout'
 			)
 	print start_time, end_time
 	if db:
-	    cur = db.service_perf.find({"data":{ "$elemMatch": { "time" : { "$gt": start_time, "$lt": end_time}}}})
+		#if perf_table == 'network_perf':
+		#        cur = db.network_perf.find({"check_time": {"$gt": start_time, "$lt": end_time}})
+		#elif perf_table == 'service_perf':
+		#        cur = db.service_perf.find({"check_time": {"$gt": start_time, "$lt": end_time}})
+		cur = db[perf_table].find({'check_time': {'$gt': start_time, '$lt': end_time}})
         
 	for doc in cur:
 		docs.append(doc)
@@ -81,8 +112,15 @@ def make_half_hourly_data(docs):
 	# Store the hour-wise perf data into a dict
 	hour_wise_perf = {}
 	host, ip_address = docs[0].get('host'), docs[0].get('ip_address')
-	ds, service = docs[0].get('ds'), docs[0].get('service')
+	ds, service = str(docs[0].get('ds')), docs[0].get('service')
 	site = docs[0].get('site')
+	val_frequencies = None
+	# These services contain perf which can't be evaluated using regular `min`, `max` functions
+	wimax_mrotek_services = ['wimax_ss_sector_id', 'wimax_ss_mac', 'wimax_dl_intrf', 'wimax_ul_intrf', 'wimax_ss_ip', 
+			'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec', 'wimax_ss_frequency',
+			'rici_line_1_port_state', 'rici_fe_port_state', 'rici_e1_interface_alarm',
+			'rici_device_type', 'mrotek_line_1_port_state', 'mrotek_fe_port_state',
+			'mrotek_e1_interface_alarm', 'mrotek_device_type']
 	for doc in docs:
 		data_values = sorted(doc.get('data'), key=itemgetter('time'))
 		# Club the data entries based on hour value
@@ -96,8 +134,6 @@ def make_half_hourly_data(docs):
         #print '==== hour_wise_perf ===='
 	#pprint(hour_wise_perf)
 	for hour, perf in hour_wise_perf.items():
-		#print 'perf--------'
-		#print perf
 		perf = map(lambda t: convert(t), perf)
 		#print '---- perf after eval----------'
 		#print perf
@@ -107,30 +143,31 @@ def make_half_hourly_data(docs):
 		s_h_pivot_time = f_h_pivot_time + timedelta(minutes=30)
 		# 0 - 30 mins data for the particular hour
 		first_half_data = filter(lambda entry: entry.get('time').minute <= 30, perf) 
-		#print "-- First half data"
-		#print first_half_data
 		if first_half_data:
 		        first_half_data_values = map(lambda e: e.get('value'), first_half_data)
-			if not first_half_data_values[0]:
+			if first_half_data_values[0] == '':
 				f_h_min_val, f_h_max_val, f_h_avg_val = None, None, None
 			else:
-			        f_h_min_val = min(first_half_data_values)
-			        f_h_max_val = max(first_half_data_values)
-			        f_h_avg_val = sum(first_half_data_values)/len(first_half_data_values)
+				if service in wimax_mrotek_services:
+					f_h_min_val = first_half_data_values[0]
+					f_h_max_val = first_half_data_values[0]
+					f_h_avg_val = None
+				else:
+					f_h_min_val = min(first_half_data_values)
+					f_h_max_val = max(first_half_data_values)
+					f_h_avg_val = sum(first_half_data_values)/len(first_half_data_values)
 
 			aggr_data = {
 					'host': str(host),
 					'ip_address': str(ip_address),
 					'time': f_h_pivot_time,
 					'ds': str(ds),
-					'service': str(service),
+					'service': service,
 					'site': str(site),
 					'min': f_h_min_val,
 					'max': f_h_max_val,
 					'avg': f_h_avg_val
 					}
-			#print "-- data to be inserted --"
-			#print aggr_data
 			# Find the existing doc to update
 			find_query = {
 					'host': aggr_data.get('host'),
@@ -143,12 +180,23 @@ def make_half_hourly_data(docs):
 			#print existing_doc
 			if existing_doc:
 				existing_doc = existing_doc[0]
-				min_val = min([existing_doc.get('min'), aggr_data.get('min')]) 
-				max_val = max([existing_doc.get('max'), aggr_data.get('max')]) 
-				if aggr_data.get('avg'):
-				        avg_val = (existing_doc.get('avg') + aggr_data.get('avg')) / 2
+				if service in wimax_mrotek_services:
+					val_frequencies = [existing_doc.get('min'), existing_doc.get('max'),
+							aggr_data.get('min'), aggr_data.get('max')]
+					occur = collections.defaultdict(int)
+					for val in val_frequencies:
+						occur[val] += 1
+					freq_dist = occur.keys()
+					max_val = freq_dist[0]
+					min_val = freq_dist[-1]
+					avg_val = None
 				else:
-				        avg_val = existing_doc.get('avg')
+					min_val = min([existing_doc.get('min'), aggr_data.get('min')]) 
+					max_val = max([existing_doc.get('max'), aggr_data.get('max')]) 
+					if aggr_data.get('avg'):
+						avg_val = (existing_doc.get('avg') + aggr_data.get('avg')) / 2
+					else:
+						avg_val = existing_doc.get('avg')
 				aggr_data.update({
 					'min': min_val,
 					'max': max_val,
@@ -161,15 +209,22 @@ def make_half_hourly_data(docs):
 		#print "-- second half data --"
 		#print second_half_data
 		if second_half_data:
+			#print 'second_half_data ------'
+			#print second_half_data
 		        second_half_data_values = map(lambda e: e.get('value'), second_half_data)
 			#print 'second_half_data_values--'
 			#print second_half_data_values
-			if not second_half_data_values[0]:
+			if second_half_data_values[0] == '':
 				s_h_min_val, s_h_max_val, s_h_avg_val = None, None, None
 			else:
-			        s_h_min_val = min(second_half_data_values)
-			        s_h_max_val = max(second_half_data_values)
-			        s_h_avg_val = sum(second_half_data_values)/len(second_half_data_values)
+				if service in wimax_mrotek_services:
+					f_h_min_val = second_half_data_values[0]
+					f_h_max_val = second_half_data_values[0]
+					f_h_avg_val = None
+				else:
+					s_h_min_val = min(second_half_data_values)
+					s_h_max_val = max(second_half_data_values)
+					s_h_avg_val = sum(second_half_data_values)/len(second_half_data_values)
 
 			aggr_data = {
 					'host': host,
@@ -182,8 +237,6 @@ def make_half_hourly_data(docs):
 					'max': s_h_max_val,
 					'avg': s_h_avg_val
 					}
-			#print "-- data to be inserted --"
-			#print aggr_data
 			# Find the existing doc to update
 			find_query = {
 					'host': aggr_data.get('host'),
@@ -196,12 +249,23 @@ def make_half_hourly_data(docs):
 			#print existing_doc
 			if existing_doc:
 				existing_doc = existing_doc[0]
-				min_val = min([existing_doc.get('min'), aggr_data.get('min')]) 
-				max_val = max([existing_doc.get('max'), aggr_data.get('max')]) 
-				if aggr_data.get('avg'):
-				        avg_val = (existing_doc.get('avg') + aggr_data.get('avg')) / 2
+				if service in wimax_mrotek_services:
+					val_frequencies = [existing_doc.get('min'), existing_doc.get('max'),
+							aggr_data.get('min'), aggr_data.get('max')]
+					occur = collections.defaultdict(int)
+					for val in val_frequencies:
+						occur[val] += 1
+					freq_dist = occur.keys()
+					max_val = freq_dist[0]
+					min_val = freq_dist[-1]
+					avg_val = None
 				else:
-					avg_val = existing_doc.get('avg')
+					min_val = min([existing_doc.get('min'), aggr_data.get('min')]) 
+					max_val = max([existing_doc.get('max'), aggr_data.get('max')]) 
+					if aggr_data.get('avg'):
+						avg_val = (existing_doc.get('avg') + aggr_data.get('avg')) / 2
+					else:
+						avg_val = existing_doc.get('avg')
 				aggr_data.update({
 					'min': min_val,
 					'max': max_val,
@@ -231,7 +295,6 @@ def upsert_aggregated_data(find_query, doc):
 	"""
 
         global mongo_configs
-	mongo_configs['db_name'] = 'nocout_historical'
         # Mongodb connection object
        	db = mongo_module.mongo_conn(
 		host=mongo_configs.get('host'),
@@ -239,7 +302,11 @@ def upsert_aggregated_data(find_query, doc):
 			db_name=mongo_configs.get('db_name')
 			)
 	if db:
-		db.service_perf_half_hourly.update(find_query, doc,upsert=True)
+		#if hist_perf_table == 'network_perf_half_hourly':
+		#	db.network_perf_half_hourly.update(find_query, doc,upsert=True)
+		#elif hist_perf_table == 'service_perf_half_hourly':
+		#	db.service_perf_half_hourly.update(find_query, doc,upsert=True)
+		cur = db[hist_perf_table].update(find_query, doc, upsert=True)
 
 def find_existing_entry(find_query):
 	"""
@@ -247,7 +314,6 @@ def find_existing_entry(find_query):
 	"""
 
         global mongo_configs
-	mongo_configs['db_name'] = 'nocout_historical'
 	docs = []
         # Mongodb connection object
        	db = mongo_module.mongo_conn(
@@ -256,11 +322,31 @@ def find_existing_entry(find_query):
 			db_name=mongo_configs.get('db_name')
 			)
 	if db:
-		cur = db.service_perf_half_hourly.find(find_query)
+		#if hist_perf_table == 'network_perf_half_hourly':
+		#        cur = db.network_perf_half_hourly.find(find_query)
+		#elif hist_perf_table == 'service_perf_half_hourly':
+		#        cur = db.service_perf_half_hourly.find(find_query)
+		cur = db[hist_perf_table].find(find_query)
 	for doc in cur:
 		docs.append(doc)
 
 	return docs
+
+
+#def main(argv):
+#	parser = optparse.OptionParser()
+#	parser.add_option('-p', '--perf', dest='perf', type='choice', choices=['service_perf', 'network_perf'])
+#	parser.add_option('-s', '--historical', dest='hist', type='choice', choices=['service_perf_half_hourly', 'network_perf_half_hourly'])
+#	options, remainder = parser.parse_args(argv)
+#	if options.perf and options.hist:
+#	        mongo_main(perf_table=options.perf, hist_perf_table=options.hist)
+#	else:
+#		usage()
+#		sys.exit(2)
+
+
+def usage():
+	print "Usage: service_mongo_aggregation_half_hourly.py [options]"
 
 
 if __name__ == '__main__':

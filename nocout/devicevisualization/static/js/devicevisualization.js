@@ -203,8 +203,7 @@ $("#resetFilters").click(function(e) {
         
         /*Clear Existing Labels & Reset Counters*/
         gmap_self.clearStateCounters();
-
-        isCallCompleted = 1;
+        isApiResponse = 0;
         mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
         mapInstance.setZoom(5);
         // Load all counters
@@ -341,12 +340,14 @@ $("#setAdvFilterBtn").click(function(e) {
             vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
             city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
             state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
-            total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length;
+            frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
+            polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
+            total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length + frequency_filter.length + polarization_filter.length;
 
         // If any value is selected in filter
         if(total_selected_items > 0) {
             // Call function to plot the data on map as per the applied filters
-            gmap_self.applyAdvanceFilters(technology_filter,vendor_filter,state_filter,city_filter);
+            gmap_self.applyAdvanceFilters();
         } else {
             /*Hide the spinner*/
             hideSpinner();
@@ -516,7 +517,7 @@ $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $(this).val();
     defaultIconSize= val;
     if(window.location.pathname.indexOf("white_background") > -1) {
-        // whiteMapClass.toggleIconSize(val);
+        whiteMapClass.updateMarkersSize(val);
     } else {
         networkMapInstance.updateAllMarkersWithNewIcon(val);
         
@@ -789,6 +790,7 @@ function showToolsPanel() {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
 
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
     }
@@ -800,7 +802,7 @@ function removetoolsPanel() {
     is_ruler_active= -1;
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
     }    
@@ -844,6 +846,9 @@ $("#ruler_remove").click(function(e) {
 
     $(this).addClass("hide");
     $("#ruler_select").removeClass("hide");
+
+    // Change map cursor
+    mapInstance.setOptions({'draggableCursor' : ''});
 
     networkMapInstance.clearRulerTool_gmap();
 });
@@ -1065,3 +1070,12 @@ $("#export_data_gmap").click(function(e) {
     // call function to select data to be export & then export selected data
     networkMapInstance.exportData_gmap();
 });
+
+
+function isPointInPoly(poly, pt){
+    for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
+        ((poly[i].lat <= pt.lat && pt.lat < poly[j].lat) || (poly[j].lat <= pt.lat && pt.lat < poly[i].lat))
+        && (pt.lon < (poly[j].lon - poly[i].lon) * (pt.lat - poly[i].lat) / (poly[j].lat - poly[i].lat) + poly[i].lon)
+        && (c = !c);
+    return c;
+}
