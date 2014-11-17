@@ -65,9 +65,9 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                 var column = grid_headers[i];
                 if (column.mData.indexOf("sector_id") > -1) {
                     if (column.bVisible) {
-                        column.bVisible = false;
+                        column.sClass = "hide";
                     } else {
-                        column["bVisible"] = false;
+                        column["sClass"] = "hide";
                     }
                 }
             }
