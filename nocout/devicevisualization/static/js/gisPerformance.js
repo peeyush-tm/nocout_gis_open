@@ -277,6 +277,7 @@ function GisPerformance() {
             var current_sector = sectorArray[i],
                 sector_ip = current_sector.ip_address,
                 sector_id = current_sector.sector_id,
+                sector_perf_info = current_sector.perf_info,
                 sector_device = current_sector.device_name,
                 sector_marker = allMarkersObject_gmap['sector_device']['sector_'+sector_ip],
                 sector_polygon = allMarkersObject_gmap['sector_polygon']['poly_'+sector_ip+"_"+sector_id],
@@ -307,6 +308,11 @@ function GisPerformance() {
                         "oldIcon" : old_icon_obj,
                     });
                 }
+
+                // Set perf info for sector marker to show it on tooltip
+                sector_marker.setOptions({
+                    "poll_info" : sector_perf_info
+                });
 
                 startEndObj["startLat"] = bs_object.data.lat;
                 startEndObj["startLon"] = bs_object.data.lon;
@@ -345,6 +351,11 @@ function GisPerformance() {
                         path: polyPathArray,
                         fillColor: sector_color
                     });
+                });
+
+                // Set perf info for sector marker to show it on tooltip
+                sector_polygon.setOptions({
+                    "poll_info" : sector_perf_info
                 });
 
             }
