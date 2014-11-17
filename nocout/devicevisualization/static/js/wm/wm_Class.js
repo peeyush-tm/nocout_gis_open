@@ -1626,7 +1626,7 @@ function WhiteMapClass() {
 						}
 
 						//Condition to check if we need to call Ajax Request again
-						if (i <= loop_count && response.success && response.data.objects.children.length) {
+						if (i <= loop_count && response.success) {
 
 							bs_data_list = bs_data_list.concat(response.data.objects.children);
 							
