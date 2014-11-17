@@ -1311,7 +1311,7 @@ def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
     :return:
     """
 
-    raw_results = cached_all_gis_inventory(query_all_gis_inventory())
+    raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
 
     indexed_raw_results = {}
 
