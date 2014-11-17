@@ -70,7 +70,8 @@ urlpatterns = patterns('',
                        # url(r'^admin/', include(admin.site.urls)),
                        url(r'^logs/', include('activity_stream.urls')),
                        url(r'^sm/', include('session_management.urls')),
-                       url(r'^bulk_import/', include('inventory.bulk_import_urls')))
+                       url(r'^bulk_import/', include('inventory.bulk_import_urls')),
+                       url(r'^api/', include('inventory.api_urls')))
 
 # if settings.DEBUG:
 #     import debug_toolbar
