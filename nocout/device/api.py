@@ -27,7 +27,7 @@ from pprint import pprint
 logger=logging.getLogger(__name__)
 
 global gis_information
-gis_information = cached_all_gis_inventory(query_all_gis_inventory())
+gis_information = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
 
 
 @cache_for(600)

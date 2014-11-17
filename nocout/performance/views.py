@@ -174,7 +174,7 @@ SERVICES = {
 }
 
 global gis_information
-gis_information = cached_all_gis_inventory(query_all_gis_inventory())
+gis_information = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
 
 
 # def uptime_to_days(uptime=0):
