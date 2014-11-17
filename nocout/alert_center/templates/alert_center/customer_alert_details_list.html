@@ -1,5 +1,11 @@
-{% extends "capacity_management/capacity_mgmt_breadcrumb.html" %}
-
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <a href="/home">Home</a> >
+    <li><a href="#">Alert Center</a></li>
+    <li><a href="#">Alert Detail</a></li>
+    <li><a href="#">Customer Detail</a></b></li>
+    <li><b><span id="nav_tab_name"></span></b></li>
+{% endblock %}
 {% block content_title %}Customer Details{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
@@ -185,6 +191,20 @@
             // dataTableInstance.createDataTable("customer_wifi_alertlistingtable", gridHeadersObj, ajax_url_wifi, destroy);
             // dataTableInstance.createDataTable("customer_pmp_alertlistingtable",  gridHeadersObj, ajax_url_pmp,  destroy);
             // dataTableInstance.createDataTable("customer_p2p_alertlistingtable",  gridHeadersObj, ajax_url_p2p,  destroy);
+
+            // if tabination is there in page add its text in breadcrumb
+            var tab = $('.nav li').filter('.active').find('.hidden-inline-mobile')
+            if (tab.length){
+                $('#nav_tab_name').text(tab.text());
+            }
+            else{
+                $(".breadcrumb").children().last().hide()
+            }
+            // change name of the tab on click of the tab
+            $(".nav-tabs li").click( function() {
+                $('#nav_tab_name').text($(this).text());
+            });
+
         });
 
     </script>

@@ -1,5 +1,12 @@
-{% extends "nocout/breadcrumb.html" %}
-
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <a href="/home">Home</a> >
+    <li><a href="#">Alert Center</a></li>
+    <li><a href="#">{{ page_type }}</a></li>
+    <li><a href="/device/">device</a></li>
+    <li><a href="/device/{{ current_device_id }}">{{ current_device_id }}</a></li>
+    <li><b>{{ service_name }}</b></li>
+{% endblock %}
 {% block content_title %} {{ page_type | title  }} Alert{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
