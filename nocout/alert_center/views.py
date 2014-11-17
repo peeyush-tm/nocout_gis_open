@@ -1400,6 +1400,16 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
                         'age': data["age"],
                         'description': ''#data['description']
                     }
+                    if is_ss:
+                        device_events.update({
+                            'device_type' : format_value(bs_row['SS_TYPE']),
+                            'sector_id': format_value(bs_row['SECTOR_SECTOR_ID']),
+                        })
+                    elif is_bh:
+                        device_events.update({
+                            "device_type": format_value(bs_row['BHTYPE']),
+                            "device_technology": format_value(bs_row['BHTECH'])
+                        })
                     device_list.append(device_events)
 
     return device_list
