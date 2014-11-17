@@ -1,16 +1,3 @@
-{% extends "nocout/base.html" %}
-{% block breadcrumb_title %}
-
-{% endblock %}
-{% block load_js %}
-    <script>
-        $(document).ready(function () {
-            App.setPage("");  //Set current page
-            App.init(); //Initialise plugins and elements
-        });
-    </script>
-{% endblock %}
-{% block load_breadcrumb %}
 <script>
     jQuery(document).ready(function () {
 
@@ -86,4 +73,3 @@
     });
 
 </script>
-{% endblock %}
