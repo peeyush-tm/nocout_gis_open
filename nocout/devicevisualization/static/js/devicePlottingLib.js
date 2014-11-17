@@ -567,7 +567,7 @@ function devicePlottingClass_gmap() {
 
 	            		// If any data exists
 	            		if(data_to_plot.length > 0) {
-	            			if(lastZoomLevel < mapInstance.getZoom()) {
+	            			// if(lastZoomLevel < mapInstance.getZoom()) {
 			            		/*Clear all everything from map*/
 								$.grep(allMarkersArray_gmap,function(marker) {
 									marker.setMap(null);
@@ -588,16 +588,37 @@ function devicePlottingClass_gmap() {
 								if(masterClusterInstance) {
 									masterClusterInstance.clearMarkers();
 								}
-	            			}
+	            			// }
 
 							main_devices_data_gmaps = data_to_plot;
 							
-							var inBoundData = gmap_self.getNewBoundsDevices();
+							// var inBoundData = gmap_self.getNewBoundsDevices();
 
-							currentlyPlottedDevices = inBoundData;
+							// currentlyPlottedDevices = inBoundData;
 
 							// Call function to plot devices on gmap
-							gmap_self.plotDevices_gmap(inBoundData,"base_station");
+							gmap_self.plotDevices_gmap(data_to_plot,"base_station");
+
+							var polylines = allMarkersObject_gmap['path'],
+								polygons = allMarkersObject_gmap['sector_polygon'];
+
+							// Hide polylines if shown
+							for(key in polylines) {
+								var current_line = polylines[key];
+								// If shown
+								if(current_line.map) {
+									current_line.setMap(null);
+								}
+							}
+
+							// Hide polygons if shown
+							for(key in polygons) {
+								var current_polygons = polygons[key];
+								// If shown
+								if(current_polygons.map) {
+									current_polygons.setMap(null);
+								}
+							}
 	            		}
 
 	            		// Show points line if exist
@@ -1752,9 +1773,15 @@ function devicePlottingClass_gmap() {
 				      	connected_ss = allMarkersObject_gmap['sub_station']['ss_'+current_line.filter_data.ss_name];
 
 				    if((nearEndVisible || farEndVisible) && ((connected_bs && connected_ss) && (connected_bs.isActive != 0 && connected_ss.isActive != 0))) {
-				    	current_line.setMap(mapInstance);
+				    	// If polyline not shown then show the polyline
+				    	if(!current_line.map) {
+				    		current_line.setMap(mapInstance);
+				    	}
 				    } else {
-				    	current_line.setMap(null);
+				    	// If polyline shown then hide the polyline
+				    	if(current_line.map) {
+				    		current_line.setMap(null);
+			    		}
 				    }
 		    	}
 		    }
@@ -1773,9 +1800,15 @@ function devicePlottingClass_gmap() {
 		    		isMarkerExist = mapInstance.getBounds().contains(ss_marker.getPosition());
 	    		if(isMarkerExist) {
 			    	if(ss_marker.isActive && +(ss_marker.isActive) === 1) {
-			      		allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
+			    		// If SS Marker not shown then show the SS Marker
+			    		if(!allMarkersObject_gmap['sub_station'][key].map) {
+			      			allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
+			    		}
 			    	} else {
-			      		allMarkersObject_gmap['sub_station'][key].setMap(null);
+			    		// If SS Marker shown then hide the SS Marker
+			    		if(allMarkersObject_gmap['sub_station'][key].map) {
+			      			allMarkersObject_gmap['sub_station'][key].setMap(null);
+		    			}
 			    	}
 	    		}
 		    }
@@ -1794,9 +1827,15 @@ function devicePlottingClass_gmap() {
 		      		isMarkerExist = mapInstance.getBounds().contains(bs_marker.getPosition());
 	      		if(isMarkerExist) {
 			    	if(bs_marker.isActive && +(bs_marker.isActive) === 1) {
-			      		allMarkersObject_gmap['base_station'][key].setMap(mapInstance);
+			    		// If BS Marker not shown then show the BS Marker
+			    		if(!allMarkersObject_gmap['base_station'][key].map) {
+			      			allMarkersObject_gmap['base_station'][key].setMap(mapInstance);
+			    		}
 			        } else {
-			      		allMarkersObject_gmap['base_station'][key].setMap(null);
+			        	// If BS Marker shown then hide the BS Marker
+			        	if(allMarkersObject_gmap['base_station'][key].map) {
+			      			allMarkersObject_gmap['base_station'][key].setMap(null);
+		        		}
 			        }
 	      		}
 		    }
@@ -1815,9 +1854,15 @@ function devicePlottingClass_gmap() {
 		      		isMarkerExist = mapInstance.getBounds().contains(sector_marker.getPosition());
 	      		if(isMarkerExist) {
 			    	if(sector_marker.isActive && +(sector_marker.isActive) === 1) {
-			      		allMarkersObject_gmap['sector_device'][key].setMap(mapInstance);
+			    		// If Sector Marker not shown then show the Sector Marker
+			    		if(!allMarkersObject_gmap['sector_device'][key].map) {
+			      			allMarkersObject_gmap['sector_device'][key].setMap(mapInstance);
+			    		}
 			    	} else {
-			    		allMarkersObject_gmap['sector_device'][key].setMap(null);
+			    		// If Sector Marker shown then hide the Sector Marker
+			    		if(allMarkersObject_gmap['sector_device'][key].map) {
+			    			allMarkersObject_gmap['sector_device'][key].setMap(null);
+		    			}
 			        }
 	      		}
 		  }
@@ -1836,9 +1881,15 @@ function devicePlottingClass_gmap() {
 		    		isMarkerExist = mapInstance.getBounds().contains(new google.maps.LatLng(sector_polygon.ptLat,sector_polygon.ptLon));
 	    		if(isMarkerExist) {
 			    	if(sector_polygon.isActive && +(sector_polygon.isActive) === 1) {
-			      		allMarkersObject_gmap['sector_polygon'][key].setMap(mapInstance);
+			    		// If Polygon not shown then show the polygon
+			    		if(!allMarkersObject_gmap['sector_polygon'][key].map) {
+			      			allMarkersObject_gmap['sector_polygon'][key].setMap(mapInstance);
+			    		}
 			    	} else {
-			      		allMarkersObject_gmap['sector_polygon'][key].setMap(null);
+			    		// If Polygon shown then hide the polygon
+			    		if(allMarkersObject_gmap['sector_polygon'][key].map) {
+			      			allMarkersObject_gmap['sector_polygon'][key].setMap(null);
+		    			}
 			        }
 	    		}
 		    }
@@ -3598,29 +3649,27 @@ function devicePlottingClass_gmap() {
                 mapInstance.setZoom(15);
             }
 
-            if(lastZoomLevel < 8) {
-            	/*Clear all everything from map*/
-				$.grep(allMarkersArray_gmap,function(marker) {
-					marker.setMap(null);
-				});
+            /*Clear all everything from map*/
+			$.grep(allMarkersArray_gmap,function(marker) {
+				marker.setMap(null);
+			});
 
-				// Reset variables
-				allMarkersArray_gmap = [];
-				main_devices_data_gmaps = [];
-				currentlyPlottedDevices = [];
-				allMarkersObject_gmap= {
-					'base_station': {},
-					'path': {},
-					'sub_station': {},
-					'sector_device': {},
-					'sector_polygon': {}
-				};
+			// Reset variables
+			allMarkersArray_gmap = [];
+			main_devices_data_gmaps = [];
+			currentlyPlottedDevices = [];
+			allMarkersObject_gmap= {
+				'base_station': {},
+				'path': {},
+				'sub_station': {},
+				'sector_device': {},
+				'sector_polygon': {}
+			};
 
-				/*Clear master marker cluster objects*/
-				if(masterClusterInstance) {
-					masterClusterInstance.clearMarkers();
-				}
-            }
+			/*Clear master marker cluster objects*/
+			if(masterClusterInstance) {
+				masterClusterInstance.clearMarkers();
+			}
 
 			main_devices_data_gmaps = data_to_plot;
 
