@@ -46,6 +46,8 @@ else:
 	print "Usage: service_mongo_aggregation_hourly.py [options]"
 	sys.exit(2)
 
+aggregated_data_values = []
+
 
 def main():
 	docs = []
@@ -111,6 +113,7 @@ def quantify_data_based_on_freq(docs):
 	Quantifies perf data based on occurences of perf values
 	"""
 	
+	global aggregated_data_values
 	# Aggregated data doc to be inserted into historical mongodb 
 	aggr_data = {}
 	host, ip_address = docs[0].get('device_name'), docs[0].get('ip_address')
@@ -134,6 +137,8 @@ def quantify_data_based_on_freq(docs):
 	if existing_doc:
 		value_frequencies.append(existing_doc[0].get('max'))
 		value_frequencies.append(existing_doc[0].get('min'))
+		# First remove the existing entry from aggregated_data_values
+		aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.keys())), aggregated_data_values)
 	# Count the highest and lowest frequency values
 	# Use defaultdict in place of Counter [for python < 2.7]
 	occur = defaultdict(int)
@@ -153,9 +158,10 @@ def quantify_data_based_on_freq(docs):
 		'max': lowest_fre_val,
 		'avg': None
 		})
-	upsert_aggregated_data(find_query, aggr_data)
+	#upsert_aggregated_data(find_query, aggr_data)
+	aggregated_data_values.append(aggr_data)
 
-def upsert_aggregated_data(find_query, doc):
+def insert_aggregated_data(docs):
 	"""
 	Insert the data into historical mongodb
 	"""
@@ -171,7 +177,7 @@ def upsert_aggregated_data(find_query, doc):
 		#	db.interface_perf_daily.update(find_query, doc,upsert=True)
 		#elif hist_perf_table == 'inventory_perf_weekly':
 		#	db.inventory_perf_weekly.update(find_query, doc,upsert=True)
-		db[hist_perf_table].update(find_query, doc, upsert=True)
+		db[hist_perf_table].insert(docs)
 
 def find_existing_entry(find_query):
 	"""
@@ -180,22 +186,24 @@ def find_existing_entry(find_query):
 
 	docs = []
         # Mongodb connection object
-       	db = mongo_module.mongo_conn(
-		host=mongo_configs.get('host'),
-			port=mongo_configs.get('port'),
-			db_name=mongo_configs.get('db_name')
-			)
-	if db:
-		#if hist_perf_table == 'interface_perf_daily':
-		#	cur = db.interface_perf_daily.find(find_query)
-		#elif hist_perf_table == 'inventory_perf_weekly':
-		#	cur = db.inventory_perf_weekly.find(find_query)
-		cur = db[hist_perf_table].find(find_query)
-	for doc in cur:
-		docs.append(doc)
+       	#db = mongo_module.mongo_conn(
+	#	host=mongo_configs.get('host'),
+	#		port=mongo_configs.get('port'),
+	#		db_name=mongo_configs.get('db_name')
+	#		)
+	#if db:
+	#	#if hist_perf_table == 'interface_perf_daily':
+	#	#	cur = db.interface_perf_daily.find(find_query)
+	#	#elif hist_perf_table == 'inventory_perf_weekly':
+	#	#	cur = db.inventory_perf_weekly.find(find_query)
+	#	cur = db[hist_perf_table].find(find_query)
+	#for doc in cur:
+	#	docs.append(doc)
+	docs = filter(lambda d: set(find_query.values()) <= set(d.keys()), aggregated_data_values)
 
 	return docs
 
 
 if __name__ == '__main__':
 	main()
+	insert_aggregated_data(aggregated_data_values)
