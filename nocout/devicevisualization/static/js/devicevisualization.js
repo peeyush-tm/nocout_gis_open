@@ -29,7 +29,7 @@ if(!$.cookie("freezedAt")) {
 
 /*Save cookie value to variable*/
 isFreeze = $.cookie("isFreezeSelected");
-freezedAt = $.cookie("freezedAt");
+freezedAt = $.cookie("freezedAt") ? $.cookie("freezedAt") : 0;
 tools_ruler = $.cookie("tools_ruler");        
 tools_line = $.cookie("tools_line");
 

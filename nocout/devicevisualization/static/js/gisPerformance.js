@@ -138,14 +138,15 @@ function GisPerformance() {
             type: 'GET',
             dataType: 'json',
             //In success
-            success: function (data) {
+            success: function (result) {
+                var data = result[0];
                 //If data is there
                 if(data){
                     //Store data in gisData
                     gisPerformance_this.gisData = data.length ? data[0] : data;
-                    var current_bs_list = getMarkerInCurrentBound();
+                    var current_bs_in_bound = getMarkerInCurrentBound();
                     /*Check that the bsname is present in current bounds or not*/
-                    if (current_bs_list.indexOf(data.bs_id) >= 0) {
+                    if (current_bs_in_bound.indexOf(data.bs_id) > -1) {
                         //Update Map with the data
                         gisPerformance_this.updateMap();
                     }
@@ -258,8 +259,10 @@ function GisPerformance() {
 
         for(var i=0;i<connected_sectors.length;i++) {
             for(var j=0;j<sectorArray.length;j++) {
-                if((connected_sectors[i].device_name === sectorArray[j].sector_configured_on_device) && (connected_sectors[i].sector_configured_on === sectorArray[j].ip_address)) {
-                    bs_object.data.param.sector[i].sub_station = sectorArray[j].sub_station;
+                if(sectorArray[j].sub_station && sectorArray[j].sub_station.length > 0) {
+                    if((connected_sectors[i].device_name === sectorArray[j].sector_configured_on_device) && (connected_sectors[i].sector_configured_on === sectorArray[j].ip_address)) {
+                        bs_object.data.param.sector[i].sub_station = sectorArray[j].sub_station;
+                    }
                 }
             }
         }
@@ -360,58 +363,62 @@ function GisPerformance() {
 
             }
 
-            // If sub-station exist the remove old sub-station markers from google map.
-            var ss_marker_obj = allMarkersObject_gmap['sub_station'],
-                removed_key = [],
-                ss_name_array = [];
-            for(key in ss_marker_obj) {
-                var current_old_ss = ss_marker_obj[key],
-                    condition1 = current_old_ss.filter_data.bs_id === gisData.bs_id,
-                    condition2 = current_old_ss.filter_data.sector_name === sector_ip,
-                    condition3 = current_old_ss.filter_data.sector_id === sector_id;
+            // If any ss exist in response then clear old ss from map
+            if(sub_station.length > 0) {
 
-                if(condition1 && condition2 && condition3) {
-                    // Remove from google map
-                    current_old_ss.setMap(null);
-                    removed_key.push(key);
-                    ss_name_array.push(current_old_ss.name);
-                }
-            }
+                // If sub-station exist the remove old sub-station markers from google map.
+                var ss_marker_obj = allMarkersObject_gmap['sub_station'],
+                    removed_key = [],
+                    ss_name_array = [];
+                for(key in ss_marker_obj) {
+                    var current_old_ss = ss_marker_obj[key],
+                        condition1 = current_old_ss.filter_data.bs_id === gisData.bs_id,
+                        condition2 = current_old_ss.filter_data.sector_name === sector_ip,
+                        condition3 = current_old_ss.filter_data.sector_id === sector_id;
 
-            for(var x=0;x<removed_key.length;x++) {
-                delete allMarkersObject_gmap['sub_station'][removed_key[x]];
-
-                // Remove Line from map & array
-                if(allMarkersObject_gmap['path']['line_'+ss_name_array[x]]) {
-                    allMarkersObject_gmap['path']['line_'+ss_name_array[x]].setMap(null);
+                    if(condition1 && condition2 && condition3) {
+                        // Remove from google map
+                        current_old_ss.setMap(null);
+                        removed_key.push(key);
+                        ss_name_array.push(current_old_ss.name);
+                    }
                 }
 
-                delete allMarkersObject_gmap['path']['line_'+ss_name_array[x]];
-            }
+                for(var x=0;x<removed_key.length;x++) {
+                    delete allMarkersObject_gmap['sub_station'][removed_key[x]];
 
-            // Get ss markers from all markers array
-            var splice_index = [];
-            for(var x=0;x<allMarkersArray_gmap.length;x++){
-                var condition1 = allMarkersArray_gmap[x].pointType === 'sub_station' || allMarkersArray_gmap[x].pointType === 'path',
-                    condition2 = allMarkersArray_gmap[x].filter_data.bs_id === gisData.bs_id,
-                    condition3 = allMarkersArray_gmap[x].filter_data.sector_name === sector_ip,
-                    condition4 = allMarkersArray_gmap[x].filter_data.sector_id === sector_id;
-                if(condition1 && condition2 && condition3 && condition4) {
-                    splice_index.push(x);
+                    // Remove Line from map & array
+                    if(allMarkersObject_gmap['path']['line_'+ss_name_array[x]]) {
+                        allMarkersObject_gmap['path']['line_'+ss_name_array[x]].setMap(null);
+                    }
+
+                    delete allMarkersObject_gmap['path']['line_'+ss_name_array[x]];
                 }
-            }
 
-            // Remove ss marker from all markers array
-            for(var y=0;y<splice_index.length;y++) {
-                allMarkersArray_gmap.splice(splice_index[i],1);
-            }
+                // Get ss markers from all markers array
+                var splice_index = [];
+                for(var x=0;x<allMarkersArray_gmap.length;x++){
+                    var condition1 = allMarkersArray_gmap[x].pointType === 'sub_station' || allMarkersArray_gmap[x].pointType === 'path',
+                        condition2 = allMarkersArray_gmap[x].filter_data.bs_id === gisData.bs_id,
+                        condition3 = allMarkersArray_gmap[x].filter_data.sector_name === sector_ip,
+                        condition4 = allMarkersArray_gmap[x].filter_data.sector_id === sector_id;
+                    if(condition1 && condition2 && condition3 && condition4) {
+                        splice_index.push(x);
+                    }
+                }
 
-            // Update Marker cluster
-            var bs_markers_array = Object.keys(allMarkersObject_gmap['base_station']).map(function(k) { return allMarkersObject_gmap['base_station'][k] });
-            var ss_markers_array = Object.keys(allMarkersObject_gmap['sub_station']).map(function(k) { return allMarkersObject_gmap['sub_station'][k] });
-            masterClusterInstance.clearMarkers();
-            masterClusterInstance.addMarkers(bs_markers_array);
-            masterClusterInstance.addMarkers(ss_markers_array);
+                // Remove ss marker from all markers array
+                for(var y=0;y<splice_index.length;y++) {
+                    allMarkersArray_gmap.splice(splice_index[i],1);
+                }
+
+                // Update Marker cluster
+                var bs_markers_array = Object.keys(allMarkersObject_gmap['base_station']).map(function(k) { return allMarkersObject_gmap['base_station'][k] });
+                var ss_markers_array = Object.keys(allMarkersObject_gmap['sub_station']).map(function(k) { return allMarkersObject_gmap['sub_station'][k] });
+                masterClusterInstance.clearMarkers();
+                masterClusterInstance.addMarkers(bs_markers_array);
+                masterClusterInstance.addMarkers(ss_markers_array);
+            }
 
 
             // Loop to plot new sub-stations
