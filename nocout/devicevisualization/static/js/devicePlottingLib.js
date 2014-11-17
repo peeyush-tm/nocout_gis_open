@@ -648,7 +648,13 @@ function devicePlottingClass_gmap() {
 	            	},500);
 
 	            } else if(mapInstance.getZoom() <= 7) {
-					
+	            	
+					// Clear performance calling timeout
+					if(recallPerf != "") {
+            			clearTimeout(recallPerf);
+            			recallPerf = "";
+            		}
+
 					/*Loop to hide Marker Labels*/
         			for (var x = 0; x < labelsArray.length; x++) {
                         var move_listener_obj = labelsArray[x].moveListener_;
@@ -3753,7 +3759,11 @@ function devicePlottingClass_gmap() {
     		} else if($.trim(mapPageType) == "white_background") {
     			gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
 			} else {
-				gmap_self.updateStateCounter_gmaps(appliedFilterObj_gmaps);
+				// if(mapInstance.getZoom() < 7) {
+					gmap_self.updateStateCounter_gmaps(appliedFilterObj_gmaps);
+				// } else {
+				// 	gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
+				// }
 			}
         }
         /*If no filter is applied the load all the devices*/
