@@ -193,7 +193,8 @@ INSTALLED_APPS = (
     'corsheaders',
     'activity_stream',
     'jsonify',
-    'djcelery'
+    'djcelery',
+    'rest_framework',
 )
 
 CACHES = {
