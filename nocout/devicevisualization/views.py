@@ -1717,42 +1717,42 @@ class GISPerfData(View):
             # circuit id
             circuit_id = ""
             try:
-                circuit_id = substation.ss_circuit.all()[0].circuit_id
+                circuit_id = substation.circuit_set.all()[0].circuit_id
             except Exception as e:
                 logger.info("Circuit ID not exist. Exception: ", e.message)
 
             # qos bandwidth
             qos = ""
             try:
-                qos = substation.ss_circuit.all()[0].qos_bandwidth
+                qos = substation.circuit_set.all()[0].qos_bandwidth
             except Exception as e:
                 logger.info("QOS not exist. Exception: ", e.message)
 
             # customer address
             customer_address = ""
             try:
-                customer_address = substation.ss_circuit.all()[0].customer.address
+                customer_address = substation.circuit_set.all()[0].customer.address
             except Exception as e:
                 logger.info("Customer Address not exist. Exception: ", e.message)
 
             # date of acceptance
             date_of_acceptance = ""
             try:
-                date_of_acceptance = substation.ss_circuit.all()[0].date_of_acceptance
+                date_of_acceptance = substation.circuit_set.all()[0].date_of_acceptance
             except Exception as e:
                 logger.info("Date Of Acceptance not exist. Exception: ", e.message)
 
             # dl rssi during acceptance
             dl_rssi_during_acceptance = ""
             try:
-                dl_rssi_during_acceptance = substation.ss_circuit.all()[0].dl_rssi_during_acceptance
+                dl_rssi_during_acceptance = substation.circuit_set.all()[0].dl_rssi_during_acceptance
             except Exception as e:
                 logger.info("DL RSSI During Acceptance not exist. Exception: ", e.message)
 
             # ss sector frequency
             ss_sector_frequency = ""
             try:
-                ss_sector_frequency = substation.ss_circuit.all()[0].sector.frequency.value
+                ss_sector_frequency = substation.circuit_set.all()[0].sector.frequency.value
             except Exception as e:
                 logger.info("SS Sector Frequency not exist. Exception: ", e.message)
 

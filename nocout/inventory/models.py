@@ -223,7 +223,7 @@ class Circuit(models.Model):
     circuit_id = models.CharField('Circuit ID', max_length=250, null=True, blank=True)
     sector = models.ForeignKey(Sector, null=True, blank=True)
     customer = models.ForeignKey(Customer, null=True, blank=True)
-    sub_station = models.ForeignKey(SubStation, null=True, blank=True, related_name='ss_circuit')
+    sub_station = models.ForeignKey(SubStation, null=True, blank=True)
     qos_bandwidth = models.FloatField('QOS(BW)', null=True, blank=True, help_text='(kbps) Enter a number.')
     dl_rssi_during_acceptance = models.CharField('RSSI During Acceptance', max_length=100, null=True, blank=True)
     dl_cinr_during_acceptance = models.CharField('CINR During Acceptance', max_length=100, null=True, blank=True)
