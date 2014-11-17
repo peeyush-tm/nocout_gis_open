@@ -5,6 +5,7 @@ var earth_self = "",
 	tech_vendor_obj = {},
 	all_vendor_array = [],
 	isFirstTime = 1,
+	current_zoom = "",
 	ge = "",
 	plotted_bs_earth = [],
 	plotted_sector_earth = [],
@@ -134,13 +135,15 @@ function googleEarthClass() {
 		ge.getLayerRoot().enableLayerById(ge.LAYER_ROADS, true);
 
 
-		google.earth.addEventListener(ge.getView(), 'viewchangeend', function(){
+		google.earth.addEventListener(ge.getView(), 'viewchange', function(){
 			if(timer){
 				clearTimeout(timer);
 			}
 			function eventHandler() {
+				
 				// get the globe bounds (method 1)
-				var globeBounds = ge.getView().getViewportGlobeBounds();
+				var globeBounds = ge.getView().getViewportGlobeBounds(),
+					zoom_check = current_zoom ? current_zoom :400000;
 
 				if (globeBounds) {
 					var poly = [
@@ -152,11 +155,13 @@ function googleEarthClass() {
 					var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 
 					if(lookAt.getRange() <= 600540) {
-						if(lookAt.getRange() >= 300540 && lookAt.getRange() <= 600540) {
+						if(Math.floor(lookAt.getRange()/100000) === 4) {
 						
 							var states_with_bounds = state_lat_lon_db.where(function(obj) {
 								return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
 							});
+
+							console.log(states_with_bounds);
 
 							var states_array = [];
 
@@ -243,6 +248,8 @@ function googleEarthClass() {
 									
 									var inBoundData = earth_self.getNewBoundsDevices();
 
+									console.log(data_to_plot);
+									console.log(inBoundData);
 									currentlyPlottedDevices = inBoundData;
 									// Call function to plot devices on gmap
 									earth_self.plotDevices_earth(inBoundData,"base_station");
@@ -250,7 +257,7 @@ function googleEarthClass() {
 
 			            		// Show points line if exist
 			            		for(key in line_data_obj) {
-			            			line_data_obj[key].setMap(mapInstance);
+			            			line_data_obj[key].setVisibility(true);
 			            		}
 							}
 						} else {
@@ -345,7 +352,7 @@ function googleEarthClass() {
 		            lastZoomLevel = lookAt.getRange();
 				}
 			}
-			timer = setTimeout(eventHandler, 100);
+			timer = setTimeout(eventHandler, 200);
 		}
 		);
 
@@ -810,6 +817,19 @@ function googleEarthClass() {
 		}
 	};
 
+	/**
+	 * This function clear the state counter & labels
+	 * @method clearStateCounters
+	 */
+	this.clearStateCounters = function() {
+		for(key in state_wise_device_counters) {
+			state_wise_device_counters[key] = 0;
+			if(state_wise_device_labels[key]) {
+				state_wise_device_labels[key].setVisibility(false);
+			}
+		}
+	};
+
 
 	/**
 	 * This function trigger when state label is clicked & loads the state wise data.
@@ -835,8 +855,11 @@ function googleEarthClass() {
 
 				// Zoom out to 8times the current range.
 				lookAt.setRange(400000);		
+
 		
 				ge.getView().setAbstractView(lookAt);
+
+				current_zoom = lookAt.getRange();
 	
 				// Hide Clicked state Label
 				if(!(state_wise_device_labels[clicked_state].isHidden_)) {
@@ -878,7 +901,6 @@ function googleEarthClass() {
 				}
 			}
 		}
-		console.log(inBoundDevices);
 		// Return devices which are in current bounds
 		return inBoundDevices;
 	};
@@ -894,7 +916,7 @@ function googleEarthClass() {
 
 		for(var i=main_devices_data_earth.length;i--;) {
 			var current_device_set = main_devices_data_earth[i];
-			if(plottedBsIds.indexOf(current_device_set.id) === -1) {
+			// if(plottedBsIds.indexOf(current_device_set.id) === -1) {
 
 				var globeBounds = ge.getView().getViewportGlobeBounds();
 
@@ -909,12 +931,11 @@ function googleEarthClass() {
 					var isDeviceInBound =  isPointInPoly(poly, {lat: current_device_set.data.lat, lon: current_device_set.data.lon});
 					if(isDeviceInBound) {
 						newInBoundDevices.push(current_device_set);
-						plottedBsIds.push(current_device_set.id);
+						// plottedBsIds.push(current_device_set.id);
 					}
 				}
-			}
+			// }
 		}
-		console.log(newInBoundDevices);
 		// Return devices which are in current bounds
 		return newInBoundDevices;
 	};
@@ -1464,8 +1485,7 @@ function googleEarthClass() {
 		    	var ss_marker = allMarkersObject_earth['sub_station'][key],
 		    		isMarkerExist = isPointInPoly(earthBounds, {lat: ss_marker.ptLat, lon: ss_marker.ptLon});
 	    		if(isMarkerExist) {
-	    			console.log(ss_marker);
-			    	if(ss_marker.isActive && +(ss_marker.isActive) === 1) {
+	    			if(ss_marker.isActive && +(ss_marker.isActive) === 1) {
 			    		// If SS Marker not shown then show the SS Marker
 			    		if(!allMarkersObject_earth['sub_station'][key].map) {
 			      			allMarkersObject_earth['sub_station'][key].setVisibility(true);
@@ -1474,7 +1494,7 @@ function googleEarthClass() {
 			    	} else {
 			    		// If SS Marker shown then hide the SS Marker
 			    		if(allMarkersObject_earth['sub_station'][key].map) {
-			      			allMarkersObject_earth['sub_station'][key].setVisibility(null);
+			      			allMarkersObject_earth['sub_station'][key].setVisibility(false);
 			      			allMarkersObject_earth['sub_station'][key].map = '';
 		    			}
 			    	}
@@ -1556,8 +1576,7 @@ function googleEarthClass() {
 		    	var sector_polygon = allMarkersObject_earth['sector_polygon'][key],
 		    		isMarkerExist = isPointInPoly(earthBounds, {lat: sector_polygon.ptLat, lon: sector_polygon.ptLon});
 	    		if(isMarkerExist) {
-	    			console.log(isMarkerExist);
-			    	if(sector_polygon.isActive && +(sector_polygon.isActive) === 1) {
+	    			if(sector_polygon.isActive && +(sector_polygon.isActive) === 1) {
 			    		// If Polygon not shown then show the polygon
 			    		if(!allMarkersObject_earth['sector_polygon'][key].map) {
 

@@ -3756,7 +3756,8 @@ function devicePlottingClass_gmap() {
         if(filtersLength > 0) {
         	
         	if($.trim(mapPageType) == "googleEarth") {
-        		gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
+        		gmap_self.updateStateCounter_gmaps(appliedFilterObj_gmaps);
+        		// gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
     		} else if($.trim(mapPageType) == "white_background") {
     			gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
 			} else {
@@ -3843,7 +3844,11 @@ function devicePlottingClass_gmap() {
 	this.updateStateCounter_gmaps = function(filterObj) {
 
 		/*Clear Existing Labels & Reset Counters*/
-		gmap_self.clearStateCounters();
+		if(window.location.pathname.indexOf("googleEarth") > -1) {
+			earth_self.clearStateCounters();
+		} else {
+			gmap_self.clearStateCounters();
+		}
 
 		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
 			vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
@@ -3871,12 +3876,29 @@ function devicePlottingClass_gmap() {
     	}
 
 		if(data_to_plot.length > 0) {
-			data_for_filters = data_to_plot;
-			isCallCompleted = 1;
-			mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
-			mapInstance.setZoom(5);
-			isApiResponse = 0;
-			gmap_self.showStateWiseData_gmap(data_to_plot);
+			if(window.location.pathname.indexOf("googleEarth") > -1) {
+				data_for_filters_earth = data_to_plot;
+				isCallCompleted = 1;
+				/*Set current position of google earth to india*/
+				var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+				lookAt.setLatitude(21.0000);
+				lookAt.setLongitude(78.0000);
+				// lookAt.setZoom
+				// Update the view in Google Earth 
+				ge.getView().setAbstractView(lookAt); 
+
+				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+				// mapInstance.setZoom(5);
+				isApiResponse = 0;
+				earth_self.showStateWiseData_gmap(data_to_plot);
+			} else {
+				data_for_filters = data_to_plot;
+				isCallCompleted = 1;
+				mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+				mapInstance.setZoom(5);
+				isApiResponse = 0;
+				gmap_self.showStateWiseData_gmap(data_to_plot);
+			}
 		} else {
 			$.gritter.add({
         		// (string | mandatory) the heading of the notification
