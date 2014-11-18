@@ -823,13 +823,15 @@ function removetoolsPanel() {
 }
 
 $("#ruler_select").click(function(e) {
-    pointAdded= -1;
-    is_ruler_active= 1;
-    is_line_active= -1;
 
     google.maps.event.clearListeners(mapInstance, 'click');
 
     networkMapInstance.clearRulerTool_gmap();
+
+    // Set/Reset variables
+    pointAdded= -1;
+    is_ruler_active= 1;
+    is_line_active= -1;
 
     $(this).addClass("hide");
     $("#ruler_remove").removeClass("hide");

@@ -90,6 +90,7 @@ var is_line_active = 0,
 	tools_rule_array = [],
 	isCreated = 0,
 	ruler_pt_count = 0,
+	temp_line = "",
 	distance_label = {},
     map_points_array = [],
     map_points_lat_lng_array= [],
@@ -724,6 +725,31 @@ function devicePlottingClass_gmap() {
 	            // Save last Zoom Value
 	            lastZoomLevel = mapInstance.getZoom();
             });
+
+	        google.maps.event.addListener(mapInstance,'mousemove',function(e) {
+
+	        	if(is_ruler_active === 1) {
+					if(ruler_pt_count == 1) {
+						if(!temp_line) {
+							var line_path = [
+								ruler_array[0].getPosition(),
+								e.latLng,
+							];
+							temp_line = new google.maps.Polyline({
+								path : line_path,
+								clickable : false,
+								map : mapInstance
+							});
+						} else {
+							var line_path = [
+								ruler_array[0].getPosition(),
+								e.latLng,
+							];
+							temp_line.setPath(line_path);
+						}	
+					}
+	        	}
+	    	});
 
 			/*Search text box object*/
 			var searchTxt = document.getElementById('google_loc_search');
@@ -4838,7 +4864,7 @@ function devicePlottingClass_gmap() {
     /*
     Here we clear All The Variables and Point related to Rulers in tools
      */
-    this.clearRulerTool_gmap= function() {
+    this.clearRulerTool_gmap = function() {
 
     	//Remove Ruler markers
     	for(var i=0;i<ruler_array.length;i++) {
@@ -4913,6 +4939,8 @@ function devicePlottingClass_gmap() {
        
         //first clear the click listners. point tool might be in use
         google.maps.event.clearListeners(mapInstance,'click');
+        
+        //Set the cursor to pointer(Arrow)
         mapInstance.setOptions({'draggableCursor' : 'default'});
 
 		google.maps.event.addListener(mapInstance,'click',function(e) {
@@ -4921,6 +4949,8 @@ function devicePlottingClass_gmap() {
 				gmap_self.clearRulerTool_gmap();
 				return ;
 			}
+			
+			is_ruler_active = 1;
 
 			ruler_point = new google.maps.Marker({position: e.latLng, map: mapInstance});
 			ruler_array.push(ruler_point);
@@ -4944,6 +4974,14 @@ function devicePlottingClass_gmap() {
 				var ruler_line = gmap_self.createLink_gmaps(latLonObj);
 				/*Show Line on Map*/
 				ruler_line.setMap(mapInstance);
+
+				// Remove mousemove listener
+				// google.maps.event.clearListeners(mapInstance,'mousemove');
+
+				if(temp_line) {
+					temp_line.setMap(null);
+					temp_line = "";
+				}
 				
 				tools_rule_array.push(ruler_line);
 
