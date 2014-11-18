@@ -1,10 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Settings</li>
-    <li>Threshold Configuration</li>
-    <li>New</li>
-{% endblock %}
+
 {% block css %}
 	<!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
@@ -99,7 +95,7 @@
                 if((startingValue=== 0 || startingValue) && (endValue===0 || endValue)) {
                     if(startingValue > endValue) {
                         range_bug_array.push(i);
-                        
+
                         if(bugs_array.indexOf("range_bug_array") == -1) {
                             bugs_array.push("range_bug_array");
                         }
@@ -116,21 +112,21 @@
                                         if(bugs_array.indexOf("overlapping_bug_array") == -1) {
                                             bugs_array.push("overlapping_bug_array");
                                         }
-                                    }                                
+                                    }
                                 }
                             }
                         }
                     }
 
                 } else if((startingValue===0 || startingValue) && !endValue) {
-                    
+
                     empty_end_array.push(i);
                     if(bugs_array.indexOf("empty_end_array") == -1) {
                         bugs_array.push("empty_end_array");
                     }
 
                 } else if(!startingValue && (endValue===0 || endValue)) {
-                    
+
                     empty_start_array.push(i);
                     if(bugs_array.indexOf("empty_start_array") == -1) {
                         bugs_array.push("empty_start_array");

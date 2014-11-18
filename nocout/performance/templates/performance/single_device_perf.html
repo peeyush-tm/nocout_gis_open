@@ -1,8 +1,5 @@
 {% extends "nocout/base.html" %}
-{% block breadcrumb_title %}
-    <li>Performance Reports</li>
-    <li>{{ page_title }} Live</li>
-{% endblock %}
+
 {% block content_title %} {{ page_title }} Live{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
@@ -54,7 +51,7 @@
                         <div class="btn-group dropdown col-xs-1">
                             <button id="apply_filter" class="btn  btn-default btn-sm">
                                 Apply Filter
-                            </button>                            
+                            </button>
                         </div>
                     </li>
                     <li>
@@ -64,7 +61,7 @@
                             </button>
                         </div>
                     </li>
-                    
+
                     <li>
                         <!--CSV or Excel download action. -->
                         <div class="btn-group dropdown col-xs-1">
@@ -109,7 +106,7 @@
             <!--Device Status Block Start-->
             <!-- <button class="btn btn-info btn-xs" title="Hide Status" id="show_status_btn">Hide Status</button>
             <div class="clearfix"></div> -->
-            <!--Device Status Block End-->            
+            <!--Device Status Block End-->
             <div class="box">
                 <div class="box-title" style="background:transparent;"></div>
                 <!--Services Tabs & their content Start-->
@@ -258,7 +255,7 @@
 {#                                                {% endif %} -->#}
                                             </tbody>
                                         </table>
-                                        
+
                                     </div>
                                 </div>
                             </div>
@@ -329,7 +326,7 @@
                                                 {% endif %}
                                             </tbody>
                                         </table>
-                                        
+
                                     </div>
                                 </div>
                             </div>
@@ -363,7 +360,7 @@
         // if (window.location.protocol == "https:") {
         //     if(window.location.origin) {
         //         window.location.origin = "https:" + window.location.origin.substring(window.location.protocol.length);
-        //     }            
+        //     }
         // }
 
 
@@ -467,7 +464,7 @@
                     var myStartDate = startDate.toDate(), myEndDate = endDate.toDate();
                     var myStartTime = myStartDate.getTime()/1000.0;
                     var myEndTime = myEndDate.getTime()/1000.0;
-                    
+
                     window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent(myStartTime)
                             + '&end_date=' + encodeURIComponent(myEndTime);
 
@@ -486,7 +483,7 @@
             });
 
             $("#download_excel").on('click', function () {
-                
+
                 //get start date and end date from params
                 var start_date = $.urlParam('start_date');
                 var end_date = $.urlParam('end_date');
@@ -535,7 +532,7 @@
                 var end_date = $.urlParam('end_date');
 
                 if(!($("#sia").parent().hasClass("active")) && !($("#errors").parent().hasClass("active"))) {
-                    
+
                     var service_name = window.location.href.split('#')[1];
                     var service_data_source = window.location.href.split('#')[2];
 
@@ -652,7 +649,7 @@
                 var activeTabId = $.cookie('activeTabId');
                 //if activeTabId is stored in cookie and tabEL exist.
                 if(activeTabId && $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#"+activeTabId).length) {
-                    $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#"+activeTabId).trigger('click');    
+                    $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#"+activeTabId).trigger('click');
                 } else {
                     $("#" + tab_id + " .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
                 }
@@ -699,7 +696,7 @@
 
             $('#reservationtime').daterangepicker(
                 {
-                    timePicker: true, timePickerIncrement: 60, 
+                    timePicker: true, timePickerIncrement: 60,
                     // format: 'd/m/Y H:M:S' ,
                     opens: "left",
                     showDropdowns: true,
@@ -724,9 +721,9 @@
                     endDate = end;
                 }
             );
-            
+
             if($.urlParam('start_date') && $.urlParam('end_date')) {
-                $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss")); 
+                $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss"));
                 startDate = moment(oldStartDate);
                 endDate = moment(oldENdData);
             }

@@ -7,10 +7,10 @@ from django.views.decorators.cache import cache_page
 
 urlpatterns = patterns('',
   url(r'^$', views.DeviceList.as_view(), name='device_list'),
-  url(r'^(?P<pk>\d+)$', views.DeviceDetail.as_view(), name='device_detail'),
+  url(r'^(?P<pk>\d+)/$', views.DeviceDetail.as_view(), name='device_detail'),
   url(r'^new/$', views.DeviceCreate.as_view(), name='device_new'),
-  url(r'^edit/(?P<pk>\d+)$', views.DeviceUpdate.as_view(), name='device_edit'),
-  url(r'^delete/(?P<pk>\d+)$', views.DeviceDelete.as_view(), name='device_delete'),
+  url(r'^(?P<pk>\d+)/edit/$', views.DeviceUpdate.as_view(), name='device_edit'),
+  url(r'^(?P<pk>\d+)/delete/$', views.DeviceDelete.as_view(), name='device_delete'),
 
   # url(r'^stats/$', cache_page(60 * 60)(api.DeviceStatsApi.as_view())),
   url(r'^stats/$', api.DeviceStatsApi.as_view()),

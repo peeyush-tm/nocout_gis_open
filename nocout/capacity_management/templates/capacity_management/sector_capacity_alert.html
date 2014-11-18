@@ -1,8 +1,9 @@
 {% extends "nocout/base.html" %}
 {% block breadcrumb_title %}
-    <li>Capacity Management</li>
-    <li>Daily Alerts</li>
-    <li>Sector Augumentation</li>
+    <a href="/home">Home</a> >
+    <li><a href="#">Capacity Management</a></li>
+    <li><a href="#">Daily Alerts</a></li>
+    <li><b>Sector Augmentation</b></li>
 {% endblock %}
 {% block content_title %}Sector Augmentation{% endblock %}
 {% block content_description %} Sector Augmentation List {% endblock %}
@@ -54,7 +55,7 @@
 <script type="text/javascript">
     /*This is a temporary code which is replace when data for data table is provided*/
     $(".datatable").DataTable();
-    
+
     function nw_alert_showFilters() {
 
         if($("#removeNwDetailFilterBtn").hasClass("hide")) {
@@ -77,12 +78,12 @@
                     label: "Cancel",
                     className: "btn-danger",
                     callback: function() {
-                        
+
                     }
-                }            
+                }
             }
         });
-                
+
     }
 
     function nw_alert_removeFilters() {
