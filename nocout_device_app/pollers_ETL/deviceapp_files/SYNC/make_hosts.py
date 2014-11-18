@@ -1,4 +1,3 @@
-from wato import defaults
 from mysql_connection import mysql_conn
 from pprint import pformat
 import time
@@ -76,7 +75,7 @@ def make_BS_data():
 
 def write_data():
 	tstmp = int(time.time())
-	with open('/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk_' % defaults.omd_site + str(tstmp), 'w') as f:
+	with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk_' + str(tstmp), 'w') as f:
 		f.write("# encoding: utf-8\n\n")
 		f.write("\nhost_contactgroups += []\n\n\n")
 		f.write("all_hosts += %s\n" % pformat(all_hosts))
