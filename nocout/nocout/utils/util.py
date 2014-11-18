@@ -106,7 +106,7 @@ def format_value(format_this, type_of=None):
         elif type_of == 'mac':
             return format_this.upper() if format_this else 'NA'
     except:
-        pass
+        return 'NA'
     return 'NA'
 
 ###caching
