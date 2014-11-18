@@ -621,6 +621,17 @@ class AlertListingTable(BaseDatatableView):
     order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                      'current_value', 'max_value', 'sys_timestamp', 'description']
 
+    polled_columns = ["id",
+                      "ip_address",
+                      "data_source",
+                      "device_name",
+                      "severity",
+                      "current_value",
+                      "max_value",
+                      "sys_timestamp",
+                      "age"
+                      # "description"
+    ]
 
     def get_initial_queryset(self):
         """
@@ -662,17 +673,7 @@ class AlertListingTable(BaseDatatableView):
             extra_query_condition = ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
             search_table = "performance_servicestatus"
 
-        required_data_columns = ["id",
-                                 "ip_address",
-                                 "data_source",
-                                 "device_name",
-                                 "severity",
-                                 "current_value",
-                                 "max_value",
-                                 "sys_timestamp",
-                                 "age"
-                                 # "description"
-        ]
+        required_data_columns = self.polled_columns
 
         sorted_device_list = list()
 
@@ -694,7 +695,7 @@ class AlertListingTable(BaseDatatableView):
 
 
             device_list = prepare_raw_alert_results(device_list,performance_data)
-            print(device_list)
+            
             # sorted_device_list += sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
             sorted_device_list += device_list
 
