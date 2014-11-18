@@ -11,7 +11,7 @@ from device.models import Device, City, State, DeviceTechnology, DeviceType
 from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 from performance.views import ptp_device_circuit_backhaul, organization_customer_devices, \
-    organization_network_devices, organization_backhaul_devices, indexed_gis_devices
+    organization_network_devices, organization_backhaul_devices, indexed_gis_devices, combined_indexed_gis_devices
 from django.utils.dateformat import format
 from django.db.models import Q
 
@@ -1315,9 +1315,12 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
     :return:
     """
 
-    indexed_sector = indexed_gis_devices("SECTOR_CONF_ON_NAME")
-    indexed_ss = indexed_gis_devices("SSDEVICENAME")
-    indexed_bh = indexed_gis_devices("BHCONF")
+    # indexed_sector = indexed_gis_devices("SECTOR_CONF_ON_NAME")
+    # indexed_ss = indexed_gis_devices("SSDEVICENAME")
+    # indexed_bh = indexed_gis_devices("BHCONF")
+
+    indexed_sector, indexed_ss, indexed_bh = \
+        combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'})
 
     processed_device = {}
 
