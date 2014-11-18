@@ -1997,6 +1997,23 @@ var state_wise_device_label_text= {};
 	 	}	
 	};
 
+	this.pointToLatLon = function(lat_lon_str) {
+		
+		var lat = +lat_lon_str.split(",")[0],
+			lng = +lat_lon_str.split(",")[1];
+
+		// Create a new LookAt.
+		var lookAt = ge.createLookAt('');
+
+		// Set the position values.
+		lookAt.setLatitude(lat);
+		lookAt.setLongitude(lng);
+		lookAt.setRange(85000.0); //default is 0.0
+
+		// Update the view in Google Earth.
+		ge.getView().setAbstractView(lookAt);
+	};
+
 	/**
      * This function resets the global variables & again call the api calling function after given timeout i.e. 5 minutes
      * @method recallServer_earth

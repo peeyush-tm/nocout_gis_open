@@ -613,6 +613,8 @@ function isLatLon(e) {
                     if((lat_check && lon_check)) {
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             whiteMapClass.zoomToLonLat(entered_txt);
+                        } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                            earth_instance.pointToLatLon(entered_txt);
                         } else {
                             networkMapInstance.pointToLatLon(entered_txt);
                         }
@@ -622,6 +624,8 @@ function isLatLon(e) {
                         
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             whiteMapClass.zoomToLonLat(entered_txt);
+                        } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                            earth_instance.pointToLatLon(entered_txt);
                         } else {
                             networkMapInstance.pointToLatLon(entered_txt);
                         }
