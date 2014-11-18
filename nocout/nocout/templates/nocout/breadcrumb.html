@@ -1,75 +1,79 @@
 <script>
-    jQuery(document).ready(function () {
+    // $(document).ready(function () {
 
-        var wrkLocation = location.href;
-        var wrkLength = wrkLocation.indexOf("#");  // Find the begining of any anchor reference
-        if (wrkLength != -1) {
-            wrkLocation = wrkLocation.substr(0,wrkLength);  // Remove the anchor reference
-        }
-        var wrkLength = wrkLocation.indexOf("?");  // Find the begining of the query string
-        if (wrkLength != -1) {
-            wrkLocation = wrkLocation.substr(0,wrkLength);  // Remove the query string
-        }
-        wrkLocation = unescape(wrkLocation);
+    //     var wrkLocation = location.href;
+    //     var wrkLength = wrkLocation.indexOf("#");  // Find the begining of any anchor reference
+    //     if (wrkLength != -1) {
+    //         wrkLocation = wrkLocation.substr(0,wrkLength);  // Remove the anchor reference
+    //     }
+    //     var wrkLength = wrkLocation.indexOf("?");  // Find the begining of the query string
+    //     if (wrkLength != -1) {
+    //         wrkLocation = wrkLocation.substr(0,wrkLength);  // Remove the query string
+    //     }
+    //     wrkLocation = decodeURI(wrkLocation);
 
-        //var re = /<\S[^>]*>/g; // Remove html tags from a string
-        var re = /<.*/g; // remove < and anything after
-        wrkLocation = wrkLocation.replace(re, "");
+    //     //var re = /<\S[^>]*>/g; // Remove html tags from a string
+    //     var re = /<.*/g; // remove < and anything after
+    //     wrkLocation = wrkLocation.replace(re, "");
 
-        //to use if there is tabination in page
-        var current_page_url = wrkLocation;
+    //     //to use if there is tabination in page
+    //     var current_page_url = wrkLocation;
 
-        var arrURL = wrkLocation.split("/"); // Array containing the current location, split at the slashes
+    //     var arrURL = wrkLocation.split("/"); // Array containing the current location, split at the slashes
+    //     var output = "";
+        
+    //     // Do not show "Home" link only in "Home or Dashboard" page
+    //     if(arrURL.indexOf('home') == -1) {
+    //         output = '<li class="toUpper"><a href="/home/">Home</a></li>'; // The string which will be output to the browser, starts with a link to the home page
+    //     }
 
-        var output = '<li class="toUpper"><a href="/home/">Home</a></li>'; // The string which will be output to the browser, starts with a link to the home page
+    //     // To get the location from the side-menu bar
+    //     if ($('.sidebar-menu .current').parents('.has-sub').length ){
+    //         var has_sub = $('.sidebar-menu .current').parents('.has-sub').find('.menu-text').text()
+    //         output += ' <li class="toUpper"> <a href="#">'+ has_sub +'</a></li>';
+    //         if ($('.sidebar-menu .current').parents('.has-sub-sub').length ){
+    //             var has_sub_sub = $('.sidebar-menu .current').parents('.has-sub-sub').find('a[href="javascript:;"]')
+    //             if (has_sub_sub.length > 1){
+    //                 has_sub_sub = has_sub_sub.children().first().text()
+    //             }
+    //             else{
+    //                 has_sub_sub = has_sub_sub.find('.sub-menu-text').text()
+    //             }
+    //             output += '<li class="toUpper"> <a href="#">'+ has_sub_sub +'</li>';
+    //         }
+    //     }
 
-        // To get the location from the side-menu bar
-        if ($('.sidebar-menu .current').parents('.has-sub').length ){
-            var has_sub = $('.sidebar-menu .current').parents('.has-sub').find('.menu-text').text()
-            output += ' <li class="toUpper"> <a href="#">'+ has_sub +'</a></li>';
-            if ($('.sidebar-menu .current').parents('.has-sub-sub').length ){
-                var has_sub_sub = $('.sidebar-menu .current').parents('.has-sub-sub').find('a[href="javascript:;"]')
-                if (has_sub_sub.length > 1){
-                    has_sub_sub = has_sub_sub.children().first().text()
-                }
-                else{
-                    has_sub_sub = has_sub_sub.find('.sub-menu-text').text()
-                }
-                output += '<li class="toUpper"> <a href="#">'+ has_sub_sub +'</li>';
-            }
-        }
+    //     var path = '/'; // Link for the crumbs
 
-        var path = '/'; // Link for the crumbs
+    //     // If last item is blank or index.* or default.*, remove it
+    //     if (arrURL[arrURL.length-1] == '' || arrURL[arrURL.length-1].match(/^index\.|^default\./i) ) {
+    //         arrURL.length--;
+    //     }
 
-        // If last item is blank or index.* or default.*, remove it
-        if (arrURL[arrURL.length-1] == '' || arrURL[arrURL.length-1].match(/^index\.|^default\./i) ) {
-            arrURL.length--;
-        }
+    //     if (arrURL.length > 3) {
+    //         for (counter = 3;counter < arrURL.length-1;counter++) {  // Loop to display the links
+    //             path += arrURL[counter] + '/';  // always end links to folder with '/'
+    //             output += '<li class="toUpper"> <a href="' + path + '">' + (arrURL[counter].replace(/_/g,' ')) + '</a></li>';
+    //         }
 
-        if (arrURL.length > 3) {
-            for (counter = 3;counter < arrURL.length-1;counter++) {  // Loop to display the links
-                path += arrURL[counter] + '/';  // always end links to folder with '/'
-                output += '<li class="toUpper"> <a href="' + path + '">' + (arrURL[counter].replace(/_/g,' ')) + '</a></li>';
-            }
+    //         var current_page = (arrURL[arrURL.length-1].replace(/_/g,' ').replace(/\.\w{3,5}$/,''));
+    //         var tab = $('.nav li').filter('.active').find('.hidden-inline-mobile')
 
-            var current_page = (arrURL[arrURL.length-1].replace(/_/g,' ').replace(/\.\w{3,5}$/,''));
-            var tab = $('.nav li').filter('.active').find('.hidden-inline-mobile')
+    //         if (tab.length){
+    //             output += '<li class="toUpper"> <a href="'+ current_page_url +'">'+ current_page +'</a></li> ';
+    //             // Display the name of the current tab in bold
+    //             output += ' <li class="toUpper"> <strong><span id="nav_tab_name">' + tab.text() + '</span></li>';
+    //         }
+    //         else{
+    //             // Display the name of the current page in bold
+    //             output += ' <li class="toUpper"> <strong>' + current_page + '</strong></li>';
+    //         }
+    //         $(".breadcrumb").append(output)
+    //     }
 
-            if (tab.length){
-                output += '<li class="toUpper"> <a href="'+ current_page_url +'">'+ current_page +'</a></li> ';
-                // Display the name of the current tab in bold
-                output += ' <li class="toUpper"> <strong><span id="nav_tab_name">' + tab.text() + '</span></li>';
-            }
-            else{
-                // Display the name of the current page in bold
-                output += ' <li class="toUpper"> <strong>' + current_page + '</strong></li>';
-            }
-            $(".breadcrumb").append(output)
-        }
-
-        $(".nav-tabs li").click( function() {
-            $('#nav_tab_name').text($(this).text());
-        });
-    });
+    //     $(".nav-tabs li").click( function() {
+    //         $('#nav_tab_name').text($(this).text());
+    //     });
+    // });
 
 </script>
