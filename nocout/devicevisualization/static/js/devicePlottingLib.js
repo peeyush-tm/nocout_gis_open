@@ -3189,8 +3189,8 @@ function devicePlottingClass_gmap() {
         		var bs_technology_array = [];
         		var searchPattern = new RegExp('^' + query.term, 'i');
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var technologies = obj.sector_ss_technology;
-        			if(technologies.search(query.term) > -1) {
+        			var technologies = obj.sector_ss_technology.toLowerCase();
+        			if(technologies.search(query.term.toLowerCase()) > -1) {
 	        			return true;
         			} else {
         				return false;
@@ -3219,11 +3219,12 @@ function devicePlottingClass_gmap() {
         	minimumInputLength: 3,
         	query: function (query) {
         		var bs_vendor_array = [],
-        			searchPattern = new RegExp('^' + query.term, 'i');
+        			searchPattern = new RegExp('^' + query.term, 'i'),
+        			selected_technology = $("#filter_technology").select2("val");
 
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var vendors = obj.sector_ss_vendor;
-        			if(vendors.search(query.term) > -1) {
+        			var vendors = obj.sector_ss_vendor.toLowerCase();
+        			if(vendors.search(query.term.toLowerCase()) > -1) {
 	        			return true;
         			} else {
         				return false;
@@ -3233,14 +3234,17 @@ function devicePlottingClass_gmap() {
 		        var data = {results: []}, i, j, s;
 		        var limit = filtered_data.length <= 40 ? filtered_data.length : 40;
 		        for (i = 0; i < limit; i++) {
-		        	var vendor_list = filtered_data[i].sector_ss_vendor.split("|");
-        			for(var j=0;j<vendor_list.length;j++) {
-        				if(searchPattern.test(vendor_list[j])) {
-				        	if(bs_vendor_array.indexOf(vendor_list[j]) < 0) {
-				        		bs_vendor_array.push(vendor_list[j]);
-				            	data.results.push({id: vendor_list[j], text: vendor_list[j], value : vendor_list[j]});
+		        	var sectors = filtered_data[i].data.param.sector;
+        			for(var j=0;j<sectors.length;j++) {
+        				var condition = selected_technology.length > 0 ? selected_technology.indexOf(sectors[j].technology) > -1 : true;
+        				if(condition) {
+	        				if(searchPattern.test(sectors[j].vendor)) {
+					        	if(bs_vendor_array.indexOf(sectors[j].vendor) < 0) {
+					        		bs_vendor_array.push(sectors[j].vendor);
+					            	data.results.push({id: sectors[j].vendor, text: sectors[j].vendor, value : sectors[j].vendor});
+					        	}
 				        	}
-			        	}
+        				}
     				}
 		        }
 		        query.callback(data);
@@ -3316,8 +3320,8 @@ function devicePlottingClass_gmap() {
         			searchPattern = new RegExp('^' + query.term, 'i');
 
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var frequencies = obj.sector_planned_frequencies;
-        			if(frequencies.search(query.term) > -1) {
+        			var frequencies = obj.sector_planned_frequencies.toLowerCase();
+        			if(frequencies.search(query.term.toLowerCase()) > -1) {
 	        			return true;
         			} else {
         				return false;
@@ -3420,8 +3424,8 @@ function devicePlottingClass_gmap() {
         			ip_address_array = [];
 
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var ipAddress = obj.sector_configured_on_devices;
-        			if(ipAddress.search(query.term) > -1) {
+        			var ipAddress = obj.sector_configured_on_devices.toLowerCase();
+        			if(ipAddress.search(query.term.toLowerCase()) > -1) {
         				return true;
 					} else {
 						return false;
@@ -3452,8 +3456,8 @@ function devicePlottingClass_gmap() {
         		var searchPattern = new RegExp('^' + query.term, 'i'),
         			circuit_id_array = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var circuit_Ids = obj.circuit_ids;
-        			if(circuit_Ids.search(query.term) > -1) {
+        			var circuit_Ids = obj.circuit_ids.toLowerCase();
+        			if(circuit_Ids.search(query.term.toLowerCase()) > -1) {
         				return true;
         			} else {
 						return false;

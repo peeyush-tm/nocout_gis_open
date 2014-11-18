@@ -249,14 +249,20 @@ span.dept {
 
 /*for laptop screen*/
 @media screen and (max-width:1366px), screen and (max-height: 768px) { 
-.Tbl_FixHeight {
-  height:458px;
-}
+  .Tbl_FixHeight {
+    height:458px;
+  }
 }
 /*for 1024*768 resolution*/
 @media screen and (width:1024px), screen and (height: 768px) { 
-.Tbl_FixHeight {
-  height:540px;
+  .Tbl_FixHeight {
+    height:540px;
+  }
 }
+
+.toUpper {
+  text-transform: uppercase;
 }
+.toLower {
+  text-transform: lowercase;
 }
