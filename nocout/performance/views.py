@@ -12,7 +12,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
-from nocout.settings import P2P, WiMAX, PMP
+from nocout.settings import P2P, WiMAX, PMP, DEBUG
 from performance.models import PerformanceService, PerformanceNetwork, EventNetwork, EventService, NetworkStatus, ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, Status, NetworkAvailabilityDaily, Topology
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
@@ -269,6 +269,7 @@ class LivePerformanceListing(BaseDatatableView):
     """
     model = NetworkStatus
     is_ordered = False
+    is_polled = False
     is_searched = False
     is_initialised = True
 
@@ -489,29 +490,37 @@ class LivePerformanceListing(BaseDatatableView):
             reverse = False if s_sort_dir == 'desc' else True
 
         if i_sorting_cols and i_sort_col:
-            self.is_ordered = True
             self.is_initialised = False
+            self.is_ordered = True
             sort_data = self.prepare_devices(qs)
             try:
                 sort_using = columns[i_sort_col]
                 if sort_using in self.polled_columns:
+                    self.is_polled = True
                     ##now we need to poll the devices
                     ##here we can limit the number of devices in query
                     ##to get the data from
                     ##that needs to be per machine basis
                     ##once we have the results
                     ##we can quickly call upon prepare_devices
-                    pass
+                    machines = self.prepare_machines(sort_data)
+                    #preparing the polled results
+                    qs = self.prepare_polled_results(sort_data, multi_proc=False, machine_dict=machines)
+                    sort_data = qs
+                else:
+                    self.is_polled = False
                 sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
                 return sorted_qs
 
             except Exception as nocolumn:
                 self.is_initialised = True
                 self.is_ordered = False
+                self.is_polled = False
 
         else:
             self.is_initialised = True
             self.is_ordered = False
+            self.is_polled = False
             return qs
 
     def prepare_devices(self,qs):
@@ -520,12 +529,16 @@ class LivePerformanceListing(BaseDatatableView):
         :param device_list:
         :return:
         """
+        if DEBUG:
+            log.debug("preparing devices")
         page_type = self.request.GET['page_type']
         return prepare_gis_devices(qs, page_type)
 
     def prepare_machines(self, qs):
         """
         """
+        if DEBUG:
+            log.debug("preparing machines")
         device_list = []
         for device in qs:
             device_list.append(
@@ -542,6 +555,8 @@ class LivePerformanceListing(BaseDatatableView):
         preparing polled results
         after creating static inventory first
         """
+        if DEBUG:
+            log.debug("preparing polled results")
         result_qs = polled_results(qs=qs,
                                    multi_proc=multi_proc,
                                    machine_dict=machine_dict,
@@ -556,7 +571,8 @@ class LivePerformanceListing(BaseDatatableView):
         :param qs:
         :return qs
         """
-
+        if DEBUG:
+            log.debug("preparing final result")
         if qs:
             for dct in qs:
                 # device = Device.objects.get(id=dct['id'])
@@ -609,20 +625,21 @@ class LivePerformanceListing(BaseDatatableView):
         ## if this has been seached
         ## dont call prepare_devices
 
-        if self.is_initialised and not self.is_searched:
+        if self.is_initialised and not (self.is_searched or self.is_ordered):
             #prepare devices with GIS information
             qs = self.prepare_devices(qs=qs)
             #end prepare devices with GIS information
+
+        if not self.is_polled:
+            #preparing machine list
+            machines = self.prepare_machines(qs)
+            #preparing the polled results
+            qs = self.prepare_polled_results(qs, multi_proc=True, machine_dict=machines)
 
         # if the qs is empty then JSON is unable to serialize the empty
         # ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
-
-        #preparing machine list
-        machines = self.prepare_machines(qs)
-        #preparing the polled results
-        qs = self.prepare_polled_results(qs, multi_proc=True, machine_dict=machines)
 
         aaData = self.prepare_results(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
@@ -704,8 +721,12 @@ def map_results(perf_result, qs):
                 for dct in result_qs:
                     result = device_result[p_result]
                     if dct["device_name"] == p_result:
-                        dct["packet_loss"] = result["packet_loss"]
-                        dct["latency"] = result["latency"]
+                        try:
+                            dct["packet_loss"] = float(result["packet_loss"])
+                            dct["latency"] = float(result["latency"])
+                        except Exception as e:
+                            dct["packet_loss"] = result["packet_loss"]
+                            dct["latency"] = result["latency"]
                         dct["last_updated"] = result["last_updated"]
     return result_qs
 
