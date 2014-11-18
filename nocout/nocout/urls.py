@@ -73,6 +73,7 @@ urlpatterns = patterns('',
                        url(r'^bulk_import/', include('inventory.bulk_import_urls')),
                        url(r'^api/', include('inventory.api_urls')),
                        url(r'^country/', include('device.country_urls')),
+                       url(r'^state/', include('device.state_urls')),
                        )
 
 # if settings.DEBUG:

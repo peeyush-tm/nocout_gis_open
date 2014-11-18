@@ -14,7 +14,7 @@ from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFields
     DeviceFrequency
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm, DevicePortForm, DeviceFrequencyForm, \
-    CountryForm
+    CountryForm, StateForm
 from nocout.utils.util import DictDiffer
 from django.http.response import HttpResponseRedirect
 from organization.models import Organization
@@ -2951,3 +2951,146 @@ class CountryDelete(SuperUserRequiredMixin, UserLogDeleteMixin, DeleteView):
     template_name = 'country/country_delete.html'
     success_url = reverse_lazy('country_list')
     obj_alias = 'country_name'
+
+
+#**************************************** Country *********************************************
+class StateListing(SuperUserRequiredMixin, ListView):
+    """
+    Render list of state list
+    """
+    model = State
+    template_name = 'state/state_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(StateListing, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'country__country_name', 'sTitle': 'Country', 'sWidth': '40%', },
+            {'mData': 'state_name', 'sTitle': 'State', 'sWidth': 'auto', },
+        ]
+        if self.request.user.is_superuser:
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class StateListingTable(SuperUserRequiredMixin, BaseDatatableView):
+    """
+    Render JQuery datatables for listing of state
+    """
+    model = State
+    columns = ['country__country_name', 'state_name']
+    order_columns = ['country__country_name', 'state_name',]
+
+    def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+        """
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch and len(str(sSearch).strip()) >= 3:
+            sSearch = sSearch.replace("\\","")
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns:
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return State.objects.values(*self.columns + ['id'])
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+        """
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in qs:
+            dct.update(actions='<a href="/state/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/state/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
+        # Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret
+
+
+class StateDetail(SuperUserRequiredMixin, DetailView):
+    """
+    Render detail view for State
+    """
+    model = State
+    template_name = 'state/state_detail.html'
+
+
+class StateCreate(SuperUserRequiredMixin, CreateView):
+    """
+    Render state create view
+    """
+    template_name = 'state/state_new.html'
+    model = State
+    form_class = StateForm
+    success_url = reverse_lazy('state_list')
+
+
+class StateUpdate(SuperUserRequiredMixin, UpdateView):
+    """
+    Render state update view
+    """
+    template_name = 'state/state_update.html'
+    model = State
+    form_class = StateForm
+    success_url = reverse_lazy('state_list')
+
+
+class StateDelete(SuperUserRequiredMixin, UserLogDeleteMixin, DeleteView):
+    """
+    Render state delete view
+    """
+    model = State
+    template_name = 'state/state_delete.html'
+    success_url = reverse_lazy('state_list')
+    obj_alias = 'state_name'
+

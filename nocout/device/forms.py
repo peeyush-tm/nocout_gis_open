@@ -781,3 +781,42 @@ class CountryForm(forms.ModelForm):
         """
         model = Country
         fields = ('country_name',)
+
+
+# ******************************************* Country *******************************************
+class StateForm(forms.ModelForm):
+    """
+    Rendering form for country
+    """
+    def __init__(self, *args, **kwargs):
+        # removing help text for device_models 'select' field
+        self.base_fields['state_name'].help_text = ''
+        super(StateForm, self).__init__(*args, **kwargs)
+
+        self.fields['state_name'].required = True
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = State
+        fields = ('country', 'state_name',)
