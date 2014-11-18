@@ -156,7 +156,7 @@ function googleEarthClass() {
 
 					if(lookAt.getRange() <= 600540) {
 
-						earth_self.clearLabelElements();
+						// earth_self.clearLabelElements();
 
 						if(Math.floor(lookAt.getRange()/100000) === 4) {
 						
@@ -250,6 +250,8 @@ function googleEarthClass() {
 									var inBoundData = earth_self.getNewBoundsDevices();
 
 									currentlyPlottedDevices = inBoundData;
+
+
 									// Call function to plot devices on gmap
 									earth_self.plotDevices_earth(inBoundData,"base_station");
 			            		}
@@ -895,8 +897,12 @@ var state_wise_device_label_text= {};
 			state_wise_device_counters[key] = 0;
 			if(state_wise_device_labels[key]) {
 				state_wise_device_labels[key].setVisibility(false);
+				// var markerLabel= ge.getElementById(key);
+				// ge.getFeatures().removeChild(markerLabel);
 			}
 		}
+		state_wise_device_counters= {};
+		state_wise_device_labels= {};
 	};
 
 
@@ -1070,7 +1076,7 @@ var state_wise_device_label_text= {};
 
     		// $.grep(sectorsArray,function(sector) { 
 			for(var j=0;j<sectorsArray.length;j++) {
-			// console.log(1);
+				
 
 				var lon = resultantMarkers[i].data.lon,
 					lat = resultantMarkers[i].data.lat,
@@ -1341,9 +1347,11 @@ var state_wise_device_label_text= {};
 		placemark = "";
 		placemark = ge.createPlacemark(placemarkId+"_"+marker_count);
 		// placemark.setDescription(description);
-
-		var icon = ge.createIcon('');
-		icon.setHref(iconHref);
+		icon = ge.createIcon('');
+		(function(iconUrl) {
+			icon.setHref(iconUrl);
+		}(iconHref));
+		
 		
 		var style = ge.createStyle(''); //create a new style
 		style.getIconStyle().setIcon(icon); //apply the icon to the style

@@ -3054,6 +3054,7 @@ function devicePlottingClass_gmap() {
             });
 
         	if(page_type && page_type == 'googleEarth') {
+        		data_for_filters_earth = [];
         		earth_instance.clearEarthElements();
         	} else if (page_type && page_type == 'white_background') {
         		data_for_filter_wmap = [];
@@ -3071,7 +3072,7 @@ function devicePlottingClass_gmap() {
 
 	            data_for_filters_earth = filteredData;
 
-            	isCallCompleted = 1;
+            	// isCallCompleted = 1;
 
             	earth_instance.clearEarthElements();
             	/*Populate the map with the filtered markers*/
@@ -3777,15 +3778,31 @@ function devicePlottingClass_gmap() {
 
         		/*Clear all the elements from google earth*/
 		        earth_instance.clearEarthElements();
+		        earth_instance.clearStateCounters();
 
 		        /*Reset Global Variables & Filters*/
 		        earth_instance.resetVariables_earth();
 
-		        /*Save updated data to global variable*/
-				data_for_filters_earth = main_devices_data_earth;
+		        isCallCompleted = 1;
+
+		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+				lookAt.setLatitude(21.0000);
+				lookAt.setLongitude(78.0000);
+				lookAt.setRange(6019955);
+				// lookAt.setZoom
+				// Update the view in Google Earth 
+				ge.getView().setAbstractView(lookAt); 
+				
+				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+				// mapInstance.setZoom(5);
+				data_for_filters_earth = all_devices_loki_db.data;
+
+				isApiResponse = 0;
+				// Load all counters
+				earth_instance.showStateWiseData_earth(all_devices_loki_db.data);
 
 		        /*create the BS-SS network on the google earth*/
-		        earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
+		        // earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
 		    } else if($.trim(mapPageType) == "white_background") {
 
 		    	whiteMapClass.hideAllFeatures();
@@ -3864,7 +3881,7 @@ function devicePlottingClass_gmap() {
 			data_to_plot = [];
 
 		if(isAdvanceFilterApplied || isBasicFilterApplied) {
-			filtered_data = gmap_self.getFilteredData_gmap();
+			filtered_data = gmap_self.getFilteredData_gmap();	
 		} else {
 			filtered_data = all_devices_loki_db.data;
 		}
@@ -3883,14 +3900,13 @@ function devicePlottingClass_gmap() {
 				var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
+				lookAt.setRange(6019955);
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
 
-				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
-				// mapInstance.setZoom(5);
 				isApiResponse = 0;
-				earth_self.showStateWiseData_gmap(data_to_plot);
+				earth_self.showStateWiseData_earth(data_to_plot);
 			} else {
 				data_for_filters = data_to_plot;
 				isCallCompleted = 1;

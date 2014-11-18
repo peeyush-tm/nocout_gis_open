@@ -179,17 +179,32 @@ $("#resetFilters").click(function(e) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
 
-        /***************GOOGLE EARTH CODE*******************/
+        /************************Google Earth Code***********************/
+
         /*Clear all the elements from google earth*/
         earth_instance.clearEarthElements();
+        earth_instance.clearStateCounters();
 
         /*Reset Global Variables & Filters*/
         earth_instance.resetVariables_earth();
 
-        data_for_filters_earth = main_devices_data_earth;
+        isCallCompleted = 1;
 
-        /*create the BS-SS network on the google map*/
-        earth_instance.plotDevices_earth(main_devices_data_earth,'base_station');
+        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+        lookAt.setLatitude(21.0000);
+        lookAt.setLongitude(78.0000);
+        lookAt.setRange(6019955);
+        // lookAt.setZoom
+        // Update the view in Google Earth 
+        ge.getView().setAbstractView(lookAt); 
+        
+        // mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+        // mapInstance.setZoom(5);
+        data_for_filters_earth = all_devices_loki_db.data;
+
+        isApiResponse = 0;
+        // Load all counters
+        earth_instance.showStateWiseData_earth(all_devices_loki_db.data);
     } else if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.hideAllFeatures();
 
