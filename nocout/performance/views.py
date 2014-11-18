@@ -1779,45 +1779,45 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
     """
     in_string = lambda x: "'" + str(x) + "'"
     query = """
-        SELECT table_1.id as id,
+        select table_1.id as id,
             table_1.service_name as service_name,
             table_1.device_name as device_name,
             table_1.current_value as pl,
             table_2.current_value as rta,
             table_1.sys_timestamp
         from (
-        SELECT `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
-        FROM
+        select `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
+        from
             (
-                SELECT `id`,
+                select `id`,
                 `service_name`,
                 `device_name`,
                 `data_source`,
                 `current_value`,
                 `sys_timestamp`
-                FROM `performance_networkstatus`
-                WHERE
+                from `performance_networkstatus`
+                where
                     `performance_networkstatus`.`device_name` in ({0})
-                    AND `performance_networkstatus`.`data_source` in ( 'pl','rta' )
-            ORDER BY `performance_networkstatus`.sys_timestamp DESC) as `derived_table`
-        GROUP BY `derived_table`.`device_name`, `derived_table`.`data_source`
+                    and `performance_networkstatus`.`data_source` in ( 'pl','rta' )
+            order by `performance_networkstatus`.sys_timestamp desc) as `derived_table`
+        group by `derived_table`.`device_name`, `derived_table`.`data_source`
         ) as table_1
         join (
-            SELECT `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
-            FROM
+            select `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
+            from
                 (
-                    SELECT `id`,
+                    select `id`,
                     `service_name`,
                     `device_name`,
                     `data_source`,
                     `current_value`,
-                    `sys_timestamp` FROM
+                    `sys_timestamp` from
                     `performance_networkstatus`
-                    WHERE
+                    where
                     `performance_networkstatus`.`device_name` in ({0})
-                    AND `performance_networkstatus`.`data_source` in ( 'pl','rta' )
-                ORDER BY `performance_networkstatus`.sys_timestamp DESC) as `derived_table`
-            GROUP BY `derived_table`.`device_name`, `derived_table`.`data_source`
+                    and `performance_networkstatus`.`data_source` in ( 'pl','rta' )
+                order by `performance_networkstatus`.sys_timestamp desc) as `derived_table`
+            group by `derived_table`.`device_name`, `derived_table`.`data_source`
         ) as table_2
         on (table_1.device_name = table_2.device_name and table_1.data_source != table_2.data_source)
         group by (table_1.device_name);
@@ -2138,6 +2138,7 @@ def prepare_gis_devices(devices, page_type):
     return devices
 
 
+@cache_for(300)
 def indexed_polled_results(performance_data):
     """
 
