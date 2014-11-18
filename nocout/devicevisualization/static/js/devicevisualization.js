@@ -230,9 +230,10 @@ function showAdvSearch() {
     showSpinner();
     // advJustSearch.getFilterInfofrompagedata("searchInfoModal", "advSearchBtn");
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-        $("#advFilterContainerBlock").hide();
-        $("#advSearchContainerBlock").show();
-        advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
+        if($("#advSearchContainerBlock").hasClass("hide")) {
+            $("#advSearchContainerBlock").removeClass("hide");
+        }
+        hideSpinner();
     } else if (window.location.pathname.indexOf("white_background") > -1) {
         $("#advFilterContainerBlock").hide();
         $("#advSearchContainerBlock").show();
@@ -250,7 +251,8 @@ $("#setAdvSearchBtn").click(function(e) {
     
     advJustSearch.showNotification();
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-        advJustSearch.searchAndCenterData(data_for_filters_earth);
+        gmap_self.advanceSearchFunc();
+        // advJustSearch.searchAndCenterData(data_for_filters_earth);
     } else if (window.location.pathname.indexOf("white_background") > -1) {
         advJustSearch.searchAndCenterData(data_for_filter_wmap);
     } else {
@@ -261,7 +263,7 @@ $("#setAdvSearchBtn").click(function(e) {
 $("#cancelAdvSearchBtn").click(function(e) {
     
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-        $("#advFilterSearchContainerBlock").html("");
+        $("#advSearchContainerBlock").addClass("hide");
     } else if (window.location.pathname.indexOf("white_background") > -1) {
         $("#advFilterSearchContainerBlock").html("");
     }
@@ -279,14 +281,18 @@ function resetAdvanceSearch() {
 $("#resetSearchForm").click(function(e) {
     
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-        $("form#searchInfoModal_form").find('select').each(function(i, el) {
-            $(el).select2("val", [])
-            if(i== $("form#searchInfoModal_form").find('select').length-1) {
-                //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
-                //     $("#advSearchContainerBlock").addClass("hide");
-                // } 
-            }
-        });
+        $("#search_name").select2("val","");
+        $("#search_sector_configured_on").select2("val","");
+        $("#search_circuit_ids").select2("val","");
+        $("#search_city").select2("val","");
+        // $("form#searchInfoModal_form").find('select').each(function(i, el) {
+        //     $(el).select2("val", [])
+        //     if(i== $("form#searchInfoModal_form").find('select').length-1) {
+        //         //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
+        //         //     $("#advSearchContainerBlock").addClass("hide");
+        //         // } 
+        //     }
+        // });
     } else if (window.location.pathname.indexOf("white_background") > -1) {
         $("form#searchInfoModal_form").find('select').each(function(i, el) {
             $(el).select2("val", [])

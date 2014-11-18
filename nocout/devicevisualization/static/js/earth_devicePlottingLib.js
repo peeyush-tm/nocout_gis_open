@@ -124,6 +124,7 @@ function googleEarthClass() {
 		var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 		lookAt.setLatitude(21.0000);
 		lookAt.setLongitude(78.0000);
+		lookAt.setRange(6019955);
 
 		// Update the view in Google Earth 
 		ge.getView().setAbstractView(lookAt); 
@@ -146,6 +147,7 @@ function googleEarthClass() {
 					zoom_check = current_zoom ? current_zoom :400000;
 
 				if (globeBounds) {
+					console.log("Globe mai aa gya");
 					var poly = [
 							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()},
 							{lat: globeBounds.getNorth(), lon: globeBounds.getEast()},
@@ -155,11 +157,14 @@ function googleEarthClass() {
 					var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 
 					if(lookAt.getRange() <= 600540) {
+						console.log("7+ Zoom mai aa gya");
 
 						// earth_self.clearLabelElements();
-
+						var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+						console.log(lookAt.getRange());
+						console.log(Math.floor(lookAt.getRange()/100000));
 						if(Math.floor(lookAt.getRange()/100000) === 4) {
-						
+							console.log("8 Zoom mai aa gya");						
 							var states_with_bounds = state_lat_lon_db.where(function(obj) {
 								return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
 							});
@@ -353,7 +358,7 @@ function googleEarthClass() {
 		            lastZoomLevel = lookAt.getRange();
 				}
 			}
-			timer = setTimeout(eventHandler, 200);
+			timer = setTimeout(eventHandler, 100);
 		}
 		);
 
@@ -929,7 +934,7 @@ var state_wise_device_label_text= {};
 				ge.getView().setAbstractView(lookAt);
 
 				// Zoom out to 8times the current range.
-				lookAt.setRange(400000);		
+				lookAt.setRange(420000);		
 
 		
 				ge.getView().setAbstractView(lookAt);
@@ -1180,7 +1185,7 @@ var state_wise_device_label_text= {};
 						if(sectorMarkerConfiguredOn_earth.indexOf(sectorsArray[j].sector_configured_on) == -1) {
 
 							sector_MarkersArray.push(sector_marker);
-							allMarkersArray_earth.push(sector_marker);
+							// allMarkersArray_earth.push(sector_marker);
 
 							/*Push Sector marker to pollableDevices array*/
 							pollableDevices.push(sector_marker);
@@ -1748,6 +1753,8 @@ var state_wise_device_label_text= {};
 		for(var key in sectorAdditionalInfo) {
 			sectorPolygonObj[key] = sectorAdditionalInfo[key];
 		}
+
+		allMarkersArray_earth.push(sectorPolygonObj);
 
 		var lineStyle = sectorPolygonObj.getStyleSelector().getLineStyle();
 

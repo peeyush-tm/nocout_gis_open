@@ -76,7 +76,41 @@
         <div id="advSearchContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Advance Search</h4>
 
-            <div id="advSearchFormContainer" class="col-md-8 col-md-offset-2"></div>
+            <div id="advSearchFormContainer" class="col-md-8 col-md-offset-2">
+                <div id="earth_search" class="advanceSearchContainer">
+                    <form id="earth_search_form" method="post">
+                        <div class="form-horizontal">
+                            <div class="form-group">
+                                <label for="name" class="col-sm-4 control-label">BS Name</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="search_name">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sector_configured_on" class="col-sm-4 control-label">IP Address</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="search_sector_configured_on">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="circuit_ids" class="col-sm-4 control-label">Circut ID</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="search_circuit_ids">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="city" class="col-sm-4 control-label">BS City</label>
+                                <div class="col-sm-8">
+                                    <input type="hidden" class="multiSelectBox col-md-12" id="search_city">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
             <div class="clearfix"></div>
 
             <div class="col-md-8 col-md-offset-2">
