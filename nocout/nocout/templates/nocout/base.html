@@ -6,7 +6,7 @@
 {% block main_block %}
     <!-- PAGE -->
     <section id="page">
-        
+
         <!-- SIDEBAR -->
         {% include 'nocout/sidemenu.html' %}
         <!-- /SIDEBAR -->
@@ -24,14 +24,16 @@
                                         <ul class="breadcrumb">
                                             <li>
                                                 <i class="fa fa-home"></i>
-                                                <a href="/home/">Home</a>
+
                                             </li>
                                             {% block breadcrumb_title %}
-                                                <li>Dashboard</li>
+                                                <!-- BREADCRUMB -->
+                                                {% include 'nocout/breadcrumb.html' %}
+                                                <!-- /BREADCRUMB -->
                                             {% endblock %}
                                         </ul>
                                         <!-- /BREADCRUMBS -->
-                                        <div class="clearfix">
+                                        <div class="clearfix">s
                                             <h3 class="content-title pull-left">
                                                 {% block content_title %}Dashboard{% endblock %}
                                             </h3>
@@ -40,7 +42,7 @@
                                         <div class="description">{% block content_description %}Overview, Statistics and more{% endblock %}</div>
 
                                     </div>
-                                </div>                            
+                                </div>
                             </div>
                             <!-- /PAGE HEADER -->
 
@@ -67,15 +69,15 @@
                     </div>
                     <!-- /CONTENT-->
                 </div>
-            </div>            
-        </div>        
+            </div>
+        </div>
     </section>
 
     <!-- session_security dialog html -->
     {% include 'session_security/dialog.html' %}
     <!-- session_security dialog html -->
-    
+
     <!--/PAGE END-->
-    
+
 {% endblock %}
 <!--Main Block End-->

@@ -1,9 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>SNMP Parameters</li>
-{% endblock %}
+
 {% block content_title %}SNMP Parameters Management{% endblock %}
 {% block content_description %}List of SNMP parameters{% endblock %}
 {% block content %}
@@ -15,7 +12,7 @@
         {% endif %}
     {% endfor %}
 
-    
+
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>SNMP PARAMETERS LISTING</h4>

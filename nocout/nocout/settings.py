@@ -201,6 +201,9 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
         'LOCATION': '/tmp/nocout_cache',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
     }
 }
 

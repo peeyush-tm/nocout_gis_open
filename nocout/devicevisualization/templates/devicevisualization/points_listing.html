@@ -1,9 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Network Maps</li>
-    <li>Points</li>
-{% endblock %}
+
 {% block content_title %}Points{% endblock %}
 {% block content_description %}List of Points{% endblock %}
 {% block content %}
@@ -29,12 +26,12 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ table_headers|safe }}');
             /*Ajax url to get grid data*/
-            
+
             var ajax_url = '{% url "point_listing_table" %}';
             // Call createDataTable function of ourDataTableWidget class
             var destroy=false;
             dataTableInstance.createDataTable("pointsListingTable", gridHeadersObj, ajax_url, destroy);
-            
+
         });
     </script>
 {% endblock %}

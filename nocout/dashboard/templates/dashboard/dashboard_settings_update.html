@@ -1,10 +1,6 @@
 {% extends "dashboard/dashboard_base.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li><a href="{% url 'dashboard-settings' %}">Dashboard Settings</a></li>
-    <li><a href="{% url 'dashboard-settings-detail' pk=object.id %}">{{ object.id }}</a></li>
-    <li>Edit</li>
-{% endblock %}
+
 {% block content_title %}Dashboard Management{% endblock %}
 {% block content_description %}Update Dashboard settings{% endblock %}
 {% block content %}
