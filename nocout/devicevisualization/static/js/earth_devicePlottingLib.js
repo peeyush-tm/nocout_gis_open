@@ -676,15 +676,15 @@ var state_wise_device_label_text= {};
 					state_wise_device_counters[state] += 1;
 					if(state_lat_lon_obj) {
 						// Update the content of state counter label as per devices count
-						// state_wise_device_labels[state].setName(String(state_wise_device_counters[state]));
-						state_wise_device_label_text[state].setName(String(state_wise_device_counters[state]));
+						state_wise_device_labels[state].setName(String(state_wise_device_counters[state]));
+						// state_wise_device_label_text[state].setName(String(state_wise_device_counters[state]));
 					}
 				} else {
 					state_wise_device_counters[state] = 1;
 					if(state_lat_lon_obj) {	  
 			   			//Create the placemark
 			   			var device_counter_label = ge.createPlacemark('');
-			   			device_counter_label.setName(String(' '));
+			   			device_counter_label.setName(String(state_wise_device_counters[state]));
 
 			   			var clusterIcon = ge.createIcon('');
 						clusterIcon.setHref(base_url+"/static/js/OpenLayers/img/state_cluster.png");
@@ -709,35 +709,35 @@ var state_wise_device_label_text= {};
 
 						}(state_param));
 
-						(function() {
-				        	// Create the placemark.
-							var device_counter_text = ge.createPlacemark('');
-							device_counter_text.setName(String(state_wise_device_counters[state]));
+						// (function() {
+				  //       	// Create the placemark.
+						// 	var device_counter_text = ge.createPlacemark('');
+						// 	device_counter_text.setName(String(state_wise_device_counters[state]));
 
-							// Define a custom icon.
-							var icon = ge.createIcon('');
-							icon.setHref(base_url+'/static/img/icons/1x1.png');
-							var style = ge.createStyle(''); //create a new style
-							style.getIconStyle().setIcon(icon); //apply the icon to the style
-							device_counter_text.setStyleSelector(style); //apply the style to the placemark
-							style.getIconStyle().setScale(0);
+						// 	// Define a custom icon.
+						// 	var icon = ge.createIcon('');
+						// 	icon.setHref(base_url+'/static/img/icons/1x1.png');
+						// 	var style = ge.createStyle(''); //create a new style
+						// 	style.getIconStyle().setIcon(icon); //apply the icon to the style
+						// 	device_counter_text.setStyleSelector(style); //apply the style to the placemark
+						// 	style.getIconStyle().setScale(0);
 
-							// Set the placemark's location.  
-							var point = ge.createPoint('');
-							var nLat = ((+state_lat_lon_obj.lat*1000)-0)/1000;
-							var nLng = ((+state_lat_lon_obj.lon*1000)-0)/1000;
-							point.setLatitude(nLat);
-							point.setLongitude(nLng);
-							device_counter_text.setGeometry(point);
+						// 	// Set the placemark's location.  
+						// 	var point = ge.createPoint('');
+						// 	var nLat = ((+state_lat_lon_obj.lat*1000)-0)/1000;
+						// 	var nLng = ((+state_lat_lon_obj.lon*1000)-0)/1000;
+						// 	point.setLatitude(nLat);
+						// 	point.setLongitude(nLng);
+						// 	device_counter_text.setGeometry(point);
 
-							device_counter_text.placemarkerType = 'label_icon';
+						// 	device_counter_text.placemarkerType = 'label_icon';
 
-							// Add the placemark to Earth.
-							ge.getFeatures().appendChild(device_counter_text);
+						// 	// Add the placemark to Earth.
+						// 	ge.getFeatures().appendChild(device_counter_text);
 
-					        state_wise_device_label_text[state] = device_counter_text;
+					 //        state_wise_device_label_text[state] = device_counter_text;
 
-				        }());
+				  //       }());
 					}
 			        state_wise_device_labels[state] = device_counter_label;
 				}
@@ -770,14 +770,14 @@ var state_wise_device_label_text= {};
 
 							if(state_wise_device_counters[current_state_name]) {
 								state_wise_device_counters[current_state_name] += 1;
-								// state_wise_device_labels[current_state_name].setName(String(state_wise_device_counters[state]));
-								state_wise_device_label_text[state].setName(String(state_wise_device_counters[state]));
+								state_wise_device_labels[current_state_name].setName(String(state_wise_device_counters[state]));
+								// state_wise_device_label_text[state].setName(String(state_wise_device_counters[state]));
 							} else {
 								state_wise_device_counters[current_state_name] = 1;
 							
 						        //Create the placemark
 					   			var device_counter_label = ge.createPlacemark('');
-					   			device_counter_label.setName(String(' '));
+					   			device_counter_label.setName(String(state_wise_device_counters[state]));
 
 					   			var clusterIcon = ge.createIcon('');
 								clusterIcon.setHref(base_url+"/static/js/OpenLayers/img/state_cluster.png");
@@ -807,35 +807,35 @@ var state_wise_device_label_text= {};
 
 								state_wise_device_labels[current_state_name] = device_counter_label;
 
-								(function() {
-							        // Create the placemark.
-									var device_counter_text = ge.createPlacemark('');
-									device_counter_text.setName(String(state_wise_device_counters[state]));
+								// (function() {
+							 //        // Create the placemark.
+								// 	var device_counter_text = ge.createPlacemark('');
+								// 	device_counter_text.setName(String(state_wise_device_counters[state]));
 
-									// Define a custom icon.
-									var icon = ge.createIcon('');
-									icon.setHref(base_url+'/static/img/icons/1x1.png');
-									var style = ge.createStyle(''); //create a new style
-									style.getIconStyle().setIcon(icon); //apply the icon to the style
-									device_counter_text.setStyleSelector(style); //apply the style to the placemark
-									style.getIconStyle().setScale(0);
+								// 	// Define a custom icon.
+								// 	var icon = ge.createIcon('');
+								// 	icon.setHref(base_url+'/static/img/icons/1x1.png');
+								// 	var style = ge.createStyle(''); //create a new style
+								// 	style.getIconStyle().setIcon(icon); //apply the icon to the style
+								// 	device_counter_text.setStyleSelector(style); //apply the style to the placemark
+								// 	style.getIconStyle().setScale(0);
 
-									// Set the placemark's location.  
-									var point = ge.createPoint('');
-									var nLat = ((+state_lat_lon_obj.lat*1000)-0)/1000;
-									var nLng = ((+state_lat_lon_obj.lon*1000)-0)/1000;
-									point.setLatitude(nLat);
-									point.setLongitude(nLng);
-									device_counter_text.setGeometry(point);
+								// 	// Set the placemark's location.  
+								// 	var point = ge.createPoint('');
+								// 	var nLat = ((+state_lat_lon_obj.lat*1000)-0)/1000;
+								// 	var nLng = ((+state_lat_lon_obj.lon*1000)-0)/1000;
+								// 	point.setLatitude(nLat);
+								// 	point.setLongitude(nLng);
+								// 	device_counter_text.setGeometry(point);
 
-									device_counter_text.placemarkerType = 'label_icon';
+								// 	device_counter_text.placemarkerType = 'label_icon';
 
-									// Add the placemark to Earth.
-									ge.getFeatures().appendChild(device_counter_text);
+								// 	// Add the placemark to Earth.
+								// 	ge.getFeatures().appendChild(device_counter_text);
 
-							        state_wise_device_label_text[state] = device_counter_text;
+							 //        state_wise_device_label_text[state] = device_counter_text;
 
-						        }());
+						  //       }());
 							}
 
 							// Break for loop if state found
@@ -1018,43 +1018,6 @@ var state_wise_device_label_text= {};
 	 */
 	this.plotDevices_earth = function(resultantMarkers,station_type) {
 		for(var i=0;i<resultantMarkers.length;i++) {
-
-			// var window_name = "Base Station",
-			// 	dev_technology = "",
-			// 	sectorsDetail = [];
-
-			// /*Create BS info window HTML string*/
-			// var bs_infoTable = "<table class='table table-bordered'><tbody>";
-
-			// /*Fetch BS information*/
-			// for(var x=0;x<resultantMarkers[i].data.param.base_station.length;x++) {
-
-			// 	if(resultantMarkers[i].data.param.base_station[x].show == 1) {
-			// 		bs_infoTable += "<tr><td>"+resultantMarkers[i].data.param.base_station[x].title+"</td><td>"+resultantMarkers[i].data.param.base_station[x].value+"</td></tr>";
-			// 	}
-			// }
-			// /*Set lat-lon*/
-			// bs_infoTable += "<tr><td>Lat, Long</td><td>"+resultantMarkers[i].data.lat+", "+resultantMarkers[i].data.lon+"</td></tr>";
-
-			// /*Fetch Backhaul information*/
-			// bs_infoTable += "<tr><td colspan='2'><b>Backhaul Info</b></td></tr>";
-			// for(var y=0;y<resultantMarkers[i].data.param.backhual.length;y++) {
-
-			// 	if(resultantMarkers[i].data.param.backhual[y].show == 1) {
-			// 		bs_infoTable += "<tr><td>"+resultantMarkers[i].data.param.backhual[y].title+"</td><td>"+resultantMarkers[i].data.param.backhual[y].value+"</td></tr>";
-			// 	}
-			// }
-			// /*Device Technology*/
-			// dev_technology = resultantMarkers[i].data.technology;
-
-			// /*Sectors*/
-			// sectorsDetail = resultantMarkers[i].data.param.sector;
-
-			// bs_infoTable += "</tbody></table>";
-
-			/*Final infowindow content string*/
-			// var bs_windowContent = "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+window_name+"</h4></div><div class='box-body'><div class='' align='center'>"+bs_infoTable+"</div><div class='clearfix'></div></div></div></div>";
-
 			var bs_marker_icon = base_url+"/static/img/icons/bs.png";
 
 			var bsInfo = {
@@ -1100,12 +1063,14 @@ var state_wise_device_label_text= {};
 				$("#infoWindowContainer").removeClass('hide');
 				event.preventDefault();
 			});
-
+// console.log(resultantMarkers[i]);
 			var sectorsArray = resultantMarkers[i].data.param.sector;
 			var deviceIDArray= [];
+// console.log(sectorsArray);
 
     		// $.grep(sectorsArray,function(sector) { 
 			for(var j=0;j<sectorsArray.length;j++) {
+			// console.log(1);
 
 				var lon = resultantMarkers[i].data.lon,
 					lat = resultantMarkers[i].data.lat,
@@ -1192,7 +1157,6 @@ var state_wise_device_label_text= {};
 						};
 
 						var sect_height = sectorsArray[j].antenna_height;
-
 						// Create Sector placemark.
 						var sector_marker = earth_self.makePlacemark(sectorMarkerIcon,resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,sectorsArray[j].sector_configured_on+"_"+j,sectorInfo);
 						/*Push Sector placemark to sector placemark array*/
@@ -2062,16 +2026,16 @@ var state_wise_device_label_text= {};
 
     this.showLabelElements = function() {
     	var features = ge.getFeatures();
-    	for(var key in state_wise_device_label_text) {
-    		state_wise_device_label_text[key].setVisibility(true);
-    	}
+    	// for(var key in state_wise_device_label_text) {
+    	// 	state_wise_device_label_text[key].setVisibility(true);
+    	// }
     }
 
     this.clearLabelElements = function() {
     	var features = ge.getFeatures();
-    	for(var key in state_wise_device_label_text) {
-    		state_wise_device_label_text[key].setVisibility(false);
-    	}
+    	// for(var key in state_wise_device_label_text) {
+    	// 	state_wise_device_label_text[key].setVisibility(false);
+    	// }
     }
 
 
