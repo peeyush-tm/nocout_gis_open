@@ -1073,7 +1073,7 @@ def sync():
     except Exception, e:
         logger.error('[sync]' + pprint.pformat(e))
     if f == 0:
-        sites_affected.append(defaults.omd_site)
+        #sites_affected.append(defaults.omd_site)
 	# Update the configuration database
 	make_hosts.update_configuration_db()
     # Some syntax error with hosts.mk or rules.mk
