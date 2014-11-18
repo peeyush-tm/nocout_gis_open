@@ -151,7 +151,11 @@ def cached_all_gis_inventory(query):
     return fetch_raw_result(query)
 
 
-def query_all_gis_inventory():
+def query_all_gis_inventory(monitored_only=False):
+    added_device = " "
+    if monitored_only:
+        added_device = "where device.is_added_to_nms = 1 "
+
     gis = '''
         select * from (
                 select  basestation.id as BSID,
@@ -264,6 +268,7 @@ left join (
         on (
             frequency.id = sector.frequency_id
         )
+{0}
     ) as sector_info
     left join (
         select circuit.id as CID,
@@ -346,6 +351,7 @@ left join (
         and
             devicetype.id = device.device_type
         )
+{0}
     ) as ckt_info
     on (
         ckt_info.SID = sector_info.SECTOR_ID
@@ -406,6 +412,7 @@ left join
             and
             devicetype.id = device.device_type
         )
+{0}
         ) as bh_info left join (
                 select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
                 left join (
@@ -443,5 +450,5 @@ on
 
  group by BSID,SECTOR_ID,CID 
         ;
-        '''
+        '''.format(added_device)
     return gis

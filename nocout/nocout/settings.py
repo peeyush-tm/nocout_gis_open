@@ -193,13 +193,17 @@ INSTALLED_APPS = (
     'corsheaders',
     'activity_stream',
     'jsonify',
-    'djcelery'
+    'djcelery',
+    'rest_framework',
 )
 
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
         'LOCATION': '/tmp/nocout_cache',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
     }
 }
 

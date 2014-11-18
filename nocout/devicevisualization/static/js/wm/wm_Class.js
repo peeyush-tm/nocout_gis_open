@@ -239,22 +239,23 @@ function WhiteMapClass() {
 			/*Reset marker icon*/
 			for(var i=0;i<polygonSelectedDevices.length;i++) {
 
-				var ss_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.name],
-					pointType = ss_marker.attributes.pointType,
-					sector_marker = "";
-
-				if(pointType === 'sub_station') {
-					sector_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.sector_ip];
-				} else {
-					sector_marker = wm_obj['devices']['sector_'+polygonSelectedDevices[i].attributes.sectorName];
-				}
-
+				var ss_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.name];
 				if(ss_marker) {
-					ss_marker.style.externalGraphic = ss_marker.attributes.oldIcon;
-					
-				} else if(sector_marker) {
-					sector_marker.style.externalGraphic = sector_marker.attributes.oldIcon
-					
+					var pointType = ss_marker.attributes.pointType,
+						sector_marker = "";
+
+					if(pointType === 'sub_station') {
+						sector_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.sector_ip];
+					} else {
+						sector_marker = wm_obj['devices']['sector_'+polygonSelectedDevices[i].attributes.sectorName];
+					}
+
+					if(ss_marker) {
+						ss_marker.style.externalGraphic = ss_marker.attributes.oldIcon;
+						
+					} else if(sector_marker) {
+						sector_marker.style.externalGraphic = sector_marker.attributes.oldIcon
+					}
 				}
 			}
 			ccpl_map.getLayersByName('Markers')[0].redraw();
@@ -1625,7 +1626,7 @@ function WhiteMapClass() {
 						}
 
 						//Condition to check if we need to call Ajax Request again
-						if (i <= loop_count && response.success && response.data.objects.children.length) {
+						if (i <= loop_count && response.success) {
 
 							bs_data_list = bs_data_list.concat(response.data.objects.children);
 							

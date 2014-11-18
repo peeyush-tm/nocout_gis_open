@@ -28,6 +28,9 @@ from nocout.utils import logged_in_user_organizations
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from django.db.models import Q
+
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -58,17 +61,12 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'site_instance__name', 'sTitle': 'Site Instance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'device_type__name', 'sTitle': 'Device Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'host_state', 'sTitle': 'Host State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'mac_address', 'sTitle': 'MAC Address', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False}, ]
+            {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device_type__name', 'sTitle': 'Device Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'host_state', 'sTitle': 'Host State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'mac_address', 'sTitle': 'MAC Address', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         #if the user role is Admin or superadmin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
@@ -83,17 +81,12 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'site_instance__name', 'sTitle': 'Site Instance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'device_type__name', 'sTitle': 'Device Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'host_state', 'sTitle': 'Host State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'mac_address', 'sTitle': 'MAC Address', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False}, ]
+            {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device_type__name', 'sTitle': 'Device Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'host_state', 'sTitle': 'Host State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'mac_address', 'sTitle': 'MAC Address', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
@@ -116,23 +109,22 @@ def create_device_tree(request):
     return render_to_response('device/devices_tree_view.html', templateData, context_instance=RequestContext(request))
 
 
-class OperationalDeviceListingTable(PermissionsRequiredMixin, BaseDatatableView):
+class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing operational devices only
     """
     model = Device
     required_permissions = ('device.view_device',)
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-               'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
-    order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
-
-    def pop_filter_keys(self, dct):
-        """
-        Filtering device fields
-        """
-        keys_list = ['device_type__name', 'device_technology__name', 'state__name']
-        for k in keys_list:
-            dct.pop(k)
+        'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
+    order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
+        'device_type', 'host_state', 'ip_address', 'mac_address', 'state' ]
+    search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
+        'ip_address', 'mac_address']
+    extra_qs_kwargs = {
+                        'is_deleted': 0,
+                        'is_added_to_nms__in': [1,2]
+        }
 
     def filter_queryset(self, qs):
         """
@@ -140,46 +132,17 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, BaseDatatableView)
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch and len(str(sSearch).strip()) >= 3:
-            result_list = list()
 
-            for dictionary in qs:
+            state_qs = State.objects.filter(state_name__icontains=sSearch)
+            device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
+            device_tech_qs = DeviceTechnology.objects.filter(name__icontains=sSearch)
 
-                x = json.dumps(dictionary)
-                dictionary = json.loads(x)
+            query_object = Q()
+            for column in self.search_columns:
+                query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
-                try:
-                    dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
-                        if dictionary['device_type'] else ''
-                except Exception as device_type_exp:
-                    dictionary['device_type__name'] = ""
-
-                try:
-                    dictionary['device_technology__name'] = DeviceTechnology.objects.get(
-                        pk=int(dictionary['device_technology'])).name \
-                        if dictionary['device_technology'] else ''
-                except Exception as device_tech_exp:
-                    dictionary['device_technology__name'] = ""
-
-                try:
-                    dictionary['state__name'] = State.objects.get(pk=int(dictionary['state'])).state_name if dictionary[
-                        'state'] else ''
-                except Exception as device_state_exp:
-                    dictionary['state__name'] = ""
-
-                for dict in dictionary:
-                    if dictionary[dict]:
-                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
-                        ):
-                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
-                                result_list.append(dictionary)
-                        else:
-                            if sSearch == dictionary[dict] and dictionary not in result_list:
-                                result_list.append(dictionary)
-                map(lambda x: dictionary.pop(x) if x in dictionary else None,
-                    ['device_type__name', 'device_technology__name', 'state__name'])
-
-            return result_list
+            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(device_technology__in=device_tech_qs)
+            qs = qs.filter(query_object)
 
         return qs
 
@@ -216,22 +179,6 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, BaseDatatableView)
         if order:
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-
-            if settings.DEBUG:
-                logger.error("Need to provide a model or implement get_initial_queryset!",
-                             extra={'stack': True, 'request': self.request})
-
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        return Device.objects.filter(organization__in=logged_in_user_organizations(self),
-                                     is_deleted=0,
-                                     is_added_to_nms__in=[1, 2]).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -374,55 +321,25 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, BaseDatatableView)
                 logger.exception("Device is not a substation. %s" % e.message)
         return json_data
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
 
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData,
-        }
-        return ret
-
-
-class NonOperationalDeviceListingTable(BaseDatatableView):
+class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing non-operational devices only
     """
     model = Device
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
-    order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
+    order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
+        'device_type', 'host_state', 'ip_address', 'mac_address', 'state' ]
+    search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
+        'ip_address', 'mac_address']
 
-    def pop_filter_keys(self, dct):
-        """
-        Filtering device fields
-        """
-        keys_list = ['device_type__name', 'device_technology__name', 'state__name']
-        for k in keys_list:
-            dct.pop(k)
+    extra_qs_kwargs = {
+                        "is_deleted": 0,
+                        "is_monitored_on_nms": 0,
+                        "is_added_to_nms": 0,
+                        "host_state": 'Enable'
+        }
 
     def filter_queryset(self, qs):
         """
@@ -430,49 +347,20 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch and len(str(sSearch).strip()) >= 3:
-            result_list = list()
 
-            for dictionary in qs:
+            state_qs = State.objects.filter(state_name__icontains=sSearch)
+            device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
+            device_tech_qs = DeviceTechnology.objects.filter(name__icontains=sSearch)
 
-                x = json.dumps(dictionary)
-                dictionary = json.loads(x)
+            query_object = Q()
+            for column in self.search_columns:
+                query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
-                try:
-                    dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
-                        if dictionary['device_type'] else ''
-                except Exception as device_type_exp:
-                    dictionary['device_type__name'] = ""
-
-                try:
-                    dictionary['device_technology__name'] = DeviceTechnology.objects.get(
-                        pk=int(dictionary['device_technology'])).name \
-                        if dictionary['device_technology'] else ''
-                except Exception as device_tech_exp:
-                    dictionary['device_technology__name'] = ""
-
-                try:
-                    dictionary['state__name'] = State.objects.get(pk=int(dictionary['state'])).state_name if dictionary[
-                        'state'] else ''
-                except Exception as device_state_exp:
-                    dictionary['state__name'] = ""
-
-                for dict in dictionary:
-                    if dictionary[dict]:
-                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
-                        ):
-                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
-                                result_list.append(dictionary)
-                        else:
-                            if sSearch == dictionary[dict] and dictionary not in result_list:
-                                result_list.append(dictionary)
-
-                map(lambda x: dictionary.pop(x) if x in dictionary else None,
-                    ['device_type__name', 'device_technology__name', 'state__name'])
-
-            return result_list
+            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(device_technology__in=device_tech_qs)
+            qs = qs.filter(query_object)
 
         return qs
+
 
     def ordering(self, qs):
         """
@@ -507,24 +395,6 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
         if order:
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-
-            if settings.DEBUG:
-                logger.error("Need to provide a model or implement get_initial_queryset!",
-                             extra={'stack': True, 'request': self.request})
-
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        return Device.objects.filter(organization__in=logged_in_user_organizations(self),
-                                     is_deleted=0,
-                                     is_monitored_on_nms=0,
-                                     is_added_to_nms=0,
-                                     host_state="Enable").values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -617,57 +487,22 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
                 logger.exception("Device is not a substation. %s" % e.message)
         return json_data
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
 
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.
-        # Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData,
-        }
-        return ret
-
-
-class DisabledDeviceListingTable(BaseDatatableView):
+class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing disabled devices only
     """
     model = Device
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
-    order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
-
-    def pop_filter_keys(self, dct):
-        """
-        Filtering device fields
-        """
-        keys_list = ['device_type__name', 'device_technology__name', 'state__name']
-        for k in keys_list:
-            dct.pop(k)
+    order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
+        'device_type', 'host_state', 'ip_address', 'mac_address', 'state' ]
+    search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
+        'ip_address', 'mac_address']
+    extra_qs_kwargs = {
+                        "is_deleted": 0,
+                        "host_state": 'Disable'
+        }
 
     def filter_queryset(self, qs):
         """
@@ -675,46 +510,17 @@ class DisabledDeviceListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch and len(str(sSearch).strip()) >= 3:
-            result_list = list()
 
-            for dictionary in qs:
+            state_qs = State.objects.filter(state_name__icontains=sSearch)
+            device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
+            device_tech_qs = DeviceTechnology.objects.filter(name__icontains=sSearch)
 
-                x = json.dumps(dictionary)
-                dictionary = json.loads(x)
+            query_object = Q()
+            for column in self.search_columns:
+                query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
-                try:
-                    dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
-                        if dictionary['device_type'] else ''
-                except Exception as device_type_exp:
-                    dictionary['device_type__name'] = ""
-
-                try:
-                    dictionary['device_technology__name'] = DeviceTechnology.objects.get(
-                        pk=int(dictionary['device_technology'])).name \
-                        if dictionary['device_technology'] else ''
-                except Exception as device_tech_exp:
-                    dictionary['device_technology__name'] = ""
-
-                try:
-                    dictionary['state__name'] = State.objects.get(pk=int(dictionary['state'])).state_name if dictionary[
-                        'state'] else ''
-                except Exception as device_state_exp:
-                    dictionary['state__name'] = ""
-
-                for dict in dictionary:
-                    if dictionary[dict]:
-                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
-                        ):
-                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
-                                result_list.append(dictionary)
-                        else:
-                            if sSearch == dictionary[dict] and dictionary not in result_list:
-                                result_list.append(dictionary)
-                map(lambda x: dictionary.pop(x) if x in dictionary else None,
-                    ['device_type__name', 'device_technology__name', 'state__name'])
-
-            return result_list
+            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(device_technology__in=device_tech_qs)
+            qs = qs.filter(query_object)
 
         return qs
 
@@ -751,22 +557,6 @@ class DisabledDeviceListingTable(BaseDatatableView):
         if order:
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
-
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-
-            if settings.DEBUG:
-                logger.error("Need to provide a model or implement get_initial_queryset!",
-                             extra={'stack': True, 'request': self.request})
-
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        return Device.objects.filter(organization__in=logged_in_user_organizations(self), is_deleted=0, host_state="Disable") \
-            .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -861,56 +651,21 @@ class DisabledDeviceListingTable(BaseDatatableView):
             #     logger.info("Device is not substation.")
         return json_data
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
 
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData,
-        }
-        return ret
-
-
-class ArchivedDeviceListingTable(BaseDatatableView):
+class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing archived devices only
     """
     model = Device
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
-    order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
-
-    def pop_filter_keys(self, dct):
-        """
-        Filtering device fields
-        """
-        keys_list = ['device_type__name', 'device_technology__name', 'state__name']
-        for k in keys_list:
-            dct.pop(k)
-
+    order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
+        'device_type', 'host_state', 'ip_address', 'mac_address', 'state' ]
+    search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
+        'ip_address', 'mac_address']
+    extra_qs_kwargs = {
+                        'is_deleted':1
+        }
 
     def filter_queryset(self, qs):
         """
@@ -918,46 +673,17 @@ class ArchivedDeviceListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch and len(str(sSearch).strip()) >= 3:
-            result_list = list()
 
-            for dictionary in qs:
+            state_qs = State.objects.filter(state_name__icontains=sSearch)
+            device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
+            device_tech_qs = DeviceTechnology.objects.filter(name__icontains=sSearch)
 
-                x = json.dumps(dictionary)
-                dictionary = json.loads(x)
+            query_object = Q()
+            for column in self.search_columns:
+                query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
-                try:
-                    dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
-                        if dictionary['device_type'] else ''
-                except Exception as device_type_exp:
-                    dictionary['device_type__name'] = ""
-
-                try:
-                    dictionary['device_technology__name'] = DeviceTechnology.objects.get(
-                        pk=int(dictionary['device_technology'])).name \
-                        if dictionary['device_technology'] else ''
-                except Exception as device_tech_exp:
-                    dictionary['device_technology__name'] = ""
-
-                try:
-                    dictionary['state__name'] = State.objects.get(pk=int(dictionary['state'])).state_name if dictionary[
-                        'state'] else ''
-                except Exception as device_state_exp:
-                    dictionary['state__name'] = ""
-
-                for dict in dictionary:
-                    if dictionary[dict]:
-                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
-                        ):
-                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
-                                result_list.append(dictionary)
-                        else:
-                            if sSearch == dictionary[dict] and dictionary not in result_list:
-                                result_list.append(dictionary)
-                map(lambda x: dictionary.pop(x) if x in dictionary else None,
-                    ['device_type__name', 'device_technology__name', 'state__name'])
-
-            return result_list
+            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(device_technology__in=device_tech_qs)
+            qs = qs.filter(query_object)
 
         return qs
 
@@ -994,23 +720,6 @@ class ArchivedDeviceListingTable(BaseDatatableView):
         if order:
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
-
-
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-
-            if settings.DEBUG:
-                logger.error("Need to provide a model or implement get_initial_queryset!",
-                             extra={'stack': True, 'request': self.request})
-
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        return Device.objects.filter(organization__in=logged_in_user_organizations(self), is_deleted=1) \
-            .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -1109,56 +818,21 @@ class ArchivedDeviceListingTable(BaseDatatableView):
             #     logger.info("Device is not substation.")
         return json_data
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
 
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData,
-        }
-        return ret
-
-
-class AllDeviceListingTable(BaseDatatableView):
+class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView):
     """
     Render JQuery datatables for listing of all devices
     """
     model = Device
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
-    order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
-
-    def pop_filter_keys(self, dct):
-        """
-        Filtering device fields
-        """
-        keys_list = ['device_type__name', 'device_technology__name', 'state__name']
-        for k in keys_list:
-            dct.pop(k)
-
+    order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
+        'device_type', 'host_state', 'ip_address', 'mac_address', 'state' ]
+    search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
+        'ip_address', 'mac_address']
+    extra_qs_kwargs = {
+                        'is_deleted': 0
+        }
 
     def filter_queryset(self, qs):
         """
@@ -1166,46 +840,17 @@ class AllDeviceListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch and len(str(sSearch).strip()) >= 3:
-            result_list = list()
 
-            for dictionary in qs:
+            state_qs = State.objects.filter(state_name__icontains=sSearch)
+            device_type_qs = DeviceType.objects.filter(name__icontains=sSearch)
+            device_tech_qs = DeviceTechnology.objects.filter(name__icontains=sSearch)
 
-                x = json.dumps(dictionary)
-                dictionary = json.loads(x)
+            query_object = Q()
+            for column in self.search_columns:
+                query_object = query_object | Q(**{"%s__icontains" % column: sSearch})
 
-                try:
-                    dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
-                        if dictionary['device_type'] else ''
-                except Exception as device_type_exp:
-                    dictionary['device_type__name'] = ""
-
-                try:
-                    dictionary['device_technology__name'] = DeviceTechnology.objects.get(
-                        pk=int(dictionary['device_technology'])).name \
-                        if dictionary['device_technology'] else ''
-                except Exception as device_tech_exp:
-                    dictionary['device_technology__name'] = ""
-
-                try:
-                    dictionary['state__name'] = State.objects.get(pk=int(dictionary['state'])).state_name if dictionary[
-                        'state'] else ''
-                except Exception as device_state_exp:
-                    dictionary['state__name'] = ""
-
-                for dict in dictionary:
-                    if dictionary[dict]:
-                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
-                        ):
-                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
-                                result_list.append(dictionary)
-                        else:
-                            if sSearch == dictionary[dict] and dictionary not in result_list:
-                                result_list.append(dictionary)
-                map(lambda x: dictionary.pop(x) if x in dictionary else None,
-                    ['device_type__name', 'device_technology__name', 'state__name'])
-
-            return result_list
+            query_object = query_object | Q(state__in=state_qs) | Q(device_type__in=device_type_qs) | Q(device_technology__in=device_tech_qs)
+            qs = qs.filter(query_object)
 
         return qs
 
@@ -1242,21 +887,6 @@ class AllDeviceListingTable(BaseDatatableView):
         if order:
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-
-            if settings.DEBUG:
-                logger.error("Need to provide a model or implement get_initial_queryset!",
-                             extra={'stack': True, 'request': self.request})
-
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-
-        return Device.objects.filter(organization__in=logged_in_user_organizations(self), is_deleted=0) \
-            .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -1363,38 +993,6 @@ class AllDeviceListingTable(BaseDatatableView):
             except:
                 logger.exception("Device is not substation.")
         return json_data
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = len(qs)
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData,
-        }
-        return ret
 
 
 class DeviceDetail(PermissionsRequiredMixin, DetailView):

@@ -1,9 +1,16 @@
 """
+User Log Deletion Mixin to be used for class based views through-out the system.
 """
 from activity_stream.models import UserAction
 
 class UserLogDeleteMixin(object):
     """
+    View mixin which log the user action on delete.
+
+    Example Usage:
+
+        class SomeDeleteView(UserLogDeleteMixin, DeleteView):
+            ...
     """
     obj_alias = 'alias'
 
