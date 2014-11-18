@@ -70,8 +70,8 @@ class OrganizationListingTable(PermissionsRequiredMixin, DatatableOrganizationFi
         """
         json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in json_data:
-            dct.update(actions='<a href="/organization/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/organization/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/organization/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/organization/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return json_data
 
 

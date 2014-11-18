@@ -1,9 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Service Data Source</li>
-{% endblock %}
+
 {% block content_title %}Service Data Source Management{% endblock %}
 {% block content_description %}List of service data source{% endblock %}
 {% block content %}
@@ -15,7 +12,7 @@
         {% endif %}
     {% endfor %}
 
-    
+
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>SERVICE DATA SOURCE LISTING</h4>
