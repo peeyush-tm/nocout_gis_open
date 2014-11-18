@@ -152,8 +152,10 @@ def cached_all_gis_inventory(query):
 
 
 ## Function with imporved GIS API query
-def query_all_gis_inventory_improved():
-
+def query_all_gis_inventory_improved(monitored_only=False):
+    added_device = " "
+    if monitored_only:
+        added_device = "where device.is_added_to_nms = 1 "
     gis = '''
         select * from (
                 select  basestation.id as BSID,
@@ -183,12 +185,12 @@ def query_all_gis_inventory_improved():
 
                         backhaul.id as BHID,
                         sector.id as SID
-                        
+
                 from inventory_basestation as basestation
                 left join inventory_sector as sector
                 on sector.base_station_id = basestation.id
                 left join inventory_backhaul as backhaul
-                on backhaul.id = basestation.backhaul_id 
+                on backhaul.id = basestation.backhaul_id
                 left join device_country as country
                 on country.id = basestation.country
                 left join device_city as city
@@ -198,7 +200,7 @@ def query_all_gis_inventory_improved():
                 left join device_device as device
                 on device.id = basestation.bs_switch_id
                 group by BSID
-            )as bs_info 
+            )as bs_info
 left join (
     select * from (select
 
@@ -267,6 +269,7 @@ left join (
         on (
             frequency.id = sector.frequency_id
         )
+{0}
     ) as sector_info
     left join (
         select circuit.id as CID,
@@ -349,6 +352,7 @@ left join (
         and
             devicetype.id = device.device_type
         )
+{0}
     ) as ckt_info
     on (
         ckt_info.SID = sector_info.SECTOR_ID
@@ -409,6 +413,7 @@ left join
             and
             devicetype.id = device.device_type
         )
+{0}
         ) as bh_info left join (
                 select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
                 left join (
@@ -444,7 +449,7 @@ left join
 on
     (bh.BHID = bs_info.BHID)
 
-  group by BSID,SECTOR_ID,CID 
+  group by BSID,SECTOR_ID,CID
         ;
         '''.format(added_device)
     return gis    
