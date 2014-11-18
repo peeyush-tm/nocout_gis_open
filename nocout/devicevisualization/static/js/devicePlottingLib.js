@@ -3154,13 +3154,39 @@ function devicePlottingClass_gmap() {
         $("#resetFilters").button("loading");
 
         if(data_to_plot.length > 0) {
-            /*Clear Existing Labels & Reset Counters*/
-            gmap_self.clearStateCounters();
-            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
-            mapInstance.setZoom(5);
-            data_for_filters = data_to_plot;
-            isApiResponse = 0;
-            gmap_self.showStateWiseData_gmap(data_to_plot);
+
+        	if(window.location.pathname.indexOf("googleEarth") > -1) {
+        		/************************Google Earth Code***********************/
+
+        		/*Clear all the elements from google earth*/
+		        earth_instance.clearEarthElements();
+		        earth_instance.clearStateCounters();
+
+
+		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+				lookAt.setLatitude(21.0000);
+				lookAt.setLongitude(78.0000);
+				lookAt.setRange(6019955);
+				// lookAt.setZoom
+				// Update the view in Google Earth 
+				ge.getView().setAbstractView(lookAt); 
+				
+				data_for_filters_earth = data_to_plot;
+
+				isApiResponse = 0;
+				// Load all counters
+				earth_instance.showStateWiseData_earth(data_to_plot);
+
+        	} else {
+	            /*Clear Existing Labels & Reset Counters*/
+	            gmap_self.clearStateCounters();
+	            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+	            mapInstance.setZoom(5);
+	            data_for_filters = data_to_plot;
+	            isApiResponse = 0;
+	            gmap_self.showStateWiseData_gmap(data_to_plot);
+        		
+        	}
 
         } else {
             $.gritter.add({
