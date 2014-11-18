@@ -235,6 +235,15 @@
                             {% if perms.command.view_command %}
                             <li><a class="" href="/command/"><span class="sub-menu-text">Commands</span></a></li>
                             {% endif %}
+                            {% if perms.command.view_country %}
+                            <li><a class="" href="/country/"><span class="sub-menu-text">Country</span></a></li>
+                            {% endif %}
+                            {% if perms.command.view_state %}
+                            <li><a class="" href="/state/"><span class="sub-menu-text">State</span></a></li>
+                            {% endif %}
+                            {% if perms.command.view_city %}
+                            <li><a class="" href="/city/"><span class="sub-menu-text">City</span></a></li>
+                            {% endif %}
                         </ul>
                     </li>
                     {% endif %}
