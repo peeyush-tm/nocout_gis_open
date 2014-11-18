@@ -74,6 +74,7 @@ urlpatterns = patterns('',
                        url(r'^api/', include('inventory.api_urls')),
                        url(r'^country/', include('device.country_urls')),
                        url(r'^state/', include('device.state_urls')),
+                       url(r'^city/', include('device.city_urls')),
                        )
 
 # if settings.DEBUG:
