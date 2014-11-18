@@ -11,7 +11,7 @@ var currentRouterString = "",
     typeCheck = (+checkValue) + 1,
     isForm = false;
 
-if(checkValue == "new" || checkValue == "update" || checkValue == "treeview" || checkValue == "edit" || checkValue == "delete") {
+if(checkValue == "create" || checkValue == "add" || checkValue == "new" || checkValue == "update" || checkValue == "treeview" || checkValue == "edit" || checkValue == "delete") {
     if($.trim(typeCheck) != "NaN") {        
         /*Current router url text*/
         currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-3));
