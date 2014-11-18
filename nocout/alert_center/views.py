@@ -694,7 +694,7 @@ class AlertListingTable(BaseDatatableView):
 
 
             device_list = prepare_raw_alert_results(device_list,performance_data)
-
+            print(device_list)
             # sorted_device_list += sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
             sorted_device_list += device_list
 
@@ -1378,7 +1378,10 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
                         'max_value': data["max_value"],
                         'sys_timestamp': datetime.datetime.fromtimestamp(
                             float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                        'age': data["age"],
+                        'age': datetime.datetime.fromtimestamp(
+                            float(data["age"])).strftime("%d days %H:%M:%S")
+                            if data["age"]
+                            else "",
                         'description': ''#data['description']
                     }
                     if is_ss:
