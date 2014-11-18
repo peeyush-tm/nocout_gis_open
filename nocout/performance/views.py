@@ -174,7 +174,7 @@ SERVICES = {
 }
 
 global gis_information
-gis_information = cached_all_gis_inventory(query_all_gis_inventory())
+gis_information = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
 
 
 # def uptime_to_days(uptime=0):
@@ -1959,26 +1959,22 @@ def organization_backhaul_devices(organizations, technology = None):
 
 
 @cache_for(3600)
-def indexed_gis_devices(page_type):
+def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
     """
 
     :return:
     """
-    raw_results = gis_information
+
+    raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
 
     indexed_raw_results = {}
 
-    indexes = {
-        'network': 'SECTOR_CONF_ON_ID',
-        'customer': 'SS_DEVICE_ID',
-        'other': 'BH_DEVICE_ID'
-    }
-
     for result in raw_results:
-        defined_index = result[indexes[page_type]]
+        defined_index = result[indexed]
         if defined_index not in indexed_raw_results:
             indexed_raw_results[defined_index] = []
         indexed_raw_results[defined_index].append(result)
+
     return indexed_raw_results
 
 
@@ -1997,62 +1993,69 @@ def prepare_gis_devices(devices, page_type):
     #     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
     # ##binary search instead
 
-    gis_result = indexed_gis_devices(page_type=page_type)
+    indexed_sector = indexed_gis_devices("SECTOR_CONF_ON_NAME")
+    indexed_ss = indexed_gis_devices("SSDEVICENAME")
+    indexed_bh = indexed_gis_devices("BHCONF")
+
+    # gis_result = indexed_gis_devices(page_type=page_type)
+
+    processed_device = {}
 
     for device in devices:
-        device_id = device['id']
-        sector_id = []
-        circuit_id = []
-        bh_id = []
-        if device_id in gis_result:
-            raw_results = gis_result[device_id] ##this is a list
-            for result in raw_results:
-                #if device is sector
-                if page_type == 'network' \
-                        and device_id == result['SECTOR_CONF_ON_ID'] \
-                        and result['SECTOR_SECTOR_ID'] not in sector_id:
 
-                    sector_id.append(format_value(result['SECTOR_SECTOR_ID']))
-                    device.update({
+        is_sector = False
+        is_ss = False
+        is_bh = False
+
+        sector_id = []
+
+        device_name = device['device_name']
+
+        if device_name in indexed_sector:
+            #is sector
+            is_sector = True
+            raw_result = indexed_sector[device_name]
+        elif device_name in indexed_ss:
+            #is ss
+            is_ss = True
+            raw_result = indexed_ss[device_name]
+        elif device_name in indexed_bh:
+            #is bh
+            is_bh = True
+            raw_result = indexed_bh[device_name]
+        else:
+            continue
+
+        if is_sector:
+            for bs_row in raw_result:
+                if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
+                    and bs_row['SECTOR_SECTOR_ID'] is not None:
+                    sector_id.append(bs_row['SECTOR_SECTOR_ID'])
+
+        for bs_row in raw_result:
+            if device_name is not None and device_name not in processed_device:
+                processed_device[device_name] = []
+                device.update({
                         "sector_id": ", ".join(sector_id),
-                        "circuit_id": format_value(result['CCID']),
-                        "customer_name" : format_value(result['CUST']),
-                        "bs_name": format_value(result['BSALIAS']),
-                        "city": format_value(result['BSCITY']),
-                        "state": format_value(result['BSSTATE']),
-                        "device_type": format_value(result['SECTOR_TYPE']),
-                        "device_technology": format_value(result['SECTOR_TECH'])
+                        "circuit_id": format_value(bs_row['CCID']),
+                        "customer_name" : format_value(bs_row['CUST']),
+                        "bs_name": format_value(bs_row['BSALIAS']),
+                        "city": format_value(bs_row['BSCITY']),
+                        "state": format_value(bs_row['BSSTATE']),
+                        "device_type": format_value(bs_row['SECTOR_TYPE']),
+                        "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
-                elif page_type == 'customer' \
-                        and device_id == result['SS_DEVICE_ID']\
-                        and result['CCID'] not in circuit_id:
-                    circuit_id.append(result['CCID'])
+                if is_ss:
                     device.update({
-                        "sector_id": format_value(result['SECTOR_SECTOR_ID']),
-                        "circuit_id": format_value(result['CCID']),
-                        "customer_name" : format_value(result['CUST']),
-                        "bs_name": format_value(result['BSALIAS']),
-                        "city": format_value(result['BSCITY']),
-                        "state": format_value(result['BSSTATE']),
-                        "device_type": format_value(result['SS_TYPE']),
-                        "device_technology": format_value(result['SECTOR_TECH'])
+                        "device_type": format_value(bs_row['SS_TYPE']),
+                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']),
                     })
-                elif page_type == 'other' \
-                        and device_id == result['BH_DEVICE_ID']\
-                        and result['BH_DEVICE_ID'] not in bh_id:
-                    bh_id.append(result['BH_DEVICE_ID'])
+                elif is_bh:
                     device.update({
-                        "sector_id": format_value(result['SECTOR_SECTOR_ID']),
-                        "circuit_id": format_value(result['CCID']),
-                        "customer_name" : format_value(result['CUST']),
-                        "bs_name": format_value(result['BSALIAS']),
-                        "city": format_value(result['BSCITY']),
-                        "state": format_value(result['BSSTATE']),
-                        "device_type": format_value(result['BHTYPE']),
-                        "device_technology": format_value(result['BHTECH'])
+                        "device_type": format_value(bs_row['BHTYPE']),
+                        "device_technology": format_value(bs_row['BHTECH'])
                     })
-                else:
-                    pass
+
     return devices
 
 ## for distributed performance collection

@@ -219,9 +219,9 @@
                 <!-- <li>
                     <button type="button" class="btn btn-info">Export Data</button>
                 </li> -->
-                <!-- <li>
+                <li>
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
-                </li> -->
+                </li>
                 <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines" onchange="whiteMapClass.refreshLineLayers()" style="vertical-align: text-top;"/></li>
                 <li class="fright">
                     <form action="#" class="form-horizontal">
@@ -369,7 +369,7 @@
     <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
     <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>
     <script type="text/javascript" src={% static "js/OpenLayers/OpenLayers.js" %}></script>
-    <script src="js/OpenLayers/fullscreen-api-polyfill.js"></script>
+    <script type="text/javascript" src={% static "js/OpenLayers/fullscreen-api-polyfill.js" %}></script>
     <script type="text/javascript" src={% static "js/OpenLayers/FullScreen.js" %}></script>
     <!--LOKIJS for Javascript Database-->
     <script type="text/javascript" src={% static "js/lokijs.min.js" %}></script>

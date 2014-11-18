@@ -230,6 +230,9 @@
             <!--Google Earth Container Start-->
             <div id="google_earth_container"></div>
             <!--Google Earth Container End-->
+            <div id="infoWindowContainer" class="sideInfoContainer col-md-5 col-md-offset-7 hide" style="z-index:100;">                
+                <iframe allowTransparency="true" style="position:absolute; top:0px; right:0px; width:100%; height:100%;overflow-y:auto; z-index:0;"></iframe>
+            </div>
 
         <!--SideInfo Panel Start-->
         <div id="sideInfoContainer" class="sideInfoContainer shim_block col-md-4 col-md-offset-8 hide">
@@ -297,7 +300,8 @@
         var networkMapInstance = "",
             earth_instance = "",
             advJustSearch= "",
-            gisPerformanceClass = "";
+            gisPerformanceClass = "",
+            gmap_self;
 
         google.load("earth", "1");
 
@@ -317,6 +321,8 @@
 
             /*Create a instance of advanceSimpleSearchClass*/
             advJustSearch= new advanceSearchMainClass();
+
+            gmap_self = networkMapInstance;
 
             /*Create performance lib instance*/
             gisPerformanceClass= new GisPerformance();

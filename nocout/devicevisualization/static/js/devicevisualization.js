@@ -29,7 +29,7 @@ if(!$.cookie("freezedAt")) {
 
 /*Save cookie value to variable*/
 isFreeze = $.cookie("isFreezeSelected");
-freezedAt = $.cookie("freezedAt");
+freezedAt = $.cookie("freezedAt") ? $.cookie("freezedAt") : 0;
 tools_ruler = $.cookie("tools_ruler");        
 tools_line = $.cookie("tools_line");
 
@@ -69,7 +69,7 @@ function getPageType() {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
         mapPageType = "googleEarth";
-        // networkMapInstance = mapsLibInstance;
+        gmap_self = networkMapInstance;
     } else if(window.location.pathname.indexOf("white_background") > -1) {
         mapPageType = "white_background";
         networkMapInstance = gmap_self;
