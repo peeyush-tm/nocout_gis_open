@@ -1036,9 +1036,12 @@ def sync():
     #if os.path.exists(rules_file):
     #    os.system('rsync -a %s /omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
 
-    # Make hosts.mk and rules.mk which takes configurations from db
-    make_hosts.main()
-    make_rules.main()
+    try:
+	    # Make hosts.mk and rules.mk which takes configurations from db
+	    make_hosts.main()
+	    make_rules.main()
+    except Exception, e:
+	    logger.error('Error in make_hosts or make_rules: ' + pprint.pformat(e))
     # Switch to check_mk base dir
     os.chdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato')
     # Use latest hosts file
