@@ -1123,3 +1123,52 @@ function isPointInPoly(poly, pt){
         && (c = !c);
     return c;
 }
+
+/**
+ * Function to bounds Google Earth
+ * @param  {Array} boundsObj Array of Lat and Lon Object
+ * @return {[type]}           [description]
+ */
+function showGoogleEarthInBounds(boundsArr, callback) {
+
+    gexInstance.dom.clearFeatures();
+
+    var boundPolygonArray= [];
+    for(var i=0;i< boundsArr.length; i++) {
+        (function(i) {
+            boundPolygonArray.push(gexInstance.dom.buildPointPlacemark([boundsArr[i].lat, boundsArr[i].lon]));
+        }(i));
+    }
+
+    var folder = gexInstance.dom.addFolder(boundPolygonArray);
+
+    // var bounds = gexInstance.dom.computeBounds(folder);
+    // gexInstance.view.setToBoundsView(bounds, { aspectRatio: 1.0 });
+    gexInstance.util.flyToObject(folder);
+
+    callback();
+    
+
+    
+
+    // 
+    // g_earth.clearOverlays();
+
+    // var totalBounds = new GLatLngBounds();
+
+    // var boundPolygonArray = [];
+
+    // for(var i=0; i< boundsArr.length; i++) {
+    //     (function(i) {
+    //         boundPolygonArray.push(new GLatLng(boundsArr[i].lat, boundsArr[i].lon));
+    //     }(i));
+    // }
+
+    // var globeBoundsPolygon = new GPolygon(boundPolygonArray, '#0000ff', 2, 1.00, '#0000ff',    0.25, { clickable: false });
+
+    // // g_earth.addOverlay(globeBoundsPolygon);
+
+    // var polyBounds = globeBoundsPolygon.getBounds();
+    // totalBounds.extend(polyBounds.getNorthEast());
+    // totalBounds.extend(polyBounds.getSouthWest());
+}

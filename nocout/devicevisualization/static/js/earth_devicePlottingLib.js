@@ -1,5 +1,6 @@
 /*Global Variables*/
-var earth_self = "",
+var g_earth = "",
+	earth_self = "",
 	gexInstance = "",
 	networkMapInstance = "",
 	tech_vendor_obj = {},
@@ -86,7 +87,7 @@ function googleEarthClass() {
 		$("#resetFilters").button("loading");
 
 
-		google.earth.createInstance(domElement, earth_self.earthInitCallback, earth_self.earthFailureCallback);
+		g_earth = google.earth.createInstance(domElement, earth_self.earthInitCallback, earth_self.earthFailureCallback);
 	};
 
 	function getCurrentEarthBoundPolygon() {
