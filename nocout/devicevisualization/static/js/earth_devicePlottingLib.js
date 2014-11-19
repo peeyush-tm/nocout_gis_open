@@ -1277,7 +1277,7 @@ var state_wise_device_label_text= {};
 					if(ssDataObj.data.lat && ssDataObj.data.lon) {
 						// Create SS placemark.
 						var ss_marker = earth_self.makePlacemark(ssMarkerIcon,ssDataObj.data.lat,ssDataObj.data.lon,'ss_'+ssDataObj.id,ssInfo);
-
+console.log(ssMarkerIcon);
 						google.earth.addEventListener(ss_marker, 'click', function(event) {
 							var content = gmap_self.makeWindowContent(ss_marker);
 							$("#infoWindowContainer").html('<iframe allowTransparency="true" style="position:absolute; top:0px; right:0px; width:100%; height:100%;overflow-y:auto; z-index:100;"></iframe>'+content);
@@ -2314,7 +2314,7 @@ console.log('bakayaro');
 									}
 								}
 
-								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon,
+								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon;
 								// var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
 								// var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png";
 								var ss_marker = allMarkersObject_earth['sub_station']['ss_'+marker_name],
