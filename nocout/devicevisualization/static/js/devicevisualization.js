@@ -1200,3 +1200,17 @@ function arraysEqual(a, b) {
   }
   return true;
 }
+
+function checkIfMarkerIsInState(marker, array_state_name) {
+    var isMarkerPresent= false, i=0;
+    var lower_array_state_name = array_state_name.map(function(x) {return x.name.toLowerCase();})
+    for(i=0; i< lower_array_state_name.length; i++) {
+        if(!marker.state) {
+            return isMarkerPresent;
+        }
+        if(lower_array_state_name.indexOf(marker.state.toLowerCase()) > -1) {
+            return !isMarkerPresent;
+        }
+    }
+    return isMarkerPresent;
+}

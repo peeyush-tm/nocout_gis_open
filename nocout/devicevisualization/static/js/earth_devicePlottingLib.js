@@ -102,6 +102,7 @@ function googleEarthClass() {
 	}
 
 	var lastStateBounds = [];
+	var statesDataShown = [];
 	/**
 	 * This function handles the initialization callback of google earth creation function
 	 * @method earthInitCallback
@@ -159,18 +160,16 @@ function googleEarthClass() {
 					var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 
 					if(lookAt.getRange() <= 600540) {
-						console.log("7+ Zoom mai aa gya");
 
 						// earth_self.clearLabelElements();
 						var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
-						console.log(lookAt.getRange());
-						console.log(Math.floor(lookAt.getRange()/100000));
 						if(Math.floor(lookAt.getRange()/100000) === 4) {
+							
 							var states_with_bounds = state_lat_lon_db.where(function(obj) {
 								return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
 							});
 
-							if(states_with_bounds === [] || (Math.floor(lookAt.getRange()/100000) === 4 && Math.floor(lastZoomLevel/100000) === 4 && arraysEqual(lastStateBounds, states_with_bounds))) {
+							if(Math.floor(lookAt.getRange()/100000) === 4 && Math.floor(lastZoomLevel/100000) === 4 && arraysEqual(lastStateBounds, states_with_bounds)) {
 								return ;
 							}
 							var states_array = [];
@@ -241,6 +240,7 @@ function googleEarthClass() {
 					            		/*Clear all everything from map*/
 									$.grep(allMarkersArray_earth,function(marker) {
 										marker.setVisibility(false);
+										// lastStateBounds
 									});
 									// Reset Variables
 									allMarkersArray_earth = [];
@@ -264,6 +264,12 @@ function googleEarthClass() {
 
 									// Call function to plot devices on gmap
 									earth_self.plotDevices_earth(inBoundData,"base_station");
+
+									/*Show The loading Icon*/
+									$("#loadingIcon").hide();
+
+									/*Disable the refresh button*/
+									$("#resetFilters").button("complete");
 			            		}
 
 			            		// Show points line if exist
@@ -271,6 +277,7 @@ function googleEarthClass() {
 			            			line_data_obj[key].setVisibility(true);
 			            		}
 							}
+							statesDataShown = states_with_bounds;
 						} else {
 
 	    					earth_self.showLinesInBounds();
@@ -1033,6 +1040,9 @@ var state_wise_device_label_text= {};
      * @uses gmap_devicePlottingLib
 	 */
 	this.plotDevices_earth = function(resultantMarkers,station_type) {
+
+
+
 		for(var i=0;i<resultantMarkers.length;i++) {
 			var bs_marker_icon = base_url+"/static/img/icons/bs.png";
 
@@ -1055,7 +1065,8 @@ var state_wise_device_label_text= {};
 				antenna_height: resultantMarkers[i].data.antenna_height,
 				markerType: 'BS',
 				isMarkerSpiderfied: false,
-				isActive: 1
+				isActive: 1,
+				state: resultantMarkers[i].data.state
 			};
 
 			// Create BS placemark.
@@ -1169,7 +1180,8 @@ var state_wise_device_label_text= {};
 							sector_lon: startEndObj["startLon"],
 							hasPerf: 0,
 							antenna_height: sectorsArray[j].antenna_height,
-							isActive: 1
+							isActive: 1,
+							state: resultantMarkers[i].data.state
 						};
 
 						var sect_height = sectorsArray[j].antenna_height;
@@ -1240,7 +1252,8 @@ var state_wise_device_label_text= {};
 						ss_ip: ssDataObj.data.substation_device_ip_address,
 						sector_ip: sectorsArray[j].sector_configured_on,
 						hasPerf: 0,
-						isActive: 1
+						isActive: 1,
+						state: resultantMarkers[i].data.state
 					};
 
 					if(ssDataObj.data.lat && ssDataObj.data.lon) {
@@ -1323,6 +1336,14 @@ var state_wise_device_label_text= {};
 					}
 				}
     		}
+
+    		if(i=== resultantMarkers.length-1) {
+    				/*Hide The loading Icon*/
+					$("#loadingIcon").hide();
+
+					/*Enable the refresh button*/
+					$("#resetFilters").button("complete");
+    		}
 		}/*End of devices list for loop.*/
 
 		if(isCallCompleted == 1) {
@@ -1333,11 +1354,7 @@ var state_wise_device_label_text= {};
 				networkMapInstance.getBasicFilters(basic_filter_data);
 			}
 
-			/*Hide The loading Icon*/
-			$("#loadingIcon").hide();
-
-			/*Enable the refresh button*/
-			$("#resetFilters").button("complete");
+		
 		}
 	};
 
@@ -1443,6 +1460,7 @@ var state_wise_device_label_text= {};
 			ssName 		    : ss_name,
 			bsName 			: bs_name,
 			zIndex 			: 9999
+			// state: resultantMarkers[i].data.state
         };
 
 		// 
@@ -1723,6 +1741,7 @@ var state_wise_device_label_text= {};
 			polarisation 	 : polarisation,
 			original_sectors : sector_child,
 			isActive 		 : 1
+			// state: resultantMarkers[i].data.state
         };
 
 		// Create the placemark.
