@@ -28,13 +28,11 @@ def mongo_conn(**kwargs):
     	"""
     	DB = None
     	try:
-        	CONN = pymongo.Connection(
-            	host=kwargs.get('host'),
-            	port=kwargs.get('port')
-        	)
+        	CONN = pymongo.Connection(host=kwargs.get('host'), port=kwargs.get('port'))
         	DB = CONN[kwargs.get('db_name')]
     	except pymongo.errors.PyMongoError, e:
-       		raise pymongo.errors.PyMongoError, e
+       		print 'Error in Mongo Connection'
+		print e.message
 	return DB
 
 
@@ -90,6 +88,8 @@ def mongo_db_insert(db,event_dict,flag):
 			db.status_perf.insert(event_dict)
 		elif flag == "availability":
 			db.device_availability.insert(event_dict)
+		elif flag == "kpi_services":
+			db.kpi_data.insert(event_dict)
                 return success
         else:
                 print "Mongo_db insertion failed"
@@ -119,8 +119,10 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 				db.device_status_services_status.update(matching_criteria,event_dict,upsert=True)
 			elif flag == "topology":
 				db.cambium_topology_data.update(matching_criteria,event_dict,upsert=True)
-			elif flag == "wimax_topology":
-				db.wimax_topology_data.update(matching_criteria,event_dict,upsert=True)
+                        elif flag == "wimax_topology":
+                                db.wimax_topology_data.update(matching_criteria,event_dict,upsert=True)
+                        elif flag == "kpi_services":
+                                db.kpi_data.update(matching_criteria,event_dict,upsert=True)
                 	return success
 		except Exception, ReferenceError:
         		print "Mongodb updation failed"
