@@ -2021,11 +2021,17 @@ def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
 
 
 @cache_for(300)
-def combined_indexed_gis_devices(indexes=None):
+def combined_indexed_gis_devices(indexes):
     """
     indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}
     :return:
     """
+    st = datetime.datetime.now()
+
+    if DEBUG:
+        log.debug("preparing indexed sector ss bh results")
+        log.debug("start time %s" %st)
+
     indexed_sector = {}
     indexed_ss = {}
     indexed_bh = {}
@@ -2051,6 +2057,13 @@ def combined_indexed_gis_devices(indexes=None):
             indexed_ss[defined_ss_index].append(result)
             indexed_bh[defined_bh_index].append(result)
 
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        log.debug("Ending {}".format(divmod(elapsed.total_seconds(), 60)))
+        log.debug("preparing indexed sector ss bh results : complete")
+
+
     return indexed_sector, indexed_ss, indexed_bh
 
 
@@ -2072,7 +2085,7 @@ def prepare_gis_devices(devices, page_type):
     st = datetime.datetime.now()
 
     if DEBUG:
-        log.debug("preparing indexed sector ss bh results")
+        log.debug("calling indexed gis inventory")
         log.debug("start time %s" %st)
 
     indexed_sector, indexed_ss, indexed_bh = \
@@ -2083,8 +2096,8 @@ def prepare_gis_devices(devices, page_type):
     if DEBUG:
         endtime = datetime.datetime.now()
         elapsed = endtime - st
-        log.debug("preparing indexed sector ss bh results : complete")
         log.debug("Ending {}".format(divmod(elapsed.total_seconds(), 60)))
+        log.debug("calling indexed gis inventory : complete")
 
     st = datetime.datetime.now()
 
@@ -2152,8 +2165,8 @@ def prepare_gis_devices(devices, page_type):
     if DEBUG:
         endtime = datetime.datetime.now()
         elapsed = endtime - st
-        log.debug("preparing device dictionary sector ss bh results : complete")
         log.debug("Ending {}".format(divmod(elapsed.total_seconds(), 60)))
+        log.debug("preparing device dictionary sector ss bh results : complete")
 
     return devices
 
