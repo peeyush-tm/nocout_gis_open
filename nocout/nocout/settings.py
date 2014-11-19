@@ -199,8 +199,8 @@ INSTALLED_APPS = (
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/tmp/nocout_cache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'nocout-gis-rf-critical',
         'OPTIONS': {
             'MAX_ENTRIES': 1000
         }
