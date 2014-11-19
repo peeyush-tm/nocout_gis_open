@@ -235,7 +235,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
             # c. sub-station configured on (from model SubStation)
             detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
             else:
                 edit_action = ''
             if self.request.user.has_perm('device.delete_device'):
@@ -450,7 +450,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
             #     dct['id']))
             detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
             else:
                 edit_action = ''
             if self.request.user.has_perm('device.delete_device'):
@@ -612,7 +612,7 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
             #     dct['id']))
             detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
             else:
                 edit_action = ''
             if self.request.user.has_perm('device.delete_device'):
@@ -779,7 +779,7 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                 add_action = ''
             detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(dct['id'])
             else:
                 edit_action = ''
             if self.request.user.has_perm('device.delete_device'):
@@ -955,7 +955,7 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
             #     dct['id']))
             detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
             if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+                edit_action = '<a href="/device/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
             else:
                 edit_action = ''
             if self.request.user.has_perm('device.delete_device'):
@@ -1408,8 +1408,8 @@ class DeviceTypeFieldsListingTable(PermissionsRequiredMixin, BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/device_fields/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/device_fields/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+            dct.update(actions='<a href="/device_fields/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/device_fields/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
         return qs
 
@@ -1617,8 +1617,8 @@ class DeviceTechnologyListingTable(PermissionsRequiredMixin, BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/technology/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/technology/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+            dct.update(actions='<a href="/technology/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/technology/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
         return qs
 
@@ -1914,8 +1914,8 @@ class DeviceVendorListingTable(PermissionsRequiredMixin, BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/vendor/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/vendor/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+            dct.update(actions='<a href="/vendor/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/vendor/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
         return qs
 
@@ -2144,8 +2144,8 @@ class DeviceModelListingTable(PermissionsRequiredMixin, BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/model/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/model/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+            dct.update(actions='<a href="/model/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/model/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
         return qs
 
@@ -2401,8 +2401,8 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
             except Exception as e:
                 logger.exception(e)
 
-            dct.update(actions='<a href="/type/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="/type/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/type/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/type/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def ordering(self, qs):
@@ -2580,8 +2580,8 @@ class DevicePortListingTable(PermissionsRequiredMixin, BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/device_port/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/device_port/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/device_port/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/device_port/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -2740,8 +2740,8 @@ class DeviceFrequencyListingTable(PermissionsRequiredMixin, BaseDatatableView):
                             else dct['frequency_radius']
                 )
 
-            dct.update(actions='<a href="/frequency/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/frequency/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/frequency/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/frequency/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):

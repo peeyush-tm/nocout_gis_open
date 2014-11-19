@@ -39,7 +39,8 @@ $(".nav-tabs li a").click(function (e, isFirst) {
         div_id = e.currentTarget.href.split("#")[1],
         table_id = $("#" + div_id).find("table")[0].id,
         ajax_url = e.currentTarget.attributes.data_url.value,
-        grid_headers = JSON.parse(e.currentTarget.attributes.data_header.value);
+        grid_headers = JSON.parse(e.currentTarget.attributes.data_header.value),
+        isTab = $('.nav li.active .hidden-inline-mobile');
     // isTableExists = $.fn.dataTableSettings;
 
     /*Check that the table is created before or not*/
@@ -76,6 +77,11 @@ $(".nav-tabs li a").click(function (e, isFirst) {
         /*Call createDataTable function to create the data table for specified dom element with given data*/
         dataTableInstance.createDataTable(table_id, grid_headers, ajax_url, destroy);
     }
+
+    setTimeout(function() {
+        // Update Breadcrumb
+        $(".breadcrumb li:last-child").html('<a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a>');
+    },150);
 
     /*Save the last clicked tab id in global variable for condition checks*/
     last_clicked_tab = e.currentTarget.id;

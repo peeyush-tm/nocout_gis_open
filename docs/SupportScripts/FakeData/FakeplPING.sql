@@ -34,5 +34,5 @@ select
 	0,
 	0,
 	0,
-	FLOOR(RAND() * (100 - 0 + 1))
+	1416309593
 from device_device;
