@@ -1770,12 +1770,6 @@ function devicePlottingClass_gmap() {
 			var content = gmap_self.makeWindowContent(this);
 			$("#infoWindowContainer").html(content);
 			$("#infoWindowContainer").removeClass('hide');
-			/*Set the content for infowindow*/
-			// infowindow.setContent(content);
-			/*Set The Position for InfoWindow*/
-			// infowindow.setPosition(e.latLng);
-			/*Open the  info window*/
-			// infowindow.open(mapInstance);
 
 			/*Show only 5 rows, hide others*/
 			// gmap_self.show_hide_info();
@@ -1794,29 +1788,34 @@ function devicePlottingClass_gmap() {
 	 * @method showLinesInBounds
 	 */
 	this.showLinesInBounds = function() {
-		/*Loop for polylines*/
-		for(var key in allMarkersObject_gmap['path']) {
-			if(allMarkersObject_gmap['path'].hasOwnProperty(key)) {
-		    	var current_line = allMarkersObject_gmap['path'][key];
-		    	if(current_line) {
-				    var nearEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(current_line.nearLat,current_line.nearLon)),
-				      	farEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(current_line.ss_lat,current_line.ss_lon)),
-				      	connected_bs = allMarkersObject_gmap['base_station']['bs_'+current_line.filter_data.bs_name],
-				      	connected_ss = allMarkersObject_gmap['sub_station']['ss_'+current_line.filter_data.ss_name];
 
-				    if((nearEndVisible || farEndVisible) && ((connected_bs && connected_ss) && (connected_bs.isActive != 0 && connected_ss.isActive != 0))) {
-				    	// If polyline not shown then show the polyline
-				    	if(!current_line.map) {
-				    		current_line.setMap(mapInstance);
-				    	}
-				    } else {
-				    	// If polyline shown then hide the polyline
-				    	if(current_line.map) {
-				    		current_line.setMap(null);
-			    		}
-				    }
-		    	}
-		    }
+		var isLineChecked = $("#showConnLines:checked").length;
+		/*checked case*/
+		if(isLineChecked > 0) {
+			/*Loop for polylines*/
+			for(var key in allMarkersObject_gmap['path']) {
+				if(allMarkersObject_gmap['path'].hasOwnProperty(key)) {
+			    	var current_line = allMarkersObject_gmap['path'][key];
+			    	if(current_line) {
+					    var nearEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(current_line.nearLat,current_line.nearLon)),
+					      	farEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(current_line.ss_lat,current_line.ss_lon)),
+					      	connected_bs = allMarkersObject_gmap['base_station']['bs_'+current_line.filter_data.bs_name],
+					      	connected_ss = allMarkersObject_gmap['sub_station']['ss_'+current_line.filter_data.ss_name];
+
+					    if((nearEndVisible || farEndVisible) && ((connected_bs && connected_ss) && (connected_bs.isActive != 0 && connected_ss.isActive != 0))) {
+					    	// If polyline not shown then show the polyline
+					    	if(!current_line.map) {
+					    		current_line.setMap(mapInstance);
+					    	}
+					    } else {
+					    	// If polyline shown then hide the polyline
+					    	if(current_line.map) {
+					    		current_line.setMap(null);
+				    		}
+					    }
+			    	}
+			    }
+			}
 		}
 	};
 
@@ -1940,15 +1939,24 @@ function devicePlottingClass_gmap() {
 
 		/*Unchecked case*/
 		if(isLineChecked == 0) {
-
-			for (var i = 0; i < ssLinkArray.length; i++) {
-				ssLinkArray[i].setMap(null);
+			for(key in allMarkersObject_gmap['path']) {
+				if(allMarkersObject_gmap['path'][key].map) {
+					allMarkersObject_gmap['path'][key].setMap(null);
+				}
 			}
+			// for (var i = 0; i < ssLinkArray.length; i++) {
+			// 	ssLinkArray[i].setMap(null);
+			// }
 
 		} else {
-			for (var i = 0; i < current_lines.length; i++) {
-				current_lines[i].setMap(mapInstance);
+			for(key in allMarkersObject_gmap['path']) {
+				if(!allMarkersObject_gmap['path'][key].map) {
+					allMarkersObject_gmap['path'][key].setMap(mapInstance);
+				}
 			}
+			// for (var i = 0; i < current_lines.length; i++) {
+			// 	current_lines[i].setMap(mapInstance);
+			// }
 		}
 	};
 
