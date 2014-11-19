@@ -4700,16 +4700,17 @@ function devicePlottingClass_gmap() {
 									}
 								}
 
-								// var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon,
-								var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
-								var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png",
-									ss_marker = allMarkersObject_gmap['sub_station']['ss_'+marker_name],
+								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon;
+								// var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
+								// var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png",
+								var ss_marker = allMarkersObject_gmap['sub_station']['ss_'+marker_name],
 									sector_marker = allMarkersObject_gmap['sector_device']['sector_'+sector_ip],
 									marker_polling_obj = {
 										"device_name" : allSSIds[i],
 										"polling_icon" : newIcon,
 										"polling_time" : current_time,
-										"polling_value" : result.data.devices[allSSIds[i]].value
+										"polling_value" : result.data.devices[allSSIds[i]].value,
+										"ip": ""
 									};
 
 								if(polled_devices_names.indexOf(allSSIds[i]) == -1) {
@@ -4720,18 +4721,21 @@ function devicePlottingClass_gmap() {
 									complete_polled_devices_icon[allSSIds[i]] = [];
 								}
 								complete_polled_devices_icon[allSSIds[i]].push(newIcon);
-								complete_polled_devices_data.push(marker_polling_obj);
 								
 								/*Update the marker icons*/
 								if(ss_marker) {
 									ss_marker.setOptions({
 										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
 									});
+									marker_polling_obj.ip = ss_marker.ss_ip;
 								} else if(sector_marker) {
 									sector_marker.setOptions({
 										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
 									});
+									marker_polling_obj.ip = sector_marker.sectorName;
 								}
+
+								complete_polled_devices_data.push(marker_polling_obj);
 
 								/*total Polled Occurence*/
 								total_polled_occurence = complete_polled_devices_icon[allSSIds[i]].length;
@@ -5021,11 +5025,15 @@ function devicePlottingClass_gmap() {
 
     	var table_html = "";
 
+    	if(window.location.pathname.indexOf("googleEarth") > -1) {
+    		table_html+= '<iframe allowTransparency="true" style="position:absolute; top:0px; right:0px; width:100%; height:100%;overflow-y:auto; z-index:100;"></iframe>';
+    	}
+
     	table_html += "<div class='polling_table_container'><table style='z-index:9999;' id='polling_data_table' class='datatable table table-striped table-bordered table-hover'><thead><tr><th>Device Name</th><th>Time</th><th>Value</th></tr><thead><tbody>";
 
     	for(var i=0;i<complete_polled_devices_data.length;i++) {
     		table_html += '<tr>';
-    		table_html += '<td>'+complete_polled_devices_data[i].device_name+'</td>';
+    		table_html += '<td>'+complete_polled_devices_data[i].ip+'</td>';
     		table_html += '<td>'+complete_polled_devices_data[i].polling_time+'</td>';
     		table_html += '<td>'+complete_polled_devices_data[i].polling_value+'</td>';
     		table_html += '</tr>';
