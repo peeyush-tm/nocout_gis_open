@@ -32,6 +32,7 @@ var main_devices_data_gmaps = [],
 	currentlyPlottedDevices = [],
 	plottedBsIds = [],
 	lastZoomLevel = 5,
+	current_zoom = 5,
 	all_devices_loki_db = [],
 	state_wise_device_counters = {},
 	state_wise_device_labels = {},
@@ -494,6 +495,9 @@ function devicePlottingClass_gmap() {
             });
 
             google.maps.event.addListener(mapInstance, 'idle', function() {
+
+            	// Save current zoom value in global variable
+            	current_zoom = mapInstance.getZoom();
             	
             	/* When zoom level is greater than 8 show lines */
             	if(mapInstance.getZoom() > 7) {
@@ -1470,6 +1474,8 @@ function devicePlottingClass_gmap() {
 							deviceExtraInfo 	: sector_array[j].info,
 							deviceInfo 			: sector_array[j].device_info,
 							poll_info 			: [],
+							pl 					: "",
+							rta					: "",
 							sectorName  		: sector_array[j].sector_configured_on,
 							device_name  		: sector_array[j].sector_configured_on_device,
 							name  				: sector_array[j].sector_configured_on_device,
@@ -1488,6 +1494,45 @@ function devicePlottingClass_gmap() {
 
 					/*Create Sector Marker*/
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
+
+					// Mouseover event on sector marker
+					google.maps.event.addListener(sector_Marker, 'mouseover', function(e) {
+						
+						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+						if(condition1 || condition2) {
+							var pl = $.trim(this.pl) ? this.pl : "N/A",
+								rta = $.trim(this.rta) ? this.rta : "N/A",
+								info_html = '';
+
+							// Create hover infowindow html content
+							info_html += '<table class="table table-responsive table-bordered table-hover">';
+							info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
+							info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+							info_html += '</table>';
+
+					    	/*Set the content for infowindow*/
+							infowindow.setContent(info_html);
+							/*Shift the window little up*/
+							infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
+							/*Set The Position for InfoWindow*/
+							infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
+							/*Open the info window*/
+							infowindow.open(mapInstance);
+						}
+					});
+
+					// Mouseout event on sector marker
+					google.maps.event.addListener(sector_Marker, 'mouseout', function() {
+						
+						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+						if(condition1 || condition2) {
+					    	infowindow.close();
+					    }
+					});
 
 					if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
 						sector_MarkersArray.push(sector_Marker);
@@ -1535,6 +1580,8 @@ function devicePlottingClass_gmap() {
 				    	dataset 	     : 	ss_marker_obj.data.param.sub_station,
 				    	bhInfo 			 : 	[],
 				    	poll_info 		 :  [],
+				    	pl 				 :  "",
+						rta				 :  "",
 				    	antenna_height   : 	ss_marker_obj.data.antenna_height,
 				    	name 		 	 : 	ss_marker_obj.name,
 				    	bs_name 		 :  bs_ss_devices[i].name,
@@ -1551,6 +1598,43 @@ function devicePlottingClass_gmap() {
 
 				    /*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
+
+				    // Mouseover event on sub-station marker
+					google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
+						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+						if(condition1 || condition2) {
+							var pl = $.trim(this.pl) ? this.pl : "N/A",
+								rta = $.trim(this.rta) ? this.rta : "N/A",
+								info_html = '';
+
+							// Create hover infowindow html content
+							info_html += '<table class="table table-responsive table-bordered table-hover">';
+							info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
+							info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+							info_html += '</table>';
+
+					    	/*Set the content for infowindow*/
+							infowindow.setContent(info_html);
+							/*Shift the window little up*/
+							infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
+							/*Set The Position for InfoWindow*/
+							infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
+							/*Open the info window*/
+							infowindow.open(mapInstance);
+						}
+					});
+
+					// Mouseout event on sub-station marker
+					google.maps.event.addListener(ss_marker, 'mouseout', function() {
+						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+						if(condition1 || condition2) {
+					    	infowindow.close();
+					    }
+					});
 
 				    /*Add BS Marker To Cluster*/
 					masterClusterInstance.addMarker(ss_marker);
@@ -1824,25 +1908,30 @@ function devicePlottingClass_gmap() {
 	 * @method showSubStaionsInBounds
 	 */
 	this.showSubStaionsInBounds = function() {
-		/*Loop for polylines*/
-		for(var key in allMarkersObject_gmap['sub_station']) {
-			if(allMarkersObject_gmap['sub_station'].hasOwnProperty(key)) {
-		    	var ss_marker = allMarkersObject_gmap['sub_station'][key],
-		    		isMarkerExist = mapInstance.getBounds().contains(ss_marker.getPosition());
-	    		if(isMarkerExist) {
-			    	if(ss_marker.isActive && +(ss_marker.isActive) === 1) {
-			    		// If SS Marker not shown then show the SS Marker
-			    		if(!allMarkersObject_gmap['sub_station'][key].map) {
-			      			allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
-			    		}
-			    	} else {
-			    		// If SS Marker shown then hide the SS Marker
-			    		if(allMarkersObject_gmap['sub_station'][key].map) {
-			      			allMarkersObject_gmap['sub_station'][key].setMap(null);
-		    			}
-			    	}
-	    		}
-		    }
+		var isSSChecked = $("#showAllSS:checked").length;
+
+		/*Checked case*/
+		if(isSSChecked > 0) {
+			/*Loop for polylines*/
+			for(var key in allMarkersObject_gmap['sub_station']) {
+				if(allMarkersObject_gmap['sub_station'].hasOwnProperty(key)) {
+			    	var ss_marker = allMarkersObject_gmap['sub_station'][key],
+			    		isMarkerExist = mapInstance.getBounds().contains(ss_marker.getPosition());
+		    		if(isMarkerExist) {
+				    	if(ss_marker.isActive && +(ss_marker.isActive) === 1) {
+				    		// If SS Marker not shown then show the SS Marker
+				    		if(!allMarkersObject_gmap['sub_station'][key].map) {
+				      			allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
+				    		}
+				    	} else {
+				    		// If SS Marker shown then hide the SS Marker
+				    		if(allMarkersObject_gmap['sub_station'][key].map) {
+				      			allMarkersObject_gmap['sub_station'][key].setMap(null);
+			    			}
+				    	}
+		    		}
+			    }
+			}
 		}
 	};
 
@@ -1944,9 +2033,6 @@ function devicePlottingClass_gmap() {
 					allMarkersObject_gmap['path'][key].setMap(null);
 				}
 			}
-			// for (var i = 0; i < ssLinkArray.length; i++) {
-			// 	ssLinkArray[i].setMap(null);
-			// }
 
 		} else {
 			for(key in allMarkersObject_gmap['path']) {
@@ -1954,9 +2040,31 @@ function devicePlottingClass_gmap() {
 					allMarkersObject_gmap['path'][key].setMap(mapInstance);
 				}
 			}
-			// for (var i = 0; i < current_lines.length; i++) {
-			// 	current_lines[i].setMap(mapInstance);
-			// }
+		}
+	};
+
+	/**
+	 * This function show/hide the sub-stations.
+	 * @method showSubStations_gmap
+	 */
+	this.showSubStations_gmap = function() {
+
+		var isSSChecked = $("#showAllSS:checked").length;
+
+		/*Unchecked case*/
+		if(isSSChecked == 0) {
+			for(key in allMarkersObject_gmap['sub_station']) {
+				if(allMarkersObject_gmap['sub_station'][key].map) {
+					allMarkersObject_gmap['sub_station'][key].setMap(null);
+				}
+			}
+
+		} else {
+			for(key in allMarkersObject_gmap['sub_station']) {
+				if(!allMarkersObject_gmap['sub_station'][key].map) {
+					allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
+				}
+			}
 		}
 	};
 

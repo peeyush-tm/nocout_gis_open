@@ -315,57 +315,18 @@ class LivePerformanceListing(BaseDatatableView):
         :return: list of devices
         """
 
-        page_type = self.request.GET['page_type']
-        device_technology_id = None
+        page_type = self.request.GET.get('page_type')
 
         required_value_list = ['id','machine__name','device_name','ip_address']
 
-        if self.request.GET['page_type'] == 'customer':
-            page_type = 'customer'
-            device_tab_technology = self.request.GET.get('data_tab')
-            device_technology_id = DeviceTechnology.objects.get(name__icontains=device_tab_technology).id
+        device_tab_technology = self.request.GET.get('data_tab')
 
-            #If the technology is P2P then fetch all the device without circuit_type backhaul and
-            #include all the devices whether they are sector_configured_on or substation
-            if int(device_technology_id) == int(P2P.ID):
-                #single query to fetch devices with circuit type as backhaul
-                # device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
+        devices = filter_devices(organizations=kwargs['organizations'],
+                                 data_tab=device_tab_technology,
+                                 page_type=page_type,
+                                 required_value_list=required_value_list
+        )
 
-                devices = organization_customer_devices(
-                    kwargs['organizations'],
-                    int(device_technology_id)
-                ).values(*required_value_list)
-
-            else:
-                #If the technology is not P2P then include devices which are substation.
-                devices = organization_customer_devices(
-                    kwargs['organizations'], device_technology_id
-                ).values(*required_value_list)
-
-        elif self.request.GET['page_type'] == 'network':
-            page_type = 'network'
-            device_tab_technology = self.request.GET.get('data_tab')
-            device_technology_id = DeviceTechnology.objects.get(name__icontains=device_tab_technology).id
-
-            # If the page_type is network then include only devices which are added to NMS and devices which are not P2P,
-            # and must be either PMP or WiMAX.
-            devices = organization_network_devices(
-                organizations=kwargs['organizations'],
-                technology=device_technology_id
-            ).values(*required_value_list)
-
-        elif self.request.GET['page_type'] == 'other':
-            page_type = 'other'
-            # If the page_type is network then include only devices which are added to NMS and devices which are not P2P,
-            # and must be either PMP or WiMAX.
-            devices = organization_backhaul_devices(
-                organizations=kwargs['organizations']
-            ).values(*required_value_list)
-
-        else:
-            return []
-
-        device_list = []
         for device in devices:
             device.update({
                 "page_type":page_type,
@@ -374,14 +335,14 @@ class LivePerformanceListing(BaseDatatableView):
                 "last_updated": "NA",
                 "last_updated_date": "NA",
                 "last_updated_time": "NA",
-                "sector_id": "",
-                "circuit_id": "",
-                "customer_name" : "",
-                "bs_name": "",
-                "city": "",
-                "state": "",
-                "device_type": "",
-                "device_technology": ""
+                "sector_id": "NA",
+                "circuit_id": "NA",
+                "customer_name": "NA",
+                "bs_name": "NA",
+                "city": "NA",
+                "state": "NA",
+                "device_type": "NA",
+                "device_technology": "NA"
             })
 
         return devices
@@ -545,7 +506,9 @@ class LivePerformanceListing(BaseDatatableView):
             device_list.append(
                 {
                     'device_name': device['device_name'],
-                    'device_machine': device['machine__name']
+                    'device_machine': device['machine_name'],
+                    'id': device['id'],
+                    'ip_address': device['ip_address']
                 }
             )
 
@@ -650,6 +613,8 @@ class LivePerformanceListing(BaseDatatableView):
         }
         return ret
 
+
+@cache_for(300)
 def prepare_machines(device_list):
     """
 
@@ -667,7 +632,7 @@ def prepare_machines(device_list):
     return machine_dict
 
 
-@cache_for(600)
+@cache_for(300)
 def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     """
     ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
@@ -730,6 +695,7 @@ def map_results(perf_result, qs):
                             dct["latency"] = result["latency"]
                         dct["last_updated"] = result["last_updated"]
     return result_qs
+
 
 class Get_Perfomance(View):
     """
@@ -974,6 +940,7 @@ class Fetch_Inventory_Devices(View):
                            'technology': DeviceTechnology.objects.get(id=device.device_technology).name }
         )
         return result
+
 
 class Inventory_Device_Status(View):
     """
@@ -1772,6 +1739,7 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
 
     return query
 
+
 def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
     """
 
@@ -1826,7 +1794,7 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
     return query
 
 #common function to get the devices
-@cache_for(3600)
+@cache_for(300)
 def ptp_device_circuit_backhaul(specify_type='all'):
     """
     Special case fot PTP technology devices. Wherein Circuit type backhaul is required
@@ -1859,7 +1827,8 @@ def ptp_device_circuit_backhaul(specify_type='all'):
 
     return device_list_with_circuit_type_backhaul
 
-@cache_for(3600)
+
+@cache_for(300)
 def organization_customer_devices(organizations, technology = None, specify_ptp_type='all'):
     """
     To result back the all the customer devices from the respective organization..
@@ -1911,7 +1880,8 @@ def organization_customer_devices(organizations, technology = None, specify_ptp_
 
     return organization_customer_devices
 
-@cache_for(3600)
+
+@cache_for(300)
 def organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all'):
     """
     To result back the all the network devices from the respective organization..
@@ -1961,7 +1931,8 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
 
     return organization_network_devices
 
-@cache_for(3600)
+
+@cache_for(300)
 def organization_backhaul_devices(organizations, technology = None):
     """
     To result back the all the network devices from the respective organization..
@@ -1980,7 +1951,59 @@ def organization_backhaul_devices(organizations, technology = None):
     )
 
 
-@cache_for(3600)
+@cache_for(300)
+def filter_devices(organizations=[],
+                   data_tab=None,
+                   page_type="customer",
+                   required_value_list=[]
+                   ):
+
+    """
+
+    :param logged_in_user: authenticated user
+    :param data_tab: the technology user wants to retrive
+    :return: the list of devices that user has been assigned via organization
+    """
+    device_list = list()
+    organization_devices = list()
+
+    if len(required_value_list):
+        device_value_list = required_value_list
+    else:
+        device_value_list = ['id','machine__name','device_name','ip_address']
+
+    device_tab_technology = data_tab ##
+    device_technology_id = None
+    try:
+        device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
+    except Exception as e:
+        log.exception("Backhaul Device Filter %s" %(e.message))
+
+    if page_type == "customer":
+        device_list = organization_customer_devices(organizations, device_technology_id
+        ).values(*device_value_list)
+    elif page_type == "network":
+        device_list = organization_network_devices(organizations, device_technology_id
+        ).values(*device_value_list)
+    elif page_type == "other":
+        device_list = organization_backhaul_devices(organizations).values(*device_value_list)
+    else:
+        device_list = []
+    # get the devices in an organisation which are added for monitoring
+    organization_devices = [
+        {
+            'device_name': device['device_name'],
+            'machine_name': device['machine__name'],
+            'id': device['id'],
+            'ip_address': device['ip_address']
+        }
+        for device in device_list
+    ]
+
+    return organization_devices
+
+
+@cache_for(300)
 def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
     """
 
@@ -2000,7 +2023,7 @@ def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
     return indexed_raw_results
 
 
-@cache_for(3600)
+@cache_for(300)
 def combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}):
     """
     indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}
@@ -2034,7 +2057,7 @@ def combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'S
     return indexed_sector, indexed_ss, indexed_bh
 
 
-@cache_for(3600)
+@cache_for(300)
 def prepare_gis_devices(devices, page_type):
     """
     map the devices with gis data
