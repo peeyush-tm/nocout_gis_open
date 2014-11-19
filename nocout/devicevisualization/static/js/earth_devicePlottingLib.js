@@ -101,6 +101,7 @@ function googleEarthClass() {
 		return poly;
 	}
 
+	var lastStateBounds = [];
 	/**
 	 * This function handles the initialization callback of google earth creation function
 	 * @method earthInitCallback
@@ -125,7 +126,7 @@ function googleEarthClass() {
 		var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 		lookAt.setLatitude(21.0000);
 		lookAt.setLongitude(78.0000);
-		lookAt.setRange(6019955);
+		lookAt.setRange(5019955);
 
 		// Update the view in Google Earth 
 		ge.getView().setAbstractView(lookAt); 
@@ -165,12 +166,15 @@ function googleEarthClass() {
 						console.log(lookAt.getRange());
 						console.log(Math.floor(lookAt.getRange()/100000));
 						if(Math.floor(lookAt.getRange()/100000) === 4) {
-							console.log("8 Zoom mai aa gya");						
 							var states_with_bounds = state_lat_lon_db.where(function(obj) {
 								return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
 							});
 
+							if(states_with_bounds === [] || (Math.floor(lookAt.getRange()/100000) === 4 && Math.floor(lastZoomLevel/100000) === 4 && arraysEqual(lastStateBounds, states_with_bounds))) {
+								return ;
+							}
 							var states_array = [];
+							lastStateBounds= states_with_bounds;
 
 		            		// Hide State Labels which are in current bounds
 		            		for(var i=states_with_bounds.length;i--;) {

@@ -1174,3 +1174,29 @@ function showGoogleEarthInBounds(boundsArr, callback) {
     // totalBounds.extend(polyBounds.getNorthEast());
     // totalBounds.extend(polyBounds.getSouthWest());
 }
+
+function objectsAreSame(x, y) {
+   var objectsAreSame = true;
+   for(var propertyName in x) {
+      if(x[propertyName] !== y[propertyName]) {
+         objectsAreSame = false;
+         break;
+      }
+   }
+   return objectsAreSame;
+}
+
+
+function arraysEqual(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length != b.length) return false;
+
+  // If you don't care about the order of the elements inside
+  // the array, you should sort both arrays here.
+
+  for (var i = 0; i < a.length; ++i) {
+    return objectsAreSame(a[i], b[i]);
+  }
+  return true;
+}
