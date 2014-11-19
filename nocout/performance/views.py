@@ -2021,35 +2021,35 @@ def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
 
 
 @cache_for(300)
-def combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}):
+def combined_indexed_gis_devices(indexes=None):
     """
     indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}
     :return:
     """
-
-    raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
-
     indexed_sector = {}
     indexed_ss = {}
     indexed_bh = {}
 
-    for result in raw_results:
-        defined_sector_index = result[indexes['sector']]
-        defined_ss_index = result[indexes['ss']]
-        defined_bh_index = result[indexes['bh']]
-        #indexing sector
-        if defined_sector_index not in indexed_sector:
-            indexed_sector[defined_sector_index] = []
-        #indexing ss
-        if defined_ss_index not in indexed_ss:
-            indexed_ss[defined_ss_index] = []
-        #indexing bh
-        if defined_bh_index not in indexed_bh:
-            indexed_bh[defined_bh_index] = []
+    if indexes:
+        raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
 
-        indexed_sector[defined_sector_index].append(result)
-        indexed_ss[defined_ss_index].append(result)
-        indexed_bh[defined_bh_index].append(result)
+        for result in raw_results:
+            defined_sector_index = result[indexes['sector']]
+            defined_ss_index = result[indexes['ss']]
+            defined_bh_index = result[indexes['bh']]
+            #indexing sector
+            if defined_sector_index not in indexed_sector:
+                indexed_sector[defined_sector_index] = []
+            #indexing ss
+            if defined_ss_index not in indexed_ss:
+                indexed_ss[defined_ss_index] = []
+            #indexing bh
+            if defined_bh_index not in indexed_bh:
+                indexed_bh[defined_bh_index] = []
+
+            indexed_sector[defined_sector_index].append(result)
+            indexed_ss[defined_ss_index].append(result)
+            indexed_bh[defined_bh_index].append(result)
 
     return indexed_sector, indexed_ss, indexed_bh
 
