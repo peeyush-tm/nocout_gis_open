@@ -118,7 +118,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 		
 		current_time = int(time.time())
 		plugin_output = plugin_output.split(' ')
-		if len(plugin_output) > 1:
+		if len(plugin_output) > 1 and 'radwin' not in service:
 			ds_list = map(lambda x: x.split("=")[0],plugin_output)
 			value_list = map(lambda x: x.split("=")[1],plugin_output)
 
