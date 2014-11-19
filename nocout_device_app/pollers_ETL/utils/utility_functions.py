@@ -2,7 +2,7 @@ import socket
 import re
 import mysql.connector
 import os
-from datetime import datetime
+from datetime import datetime,timedelta
 import time
 def get_from_socket(site_name, query):
     """
@@ -22,9 +22,34 @@ def get_from_socket(site_name, query):
     s.connect(socket_path)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
-    output = s.recv(100000000)
-    output.strip("\n")
+    output = ''
+    while True:
+        out = s.recv(100000000)
+        out.strip()
+        if not len(out):
+	    break
+        output += out
     return output
+
+
+def pivot_timestamp_fwd(timestamp):
+    """
+    Function_name : pivot_timestamp (function for pivoting the time to 5 minutes interval)
+
+    Args: timestamp
+
+    Kwargs: None
+    return:
+           t_stmp (pivoted time stamp)
+    Exception:
+           None
+    """
+    t_stmp = timestamp + timedelta(minutes=-(timestamp.minute % 5))
+    if (timestamp.minute %5) != 0:
+        t_stmp = t_stmp + timedelta(minutes=5)
+
+
+    return t_stmp
 
 
 def get_threshold(perf_data):
@@ -49,15 +74,15 @@ def get_threshold(perf_data):
     	if param.partition('=')[2]:
             	if ';' in param.split("=")[1]:
                     	threshold_values[param.split("=")[0]] = {
-                    	"war": re.sub('[ms]', '', param.split("=")[1].split(";")[1]),
-                    	"cric": re.sub('[ms]', '', param.split("=")[1].split(";")[2]),
-                    	"cur": re.sub('[ms]', '', param.split("=")[1].split(";")[0])
+                    	"war": re.sub('ms', '', param.split("=")[1].split(";")[1]),
+                    	"cric": re.sub('ms', '', param.split("=")[1].split(";")[2]),
+                    	"cur": re.sub('ms', '', param.split("=")[1].split(";")[0])
                     	}
             	else:
                     	threshold_values[param.split("=")[0]] = {
                     	"war": None,
                     	"cric": None,
-                    	"cur": re.sub('[ms]', '', param.split("=")[1].strip("\n"))
+                    	"cur": re.sub('ms', '', param.split("=")[1].strip("\n"))
                     	}
     	else:
         	threshold_values[param.split("=")[0]] = {
