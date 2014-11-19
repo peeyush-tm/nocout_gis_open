@@ -3761,7 +3761,18 @@ function devicePlottingClass_gmap() {
     	advJustSearch.resetVariables();
 
 	    for(var i=data_to_plot.length;i--;) {
-	    	if(selected_bs_city.length <= 0) {
+	    	var exceptCityCondition = selected_bs_alias.length === 0 && selected_ip_address.length === 0 && selected_circuit_id.length === 0;
+	    	if(exceptCityCondition) {
+	    		var city_condition = selected_bs_city.indexOf(data_to_plot[i].data.city) > -1 ? true : false;
+	    		if(city_condition) {
+		    		if(window.location.pathname.indexOf("googleEarth") > -1) {
+						folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
+			    	} else {
+			    		bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].data.lat,data_to_plot[i].data.lon));
+			    	}
+	    		}
+    		} else {
+
 	    		if(selected_bs_alias.length > 0) {
 		    		var bs_alias = data_to_plot[i].alias,
 		    			alias_condition = selected_bs_alias.indexOf(bs_alias) > -1 ? true : false;
@@ -3863,8 +3874,6 @@ function devicePlottingClass_gmap() {
 		    			}
 		    		}
 		    	}
-	    	} else {
-
 	    	}
 	    }
 
