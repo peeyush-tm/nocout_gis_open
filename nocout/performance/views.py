@@ -2029,8 +2029,8 @@ def combined_indexed_gis_devices(indexes):
     st = datetime.datetime.now()
 
     if DEBUG:
-        log.debug("preparing indexed sector ss bh results")
-        log.debug("start time %s" %st)
+        log.debug("PERFORMANCE : GIS INDEXED sector ss bh results")
+        log.debug("START TIME : %s" %st)
 
     indexed_sector = {}
     indexed_ss = {}
@@ -2060,9 +2060,8 @@ def combined_indexed_gis_devices(indexes):
     if DEBUG:
         endtime = datetime.datetime.now()
         elapsed = endtime - st
-        log.debug("Ending {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("preparing indexed sector ss bh results : complete")
-
+        log.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
+        log.debug("PERFORMANCE : GIS INDEXED sector ss bh results : COMPLETED")
 
     return indexed_sector, indexed_ss, indexed_bh
 
@@ -2085,8 +2084,8 @@ def prepare_gis_devices(devices, page_type):
     st = datetime.datetime.now()
 
     if DEBUG:
-        log.debug("calling indexed gis inventory")
-        log.debug("start time %s" %st)
+        log.debug("PERFORMANCE : CALL : combined_indexed_gis_devices")
+        log.debug("START TIME : %s" %st)
 
     indexed_sector, indexed_ss, indexed_bh = \
         combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'})
@@ -2096,14 +2095,14 @@ def prepare_gis_devices(devices, page_type):
     if DEBUG:
         endtime = datetime.datetime.now()
         elapsed = endtime - st
-        log.debug("Ending {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("calling indexed gis inventory : complete")
+        log.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
+        log.debug("PERFORMANCE : CALL : combined_indexed_gis_devices : COMPLETED")
 
     st = datetime.datetime.now()
 
     if DEBUG:
-        log.debug("preparing device dictionary sector ss bh results")
-        log.debug("start time %s" %st)
+        log.debug("FINAL RESULTS : GIS Inventory Mapped")
+        log.debug("START TIME : %s" %st)
 
     processed_device = {}
 
@@ -2144,7 +2143,7 @@ def prepare_gis_devices(devices, page_type):
                 device.update({
                         "sector_id": ", ".join(sector_id),
                         "circuit_id": format_value(bs_row['CCID']),
-                        "customer_name" : format_value(bs_row['CUST']),
+                        "customer_name": format_value(bs_row['CUST']),
                         "bs_name": format_value(bs_row['BSALIAS']),
                         "city": format_value(bs_row['BSCITY']),
                         "state": format_value(bs_row['BSSTATE']),
@@ -2165,8 +2164,8 @@ def prepare_gis_devices(devices, page_type):
     if DEBUG:
         endtime = datetime.datetime.now()
         elapsed = endtime - st
-        log.debug("Ending {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("preparing device dictionary sector ss bh results : complete")
+        log.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
+        log.debug("FINAL RESULTS : GIS Inventory Mapped : COMPLETED")
 
     return devices
 

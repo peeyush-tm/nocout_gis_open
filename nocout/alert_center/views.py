@@ -1278,6 +1278,7 @@ def common_prepare_results(qs):
 
     return qs
 
+
 def severity_level_check(list_to_check):
     """
 
@@ -1315,7 +1316,11 @@ def raw_prepare_result(performance_data,
     :return:
     """
 
-    # count
+    st = datetime.datetime.now()
+    if DEBUG:
+        logger.debug("ALERT : Preparing Query Results")
+        logger.debug("START TIME : %s" %st)
+
     count = 0
 
     while count <= math.ceil(len(devices) / limit):
@@ -1336,6 +1341,12 @@ def raw_prepare_result(performance_data,
 
         count += 1
 
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
+        logger.debug("ALERT : Preparing Query Results : COMPLETED")
+
     return performance_data
 
 
@@ -1347,6 +1358,11 @@ def indexed_alert_results(performance_data):
     :return:
     """
 
+    st = datetime.datetime.now()
+    if DEBUG:
+        logger.debug("ALERT : Preparing INDEXED Results")
+        logger.debug("START TIME : %s" %st)
+
     indexed_raw_results = {}
 
     for data in performance_data:
@@ -1356,6 +1372,12 @@ def indexed_alert_results(performance_data):
             if defined_index not in indexed_raw_results:
                 indexed_raw_results[defined_index] = None
             indexed_raw_results[defined_index] = data
+
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
+        logger.debug("ALERT : Preparing INDEXED Results : COMPLETED")
 
     return indexed_raw_results
 
@@ -1369,6 +1391,10 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
     :param performance_data:
     :return:
     """
+    st = datetime.datetime.now()
+    if DEBUG:
+        logger.debug("ALERT : Preparing ALERT POLLED Results")
+        logger.debug("START TIME : %s" %st)
 
     indexed_alert_data = indexed_alert_results(performance_data)
 
@@ -1428,5 +1454,11 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
             })
 
             device_list.append(device_events)
+
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
+        logger.debug("ALERT : Preparing ALERT POLLED Results : COMPLETED")
 
     return device_list
