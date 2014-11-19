@@ -168,7 +168,7 @@ function googleEarthClass() {
 					zoom_check = current_zoom ? current_zoom :400000;
 
 				if (globeBounds) {
-					console.log("Globe mai aa gya");
+					// console.log("Globe mai aa gya");
 					var poly = [
 							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()},
 							{lat: globeBounds.getNorth(), lon: globeBounds.getEast()},
@@ -1108,10 +1108,10 @@ var state_wise_device_label_text= {};
 				$("#infoWindowContainer").removeClass('hide');
 				event.preventDefault();
 			});
-// console.log(resultantMarkers[i]);
+console.log(resultantMarkers[i]);
 			var sectorsArray = resultantMarkers[i].data.param.sector;
 			var deviceIDArray= [];
-// console.log(sectorsArray);
+console.log(sectorsArray);
 
     		// $.grep(sectorsArray,function(sector) { 
 			for(var j=0;j<sectorsArray.length;j++) {
@@ -1277,7 +1277,7 @@ var state_wise_device_label_text= {};
 					if(ssDataObj.data.lat && ssDataObj.data.lon) {
 						// Create SS placemark.
 						var ss_marker = earth_self.makePlacemark(ssMarkerIcon,ssDataObj.data.lat,ssDataObj.data.lon,'ss_'+ssDataObj.id,ssInfo);
-
+// console.log(ssMarkerIcon);
 						google.earth.addEventListener(ss_marker, 'click', function(event) {
 							var content = gmap_self.makeWindowContent(ss_marker);
 							$("#infoWindowContainer").html('<iframe allowTransparency="true" style="position:absolute; top:0px; right:0px; width:100%; height:100%;overflow-y:auto; z-index:100;"></iframe>'+content);
@@ -1404,7 +1404,7 @@ var state_wise_device_label_text= {};
 		placemark.setStyleSelector(style); //apply the style to the placemark
 
 		var point = ge.createPoint('');
-		// console.log(latitude, longitude);
+		console.log(latitude, longitude);
 		point.setLatitude(latitude);
 		point.setLongitude(longitude);
 		placemark.setGeometry(point);
@@ -1859,7 +1859,7 @@ var state_wise_device_label_text= {};
      * @method initLivePolling
      */
     this.initLivePolling_earth = function() {
-console.log('bakayaro');
+// console.log('bakayaro');
 
     	if(Math.floor(getEarthZoomLevel()/100000) <= 4) {
     		/*Reset marker icon*/
@@ -1949,7 +1949,7 @@ console.log('bakayaro');
     		bootbox.alert("Please zoom in for live poll devices.There are too many devices.");
     		$("#clearPolygonBtn").trigger('click');
     	}
-    	console.log('end of bakayaro');
+    	// console.log('end of bakayaro');
     };
 
 	/**
@@ -1962,7 +1962,7 @@ console.log('bakayaro');
     		pathArray = [],
 			polygon = "",
 			service_type = $("#isPing")[0].checked ? "ping" : "other";
-		console.log('konoyaro');
+		// console.log('konoyaro');
     	/*Re-Initialize the polling*/
     	earth_self.initLivePolling_earth();
 
@@ -2177,11 +2177,11 @@ console.log('bakayaro');
     				}
     			},
     			error : function(err) {
-    				console.log(err.statusText);
+    				// console.log(err.statusText);
     			}
 			});
 		}
-		console.log('end of konoyaro');
+		// console.log('end of konoyaro');
 	}
 
 	/**
@@ -2244,8 +2244,8 @@ console.log('bakayaro');
 							} else {
 								new_device_name = allSSIds[i];
 							}
-							console.log("SS ID: "+allSSIds[i]);
-							console.log("In Result: "+ result.data.devices[allSSIds[i]]);
+							// console.log("SS ID: "+allSSIds[i]);
+							// console.log("In Result: "+ result.data.devices[allSSIds[i]]);
 							if(result.data.devices[allSSIds[i]] != undefined) {
 
 								if(hasPolledInfo) {
@@ -2314,7 +2314,7 @@ console.log('bakayaro');
 									}
 								}
 
-								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon,
+								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon;
 								// var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
 								// var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png";
 								var ss_marker = allMarkersObject_earth['sub_station']['ss_'+marker_name],
