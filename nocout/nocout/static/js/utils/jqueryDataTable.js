@@ -47,7 +47,7 @@ function ourDataTableWidget()
             aoColumns:tableheaders,
             sPaginationType: "full_numbers",
             aaSorting:[],
-            bStateSave:true
+            bStateSave:false
  		});
     };
 }

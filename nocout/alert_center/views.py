@@ -10,8 +10,15 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceTechnology, DeviceType
 from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
-from performance.views import ptp_device_circuit_backhaul, organization_customer_devices, \
-    organization_network_devices, organization_backhaul_devices, indexed_gis_devices
+
+from performance.views import ptp_device_circuit_backhaul, \
+    organization_customer_devices, \
+    organization_network_devices, \
+    organization_backhaul_devices, \
+    indexed_gis_devices, \
+    combined_indexed_gis_devices,\
+    indexed_polled_results
+
 from django.utils.dateformat import format
 from django.db.models import Q
 
@@ -701,6 +708,15 @@ class AlertListingTable(BaseDatatableView):
 
         return sorted_device_list
 
+    def prepare_raw_alert_results(self,qs):
+        """
+
+        :param qs:
+        :return: prepare the GIS inventory for the devices
+        """
+        device_list = list()
+        return prepare_raw_alert_results(device_list,qs)
+
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -1210,6 +1226,8 @@ def severity_level_check(list_to_check):
             if severity.lower() in item.lower():
                 return True
 
+
+@cache_for(300)
 def raw_prepare_result(performance_data,
                        machine,
                        table_name=None,
@@ -1258,6 +1276,7 @@ def raw_prepare_result(performance_data,
     return performance_data
 
 
+@cache_for(3600)
 def filter_devices(logged_in_user, data_tab = None, page_type="customer"):
 
     """
@@ -1288,6 +1307,8 @@ def filter_devices(logged_in_user, data_tab = None, page_type="customer"):
 
     return organization_devices
 
+
+@cache_for(3600)
 def filter_machines(organization_devices):
     # Unique machine from the sector_configured_on_devices
     """
@@ -1305,6 +1326,28 @@ def filter_machines(organization_devices):
 
     return machine_dict
 
+
+@cache_for(300)
+def indexed_alert_results(performance_data):
+    """
+
+    :param performance_data:
+    :return:
+    """
+
+    indexed_raw_results = {}
+
+    for data in performance_data:
+        #this would be a unique combination
+        if data['data_source'] is not None and data['device_name'] is not None:
+            defined_index = data['device_name'], data['data_source']
+            if defined_index not in indexed_raw_results:
+                indexed_raw_results[defined_index] = None
+            indexed_raw_results[defined_index] = data
+
+    return indexed_raw_results
+
+
 @cache_for(300)
 def prepare_raw_alert_results(device_list=[], performance_data=None):
     """
@@ -1315,13 +1358,31 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
     :return:
     """
 
-    indexed_sector = indexed_gis_devices("SECTOR_CONF_ON_NAME")
-    indexed_ss = indexed_gis_devices("SSDEVICENAME")
-    indexed_bh = indexed_gis_devices("BHCONF")
+    # indexed_sector = indexed_gis_devices("SECTOR_CONF_ON_NAME")
+    # indexed_ss = indexed_gis_devices("SSDEVICENAME")
+    # indexed_bh = indexed_gis_devices("BHCONF")
+
+    indexed_sector, indexed_ss, indexed_bh = \
+        combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'})
 
     processed_device = {}
 
-    for data in performance_data:
+    indexed_alert_data = indexed_alert_results(performance_data)
+
+    for device_alert in indexed_alert_data:
+        # the data would be a tuple of ("device_name"."data_source")
+        #sample index data
+        #{(u'511', u'pl'): {
+        # 'data_source': u'pl',
+        # 'severity': u'down',
+        # 'max_value': u'0',
+        # 'age': 1416309593L,
+        # 'device_name': u'511',
+        # 'sys_timestamp': 0L,
+        # 'current_value': u'49',
+        # 'ip_address': u'10.157.66.9',
+        # 'id': 59440L}
+        # }
 
         is_sector = False
         is_ss = False
@@ -1329,72 +1390,76 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
 
         sector_ids = []
 
-        device_name = data['device_name'].strip().lower() \
-                        if data['device_name'] else None
+        device_name, data_source = device_alert
 
-        if data['device_name'] in indexed_sector:
+        data = indexed_alert_data[device_alert]
+
+        if device_name in indexed_sector:
             #is sector
             is_sector = True
             raw_result = indexed_sector[device_name]
-        elif data['device_name'] in indexed_ss:
+        elif device_name in indexed_ss:
             #is ss
             is_ss = True
             raw_result = indexed_ss[device_name]
-        elif data['device_name'] in indexed_bh:
+        elif device_name in indexed_bh:
             #is bh
             is_bh = True
             raw_result = indexed_bh[device_name]
         else:
             continue
 
+        bs_info = None
+
         if is_sector:
             for bs_row in raw_result:
+                #take a single row to identify device attributes
+                bs_info = bs_row
+                #take a single row to identify device attributes
                 if bs_row['SECTOR_SECTOR_ID'] not in sector_ids \
                     and bs_row['SECTOR_SECTOR_ID'] is not None:
                     sector_ids.append(bs_row['SECTOR_SECTOR_ID'])
+        elif is_ss or is_bh:
+            if len(raw_result):
+                bs_info = raw_result[0]
+            else:
+                continue
+        else:
+            continue
 
-        data_source = data["data_source"].strip().lower() \
-                        if data["data_source"] else None
-
-
-        for bs_row in raw_result:
-            if device_name is not None and data_source is not None \
-                and (device_name, data_source) not in processed_device:
-                processed_device[device_name, data_source] = []
-
-                if severity_level_check(list_to_check=[data['severity']]):
-                    device_events = {
-                        'device_name': device_name,
-                        'device_type': format_value(bs_row['SECTOR_TYPE']),
-                        'severity': data['severity'],
-                        'ip_address': data["ip_address"],
-                        'base_station': format_value(bs_row['BSALIAS']),
-                        'circuit_id': format_value(bs_row['CCID']),
-                        'sector_id': ", ".join(sector_ids),
-                        'city': format_value(bs_row['BSCITY']),
-                        'state': format_value(bs_row['BSSTATE']),
-                        'customer_name': format_value(bs_row['CUST']),
-                        'data_source_name': data_source,
-                        'current_value': data["current_value"],
-                        'max_value': data["max_value"],
-                        'sys_timestamp': datetime.datetime.fromtimestamp(
-                            float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                        'age': datetime.datetime.fromtimestamp(
-                            float(data["age"])).strftime("%d days %H:%M:%S")
-                            if data["age"]
-                            else "",
-                        'description': ''#data['description']
-                    }
-                    if is_ss:
-                        device_events.update({
-                            'device_type' : format_value(bs_row['SS_TYPE']),
-                            'sector_id': format_value(bs_row['SECTOR_SECTOR_ID']),
-                        })
-                    elif is_bh:
-                        device_events.update({
-                            "device_type": format_value(bs_row['BHTYPE']),
-                            "device_technology": format_value(bs_row['BHTECH'])
-                        })
-                    device_list.append(device_events)
+        if severity_level_check(list_to_check=[data['severity']]):
+            device_events = {
+                'device_name': device_name,
+                'device_type': format_value(bs_info['SECTOR_TYPE']),
+                'severity': data['severity'],
+                'ip_address': data["ip_address"],
+                'base_station': format_value(bs_info['BSALIAS']),
+                'circuit_id': format_value(bs_info['CCID']),
+                'sector_id': ", ".join(sector_ids),
+                'city': format_value(bs_info['BSCITY']),
+                'state': format_value(bs_info['BSSTATE']),
+                'customer_name': format_value(bs_info['CUST']),
+                'data_source_name': " ".join(map(lambda a: a.title(), data_source.split("_"))),
+                'current_value': data["current_value"],
+                'max_value': data["max_value"],
+                'sys_timestamp': datetime.datetime.fromtimestamp(
+                    float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                'age': datetime.datetime.fromtimestamp(
+                    float(data["age"])).strftime("%d days %H:%M:%S")
+                    if data["age"]
+                    else "",
+                'description': ''#data['description']
+            }
+            if is_ss:
+                device_events.update({
+                    'device_type' : format_value(bs_info['SS_TYPE']),
+                    'sector_id': format_value(bs_info['SECTOR_SECTOR_ID']),
+                })
+            elif is_bh:
+                device_events.update({
+                    "device_type": format_value(bs_info['BHTYPE']),
+                    "device_technology": format_value(bs_info['BHTECH'])
+                })
+            device_list.append(device_events)
 
     return device_list

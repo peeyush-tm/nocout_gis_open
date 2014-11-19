@@ -90,6 +90,7 @@ var is_line_active = 0,
 	tools_rule_array = [],
 	isCreated = 0,
 	ruler_pt_count = 0,
+	temp_line = "",
 	distance_label = {},
     map_points_array = [],
     map_points_lat_lng_array= [],
@@ -724,6 +725,31 @@ function devicePlottingClass_gmap() {
 	            // Save last Zoom Value
 	            lastZoomLevel = mapInstance.getZoom();
             });
+
+	        google.maps.event.addListener(mapInstance,'mousemove',function(e) {
+
+	        	if(is_ruler_active === 1) {
+					if(ruler_pt_count == 1) {
+						if(!temp_line) {
+							var line_path = [
+								ruler_array[0].getPosition(),
+								e.latLng,
+							];
+							temp_line = new google.maps.Polyline({
+								path : line_path,
+								clickable : false,
+								map : mapInstance
+							});
+						} else {
+							var line_path = [
+								ruler_array[0].getPosition(),
+								e.latLng,
+							];
+							temp_line.setPath(line_path);
+						}	
+					}
+	        	}
+	    	});
 
 			/*Search text box object*/
 			var searchTxt = document.getElementById('google_loc_search');
@@ -1744,12 +1770,6 @@ function devicePlottingClass_gmap() {
 			var content = gmap_self.makeWindowContent(this);
 			$("#infoWindowContainer").html(content);
 			$("#infoWindowContainer").removeClass('hide');
-			/*Set the content for infowindow*/
-			// infowindow.setContent(content);
-			/*Set The Position for InfoWindow*/
-			// infowindow.setPosition(e.latLng);
-			/*Open the  info window*/
-			// infowindow.open(mapInstance);
 
 			/*Show only 5 rows, hide others*/
 			// gmap_self.show_hide_info();
@@ -1768,29 +1788,34 @@ function devicePlottingClass_gmap() {
 	 * @method showLinesInBounds
 	 */
 	this.showLinesInBounds = function() {
-		/*Loop for polylines*/
-		for(var key in allMarkersObject_gmap['path']) {
-			if(allMarkersObject_gmap['path'].hasOwnProperty(key)) {
-		    	var current_line = allMarkersObject_gmap['path'][key];
-		    	if(current_line) {
-				    var nearEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(current_line.nearLat,current_line.nearLon)),
-				      	farEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(current_line.ss_lat,current_line.ss_lon)),
-				      	connected_bs = allMarkersObject_gmap['base_station']['bs_'+current_line.filter_data.bs_name],
-				      	connected_ss = allMarkersObject_gmap['sub_station']['ss_'+current_line.filter_data.ss_name];
 
-				    if((nearEndVisible || farEndVisible) && ((connected_bs && connected_ss) && (connected_bs.isActive != 0 && connected_ss.isActive != 0))) {
-				    	// If polyline not shown then show the polyline
-				    	if(!current_line.map) {
-				    		current_line.setMap(mapInstance);
-				    	}
-				    } else {
-				    	// If polyline shown then hide the polyline
-				    	if(current_line.map) {
-				    		current_line.setMap(null);
-			    		}
-				    }
-		    	}
-		    }
+		var isLineChecked = $("#showConnLines:checked").length;
+		/*checked case*/
+		if(isLineChecked > 0) {
+			/*Loop for polylines*/
+			for(var key in allMarkersObject_gmap['path']) {
+				if(allMarkersObject_gmap['path'].hasOwnProperty(key)) {
+			    	var current_line = allMarkersObject_gmap['path'][key];
+			    	if(current_line) {
+					    var nearEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(current_line.nearLat,current_line.nearLon)),
+					      	farEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(current_line.ss_lat,current_line.ss_lon)),
+					      	connected_bs = allMarkersObject_gmap['base_station']['bs_'+current_line.filter_data.bs_name],
+					      	connected_ss = allMarkersObject_gmap['sub_station']['ss_'+current_line.filter_data.ss_name];
+
+					    if((nearEndVisible || farEndVisible) && ((connected_bs && connected_ss) && (connected_bs.isActive != 0 && connected_ss.isActive != 0))) {
+					    	// If polyline not shown then show the polyline
+					    	if(!current_line.map) {
+					    		current_line.setMap(mapInstance);
+					    	}
+					    } else {
+					    	// If polyline shown then hide the polyline
+					    	if(current_line.map) {
+					    		current_line.setMap(null);
+				    		}
+					    }
+			    	}
+			    }
+			}
 		}
 	};
 
@@ -1914,15 +1939,24 @@ function devicePlottingClass_gmap() {
 
 		/*Unchecked case*/
 		if(isLineChecked == 0) {
-
-			for (var i = 0; i < ssLinkArray.length; i++) {
-				ssLinkArray[i].setMap(null);
+			for(key in allMarkersObject_gmap['path']) {
+				if(allMarkersObject_gmap['path'][key].map) {
+					allMarkersObject_gmap['path'][key].setMap(null);
+				}
 			}
+			// for (var i = 0; i < ssLinkArray.length; i++) {
+			// 	ssLinkArray[i].setMap(null);
+			// }
 
 		} else {
-			for (var i = 0; i < current_lines.length; i++) {
-				current_lines[i].setMap(mapInstance);
+			for(key in allMarkersObject_gmap['path']) {
+				if(!allMarkersObject_gmap['path'][key].map) {
+					allMarkersObject_gmap['path'][key].setMap(mapInstance);
+				}
 			}
+			// for (var i = 0; i < current_lines.length; i++) {
+			// 	current_lines[i].setMap(mapInstance);
+			// }
 		}
 	};
 
@@ -4970,7 +5004,7 @@ function devicePlottingClass_gmap() {
     /*
     Here we clear All The Variables and Point related to Rulers in tools
      */
-    this.clearRulerTool_gmap= function() {
+    this.clearRulerTool_gmap = function() {
 
     	//Remove Ruler markers
     	for(var i=0;i<ruler_array.length;i++) {
@@ -5045,6 +5079,8 @@ function devicePlottingClass_gmap() {
        
         //first clear the click listners. point tool might be in use
         google.maps.event.clearListeners(mapInstance,'click');
+        
+        //Set the cursor to pointer(Arrow)
         mapInstance.setOptions({'draggableCursor' : 'default'});
 
 		google.maps.event.addListener(mapInstance,'click',function(e) {
@@ -5053,6 +5089,8 @@ function devicePlottingClass_gmap() {
 				gmap_self.clearRulerTool_gmap();
 				return ;
 			}
+			
+			is_ruler_active = 1;
 
 			ruler_point = new google.maps.Marker({position: e.latLng, map: mapInstance});
 			ruler_array.push(ruler_point);
@@ -5076,6 +5114,14 @@ function devicePlottingClass_gmap() {
 				var ruler_line = gmap_self.createLink_gmaps(latLonObj);
 				/*Show Line on Map*/
 				ruler_line.setMap(mapInstance);
+
+				// Remove mousemove listener
+				// google.maps.event.clearListeners(mapInstance,'mousemove');
+
+				if(temp_line) {
+					temp_line.setMap(null);
+					temp_line = "";
+				}
 				
 				tools_rule_array.push(ruler_line);
 
