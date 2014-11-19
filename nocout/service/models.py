@@ -99,7 +99,7 @@ class Service(models.Model):
     name = models.CharField('Name', max_length=100)
     alias = models.CharField('Alias', max_length=100)
     parameters = models.ForeignKey(ServiceParameters)
-    service_data_sources = models.ManyToManyField(ServiceDataSource)
+    service_data_sources = models.ManyToManyField(ServiceDataSource, through="ServiceSpecificDataSource")
     command = models.ForeignKey(Command, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
 
@@ -108,6 +108,16 @@ class Service(models.Model):
         Service object presentation
         """
         return self.name
+
+
+class ServiceSpecificDataSource(models.Model):
+    """
+    Service Based Data Source Model Column Declaration.
+    """
+    service_data_sources = models.ForeignKey(ServiceDataSource)
+    service = models.ForeignKey(Service)
+    warning = models.CharField('Warning', max_length=255, null=True, blank=True)
+    critical = models.CharField('Critical', max_length=255, null=True, blank=True)
 
 
 # device service configuration --> it contains services those are already running
