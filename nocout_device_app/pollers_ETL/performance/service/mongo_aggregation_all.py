@@ -3,12 +3,12 @@ mongo_aggregation_all.py
 ==================================
 
 Usage ::
-python mongo_aggregation_all.py -t 1 -s hourly -s network_perf_half_hourly -d network_perf_hourly
-python mongo_aggregation_all.py -t 1 -s hourly -d service_perf_half_hourly -d service_perf_hourly
-python mongo_aggregation_all.py -t 24 -s daily -d network_perf_hourly -d network_perf_daily
-python mongo_aggregation_all.py -t 24 -s daily -d service_perf_hourly -d service_perf_daily
-python mongo_aggregation_all.py -t (7*24) -s weekly -d service_perf_daily -d service_perf_weekly
-python mongo_aggregation_all.py -t (7*24) -s weekly -d inventory_perf_daily -d inventory_perf_weekly
+python mongo_aggregation_all.py -t 1 -f hourly -s network_perf_half_hourly -d network_perf_hourly
+python mongo_aggregation_all.py -t 1 -f hourly -s service_perf_half_hourly -d service_perf_hourly
+python mongo_aggregation_all.py -t 24 -f daily -s network_perf_hourly -d network_perf_daily
+python mongo_aggregation_all.py -t 24 -f daily -s service_perf_hourly -d service_perf_daily
+python mongo_aggregation_all.py -t 168 -f weekly -s service_perf_daily -d service_perf_weekly
+python mongo_aggregation_all.py -t 168 -f weekly -s inventory_perf_daily -d inventory_perf_weekly
 Options ::
 t - Time frame for read operation [Hours]
 s - Source Mongodb collection
