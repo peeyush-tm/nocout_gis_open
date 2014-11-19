@@ -1824,25 +1824,30 @@ function devicePlottingClass_gmap() {
 	 * @method showSubStaionsInBounds
 	 */
 	this.showSubStaionsInBounds = function() {
-		/*Loop for polylines*/
-		for(var key in allMarkersObject_gmap['sub_station']) {
-			if(allMarkersObject_gmap['sub_station'].hasOwnProperty(key)) {
-		    	var ss_marker = allMarkersObject_gmap['sub_station'][key],
-		    		isMarkerExist = mapInstance.getBounds().contains(ss_marker.getPosition());
-	    		if(isMarkerExist) {
-			    	if(ss_marker.isActive && +(ss_marker.isActive) === 1) {
-			    		// If SS Marker not shown then show the SS Marker
-			    		if(!allMarkersObject_gmap['sub_station'][key].map) {
-			      			allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
-			    		}
-			    	} else {
-			    		// If SS Marker shown then hide the SS Marker
-			    		if(allMarkersObject_gmap['sub_station'][key].map) {
-			      			allMarkersObject_gmap['sub_station'][key].setMap(null);
-		    			}
-			    	}
-	    		}
-		    }
+		var isSSChecked = $("#showAllSS:checked").length;
+
+		/*Checked case*/
+		if(isSSChecked > 0) {
+			/*Loop for polylines*/
+			for(var key in allMarkersObject_gmap['sub_station']) {
+				if(allMarkersObject_gmap['sub_station'].hasOwnProperty(key)) {
+			    	var ss_marker = allMarkersObject_gmap['sub_station'][key],
+			    		isMarkerExist = mapInstance.getBounds().contains(ss_marker.getPosition());
+		    		if(isMarkerExist) {
+				    	if(ss_marker.isActive && +(ss_marker.isActive) === 1) {
+				    		// If SS Marker not shown then show the SS Marker
+				    		if(!allMarkersObject_gmap['sub_station'][key].map) {
+				      			allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
+				    		}
+				    	} else {
+				    		// If SS Marker shown then hide the SS Marker
+				    		if(allMarkersObject_gmap['sub_station'][key].map) {
+				      			allMarkersObject_gmap['sub_station'][key].setMap(null);
+			    			}
+				    	}
+		    		}
+			    }
+			}
 		}
 	};
 
@@ -1944,9 +1949,6 @@ function devicePlottingClass_gmap() {
 					allMarkersObject_gmap['path'][key].setMap(null);
 				}
 			}
-			// for (var i = 0; i < ssLinkArray.length; i++) {
-			// 	ssLinkArray[i].setMap(null);
-			// }
 
 		} else {
 			for(key in allMarkersObject_gmap['path']) {
@@ -1954,9 +1956,31 @@ function devicePlottingClass_gmap() {
 					allMarkersObject_gmap['path'][key].setMap(mapInstance);
 				}
 			}
-			// for (var i = 0; i < current_lines.length; i++) {
-			// 	current_lines[i].setMap(mapInstance);
-			// }
+		}
+	};
+
+	/**
+	 * This function show/hide the sub-stations.
+	 * @method showSubStations_gmap
+	 */
+	this.showSubStations_gmap = function() {
+
+		var isSSChecked = $("#showAllSS:checked").length;
+
+		/*Unchecked case*/
+		if(isSSChecked == 0) {
+			for(key in allMarkersObject_gmap['sub_station']) {
+				if(allMarkersObject_gmap['sub_station'][key].map) {
+					allMarkersObject_gmap['sub_station'][key].setMap(null);
+				}
+			}
+
+		} else {
+			for(key in allMarkersObject_gmap['sub_station']) {
+				if(!allMarkersObject_gmap['sub_station'][key].map) {
+					allMarkersObject_gmap['sub_station'][key].setMap(mapInstance);
+				}
+			}
 		}
 	};
 

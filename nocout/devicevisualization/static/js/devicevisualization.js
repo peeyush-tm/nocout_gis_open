@@ -43,10 +43,12 @@ if(isFreeze == 1 || (tools_ruler && tools_ruler != 0) || (tools_line && tools_li
     $("#showToolsBtn").removeClass("btn-warning");
 }
 
-if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
-    $("#show_hide_label")[0].checked= true;
-} else {
-    $("#show_hide_label")[0].checked= false;
+if($.cookie("isLabelChecked")) {
+    if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
+        $("#show_hide_label")[0].checked= true;
+    } else {
+        $("#show_hide_label")[0].checked= false;
+    }
 }
 
 if(window.location.pathname.indexOf("white_background") > -1) {
