@@ -3,12 +3,12 @@ mongo_aggregation_all.py
 ==================================
 
 Usage ::
-python mongo_aggregation_all.py -t 1 -f hourly -s network_perf_half_hourly -d network_perf_hourly
-python mongo_aggregation_all.py -t 1 -f hourly -s service_perf_half_hourly -d service_perf_hourly
-python mongo_aggregation_all.py -t 24 -f daily -s network_perf_hourly -d network_perf_daily
-python mongo_aggregation_all.py -t 24 -f daily -s service_perf_hourly -d service_perf_daily
-python mongo_aggregation_all.py -t (7*24) -f weekly -s service_perf_daily -d service_perf_weekly
-python mongo_aggregation_all.py -t (7*24) -f weekly -s inventory_perf_daily -d inventory_perf_weekly
+python mongo_aggregation_all.py -t 1 -s hourly -s network_perf_half_hourly -d network_perf_hourly
+python mongo_aggregation_all.py -t 1 -s hourly -d service_perf_half_hourly -d service_perf_hourly
+python mongo_aggregation_all.py -t 24 -s daily -d network_perf_hourly -d network_perf_daily
+python mongo_aggregation_all.py -t 24 -s daily -d service_perf_hourly -d service_perf_daily
+python mongo_aggregation_all.py -t (7*24) -s weekly -d service_perf_daily -d service_perf_weekly
+python mongo_aggregation_all.py -t (7*24) -s weekly -d inventory_perf_daily -d inventory_perf_weekly
 Options ::
 t - Time frame for read operation [Hours]
 s - Source Mongodb collection
@@ -53,6 +53,8 @@ if options.source_db and options.destination_db and options.hours and options.ti
 else:
 	print "Usage: service_mongo_aggregation_hourly.py [options]"
 	sys.exit(2)
+
+aggregated_data_values = []
 
 
 def main():
@@ -104,6 +106,7 @@ def quantify_perf_data(doc):
 	and frequency based data based on number of  occurrences of values
 	"""
 	
+	global aggregated_data_values
         # These services contain perf which can't be evaluated using regular `min`, `max` functions
 	wimax_mrotek_services = ['wimax_ss_sector_id', 'wimax_ss_mac', 'wimax_dl_intrf', 'wimax_ul_intrf', 'wimax_ss_ip',
 			'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec', 'wimax_ss_frequency',
@@ -178,10 +181,13 @@ def quantify_perf_data(doc):
 			'max': max_val,
 			'avg': avg_val
 			})
-	upsert_aggregated_data(find_query, aggr_data)
+		# First remove the existing entry from aggregated_data_values
+	        aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.keys())), aggregated_data_values)
+	#upsert_aggregated_data(find_query, aggr_data)
+	aggregated_data_values.append(aggr_data)
 
 
-def upsert_aggregated_data(find_query, doc):
+def insert_aggregated_data(doc):
 	"""
 	Insert the data into historical mongodb
 	"""
@@ -206,22 +212,22 @@ def upsert_aggregated_data(find_query, doc):
 		#        db.interface_perf_weekly.update(find_query, doc,upsert=True)
 		#elif hist_perf_table == 'inventory_perf_weekly':
 		#        db.inventory_perf_weekly.update(find_query, doc,upsert=True)
-		db[hist_perf_table].update(find_query, doc, upsert=True)
+		db[hist_perf_table].insert(doc)
 
 def find_existing_entry(find_query):
 	"""
 	Find the doc for update query
 	"""
        
-        global mongo_configs
+        #global mongo_configs
 	docs = []
         # Mongodb connection object
-       	db = mongo_module.mongo_conn(
-		host=mongo_configs.get('host'),
-			port=mongo_configs.get('port'),
-			db_name=mongo_configs.get('db_name')
-			)
-	if db:
+       	#db = mongo_module.mongo_conn(
+	#	host=mongo_configs.get('host'),
+	#		port=mongo_configs.get('port'),
+	#		db_name=mongo_configs.get('db_name')
+	#		)
+	#if db:
 		#if hist_perf_table == 'network_perf_hourly':
 		#        cur = db.network_perf_hourly.find(find_query)
 		#elif hist_perf_table == 'service_perf_hourly':
@@ -234,9 +240,10 @@ def find_existing_entry(find_query):
 		#        cur = db.interface_perf_weekly.find(find_query)
 		#elif hist_perf_table == 'inventory_perf_weekly':
 		#        cur = db.inventory_perf_weekly.find(find_query)
-		cur = db[hist_perf_table].find(find_query)
-	for doc in cur:
-		docs.append(doc)
+		#cur = db[hist_perf_table].find(find_query)
+	#for doc in cur:
+	#	docs.append(doc)
+	docs = filter(lambda d: set(find_query.values()) <= set(d.keys()), aggregated_data_values)
 
 	return docs
 
@@ -246,3 +253,5 @@ def usage():
 
 if __name__ == '__main__':
 	main()
+	print aggregated_data_values
+	insert_aggregated_data(aggregated_data_values)

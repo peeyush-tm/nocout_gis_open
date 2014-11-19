@@ -46,6 +46,8 @@ else:
 	print "Usage: service_mongo_aggregation_half_hourly.py [options]"
 	sys.exit(2)
 
+aggregated_data_values = []
+
 def mongo_main():
 	global mongo_configs
 	docs = []
@@ -107,6 +109,7 @@ def make_half_hourly_data(docs):
 	Quantifies the perf data in 30 mins time frame
 	"""
 	
+	global aggregated_data_values
 	# Aggregated data doc to be inserted into historical mongodb 
 	aggr_data = {}
 	# Store the hour-wise perf data into a dict
@@ -176,8 +179,11 @@ def make_half_hourly_data(docs):
 					'time': aggr_data.get('time')
 					}
 			existing_doc = find_existing_entry(find_query)
-			#print 'existing_doc'
-			#print existing_doc
+			print '========================='
+			print 'existing_doc'
+			print existing_doc
+			print 'aggr_data'
+			print aggr_data
 			if existing_doc:
 				existing_doc = existing_doc[0]
 				if service in wimax_mrotek_services:
@@ -202,7 +208,12 @@ def make_half_hourly_data(docs):
 					'max': max_val,
 					'avg': avg_val
 					})
-			upsert_aggregated_data(find_query, aggr_data)
+				# First remove the existing entry from aggregated_data_values
+				aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
+			print 'Updated aggr_data'
+			print aggr_data
+			#upsert_aggregated_data(find_query, aggr_data)
+			aggregated_data_values.append(aggr_data)
 
 		# 30 - 60 mins data for the particular hour
 	        second_half_data = filter(lambda entry: entry.get('time').minute > 30, perf) 
@@ -245,8 +256,11 @@ def make_half_hourly_data(docs):
 					'time': aggr_data.get('time')
 					}
 			existing_doc = find_existing_entry(find_query)
-			#print 'existing_doc'
-			#print existing_doc
+			print '========================='
+			print 'existing_doc'
+			print existing_doc
+			print 'aggr_data'
+			print aggr_data
 			if existing_doc:
 				existing_doc = existing_doc[0]
 				if service in wimax_mrotek_services:
@@ -271,7 +285,12 @@ def make_half_hourly_data(docs):
 					'max': max_val,
 					'avg': avg_val
 					})
-			upsert_aggregated_data(find_query, aggr_data)
+				# First remove the existing entry from aggregated_data_values
+				aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
+			print 'Updated aggr_data'
+			print aggr_data
+			#upsert_aggregated_data(find_query, aggr_data)
+			aggregated_data_values.append(aggr_data)
 
 
 def convert(data):
@@ -289,7 +308,7 @@ def convert(data):
 	        return data
 
 
-def upsert_aggregated_data(find_query, doc):
+def insert_aggregated_data(docs):
 	"""
 	Insert the data into historical mongodb
 	"""
@@ -306,29 +325,30 @@ def upsert_aggregated_data(find_query, doc):
 		#	db.network_perf_half_hourly.update(find_query, doc,upsert=True)
 		#elif hist_perf_table == 'service_perf_half_hourly':
 		#	db.service_perf_half_hourly.update(find_query, doc,upsert=True)
-		cur = db[hist_perf_table].update(find_query, doc, upsert=True)
+		db[hist_perf_table].insert(docs)
 
 def find_existing_entry(find_query):
 	"""
 	Find the doc for update query
 	"""
 
-        global mongo_configs
+        #global mongo_configs
 	docs = []
         # Mongodb connection object
-       	db = mongo_module.mongo_conn(
-		host=mongo_configs.get('host'),
-			port=mongo_configs.get('port'),
-			db_name=mongo_configs.get('db_name')
-			)
-	if db:
-		#if hist_perf_table == 'network_perf_half_hourly':
-		#        cur = db.network_perf_half_hourly.find(find_query)
-		#elif hist_perf_table == 'service_perf_half_hourly':
-		#        cur = db.service_perf_half_hourly.find(find_query)
-		cur = db[hist_perf_table].find(find_query)
-	for doc in cur:
-		docs.append(doc)
+       	#db = mongo_module.mongo_conn(
+	#	host=mongo_configs.get('host'),
+	#		port=mongo_configs.get('port'),
+	#		db_name=mongo_configs.get('db_name')
+	#		)
+	#if db:
+	#	#if hist_perf_table == 'network_perf_half_hourly':
+	#	#        cur = db.network_perf_half_hourly.find(find_query)
+	#	#elif hist_perf_table == 'service_perf_half_hourly':
+	#	#        cur = db.service_perf_half_hourly.find(find_query)
+	#	cur = db[hist_perf_table].find(find_query)
+	#for doc in cur:
+	#	docs.append(doc)
+	docs = filter(lambda d: set(find_query.values()) <= set(d.values()), aggregated_data_values)
 
 	return docs
 
@@ -351,3 +371,4 @@ def usage():
 
 if __name__ == '__main__':
 	mongo_main()
+	insert_aggregated_data(aggregated_data_values)

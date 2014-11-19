@@ -193,7 +193,7 @@ def insert_data(table, data_values, **kwargs):
 		`machine_name`=%s, `site_name`=%s, `data_source`=%s, `current_value`=%s,
 		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
-		`ip_address`=%s,`age`=%s,`severity`=%s
+		`ip_address`=%s, `severity`=%s, `age`=%s
 		WHERE `device_name`=%s AND `service_name`=%s AND `data_source`=%s
 		"""
 		try:

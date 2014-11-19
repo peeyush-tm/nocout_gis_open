@@ -1032,9 +1032,9 @@ def sync():
 
     # Create backup for the hosts and rules file
     #if os.path.exists(hosts_file):
-    #    os.system('rsync -a %s /omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
+    #    os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
     #if os.path.exists(rules_file):
-    #    os.system('rsync -a %s /omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
+    #    os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
 
     try:
 	    # Make hosts.mk and rules.mk which takes configurations from db
@@ -1043,30 +1043,30 @@ def sync():
     except Exception, e:
 	    logger.error('Error in make_hosts or make_rules: ' + pprint.pformat(e))
     # Switch to check_mk base dir
-    os.chdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato')
+    os.chdir('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato')
     # Use latest hosts file
-    all_hosts_files = filter(lambda f: os.path.isfile and 'hosts' in f, os.listdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/'))
+    all_hosts_files = filter(lambda f: os.path.isfile and 'hosts' in f, os.listdir('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/'))
     all_hosts_files = sorted(all_hosts_files, key=os.path.getmtime, reverse=True)
 
     latest_hosts_file = all_hosts_files[0]
     logger.info('latest_hosts_file: ' + pprint.pformat(latest_hosts_file))
     if len(all_hosts_files) == 1:
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
     elif len(all_hosts_files) > 1:
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_hosts')
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', '/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file)
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_hosts', '/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_hosts')
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file)
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_hosts', '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
     # Use latest rules file
-    all_rules_files = filter(lambda f: os.path.isfile and 'rules' in f, os.listdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/'))
+    all_rules_files = filter(lambda f: os.path.isfile and 'rules' in f, os.listdir('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/'))
     all_rules_files = sorted(all_rules_files, key=os.path.getmtime, reverse=True)
     latest_rules_file = all_rules_files[0]
     logger.info('latest_rules_file: ' + pprint.pformat(latest_rules_file))
     if len(all_rules_files) == 1:
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
     elif len(all_rules_files) > 1:
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_rules')
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', '/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file)
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_rules', '/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_rules')
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file)
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_rules', '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
 
     nocout_create_sync_snapshot()
     nocout_sites = nocout_distributed_sites()
@@ -1082,8 +1082,8 @@ def sync():
     # Some syntax error with hosts.mk or rules.mk
     else:
 	    logger.info("Could not cmk -R master_UA")
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
 	    # Generate a fresh snapshot
             nocout_create_sync_snapshot()
             for site, attrs in nocout_sites.items():
@@ -1105,8 +1105,8 @@ def sync():
         })
     else:
 	    logger.info("Length of sites_affected and nocout_sites doesn't match")
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
-	    os.rename('/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
+	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
 	    # Generate a fresh snapshot
             nocout_create_sync_snapshot()
             for site, attrs in nocout_sites.items():
