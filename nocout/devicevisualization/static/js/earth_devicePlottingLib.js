@@ -56,7 +56,7 @@ var counter_div_style = "",
 	all_cities_array = [];
 var plottedBsIds = [], allMarkersArray_earth= [];
 var isApiResponse = 1;
-
+var lastStateBounds = [];
 
 /*
 Pollin Variables
@@ -117,7 +117,7 @@ function googleEarthClass() {
 		return poly;
 	}
 
-	var lastStateBounds = [];
+	
 	var statesDataShown = [];
 	/**
 	 * This function handles the initialization callback of google earth creation function
@@ -157,8 +157,8 @@ function googleEarthClass() {
 
 		google.earth.addEventListener(ge.getView(), 'viewchange', function(){
 			if(timer){
-				var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
-				lastZoomLevel = lookAt.getRange();
+				// var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+				// lastZoomLevel = lookAt.getRange();
 				clearTimeout(timer);
 			}
 			function eventHandler() {
@@ -168,7 +168,7 @@ function googleEarthClass() {
 					zoom_check = current_zoom ? current_zoom :400000;
 
 				if (globeBounds) {
-					// console.log("Globe mai aa gya");
+					
 					var poly = [
 							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()},
 							{lat: globeBounds.getNorth(), lon: globeBounds.getEast()},
@@ -186,6 +186,7 @@ function googleEarthClass() {
 							var states_with_bounds = state_lat_lon_db.where(function(obj) {
 								return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
 							});
+
 
 							if(Math.floor(lookAt.getRange()/100000) === 4 && Math.floor(lastZoomLevel/100000) === 4 && arraysEqual(lastStateBounds, states_with_bounds)) {
 								return ;
@@ -681,6 +682,7 @@ var state_wise_device_label_text= {};
      * @param dataset {Object} In case of BS, it is the devies object array & for SS it contains BS marker object with SS & sector info
 	 */
 	this.showStateWiseData_earth = function(dataset) {
+		lastStateBounds= [];
 		//Loop For Base Station
 		for(var i=dataset.length;i--;) {
 
@@ -1104,14 +1106,15 @@ var state_wise_device_label_text= {};
 
 			google.earth.addEventListener(bs_marker, 'click', function(event) {
 				var content = gmap_self.makeWindowContent(bs_marker);
-				$("#infoWindowContainer").html('<iframe allowTransparency="true" style="position:absolute; top:0px; right:0px; width:100%; height:100%;overflow-y:auto; z-index:100;"></iframe>'+content);
+				$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
+				$("#infoWindowContainer").html(content);
 				$("#infoWindowContainer").removeClass('hide');
 				event.preventDefault();
 			});
-console.log(resultantMarkers[i]);
+
 			var sectorsArray = resultantMarkers[i].data.param.sector;
 			var deviceIDArray= [];
-console.log(sectorsArray);
+
 
     		// $.grep(sectorsArray,function(sector) { 
 			for(var j=0;j<sectorsArray.length;j++) {
@@ -1205,6 +1208,7 @@ console.log(sectorsArray);
 						var sect_height = sectorsArray[j].antenna_height;
 						// Create Sector placemark.
 						var sector_marker = earth_self.makePlacemark(sectorMarkerIcon,resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,sectorsArray[j].sector_configured_on+"_"+j,sectorInfo);
+						updateGoogleEarthPlacemark(sector_marker, sectorMarkerIcon);
 						/*Push Sector placemark to sector placemark array*/
 						plotted_sector_earth.push(sector_marker);
 
@@ -1212,7 +1216,8 @@ console.log(sectorsArray);
 
 						google.earth.addEventListener(sector_marker, 'click', function(event) {
 							var content = gmap_self.makeWindowContent(sector_marker);
-							$("#infoWindowContainer").html('<iframe allowTransparency="true" style="position:absolute; top:0px; right:0px; width:100%; height:100%;overflow-y:auto; z-index:100;"></iframe>'+content);
+							$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
+							$("#infoWindowContainer").html(content);
 							$("#infoWindowContainer").removeClass('hide');
 							event.preventDefault();
 						});
@@ -1277,10 +1282,12 @@ console.log(sectorsArray);
 					if(ssDataObj.data.lat && ssDataObj.data.lon) {
 						// Create SS placemark.
 						var ss_marker = earth_self.makePlacemark(ssMarkerIcon,ssDataObj.data.lat,ssDataObj.data.lon,'ss_'+ssDataObj.id,ssInfo);
-// console.log(ssMarkerIcon);
+						updateGoogleEarthPlacemark(ss_marker, ssMarkerIcon);
+
 						google.earth.addEventListener(ss_marker, 'click', function(event) {
 							var content = gmap_self.makeWindowContent(ss_marker);
-							$("#infoWindowContainer").html('<iframe allowTransparency="true" style="position:absolute; top:0px; right:0px; width:100%; height:100%;overflow-y:auto; z-index:100;"></iframe>'+content);
+							$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
+							$("#infoWindowContainer").html(content);
 							$("#infoWindowContainer").removeClass('hide');
 							event.preventDefault();
 						});
@@ -1340,8 +1347,8 @@ console.log(sectorsArray);
 
 							var linkColor = ssDataObj.data.link_color;
 							var bs_info = resultantMarkers[i].data.param.base_station;
-							var ss_info = ssDataObj.data.param.sub_station;
-							var linkLinePlacemark = earth_self.createLink_earth(startEndObj,linkColor,bs_info,ss_info,sect_height,sectorsArray[j].sector_configured_on,ssDataObj.name,resultantMarkers[i].name,resultantMarkers[i].id,sectorsArray[j].sector_id);
+							// var ss_info = ssDataObj.data.param.sub_station;
+							var linkLinePlacemark = earth_self.createLink_earth(startEndObj,linkColor,base_info,ss_info,sect_height,sectorsArray[j].sector_configured_on,ssDataObj.name,resultantMarkers[i].name,resultantMarkers[i].id,sectorsArray[j].sector_id);
 							allMarkersArray_earth.push(linkLinePlacemark);
 							plottedLinks_earth.push(linkLinePlacemark);
 
@@ -1393,18 +1400,15 @@ console.log(sectorsArray);
 		placemark = ge.createPlacemark(placemarkId+"_"+marker_count);
 		// placemark.setDescription(description);
 		icon = ge.createIcon('');
-		(function(iconUrl) {
-			icon.setHref(iconUrl);
-		}(iconHref));
-		
+		icon.setHref(iconHref);
 		
 		var style = ge.createStyle(''); //create a new style
 		style.getIconStyle().setIcon(icon); //apply the icon to the style
-		// style.getIconStyle().setScale(0.7);
+		style.getIconStyle().setScale(0.7);
 		placemark.setStyleSelector(style); //apply the style to the placemark
 
 		var point = ge.createPoint('');
-		console.log(latitude, longitude);
+		
 		point.setLatitude(latitude);
 		point.setLongitude(longitude);
 		placemark.setGeometry(point);
@@ -1412,6 +1416,7 @@ console.log(sectorsArray);
 		for(var key in description) {
 			placemark[key] = description[key];
 		}
+
 
 		ge.getFeatures().appendChild(placemark);
 		return placemark;
@@ -1428,11 +1433,8 @@ console.log(sectorsArray);
 	 */
 	this.createLink_earth = function(startEndObj,linkColor,bs_info,ss_info,sect_height,sector_name,ss_name,bs_name,bs_id,sector_id) {
 
-
-
 		var  linkObject = {}, link_path_color = linkColor;
 		var ss_info_obj = "", ss_height = 40;
-
 		if(ss_info != undefined || ss_info == "") {
 			ss_info_obj = ss_info.info;
 			ss_height = ss_info.antenna_height;
@@ -1509,11 +1511,14 @@ console.log(sectorsArray);
 		}
 
 		google.earth.addEventListener(lineStringPlacemark, 'click', function(event) {
-			event.preventDefault();
 			/*Call the function to create info window content*/
 			var content = gmap_self.makeWindowContent(lineStringPlacemark);
-			$("#infoWindowContainer").html('<iframe allowTransparency="true" style="position:absolute; top:0px; right:0px; width:100%; height:100%;overflow-y:auto; z-index:100;"></iframe>'+content);
+			
+			$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
+
+			$("#infoWindowContainer").html(content);
 			$("#infoWindowContainer").removeClass('hide');
+			event.preventDefault();
 		});
 
 		markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= lineStringPlacemark;
@@ -1824,7 +1829,8 @@ console.log(sectorsArray);
 
 		google.earth.addEventListener(sectorPolygonObj, 'click', function(event) {
 			var content = gmap_self.makeWindowContent(sectorPolygonObj);
-			$("#infoWindowContainer").html('<iframe allowTransparency="true" style="position:absolute; top:0px; right:0px; width:100%; height:100%;overflow-y:auto; z-index:100;"></iframe>'+content);
+			$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
+			$("#infoWindowContainer").html(content);
 			$("#infoWindowContainer").removeClass('hide');
 			event.preventDefault();
 		});
@@ -1859,7 +1865,6 @@ console.log(sectorsArray);
      * @method initLivePolling
      */
     this.initLivePolling_earth = function() {
-// console.log('bakayaro');
 
     	if(Math.floor(getEarthZoomLevel()/100000) <= 4) {
     		/*Reset marker icon*/
@@ -1949,7 +1954,7 @@ console.log(sectorsArray);
     		bootbox.alert("Please zoom in for live poll devices.There are too many devices.");
     		$("#clearPolygonBtn").trigger('click');
     	}
-    	// console.log('end of bakayaro');
+    	
     };
 
 	/**
@@ -1962,7 +1967,7 @@ console.log(sectorsArray);
     		pathArray = [],
 			polygon = "",
 			service_type = $("#isPing")[0].checked ? "ping" : "other";
-		// console.log('konoyaro');
+		
     	/*Re-Initialize the polling*/
     	earth_self.initLivePolling_earth();
 
@@ -2181,7 +2186,7 @@ console.log(sectorsArray);
     			}
 			});
 		}
-		// console.log('end of konoyaro');
+		
 	}
 
 	/**
@@ -2244,8 +2249,8 @@ console.log(sectorsArray);
 							} else {
 								new_device_name = allSSIds[i];
 							}
-							// console.log("SS ID: "+allSSIds[i]);
-							// console.log("In Result: "+ result.data.devices[allSSIds[i]]);
+							
+							
 							if(result.data.devices[allSSIds[i]] != undefined) {
 
 								if(hasPolledInfo) {
