@@ -408,7 +408,7 @@ function advanceSearchMainClass() {
                   var lookAt = ge.createLookAt('');
                   lookAt.setLatitude(lat);
                   lookAt.setLongitude(lon);
-                  lookAt.setRange(8000);
+                  lookAt.setRange(30000);
                   ge.getView().setAbstractView(lookAt);
             } else if(window.location.pathname.indexOf("white_background") > -1) {
                 bounds.extend(new OpenLayers.LonLat(lon, lat));

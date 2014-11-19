@@ -854,7 +854,12 @@ function advanceSearchClass() {
 
         // Not to clear the html for gmap page
         if(window.location.pathname.indexOf("googleEarth") > -1) {
-	        $("#advFilterFormContainer").html("");
+	        $("#filter_technology").select2("val","");
+	    	$("#filter_vendor").select2("val","");
+	    	$("#filter_state").select2("val","");
+	    	$("#filter_city").select2("val","");
+	    	$("#filter_frequency").select2("val","");
+	    	$("#filter_polarization").select2("val","");
 	    } else if(window.location.pathname.indexOf("white_background") > -1) {
 	        $("#advFilterFormContainer").html("");
 	    } else {

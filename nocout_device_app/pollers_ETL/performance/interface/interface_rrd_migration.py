@@ -17,55 +17,48 @@ class MKGeneralException(Exception):
 def status_perf_data(site,hostlist):
 
 	status_check_list = []
-	status_service_dict = {}
 	matching_criteria = {}
 	db = mongo_module.mongo_db_conn(site,"nocout")
-	for host in hostlist:
-		query = "GET hosts\nColumns: host_services\nFilter: host_name = %s\n" %(host[0])
-		query_output = utility_module.get_from_socket(site,query).strip()
-		service_list = [service_name for service_name in query_output.split(',')]
-		for service in service_list:
-			if service.endswith('_status'):
-				status_check_list.append(service)
-		for service in status_check_list:
-			query_string = "GET services\nColumns: service_state service_perf_data host_address\nFilter: " + \
-			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 	 	% (service,host[0])
-			query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-			try:
-				if query_output[0][1]:
-					perf_data_output = str(query_output[0][1])
-					service_state = (query_output[0][0])
-					host_ip = str(query_output[0][2])
-                        		current_time = int(time.time())
-					if service_state == 0:
-						service_state = "OK"
-					elif service_state == 1:
-						service_state = "WARNING"
-					elif service_state == 2:
-						service_state = "CRITICAL"
-					elif service_state == 3:
-						service_state = "UNKNOWN"
-                			perf_data = utility_module.get_threshold(perf_data_output)
-				else:
-					continue
-			except:
-				continue
+	query_string = "GET services\nColumns: host_name host_address host_state service_description service_state service_perf_data\n" +\
+			"Filter: service_description ~ _status\nOutputFormat: json\n"
+	query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
+	for entry in query_output:
+		if int(entry[2]) == 1:
+			return
+		service_state = entry[4]
+                host = entry[0]
+                if service_state == 0:
+                        service_state = "OK"
+                elif service_state == 1:
+                        service_state = "WARNING"
+                elif service_state == 2:
+                        service_state = "CRITICAL"
+                elif service_state == 3:
+                        service_state = "UNKNOWN"
+                host_ip = entry[1]
+                service = entry[3]
+		try:
+			perf_data_output = entry[5]
+		except Exception as e:
+			print e
+			continue
+		if perf_data_output:
+			current_time = int(time.time())
+			perf_data = utility_module.get_threshold(perf_data_output)
                 	for ds in perf_data.iterkeys():
                         	cur =perf_data.get(ds).get('cur')
                         	war =perf_data.get(ds).get('war')
                         	crit =perf_data.get(ds).get('cric')
-				status_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
+				status_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host),
                                                 service_name=service,current_value=cur,min_value=0,max_value=0,avg_value=0,
                                                 data_source=ds,severity=service_state,site_name=site,warning_threshold=war,
                                                 critical_threshold=crit,ip_address=host_ip)
-				matching_criteria.update({'device_name':str(host[0]),'service_name':service,'site_name':site,'data_source':ds})
+				matching_criteria.update({'device_name':str(host),'service_name':service,'data_source':ds})
 				mongo_module.mongo_db_update(db,matching_criteria,status_service_dict,"status_services")
-                        	mongo_module.mongo_db_insert(db,status_service_dict,"status_services")
 				matching_criteria = {}
-			#query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
-		status_service_dict = {}
-		status_check_list = [] 
-
+				status_check_list.append(status_service_dict)
+				status_service_dict = {}
+	mongo_module.mongo_db_insert(db,status_check_list,"status_services")
 def status_perf_data_main():
 	try:
 		configs = config_module.parse_config_obj()

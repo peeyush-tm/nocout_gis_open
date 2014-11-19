@@ -97,7 +97,9 @@ function GisPerformance() {
      */
     this.sendRequest = function (counter) {
         //If isFrozen is false and Cookie value for freezeSelected is also false
-        if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0) {
+        var zoom_condition = current_zoom ? current_zoom > 7 : true;
+        
+        if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0 && zoom_condition) {
             var gisPerformance_this = this;
             //Call waitAndSend function with BS Json Data and counter value
             gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
@@ -280,7 +282,7 @@ function GisPerformance() {
             var current_sector = sectorArray[i],
                 sector_ip = current_sector.ip_address,
                 sector_id = current_sector.sector_id,
-                sector_perf_info = current_sector.perf_info,
+                sector_perf_info = current_sector.perf_info ? current_sector.perf_info : [],
                 sector_device = current_sector.device_name,
                 sector_marker = allMarkersObject_gmap['sector_device']['sector_'+sector_ip],
                 sector_polygon = allMarkersObject_gmap['sector_polygon']['poly_'+sector_ip+"_"+sector_id],
@@ -312,9 +314,22 @@ function GisPerformance() {
                     });
                 }
 
+                var sector_pl = "",
+                    sector_rta = "";
+
+                for(var x=sector_perf_info.length;x--;) {
+                    if($.trim(sector_perf_info[x].name) === 'pl') {
+                        sector_pl = sector_perf_info[x].value;
+                    } else if($.trim(sector_perf_info[x].name) === 'rta') {
+                        sector_rta = sector_perf_info[x].value;
+                    }
+                }
+
                 // Set perf info for sector marker to show it on tooltip
                 sector_marker.setOptions({
-                    "poll_info" : sector_perf_info
+                    "poll_info" : sector_perf_info,
+                    "pl" : sector_pl,
+                    "rta" : sector_rta
                 });
 
                 startEndObj["startLat"] = bs_object.data.lat;
@@ -457,7 +472,19 @@ function GisPerformance() {
 
             // Loop to plot new sub-stations
             for(var j=0;j<sub_station.length;j++) {
-                var ss_marker_obj = sub_station[j];
+                
+                var ss_marker_obj = sub_station[j],
+                    ss_perf_info = ss_marker_obj.data.param.sub_station,
+                    ss_pl = "",
+                    ss_rta = "";
+
+                for(var y=ss_perf_info.length;y--;) {
+                    if($.trim(ss_perf_info[y].name) === 'pl') {
+                        ss_pl = ss_perf_info[y].value;
+                    } else if($.trim(ss_perf_info[y].name) === 'rta') {
+                        ss_rta = ss_perf_info[y].value;
+                    }
+                }
 
                 /*Create SS Marker Object*/
                 var ss_marker_object = {
@@ -469,9 +496,11 @@ function GisPerformance() {
                     oldIcon          :  new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
                     clusterIcon      :  new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
                     pointType        :  "sub_station",
-                    dataset          :  ss_marker_obj.data.param.sub_station,
+                    dataset          :  ss_perf_info,
                     bhInfo           :  [],
                     poll_info        :  [],
+                    pl               :  ss_pl,
+                    rta              :  ss_rta,
                     antenna_height   :  ss_marker_obj.data.antenna_height,
                     name             :  ss_marker_obj.name,
                     bs_name          :  gisData.bs_name,
