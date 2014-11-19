@@ -460,6 +460,12 @@ $("#createPolygonBtn").click(function(e) {
 
         /*Call get_page_status function to show the current status*/
         get_page_status();
+    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.initLivePolling_earth();
+        hasSelectDevice = 1;
+
+        /*Call get_page_status function to show the current status*/
+        get_page_status();
     } else {
         networkMapInstance.initLivePolling();
 
@@ -484,6 +490,7 @@ $("#tech_send").click(function(e) {
 $("#fetch_polling").click(function(e) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.getDevicesPollingData_earth();
     } else if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.getDevicesPollingData_wmaps();
     } else {
@@ -495,6 +502,8 @@ $("#fetch_polling").click(function(e) {
 $("#polling_tech").change(function(e) {
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.initLivePolling();
+    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.initLivePolling_earth();
     } else {
         networkMapInstance.initLivePolling();
     }
@@ -511,8 +520,12 @@ $("#polling_tabular_view").click(function(e) {
 
 /*triggers when clear selection button is clicked*/
 $("#clearPolygonBtn").click(function(e) {
-if(window.location.pathname.indexOf("white_background") > -1) {
-    whiteMapClass.stopPolling();
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.stopPolling();
+    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.clearPolygon();
+        hasSelectDevice = 0;
+        get_page_status();
     } else {
         networkMapInstance.clearPolygon();
         hasSelectDevice = 0;
@@ -1062,6 +1075,8 @@ $("#show_hide_label").click(function(e) {
 $("#navigation_container button#previous_polling_btn").click(function(e) {
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.show_previous_polled_icon_wmaps();
+    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.show_previous_polled_icon_earth();
     } else {
         networkMapInstance.show_previous_polled_icon();
     }
@@ -1073,6 +1088,8 @@ $("#navigation_container button#previous_polling_btn").click(function(e) {
 $("#navigation_container button#next_polling_btn").click(function(e) {
    if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.show_next_polled_icon_wmaps();
+    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.show_next_polled_icon_earth();
     } else {
         networkMapInstance.show_next_polled_icon();
     }
@@ -1213,4 +1230,19 @@ function checkIfMarkerIsInState(marker, array_state_name) {
         }
     }
     return isMarkerPresent;
+}
+
+function getEarthZoomLevel() {
+    var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+    return lookAt.getRange();
+}
+
+function updateGoogleEarthPlacemark(placemark, newIcon) {
+    // Define a custom icon.next_polling_btn
+    var icon = ge.createIcon('');
+    icon.setHref(newIcon);
+    var style = ge.createStyle('');
+    style.getIconStyle().setIcon(icon);
+    // style.getIconStyle().setScale(5.0);
+    placemark.setStyleSelector(style);
 }
