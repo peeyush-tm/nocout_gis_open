@@ -2,6 +2,7 @@
 import csv
 import json
 import datetime
+import time
 from django.db.models import Count, Q
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
@@ -12,7 +13,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
-from nocout.settings import P2P, WiMAX, PMP
+from nocout.settings import P2P, WiMAX, PMP, DEBUG
 from performance.models import PerformanceService, PerformanceNetwork, EventNetwork, EventService, NetworkStatus, ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, Status, NetworkAvailabilityDaily, Topology
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
@@ -269,6 +270,7 @@ class LivePerformanceListing(BaseDatatableView):
     """
     model = NetworkStatus
     is_ordered = False
+    is_polled = False
     is_searched = False
     is_initialised = True
 
@@ -367,11 +369,11 @@ class LivePerformanceListing(BaseDatatableView):
         for device in devices:
             device.update({
                 "page_type":page_type,
-                "packet_loss": "",
-                "latency": "",
-                "last_updated": "",
-                "last_updated_date": "",
-                "last_updated_time": "",
+                "packet_loss": "NA",
+                "latency": "NA",
+                "last_updated": "NA",
+                "last_updated_date": "NA",
+                "last_updated_time": "NA",
                 "sector_id": "",
                 "circuit_id": "",
                 "customer_name" : "",
@@ -489,29 +491,37 @@ class LivePerformanceListing(BaseDatatableView):
             reverse = False if s_sort_dir == 'desc' else True
 
         if i_sorting_cols and i_sort_col:
-            self.is_ordered = True
             self.is_initialised = False
+            self.is_ordered = True
             sort_data = self.prepare_devices(qs)
             try:
                 sort_using = columns[i_sort_col]
                 if sort_using in self.polled_columns:
+                    self.is_polled = True
                     ##now we need to poll the devices
                     ##here we can limit the number of devices in query
                     ##to get the data from
                     ##that needs to be per machine basis
                     ##once we have the results
                     ##we can quickly call upon prepare_devices
-                    pass
+                    machines = self.prepare_machines(sort_data)
+                    #preparing the polled results
+                    qs = self.prepare_polled_results(sort_data, multi_proc=False, machine_dict=machines)
+                    sort_data = qs
+                else:
+                    self.is_polled = False
                 sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
                 return sorted_qs
 
             except Exception as nocolumn:
                 self.is_initialised = True
                 self.is_ordered = False
+                self.is_polled = False
 
         else:
             self.is_initialised = True
             self.is_ordered = False
+            self.is_polled = False
             return qs
 
     def prepare_devices(self,qs):
@@ -520,12 +530,16 @@ class LivePerformanceListing(BaseDatatableView):
         :param device_list:
         :return:
         """
+        if DEBUG:
+            log.debug("preparing devices")
         page_type = self.request.GET['page_type']
         return prepare_gis_devices(qs, page_type)
 
     def prepare_machines(self, qs):
         """
         """
+        if DEBUG:
+            log.debug("preparing machines")
         device_list = []
         for device in qs:
             device_list.append(
@@ -542,6 +556,8 @@ class LivePerformanceListing(BaseDatatableView):
         preparing polled results
         after creating static inventory first
         """
+        if DEBUG:
+            log.debug("preparing polled results")
         result_qs = polled_results(qs=qs,
                                    multi_proc=multi_proc,
                                    machine_dict=machine_dict,
@@ -556,7 +572,8 @@ class LivePerformanceListing(BaseDatatableView):
         :param qs:
         :return qs
         """
-
+        if DEBUG:
+            log.debug("preparing final result")
         if qs:
             for dct in qs:
                 # device = Device.objects.get(id=dct['id'])
@@ -609,20 +626,21 @@ class LivePerformanceListing(BaseDatatableView):
         ## if this has been seached
         ## dont call prepare_devices
 
-        if self.is_initialised and not self.is_searched:
+        if self.is_initialised and not (self.is_searched or self.is_ordered):
             #prepare devices with GIS information
             qs = self.prepare_devices(qs=qs)
             #end prepare devices with GIS information
+
+        if not self.is_polled:
+            #preparing machine list
+            machines = self.prepare_machines(qs)
+            #preparing the polled results
+            qs = self.prepare_polled_results(qs, multi_proc=True, machine_dict=machines)
 
         # if the qs is empty then JSON is unable to serialize the empty
         # ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
-
-        #preparing machine list
-        machines = self.prepare_machines(qs)
-        #preparing the polled results
-        qs = self.prepare_polled_results(qs, multi_proc=True, machine_dict=machines)
 
         aaData = self.prepare_results(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
@@ -704,8 +722,12 @@ def map_results(perf_result, qs):
                 for dct in result_qs:
                     result = device_result[p_result]
                     if dct["device_name"] == p_result:
-                        dct["packet_loss"] = result["packet_loss"]
-                        dct["latency"] = result["latency"]
+                        try:
+                            dct["packet_loss"] = float(result["packet_loss"])
+                            dct["latency"] = float(result["latency"])
+                        except Exception as e:
+                            dct["packet_loss"] = result["packet_loss"]
+                            dct["latency"] = result["latency"]
                         dct["last_updated"] = result["last_updated"]
     return result_qs
 
@@ -1757,45 +1779,45 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
     """
     in_string = lambda x: "'" + str(x) + "'"
     query = """
-        SELECT table_1.id as id,
+        select table_1.id as id,
             table_1.service_name as service_name,
             table_1.device_name as device_name,
             table_1.current_value as pl,
             table_2.current_value as rta,
             table_1.sys_timestamp
         from (
-        SELECT `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
-        FROM
+        select `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
+        from
             (
-                SELECT `id`,
+                select `id`,
                 `service_name`,
                 `device_name`,
                 `data_source`,
                 `current_value`,
                 `sys_timestamp`
-                FROM `performance_networkstatus`
-                WHERE
+                from `performance_networkstatus`
+                where
                     `performance_networkstatus`.`device_name` in ({0})
-                    AND `performance_networkstatus`.`data_source` in ( 'pl','rta' )
-            ORDER BY `performance_networkstatus`.sys_timestamp DESC) as `derived_table`
-        GROUP BY `derived_table`.`device_name`, `derived_table`.`data_source`
+                    and `performance_networkstatus`.`data_source` in ( 'pl','rta' )
+            order by `performance_networkstatus`.sys_timestamp desc) as `derived_table`
+        group by `derived_table`.`device_name`, `derived_table`.`data_source`
         ) as table_1
         join (
-            SELECT `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
-            FROM
+            select `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
+            from
                 (
-                    SELECT `id`,
+                    select `id`,
                     `service_name`,
                     `device_name`,
                     `data_source`,
                     `current_value`,
-                    `sys_timestamp` FROM
+                    `sys_timestamp` from
                     `performance_networkstatus`
-                    WHERE
+                    where
                     `performance_networkstatus`.`device_name` in ({0})
-                    AND `performance_networkstatus`.`data_source` in ( 'pl','rta' )
-                ORDER BY `performance_networkstatus`.sys_timestamp DESC) as `derived_table`
-            GROUP BY `derived_table`.`device_name`, `derived_table`.`data_source`
+                    and `performance_networkstatus`.`data_source` in ( 'pl','rta' )
+                order by `performance_networkstatus`.sys_timestamp desc) as `derived_table`
+            group by `derived_table`.`device_name`, `derived_table`.`data_source`
         ) as table_2
         on (table_1.device_name = table_2.device_name and table_1.data_source != table_2.data_source)
         group by (table_1.device_name);
@@ -1979,6 +2001,40 @@ def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
 
 
 @cache_for(3600)
+def combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}):
+    """
+    indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}
+    :return:
+    """
+
+    raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
+
+    indexed_sector = {}
+    indexed_ss = {}
+    indexed_bh = {}
+
+    for result in raw_results:
+        defined_sector_index = result[indexes['sector']]
+        defined_ss_index = result[indexes['ss']]
+        defined_bh_index = result[indexes['bh']]
+        #indexing sector
+        if defined_sector_index not in indexed_sector:
+            indexed_sector[defined_sector_index] = []
+        #indexing ss
+        if defined_ss_index not in indexed_ss:
+            indexed_ss[defined_ss_index] = []
+        #indexing bh
+        if defined_bh_index not in indexed_bh:
+            indexed_bh[defined_bh_index] = []
+
+        indexed_sector[defined_sector_index].append(result)
+        indexed_ss[defined_ss_index].append(result)
+        indexed_bh[defined_bh_index].append(result)
+
+    return indexed_sector, indexed_ss, indexed_bh
+
+
+@cache_for(3600)
 def prepare_gis_devices(devices, page_type):
     """
     map the devices with gis data
@@ -1993,11 +2049,28 @@ def prepare_gis_devices(devices, page_type):
     #     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
     # ##binary search instead
 
-    indexed_sector = indexed_gis_devices("SECTOR_CONF_ON_NAME")
-    indexed_ss = indexed_gis_devices("SSDEVICENAME")
-    indexed_bh = indexed_gis_devices("BHCONF")
+    st = datetime.datetime.now()
+
+    if DEBUG:
+        log.debug("preparing indexed sector ss bh results")
+        log.debug("start time %s" %st)
+
+    indexed_sector, indexed_ss, indexed_bh = \
+        combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'})
 
     # gis_result = indexed_gis_devices(page_type=page_type)
+
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        log.debug("preparing indexed sector ss bh results : complete")
+        log.debug("Ending {}".format(divmod(elapsed.total_seconds(), 60)))
+
+    st = datetime.datetime.now()
+
+    if DEBUG:
+        log.debug("preparing device dictionary sector ss bh results")
+        log.debug("start time %s" %st)
 
     processed_device = {}
 
@@ -2056,7 +2129,31 @@ def prepare_gis_devices(devices, page_type):
                         "device_technology": format_value(bs_row['BHTECH'])
                     })
 
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        log.debug("preparing device dictionary sector ss bh results : complete")
+        log.debug("Ending {}".format(divmod(elapsed.total_seconds(), 60)))
+
     return devices
+
+
+@cache_for(300)
+def indexed_polled_results(performance_data):
+    """
+
+    :return: dictionary for polled results w.r.t to device name
+    """
+    indexed_raw_results = {}
+
+    for data in performance_data:
+        defined_index = data['device_name']
+        if defined_index not in indexed_raw_results:
+            indexed_raw_results[defined_index] = None
+        indexed_raw_results[defined_index] = data
+
+    return indexed_raw_results
+
 
 ## for distributed performance collection
 ## function to accept machine wise device list
@@ -2073,6 +2170,7 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
     :param device_list:
     :return:
     """
+    st = datetime.datetime.now()
 
     device_result = {}
     perf_result = {"packet_loss": "N/A",
@@ -2081,6 +2179,10 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
                    "last_updated_date": "N/A",
                    "last_updated_time": "N/A"
                   }
+
+    if DEBUG:
+        log.debug("preparing polled results : query")
+        log.debug("start time %s" %st)
 
     query = prepare_row_query(table_name="performance_networkstatus",
                           devices=device_list,
@@ -2095,13 +2197,28 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
     )
     # (query)
     performance_data = fetch_raw_result(query=query,machine=machine)#model.objects.raw(query).using(alias=machine)
+
+    indexed_perf_data = indexed_polled_results(performance_data)
+
     # (len(performance_data))
     for device in device_list:
         if device not in device_result:
             device_result[device] = perf_result
 
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        log.debug("preparing polled results : query execution complete")
+        log.debug("Ending Query Time {}".format(divmod(elapsed.total_seconds(), 60)))
+
+    st = datetime.datetime.now()
+
+    if DEBUG:
+        log.debug("preparing polled results : processing in loop start")
+        log.debug("start time %s" %st)
+
     processed = []
-    for device in device_result:
+    for device in indexed_perf_data:
         if device not in processed:
             processed.append(device)
             perf_result = {"packet_loss": "N/A",
@@ -2111,27 +2228,34 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
                            "last_updated_time": "N/A",
                            "device_name" : "N/A",
             }
+            data = indexed_perf_data[device]
+            # for data in performance_data:
+            #     if str(data['device_name']).strip().lower() == str(device).strip().lower():
+            perf_result['device_name'] = data['device_name']
 
-            for data in performance_data:
-                if str(data['device_name']).strip().lower() == str(device).strip().lower():
-                    perf_result['device_name'] = data['device_name']
+            # d_src = str(data['data_source']).strip().lower()
+            # current_val = str(data['current_value'])
 
-                    # d_src = str(data['data_source']).strip().lower()
-                    # current_val = str(data['current_value'])
+            # if d_src == "pl":
+            perf_result["packet_loss"] = data['pl']
+            # if d_src == "rta":
+            perf_result["latency"] = data['rta']
 
-                    # if d_src == "pl":
-                    perf_result["packet_loss"] = data['pl']
-                    # if d_src == "rta":
-                    perf_result["latency"] = data['rta']
+            perf_result["last_updated"] = datetime.datetime.fromtimestamp(
+                float(data['sys_timestamp'])
+            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
 
-                    perf_result["last_updated"] = datetime.datetime.fromtimestamp(
-                        float(data['sys_timestamp'])
-                    ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-
-                    device_result[device] = perf_result
+            device_result[device] = perf_result
     # (device_result)
     try:
         q.put(device_result)
+
+        if DEBUG:
+            endtime = datetime.datetime.now()
+            elapsed = endtime - st
+            log.debug("preparing polled results : processing in loop end")
+            log.debug("Ending Multiprocessing time {}".format(divmod(elapsed.total_seconds(), 60)))
+
     except Exception as e:
         log.exception(e.message)
 
@@ -2143,6 +2267,7 @@ def get_performance_data(device_list, machine, model):
     :param device_list:
     :return:
     """
+    st = datetime.datetime.now()
 
     device_result = {}
     perf_result = {"packet_loss": "N/A",
@@ -2151,6 +2276,10 @@ def get_performance_data(device_list, machine, model):
                    "last_updated_date": "N/A",
                    "last_updated_time": "N/A"
                   }
+
+    if DEBUG:
+        log.debug("preparing polled results : query")
+        log.debug("start time %s" %st)
 
     query = prepare_row_query(table_name="performance_networkstatus",
                           devices=device_list,
@@ -2165,13 +2294,29 @@ def get_performance_data(device_list, machine, model):
     )
 
     performance_data = fetch_raw_result(query=query,machine=machine)#model.objects.raw(query).using(alias=machine)
+
+    indexed_perf_data = indexed_polled_results(performance_data)
+
     # (len(performance_data))
     for device in device_list:
         if device not in device_result:
             device_result[device] = perf_result
 
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        log.debug("preparing polled results : query execution complete")
+        log.debug("Ending Query Time {}".format(divmod(elapsed.total_seconds(), 60)))
+
+    st = datetime.datetime.now()
+
+    if DEBUG:
+        log.debug("preparing polled results : processing in loop start")
+        log.debug("start time %s" %st)
+
+
     processed = []
-    for device in device_result:
+    for device in indexed_perf_data:
         if device not in processed:
             processed.append(device)
             perf_result = {"packet_loss": "N/A",
@@ -2181,23 +2326,30 @@ def get_performance_data(device_list, machine, model):
                            "last_updated_time": "N/A",
                            "device_name" : "N/A",
             }
+            data = indexed_perf_data[device]
+            # for data in performance_data:
+            #     if str(data['device_name']).strip().lower() == str(device).strip().lower():
+            perf_result['device_name'] = data['device_name']
 
-            for data in performance_data:
-                if str(data['device_name']).strip().lower() == str(device).strip().lower():
-                    perf_result['device_name'] = data['device_name']
+            # d_src = str(data['data_source']).strip().lower()
+            # current_val = str(data['current_value'])
 
-                    # d_src = str(data['data_source']).strip().lower()
-                    # current_val = str(data['current_value'])
+            # if d_src == "pl":
+            perf_result["packet_loss"] = data['pl']
+            # if d_src == "rta":
+            perf_result["latency"] = data['rta']
 
-                    # if d_src == "pl":
-                    perf_result["packet_loss"] = data['pl']
-                    # if d_src == "rta":
-                    perf_result["latency"] = data['rta']
+            perf_result["last_updated"] = datetime.datetime.fromtimestamp(
+                float(data['sys_timestamp'])
+            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
 
-                    perf_result["last_updated"] = datetime.datetime.fromtimestamp(
-                        float(data['sys_timestamp'])
-                    ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-
-                    device_result[device] = perf_result
+            device_result[device] = perf_result
+    # (device_result)
     #  device_result
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        log.debug("preparing polled results : processing in loop end")
+        log.debug("Ending single thread processing time {}".format(divmod(elapsed.total_seconds(), 60)))
+
     return device_result

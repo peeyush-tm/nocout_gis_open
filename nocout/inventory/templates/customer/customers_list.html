@@ -1,17 +1,14 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Customer</li>
-{% endblock %}
+
 {% block content_title %}Customer Management{% endblock %}
 {% block content_description %}List of customer{% endblock %}
 {% block content %}
-    
+
         {% if perms.inventory.add_customer %}
             <p><a href="/customer/new"><i class="fa fa-plus">&nbsp;</i> Create Customer</a></p>
         {% endif %}
-    
+
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>CUSTOMER LISTING</h4>

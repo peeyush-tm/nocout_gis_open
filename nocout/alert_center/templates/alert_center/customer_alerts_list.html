@@ -2,20 +2,16 @@
 {% block breadcrumb_title %}
     <a href="/home">Home</a> >
     <li><a href="#">Alert Center</a></li>
-    <li><a href="#">Alert Detail</a></li>
-    <li><a href="#">Customer Detail</a></b></li>
+    <li><a href="#">Customer Alerts</a></li>
+    <li><a href="#">{{ data_source }}</a></li>
     <li><b><span id="nav_tab_name"></span></b></li>
 {% endblock %}
-{% block content_title %}Customer Details{% endblock %}
-{% block content_description %} {% endblock %}
+{% block content_title %}Customer Alerts{% endblock %}
+{% block content_description %}Customer Alerts List{% endblock %}
 {% load staticfiles %}
 {% block css %}
     <!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css"
-          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
-{% endblock %}
-
-{% block page_setting_block %}
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} >
 {% endblock %}
 
 {% block content %}
@@ -32,7 +28,7 @@
                         <li><a href="#customer_pmp_block" id="customer_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
                         <li class="active"><a href="#customer_p2p_block" id="customer_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
                 </ul>
-                <div class="tab-content Tbl_FixHeight" style="overflow:auto;">
+                <div class="tab-content" style="overflow:auto;">
                     <div class="tab-pane in active" id="customer_p2p_block">
                         <table id="customer_p2p_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
@@ -58,27 +54,36 @@
     </div>
     </div>
 {% endblock %}
-
 {% block jquery %}
-    <!-- Custom script for data table-->
+<script type="text/javascript">
+    var dataTableInstance = "",
+        base_url = "",
+        excel_columns = [];
+    /*This is a temporary code which is replace when data for data table is provided*/
+    $(document).ready(function (e) {
 
-    <!-- Library to load tab content on tab click-->
-    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
-    <script type="text/javascript">
-        var dataTableInstance = "",
-            base_url = "",
-            excel_columns = [];
+        /*Set the base url of application for ajax calls*/
+        if(window.location.origin) {
+            base_url = window.location.origin;
+        } else {
+            base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+        }
 
-        $(document).ready(function (e) {
+        var sort_index = 9;
+        /*Grid headers object*/
+        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+        /*Ajax url to get grid data*/
+        ajax_url_get_parameter = "";
 
-            /*Set the base url of application for ajax calls*/
-            if(window.location.origin) {
-                base_url = window.location.origin;
-            } else {
-                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
-            }
-
-            function ourDataTableWidget() {
+        if(/latency/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='latency';
+            sort_index = 10;
+        } else if(/packet_drop/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='packet_drop'
+        } else if(/down/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='down'
+        }
+          function ourDataTableWidget() {
                 /**
                  * This function creates the jquery data table on given domElement
                  * @class ourDataTableWidget
@@ -87,7 +92,7 @@
                  * @param tableheaders {JSON Object} It contains the grid headers object
                  * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
                  */
-                this.createDataTable = function (tableId, tableheaders, ajax_url, destroy) {
+                this.createDataTable = function(tableId, tableheaders, ajax_url, destroy) {
                     /*Show the spinner*/
                     showSpinner();
 
@@ -109,10 +114,11 @@
                         var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
                         length_sel.addClass('form-control input-sm');
                     });
-                    if (destroy) {
-                        $("#" + tableId).dataTable().fnDestroy();
+                    if (destroy){
+                        $("#"+tableId).dataTable().fnDestroy();
                     }
-                    var dtable = $("#" + tableId).DataTable({
+
+                    var dtable = $("#"+tableId).DataTable({
                         sDom: 'T<"clear">lfrtip',
                         oTableTools: {
                             sSwfPath : base_url+"/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
@@ -128,61 +134,44 @@
                         bAutoWidth: false,
                         bDestroy : true,
                         bPaginate: true,
-                        bProcessing: true,
+                        bProcessing : true,
                         bServerSide: false,
                         sAjaxSource: ajax_url,
                         /*This is the callback funtion for data ajax call*/
-                        fnInitComplete: function (oSettings, json) {
+                        fnInitComplete : function(oSettings, json) {
                             /*Hide the spinner*/
                             hideSpinner();
                         },
-                        aoColumns: tableheaders,
-                        sPaginationType: "bs_full",
-                        aaSorting: [
-                            [10, 'desc'],
-                            [0, 'asc']
-                        ]
+                        aoColumns:tableheaders,
+                        sPaginationType: "full_numbers",
+                        aaSorting: [[sort_index, 'desc'],[0, 'asc']]
                     });
                 };
             }
-
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-            /*Ajax url to get grid data*/
-            ajax_url_get_parameter = "";
 
-            if (/latency/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'latency'
-            } else if (/packet_drop/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'packet_drop'
-            } else if (/down/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'down'
-            }
-
-
-            var ajax_url_wifi = '{% url "CustomerAlertDetails" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX';
-            var ajax_url_pmp = '{% url "CustomerAlertDetails" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'PMP';
-            var ajax_url_p2p = '{% url "CustomerAlertDetails" %}' + '?data_source=' + ajax_url_get_parameter + '&data_tab=' + 'P2P';
+            var ajax_url_wifi= '{% url "CustomerAlertListingTable" %}'+'?data_source='+ ajax_url_get_parameter+'&data_tab=' + 'WiMAX';
+            var ajax_url_pmp=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'PMP';
+            var ajax_url_p2p=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'P2P';
 
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
-            $("#customer_wifi_tab").attr("data_url", ajax_url_wifi);
-            $("#customer_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#customer_wifi_tab").attr("data_url",ajax_url_wifi);
+            $("#customer_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
-            $("#customer_pmp_tab").attr("data_url", ajax_url_pmp);
-            $("#customer_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#customer_pmp_tab").attr("data_url",ajax_url_pmp);
+            $("#customer_pmp_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
-            $("#customer_ptp_tab").attr("data_url", ajax_url_p2p);
-            $("#customer_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#customer_ptp_tab").attr("data_url",ajax_url_p2p);
+            $("#customer_ptp_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
             var location_array = window.location.href.split("#");
 
-            if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+            if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
 
                 /*Trigger click event on active tab to load its data*/
-                $("#customer_ptp_tab").trigger('click', true);
+                $("#customer_ptp_tab").trigger('click',true);
             }
 
             // var destroy=false;
@@ -206,17 +195,18 @@
             });
 
         });
-
-    </script>
+</script>
+<!-- Library to load tab content on tab click-->
+<script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
 {% endblock %}
 
 {% block load_js %}
-    <!-- /JAVASCRIPTS -->
+<!-- /JAVASCRIPTS -->
 
-    <script>
-        jQuery(document).ready(function () {
-            App.setPage("");  //Set current page
-            App.init(); //Initialise plugins and elements
-        });
-    </script>
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
 {% endblock %}

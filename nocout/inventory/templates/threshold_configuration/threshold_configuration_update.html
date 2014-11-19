@@ -1,10 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Settings</li>
-    <li>Threshold Configuration</li>
-    <li>Edit</li>
-{% endblock %}
+
 {% block css %}
 	<!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
@@ -58,7 +54,7 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
-        
+
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
@@ -97,7 +93,7 @@
                 if((startingValue=== 0 || startingValue) && (endValue===0 || endValue)) {
                     if(startingValue > endValue) {
                         range_bug_array.push(i);
-                        
+
                         if(bugs_array.indexOf("range_bug_array") == -1) {
                             bugs_array.push("range_bug_array");
                         }
@@ -107,7 +103,7 @@
                             if(j != i) {
                                 var startingValue2 = parseInt($("input#id_range"+j+"_start").val(), 10);
                                 var endValue2 = parseInt($("input#id_range"+j+"_end").val(), 10);
-                                
+
                                 if((startingValue2 >= startingValue && startingValue2 <= endValue) || (endValue2 >= startingValue && endValue2 <= endValue)) {
                                     if(overlapping_bug_array.indexOf(j) == -1 && range_bug_array.indexOf(j) == -1) {
                                         overlapping_bug_array.push(j);
@@ -115,21 +111,21 @@
                                         if(bugs_array.indexOf("overlapping_bug_array") == -1) {
                                             bugs_array.push("overlapping_bug_array");
                                         }
-                                    }                                
+                                    }
                                 }
                             }
                         }
                     }
 
                 } else if((startingValue===0 || startingValue) && !endValue) {
-                    
+
                     empty_end_array.push(i);
                     if(bugs_array.indexOf("empty_end_array") == -1) {
                         bugs_array.push("empty_end_array");
                     }
 
                 } else if(!startingValue && (endValue===0 || endValue)) {
-                    
+
                     empty_start_array.push(i);
                     if(bugs_array.indexOf("empty_start_array") == -1) {
                         bugs_array.push("empty_start_array");
@@ -194,10 +190,10 @@
         var to_seperator_html = "<span class='col-sm-1' style='padding: 0px;padding-top: 5px;text-align: center;'>To</span>";
 
         /*Update Range html*/
-        for(var j=1;j<=range_count/2;j++) {            
+        for(var j=1;j<=range_count/2;j++) {
 
             $("#id_range"+j+"_start").parent().html($("#id_range"+j+"_start").parent().html()+""+to_seperator_html+""+$("#id_range"+j+"_end").parent().html());
-            
+
             $("#id_range"+j+"_start").attr("style","width:45%;");
             $("#id_range"+j+"_start").addClass("col-md-4");
             $("#id_range"+j+"_start").attr("placeholder","Start");
@@ -206,7 +202,7 @@
             $("#id_range"+j+"_end").addClass("col-md-4");
             $("#id_range"+j+"_end").addClass("pull-right");
             $("#id_range"+j+"_end").attr("placeholder","End");
-            
+
             // $("#id_range"+j+"_start").parent().parent().parent().next().children().parent().remove();
             $("#id_range"+j+"_start").closest(".form-group").next().remove();
 

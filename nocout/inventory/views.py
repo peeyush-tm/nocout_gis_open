@@ -143,8 +143,8 @@ class InventoryListingTable(PermissionsRequiredMixin, BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/inventory/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                       <a href="/inventory/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+            dct.update(actions='<a href="/inventory/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                       <a href="/inventory/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
 
         return qs
@@ -318,11 +318,11 @@ class AntennaListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_antenna'):
-                edit_action = '<a href="/antenna/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/antenna/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_antenna'):
-                delete_action = '<a href="/antenna/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/antenna/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
@@ -463,11 +463,11 @@ class BaseStationListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_basestation'):
-                edit_action = '<a href="/base_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/base_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_basestation'):
-                delete_action = '<a href="/base_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
@@ -620,11 +620,11 @@ class BackhaulListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_backhaul'):
-                edit_action = '<a href="/backhaul/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/backhaul/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_backhaul'):
-                delete_action = '<a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/backhaul/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
@@ -772,11 +772,11 @@ class SectorListingTable(PermissionsRequiredMixin,
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_sector'):
-                edit_action = '<a href="/sector/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/sector/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_sector'):
-                delete_action = '<a href="/sector/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/sector/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
@@ -900,11 +900,11 @@ class CustomerListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_customer'):
-                edit_action = '<a href="/customer/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/customer/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_customer'):
-                delete_action = '<a href="/customer/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/customer/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
@@ -1053,11 +1053,11 @@ class SubStationListingTable(PermissionsRequiredMixin,
             dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_substation'):
-                edit_action = '<a href="/sub_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/sub_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_substation'):
-                delete_action = '<a href="/sub_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/sub_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
@@ -1190,18 +1190,18 @@ class CircuitListingTable(PermissionsRequiredMixin,
         for dct in json_data:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_circuit'):
-                edit_action = '<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
+                edit_action = '<a href="/circuit/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_circuit'):
-                delete_action = '<a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
+                delete_action = '<a href="/circuit/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
                 actions = edit_action + delete_action
             else:
                 actions = ''
-            actions = actions + '<a href="/circuit/l2_reports/{0}/"><i class="fa fa-sign-in text-info" title="View L2 reports for circuit"\
+            actions = actions + '<a href="/circuit/{0}/l2_reports/"><i class="fa fa-sign-in text-info" title="View L2 reports for circuit"\
                             alt="View L2 reports for circuit"></i></a>'.format(device_id)
             dct.update(actions=actions, date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
 
@@ -1346,7 +1346,7 @@ class L2ReportListingTable(BaseDatatableView):
         for dct in qs:
             dct.update(actions='<a href="../../../media/'+dct['file_url']+'" target="_blank" title="Download Report">\
                 <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
-                <a class="delete_l2report" style="cursor:pointer;" title="Delete Report" url="delete/{0}/">\
+                <a class="delete_l2report" style="cursor:pointer;" title="Delete Report" url="{0}/delete/">\
                 <i class="fa fa-trash-o text-danger"></i></a>\
                 '.format(dct.pop('id')),
                added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
@@ -1518,8 +1518,8 @@ class IconSettingsListingTable(PermissionsRequiredMixin, DatatableSearchMixin, V
             except Exception as e:
                 logger.info(e)
 
-            dct.update(actions='<a href="/icon_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/icon_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/icon_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/icon_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return json_data
 
 
@@ -1616,8 +1616,8 @@ class LivePollingSettingsListingTable(PermissionsRequiredMixin,
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            dct.update(actions='<a href="/live_polling_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/live_polling_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/live_polling_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/live_polling_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return json_data
 
 
@@ -1712,8 +1712,8 @@ class ThresholdConfigurationListingTable(PermissionsRequiredMixin, DatatableSear
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            dct.update(actions='<a href="/threshold_configuration/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/threshold_configuration/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/threshold_configuration/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/threshold_configuration/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return json_data
 
 
@@ -2439,8 +2439,8 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
             except Exception as e:
                 logger.info(e)
 
-            dct.update(actions='<a href="/bulk_import/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                                <a href="/bulk_import/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
+            dct.update(actions='<a href="/bulk_import/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="/bulk_import/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
             try:
                 sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS']
                 if dct.get('sheet_name'):

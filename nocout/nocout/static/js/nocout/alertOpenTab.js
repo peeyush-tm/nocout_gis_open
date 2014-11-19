@@ -83,6 +83,11 @@ $(".nav-tabs li a").click(function (e, isFirst) {
         }
     }
 
+    setTimeout(function() {
+        // Update Breadcrumb
+        $(".breadcrumb li:last-child").html('<a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a>');
+    },150);
+
     /*Refresh the tab after every given timer. Right now it is 5 minutes*/
     timeOutId = setTimeout(function () {
 
