@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from models import Service, ServiceParameters, ServiceDataSource, Protocol
+from models import Service, ServiceParameters, ServiceDataSource, Protocol, ServiceSpecificDataSource
 import re
 from django.forms.util import ErrorList
 from django.forms.models import inlineformset_factory,BaseInlineFormSet
@@ -20,8 +20,8 @@ class BaseServiceDataSourceFormset(BaseInlineFormSet):
 
     def clean(self):
         for form in self.forms:
-            if not len(form.cleaned_data.keys()):
-                raise forms.ValidationError('This field is required.')
+            if not 'service_data_sources' in form.cleaned_data:
+                raise forms.ValidationError("This field is required.")
 
 class ServiceForm(forms.ModelForm):
     """
@@ -29,7 +29,7 @@ class ServiceForm(forms.ModelForm):
     """
     def __init__(self, *args, **kwargs):
         # removing help text for service_data_sources 'select' field
-        self.base_fields['service_data_sources'].help_text = ''
+        #self.base_fields['service_data_sources'].help_text = ''
 
         try:
             if 'instance' in kwargs:
@@ -58,6 +58,7 @@ class ServiceForm(forms.ModelForm):
         Meta Information
         """
         model = Service
+        fields = ('name', 'alias', 'parameters', 'command', 'description')
 
     def clean_name(self):
         """
@@ -88,7 +89,6 @@ class ServiceForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-
 widgets = {
            'critical': forms.TextInput(attrs= {'class' : 'form-control'}),
            'warning': forms.TextInput(attrs= {'class' : 'form-control'}),
