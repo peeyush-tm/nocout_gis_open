@@ -2260,102 +2260,107 @@ function devicePlottingClass_gmap() {
 			infoTable =  "",
 			perfContent = "",
 			clickedType = $.trim(contentObject.pointType);
-
 		/*True,if clicked on the link line*/
 		if(clickedType == "path") {
-			var path_circuit_id = "";
-			/*Tabbale Start*/
-			infoTable += '<div class="tabbable">';
-			/*Tabs Creation Start*/
-			infoTable += '<ul class="nav nav-tabs">';
-			infoTable += '<li class="active"><a href="#near_end_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> BS-Sector Info</a></li>';
-			infoTable += '<li class=""><a href="#far_end_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> SS Info</a></li>';
-			infoTable += '</ul>';
-			/*Tabs Creation Ends*/
+			try {
 
-			/*Tab-content Start*/
-			infoTable += '<div class="tab-content">';
+				var path_circuit_id = "";
+				/*Tabbale Start*/
+				infoTable += '<div class="tabbable">';
+				/*Tabs Creation Start*/
+				infoTable += '<ul class="nav nav-tabs">';
+				infoTable += '<li class="active"><a href="#near_end_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> BS-Sector Info</a></li>';
+				infoTable += '<li class=""><a href="#far_end_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> SS Info</a></li>';
+				infoTable += '</ul>';
+				/*Tabs Creation Ends*/
 
-			/*First Tab Content Start*/
-			infoTable += '<div class="tab-pane fade active in" id="near_end_block"><div class="divide-10"></div>';
+				/*Tab-content Start*/
+				infoTable += '<div class="tab-content">';
 
-			infoTable += "<table class='table table-bordered'><tbody>";
-			
-			/*Loop for BS or Sector info object array*/
-			for(var i=0;i<contentObject.bs_info.length;i++) {
+				/*First Tab Content Start*/
+				infoTable += '<div class="tab-pane fade active in" id="near_end_block"><div class="divide-10"></div>';
 
-				if(contentObject.bs_info[i].show == 1) {
-					infoTable += "<tr><td>"+contentObject.bs_info[i].title+"</td><td>"+contentObject.bs_info[i].value+"</td></tr>";
-				}
-			}
+				infoTable += "<table class='table table-bordered'><tbody>";
+				// console.log("bs_info length: "+ contentObject.bs_info.length);
+				/*Loop for BS or Sector info object array*/
+				for(var i=0;i<contentObject.bs_info.length;i++) {
 
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.nearLat+", "+contentObject.nearLon+"</td></tr>";
-			infoTable += "</tbody></table>";			
-			infoTable += "</td>";
-			/*BS-Sector Info End*/
-
-			infoTable += '</div>';
-			/*First Tab Content End*/
-
-			/*Second Tab Content Start*/
-			infoTable += '<div class="tab-pane fade" id="far_end_block"><div class="divide-10"></div>';
-			/*SS Info Start*/
-			infoTable += "<td>";			
-			infoTable += "<table class='table table-bordered'><tbody>";
-			
-			/*Loop for ss info object array*/
-			for(var i=0;i<contentObject.ss_info.length;i++) {
-				if(contentObject.ss_info[i].title && $.trim(contentObject.ss_info[i].title.toLowerCase()) === 'circuit id') {
-					path_circuit_id = contentObject.ss_info[i].value;
+					if(contentObject.bs_info[i].show == 1) {
+						infoTable += "<tr><td>"+contentObject.bs_info[i].title+"</td><td>"+contentObject.bs_info[i].value+"</td></tr>";
+					}
 				}
 
-				if(contentObject.ss_info[i].show == 1) {
-					infoTable += "<tr><td>"+contentObject.ss_info[i].title+"</td><td>"+contentObject.ss_info[i].value+"</td></tr>";
+				infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.nearLat+", "+contentObject.nearLon+"</td></tr>";
+				infoTable += "</tbody></table>";			
+				infoTable += "</td>";
+				/*BS-Sector Info End*/
+
+				infoTable += '</div>';
+				/*First Tab Content End*/
+
+				/*Second Tab Content Start*/
+				infoTable += '<div class="tab-pane fade" id="far_end_block"><div class="divide-10"></div>';
+				/*SS Info Start*/
+				infoTable += "<td>";			
+				infoTable += "<table class='table table-bordered'><tbody>";
+				// console.log("ss_info length: "+ contentObject.ss_info.length);
+				/*Loop for ss info object array*/
+				for(var i=0;i<contentObject.ss_info.length;i++) {
+					if(contentObject.ss_info[i].title && $.trim(contentObject.ss_info[i].title.toLowerCase()) === 'circuit id') {
+						path_circuit_id = contentObject.ss_info[i].value;
+					}
+
+					if(contentObject.ss_info[i].show == 1) {
+						infoTable += "<tr><td>"+contentObject.ss_info[i].title+"</td><td>"+contentObject.ss_info[i].value+"</td></tr>";
+					}
 				}
-			}
 
-			var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
-				link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
+				var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
+					link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
 
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
-			if(path_circuit_id) {
-				infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
-				infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
-			}
-			infoTable += "</tbody></table>";
-			/*SS Info End*/
-			infoTable += '</div>';
-			/*Second Tab Content End*/
+				infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
+				if(path_circuit_id) {
+					infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
+					infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
+				}
+				infoTable += "</tbody></table>";
+				/*SS Info End*/
+				infoTable += '</div>';
+				/*Second Tab Content End*/
 
-			infoTable += '</div>';
-			/*Tab-content end*/
+				infoTable += '</div>';
+				/*Tab-content end*/
 
-			infoTable += '</div>';
-			/*Tabbale End*/
+				infoTable += '</div>';
+				/*Tabbale End*/
 
-			var isBSLeft = 0;
+				var isBSLeft = 0;
 
-			if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
-				isBSLeft = 1;
-			}
+				if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
+					isBSLeft = 1;
+				}
 
-			var sector_ss_name_obj = {
-				sector_Alias: contentObject.bs_info ? contentObject.bs_info[0].value : " ",
-				sector_name : contentObject.sectorName ? contentObject.sectorName : " ",
-				ss_name : contentObject.ssName ? contentObject.ssName : " ",
-				ss_customerName: contentObject.ss_info.length >= 18 ? contentObject.ss_info[17].value : " ",
-				ss_circuitId: contentObject.ss_info.length >= 4 ? contentObject.ss_info[3].value : " ",
-				isBSLeft : isBSLeft
-			};
+				var sector_ss_name_obj = {
+					sector_Alias: contentObject.bs_info ? contentObject.bs_info[0].value : " ",
+					sector_name : contentObject.sectorName ? contentObject.sectorName : " ",
+					ss_name : contentObject.ssName ? contentObject.ssName : " ",
+					ss_customerName: contentObject.ss_info.length >= 18 ? contentObject.ss_info[17].value : " ",
+					ss_circuitId: contentObject.ss_info.length >= 4 ? contentObject.ss_info[3].value : " ",
+					isBSLeft : isBSLeft
+				};
 
-			var sector_ss_name = JSON.stringify(sector_ss_name_obj);
+				var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
-			if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
-				/*Concat infowindow content*/
-				windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
-			} else {
-				/*Concat infowindow content*/
-				windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+				if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
+					/*Concat infowindow content*/
+					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+				} else {
+					/*Concat infowindow content*/
+					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+				}
+
+			} catch(e) {
+				// console.log(e);
 			}
 
 		} else if (clickedType == 'sector_Marker' || clickedType == 'sector') {
@@ -4709,16 +4714,17 @@ function devicePlottingClass_gmap() {
 									}
 								}
 
-								// var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon,
-								var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
-								var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png",
-									ss_marker = allMarkersObject_gmap['sub_station']['ss_'+marker_name],
+								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon;
+								// var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
+								// var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png",
+								var ss_marker = allMarkersObject_gmap['sub_station']['ss_'+marker_name],
 									sector_marker = allMarkersObject_gmap['sector_device']['sector_'+sector_ip],
 									marker_polling_obj = {
 										"device_name" : allSSIds[i],
 										"polling_icon" : newIcon,
 										"polling_time" : current_time,
-										"polling_value" : result.data.devices[allSSIds[i]].value
+										"polling_value" : result.data.devices[allSSIds[i]].value,
+										"ip": ""
 									};
 
 								if(polled_devices_names.indexOf(allSSIds[i]) == -1) {
@@ -4729,18 +4735,21 @@ function devicePlottingClass_gmap() {
 									complete_polled_devices_icon[allSSIds[i]] = [];
 								}
 								complete_polled_devices_icon[allSSIds[i]].push(newIcon);
-								complete_polled_devices_data.push(marker_polling_obj);
 								
 								/*Update the marker icons*/
 								if(ss_marker) {
 									ss_marker.setOptions({
 										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
 									});
+									marker_polling_obj.ip = ss_marker.ss_ip;
 								} else if(sector_marker) {
 									sector_marker.setOptions({
 										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
 									});
+									marker_polling_obj.ip = sector_marker.sectorName;
 								}
+
+								complete_polled_devices_data.push(marker_polling_obj);
 
 								/*total Polled Occurence*/
 								total_polled_occurence = complete_polled_devices_icon[allSSIds[i]].length;
@@ -5030,11 +5039,15 @@ function devicePlottingClass_gmap() {
 
     	var table_html = "";
 
+    	if(window.location.pathname.indexOf("googleEarth") > -1) {
+    		table_html+= '<iframe allowTransparency="true" style="position:absolute; top:0px; right:0px; width:100%; height:100%;overflow-y:auto; z-index:100;"></iframe>';
+    	}
+
     	table_html += "<div class='polling_table_container'><table style='z-index:9999;' id='polling_data_table' class='datatable table table-striped table-bordered table-hover'><thead><tr><th>Device Name</th><th>Time</th><th>Value</th></tr><thead><tbody>";
 
     	for(var i=0;i<complete_polled_devices_data.length;i++) {
     		table_html += '<tr>';
-    		table_html += '<td>'+complete_polled_devices_data[i].device_name+'</td>';
+    		table_html += '<td>'+complete_polled_devices_data[i].ip+'</td>';
     		table_html += '<td>'+complete_polled_devices_data[i].polling_time+'</td>';
     		table_html += '<td>'+complete_polled_devices_data[i].polling_value+'</td>';
     		table_html += '</tr>';

@@ -21,7 +21,7 @@ from django.utils.dateformat import format
 from operator import itemgetter
 from nocout.utils.util import fetch_raw_result, dict_fetchall, \
     format_value, cache_for, \
-    cached_all_gis_inventory, query_all_gis_inventory
+    cached_all_gis_inventory, query_all_gis_inventory, query_all_gis_inventory_improved
 
 from multiprocessing import Process, Queue
 
@@ -173,10 +173,6 @@ SERVICE_DATA_SOURCE = {
 SERVICES = {
 
 }
-
-global gis_information
-gis_information = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
-
 
 # def uptime_to_days(uptime=0):
 #     if uptime:
@@ -1854,7 +1850,6 @@ def organization_customer_devices(organizations, technology = None, specify_ptp_
                 organization_customer_devices = Device.objects.filter(
                     ~Q(id__in=ptp_device_circuit_backhaul(specify_type=specify_ptp_type)),
                     choose_ss_bs,  #calls the specific set of devices
-                    substation__isnull=False,
                     is_added_to_nms= 1,
                     is_deleted= 0,
                     organization__in= organizations,
@@ -1863,7 +1858,9 @@ def organization_customer_devices(organizations, technology = None, specify_ptp_
             else:
                 organization_customer_devices = Device.objects.filter(
                     ~Q(id__in=ptp_device_circuit_backhaul()),
-                    substation__isnull=False,
+                    Q(substation__isnull=False)
+                    |
+                    Q(sector_configured_on__isnull=False),
                     is_added_to_nms= 1,
                     is_deleted= 0,
                     organization__in= organizations,
