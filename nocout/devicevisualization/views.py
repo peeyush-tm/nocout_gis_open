@@ -15,7 +15,7 @@ from django.views.generic.edit import CreateView, DeleteView
 from device.models import Device, DeviceFrequency, DeviceTechnology, DeviceType
 from django.db.models import Q
 from inventory.models import ThematicSettings, UserThematicSettings, BaseStation, SubStation, UserPingThematicSettings, \
-    PingThematicSettings
+    PingThematicSettings, Circuit, CircuitL2Report
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
     PerformanceNetwork, PerformanceService, Status, Topology
 from user_profile.models import UserProfile
@@ -2446,9 +2446,27 @@ class GISPerfData(View):
         return performance_value
 
 
+## This function returns the latest l2 report url for given circuit id.
+def getL2Report(request, ckt_id = 'no'):
 
+    result = {
+        "message" : "No L2 Report",
+        "success" : 0,
+        "data" : []
+    }
 
-
-
-
+    try:
+        circuit_instance = Circuit.objects.filter(alias=ckt_id)
+        report_list = CircuitL2Report.objects.filter(circuit_id=circuit_instance).values()[:1]
+        if len(report_list) > 0:
+            file_url = report_list[0]['file_name']
+            file_url_dict = {
+                "url" : "media/"+file_url
+            }
+            result['data'].append(file_url_dict)
+            result['success'] = 1
+            result['message'] = "L2 report fetched successfully"
+    except Exception, e:
+        logger.info(e.message)
+    return HttpResponse(json.dumps(result))
 
