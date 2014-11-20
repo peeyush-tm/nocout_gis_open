@@ -24,4 +24,6 @@ urlpatterns = patterns('',
                            name='download_selected_bs_inventory'),
                        url(r'^tools/point/$', views.PointToolClass.as_view(), name='point_tool_class'),
                        url(r'^get_tools_data/$', views.GetToolsData.as_view(), name='get_tools_data'),
-                       url(r'^perf_data/$', views.GISPerfData.as_view(), name='gis_perf_data'))
+                       url(r'^perf_data/$', views.GISPerfData.as_view(), name='gis_perf_data'),
+                       url(r'^l2_report/(?P<ckt_id>\w+)/$', views.getL2Report, name='get_l2_report')
+               )

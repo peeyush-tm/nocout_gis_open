@@ -6,7 +6,9 @@
 {% block content %}
     {% for group in user.groups.all %}
         {% if group.name == 'group_admin' or group.name == 'group_operator' %}
-            <p><a href="/circuit/{{ circuit_id }}/l2_reports/create/"><i class="fa fa-plus">&nbsp;</i> Upload Report</a></p>
+            {% if page_type == 'individual' %}
+                <p><a href="/circuit/{{ circuit_id }}/l2_reports/create/"><i class="fa fa-plus">&nbsp;</i> Upload Report</a></p>
+            {% endif %}
         {% endif %}
     {% endfor %}
     <div class="box border lite">
@@ -27,11 +29,12 @@
     <script type="text/javascript">
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            var dataTableInstance = new ourDataTableWidget(),
+                gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "L2ReportListingTable" circuit_id %}';
+            
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy=false;
             dataTableInstance.createDataTable("L2ListingTable", gridHeadersObj, ajax_url, destroy);

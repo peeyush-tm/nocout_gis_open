@@ -1129,6 +1129,41 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
     }
 });
 
+$('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
+    var ckt_id = e.currentTarget.attributes['ckt_id'] ? e.currentTarget.attributes['ckt_id'].value : "";
+    // If ckt id exist then fetch l2 report url
+    if(ckt_id) {
+
+        $.ajax({
+            url: base_url+'/network_maps/l2_report/'+ckt_id+'/',
+            type : "GET",
+            success : function(response) {
+                var result = "";
+                if(typeof response === 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+                if(result.success === 1) {
+                    if(result['data'].length === 0) {
+                        bootbox.alert("No L2 Report Found.");
+                    } else {
+                        var url = base_url+"/"+result['data'][0]['url'];
+                        console.log(url);
+                        var win = window.open(url, '_blank');
+                        win.focus();
+                    }
+                } else {
+                    bootbox.alert("No L2 Report Found.");
+                }
+            },
+            error : function(err) {
+                console.log(err);
+            }
+        });
+    }
+});
+
 /**
  * This event trigger when export data button is clicked
  */
