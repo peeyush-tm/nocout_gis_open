@@ -11,6 +11,8 @@ import pymongo
 from pymongo import Connection
 import pprint
 import os
+import tarfile
+import shutil
 import ast
 from itertools import ifilterfalse
 from nocout_logger import nocout_log
@@ -1027,14 +1029,23 @@ def sync():
         "success": 1,
         "message": "Config pushed to "
     }
-    # Snapshot for the local-site; to be used only by master site
-    #nocout_create_snapshot()
+    # Create an archive of current folder state, to be used for rollback
+    os.chdir('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
+    out = tarfile.open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato_backup.tar', mode='w')
+    try:
+	    for entry in os.listdir('.'):
+		    if entry not in ['..', '.']:
+			    out.add(entry)
+    except Exception, err:
+	    logger.error('Error in tarfile generation: ' + pprint.pformat(err))
+	    # Doing the operation without creating backup in this case
+    finally:
+	    out.close()
 
-    # Create backup for the hosts and rules file
-    #if os.path.exists(hosts_file):
-    #    os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
-    #if os.path.exists(rules_file):
-    #    os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
+    nocout_sites = nocout_distributed_sites()
+    # Remove master_UA from nocout_sites
+    nocout_sites = dict(filter(lambda d: d[1].get('replication') == 'slave', nocout_sites.items()))
+    logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_sites))
 
     try:
 	    # Make hosts.mk and rules.mk which takes configurations from db
@@ -1042,56 +1053,21 @@ def sync():
 	    make_rules.main()
     except Exception, e:
 	    logger.error('Error in make_hosts or make_rules: ' + pprint.pformat(e))
-    # Switch to check_mk base dir
-    os.chdir('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato')
-    # Use latest hosts file
-    all_hosts_files = filter(lambda f: os.path.isfile and 'hosts' in f, os.listdir('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/'))
-    all_hosts_files = sorted(all_hosts_files, key=os.path.getmtime, reverse=True)
-
-    latest_hosts_file = all_hosts_files[0]
-    logger.info('latest_hosts_file: ' + pprint.pformat(latest_hosts_file))
-    if len(all_hosts_files) == 1:
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
-    elif len(all_hosts_files) > 1:
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_hosts')
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file)
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_hosts', '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
-    # Use latest rules file
-    all_rules_files = filter(lambda f: os.path.isfile and 'rules' in f, os.listdir('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/'))
-    all_rules_files = sorted(all_rules_files, key=os.path.getmtime, reverse=True)
-    latest_rules_file = all_rules_files[0]
-    logger.info('latest_rules_file: ' + pprint.pformat(latest_rules_file))
-    if len(all_rules_files) == 1:
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
-    elif len(all_rules_files) > 1:
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_rules')
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file)
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/temp_rules', '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
+	    # Perform rollback
+	    nocout_rollback_action(nocout_sites, response)
+	    return response
 
     nocout_create_sync_snapshot()
-    nocout_sites = nocout_distributed_sites()
     try:
         f = os.system('~/bin/cmk -R')
 	logger.debug('f : '  + pprint.pformat(f))
     except Exception, e:
         logger.error('[sync]' + pprint.pformat(e))
-    if f == 0:
-        #sites_affected.append(defaults.omd_site)
-	# Update the configuration database
-	make_hosts.update_configuration_db()
     # Some syntax error with hosts.mk or rules.mk
-    else:
+    if f != 0:
 	    logger.info("Could not cmk -R master_UA")
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
-	    # Generate a fresh snapshot
-            nocout_create_sync_snapshot()
-            for site, attrs in nocout_sites.items():
-                response_text = nocout_synchronize_site(site, attrs, True)
-            response.update({
-                "message": "Problem with the new config, old config retained",
-                "success": 1
-            })
+	    # Perform rollback if problem with master_UA
+	    nocout_rollback_action(nocout_sites, response)
 	    return response
     for site, attrs in nocout_sites.items():
 	logger.debug('site :' + pprint.pformat(site))
@@ -1100,23 +1076,47 @@ def sync():
             sites_affected.append(site)
     logger.info('sites_affected: ' + pprint.pformat(sites_affected))
     if len(sites_affected) == len(nocout_sites):
+	# Update the configuration database
+	make_hosts.update_configuration_db()
         response.update({
             "message": "Config pushed to " + ','.join(sites_affected)
         })
     else:
 	    logger.info("Length of sites_affected and nocout_sites doesn't match")
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_hosts_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk')
-	    os.rename('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/%s' % latest_rules_file, '/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk')
+	    nocout_rollback_action(nocout_sites, response)
+    logger.debug('[-- sync finish --]')
+    return response
+
+
+def nocout_rollback_action(nocout_sites, response):
+	    # Untar the backup archive
+	    nocout_untar_backup_folder()
 	    # Generate a fresh snapshot
             nocout_create_sync_snapshot()
+            os.system('~/bin/cmk -R')
             for site, attrs in nocout_sites.items():
-                response_text = nocout_synchronize_site(site, attrs, True)
+                nocout_synchronize_site(site, attrs, True)
             response.update({
                 "message": "Problem with the new config, old config retained",
                 "success": 1
             })
-    logger.debug('[-- sync finish --]')
-    return response
+
+
+def nocout_untar_backup_folder():
+	# Clean the wato folder first
+        os.chdir('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
+	for entry in os.listdir('.'):
+		if entry not in ['..', '.']:
+			if os.path.isdir(entry):
+				shutil.rmtree(entry)
+			else:
+				os.remove(entry)
+	# Untar the content and place in wato folder
+	try:
+		t = tarfile.open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato_backup.tar', 'r')
+		t.extractall('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
+	except Exception, err:
+		logger.error('Exception in opening backup  tarfile: ' + pprint.pformat(err))
 
 
 def toggle_sync_flag(mode=True):
@@ -1155,7 +1155,6 @@ def nocout_distributed_sites():
     sites_file = defaults.default_config_dir + "/multisite.d/sites.mk"
     if os.path.exists(sites_file):
         execfile(sites_file, nocout_site_vars, nocout_site_vars)
-    logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_site_vars.get('sites')))
     logger.debug('[--]')
 
     return nocout_site_vars.get('sites')
