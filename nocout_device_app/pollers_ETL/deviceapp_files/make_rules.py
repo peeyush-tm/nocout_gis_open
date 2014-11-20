@@ -51,6 +51,8 @@ extra_service_conf['normal_check_interval'] = [
     (5, [], ['@all'], 'Check_MK'),
 ]
 
+wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
+
 def main():
     get_settings()
 
@@ -189,7 +191,10 @@ def get_threshold(service):
         pass
     else:
         try:
-            result = (int(service['warning']), int(service['critical']))
+	    if service.get('service') in wimax_mod_services:
+		    result = (map(str, service['warning'].replace(' ', '').split(',')), map(str, service['critical'].replace(' ', '').split(',')))
+	    else:
+		    result = (int(service['warning']), int(service['critical']))
         except:
             result = (service['warning'], service['critical'])
     return result
@@ -207,8 +212,11 @@ def prepare_priority_checks():
 	data_values = filter(lambda d: d['warning'] or d['critical'], data_values)
 	processed_values = []
 	for entry in data_values:
-		processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (entry.get('warning'), entry.get('critical'))))
-	print processed_values
+		if entry.get('service_name') in wimax_mod_services:
+			processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (map(str, entry['warning'].replace(' ', '').split(',')), map(str, entry['critical'].replace(' ', '').split(',')))))
+		else:
+			processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (entry.get('warning'), entry.get('critical'))))
+	#print processed_values
 
 	return processed_values
 
