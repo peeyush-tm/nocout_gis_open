@@ -464,6 +464,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         return device_list
 
+    def prepare_devices(self,qs):
+        """
+
+        :param device_list:
+        :return:
+        """
+        return prepare_gis_devices(qs, None)
+
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -501,6 +509,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         # number of records after filtering
         total_display_records = len(qs)
+
+        qs = self.prepare_devices(qs)
 
         # qs = self.ordering(qs)
         # qs = self.paging(qs)  # Removing pagination as of now to render all the data at once.
