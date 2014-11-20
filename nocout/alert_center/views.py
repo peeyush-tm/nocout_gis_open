@@ -298,6 +298,18 @@ class GetNetworkAlertDetail(BaseDatatableView):
                'current_value', 'sys_time', 'sys_date', 'description']
     order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                      'current_value', 'sys_time', 'sys_date', 'description']
+    polled_columns = ["id",
+                      "ip_address",
+                      "service_name",
+                      "device_name",
+                      "data_source",
+                      "severity",
+                      "current_value",
+                      "max_value",
+                      "sys_timestamp",
+                      "age"
+                      # "description"
+    ]
 
     def filter_queryset(self, qs):
 
@@ -338,30 +350,61 @@ class GetNetworkAlertDetail(BaseDatatableView):
         # we need to check the tabs
         # we need to check the data requested
         tab_id = None
+
         if self.request.GET.get("data_source"):
             tab_id = self.request.GET.get("data_source")
         else:
             return []
 
-        sector_configured_on_devices = []
+        sector_configured_on_devices = list()
+        data_sources_list = list()
+        device_list = list()
+        performance_data = list()
+        required_data_columns = self.polled_columns
+
+        table_name = "performance_servicestatus"
+
+        is_bh = False
+        multi_tech = False
+        technology = []
 
         if tab_id:
             device_list = []
             if tab_id == "P2P":
-                technology = int(P2P.ID)
+                technology = [int(P2P.ID)]
                 #need to add device with Circuit Type as : Backhaul
                 # (@TODO: make this a dropdown menu item and must for the user)
                 #INVALID :::: for technology = PTP and Circuit Type as Backhaul get the Device BH Configured On ::: INVALID
                 #VALID :::: confusion HERE. What we want is that CIRCUIT TYPE BACKHAUL's both SS and BS elements should
                 #be visible on network alert center ::: VALID
             elif tab_id == "WiMAX":
-                technology = int(WiMAX.ID)
+                technology = [int(WiMAX.ID)]
             elif tab_id == "PMP":
-                technology = int(PMP.ID)
+                technology = [int(PMP.ID)]
+            elif tab_id == "Temperature":
+                #for handelling the temperature alarms
+                #temperature alarms would be for WiMAX
+                technology = [int(WiMAX.ID)]
+                data_sources_list = ['fan_temp','acb_temp']
+            elif tab_id == "Backhaul":
+                technology = None
+                is_bh = True
+            elif tab_id == "ULIssue":
+                technology = [int(WiMAX.ID), int(PMP.ID)]
+            elif tab_id == "SectorUtil":
+                technology = [int(WiMAX.ID), int(PMP.ID)]
+            elif tab_id == "BackhaulUtil":
+                technology = None
+                is_bh = True
             else:
                 return []
 
-            device_list = organization_network_devices(organizations, technology=technology)
+            if not is_bh:
+                for techno in technology:
+                    device_list += organization_network_devices(organizations, technology=techno)
+            else:
+                device_list = organization_backhaul_devices(organizations)
+
             sector_configured_on_devices = [
                                 {'device_name': device.device_name, 'machine__name': device.machine.name}
                                 for device in device_list
@@ -369,21 +412,6 @@ class GetNetworkAlertDetail(BaseDatatableView):
         else:
             return []
 
-
-        device_list, performance_data, data_sources_list = list(), list(), list()
-
-        required_data_columns = ["id",
-                                 "ip_address",
-                                 "service_name",
-                                 "device_name",
-                                 "data_source",
-                                 "severity",
-                                 "current_value",
-                                 "max_value",
-                                 "sys_timestamp",
-                                 "age"
-                                 # "description"
-                                ]
 
         # Unique machine from the sector_configured_on_devices
         unique_device_machine_list = {device['machine__name']: True for device in sector_configured_on_devices}.keys()
@@ -399,31 +427,18 @@ class GetNetworkAlertDetail(BaseDatatableView):
         #Fetching the data for the device w.r.t to their machine.
         for machine, machine_device_list in machine_dict.items():
 
-            # data_sources_list = ['rta', 'pl']
-            #
-            # device_data += self.collective_query_result(
-            #     machine = machine,
-            #     table_name = "performance_networkstatus",
-            #     devices = machine_device_list,
-            #     data_sources = data_sources_list,
-            #     columns = required_data_columns
-            # )
-
-            data_sources_list = []
             device_data += self.collective_query_result(
                 machine = machine,
-                table_name = "performance_servicestatus",
+                table_name = table_name,
                 devices = machine_device_list,
                 data_sources = data_sources_list,
                 columns = required_data_columns
             )
 
         if device_data:
-            # sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
-            # return sorted_device_data
             return device_data
 
-        return device_list
+        return []
 
     def collective_query_result(self, machine, table_name, devices, data_sources, columns):
 
@@ -449,6 +464,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         return device_list
 
+    def prepare_devices(self,qs):
+        """
+
+        :param device_list:
+        :return:
+        """
+        return prepare_gis_devices(qs, None)
+
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -458,7 +481,6 @@ class GetNetworkAlertDetail(BaseDatatableView):
         """
 
         if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
             service_tab_name = 'service'
             for dct in qs:
                 device_id = Device.objects.get(device_name=dct['device_name']).id
@@ -487,6 +509,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         # number of records after filtering
         total_display_records = len(qs)
+
+        qs = self.prepare_devices(qs)
 
         # qs = self.ordering(qs)
         # qs = self.paging(qs)  # Removing pagination as of now to render all the data at once.

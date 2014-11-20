@@ -319,23 +319,28 @@ $("#goFullScreen").click(function() {
                 toggleControlButtons();
 
                 /*Set width-height for map div in fullscreen*/
-                var mapDiv = mapInstance.getDiv();
-                mapDiv.style.width = "100%";
-                mapDiv.style.height = screen.height+"px";
+                if($(".mapContainerBlock").length > 0) {
+                    var mapDiv = mapInstance.getDiv();
+                    mapDiv.style.width = "100%";
+                    mapDiv.style.height = screen.height+"px";
+                }
                 $("#content").css("min-height","200px");
 
-                google.maps.event.trigger(mapInstance, 'resize');
-                mapInstance.setCenter(mapInstance.getCenter());
+                if($(".mapContainerBlock").length > 0) {
+                    google.maps.event.trigger(mapInstance, 'resize');
+                    mapInstance.setCenter(mapInstance.getCenter());
 
-                if(showControlDiv) {
-                    showControlDiv= "";
-                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);
+                    if(showControlDiv) {
+                        showControlDiv= "";
+                        mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);
+                    }
+                    showControlDiv = document.createElement('div');
+                    var showControl = new ShowControl(showControlDiv, mapInstance);
+                    showControlDiv.index = 1;
+                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(showControlDiv);
+                    $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Exit Full Screen');
                 }
-                showControlDiv = document.createElement('div');
-                var showControl = new ShowControl(showControlDiv, mapInstance);
-                showControlDiv.index = 1;
-                mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(showControlDiv);
-                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Exit Full Screen');
+
             }
 
 
@@ -345,7 +350,6 @@ $("#goFullScreen").click(function() {
              
             } else if (window.location.pathname.indexOf("white_background") > -1) {
                 showControlDiv= "";
-                $("#content").removeClass("zero_padding_margin");
                 $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
                 /*Reset width-height for map div in normal screen*/
                 var mapDiv = $("#wmap_container");
@@ -357,12 +361,9 @@ $("#goFullScreen").click(function() {
                 $("#goFullScreen").removeClass('hide');
 
                 $("#headerToggleBtn").removeClass('hide');
-            } else {
+            } else if (window.location.pathname.indexOf("gis") > -1) {
                 showControlDiv= "";
-
-                $("#content").removeClass("zero_padding_margin");
                 $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
-
                 if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 3) {
                     mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
                 }
@@ -381,10 +382,11 @@ $("#goFullScreen").click(function() {
                 mapInstance.setCenter(mapInstance.getCenter());
 
                 $(".mapContainerBlock .box-title").removeClass('hide');
-                $("#goFullScreen").removeClass('hide');
-                $("#headerToggleBtn").removeClass('hide');
                 // $("#headerToggleBtn").trigger('click');
-            }            
+            }
+            $("#content").removeClass("zero_padding_margin");
+            $("#goFullScreen").removeClass('hide');
+            $("#headerToggleBtn").removeClass('hide');
         }
     } else {
         bootbox.alert("Fullscreen facility not supported by your browser.Please update.")
@@ -407,8 +409,6 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
         $("#goFullScreen").addClass('btn-info');
         if($("#deviceMap").length) {
 
-            /*Remove padding & margin*/
-            $("#content").removeClass("zero_padding_margin");
             $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
 
             showControlDiv= "";
@@ -429,9 +429,12 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
 
             // toggleBoxTitle();
             $(".mapContainerBlock .box-title").removeClass('hide');
-            $("#goFullScreen").removeClass('hide');
-            $("#headerToggleBtn").removeClass('hide');
         }
+        /*Remove padding & margin*/
+        $("#content").removeClass("zero_padding_margin");
+        
+        $("#goFullScreen").removeClass('hide');
+        $("#headerToggleBtn").removeClass('hide');
     }
 });
 

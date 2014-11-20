@@ -79,11 +79,11 @@
                 <div class="tabbable header-tabs">
                     <!-- nav-tab Start -->
                     <ul class="nav nav-tabs">
-                        <li><a href="#network_bhUtil_block" data-toggle="tab"><span class="hidden-inline-mobile">BH Utilisation</span></a></li>
-                        <li><a href="#network_sectorUtil_block" data-toggle="tab"><span class="hidden-inline-mobile">Sector Utilisation</span></a></li>
-                        <li><a href="#network_ulIssue_block" data-toggle="tab"><span class="hidden-inline-mobile">UL Issue</span></a></li>
-                        <li><a href="#network_converter_block" data-toggle="tab"><span class="hidden-inline-mobile">Converter</span></a></li>
-                        <li><a href="#network_temp_block" data-toggle="tab"><span class="hidden-inline-mobile">Temperature</span></a></li>
+                        <li><a href="#network_bhUtil_block" id="network_bhUtil_tab" data-toggle="tab"><span class="hidden-inline-mobile">BH Utilisation</span></a></li>
+                        <li><a href="#network_sectorUtil_block" id="network_sectorUtil_tab" data-toggle="tab"><span class="hidden-inline-mobile">Sector Utilisation</span></a></li>
+                        <li><a href="#network_ulIssue_block" id="network_ulIssue_tab" data-toggle="tab"><span class="hidden-inline-mobile">UL Issue</span></a></li>
+                        <li><a href="#network_converter_block" id="network_converter_tab" data-toggle="tab"><span class="hidden-inline-mobile">Converter</span></a></li>
+                        <li><a href="#network_temp_block" id="network_temp_tab" data-toggle="tab"><span class="hidden-inline-mobile">Temperature</span></a></li>
                         <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP BS</span></a></li>
                         <li><a href="#network_wimax_block" id="network_wimax_tab" data-toggle="tab"><span class="hidden-inline-mobile">Wimax BS</span></a></li>
                         <li class="active"><a href="#network_ptp_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PTP BH</span></a></li>
@@ -95,17 +95,9 @@
                         <!-- network_bhUtil_block Start -->
                         <div class="tab-pane fade" id="network_bhUtil_block">
                             <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover" id="">
-                                <thead>
-                                <th></th>
-                                <th>Received Time</th>
-                                <th>Event Type</th>
-                                <th>Event Name</th>
-                                <th>Device Type</th>
-                                <th>Host Alias</th>
-                                <th>IP Address</th>
-                                <th>Description</th>
-                                </thead>
+                                   class="datatable table table-striped table-bordered table-hover"
+                                   id="network_bhUtil_block_table">
+                                <thead></thead>
                                 <tbody></tbody>
                             </table>
 
@@ -115,17 +107,9 @@
                         <!-- network_sectorUtil_block Start -->
                         <div class="tab-pane fade" id="network_sectorUtil_block">
                             <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover" id="">
-                                <thead>
-                                <th></th>
-                                <th>Received Time</th>
-                                <th>Event Type</th>
-                                <th>Event Name</th>
-                                <th>Device Type</th>
-                                <th>Host Alias</th>
-                                <th>IP Address</th>
-                                <th>Description</th>
-                                </thead>
+                                   class="datatable table table-striped table-bordered table-hover"
+                                   id="network_sectorUtil_block_table">
+                                <thead></thead>
                                 <tbody></tbody>
                             </table>
 
@@ -135,17 +119,9 @@
                         <!-- network_ulIssue_block Start -->
                         <div class="tab-pane fade" id="network_ulIssue_block">
                             <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover" id="">
-                                <thead>
-                                <th></th>
-                                <th>Received Time</th>
-                                <th>Event Type</th>
-                                <th>Event Name</th>
-                                <th>Device Type</th>
-                                <th>Host Alias</th>
-                                <th>IP Address</th>
-                                <th>Description</th>
-                                </thead>
+                                   class="datatable table table-striped table-bordered table-hover"
+                                   id="network_ulIssue_block_table">
+                                <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -165,17 +141,9 @@
                         <!-- network_converter_block Start -->
                         <div class="tab-pane fade" id="network_converter_block">
                             <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover" id="">
-                                <thead>
-                                <th></th>
-                                <th>Received Time</th>
-                                <th>Event Type</th>
-                                <th>Event Name</th>
-                                <th>Device Type</th>
-                                <th>Host Alias</th>
-                                <th>IP Address</th>
-                                <th>Description</th>
-                                </thead>
+                                   class="datatable table table-striped table-bordered table-hover"
+                                   id="nnetwork_converter_blocktable">
+                                <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -206,17 +174,9 @@
                         <!-- network_temp_block Start -->
                         <div class="tab-pane fade" id="network_temp_block">
                             <table cellpadding="0" cellspacing="0" border="0"
-                                   class="datatable table table-striped table-bordered table-hover" id="">
-                                <thead>
-                                <th></th>
-                                <th>Received Time</th>
-                                <th>Event Type</th>
-                                <th>Event Name</th>
-                                <th>Device Type</th>
-                                <th>Host Alias</th>
-                                <th>IP Address</th>
-                                <th>Description</th>
-                                </thead>
+                                   class="datatable table table-striped table-bordered table-hover"
+                                   id="network_temp_block_table">
+                                <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -345,8 +305,28 @@
             var ajax_url_wifi = '{% url "NetworkAlertDetails" %}' + '?data_source=WiMAX';
             var ajax_url_pmp = '{% url "NetworkAlertDetails" %}' + '?data_source=PMP';
             var ajax_url_p2p = '{% url "NetworkAlertDetails" %}' + '?data_source=P2P';
+            var ajax_url_temp = '{% url "NetworkAlertDetails" %}' + '?data_source=Temperature';
+            var ajax_url_con = '{% url "NetworkAlertDetails" %}' + '?data_source=Backhaul';
+            var ajax_url_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=ULIssue';
+            var ajax_url_sectorutil = '{% url "NetworkAlertDetails" %}' + '?data_source=SectorUtil';
+            var ajax_url_bhutil = '{% url "NetworkAlertDetails" %}' + '?data_source=BackhaulUtil';
 
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+
+            $("#network_bhUtil_tab").attr("data_url", ajax_url_bhutil);
+            $("#network_bhUtil_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            $("#network_sectorUtil_tab").attr("data_url", ajax_url_sectorutil);
+            $("#network_sectorUtil_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            $("#network_ulIssue_tab").attr("data_url", ajax_url_ul);
+            $("#network_ulIssue_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            $("#network_converter_tab").attr("data_url", ajax_url_con);
+            $("#network_converter_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            $("#network_temp_tab").attr("data_url", ajax_url_temp);
+            $("#network_temp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
             $("#network_wimax_tab").attr("data_url", ajax_url_wifi);
             $("#network_wimax_tab").attr("data_header", '{{ datatable_headers|safe }}');
@@ -356,6 +336,8 @@
 
             $("#network_ptp_tab").attr("data_url", ajax_url_p2p);
             $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+
 
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy = false;
