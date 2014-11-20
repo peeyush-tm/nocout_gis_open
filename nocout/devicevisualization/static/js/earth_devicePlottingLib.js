@@ -57,7 +57,7 @@ var counter_div_style = "",
 var plottedBsIds = [], allMarkersArray_earth= [];
 var isApiResponse = 1;
 var lastStateBounds = [];
-
+var statesDataShown = [];
 /*
 Pollin Variables
  */
@@ -105,39 +105,21 @@ function googleEarthClass() {
 
 		g_earth = google.earth.createInstance(domElement, earth_self.earthInitCallback, earth_self.earthFailureCallback);
 	};
-
-	function getCurrentEarthBoundPolygon() {
-		var globeBounds = ge.getView().getViewportGlobeBounds();
-		var poly = [
-							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()},
-							{lat: globeBounds.getNorth(), lon: globeBounds.getEast()},
-							{lat: globeBounds.getSouth(), lon: globeBounds.getEast()},
-							{lat: globeBounds.getSouth(), lon: globeBounds.getWest()},
-							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()}]
-		return poly;
-	}
-
 	
-	var statesDataShown = [];
+	
 	/**
 	 * This function handles the initialization callback of google earth creation function
 	 * @method earthInitCallback
 	 * @param pluginInstance {Object}, It is the JSON object returned from google earth create instance function on successful creation of google earth.
 	 */
 	this.earthInitCallback = function(pluginInstance) {
-		// var mapTypeId = myMap.getMapTypeId();
-		// myMapObject.setMapTypeId(google.maps.MapTypeId.SATELLITE);
 
 		ge = pluginInstance;
-
-		
-
 		ge.getWindow().setVisibility(true);
 
 		/*Create Instance of google earth extension library*/
 		gexInstance = new GEarthExtensions(ge);
 		gexInstance.dom.clearFeatures();
-
 
 		/*Set current position of google earth to india*/
 		var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
@@ -154,44 +136,30 @@ function googleEarthClass() {
 		ge.getLayerRoot().enableLayerById(ge.LAYER_BORDERS, true);
 		ge.getLayerRoot().enableLayerById(ge.LAYER_ROADS, true);
 
-
-		google.earth.addEventListener(ge.getView(), 'viewchange', function(){
+		//Google Map View Change Event
+		google.earth.addEventListener(ge.getView(), 'viewchangeend', function(){
 			if(timer){
-				// var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
-				// lastZoomLevel = lookAt.getRange();
 				clearTimeout(timer);
 			}
 			function eventHandler() {
-				
-				// get the globe bounds (method 1)
-				var globeBounds = ge.getView().getViewportGlobeBounds(),
-					zoom_check = current_zoom ? current_zoom :400000;
+				if (true) {
+					var poly = getCurrentEarthBoundPolygon();
 
-				if (globeBounds) {
-					
-					var poly = [
-							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()},
-							{lat: globeBounds.getNorth(), lon: globeBounds.getEast()},
-							{lat: globeBounds.getSouth(), lon: globeBounds.getEast()},
-							{lat: globeBounds.getSouth(), lon: globeBounds.getWest()},
-							{lat: globeBounds.getNorth(), lon: globeBounds.getWest()}]
 					var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 
 					if(lookAt.getRange() <= 600540) {
-
-						// earth_self.clearLabelElements();
-						var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 						if(Math.floor(lookAt.getRange()/100000) === 4) {
-							
+
 							var states_with_bounds = state_lat_lon_db.where(function(obj) {
 								return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
 							});
 
-
 							if(Math.floor(lookAt.getRange()/100000) === 4 && Math.floor(lastZoomLevel/100000) === 4 && arraysEqual(lastStateBounds, states_with_bounds)) {
 								return ;
 							}
+
 							var states_array = [];
+
 							lastStateBounds= states_with_bounds;
 
 		            		// Hide State Labels which are in current bounds
@@ -1061,9 +1029,9 @@ var state_wise_device_label_text= {};
 	 */
 	this.plotDevices_earth = function(resultantMarkers,station_type) {
 
-
-
 		for(var i=0;i<resultantMarkers.length;i++) {
+			
+
 			var bs_marker_icon = base_url+"/static/img/icons/bs.png";
 
 			var bsInfo = {
@@ -1127,7 +1095,7 @@ var state_wise_device_label_text= {};
 					beam_width = sectorsArray[j].beam_width,
 					sector_color = earth_self.makeRgbaObject(sectorsArray[j].color),
 					sectorInfo = {
-						map: 'current',
+						"map": 'current',
 						"info" : sectorsArray[j].info,
 						"bs_name" : resultantMarkers[i].name,
 						"sector_name" : sectorsArray[j].sector_configured_on,
@@ -1193,6 +1161,8 @@ var state_wise_device_label_text= {};
 							deviceExtraInfo: sectorsArray[j].info,
 							deviceInfo: sectorsArray[j].device_info,
 							poll_info: [],
+							pl: "sayonara",
+							rta: "minato",
 							sectorName: sectorsArray[j].sector_configured_on,
 							device_name: sectorsArray[j].sector_configured_on_device,
 							name: sectorsArray[j].sector_configured_on_device,
@@ -1220,6 +1190,32 @@ var state_wise_device_label_text= {};
 							$("#infoWindowContainer").html(content);
 							$("#infoWindowContainer").removeClass('hide');
 							event.preventDefault();
+						});
+
+						google.earth.addEventListener(sector_marker, 'mouseover', function(event) {
+
+							var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+								condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+							if(condition1 || condition2) {
+								var pl = $.trim(this.pl) ? this.pl : "N/A",
+									rta = $.trim(this.rta) ? this.rta : "N/A",
+									info_html = '';
+
+								// Create hover infowindow html content
+								info_html += '<table class="table table-responsive table-bordered table-hover">';
+								info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
+								info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+								info_html += '</table>';
+
+								setTimeout(function() {
+									openGoogleEarthBaloon(info_html, sector_marker);
+								}, 20);
+							}
+						});
+
+						google.earth.addEventListener(sector_marker, 'mouseout', function(event) {
+							ge.setBalloon(null);
 						});
 
 						if(sectorMarkerConfiguredOn_earth.indexOf(sectorsArray[j].sector_configured_on) == -1) {
@@ -1266,6 +1262,8 @@ var state_wise_device_label_text= {};
 						dataset: ssDataObj.data.param.sub_station,
 						bhInfo: [],
 						poll_info: [],
+						pl: "tsumugi na",
+						rta: "so yo to",
 						antenna_height: ssDataObj.data.antenna_height,
 						name: ssDataObj.name,
 						bs_name: resultantMarkers[i].name,
@@ -1291,6 +1289,32 @@ var state_wise_device_label_text= {};
 							$("#infoWindowContainer").removeClass('hide');
 							event.preventDefault();
 						});
+
+						google.earth.addEventListener(ss_marker, 'mouseover', function(event) {
+							var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+							if(condition1 || condition2) {
+								var pl = $.trim(this.pl) ? this.pl : "N/A",
+									rta = $.trim(this.rta) ? this.rta : "N/A",
+									info_html = '';
+
+								// Create hover infowindow html content
+								info_html += '<table class="table table-responsive table-bordered table-hover">';
+								info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
+								info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+								info_html += '</table>';
+
+						    	setTimeout(function() {
+						    		openGoogleEarthBaloon(info_html, ss_marker);
+						    	}, 20);
+							}
+						});
+
+						google.earth.addEventListener(ss_marker, 'mouseout', function(event) {
+							ge.setBalloon(null);
+						});
+
 
 						markersMasterObj['SS'][String(ssDataObj.data.lat)+ ssDataObj.data.lon]= ss_marker;
 					    markersMasterObj['SSNamae'][String(ssDataObj.device_name)]= ss_marker;
@@ -1337,13 +1361,13 @@ var state_wise_device_label_text= {};
 
 						/*Create link between bs & ss or sector & ss*/
 						if(ssDataObj.data.show_link == 1) {
-							var startEndObj = {};
+							// var startEndObj = {};
 						
-							startEndObj["startLat"] = resultantMarkers[i].data.lat;
-							startEndObj["startLon"] = resultantMarkers[i].data.lon;
+							// startEndObj["startLat"] = resultantMarkers[i].data.lat;
+							// startEndObj["startLon"] = resultantMarkers[i].data.lon;
 
-							startEndObj["endLat"] = ssDataObj.data.lat;
-							startEndObj["endLon"] = ssDataObj.data.lon;
+							// startEndObj["endLat"] = ssDataObj.data.lat;
+							// startEndObj["endLon"] = ssDataObj.data.lon;
 
 							var linkColor = ssDataObj.data.link_color;
 							var bs_info = resultantMarkers[i].data.param.base_station;
@@ -1784,24 +1808,16 @@ var state_wise_device_label_text= {};
 			polyPoints.getCoordinates().pushLatLngAlt(pointsArray[i].lat, pointsArray[i].lon, 700);
 		}
 
-		// infoData["technology"] = device_technology;
-		// var halfPt = Math.floor(pointsArray.length / (+2));
-		// Create object for Link Line Between Sector & SS
-		// infoData["startLat"] = pointsArray[halfPt].lat;
-		// infoData["startLon"] = pointsArray[halfPt].lon;
-		// infoData["info"] = sectorInfo;
-
 		sector_polygon.setOuterBoundary(polyPoints);
 		//Create a style and set width and color of line
 		sectorPolygonObj.setStyleSelector(ge.createStyle(''));
-		/*Set info window content for sector*/
-		// sectorPolygonObj.setDescription(sector_windowContent+"<input type='hidden' name='technology' value=' &-&-& "+JSON.stringify(infoData)+" &-&-& '/><input type='hidden' name='sub_station_data' value=' -|-|-|- "+childSS+" -|-|-|- '/>");
 
 		for(var key in sectorAdditionalInfo) {
 			sectorPolygonObj[key] = sectorAdditionalInfo[key];
 		}
 
 		allMarkersArray_earth.push(sectorPolygonObj);
+		allMarkersObject_earth['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+sectorInfo.sector_id] = sectorPolygonObj;
 
 		var lineStyle = sectorPolygonObj.getStyleSelector().getLineStyle();
 
@@ -1826,6 +1842,9 @@ var state_wise_device_label_text= {};
 
 		// Add the placemark to Earth.
 		ge.getFeatures().appendChild(sectorPolygonObj);
+
+
+		
 
 		google.earth.addEventListener(sectorPolygonObj, 'click', function(event) {
 			var content = gmap_self.makeWindowContent(sectorPolygonObj);

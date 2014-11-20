@@ -1252,3 +1252,18 @@ function updateGoogleEarthPlacemark(placemark, newIcon) {
     // style.getIconStyle().setScale(5.0);
     placemark.setStyleSelector(style);
 }
+
+function getCurrentEarthBoundPolygon() {
+    var globeBounds = ge.getView().getViewportGlobeBounds();
+    var poly = [ {lat: globeBounds.getNorth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getEast()}, {lat: globeBounds.getSouth(), lon: globeBounds.getEast()},{lat: globeBounds.getSouth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getWest()} ];
+    return poly;
+}
+
+function openGoogleEarthBaloon(innerHtml, feature) {
+    var balloon = ge.createHtmlDivBalloon('');
+    balloon.setFeature(feature);
+    var div = document.createElement('DIV');
+    div.innerHTML = innerHtml;
+    balloon.setContentDiv(div);
+    ge.setBalloon(balloon);
+}
