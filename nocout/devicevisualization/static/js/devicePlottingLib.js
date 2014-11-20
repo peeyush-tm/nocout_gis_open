@@ -3345,7 +3345,7 @@ function devicePlottingClass_gmap() {
 		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(6019955);
+				lookAt.setRange(ZoomToAlt(5));
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -3918,49 +3918,64 @@ function devicePlottingClass_gmap() {
 		    if(isSearchApplied && data_to_plot.length > 0) {
 
 		    	if(window.location.pathname.indexOf("googleEarth") > -1) {
-		    		// if(filteredBsArray.length) {
+		    				// if(filteredBsArray.length) {
 		    			
-			   //  		folder = gexInstance.dom.addFolder(folderBoundArray);
+			   			//  		folder = gexInstance.dom.addFolder(folderBoundArray);
 
 						// var bounds = gexInstance.dom.computeBounds(folder);
 						// gexInstance.view.setToBoundsView(bounds, { aspectRatio: 1.0 });
 						// 
-						showGoogleEarthInBounds(folderBoundArray, function() {
-							setTimeout(function() {
-								$.grep(allMarkersArray_earth,function(marker) {
-									marker.isActive= 0;
-									marker.setVisibility(false);
-								});
+					showGoogleEarthInBounds(folderBoundArray, function() {
 
-								allMarkersArray_earth = [];
-								main_devices_data_earth = [];
-								plottedBsIds = [];
-								currentlyPlottedDevices = [];
-								allMarkersObject_earth= {
-									'base_station': {},
-									'path': {},
-									'sub_station': {},
-									'sector_device': {},
-									'sector_polygon': {}
-								};
+						if(AltToZoom(getEarthZoomLevel()) > 15) {
+							setEarthZoomLevel(ZoomToAlt(15));
+						}
 
-								main_devices_data_earth = data_to_plot;
+						// Show search marker after some timeout
+						setTimeout(function() {
+							for(var i=0;i<searchMarkers_global.length;i++) {
+								searchMarkers_global[i].setVisibility(false);
+							}
+						},350);
+						// setTimeout(function() {
+						// 	$.grep(allMarkersArray_earth,function(marker) {
+						// 		marker.isActive= 0;
+						// 		marker.setVisibility(false);
+						// 	});
 
-					            var inBoundData = earth_instance.getNewBoundsDevices();
+						// 	allMarkersArray_earth = [];
+						// 	main_devices_data_earth = [];
+						// 	plottedBsIds = [];
+						// 	currentlyPlottedDevices = [];
+						// 	allMarkersObject_earth= {
+						// 		'base_station': {},
+						// 		'path': {},
+						// 		'sub_station': {},
+						// 		'sector_device': {},
+						// 		'sector_polygon': {}
+						// 	};
 
-								currentlyPlottedDevices = inBoundData;
+						// 	main_devices_data_earth = data_to_plot;
 
-					            // Plot devices
-					            earth_instance.plotDevices_earth(inBoundData,"base_station");
+				  //           var inBoundData = earth_instance.getNewBoundsDevices();
 
-								// Show search marker after some timeout
-								setTimeout(function() {
-									for(var i=0;i<searchMarkers_global.length;i++) {
-								    	searchMarkers_global[i].setVisibility(true);
-								    }
-								},300);
-							}, 1000);
-						});
+						// 	currentlyPlottedDevices = inBoundData;
+
+				  //           // Plot devices
+				  //           earth_instance.plotDevices_earth(inBoundData,"base_station");
+
+				  //           if(AltToZoom(getEarthZoomLevel) > 15) {
+				  //           	setEarthZoomLevel(ZoomToAlt(15));
+				  //           }
+
+						// 	// Show search marker after some timeout
+						// 	setTimeout(function() {
+						// 		for(var i=0;i<searchMarkers_global.length;i++) {
+						// 	    	searchMarkers_global[i].setVisibility(true);
+						// 	    }
+						// 	},300);
+						// }, 1000);
+					});
 
 
 		    		// }
@@ -4073,7 +4088,7 @@ function devicePlottingClass_gmap() {
 		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(6019955);
+				lookAt.setRange(ZoomToAlt(5));
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -4185,7 +4200,7 @@ function devicePlottingClass_gmap() {
 				var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(6019955);
+				lookAt.setRange(ZoomToAlt(5));
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -5166,7 +5181,7 @@ function devicePlottingClass_gmap() {
     	isCreated= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_ruler', 0, {path: '/', secure : true});
+    	$.cookie('tools_ruler', 0, {path: '/', secure: true});
 
 
     	tools_ruler = $.cookie("tools_ruler");
@@ -5310,7 +5325,7 @@ function devicePlottingClass_gmap() {
     	is_bs_clicked= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_line', 0, {path: '/', secure : true});
+    	$.cookie('tools_line', 0, {path: '/', secure: true});
 
 
     	tools_line = $.cookie("tools_line");
@@ -5979,10 +5994,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure : true});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
 
 	 	freezedAt = (new Date()).getTime();
-	 	$.cookie("freezedAt", freezedAt, {path: '/', secure : true});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
 
 	 	/*Set Live Polling flag*/
@@ -6008,10 +6023,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure : true});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
 
 	 	freezedAt = 0;
-	 	$.cookie("freezedAt", freezedAt, {path: '/', secure : true});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
 
 	 	/*Set Live Polling flag*/
@@ -7019,7 +7034,13 @@ function getMarkerInCurrentBound() {
     var bsMarkersInBound = [];
     for(var key in markersMasterObj['BS']) {
         if(markersMasterObj['BS'].hasOwnProperty(key)) {
-            var markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
+        	var markerVisible = "";
+        	if(window.location.pathname.indexOf("googleEarth") > -1) {
+        		var earthBounds = getCurrentEarthBoundPolygon();
+        		markerVisible =  isPointInPoly(earthBounds, {lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon});
+        	} else {
+				markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
+        	}
             if(markerVisible) {
             	if(markersMasterObj['BS'][key].isActive && markersMasterObj['BS'][key].isActive == 1) {
             		bsMarkersInBound.push(markersMasterObj['BS'][key]['filter_data']['bs_id']);

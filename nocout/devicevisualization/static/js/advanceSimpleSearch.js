@@ -79,29 +79,37 @@ function advanceSearchMainClass() {
 
     //Here we create a new Marker based on the lat, long and show it on the map.
     this.applyIconToSearchedResult = function(lat, long, iconUrl) {
+
         var searchMarker, searchedInputs, isOnlyStateorCityIsApplied= false;
         search_marker_count++;
 
         if(window.location.pathname.indexOf("googleEarth") > -1) {
-            // Create BS placemark.
+
+            // Create the placemark.
             var searchMarker = ge.createPlacemark('search_'+search_marker_count);
+
             // Define a custom icon.
-            var search_icon = ge.createIcon('');
-            search_icon.setHref(base_url+"/"+iconUrl);
-            var search_style = ge.createStyle(''); //create a new style
-            search_style.getIconStyle().setIcon(search_icon); //apply the icon to the style
-            searchMarker.setStyleSelector(search_style); //apply the style to the placemark         
-            
-            // Set the placemark's location.
-            var search_point = ge.createPoint('');
-            search_point.setLatitude(lat);
-            search_point.setLongitude(long);
-            searchMarker.setGeometry(search_point);
-            // Add the placemark to Earth.
+            var icon = ge.createIcon('');
+            if(iconUrl) {
+                icon.setHref(base_url+'/static/img/icons/ss_bounce.png');
+            } else {
+                icon.setHref(base_url+'/static/img/icons/bs_bounce.png');
+            }
+
+            var style = ge.createStyle(''); //create a new style
+            style.getIconStyle().setIcon(icon); //apply the icon to the style
+            searchMarker.setStyleSelector(style); //apply the style to the searchMarker
+
+            // Set the searchMarker's location.  
+            var point = ge.createPoint('');
+            point.setLatitude(lat);
+            point.setLongitude(long);
+            searchMarker.setGeometry(point);
+
+            // Add the searchMarker to Earth.
             ge.getFeatures().appendChild(searchMarker);
 
-            var gex = new GEarthExtensions(ge);
-            gex.fx.bounce(searchMarker, {
+            gexInstance.fx.bounce(searchMarker, {
                 duration: 300,
                 repeat: 0,
                 dampen: 0.3
@@ -395,7 +403,7 @@ function advanceSearchMainClass() {
 
         var bounds = "";
         if(window.location.pathname.indexOf("googleEarth") > -1) {
-
+            
         } else if(window.location.pathname.indexOf("white_background") > -1) {
             bounds = new OpenLayers.Bounds();
         } else {
@@ -404,11 +412,10 @@ function advanceSearchMainClass() {
 
         function extendBound(lat, lon) {
             if(window.location.pathname.indexOf("googleEarth") > -1) {
-
                   var lookAt = ge.createLookAt('');
                   lookAt.setLatitude(lat);
                   lookAt.setLongitude(lon);
-                  lookAt.setRange(30000);
+                  lookAt.setRange(ZoomToAlt(13));
                   ge.getView().setAbstractView(lookAt);
             } else if(window.location.pathname.indexOf("white_background") > -1) {
                 bounds.extend(new OpenLayers.LonLat(lon, lat));
