@@ -23,7 +23,6 @@ var g_earth = "",
 	devicesCount = 0,
 	counter = -999,
 	marker_count = 0;
-var gisPerformanceClass;
 var markersMasterObj;
 var allMarkersObject_earth= {
 	'base_station': {},
@@ -72,6 +71,11 @@ var polygonSelectedDevices= [],
 	polled_device_count = {},
 	polyPlacemark,
 	pollingPolygonLatLngArr= [];
+
+/**
+ * Performance
+ */
+var gisPerformanceClass= "";
 /**
  * 
  * This class is used to plot the BS & SS on the google earth & performs their functionality.
@@ -312,7 +316,7 @@ function googleEarthClass() {
 					// Start performance calling after 1.5 Second
 					setTimeout(function() {
 	    				var bs_id_list = getMarkerInCurrentBound();
-		            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
+	    				if(bs_id_list.length > 0 && isCallCompleted == 1) {
 		            		if(recallPerf != "") {
 		            			clearTimeout(recallPerf);
 		            			recallPerf = "";
@@ -1180,8 +1184,8 @@ var state_wise_device_label_text= {};
 							deviceExtraInfo: sectorsArray[j].info,
 							deviceInfo: sectorsArray[j].device_info,
 							poll_info: [],
-							pl: "sayonara",
-							rta: "minato",
+							pl: "hallo",
+							rta: "hallo",
 							sectorName: sectorsArray[j].sector_configured_on,
 							device_name: sectorsArray[j].sector_configured_on_device,
 							name: sectorsArray[j].sector_configured_on_device,
@@ -1202,40 +1206,42 @@ var state_wise_device_label_text= {};
 						plotted_sector_earth.push(sector_marker);
 
 						allMarkersArray_earth.push(sector_marker);
+						
+						(function(sector_marker) {
+							google.earth.addEventListener(sector_marker, 'click', function(event) {
+								var content = gmap_self.makeWindowContent(sector_marker);
+								$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
+								$("#infoWindowContainer").html(content);
+								$("#infoWindowContainer").removeClass('hide');
+								event.preventDefault();
+							});
 
-						google.earth.addEventListener(sector_marker, 'click', function(event) {
-							var content = gmap_self.makeWindowContent(sector_marker);
-							$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
-							$("#infoWindowContainer").html(content);
-							$("#infoWindowContainer").removeClass('hide');
-							event.preventDefault();
-						});
+							google.earth.addEventListener(sector_marker, 'mouseover', function(event) {
 
-						google.earth.addEventListener(sector_marker, 'mouseover', function(event) {
+								var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+									condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
-							var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-								condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+								if(condition1 || condition2) {
+									var pl = $.trim(this.pl) ? this.pl : "N/A",
+										rta = $.trim(this.rta) ? this.rta : "N/A",
+										info_html = '';
 
-							if(condition1 || condition2) {
-								var pl = $.trim(this.pl) ? this.pl : "N/A",
-									rta = $.trim(this.rta) ? this.rta : "N/A",
-									info_html = '';
+									// Create hover infowindow html content
+									info_html += '<table class="table table-responsive table-bordered table-hover">';
+									info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
+									info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+									info_html += '</table>';
 
-								// Create hover infowindow html content
-								info_html += '<table class="table table-responsive table-bordered table-hover">';
-								info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-								info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
-								info_html += '</table>';
+									setTimeout(function() {
+										openGoogleEarthBaloon(info_html, sector_marker);
+									}, 20);
+								}
+							});
 
-								setTimeout(function() {
-									openGoogleEarthBaloon(info_html, sector_marker);
-								}, 20);
-							}
-						});
-
-						google.earth.addEventListener(sector_marker, 'mouseout', function(event) {
-							ge.setBalloon(null);
-						});
+							google.earth.addEventListener(sector_marker, 'mouseout', function(event) {
+								ge.setBalloon(null);
+							});
+						}(sector_marker));
 
 						if(sectorMarkerConfiguredOn_earth.indexOf(sectorsArray[j].sector_configured_on) == -1) {
 
@@ -1281,8 +1287,8 @@ var state_wise_device_label_text= {};
 						dataset: ssDataObj.data.param.sub_station,
 						bhInfo: [],
 						poll_info: [],
-						pl: "tsumugi na",
-						rta: "so yo to",
+						pl: "",
+						rta: "",
 						antenna_height: ssDataObj.data.antenna_height,
 						name: ssDataObj.name,
 						bs_name: resultantMarkers[i].name,
@@ -1301,39 +1307,40 @@ var state_wise_device_label_text= {};
 						var ss_marker = earth_self.makePlacemark(ssMarkerIcon,ssDataObj.data.lat,ssDataObj.data.lon,'ss_'+ssDataObj.id,ssInfo);
 						updateGoogleEarthPlacemark(ss_marker, ssMarkerIcon);
 
-						google.earth.addEventListener(ss_marker, 'click', function(event) {
-							var content = gmap_self.makeWindowContent(ss_marker);
-							$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
-							$("#infoWindowContainer").html(content);
-							$("#infoWindowContainer").removeClass('hide');
-							event.preventDefault();
-						});
+						(function(ss_marker) {
+							google.earth.addEventListener(ss_marker, 'click', function(event) {
+								var content = gmap_self.makeWindowContent(ss_marker);
+								$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
+								$("#infoWindowContainer").html(content);
+								$("#infoWindowContainer").removeClass('hide');
+								event.preventDefault();
+							});
 
-						google.earth.addEventListener(ss_marker, 'mouseover', function(event) {
-							var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+							google.earth.addEventListener(ss_marker, 'mouseover', function(event) {
+								var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+								condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
-							if(condition1 || condition2) {
-								var pl = $.trim(this.pl) ? this.pl : "N/A",
-									rta = $.trim(this.rta) ? this.rta : "N/A",
-									info_html = '';
+								if(condition1 || condition2) {
+									var pl = $.trim(this.pl) ? this.pl : "N/A",
+										rta = $.trim(this.rta) ? this.rta : "N/A",
+										info_html = '';
 
-								// Create hover infowindow html content
-								info_html += '<table class="table table-responsive table-bordered table-hover">';
-								info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-								info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
-								info_html += '</table>';
+									// Create hover infowindow html content
+									info_html += '<table class="table table-responsive table-bordered table-hover">';
+									info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
+									info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+									info_html += '</table>';
 
-						    	setTimeout(function() {
-						    		openGoogleEarthBaloon(info_html, ss_marker);
-						    	}, 20);
-							}
-						});
+							    	setTimeout(function() {
+							    		openGoogleEarthBaloon(info_html, ss_marker);
+							    	}, 20);
+								}
+							});
 
-						google.earth.addEventListener(ss_marker, 'mouseout', function(event) {
-							ge.setBalloon(null);
-						});
-
+							google.earth.addEventListener(ss_marker, 'mouseout', function(event) {
+								ge.setBalloon(null);
+							});
+						}(ss_marker));
 
 						markersMasterObj['SS'][String(ssDataObj.data.lat)+ ssDataObj.data.lon]= ss_marker;
 					    markersMasterObj['SSNamae'][String(ssDataObj.device_name)]= ss_marker;
@@ -1534,7 +1541,7 @@ var state_wise_device_label_text= {};
 		lineStringPlacemark.setGeometry(lineString);		
 		// Add LineString points					
 		lineString.getCoordinates().pushLatLngAlt((+startEndObj.startLat), (+startEndObj.startLon), 0);
-		lineString.getCoordinates().pushLatLngAlt((+startEndObj.endLat), (+startEndObj.endLon), 0);					
+		lineString.getCoordinates().pushLatLngAlt((+startEndObj.endLat), (+startEndObj.endLon), 0);
 		// lineStringPlacemark.setDescription(line_windowContent);					
 		// Create a style and set width and color of line
 		lineStringPlacemark.setStyleSelector(ge.createStyle(''));
@@ -1942,8 +1949,9 @@ var state_wise_device_label_text= {};
      * @method initLivePolling
      */
     this.initLivePolling_earth = function() {
-
-    	if(Math.floor(getEarthZoomLevel()/100000) <= 4) {
+		var current_zoom_level = AltToZoom(getEarthZoomLevel());
+		
+		if(current_zoom_level > 7) {
     		/*Reset marker icon*/
 			for(var i=0;i<polygonSelectedDevices.length;i++) {
 
@@ -2712,10 +2720,10 @@ var state_wise_device_label_text= {};
 		nav_click_counter = 0;
 		polled_device_count = {};
 
-		var current_zoom_level = getEarthZoomLevel();
-		if(Math.floor(current_zoom_level) <= 4) {
+		var current_zoom_level = AltToZoom(getEarthZoomLevel());
+		if(current_zoom_level > 7) {
 			/*Restart performance calling*/
-	    	// gisPerformanceClass.restart();
+	    	gisPerformanceClass.restart();
     	}
 	};
 

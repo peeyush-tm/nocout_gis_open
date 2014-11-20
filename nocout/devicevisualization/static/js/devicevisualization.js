@@ -17,11 +17,11 @@ if(window.location.origin) {
 /*Set cookies if not exist*/
 if(!$.cookie("isFreezeSelected")) {
 
-    $.cookie("isFreezeSelected", 0, {path: '/', secure : true});
+    $.cookie("isFreezeSelected", 0, {path: '/', secure: true});
 }
 
 if(!$.cookie("freezedAt")) {
-    $.cookie("freezedAt", 0, {path: '/', secure : true});
+    $.cookie("freezedAt", 0, {path: '/', secure: true});
 
 }
 
@@ -58,7 +58,7 @@ if(window.location.pathname.indexOf("white_background") > -1) {
     }
     
 }
-//$.cookie("isLabelChecked", 1, {path: '/', secure : true});
+//$.cookie("isLabelChecked", 1, {path: '/', secure: true});
 
 /*Call get_page_status function to show the current status*/
 get_page_status();
@@ -1052,7 +1052,7 @@ function clearTools_gmap() {
  */
 
 $("#show_hide_label").click(function(e) {
-    $.cookie("isLabelChecked", e.currentTarget.checked, {path: '/', secure : true});
+    $.cookie("isLabelChecked", e.currentTarget.checked, {path: '/', secure: true});
 
     for(var x=0;x<labelsArray_filtered.length;x++) {
         labelsArray_filtered[x].setVisible(e.currentTarget.checked);
@@ -1248,6 +1248,11 @@ function getEarthZoomLevel() {
     return lookAt.getRange();
 }
 
+function setEarthZoomLevel(alt) {
+    var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+    return lookAt.setRange(alt);
+}
+
 function updateGoogleEarthPlacemark(placemark, newIcon) {
     // Define a custom icon.next_polling_btn
     var icon = ge.createIcon('');
@@ -1294,4 +1299,21 @@ function AltToZoom(alt) {
         if (alt > altZoomList[i] - ((altZoomList[i] - altZoomList[i+1]) / 2)) return i;
     }
     return 10;
+}
+
+function getRangeInZoom() {
+    var earthRange = getEarthZoomLevel();
+    return AltToZoom(earthRange);
+}
+
+function deleteGoogleEarthPlacemarker(uniqueID) {
+    var children = ge.getFeatures().getChildNodes();
+    for(var i = 0; i < children.getLength(); i++) { 
+        var child = children.item(i);
+        if(child.getType() == 'KmlPlacemark') {
+            if(child.getId()==uniqueID) {
+                ge.getFeatures().removeChild(child);
+            }
+        }
+    }
 }
