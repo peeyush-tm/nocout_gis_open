@@ -21,8 +21,8 @@ class BaseServiceDataSourceFormset(BaseInlineFormSet):
 
     def clean(self):
         for form in self.forms:
-            if not 'service_data_sources' in form.cleaned_data:
-                raise forms.ValidationError("This field is required.")
+            if not len(form.cleaned_data.keys()):
+                raise forms.ValidationError('This field is required.')
 
 class ServiceForm(forms.ModelForm):
     """
