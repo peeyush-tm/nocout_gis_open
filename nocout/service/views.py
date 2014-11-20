@@ -51,7 +51,7 @@ class ServiceList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Service Listing Table.
     """
@@ -59,6 +59,12 @@ class ServiceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, Datatab
     required_permissions = ('service.view_service',)
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
     order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        qs = self.model.objects.filter()
+        return qs.prefetch_related('service_data_sources')
 
     def prepare_results(self, qs):
         """
@@ -68,10 +74,17 @@ class ServiceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, Datatab
         :return qs
 
         """
-        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in json_data:
+        json_data = []
+        for obj in qs:
+            dct = {}
+            dct.update(name=obj.name)
+            dct.update(alias=obj.alias)
+            dct.update(parameters__parameter_description=obj.parameters.parameter_description)
+            dct.update(description=obj.description)
+            dct.update(service_data_sources__alias=', '.join(list(obj.service_data_sources.values_list('alias', flat=True))))
             dct.update(actions='<a href="/service/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/service/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/service/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj.id))
+            json_data.append(dct)
         return json_data
 
 
@@ -193,6 +206,7 @@ class ServiceUpdate(PermissionsRequiredMixin, UpdateView):
         success page.
         """
         self.object = form.save()
+        service_data_form.instance = self.object
         service_data_form.save()
         return HttpResponseRedirect(self.get_success_url())
 
