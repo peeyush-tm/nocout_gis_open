@@ -33,35 +33,38 @@
                                                     </div>
                                                 </div>
                                             {% endfor %}
+
                                             {{ service_data_form.management_form }}
+                                            {{ service_data_form.non_form_errors }}
                                             {% for field in service_data_form %}
-                                                {{ field.id }}
-                                                <div class='row inline {{ service_data_form.prefix }}'>
-                                                    <div class="form-group">
-                                                        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>
-                                                        <div class="col-sm-9">
-                                                            <div class="col-md-8">
-                                                                {{field.service_data_sources}}{{ service_data_form.non_form_errors }}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Critical</label>
-                                                        <div class="col-sm-9">
-                                                            <div class="col-md-8">
-                                                                {{field.critical}}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Warning</label>
-                                                        <div class="col-sm-9">
-                                                            <div class="col-md-8">
-                                                                {{field.warning}}
-                                                            </div>
+                                            {{field.id}}
+                                            <div class="row inline {{ service_data_form.prefix }}">
+                                            <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.service_data_sources}}{{ service_data_form.non_form_errors }}
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Critical</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.critical}}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Warning</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.warning}}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {{ field.DELETE }}
+                                            </div>
                                             {% endfor %}
                                         </div>
                                         <div class="form-group">
@@ -92,10 +95,10 @@
         })
     </script>
     <script type="text/javascript">
-       $(function() {
-           $(".inline.{{ service_data_form.prefix }}").formset({
-               prefix: "{{ service_data_form.prefix }}",
-           })
+   $(function() {
+       $(".inline.{{ service_data_form.prefix }}").formset({
+           prefix: "{{ service_data_form.prefix }}",
        })
-    </script>
+   })
+</script>
 {% endblock %}
