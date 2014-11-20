@@ -3345,7 +3345,7 @@ function devicePlottingClass_gmap() {
 		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(6019955);
+				lookAt.setRange(ZoomToAlt(5));
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -4073,7 +4073,7 @@ function devicePlottingClass_gmap() {
 		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(6019955);
+				lookAt.setRange(ZoomToAlt(5));
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -4185,7 +4185,7 @@ function devicePlottingClass_gmap() {
 				var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(6019955);
+				lookAt.setRange(ZoomToAlt(5));
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -7019,7 +7019,13 @@ function getMarkerInCurrentBound() {
     var bsMarkersInBound = [];
     for(var key in markersMasterObj['BS']) {
         if(markersMasterObj['BS'].hasOwnProperty(key)) {
-            var markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
+        	var markerVisible = "";
+        	if(window.location.pathname.indexOf("googleEarth") > -1) {
+        		var earthBounds = getCurrentEarthBoundPolygon();
+        		markerVisible =  isPointInPoly(earthBounds, {lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon});
+        	} else {
+				markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
+        	}
             if(markerVisible) {
             	if(markersMasterObj['BS'][key].isActive && markersMasterObj['BS'][key].isActive == 1) {
             		bsMarkersInBound.push(markersMasterObj['BS'][key]['filter_data']['bs_id']);

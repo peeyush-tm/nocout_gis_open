@@ -1272,3 +1272,26 @@ function openGoogleEarthBaloon(innerHtml, feature) {
     balloon.setContentDiv(div);
     ge.setBalloon(balloon);
 }
+
+
+
+var altZoomList = [ // Altitude <-> Zoom level
+    30000000, 24000000, 18000000, 10000000, 4000000, 1900000, 1100000, 550000, 280000,
+    170000, 82000, 38000, 19000, 9200, 4300, 2000, 990, 570, 280, 100, 36, 12, 0 ];
+
+function ZoomToAlt(zoom) {
+    /// <summary>Converts a zoom level to an altitude
+    /// <param name="zoom" />Zoom level
+    /// <returns>Altitude in meters
+    return altZoomList[zoom < 0 ? 0 : zoom > 21 ? 21 : zoom];
+}
+
+function AltToZoom(alt) {
+    /// <summary>Converts an altitude to a zoom level
+    /// <param name="alt" />Altitude in meters
+    /// <returns>Zoom level
+    for (var i = 0; i < 22; ++i) {
+        if (alt > altZoomList[i] - ((altZoomList[i] - altZoomList[i+1]) / 2)) return i;
+    }
+    return 10;
+}

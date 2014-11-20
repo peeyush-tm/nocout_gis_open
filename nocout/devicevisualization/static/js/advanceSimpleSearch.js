@@ -395,7 +395,7 @@ function advanceSearchMainClass() {
 
         var bounds = "";
         if(window.location.pathname.indexOf("googleEarth") > -1) {
-
+            
         } else if(window.location.pathname.indexOf("white_background") > -1) {
             bounds = new OpenLayers.Bounds();
         } else {
@@ -404,11 +404,10 @@ function advanceSearchMainClass() {
 
         function extendBound(lat, lon) {
             if(window.location.pathname.indexOf("googleEarth") > -1) {
-
                   var lookAt = ge.createLookAt('');
                   lookAt.setLatitude(lat);
                   lookAt.setLongitude(lon);
-                  lookAt.setRange(30000);
+                  lookAt.setRange(ZoomToAlt(13));
                   ge.getView().setAbstractView(lookAt);
             } else if(window.location.pathname.indexOf("white_background") > -1) {
                 bounds.extend(new OpenLayers.LonLat(lon, lat));
