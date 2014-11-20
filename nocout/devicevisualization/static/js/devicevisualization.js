@@ -231,16 +231,26 @@ $("#resetFilters").click(function(e) {
 function showAdvSearch() {
     showSpinner();
     // advJustSearch.getFilterInfofrompagedata("searchInfoModal", "advSearchBtn");
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        if($("#advSearchContainerBlock").hasClass("hide")) {
-            $("#advSearchContainerBlock").removeClass("hide");
-        }
-        hideSpinner();
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
+    if (window.location.pathname.indexOf("white_background") > -1) {
         $("#advFilterContainerBlock").hide();
         $("#advSearchContainerBlock").show();
         advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
     } else {
+        if(!isAdvanceFilter) {
+            $("#filter_technology").select2("val","");
+            $("#filter_vendor").select2("val","");
+            $("#filter_state").select2("val","");
+            $("#filter_city").select2("val","");
+            $("#filter_frequency").select2("val","");
+            $("#filter_polarization").select2("val","");
+
+            // Reset Advance Filters Flag
+            isAdvanceFilter = 0;
+        }
+        if(!$("#advFilterContainerBlock").hasClass("hide")) {
+            $("#advFilterContainerBlock").addClass("hide");
+        }
+
         if($("#advSearchContainerBlock").hasClass("hide")) {
             $("#advSearchContainerBlock").removeClass("hide");
         }
@@ -251,14 +261,30 @@ function showAdvSearch() {
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
     
-    advJustSearch.showNotification();
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        gmap_self.advanceSearchFunc();
-        // advJustSearch.searchAndCenterData(data_for_filters_earth);
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        advJustSearch.showNotification();
         advJustSearch.searchAndCenterData(data_for_filter_wmap);
     } else {
-        gmap_self.advanceSearchFunc();
+
+        var selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').split(',') : [],
+            selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').split(',') : [],
+            selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').split(',') : [],
+            selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').split(',') : [],
+            isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0;
+
+        // If any value is selected in searcg
+        if(isSearchApplied) {
+            // Set Advance Search Flag
+            isAdvanceSearch = 1;
+            advJustSearch.showNotification();
+            gmap_self.advanceSearchFunc();
+        } else {
+            // Reset Advance Search Flag
+            isAdvanceSearch = 0;
+            /*Hide the spinner*/
+            hideSpinner();
+            bootbox.alert("Please select atleast one field.");
+        }
     }
 });
 
@@ -282,20 +308,7 @@ function resetAdvanceSearch() {
 
 $("#resetSearchForm").click(function(e) {
     
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        $("#search_name").select2("val","");
-        $("#search_sector_configured_on").select2("val","");
-        $("#search_circuit_ids").select2("val","");
-        $("#search_city").select2("val","");
-        // $("form#searchInfoModal_form").find('select').each(function(i, el) {
-        //     $(el).select2("val", [])
-        //     if(i== $("form#searchInfoModal_form").find('select').length-1) {
-        //         //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
-        //         //     $("#advSearchContainerBlock").addClass("hide");
-        //         // } 
-        //     }
-        // });
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
+    if (window.location.pathname.indexOf("white_background") > -1) {
         $("form#searchInfoModal_form").find('select').each(function(i, el) {
             $(el).select2("val", [])
             if(i== $("form#searchInfoModal_form").find('select').length-1) {
@@ -310,6 +323,9 @@ $("#resetSearchForm").click(function(e) {
         $("#search_sector_configured_on").select2("val","");
         $("#search_circuit_ids").select2("val","");
         $("#search_city").select2("val","");
+
+        // Reset Advance Search Flag
+        isAdvanceSearch = 0;
     }
 
     advJustSearch.removeSearchMarkers();
@@ -328,16 +344,20 @@ function showAdvFilters() {
     /*Show the spinner*/
     showSpinner();
     
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        if($("#advFilterContainerBlock").hasClass("hide")) {
-            $("#advFilterContainerBlock").removeClass("hide");
-        }
-        hideSpinner();
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
+    if (window.location.pathname.indexOf("white_background") > -1) {
         $("#advSearchContainerBlock").hide();
         $("#advFilterContainerBlock").show();
         advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
     } else {
+
+        if(!isAdvanceSearch) {
+            resetAdvanceSearch();
+        }
+
+        if(!$("#advSearchContainerBlock").hasClass("hide")) {
+            $("#advSearchContainerBlock").addClass("hide");
+        }
+
         if($("#advFilterContainerBlock").hasClass("hide")) {
             $("#advFilterContainerBlock").removeClass("hide");
         }
@@ -353,27 +373,7 @@ $("#setAdvFilterBtn").click(function(e) {
 
     /*Reset advance filter status flag*/
     hasAdvFilter = 1;
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        var filtered_data = [],
-            technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
-            vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
-            city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
-            state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
-            frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
-            polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
-            total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length + frequency_filter.length + polarization_filter.length;
-
-        // If any value is selected in filter
-        if(total_selected_items > 0) {
-            // Call function to plot the data on map as per the applied filters
-            gmap_self.applyAdvanceFilters();
-        } else {
-            /*Hide the spinner*/
-            hideSpinner();
-
-            bootbox.alert("Please select any filter");
-        }
-    } else if(window.location.pathname.indexOf("white_background") > -1) {
+    if(window.location.pathname.indexOf("white_background") > -1) {
         advSearch.callSetFilter();
     } else {
         
@@ -388,11 +388,16 @@ $("#setAdvFilterBtn").click(function(e) {
 
         // If any value is selected in filter
         if(total_selected_items > 0) {
+            // Set Advance Filters Flag
+            isAdvanceFilter = 1;
             // Call function to plot the data on map as per the applied filters
             gmap_self.applyAdvanceFilters();
         } else {
             /*Hide the spinner*/
             hideSpinner();
+
+            // Set Advance Filters Flag
+            isAdvanceFilter = 0;
 
             bootbox.alert("Please select any filter");
         }
@@ -435,7 +440,7 @@ function removeAdvFilters() {
     } else if(window.location.pathname.indexOf("white_background") > -1) {
         data_for_filters = main_devices_data_wmap;
     } else {
-        
+
     }
 
     /*Call get_page_status function to show the current status*/

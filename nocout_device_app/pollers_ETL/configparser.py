@@ -45,7 +45,7 @@ def get_config_file(conf_file=None, historical_conf=False):
 	if historical_conf:
 	        conf_file = filter(lambda x: 'historical' in x and x[11:-4] in nocout_site_name, config_file_list)
 	else:
-	        conf_file = filter(lambda x: x[:-4] in nocout_site_name, config_file_list)
+	        conf_file = filter(lambda x: 'historical' not in x and x[:-4] in nocout_site_name, config_file_list)
 
         return conf_file[0] if conf_file else None
 
