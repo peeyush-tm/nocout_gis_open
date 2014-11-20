@@ -1,7 +1,5 @@
 from mysql_connection import mysql_conn
 from pprint import pformat
-import time
-import os
 
 
 db = None
@@ -74,8 +72,7 @@ def make_BS_data():
 
 
 def write_data():
-	tstmp = int(time.time())
-	with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk_' + str(tstmp), 'w') as f:
+	with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
 		f.write("# encoding: utf-8\n\n")
 		f.write("\nhost_contactgroups += []\n\n\n")
 		f.write("all_hosts += %s\n" % pformat(all_hosts))

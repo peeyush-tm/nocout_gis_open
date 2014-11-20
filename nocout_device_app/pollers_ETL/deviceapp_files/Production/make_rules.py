@@ -1,6 +1,5 @@
 from mysql_connection import mysql_conn, dict_rows
 from pprint import pprint, pformat
-import time
 
 db = mysql_conn()
 
@@ -66,8 +65,7 @@ def main():
         default_snmp_ports = snmp_ports_db
     #pprint(default_snmp_ports)
     #pprint(default_snmp_communities)
-    tstmp = int(time.time())
-    with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk_' + str(tstmp), 'w') as f:
+    with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
         f.write("# encoding: utf-8")
         f.write("\n\n\n")
         f.write("bulkwalk_hosts += %s" % pformat(bulkwalk_hosts))
