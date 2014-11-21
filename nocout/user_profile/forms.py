@@ -124,3 +124,17 @@ class UserForm(forms.ModelForm):
                 return role
         else:
             return role
+
+    def clean_password1(self):
+        """
+        Username and password must not be identical
+        """
+        if 'username' in [key for key,values in self.cleaned_data.items()]:
+            password1 = self.cleaned_data['password1']
+            username = self.cleaned_data['username']
+            if password1 == username:
+                raise forms.ValidationError("User ID and password should not be identical")
+            else:
+                return password1
+        else:
+            pass
