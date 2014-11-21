@@ -195,11 +195,19 @@ $("#headerToggleBtn").click(function(e) {
         $("#headerToggleBtn").html('<i class="fa fa-eye-slash"></i> Hide Page Controls');
         $("#headerToggleBtn").removeClass('btn-info');
         $("#headerToggleBtn").addClass('btn-danger');
+
+        if(window.location.pathname.indexOf("googleEarth") > -1) {
+            $("#page_content_div .box-title").removeClass('hide');
+        }
     } else {
         $("#headerToggleBtn").html('<i class="fa fa-eye"></i> Show Page Controls');
         $("#headerToggleBtn").removeClass('btn-danger');
         $("#headerToggleBtn").addClass('btn-info');
         $("#page_content_div .box-title").removeClass('hide');
+
+        if(window.location.pathname.indexOf("googleEarth") > -1) {
+            $("#page_content_div .box-title").addClass('hide');
+        }
     }
 
     /*Toggle Page Header*/
@@ -295,12 +303,25 @@ $("#goFullScreen").click(function() {
             var cc= $("#page_header_container").height();
 
             if(window.location.pathname.indexOf("googleEarth") > -1) {
+
+                $("#content").addClass("zero_padding_margin");
+                $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
+
+                // toggleBoxTitle();
+                /*Set width-height for map div in fullscreen*/
+                var mapDiv = $("#google_earth_container");
+                mapDiv.attr('style', 'width: 100%; height:'+ screen.height+ 'px');
+                // mapDiv.attr('style', 'height: 100%;');
+                // mapDiv.style.width = "100%";
+                // mapDiv.style.height = screen.height+"px";
+                $("#content").css("min-height","200px");
              
             } else if (window.location.pathname.indexOf("white_background") > -1) {
 
                 $("#content").addClass("zero_padding_margin");
                 $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
 
+                // toggleBoxTitle();
                 /*Set width-height for map div in fullscreen*/
                 var mapDiv = $("#wmap_container");
                 mapDiv.attr('style', 'width: 100%; height:'+ screen.height+ 'px');
@@ -347,6 +368,19 @@ $("#goFullScreen").click(function() {
         } else {
             exitFullscreen();
             if(window.location.pathname.indexOf("googleEarth") > -1) {
+
+                showControlDiv= "";
+                $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
+                /*Reset width-height for map div in normal screen*/
+                var mapDiv = $("#google_earth_container");
+                mapDiv.attr('style', 'width: 100%; height: 550px');
+
+                $("#content").removeAttr("style");
+                $(".mapContainerBlock .box-title").removeClass('hide');
+
+                $("#goFullScreen").removeClass('hide');
+
+                $("#headerToggleBtn").removeClass('hide');
              
             } else if (window.location.pathname.indexOf("white_background") > -1) {
                 showControlDiv= "";

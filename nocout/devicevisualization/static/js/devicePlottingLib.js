@@ -3347,7 +3347,7 @@ function devicePlottingClass_gmap() {
 		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(ZoomToAlt(5));
+				lookAt.setRange(6892875.865539902);
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -3847,7 +3847,7 @@ function devicePlottingClass_gmap() {
 				    			if(sector_ip_condition) {
 				    				if(window.location.pathname.indexOf("googleEarth") > -1) {
 				    					folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
-				    				} else {
+				    				advanceSearchFunc} else {
 				    					bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].data.lat,data_to_plot[i].data.lon));
 				    				}
 				    				// Hide State Counter Label(If Visible)
@@ -3930,7 +3930,9 @@ function devicePlottingClass_gmap() {
 						// Show search marker after some timeout
 						setTimeout(function() {
 							for(var i=0;i<searchMarkers_global.length;i++) {
-								searchMarkers_global[i].setVisibility(false);
+
+								// Add the searchMarker to Earth.
+								ge.getFeatures().appendChild(searchMarkers_global[i]);
 							}
 						},350);
 					});
@@ -4044,7 +4046,7 @@ function devicePlottingClass_gmap() {
 		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(ZoomToAlt(5));
+				lookAt.setRange(6892875.865539902);
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -4156,7 +4158,7 @@ function devicePlottingClass_gmap() {
 				var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(ZoomToAlt(5));
+				lookAt.setRange(6892875.865539902);
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 

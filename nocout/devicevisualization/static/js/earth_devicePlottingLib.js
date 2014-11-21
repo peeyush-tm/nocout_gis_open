@@ -130,7 +130,7 @@ function googleEarthClass() {
 		var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 		lookAt.setLatitude(21.0000);
 		lookAt.setLongitude(78.0000);
-		lookAt.setRange(ZoomToAlt(2));
+		lookAt.setRange(6892875.865539902);
 
 		// Update the view in Google Earth 
 		ge.getView().setAbstractView(lookAt); 
@@ -479,7 +479,7 @@ function googleEarthClass() {
 
             // var bounds = new google.maps.LatLngBounds();
             for (var i = 0, place; place = places[i]; i++) {
-            	
+
 				var marker = earth_self.makePlacemark(place.icon, place.geometry.location.k, place.geometry.location.B, place.place_id, {});
             	folderBoundArray.push({lat: place.geometry.location.k, lon: place.geometry.location.B});
 				place_markers.push(marker);
@@ -1223,8 +1223,8 @@ var state_wise_device_label_text= {};
 							deviceExtraInfo: sectorsArray[j].info,
 							deviceInfo: sectorsArray[j].device_info,
 							poll_info: [],
-							pl: "hallo",
-							rta: "hallo",
+							pl: "",
+							rta: "",
 							sectorName: sectorsArray[j].sector_configured_on,
 							device_name: sectorsArray[j].sector_configured_on_device,
 							name: sectorsArray[j].sector_configured_on_device,
@@ -1493,7 +1493,11 @@ var state_wise_device_label_text= {};
 		
 		var style = ge.createStyle(''); //create a new style
 		style.getIconStyle().setIcon(icon); //apply the icon to the style
-		style.getIconStyle().setScale(0.7);
+		if(description.pointType === "base_station") {
+			style.getIconStyle().setScale(1.4);
+		} else {
+			style.getIconStyle().setScale(0.8);
+		}
 		placemark.setStyleSelector(style); //apply the style to the placemark
 
 		var point = ge.createPoint('');
@@ -1789,7 +1793,7 @@ var state_wise_device_label_text= {};
 	 * This function show/hide the connection line between BS & SS.
 	 * @method showConnectionLines_gmap
 	 */
-	this.showConnectionLines_gmap = function() {
+	this.showConnectionLines_earth = function() {
 
 		var isLineChecked = $("#showConnLines:checked").length;
 
@@ -1811,7 +1815,6 @@ var state_wise_device_label_text= {};
 		}
 	};
 
-
 	/**
 	 * This function show/hide the sub-stations.
 	 * @method showSubStations_earth
@@ -1819,7 +1822,6 @@ var state_wise_device_label_text= {};
 	this.showSubStations_earth = function() {
 
 		var isSSChecked = $("#showAllSS:checked").length;
-
 		/*Unchecked case*/
 		if(isSSChecked == 0) {
 			for(key in allMarkersObject_earth['sub_station']) {
@@ -1955,30 +1957,6 @@ var state_wise_device_label_text= {};
 			$("#infoWindowContainer").removeClass('hide');
 			event.preventDefault();
 		});
-	};
-
-	/**
-	 * This function show/hide the connection line between BS & SS.
-	 * @method showConnectionLines_earth
-	 */
-	this.showConnectionLines_earth = function() {
-
-		var isLineChecked = $("#showConnLines:checked").length;
-
-		var existing_lines = ssLinkArray_filtered;
-
-		/*Unchecked case*/
-		if(isLineChecked == 0) {
-
-			for (var i = 0; i < plottedLinks_earth.length; i++) {
-				plottedLinks_earth[i].setVisibility(false);
-			}
-
-		} else {
-			for (var i = 0; i < plottedLinks_earth.length; i++) {
-				plottedLinks_earth[i].setVisibility(true);
-			}
-		}
 	};
 
 	/**
@@ -2775,6 +2753,11 @@ var state_wise_device_label_text= {};
 		return colorObject;
 	};
 
+	/**
+	 * This function points to a specific Lat long at zoom level 15
+	 * @param  {String} lat_lon_str [Contains a strinfied form of Lat and Long to point at]
+	 * @return {[Boolean]}             []
+	 */
 	this.pointToLatLon = function(lat_lon_str) {
 		
 		var lat = +lat_lon_str.split(",")[0],
@@ -2784,12 +2767,14 @@ var state_wise_device_label_text= {};
 		var lookAt = ge.createLookAt('');
 
 		// Set the position values.
+		lookAt.setRange(ZoomToAlt(15)); //default is 0.0
 		lookAt.setLatitude(lat);
 		lookAt.setLongitude(lng);
-		lookAt.setRange(ZoomToAlt(15)); //default is 0.0
 
 		// Update the view in Google Earth.
 		ge.getView().setAbstractView(lookAt);
+
+		return true;
 	};
 
 	/**
