@@ -111,8 +111,8 @@
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
-                    <li><a class="" href="/performance/customer_live/"><span class="sub-menu-text">Customer Live</span></a></li>
                     <li><a class="" href="/performance/network_live/"><span class="sub-menu-text">Network Live</span></a></li>
+                    <li><a class="" href="/performance/customer_live/"><span class="sub-menu-text">Customer Live</span></a></li>
                     <li><a class="" href="/performance/other_live/"><span class="sub-menu-text">Other</span></a></li>
                     <li class="has-sub-sub">
                         <a class="" href="javascript:;">
@@ -274,6 +274,7 @@
                                 {% endif %}
                                 {% if perms.inventory.view_circuit %}
                                 <li><a class="" href="/circuit/"><span class="sub-menu-text">Circuit</span></a></li>
+                                <li><a class="" href="/circuit/l2_reports/show_all/"><span class="sub-menu-text">L2 Reports</span></a></li>
                                 {% endif %}
                             </ul>
                         </li>

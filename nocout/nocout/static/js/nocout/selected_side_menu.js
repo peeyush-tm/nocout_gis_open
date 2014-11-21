@@ -8,16 +8,18 @@ var currentRouterString = "",
     sideMenu = $("#sidebar ul li a"),
     routerArray = window.location.href.split("/"),
     checkValue = $.trim(routerArray[routerArray.length-2]),
-    typeCheck = (+checkValue) + 1;
+    typeCheck = (+checkValue) + 1,
+    isForm = false;
 
-if(checkValue == "new" || checkValue == "update" || checkValue == "treeview" || checkValue == "edit" || checkValue == "delete") {
+if(checkValue == "create" || checkValue == "add" || checkValue == "new" || checkValue == "update" || checkValue == "treeview" || checkValue == "edit" || checkValue == "delete") {
     if($.trim(typeCheck) != "NaN") {        
         /*Current router url text*/
         currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-3));
     } else {
         /*Current router url text*/
         currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-2));
-    }    
+    }
+    isForm = true;
 } else if($.trim(typeCheck) != "NaN"){
     /*Current router url text*/
     currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-2));
@@ -65,11 +67,13 @@ for(var i = 0; i < sideMenu.length; i++) {
 /*This function apply selected classes on current menu tag & its parents*/
 function applySelectedClasses(menuTag) {
 
-    var closest_has_sub = $(menuTag).closest(".has-sub");
-    var closest_has_sub_sub = $(menuTag).closest(".has-sub-sub");
-    var closest_li = $(menuTag).closest("li");
-    var closest_sub_sub = $(menuTag).closest(".sub-sub");
-    var closest_arrow = $(menuTag).closest("span.arrow");
+    var closest_has_sub = $(menuTag).closest(".has-sub"),
+        closest_has_sub_sub = $(menuTag).closest(".has-sub-sub"),
+        closest_li = $(menuTag).closest("li"),
+        closest_sub_sub = $(menuTag).closest(".sub-sub"),
+        closest_arrow = $(menuTag).closest("span.arrow"),
+        breadcrumb_txt = '<li><a href="/home/"><i class="fa fa-home"></i> Home</a></li>',
+        isTab = $('.nav li.active .hidden-inline-mobile');
 
     if(closest_has_sub.length > 0 && closest_has_sub_sub.length > 0) {
         
@@ -85,6 +89,31 @@ function applySelectedClasses(menuTag) {
 
         /*Add current class to parent element*/
         closest_li.addClass("current");
+        breadcrumb_txt += "<li>"+closest_has_sub[0].children[0].outerHTML+"</li>";
+        breadcrumb_txt += "<li>"+closest_has_sub_sub[0].children[0].outerHTML+"</li>";
+        breadcrumb_txt += closest_li[0].outerHTML;
+
+        $(".breadcrumb").html(breadcrumb_txt);
+            
+        // If any tab Exists
+        if(isTab.length > 0) {
+            setTimeout(function() {
+                if($(".lite > .box-title > h4").text().indexOf("(") > -1) {
+                    var tab_breadcrumb = '<li><a href="'+window.location.href.split("#")[0]+'">'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</a></li>';
+                } else {
+                    var tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
+                }
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
+
+        // If create/update form
+        if(isForm) {
+            setTimeout(function() {
+                var tab_breadcrumb = '<li><a href="'+window.location.href+'"><strong>'+$('.lite > .box-title > h4').text()+'</strong></a></li>';
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
 
     } else if(closest_has_sub.length > 0 && closest_has_sub_sub.length == 0) {
         
@@ -92,12 +121,61 @@ function applySelectedClasses(menuTag) {
         var main_child_length = closest_has_sub.children().first()[0].children.length;
         var top_arrow = closest_has_sub.children().first()[0].children[main_child_length - 1];
         top_arrow.className = top_arrow.className+" open";
-
+        // console.log((window.location.pathname.indexOf('performance') || window.location.pathname.indexOf('alert_center')))
         /*Add current class to parent element*/
         closest_li.addClass("current");
+        breadcrumb_txt += "<li>"+closest_has_sub[0].children[0].outerHTML+"</li>";
+        breadcrumb_txt += closest_li[0].outerHTML;
+        $(".breadcrumb").html(breadcrumb_txt);
+
+        // If any tab Exists
+        if(isTab.length > 0) {
+            setTimeout(function() {
+                if($(".lite > .box-title > h4").text().indexOf("(") > -1) {
+                    var tab_breadcrumb = '<li><a href="'+window.location.href.split("#")[0]+'">'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</a></li>';
+                } else {
+                    var tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
+                }
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
+
+        // If create/update form
+        if(isForm) {
+            setTimeout(function() {
+                var tab_breadcrumb = '<li><a href="'+window.location.href+'"><strong>'+$('.lite > .box-title > h4').text()+'</strong></a></li>';
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
+
+
+
     } else {
         /*Add current class to parent element*/
         closest_li.addClass("active");
+        var breadcrumb_text = closest_li[0].innerHTML;
+
+        $(".breadcrumb").html(breadcrumb_text);
+        
+        // If any tab Exists
+        if(isTab.length > 0) {
+            setTimeout(function() {
+                if($(".lite > .box-title > h4").text().indexOf("(") > -1) {
+                    var tab_breadcrumb = '<li><a href="'+window.location.href.split("#")[0]+'">'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</a></li>';
+                } else {
+                    var tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
+                }
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
+
+        // If create/update form
+        if(isForm) {
+            setTimeout(function() {
+                var tab_breadcrumb = '<li><a href="'+window.location.href+'"><strong>'+$('.lite > .box-title > h4').text()+'</strong></a></li>';
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
     }
 
     /*Show sub menu.*/
@@ -241,23 +319,28 @@ $("#goFullScreen").click(function() {
                 toggleControlButtons();
 
                 /*Set width-height for map div in fullscreen*/
-                var mapDiv = mapInstance.getDiv();
-                mapDiv.style.width = "100%";
-                mapDiv.style.height = screen.height+"px";
+                if($(".mapContainerBlock").length > 0) {
+                    var mapDiv = mapInstance.getDiv();
+                    mapDiv.style.width = "100%";
+                    mapDiv.style.height = screen.height+"px";
+                }
                 $("#content").css("min-height","200px");
 
-                google.maps.event.trigger(mapInstance, 'resize');
-                mapInstance.setCenter(mapInstance.getCenter());
+                if($(".mapContainerBlock").length > 0) {
+                    google.maps.event.trigger(mapInstance, 'resize');
+                    mapInstance.setCenter(mapInstance.getCenter());
 
-                if(showControlDiv) {
-                    showControlDiv= "";
-                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);
+                    if(showControlDiv) {
+                        showControlDiv= "";
+                        mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);
+                    }
+                    showControlDiv = document.createElement('div');
+                    var showControl = new ShowControl(showControlDiv, mapInstance);
+                    showControlDiv.index = 1;
+                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(showControlDiv);
+                    $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Exit Full Screen');
                 }
-                showControlDiv = document.createElement('div');
-                var showControl = new ShowControl(showControlDiv, mapInstance);
-                showControlDiv.index = 1;
-                mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(showControlDiv);
-                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Exit Full Screen');
+
             }
 
 
@@ -267,7 +350,6 @@ $("#goFullScreen").click(function() {
              
             } else if (window.location.pathname.indexOf("white_background") > -1) {
                 showControlDiv= "";
-                $("#content").removeClass("zero_padding_margin");
                 $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
                 /*Reset width-height for map div in normal screen*/
                 var mapDiv = $("#wmap_container");
@@ -279,12 +361,9 @@ $("#goFullScreen").click(function() {
                 $("#goFullScreen").removeClass('hide');
 
                 $("#headerToggleBtn").removeClass('hide');
-            } else {
+            } else if (window.location.pathname.indexOf("gis") > -1) {
                 showControlDiv= "";
-
-                $("#content").removeClass("zero_padding_margin");
                 $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
-
                 if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 3) {
                     mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
                 }
@@ -303,10 +382,11 @@ $("#goFullScreen").click(function() {
                 mapInstance.setCenter(mapInstance.getCenter());
 
                 $(".mapContainerBlock .box-title").removeClass('hide');
-                $("#goFullScreen").removeClass('hide');
-                $("#headerToggleBtn").removeClass('hide');
                 // $("#headerToggleBtn").trigger('click');
-            }            
+            }
+            $("#content").removeClass("zero_padding_margin");
+            $("#goFullScreen").removeClass('hide');
+            $("#headerToggleBtn").removeClass('hide');
         }
     } else {
         bootbox.alert("Fullscreen facility not supported by your browser.Please update.")
@@ -329,8 +409,6 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
         $("#goFullScreen").addClass('btn-info');
         if($("#deviceMap").length) {
 
-            /*Remove padding & margin*/
-            $("#content").removeClass("zero_padding_margin");
             $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
 
             showControlDiv= "";
@@ -351,9 +429,12 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
 
             // toggleBoxTitle();
             $(".mapContainerBlock .box-title").removeClass('hide');
-            $("#goFullScreen").removeClass('hide');
-            $("#headerToggleBtn").removeClass('hide');
         }
+        /*Remove padding & margin*/
+        $("#content").removeClass("zero_padding_margin");
+        
+        $("#goFullScreen").removeClass('hide');
+        $("#headerToggleBtn").removeClass('hide');
     }
 });
 

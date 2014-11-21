@@ -10,13 +10,23 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceTechnology, DeviceType
 from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
-from performance.views import ptp_device_circuit_backhaul, organization_customer_devices, \
-    organization_network_devices, organization_backhaul_devices, indexed_gis_devices
+
+from performance.views import ptp_device_circuit_backhaul, \
+    organization_customer_devices, \
+    organization_network_devices, \
+    organization_backhaul_devices, \
+    indexed_gis_devices, \
+    combined_indexed_gis_devices,\
+    indexed_polled_results,\
+    filter_devices,\
+    prepare_machines,\
+    prepare_gis_devices
+
 from django.utils.dateformat import format
 from django.db.models import Q
 
 from django.conf import settings
-from nocout.settings import P2P, WiMAX, PMP
+from nocout.settings import P2P, WiMAX, PMP, DEBUG
 
 from nocout.utils.util import fetch_raw_result, dict_fetchall, \
     format_value, cache_for, \
@@ -50,7 +60,7 @@ def getCustomerAlertDetail(request):
          'bSortable': True},
         {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
         'bSortable': True},
-        {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
@@ -260,7 +270,7 @@ def getNetworkAlertDetail(request):
          'bSortable': True},
         {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
         'bSortable': True},
-        {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
@@ -288,6 +298,18 @@ class GetNetworkAlertDetail(BaseDatatableView):
                'current_value', 'sys_time', 'sys_date', 'description']
     order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                      'current_value', 'sys_time', 'sys_date', 'description']
+    polled_columns = ["id",
+                      "ip_address",
+                      "service_name",
+                      "device_name",
+                      "data_source",
+                      "severity",
+                      "current_value",
+                      "max_value",
+                      "sys_timestamp",
+                      "age"
+                      # "description"
+    ]
 
     def filter_queryset(self, qs):
 
@@ -328,30 +350,61 @@ class GetNetworkAlertDetail(BaseDatatableView):
         # we need to check the tabs
         # we need to check the data requested
         tab_id = None
+
         if self.request.GET.get("data_source"):
             tab_id = self.request.GET.get("data_source")
         else:
             return []
 
-        sector_configured_on_devices = []
+        sector_configured_on_devices = list()
+        data_sources_list = list()
+        device_list = list()
+        performance_data = list()
+        required_data_columns = self.polled_columns
+
+        table_name = "performance_servicestatus"
+
+        is_bh = False
+        multi_tech = False
+        technology = []
 
         if tab_id:
             device_list = []
             if tab_id == "P2P":
-                technology = int(P2P.ID)
+                technology = [int(P2P.ID)]
                 #need to add device with Circuit Type as : Backhaul
                 # (@TODO: make this a dropdown menu item and must for the user)
                 #INVALID :::: for technology = PTP and Circuit Type as Backhaul get the Device BH Configured On ::: INVALID
                 #VALID :::: confusion HERE. What we want is that CIRCUIT TYPE BACKHAUL's both SS and BS elements should
                 #be visible on network alert center ::: VALID
             elif tab_id == "WiMAX":
-                technology = int(WiMAX.ID)
+                technology = [int(WiMAX.ID)]
             elif tab_id == "PMP":
-                technology = int(PMP.ID)
+                technology = [int(PMP.ID)]
+            elif tab_id == "Temperature":
+                #for handelling the temperature alarms
+                #temperature alarms would be for WiMAX
+                technology = [int(WiMAX.ID)]
+                data_sources_list = ['fan_temp','acb_temp']
+            elif tab_id == "Backhaul":
+                technology = None
+                is_bh = True
+            elif tab_id == "ULIssue":
+                technology = [int(WiMAX.ID), int(PMP.ID)]
+            elif tab_id == "SectorUtil":
+                technology = [int(WiMAX.ID), int(PMP.ID)]
+            elif tab_id == "BackhaulUtil":
+                technology = None
+                is_bh = True
             else:
                 return []
 
-            device_list = organization_network_devices(organizations, technology=technology)
+            if not is_bh:
+                for techno in technology:
+                    device_list += organization_network_devices(organizations, technology=techno)
+            else:
+                device_list = organization_backhaul_devices(organizations)
+
             sector_configured_on_devices = [
                                 {'device_name': device.device_name, 'machine__name': device.machine.name}
                                 for device in device_list
@@ -359,21 +412,6 @@ class GetNetworkAlertDetail(BaseDatatableView):
         else:
             return []
 
-
-        device_list, performance_data, data_sources_list = list(), list(), list()
-
-        required_data_columns = ["id",
-                                 "ip_address",
-                                 "service_name",
-                                 "device_name",
-                                 "data_source",
-                                 "severity",
-                                 "current_value",
-                                 "max_value",
-                                 "sys_timestamp",
-                                 "age"
-                                 # "description"
-                                ]
 
         # Unique machine from the sector_configured_on_devices
         unique_device_machine_list = {device['machine__name']: True for device in sector_configured_on_devices}.keys()
@@ -389,31 +427,18 @@ class GetNetworkAlertDetail(BaseDatatableView):
         #Fetching the data for the device w.r.t to their machine.
         for machine, machine_device_list in machine_dict.items():
 
-            # data_sources_list = ['rta', 'pl']
-            #
-            # device_data += self.collective_query_result(
-            #     machine = machine,
-            #     table_name = "performance_networkstatus",
-            #     devices = machine_device_list,
-            #     data_sources = data_sources_list,
-            #     columns = required_data_columns
-            # )
-
-            data_sources_list = []
             device_data += self.collective_query_result(
                 machine = machine,
-                table_name = "performance_servicestatus",
+                table_name = table_name,
                 devices = machine_device_list,
                 data_sources = data_sources_list,
                 columns = required_data_columns
             )
 
         if device_data:
-            # sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
-            # return sorted_device_data
             return device_data
 
-        return device_list
+        return []
 
     def collective_query_result(self, machine, table_name, devices, data_sources, columns):
 
@@ -439,6 +464,14 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         return device_list
 
+    def prepare_devices(self,qs):
+        """
+
+        :param device_list:
+        :return:
+        """
+        return prepare_gis_devices(qs, None)
+
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -448,7 +481,6 @@ class GetNetworkAlertDetail(BaseDatatableView):
         """
 
         if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
             service_tab_name = 'service'
             for dct in qs:
                 device_id = Device.objects.get(device_name=dct['device_name']).id
@@ -477,6 +509,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         # number of records after filtering
         total_display_records = len(qs)
+
+        qs = self.prepare_devices(qs)
 
         # qs = self.ordering(qs)
         # qs = self.paging(qs)  # Removing pagination as of now to render all the data at once.
@@ -536,7 +570,7 @@ class AlertCenterListing(ListView):
              'bSortable': True},
             {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+            {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True},
             ]
         if data_tab == 'P2P' or data_tab is None:
@@ -615,12 +649,24 @@ class AlertListingTable(BaseDatatableView):
     Generic Class Based View for the Alert Center Network Listing Tables.
 
     """
+    is_polled = False
     model = EventNetwork
     columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                'current_value', 'max_value', 'sys_timestamp', 'description']
     order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                      'current_value', 'max_value', 'sys_timestamp', 'description']
 
+    polled_columns = ["id",
+                      "ip_address",
+                      "data_source",
+                      "device_name",
+                      "severity",
+                      "current_value",
+                      "max_value",
+                      "sys_timestamp",
+                      "age"
+                      # "description"
+    ]
 
     def get_initial_queryset(self):
         """
@@ -629,13 +675,72 @@ class AlertListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        else:
+            if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] == 'admin':
+                organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
+            else:
+                organizations = [self.request.user.userprofile.organization]
 
-        logged_in_user = self.request.user.userprofile
+            return self.get_initial_query_set_data(organizations=organizations)
 
-        organization_devices = filter_devices(logged_in_user,
-                                              self.request.GET.get('data_tab'),
-                                              page_type=self.request.GET.get('page_type')
+    def get_initial_query_set_data(self, **kwargs):
+        """
+        Generic function required to fetch the initial data with respect to the page_type parameter in the get request requested.
+
+        :param device_association:
+        :param kwargs:
+        :return: list of devices
+        """
+
+        page_type = self.request.GET.get('page_type')
+
+        required_value_list = ['id','machine__name','device_name','ip_address']
+
+        device_tab_technology = self.request.GET.get('data_tab')
+
+        devices = filter_devices(organizations=kwargs['organizations'],
+                                 data_tab=device_tab_technology,
+                                 page_type=page_type,
+                                 required_value_list=required_value_list
         )
+
+        return devices
+
+    def prepare_devices(self,qs):
+        """
+
+        :param device_list:
+        :return:
+        """
+        page_type = self.request.GET['page_type']
+        return prepare_gis_devices(qs, page_type)
+
+    def prepare_machines(self, qs):
+        """
+        """
+        device_list = []
+        for device in qs:
+            device_list.append(
+                {
+                    'device_name': device['device_name'],
+                    'device_machine': device['machine_name'],
+                    'id': device['id'],
+                    'ip_address': device['ip_address']
+                }
+            )
+
+        return prepare_machines(device_list)
+
+    def prepare_polled_results(self, qs, machine_dict={}):
+        """
+        preparing polled results
+        after creating static inventory first
+        """
+        device_tab_technology = self.request.GET.get('data_tab')
+        device_technology_id = DeviceTechnology.objects.get(name__icontains=device_tab_technology).id
+
+        page_type = self.request.GET.get('page_type')
+        data_source = self.request.GET.get('data_source')
 
         device_list, performance_data, data_sources_list = list(), list(), list()
 
@@ -645,39 +750,26 @@ class AlertListingTable(BaseDatatableView):
 
         extra_query_condition = None
 
-        if self.request.GET['data_source'] == 'latency':
+        if data_source == 'latency':
             extra_query_condition = ' AND (`{0}`.`current_value` > 0 ) '
             extra_query_condition += ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
             data_sources_list = ['rta']
-        elif self.request.GET['data_source'] == 'packet_drop':
+        elif data_source == 'packet_drop':
             data_sources_list = ['pl']
             extra_query_condition = ' AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) '
             extra_query_condition += ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
-        elif self.request.GET['data_source'] == 'down':
+        elif data_source == 'down':
             data_sources_list = ['pl']
             extra_query_condition = ' AND (`{0}`.`current_value` >= 100 ) '
             extra_query_condition += ' AND `{0}`.`severity` in ("down") '
             search_table = "performance_networkstatus"
-        elif self.request.GET['data_source'] == 'service':
+        elif data_source == 'service':
             extra_query_condition = ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
             search_table = "performance_servicestatus"
 
-        required_data_columns = ["id",
-                                 "ip_address",
-                                 "data_source",
-                                 "device_name",
-                                 "severity",
-                                 "current_value",
-                                 "max_value",
-                                 "sys_timestamp",
-                                 "age"
-                                 # "description"
-        ]
+        required_data_columns = self.polled_columns
 
         sorted_device_list = list()
-
-        machine_dict = filter_machines(organization_devices=organization_devices)
-        # Creating the machine as a key and device_name as a list for that machine.
 
         #Fetching the data for the device w.r.t to their machine.
         for machine, machine_device_list in machine_dict.items():
@@ -750,6 +842,18 @@ class AlertListingTable(BaseDatatableView):
         self.initialize(*args, **kwargs)
 
         qs = self.get_initial_queryset()
+
+        #machines dict
+        machines = self.prepare_machines(qs)
+        #machines dict
+
+        #prepare the polled results
+        qs = self.prepare_polled_results(qs, machine_dict=machines)
+        # this is query set with complete polled result
+
+        #this function is for mapping to GIS inventory
+        qs = self.prepare_devices(qs)
+        #this function is for mapping to GIS inventory
 
         # number of records before filtering
         total_records = len(qs)
@@ -1198,6 +1302,7 @@ def common_prepare_results(qs):
 
     return qs
 
+
 def severity_level_check(list_to_check):
     """
 
@@ -1209,6 +1314,8 @@ def severity_level_check(list_to_check):
             if severity.lower() in item.lower():
                 return True
 
+
+@cache_for(300)
 def raw_prepare_result(performance_data,
                        machine,
                        table_name=None,
@@ -1233,7 +1340,11 @@ def raw_prepare_result(performance_data,
     :return:
     """
 
-    # count
+    st = datetime.datetime.now()
+    if DEBUG:
+        logger.debug("ALERT : Preparing Query Results")
+        logger.debug("START TIME : %s" %st)
+
     count = 0
 
     while count <= math.ceil(len(devices) / limit):
@@ -1254,55 +1365,46 @@ def raw_prepare_result(performance_data,
 
         count += 1
 
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
+        logger.debug("ALERT : Preparing Query Results : COMPLETED")
+
     return performance_data
 
 
-def filter_devices(logged_in_user, data_tab = None, page_type="customer"):
-
+@cache_for(300)
+def indexed_alert_results(performance_data):
     """
 
-    :param logged_in_user: authenticated user
-    :param data_tab: the technology user wants to retrive
-    :return: the list of devices that user has been assigned via organization
-    """
-    if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-        organizations = list(logged_in_user.organization.get_descendants(include_self=True))
-    else:
-        organizations = [logged_in_user.organization]
-
-    organization_devices = list()
-    device_tab_technology = data_tab ##
-    device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
-
-    if page_type == "customer":
-        device_list = organization_customer_devices(organizations, device_technology_id)
-    else:
-        device_list = organization_network_devices(organizations, device_technology_id)
-
-    # get the devices in an organisation which are added for monitoring
-    organization_devices = [
-        {'device_name': device.device_name, 'machine_name': device.machine.name}
-        for device in device_list
-    ]
-
-    return organization_devices
-
-def filter_machines(organization_devices):
-    # Unique machine from the sector_configured_on_devices
+    :param performance_data:
+    :return:
     """
 
-    :param organization_devices: get the organisation devices
-    :return: machine wise unique list of devices
-    """
-    unique_machine_list = { device['machine_name']: True for device in organization_devices }.keys()
+    st = datetime.datetime.now()
+    if DEBUG:
+        logger.debug("ALERT : Preparing INDEXED Results")
+        logger.debug("START TIME : %s" %st)
 
-    machine_dict = dict()
-    # Creating the machine as a key and device_name as a list for that machine.
-    for machine in unique_machine_list:
-        machine_dict[machine] = [ device['device_name'] for device in organization_devices if
-                                  device['machine_name'] == machine ]
+    indexed_raw_results = {}
 
-    return machine_dict
+    for data in performance_data:
+        #this would be a unique combination
+        if data['data_source'] is not None and data['device_name'] is not None:
+            defined_index = data['device_name'], data['data_source']
+            if defined_index not in indexed_raw_results:
+                indexed_raw_results[defined_index] = None
+            indexed_raw_results[defined_index] = data
+
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
+        logger.debug("ALERT : Preparing INDEXED Results : COMPLETED")
+
+    return indexed_raw_results
+
 
 @cache_for(300)
 def prepare_raw_alert_results(device_list=[], performance_data=None):
@@ -1313,84 +1415,74 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
     :param performance_data:
     :return:
     """
+    st = datetime.datetime.now()
+    if DEBUG:
+        logger.debug("ALERT : Preparing ALERT POLLED Results")
+        logger.debug("START TIME : %s" %st)
 
-    indexed_sector = indexed_gis_devices("SECTOR_CONF_ON_NAME")
-    indexed_ss = indexed_gis_devices("SSDEVICENAME")
-    indexed_bh = indexed_gis_devices("BHCONF")
+    indexed_alert_data = indexed_alert_results(performance_data)
 
-    processed_device = {}
+    for device_alert in indexed_alert_data:
+        # the data would be a tuple of ("device_name"."data_source")
+        #sample index data
+        #{(u'511', u'pl'): {
+        # 'data_source': u'pl',
+        # 'severity': u'down',
+        # 'max_value': u'0',
+        # 'age': 1416309593L,
+        # 'device_name': u'511',
+        # 'sys_timestamp': 0L,
+        # 'current_value': u'49',
+        # 'ip_address': u'10.157.66.9',
+        # 'id': 59440L}
+        # }
 
-    for data in performance_data:
+        device_name, data_source = device_alert
 
-        is_sector = False
-        is_ss = False
-        is_bh = False
+        data = indexed_alert_data[device_alert]
 
-        sector_ids = []
+        static_gis_keys = {
+                "page_type": "NA",
+                "device_type": "NA",
+                "severity": "NA",
+                "bs_name": "NA",
+                "circuit_id": "NA",
+                "sector_id": "NA",
+                "city": "NA",
+                "state": "NA",
+                "customer_name": "NA",
+                "data_source_name": "NA",
+                "current_value": "NA",
+                "max_value": "NA",
+                "sys_timestamp": "NA",
+                "age": "NA",
+                'description': "NA"
+        }
 
-        device_name = data['device_name'].strip().lower() \
-                        if data['device_name'] else None
+        if severity_level_check(list_to_check=[data['severity']]):
+            device_events = static_gis_keys
+            device_events.update({
+                'device_name': device_name,
+                'severity': data['severity'],
+                'ip_address': data["ip_address"],
+                'data_source_name': " ".join(map(lambda a: a.title(), data_source.split("_"))),
+                'current_value': data["current_value"],
+                'max_value': data["max_value"],
+                'sys_timestamp': datetime.datetime.fromtimestamp(
+                    float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                'age': datetime.datetime.fromtimestamp(
+                    float(data["age"])).strftime("%d days %H:%M:%S")
+                    if data["age"]
+                    else "",
+                'description': ''#data['description']
+            })
 
-        if data['device_name'] in indexed_sector:
-            #is sector
-            is_sector = True
-            raw_result = indexed_sector[device_name]
-        elif data['device_name'] in indexed_ss:
-            #is ss
-            is_ss = True
-            raw_result = indexed_ss[device_name]
-        elif data['device_name'] in indexed_bh:
-            #is bh
-            is_bh = True
-            raw_result = indexed_bh[device_name]
-        else:
-            continue
+            device_list.append(device_events)
 
-        if is_sector:
-            for bs_row in raw_result:
-                if bs_row['SECTOR_SECTOR_ID'] not in sector_ids \
-                    and bs_row['SECTOR_SECTOR_ID'] is not None:
-                    sector_ids.append(bs_row['SECTOR_SECTOR_ID'])
-
-        data_source = data["data_source"].strip().lower() \
-                        if data["data_source"] else None
-
-
-        for bs_row in raw_result:
-            if device_name is not None and data_source is not None \
-                and (device_name, data_source) not in processed_device:
-                processed_device[device_name, data_source] = []
-
-                if severity_level_check(list_to_check=[data['severity']]):
-                    device_events = {
-                        'device_name': device_name,
-                        'device_type': format_value(bs_row['SECTOR_TYPE']),
-                        'severity': data['severity'],
-                        'ip_address': data["ip_address"],
-                        'base_station': format_value(bs_row['BSALIAS']),
-                        'circuit_id': format_value(bs_row['CCID']),
-                        'sector_id': ", ".join(sector_ids),
-                        'city': format_value(bs_row['BSCITY']),
-                        'state': format_value(bs_row['BSSTATE']),
-                        'customer_name': format_value(bs_row['CUST']),
-                        'data_source_name': data_source,
-                        'current_value': data["current_value"],
-                        'max_value': data["max_value"],
-                        'sys_timestamp': datetime.datetime.fromtimestamp(
-                            float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                        'age': data["age"],
-                        'description': ''#data['description']
-                    }
-                    if is_ss:
-                        device_events.update({
-                            'device_type' : format_value(bs_row['SS_TYPE']),
-                            'sector_id': format_value(bs_row['SECTOR_SECTOR_ID']),
-                        })
-                    elif is_bh:
-                        device_events.update({
-                            "device_type": format_value(bs_row['BHTYPE']),
-                            "device_technology": format_value(bs_row['BHTECH'])
-                        })
-                    device_list.append(device_events)
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
+        logger.debug("ALERT : Preparing ALERT POLLED Results : COMPLETED")
 
     return device_list

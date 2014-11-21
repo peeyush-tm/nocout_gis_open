@@ -1,8 +1,5 @@
-from wato import defaults
 from mysql_connection import mysql_conn
 from pprint import pformat
-import time
-import os
 
 
 db = None
@@ -17,7 +14,7 @@ def main():
 	global ipaddresses
 	global host_attributes
 	# This file contains device names, to be updated in configuration db
-	open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
+	open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
 	db = mysql_conn()
 	make_BS_data()
 	make_SS_data()
@@ -47,7 +44,7 @@ def make_BS_data():
 	site_instance_siteinstance.id = device_device.site_instance_id and
 	inventory_sector.sector_configured_on_id = device_device.id
 	)
-	where device_device.is_deleted=0 and device_devicetechnology.name in ("WiMAX") and device_devicetype.name in ('StarmaxIDU');
+	where device_device.is_deleted=0 and device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') and device_devicetype.name in ('Radwin2KBS', 'CanopyPM100AP', 'CanopySM100AP', 'StarmaxIDU');
 	"""
         #host name | device type | mac | parent _ name | wan | prod | agent tags | site | wato
 	cur = db.cursor() 
@@ -55,7 +52,7 @@ def make_BS_data():
 	data = cur.fetchall() 
 	cur.close() 
         processed = []
-	hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+	hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 	for device in data:
                 if  str(device[1]) in processed:
                     continue
@@ -75,8 +72,7 @@ def make_BS_data():
 
 
 def write_data():
-	tstmp = int(time.time())
-	with open('/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk_' % defaults.omd_site + str(tstmp), 'w') as f:
+	with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.mk', 'w') as f:
 		f.write("# encoding: utf-8\n\n")
 		f.write("\nhost_contactgroups += []\n\n\n")
 		f.write("all_hosts += %s\n" % pformat(all_hosts))
@@ -131,7 +127,7 @@ def make_SS_data():
 	!isnull(inventory_circuit.sector_id) and
 	inventory_sector.id = inventory_circuit.sector_id
 	)
-	where device_device.is_deleted=0 and device_devicetechnology.name in ("WiMAX") ) as dupli
+	where device_device.is_deleted=0 and device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') and device_devicetype.name in ('Radwin2KSS', 'CanopyPM100SS', 'CanopySM100SS', 'StarmaxSS')) as dupli
 	)
 	on (original.id = dupli.matcher)
         """
@@ -141,7 +137,7 @@ def make_SS_data():
 	data = cur.fetchall()
 	cur.close()
         processed = []
-	hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+	hosts_only = open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 	for device in data:
                 if str(device[4]) in processed:
                     continue
@@ -163,7 +159,7 @@ def make_SS_data():
 
 def update_configuration_db():
 	hosts = []
-	with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
+	with open('/apps/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
 		hosts = map(lambda t: t.strip(), list(f))
 	query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
 	query += " WHERE device_name IN %s" % pformat(tuple(hosts))

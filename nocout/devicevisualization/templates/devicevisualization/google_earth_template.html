@@ -193,14 +193,6 @@
         <!-- Select Device Content Start-->
         <div id="selectDeviceContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Select Devices</h4>
-            <ul class="list-unstyled list-inline">
-                <li class="hide">Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS"
-                                                          onclick="networkMapInstance.plotAllDevice_gmap()"
-                                                          style="vertical-align: text-top;" checked="checked"/></li>
-               <!--  <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
-                                                   onclick="networkMapInstance.showConnectionLines_gmap()"
-                                                   style="vertical-align: text-top;" checked="checked"/></li> -->
-            </ul>
             <div class="divide-20"></div>
         </div>
         <!-- Select Device Content End-->
@@ -210,12 +202,12 @@
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Gmap Tools</h4>
             <ul class="list-unstyled list-inline">
                 <li>
-                    <button type="button" id="ruler_select" class="btn btn-info">Select Ruler</button>
-                    <button type="button" id="ruler_remove" class="btn btn-danger hide">Remove Ruler</button>
+                    <button type="button" id="ruler_select" class="btn btn-sm btn-info">Select Ruler</button>
+                    <button type="button" id="ruler_remove" class="btn btn-sm btn-danger hide">Remove Ruler</button>
                 </li>
                 <li>
-                    <button type="button" id="point_select" class="btn btn-info">Add Point</button>
-                    <!-- <button type="button" id="point_remove" class="btn btn-danger hide">Remove Points</button> -->
+                    <button type="button" id="point_select" class="btn btn-sm btn-info">Add Point</button>
+                    <!-- <button type="button" id="point_remove" class="btn btn-sm btn-danger hide">Remove Points</button> -->
                     <ul class="list-unstyled list-inline hide" id="point_icons_container">
                     <!-- If loggedin user is super admin then only show maintainance icon -->
                         {% if user.is_superuser %}
@@ -229,22 +221,32 @@
                     </ul>
                 </li>
                 <!-- <li>
-                    <button type="button" id="line_select" class="btn btn-info">Select Line</button>
-                    <button type="button" id="line_remove" class="btn btn-danger hide">Remove Line</button>
+                    <button type="button" id="line_select" class="btn btn-sm btn-info">Select Line</button>
+                    <button type="button" id="line_remove" class="btn btn-sm btn-danger hide">Remove Line</button>
                 </li> -->
                 <li>
-                    <button type="button" id="freeze_select" class="btn btn-info">Freeze</button>
-                    <button type="button" id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
+                    <button type="button" id="freeze_select" class="btn btn-sm btn-info">Freeze</button>
+                    <button type="button" id="freeze_remove" class="btn btn-sm btn-danger hide">Un-Freeze</button>
                 </li>
                 <li>
-                    <button type="button" class="btn btn-info">Export Data</button>
+                    <button type="button" class="btn btn-sm btn-info" id="export_data_gmap">Export Data</button>
                 </li>
                 <li>
-                    <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
+                    <input type="checkbox" name="show_hide_label" id="show_hide_label" checked="checked" style="vertical-align: text-top;"> 
+                    Show Labels
                 </li>
-                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+                <li>
+                    <input type="checkbox" name="showConnLines" id="showConnLines"
                                                    onclick="networkMapInstance.showConnectionLines_gmap()"
-                                                   style="vertical-align: text-top;" checked="checked"/></li>
+                                                   style="vertical-align: text-top;" checked="checked"/>
+                    Show Connectivity Lines
+                </li>
+                <li>
+                    <input type="checkbox" name="showAllSS" id="showAllSS"
+                                                          onclick="networkMapInstance.showSubStations_gmap()"
+                                                          style="vertical-align: text-top;" checked="checked"/>
+                    Show Connected SS
+                </li>
                 <li class="fright">
                     <form action="#" class="form-horizontal">
                         <div class="form-group">

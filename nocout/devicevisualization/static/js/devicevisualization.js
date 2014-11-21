@@ -17,11 +17,11 @@ if(window.location.origin) {
 /*Set cookies if not exist*/
 if(!$.cookie("isFreezeSelected")) {
 
-    $.cookie("isFreezeSelected", 0, {path: '/', secure : true});
+    $.cookie("isFreezeSelected", 0, {path: '/', secure: true});
 }
 
 if(!$.cookie("freezedAt")) {
-    $.cookie("freezedAt", 0, {path: '/', secure : true});
+    $.cookie("freezedAt", 0, {path: '/', secure: true});
 
 }
 
@@ -43,10 +43,12 @@ if(isFreeze == 1 || (tools_ruler && tools_ruler != 0) || (tools_line && tools_li
     $("#showToolsBtn").removeClass("btn-warning");
 }
 
-if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
-    $("#show_hide_label")[0].checked= true;
-} else {
-    $("#show_hide_label")[0].checked= false;
+if($.cookie("isLabelChecked")) {
+    if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
+        $("#show_hide_label")[0].checked= true;
+    } else {
+        $("#show_hide_label")[0].checked= false;
+    }
 }
 
 if(window.location.pathname.indexOf("white_background") > -1) {
@@ -56,7 +58,7 @@ if(window.location.pathname.indexOf("white_background") > -1) {
     }
     
 }
-//$.cookie("isLabelChecked", 1, {path: '/', secure : true});
+//$.cookie("isLabelChecked", 1, {path: '/', secure: true});
 
 /*Call get_page_status function to show the current status*/
 get_page_status();
@@ -179,17 +181,32 @@ $("#resetFilters").click(function(e) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
 
-        /***************GOOGLE EARTH CODE*******************/
+        /************************Google Earth Code***********************/
+
         /*Clear all the elements from google earth*/
         earth_instance.clearEarthElements();
+        earth_instance.clearStateCounters();
 
         /*Reset Global Variables & Filters*/
         earth_instance.resetVariables_earth();
 
-        data_for_filters_earth = main_devices_data_earth;
+        isCallCompleted = 1;
 
-        /*create the BS-SS network on the google map*/
-        earth_instance.plotDevices_earth(main_devices_data_earth,'base_station');
+        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+        lookAt.setLatitude(21.0000);
+        lookAt.setLongitude(78.0000);
+        lookAt.setRange(6019955);
+        // lookAt.setZoom
+        // Update the view in Google Earth 
+        ge.getView().setAbstractView(lookAt); 
+        
+        // mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+        // mapInstance.setZoom(5);
+        data_for_filters_earth = all_devices_loki_db.data;
+
+        isApiResponse = 0;
+        // Load all counters
+        earth_instance.showStateWiseData_earth(all_devices_loki_db.data);
     } else if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.hideAllFeatures();
 
@@ -214,15 +231,26 @@ $("#resetFilters").click(function(e) {
 function showAdvSearch() {
     showSpinner();
     // advJustSearch.getFilterInfofrompagedata("searchInfoModal", "advSearchBtn");
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        $("#advFilterContainerBlock").hide();
-        $("#advSearchContainerBlock").show();
-        advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
+    if (window.location.pathname.indexOf("white_background") > -1) {
         $("#advFilterContainerBlock").hide();
         $("#advSearchContainerBlock").show();
         advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
     } else {
+        if(!isAdvanceFilter) {
+            $("#filter_technology").select2("val","");
+            $("#filter_vendor").select2("val","");
+            $("#filter_state").select2("val","");
+            $("#filter_city").select2("val","");
+            $("#filter_frequency").select2("val","");
+            $("#filter_polarization").select2("val","");
+
+            // Reset Advance Filters Flag
+            isAdvanceFilter = 0;
+        }
+        if(!$("#advFilterContainerBlock").hasClass("hide")) {
+            $("#advFilterContainerBlock").addClass("hide");
+        }
+
         if($("#advSearchContainerBlock").hasClass("hide")) {
             $("#advSearchContainerBlock").removeClass("hide");
         }
@@ -233,20 +261,37 @@ function showAdvSearch() {
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
     
-    advJustSearch.showNotification();
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        advJustSearch.searchAndCenterData(data_for_filters_earth);
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        advJustSearch.showNotification();
         advJustSearch.searchAndCenterData(data_for_filter_wmap);
     } else {
-        gmap_self.advanceSearchFunc();
+
+        var selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').split(',') : [],
+            selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').split(',') : [],
+            selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').split(',') : [],
+            selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').split(',') : [],
+            isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0;
+
+        // If any value is selected in searcg
+        if(isSearchApplied) {
+            // Set Advance Search Flag
+            isAdvanceSearch = 1;
+            advJustSearch.showNotification();
+            gmap_self.advanceSearchFunc();
+        } else {
+            // Reset Advance Search Flag
+            isAdvanceSearch = 0;
+            /*Hide the spinner*/
+            hideSpinner();
+            bootbox.alert("Please select atleast one field.");
+        }
     }
 });
 
 $("#cancelAdvSearchBtn").click(function(e) {
     
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-        $("#advFilterSearchContainerBlock").html("");
+        $("#advSearchContainerBlock").addClass("hide");
     } else if (window.location.pathname.indexOf("white_background") > -1) {
         $("#advFilterSearchContainerBlock").html("");
     }
@@ -263,16 +308,7 @@ function resetAdvanceSearch() {
 
 $("#resetSearchForm").click(function(e) {
     
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        $("form#searchInfoModal_form").find('select').each(function(i, el) {
-            $(el).select2("val", [])
-            if(i== $("form#searchInfoModal_form").find('select').length-1) {
-                //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
-                //     $("#advSearchContainerBlock").addClass("hide");
-                // } 
-            }
-        });
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
+    if (window.location.pathname.indexOf("white_background") > -1) {
         $("form#searchInfoModal_form").find('select').each(function(i, el) {
             $(el).select2("val", [])
             if(i== $("form#searchInfoModal_form").find('select').length-1) {
@@ -287,6 +323,9 @@ $("#resetSearchForm").click(function(e) {
         $("#search_sector_configured_on").select2("val","");
         $("#search_circuit_ids").select2("val","");
         $("#search_city").select2("val","");
+
+        // Reset Advance Search Flag
+        isAdvanceSearch = 0;
     }
 
     advJustSearch.removeSearchMarkers();
@@ -305,15 +344,20 @@ function showAdvFilters() {
     /*Show the spinner*/
     showSpinner();
     
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        $("#advSearchContainerBlock").hide();
-        $("#advFilterContainerBlock").show();
-        advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
+    if (window.location.pathname.indexOf("white_background") > -1) {
         $("#advSearchContainerBlock").hide();
         $("#advFilterContainerBlock").show();
         advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
     } else {
+
+        if(!isAdvanceSearch) {
+            resetAdvanceSearch();
+        }
+
+        if(!$("#advSearchContainerBlock").hasClass("hide")) {
+            $("#advSearchContainerBlock").addClass("hide");
+        }
+
         if($("#advFilterContainerBlock").hasClass("hide")) {
             $("#advFilterContainerBlock").removeClass("hide");
         }
@@ -329,9 +373,7 @@ $("#setAdvFilterBtn").click(function(e) {
 
     /*Reset advance filter status flag*/
     hasAdvFilter = 1;
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        advSearch.callSetFilter();
-    } else if(window.location.pathname.indexOf("white_background") > -1) {
+    if(window.location.pathname.indexOf("white_background") > -1) {
         advSearch.callSetFilter();
     } else {
         
@@ -346,11 +388,16 @@ $("#setAdvFilterBtn").click(function(e) {
 
         // If any value is selected in filter
         if(total_selected_items > 0) {
+            // Set Advance Filters Flag
+            isAdvanceFilter = 1;
             // Call function to plot the data on map as per the applied filters
             gmap_self.applyAdvanceFilters();
         } else {
             /*Hide the spinner*/
             hideSpinner();
+
+            // Set Advance Filters Flag
+            isAdvanceFilter = 0;
 
             bootbox.alert("Please select any filter");
         }
@@ -366,7 +413,7 @@ $("#setAdvFilterBtn").click(function(e) {
 $("#cancelAdvFilterBtn").click(function(e) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-        $("#advFilterFormContainer").html("");
+        // $("#advFilterFormContainer").html("");
     } else if(window.location.pathname.indexOf("white_background") > -1) {
         $("#advFilterFormContainer").html("");
     }
@@ -389,11 +436,11 @@ function removeAdvFilters() {
     advSearch.removeFilters();
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-        data_for_filters_earth = main_devices_data_earth;
+        // data_for_filters_earth = main_devices_data_earth;
     } else if(window.location.pathname.indexOf("white_background") > -1) {
         data_for_filters = main_devices_data_wmap;
     } else {
-        
+
     }
 
     /*Call get_page_status function to show the current status*/
@@ -416,6 +463,12 @@ $("#createPolygonBtn").click(function(e) {
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.initLivePolling();
 
+        hasSelectDevice = 1;
+
+        /*Call get_page_status function to show the current status*/
+        get_page_status();
+    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.initLivePolling_earth();
         hasSelectDevice = 1;
 
         /*Call get_page_status function to show the current status*/
@@ -444,6 +497,7 @@ $("#tech_send").click(function(e) {
 $("#fetch_polling").click(function(e) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.getDevicesPollingData_earth();
     } else if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.getDevicesPollingData_wmaps();
     } else {
@@ -455,6 +509,8 @@ $("#fetch_polling").click(function(e) {
 $("#polling_tech").change(function(e) {
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.initLivePolling();
+    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.initLivePolling_earth();
     } else {
         networkMapInstance.initLivePolling();
     }
@@ -471,8 +527,12 @@ $("#polling_tabular_view").click(function(e) {
 
 /*triggers when clear selection button is clicked*/
 $("#clearPolygonBtn").click(function(e) {
-if(window.location.pathname.indexOf("white_background") > -1) {
-    whiteMapClass.stopPolling();
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.stopPolling();
+    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.clearPolygon();
+        hasSelectDevice = 0;
+        get_page_status();
     } else {
         networkMapInstance.clearPolygon();
         hasSelectDevice = 0;
@@ -598,6 +658,8 @@ function isLatLon(e) {
                     if((lat_check && lon_check)) {
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             whiteMapClass.zoomToLonLat(entered_txt);
+                        } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                            earth_instance.pointToLatLon(entered_txt);
                         } else {
                             networkMapInstance.pointToLatLon(entered_txt);
                         }
@@ -607,6 +669,8 @@ function isLatLon(e) {
                         
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             whiteMapClass.zoomToLonLat(entered_txt);
+                        } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                            earth_instance.pointToLatLon(entered_txt);
                         } else {
                             networkMapInstance.pointToLatLon(entered_txt);
                         }
@@ -823,13 +887,15 @@ function removetoolsPanel() {
 }
 
 $("#ruler_select").click(function(e) {
-    pointAdded= -1;
-    is_ruler_active= 1;
-    is_line_active= -1;
 
     google.maps.event.clearListeners(mapInstance, 'click');
 
     networkMapInstance.clearRulerTool_gmap();
+
+    // Set/Reset variables
+    pointAdded= -1;
+    is_ruler_active= 1;
+    is_line_active= -1;
 
     $(this).addClass("hide");
     $("#ruler_remove").removeClass("hide");
@@ -986,7 +1052,7 @@ function clearTools_gmap() {
  */
 
 $("#show_hide_label").click(function(e) {
-    $.cookie("isLabelChecked", e.currentTarget.checked, {path: '/', secure : true});
+    $.cookie("isLabelChecked", e.currentTarget.checked, {path: '/', secure: true});
 
     for(var x=0;x<labelsArray_filtered.length;x++) {
         labelsArray_filtered[x].setVisible(e.currentTarget.checked);
@@ -1016,6 +1082,8 @@ $("#show_hide_label").click(function(e) {
 $("#navigation_container button#previous_polling_btn").click(function(e) {
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.show_previous_polled_icon_wmaps();
+    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.show_previous_polled_icon_earth();
     } else {
         networkMapInstance.show_previous_polled_icon();
     }
@@ -1027,6 +1095,8 @@ $("#navigation_container button#previous_polling_btn").click(function(e) {
 $("#navigation_container button#next_polling_btn").click(function(e) {
    if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.show_next_polled_icon_wmaps();
+    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.show_next_polled_icon_earth();
     } else {
         networkMapInstance.show_next_polled_icon();
     }
@@ -1053,6 +1123,45 @@ $("#point_icons_container li").click(function(e) {
 $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
     $('#infoWindowContainer').html("");
     $('#infoWindowContainer').addClass("hide");
+
+    if($(".windowIFrame").length) {
+        $(".windowIFrame").remove();
+    }
+});
+
+$('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
+    var ckt_id = e.currentTarget.attributes['ckt_id'] ? e.currentTarget.attributes['ckt_id'].value : "";
+    // If ckt id exist then fetch l2 report url
+    if(ckt_id) {
+
+        $.ajax({
+            url: base_url+'/network_maps/l2_report/'+ckt_id+'/',
+            type : "GET",
+            success : function(response) {
+                var result = "";
+                if(typeof response === 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+                if(result.success === 1) {
+                    if(result['data'].length === 0) {
+                        bootbox.alert("No L2 Report Found.");
+                    } else {
+                        var url = base_url+"/"+result['data'][0]['url'];
+                        console.log(url);
+                        var win = window.open(url, '_blank');
+                        win.focus();
+                    }
+                } else {
+                    bootbox.alert("No L2 Report Found.");
+                }
+            },
+            error : function(err) {
+                console.log(err);
+            }
+        });
+    }
 });
 
 /**
@@ -1078,4 +1187,168 @@ function isPointInPoly(poly, pt){
         && (pt.lon < (poly[j].lon - poly[i].lon) * (pt.lat - poly[i].lat) / (poly[j].lat - poly[i].lat) + poly[i].lon)
         && (c = !c);
     return c;
+}
+
+/**
+ * Function to bounds Google Earth
+ * @param  {Array} boundsObj Array of Lat and Lon Object
+ * @return {[type]}           [description]
+ */
+function showGoogleEarthInBounds(boundsArr, callback) {
+
+    gexInstance.dom.clearFeatures();
+
+    var boundPolygonArray= [];
+    for(var i=0;i< boundsArr.length; i++) {
+        (function(i) {
+            boundPolygonArray.push(gexInstance.dom.buildPointPlacemark([boundsArr[i].lat, boundsArr[i].lon]));
+        }(i));
+    }
+
+    var folder = gexInstance.dom.addFolder(boundPolygonArray);
+
+    // var bounds = gexInstance.dom.computeBounds(folder);
+    // gexInstance.view.setToBoundsView(bounds, { aspectRatio: 1.0 });
+    gexInstance.util.flyToObject(folder);
+
+    callback();
+    
+
+    
+
+    // 
+    // g_earth.clearOverlays();
+
+    // var totalBounds = new GLatLngBounds();
+
+    // var boundPolygonArray = [];
+
+    // for(var i=0; i< boundsArr.length; i++) {
+    //     (function(i) {
+    //         boundPolygonArray.push(new GLatLng(boundsArr[i].lat, boundsArr[i].lon));
+    //     }(i));
+    // }
+
+    // var globeBoundsPolygon = new GPolygon(boundPolygonArray, '#0000ff', 2, 1.00, '#0000ff',    0.25, { clickable: false });
+
+    // // g_earth.addOverlay(globeBoundsPolygon);
+
+    // var polyBounds = globeBoundsPolygon.getBounds();
+    // totalBounds.extend(polyBounds.getNorthEast());
+    // totalBounds.extend(polyBounds.getSouthWest());
+}
+
+function objectsAreSame(x, y) {
+   var objectsAreSame = true;
+   for(var propertyName in x) {
+      if(x[propertyName] !== y[propertyName]) {
+         objectsAreSame = false;
+         break;
+      }
+   }
+   return objectsAreSame;
+}
+
+
+function arraysEqual(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length != b.length) return false;
+
+  // If you don't care about the order of the elements inside
+  // the array, you should sort both arrays here.
+
+  for (var i = 0; i < a.length; ++i) {
+    return objectsAreSame(a[i], b[i]);
+  }
+  return true;
+}
+
+function checkIfMarkerIsInState(marker, array_state_name) {
+    var isMarkerPresent= false, i=0;
+    var lower_array_state_name = array_state_name.map(function(x) {return x.name.toLowerCase();})
+    for(i=0; i< lower_array_state_name.length; i++) {
+        if(!marker.state) {
+            return isMarkerPresent;
+        }
+        if(lower_array_state_name.indexOf(marker.state.toLowerCase()) > -1) {
+            return !isMarkerPresent;
+        }
+    }
+    return isMarkerPresent;
+}
+
+function getEarthZoomLevel() {
+    var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+    return lookAt.getRange();
+}
+
+function setEarthZoomLevel(alt) {
+    var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+    return lookAt.setRange(alt);
+}
+
+function updateGoogleEarthPlacemark(placemark, newIcon) {
+    // Define a custom icon.next_polling_btn
+    var icon = ge.createIcon('');
+    icon.setHref(newIcon);
+    var style = ge.createStyle('');
+    style.getIconStyle().setIcon(icon);
+    // style.getIconStyle().setScale(5.0);
+    placemark.setStyleSelector(style);
+}
+
+function getCurrentEarthBoundPolygon() {
+    var globeBounds = ge.getView().getViewportGlobeBounds();
+    var poly = [ {lat: globeBounds.getNorth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getEast()}, {lat: globeBounds.getSouth(), lon: globeBounds.getEast()},{lat: globeBounds.getSouth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getWest()} ];
+    return poly;
+}
+
+function openGoogleEarthBaloon(innerHtml, feature) {
+    var balloon = ge.createHtmlDivBalloon('');
+    balloon.setFeature(feature);
+    var div = document.createElement('DIV');
+    div.innerHTML = innerHtml;
+    balloon.setContentDiv(div);
+    ge.setBalloon(balloon);
+}
+
+
+
+var altZoomList = [ // Altitude <-> Zoom level
+    30000000, 24000000, 18000000, 10000000, 4000000, 1900000, 1100000, 550000, 280000,
+    170000, 82000, 38000, 19000, 9200, 4300, 2000, 990, 570, 280, 100, 36, 12, 0 ];
+
+function ZoomToAlt(zoom) {
+    /// <summary>Converts a zoom level to an altitude
+    /// <param name="zoom" />Zoom level
+    /// <returns>Altitude in meters
+    return altZoomList[zoom < 0 ? 0 : zoom > 21 ? 21 : zoom];
+}
+
+function AltToZoom(alt) {
+    /// <summary>Converts an altitude to a zoom level
+    /// <param name="alt" />Altitude in meters
+    /// <returns>Zoom level
+    for (var i = 0; i < 22; ++i) {
+        if (alt > altZoomList[i] - ((altZoomList[i] - altZoomList[i+1]) / 2)) return i;
+    }
+    return 10;
+}
+
+function getRangeInZoom() {
+    var earthRange = getEarthZoomLevel();
+    return AltToZoom(earthRange);
+}
+
+function deleteGoogleEarthPlacemarker(uniqueID) {
+    var children = ge.getFeatures().getChildNodes();
+    for(var i = 0; i < children.getLength(); i++) { 
+        var child = children.item(i);
+        if(child.getType() == 'KmlPlacemark') {
+            if(child.getId()==uniqueID) {
+                ge.getFeatures().removeChild(child);
+            }
+        }
+    }
 }
