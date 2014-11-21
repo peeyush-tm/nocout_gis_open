@@ -6,6 +6,8 @@ from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 import logging
+from zipfile import ZipFile
+import glob
 from nocout.settings import MEDIA_ROOT, MEDIA_URL
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView, View
@@ -786,8 +788,19 @@ class KmzViewAction(View):
         page_type = self.kwargs['page_type']
         kmz_id = self.kwargs['kmz_id']
 
-        file_url = KMZReport.objects.filter(pk=kmz_id).values('filename')
-        context_data['file_url'] = file_url[0]['filename']
+        kmz_resultset = KMZReport.objects.filter(pk=kmz_id).values()
+        context_data['file_url'] = kmz_resultset[0]['filename']
+
+        # If page_type is other than google earth & file type is kmz then extract kmz file & pass kml file url
+        if page_type != 'google_earth':
+            if context_data['file_url'].find(".kmz") > -1 :
+                try:
+                    kmz_file = ZipFile(str(MEDIA_ROOT+"/"+context_data['file_url']))
+                    kml_file_instance = kmz_file.extractall(str(MEDIA_ROOT+"uploaded/kml/"+kmz_resultset[0]['name']+"/"))
+                    kml_file = glob.glob(str(MEDIA_ROOT+"uploaded/kml/"+kmz_resultset[0]['name']+"/*.kml"))[0]
+                    context_data['file_url'] = "uploaded/kml/"+kmz_resultset[0]['name']+"/"+kml_file[kml_file.rfind("/") + 1:len(kml_file)]
+                except Exception, e:
+                    logger.info(e.message)
 
         if page_type == 'white_background':
             template = 'devicevisualization/kmz_whitebg.html'
