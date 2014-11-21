@@ -3271,15 +3271,19 @@ class DownloadSelectedBSInventory(View):
         except Exception as e:
             logger.info("Problem in creating excel rows. Exception: ", e.message)
 
+        fname = 'bs_inventory.xls'
+        response = HttpResponse(mimetype="application/ms-excel")
+        response['Content-Disposition'] = 'attachment; filename=%s' % fname
+
         # ***************************** Saving Excel (Start) ******************************
         # saving bulk upload errors excel sheet
         try:
-            inventory_wb.save("/home/priyesh/inventory_export.xls")
+            inventory_wb.save(response)
         except Exception as e:
             logger.info(e.message)
-        # ***************************** Saving Excel End ******************************
+        # ***************************** Saving Excel End **********************************
 
-        return HttpResponse(json.dumps(selected_inventory))
+        return response
 
     def get_selected_ptp_inventory(self, base_station, sector):
         # result dictionary (contains ptp and ptp bh inventory)
