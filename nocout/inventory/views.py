@@ -2902,3 +2902,1680 @@ class Ping_Update_User_Thematic_Setting(View):
                 id=int(thematic_setting_id)).name
 
         return HttpResponse(json.dumps(result))
+
+
+class DownloadSelectedBSInventory(View):
+    """ Download GIS Inventory excel sheet of selected Base Stations
+
+        :Parameters:
+            - 'base_stations' (str) - list of base stations in form of string i.e. [1, 2, 3, 4]
+
+        :Returns:
+           - 'file' (file) - inventory excel sheet
+    """
+    def get(self, request):
+        # get base stations id's list
+        bs_ids = eval(str(self.request.GET.get('base_stations', None)))
+
+        # list of ptp rows
+        ptp_rows = []
+
+        # list of ptp bh rows
+        ptp_bh_rows = []
+
+        # list of pmp bs
+        pmp_bs_rows = []
+
+        # list of pmp sm sheet
+        pmp_sm_rows = []
+
+        # list of wimax bs rows
+        wimax_bs_rows = []
+
+        # list of wimax ss rows
+        wimax_ss_rows = []
+
+        # selected inventory
+        selected_inventory = dict()
+
+        # ptp dictionary
+        ptp_fields = ['State', 'City', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
+                      'QOS (BW)', 'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height', 'Polarization',
+                      'Antenna Type', 'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
+                      'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance', 'Throughput During Acceptance',
+                      'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU Used', 'BS Switch IP', 'Aggregation Switch',
+                      'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP', 'Converter Type',
+                      'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet',
+                      'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'BSO Circuit ID', 'SS City', 'SS State',
+                      'SS Circuit ID', 'SS Customer Name', 'SS Customer Address', 'SS BS Name', 'SS QOS (BW)',
+                      'SS Latitude', 'SS Longitude', 'SS Antenna Height', 'SS Antenna Type', 'SS Antenna Gain',
+                      'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
+                      'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
+                      'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC']
+
+        # ptp bh dictionary
+        ptp_bh_fields = ['State', 'City', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
+                         'QOS (BW)', 'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height', 'Polarization',
+                         'Antenna Type', 'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
+                         'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance', 'Throughput During Acceptance',
+                         'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU Used', 'BS Switch IP', 'Aggregation Switch',
+                         'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP', 'Converter Type',
+                         'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet',
+                         'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'BSO CKT ID', 'SS City', 'SS State',
+                         'SS Circuit ID', 'SS Customer Name', 'SS Customer Address', 'SS BS Name', 'SS QOS (BW)',
+                         'SS Latitude', 'SS Longitude', 'SS Antenna Height', 'SS Antenna Type', 'SS Antenna Gain',
+                         'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
+                         'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
+                         'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC', 'SS MIMO/Diversity',
+                         'SS Polarization']
+
+        # pmp bs dictionary
+        pmp_bs_fields = ['State', 'City', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
+                         'Infra Provider', 'Site ID', 'Building Height', 'Tower Height', 'Latitude', 'Longitude',
+                         'ODU IP', 'Sector Name', 'Make Of Antenna', 'Polarization', 'Antenna Tilt', 'Antenna Height',
+                         'Antenna Beamwidth', 'Azimuth', 'Sync Splitter Used', 'Type Of GPS', 'BS Switch IP',
+                         'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
+                         'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity',
+                         'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'DR Site',
+                         'Sector ID', 'BSO Circuit ID']
+
+        # pmp ss dictionary
+        pmp_sm_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
+                         'Building Height', 'Tower/Pole Height', 'Antenna Height', 'Antenna Beamwidth',
+                         'Polarization', 'Antenna Type', 'SS Mount Type', 'Ethernet Extender', 'Cable Length',
+                         'RSSI During Acceptance', 'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance',
+                         'Lens/Reflector', 'AP IP']
+
+        # wimax bs dictionary
+        wimax_bs_fields = ['State', 'City', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
+                           'Infra Provider', 'Site ID', 'Building Height', 'Tower Height', 'Latitude', 'Longitude',
+                           'IDU IP', 'Sector Name', 'Make Of Antenna', 'Polarization', 'Antenna Tilt', 'Antenna Height',
+                           'Antenna Beamwidth', 'Azimuth', 'Installation Of Splitter', 'Type Of GPS', 'BS Switch IP',
+                           'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
+                           'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port',
+                           'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname',
+                           'PE IP', 'DR Site', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor']
+
+        # wimax ss dictionary
+        wimax_ss_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
+                           'Building Height', 'Tower/Pole Height', 'Antenna Height', 'Antenna Beamwidth',
+                           'Polarization', 'Antenna Type', 'SS Mount Type', 'Ethernet Extender', 'Cable Length',
+                           'RSSI During Acceptance', 'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance',
+                           'Vendor']
+
+        # loop on base stations by using bs_ids list conatining base stations id's
+        try:
+            for bs_id in bs_ids:
+                # base station
+                base_station = BaseStation.objects.get(pk=int(bs_id))
+
+                # sectors associated with base station (base_station)
+                sectors = base_station.sector.all()
+
+                # loop on sectors to get inventory rows by technology
+                for sector in sectors:
+                    # sector technology
+                    technology = sector.bs_technology.name
+                    if technology == "P2P":
+                        rows = self.get_selected_ptp_inventory(base_station, sector)
+                        # insert 'ptp' data dictionary in 'ptp_rows' list
+                        ptp_rows.extend(rows['ptp'])
+                        # insert 'ptp_bh' data dictionary in 'ptp_bh_rows' list
+                        ptp_bh_rows.extend(rows['ptp_bh'])
+                    elif technology == "PMP":
+                        rows = self.get_selected_pmp_inventory(base_station, sector)
+                        # insert 'pmp bs' data dictionary in 'pmp_bs_rows' list
+                        pmp_bs_rows.extend(rows['pmp_bs'])
+                        # insert 'pmp_sm' data dictionary in 'pmp_sm_rows' list
+                        pmp_sm_rows.extend(rows['pmp_sm'])
+                    elif technology == "WiMAX":
+                        rows = self.get_selected_wimax_inventory(base_station, sector)
+                        # insert 'wimax bs' data dictionary in 'wimax_bs_rows' list
+                        wimax_bs_rows.extend(rows['wimax_bs'])
+                        # insert 'wimax_ss' data dictionary in 'wimax_ss_rows' list
+                        wimax_ss_rows.extend(rows['wimax_ss'])
+                    else:
+                        pass
+
+        except Exception as e:
+            logger.info("Something wrongs with base station in initial loop. Exception: {}".format(e.message))
+
+        # insert 'ptp rows' in selected inventory dictionary
+        selected_inventory['ptp'] = ptp_rows
+
+        # insert 'ptp rows' in selected inventory dictionary
+        selected_inventory['ptp_bh'] = ptp_bh_rows
+
+        # insert 'ptp rows' in selected inventory dictionary
+        selected_inventory['pmp_bs'] = pmp_bs_rows
+
+        # insert 'ptp rows' in selected inventory dictionary
+        selected_inventory['pmp_sm'] = pmp_sm_rows
+
+        # insert 'ptp rows' in selected inventory dictionary
+        selected_inventory['wimax_bs'] = wimax_bs_rows
+
+        # insert 'ptp rows' in selected inventory dictionary
+        selected_inventory['wimax_ss'] = wimax_ss_rows
+
+        # inventory excel workbook
+        inventory_wb = xlwt.Workbook()
+
+        # ***************************** PTP *******************************
+        # ptp bs excel rows
+        ptp_excel_rows = []
+        for val in ptp_rows:
+            temp_list = list()
+            for key in ptp_fields:
+                try:
+                    temp_list.append(val[key])
+                except Exception as e:
+                    temp_list.append("")
+                    logger.info(e.message)
+            ptp_excel_rows.append(temp_list)
+
+        # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
+        ws_ptp = inventory_wb.add_sheet("PTP")
+
+        # style for header row in excel
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+
+        # creating excel headers
+        try:
+            for i, col in enumerate(ptp_fields):
+                ws_ptp.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
+        except Exception as e:
+            logger.info("Problem in creating excel headers. Exception: ", e.message)
+
+        # creating excel rows
+        try:
+            for i, l in enumerate(ptp_excel_rows):
+                i += 1
+                for j, col in enumerate(l):
+                    ws_ptp.write(i, j, col)
+        except Exception as e:
+            logger.info("Problem in creating excel rows. Exception: ", e.message)
+
+        # ***************************** PTP BH *******************************
+        # ptp bh bs excel rows
+        ptp_bh_excel_rows = []
+        for val in ptp_bh_rows:
+            temp_list = list()
+            for key in ptp_bh_fields:
+                try:
+                    temp_list.append(val[key])
+                except Exception as e:
+                    temp_list.append("")
+                    logger.info(e.message)
+            ptp_bh_excel_rows.append(temp_list)
+
+        # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
+        ws_ptp_bh = inventory_wb.add_sheet("PTP BH")
+
+        # style for header row in excel
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+
+        # creating excel headers
+        try:
+            for i, col in enumerate(ptp_bh_fields):
+                ws_ptp_bh.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
+        except Exception as e:
+            logger.info("Problem in creating excel headers. Exception: ", e.message)
+
+        # creating excel rows
+        try:
+            for i, l in enumerate(ptp_bh_excel_rows):
+                i += 1
+                for j, col in enumerate(l):
+                    ws_ptp_bh.write(i, j, col)
+        except Exception as e:
+            logger.info("Problem in creating excel rows. Exception: ", e.message)
+
+        # ***************************** PMP BS *******************************
+        # pmp bs excel rows
+        pmp_bs_excel_rows = []
+        for val in pmp_bs_rows:
+            temp_list = list()
+            for key in pmp_bs_fields:
+                try:
+                    temp_list.append(val[key])
+                except Exception as e:
+                    temp_list.append("")
+                    logger.info(e.message)
+            pmp_bs_excel_rows.append(temp_list)
+
+        # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
+        ws_pmp_bs = inventory_wb.add_sheet("PMP BS")
+
+        # style for header row in excel
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+
+        # creating excel headers
+        try:
+            for i, col in enumerate(pmp_bs_fields):
+                ws_pmp_bs.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
+        except Exception as e:
+            logger.info("Problem in creating excel headers. Exception: ", e.message)
+
+        # creating excel rows
+        try:
+            for i, l in enumerate(pmp_bs_excel_rows):
+                i += 1
+                for j, col in enumerate(l):
+                    ws_pmp_bs.write(i, j, col)
+        except Exception as e:
+            logger.info("Problem in creating excel rows. Exception: ", e.message)
+
+        # ***************************** PMP SM *******************************
+        # pmp sm excel rows
+        pmp_sm_excel_rows = []
+        for val in pmp_sm_rows:
+            temp_list = list()
+            for key in pmp_sm_fields:
+                try:
+                    temp_list.append(val[key])
+                except Exception as e:
+                    temp_list.append("")
+                    logger.info(e.message)
+            pmp_sm_excel_rows.append(temp_list)
+
+        # wimax sm sheet (contain by inventory excel workbook i.e inventory_wb)
+        ws_pmp_sm = inventory_wb.add_sheet("PMP SM")
+
+        # style for header row in excel
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+
+        # creating excel headers
+        try:
+            for i, col in enumerate(pmp_sm_fields):
+                ws_pmp_sm.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
+        except Exception as e:
+            logger.info("Problem in creating excel headers. Exception: ", e.message)
+
+        # creating excel rows
+        try:
+            for i, l in enumerate(pmp_sm_excel_rows):
+                i += 1
+                for j, col in enumerate(l):
+                    ws_pmp_sm.write(i, j, col)
+        except Exception as e:
+            logger.info("Problem in creating excel rows. Exception: ", e.message)
+
+        # ***************************** Wimax BS *******************************
+        # wimax bs excel rows
+        wimax_bs_excel_rows = []
+        for val in wimax_bs_rows:
+            temp_list = list()
+            for key in wimax_bs_fields:
+                try:
+                    temp_list.append(val[key])
+                except Exception as e:
+                    temp_list.append("")
+                    logger.info(e.message)
+            wimax_bs_excel_rows.append(temp_list)
+
+        # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
+        ws_wimax_bs = inventory_wb.add_sheet("Wimax BS")
+
+        # style for header row in excel
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+
+        # creating excel headers
+        try:
+            for i, col in enumerate(wimax_bs_fields):
+                ws_wimax_bs.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
+        except Exception as e:
+            logger.info("Problem in creating excel headers. Exception: ", e.message)
+
+        # creating excel rows
+        try:
+            for i, l in enumerate(wimax_bs_excel_rows):
+                i += 1
+                for j, col in enumerate(l):
+                    ws_wimax_bs.write(i, j, col)
+        except Exception as e:
+            logger.info("Problem in creating excel rows. Exception: ", e.message)
+
+        # ***************************** Wimax SS *******************************
+        # wimax ss excel rows
+        wimax_ss_excel_rows = []
+        for val in wimax_ss_rows:
+            temp_list = list()
+            for key in wimax_ss_fields:
+                try:
+                    temp_list.append(val[key])
+                except Exception as e:
+                    temp_list.append("")
+                    logger.info(e.message)
+            wimax_ss_excel_rows.append(temp_list)
+
+        # wimax ss sheet (contain by inventory excel workbook i.e inventory_wb)
+        ws_wimax_ss = inventory_wb.add_sheet("Wimax SS")
+
+        # style for header row in excel
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+
+        # creating excel headers
+        try:
+            for i, col in enumerate(wimax_ss_fields):
+                ws_wimax_ss.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
+        except Exception as e:
+            logger.info("Problem in creating excel headers. Exception: ", e.message)
+
+        # creating excel rows
+        try:
+            for i, l in enumerate(wimax_ss_excel_rows):
+                i += 1
+                for j, col in enumerate(l):
+                    ws_wimax_ss.write(i, j, col)
+        except Exception as e:
+            logger.info("Problem in creating excel rows. Exception: ", e.message)
+
+        fname = 'bs_inventory.xls'
+        response = HttpResponse(mimetype="application/ms-excel")
+        response['Content-Disposition'] = 'attachment; filename=%s' % fname
+
+        # ***************************** Saving Excel (Start) ******************************
+        # saving bulk upload errors excel sheet
+        try:
+            inventory_wb.save(response)
+        except Exception as e:
+            logger.info(e.message)
+        # ***************************** Saving Excel End **********************************
+
+        return response
+
+    def get_selected_ptp_inventory(self, base_station, sector):
+        # result dictionary (contains ptp and ptp bh inventory)
+        result = dict()
+
+        # ptp rows list
+        ptp_rows = list()
+
+        # ptp bh rows list
+        ptp_bh_rows = list()
+
+        # circuits associated with current sector
+        circuits = sector.circuit_set.all()
+
+        # loop through circuits; if available to get inventory rows
+        if circuits:
+            for circuit in circuits:
+                # sub station
+                sub_station = circuit.sub_station
+
+                # backhaul
+                backhaul = base_station.backhaul
+
+                # customer
+                customer = circuit.customer
+
+                # ptp row dictionary
+                ptp_row = dict()
+
+                # state
+                try:
+                    ptp_row['State'] = State.objects.get(pk=base_station.state).state_name
+                except Exception as e:
+                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+                # city
+                try:
+                    ptp_row['City'] = City.objects.get(pk=base_station.city).city_name
+                except Exception as e:
+                    logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
+
+                # circuit id
+                try:
+                    if circuit.circuit_type == "Customer":
+                        ptp_row['Circuit ID'] = circuit.circuit_id
+                    elif circuit.circuit_type == "Backhaul":
+                        ptp_row['Circuit ID'] = circuit.circuit_id.split("#")[-1]
+                    else:
+                        pass
+                except Exception as e:
+                    logger.info("Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # circuit type
+                try:
+                    ptp_row['Circuit Type'] = circuit.circuit_type
+                except Exception as e:
+                    logger.info("Circuit Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # customer name
+                try:
+                    ptp_row['Customer Name'] = customer.alias
+                except Exception as e:
+                    logger.info("Customer Name not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs address
+                try:
+                    ptp_row['BS Address'] = base_station.address
+                except Exception as e:
+                    logger.info("BS Address not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs name
+                try:
+                    ptp_row['BS Name'] = base_station.alias
+                except Exception as e:
+                    logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
+
+                # qos bandwidth
+                try:
+                    ptp_row['QOS (BW)'] = circuit.qos_bandwidth
+                except Exception as e:
+                    logger.info("QOS (BW) not exist for base station ({}).".format(base_station.name, e.message))
+
+                # latitude
+                try:
+                    ptp_row['Latitude'] = base_station.latitude
+                except Exception as e:
+                    logger.info("Latitude not exist for base station ({}).".format(base_station.name, e.message))
+
+                # longitude
+                try:
+                    ptp_row['Longitude'] = base_station.longitude
+                except Exception as e:
+                    logger.info("Longitude not exist for base station ({}).".format(base_station.name, e.message))
+
+                # antenna height
+                try:
+                    ptp_row['Antenna Height'] = sector.antenna.height
+                except Exception as e:
+                    logger.info("Antenna Height not exist for base station ({}).".format(base_station.name, e.message))
+
+                # polarization
+                try:
+                    ptp_row['Polarization'] = sector.antenna.polarization
+                except Exception as e:
+                    logger.info("Polarization not exist for base station ({}).".format(base_station.name, e.message))
+
+                # antenna type
+                try:
+                    ptp_row['Antenna Type'] = sector.antenna.antenna_type
+                except Exception as e:
+                    logger.info("Antenna Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # antenna gain
+                try:
+                    ptp_row['Antenna Gain'] = sector.antenna.gain
+                except Exception as e:
+                    logger.info("Antenna Gain not exist for base station ({}).".format(base_station.name, e.message))
+
+                # antenna mount type
+                try:
+                    ptp_row['Antenna Mount Type'] = sector.antenna.mount_type
+                except Exception as e:
+                    logger.info("Antenna Mount Type not exist for base station ({}).".format(base_station.name,
+                                                                                             e.message))
+
+                # ethernet extender
+                try:
+                    ptp_row['Ethernet Extender'] = sub_station.ethernet_extender
+                except Exception as e:
+                    logger.info("Ethernet Extender not exist for base station ({}).".format(base_station.name,
+                                                                                            e.message))
+
+                # building height
+                try:
+                    ptp_row['Building Height'] = base_station.building_height
+                except Exception as e:
+                    logger.info("Building Height not exist for base station ({}).".format(base_station.name, e.message))
+
+                # tower/pole height
+                try:
+                    ptp_row['Tower/Pole Height'] = base_station.tower_height
+                except Exception as e:
+                    logger.info("Tower/Pole Height not exist for base station ({}).".format(base_station.name,
+                                                                                            e.message))
+
+                # cable length
+                try:
+                    ptp_row['Cable Length'] = sub_station.cable_length
+                except Exception as e:
+                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+                # rssi during acceptance
+                try:
+                    ptp_row['RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
+                except Exception as e:
+                    logger.info("RSSI During Acceptance not exist for base station ({}).".format(base_station.name,
+                                                                                                 e.message))
+
+                # throughput during acceptance
+                try:
+                    ptp_row['Throughput During Acceptance'] = circuit.throughput_during_acceptance
+                except Exception as e:
+                    logger.info("Throughput During Acceptance not exist for base station ({}).".format(
+                        base_station.name,
+                        e.message))
+
+                # date of acceptance
+                try:
+                    ptp_row['Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
+                except Exception as e:
+                    logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
+                                                                                             e.message))
+
+                # bh bso
+                try:
+                    ptp_row['BH BSO'] = base_station.bh_bso
+                except Exception as e:
+                    logger.info("BH BSO not exist for base station ({}).".format(base_station.name, e.message))
+
+                # ip
+                try:
+                    ptp_row['IP'] = sector.sector_configured_on.ip_address
+                except Exception as e:
+                    logger.info("IP not exist for base station ({}).".format(base_station.name, e.message))
+
+                # mac
+                try:
+                    ptp_row['MAC'] = sector.sector_configured_on.mac_address
+                except Exception as e:
+                    logger.info("MAC not exist for base station ({}).".format(base_station.name, e.message))
+
+                # hssu used
+                try:
+                    ptp_row['HSSU Used'] = base_station.hssu_used
+                except Exception as e:
+                    logger.info("HSSU Used not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs switch ip
+                try:
+                    ptp_row['BS Switch IP'] = base_station.bs_switch.ip_address
+                except Exception as e:
+                    logger.info("BS Switch IP not exist for base station ({}).".format(base_station.name, e.message))
+
+                # aggregation switch
+                try:
+                    ptp_row['Aggregation Switch'] = backhaul.aggregator.ip_address
+                except Exception as e:
+                    logger.info("Aggregation Switch not exist for base station ({}).".format(base_station.name,
+                                                                                             e.message))
+
+                # aggregation swith port
+                try:
+                    ptp_row['Aggregation Switch Port'] = backhaul.aggregator_port_name
+                except Exception as e:
+                    logger.info("Aggregation Switch Port not exist for base station ({}).".format(base_station.name,
+                                                                                                  e.message))
+
+                # bs conveter ip
+                try:
+                    ptp_row['BS Converter IP'] = backhaul.bh_switch.ip_address
+                except Exception as e:
+                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pop converter ip
+                try:
+                    ptp_row['POP Converter IP'] = backhaul.pop.ip_address
+                except Exception as e:
+                    logger.info("POP Converter IP not exist for base station ({}).".format(base_station.name,
+                                                                                           e.message))
+
+                # converter type
+                try:
+                    ptp_row['Converter Type'] = DeviceType.objects.get(pk=backhaul.bh_switch.device_type).alias
+                except Exception as e:
+                    logger.info("Converter Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bh configured switch or converter
+                try:
+                    ptp_row['BH Configured On Switch/Converter'] = backhaul.bh_configured_on.ip_address
+                except Exception as e:
+                    logger.info("BH Configured On Switch/Converter not exist for base station ({}).".format(
+                        base_station.name,
+                        e.message))
+
+                # bh configured switch or converter port
+                try:
+                    ptp_row['Switch/Converter Port'] = backhaul.bh_port_name
+                except Exception as e:
+                    logger.info("Switch/Converter Port not exist for base station ({}).".format(base_station.name,
+                                                                                                e.message))
+
+                # bh capacity
+                try:
+                    ptp_row['BH Capacity'] = backhaul.bh_capacity
+                except Exception as e:
+                    logger.info("BH Capacity not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bh offnet/onnet
+                try:
+                    ptp_row['BH Offnet/Onnet'] = backhaul.bh_connectivity
+                except Exception as e:
+                    logger.info("BH Offnet/Onnet not exist for base station ({}).".format(base_station.name, e.message))
+
+                # backhaul type
+                try:
+                    ptp_row['Backhaul Type'] = backhaul.bh_type
+                except Exception as e:
+                    logger.info("Backhaul Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bh circuit id
+                try:
+                    ptp_row['BH Circuit ID'] = backhaul.bh_circuit_id
+                except Exception as e:
+                    logger.info("BH Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pe hostname
+                try:
+                    ptp_row['PE Hostname'] = backhaul.pe_hostname
+                except Exception as e:
+                    logger.info("PE Hostname not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pe ip
+                try:
+                    ptp_row['PE IP'] = backhaul.pe_ip
+                except Exception as e:
+                    logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bso circuit id
+                try:
+                    ptp_row['BSO Circuit ID'] = backhaul.ttsl_circuit_id
+                except Exception as e:
+                    logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # ********************************** PTP Far End (SS) ************************************
+
+                # ss city
+                try:
+                    ptp_row['SS City'] = City.objects.get(pk=sub_station.city).city_name
+                except Exception as e:
+                    logger.info("SS City not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss state
+                try:
+                    ptp_row['SS State'] = State.objects.get(pk=sub_station.state).state_name
+                except Exception as e:
+                    logger.info("SS State not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss circuit id
+                try:
+                    if circuit.circuit_type == "Customer":
+                        ptp_row['SS Circuit ID'] = circuit.circuit_id
+                    elif circuit.circuit_type == "Backhaul":
+                        ptp_row['SS Circuit ID'] = circuit.circuit_id.split("#")[0]
+                    else:
+                        pass
+                except Exception as e:
+                    logger.info("SS Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss customer name
+                try:
+                    ptp_row['SS Customer Name'] = customer.alias
+                except Exception as e:
+                    logger.info("SS Customer Name not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss customer address
+                try:
+                    ptp_row['SS Customer Address'] = customer.address
+                except Exception as e:
+                    logger.info("SS Customer Address not exist for sub station ({}).".format(sub_station.name,
+                                                                                             e.message))
+
+                # ss bs name
+                try:
+                    ptp_row['SS BS Name'] = base_station.alias
+                except Exception as e:
+                    logger.info("SS BS Name not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss qos bandwidth
+                try:
+                    ptp_row['SS QOS (BW)'] = circuit.qos_bandwidth
+                except Exception as e:
+                    logger.info("SS QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss latitude
+                try:
+                    ptp_row['SS Latitude'] = sub_station.latitude
+                except Exception as e:
+                    logger.info("SS Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss longitude
+                try:
+                    ptp_row['SS Longitude'] = sub_station.longitude
+                except Exception as e:
+                    logger.info("SS Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss antenna height
+                try:
+                    ptp_row['SS Antenna Height'] = sub_station.antenna.height
+                except Exception as e:
+                    logger.info("SS Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss antenna type
+                try:
+                    ptp_row['SS Antenna Type'] = sub_station.antenna.antenna_type
+                except Exception as e:
+                    logger.info("SS Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss antenna gain
+                try:
+                    ptp_row['SS Antenna Gain'] = sub_station.antenna.gain
+                except Exception as e:
+                    logger.info("SS Antenna Gain not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss antenna mount type
+                try:
+                    ptp_row['SS Antenna Mount Type'] = sub_station.antenna.mount_type
+                except Exception as e:
+                    logger.info("SS Antenna Mount Type not exist for sub station ({}).".format(sub_station.name,
+                                                                                               e.message))
+
+                # ss ethernet extender
+                try:
+                    ptp_row['SS Ethernet Extender'] = sub_station.ethernet_extender
+                except Exception as e:
+                    logger.info("SS Ethernet Extender not exist for sub station ({}).".format(sub_station.name,
+                                                                                              e.message))
+
+                # ss building height
+                try:
+                    ptp_row['SS Building Height'] = sub_station.building_height
+                except Exception as e:
+                    logger.info("SS Building Height not exist for sub station ({}).".format(sub_station.name,
+                                                                                            e.message))
+
+                # ss tower or pole height
+                try:
+                    ptp_row['SS Tower/Pole Height'] = sub_station.tower_height
+                except Exception as e:
+                    logger.info("SS Tower/Pole Height not exist for sub station ({}).".format(sub_station.name,
+                                                                                              e.message))
+
+                # ss cable length
+                try:
+                    ptp_row['SS Cable Length'] = sub_station.cable_length
+                except Exception as e:
+                    logger.info("SS Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss rssi during acceptance
+                try:
+                    ptp_row['SS RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
+                except Exception as e:
+                    logger.info("SS RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
+                                                                                                   e.message))
+
+                # ss throughput during acceptance
+                try:
+                    ptp_row['SS Throughput During Acceptance'] = circuit.throughput_during_acceptance
+                except Exception as e:
+                    logger.info("SS Throughput During Acceptance not exist for sub station ({}).".format(
+                        sub_station.name,
+                        e.message))
+
+                # ss date of acceptance
+                try:
+                    ptp_row['SS Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
+                except Exception as e:
+                    logger.info("SS Date Of Acceptance not exist for sub station ({}).".format(sub_station.name,
+                                                                                               e.message))
+
+                # ss bh bso
+                try:
+                    ptp_row['SS BH BSO'] = base_station.bh_bso
+                except Exception as e:
+                    logger.info("SS BH BSO not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss ip
+                try:
+                    ptp_row['SS IP'] = sub_station.device.ip_address
+                except Exception as e:
+                    logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss mac
+                try:
+                    ptp_row['SS MAC'] = sub_station.device.mac_address
+                except Exception as e:
+                    logger.info("SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss polarization
+                try:
+                    ptp_row['SS Polarization'] = sub_station.antenna.polarization
+                except Exception as e:
+                    logger.info("SS Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # filter 'ptp' and 'ptp bh' rows
+                if circuit.circuit_type == "Customer":
+                    ptp_rows.append(ptp_row)
+                elif circuit.circuit_type == "Backhaul":
+                    ptp_bh_rows.append(ptp_row)
+                else:
+                    pass
+
+        # insert 'ptp' rows in result dictionary
+        result['ptp'] = ptp_rows if ptp_rows else ""
+
+        # insert 'ptp bh' rows in result dictionary
+        result['ptp_bh'] = ptp_bh_rows if ptp_bh_rows else ""
+
+
+        return result
+
+    def get_selected_pmp_inventory(self, base_station, sector):
+        # result dictionary (contains ptp and ptp bh inventory)
+        result = dict()
+
+        # pmp bs rows list
+        pmp_bs_rows = list()
+
+        # pmp sm rows list
+        pmp_sm_rows = list()
+
+        # circuits associated with current sector
+        circuits = sector.circuit_set.all()
+
+        # loop through circuits; if available to get inventory rows
+        if circuits:
+            for circuit in circuits:
+                # sub station
+                sub_station = circuit.sub_station
+
+                # backhaul
+                backhaul = base_station.backhaul
+
+                # customer
+                customer = circuit.customer
+
+                # ptp row dictionary
+                pmp_bs_row = dict()
+
+                # ptp row dictionary
+                pmp_sm_row = dict()
+
+                # *********************************** Near End (PMP BS) *********************************
+
+                # state
+                try:
+                    pmp_bs_row['State'] = State.objects.get(pk=base_station.state).state_name
+                except Exception as e:
+                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+                # city
+                try:
+                    pmp_bs_row['City'] = City.objects.get(pk=base_station.city).city_name
+                except Exception as e:
+                    logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
+
+                # address
+                try:
+                    pmp_bs_row['Address'] = base_station.address
+                except Exception as e:
+                    logger.info("Address not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs name
+                try:
+                    pmp_bs_row['BS Name'] = base_station.alias
+                except Exception as e:
+                    logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
+
+                # type of bs (technology)
+                try:
+                    pmp_bs_row['Type Of BS (Technology)'] = base_station.bs_type
+                except Exception as e:
+                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, e.message))
+
+                # site type
+                try:
+                    pmp_bs_row['Site Type'] = base_station.bs_site_type
+                except Exception as e:
+                    logger.info("Site Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # infra provider
+                try:
+                    pmp_bs_row['Infra Provider'] = base_station.infra_provider
+                except Exception as e:
+                    logger.info("Infra Provider not exist for base station ({}).".format(base_station.name, e.message))
+
+                # building height
+                try:
+                    pmp_bs_row['Building Height'] = base_station.building_height
+                except Exception as e:
+                    logger.info("Building Height not exist for base station ({}).".format(base_station.name, e.message))
+
+                # tower height
+                try:
+                    pmp_bs_row['Tower Height'] = base_station.tower_height
+                except Exception as e:
+                    logger.info("Tower Height not exist for base station ({}).".format(base_station.name, e.message))
+
+                # latitude
+                try:
+                    pmp_bs_row['Latitude'] = base_station.latitude
+                except Exception as e:
+                    logger.info("Latitude not exist for base station ({}).".format(base_station.name, e.message))
+
+                # longitude
+                try:
+                    pmp_bs_row['Longitude'] = base_station.longitude
+                except Exception as e:
+                    logger.info("Longitude not exist for base station ({}).".format(base_station.name, e.message))
+
+                # odu ip
+                try:
+                    pmp_bs_row['ODU IP'] = sector.sector_configured_on.ip_address
+                except Exception as e:
+                    logger.info("ODU IP not exist for base station ({}).".format(base_station.name, e.message))
+
+                # sector name
+                try:
+                    pmp_bs_row['Sector Name'] = sector.name.split("_")[-1]
+                except Exception as e:
+                    logger.info("Sector Name not exist for base station ({}).".format(base_station.name, e.message))
+
+                # make of antenna
+                try:
+                    pmp_bs_row['Make Of Antenna'] = sector.antenna.make_of_antenna
+                except Exception as e:
+                    logger.info("Make Of Antenna not exist for base station ({}).".format(base_station.name,
+                                                                                          e.message))
+
+                # polarization
+                try:
+                    pmp_bs_row['Polarization'] = sector.antenna.polarization
+                except Exception as e:
+                    logger.info("Polarization not exist for base station ({}).".format(base_station.name, e.message))
+
+                # antenna tilt
+                try:
+                    pmp_bs_row['Antenna Tilt'] = sector.antenna.tilt
+                except Exception as e:
+                    logger.info("Antenna Tilt not exist for base station ({}).".format(base_station.name, e.message))
+
+                # antenna height
+                try:
+                    pmp_bs_row['Antenna Height'] = sector.antenna.height
+                except Exception as e:
+                    logger.info("Antenna Height not exist for base station ({}).".format(base_station.name, e.message))
+
+                # antenna beamwidth
+                try:
+                    pmp_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
+                except Exception as e:
+                    logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name, e.message))
+
+                # azimuth
+                try:
+                    pmp_bs_row['Azimuth'] = sector.antenna.azimuth_angle
+                except Exception as e:
+                    logger.info("Azimuth not exist for base station ({}).".format(base_station.name, e.message))
+
+                # sync splitter used
+                try:
+                    pmp_bs_row['Sync Splitter Used'] = sector.antenna.sync_splitter_used
+                except Exception as e:
+                    logger.info("Sync Splitter Used not exist for base station ({}).".format(base_station.name, e.message))
+
+                # type of gps
+                try:
+                    pmp_bs_row['Type Of GPS'] = base_station.gps_type
+                except Exception as e:
+                    logger.info("Type Of GPS not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs switch ip
+                try:
+                    pmp_bs_row['BS Switch IP'] = base_station.bs_switch.ip_address
+                except Exception as e:
+                    logger.info("BS Switch IP not exist for base station ({}).".format(base_station.name, e.message))
+
+                # aggregation switch
+                try:
+                    pmp_bs_row['Aggregation Switch'] = backhaul.aggregator.ip_address
+                except Exception as e:
+                    logger.info("Aggregation Switch not exist for base station ({}).".format(base_station.name,
+                                                                                             e.message))
+
+                # aggregation swith port
+                try:
+                    pmp_bs_row['Aggregation Switch Port'] = backhaul.aggregator_port_name
+                except Exception as e:
+                    logger.info("Aggregation Switch Port not exist for base station ({}).".format(base_station.name,
+                                                                                                  e.message))
+
+                # bs conveter ip
+                try:
+                    pmp_bs_row['BS Converter IP'] = backhaul.bh_switch.ip_address
+                except Exception as e:
+                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pop converter ip
+                try:
+                    pmp_bs_row['POP Converter IP'] = backhaul.pop.ip_address
+                except Exception as e:
+                    logger.info("POP Converter IP not exist for base station ({}).".format(base_station.name,
+                                                                                           e.message))
+
+                # converter type
+                try:
+                    pmp_bs_row['Converter Type'] = DeviceType.objects.get(pk=backhaul.bh_switch.device_type).alias
+                except Exception as e:
+                    logger.info("Converter Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bh configured switch or converter
+                try:
+                    pmp_bs_row['BH Configured On Switch/Converter'] = backhaul.bh_configured_on.ip_address
+                except Exception as e:
+                    logger.info("BH Configured On Switch/Converter not exist for base station ({}).".format(
+                        base_station.name,
+                        e.message))
+
+                # bh configured switch or converter port
+                try:
+                    pmp_bs_row['Switch/Converter Port'] = backhaul.bh_port_name
+                except Exception as e:
+                    logger.info("Switch/Converter Port not exist for base station ({}).".format(base_station.name,
+                                                                                                e.message))
+
+                # bh capacity
+                try:
+                    pmp_bs_row['BH Capacity'] = backhaul.bh_capacity
+                except Exception as e:
+                    logger.info("BH Capacity not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bh offnet/onnet
+                try:
+                    pmp_bs_row['BH Offnet/Onnet'] = backhaul.bh_connectivity
+                except Exception as e:
+                    logger.info("BH Offnet/Onnet not exist for base station ({}).".format(base_station.name, e.message))
+
+                # backhaul type
+                try:
+                    pmp_bs_row['Backhaul Type'] = backhaul.bh_type
+                except Exception as e:
+                    logger.info("Backhaul Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bh circuit id
+                try:
+                    pmp_bs_row['BH Circuit ID'] = backhaul.bh_circuit_id
+                except Exception as e:
+                    logger.info("BH Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pe hostname
+                try:
+                    pmp_bs_row['PE Hostname'] = backhaul.pe_hostname
+                except Exception as e:
+                    logger.info("PE Hostname not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pe ip
+                try:
+                    pmp_bs_row['PE IP'] = backhaul.pe_ip
+                except Exception as e:
+                    logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bso circuit id
+                try:
+                    pmp_bs_row['BSO Circuit ID'] = backhaul.ttsl_circuit_id
+                except Exception as e:
+                    logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # dr site
+                try:
+                    pmp_bs_row['DR Site'] = sector.dr_site
+                except Exception as e:
+                    logger.info("DR Site not exist for base station ({}).".format(base_station.name, e.message))
+
+                # sector id
+                try:
+                    pmp_bs_row['Sector ID'] = sector.sector_id
+                except Exception as e:
+                    logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # ********************************** Far End (PMP SM) ********************************
+
+                # customer name
+                try:
+                    pmp_sm_row['Customer Name'] = customer.alias
+                except Exception as e:
+                    logger.info("Customer Name not exist for base station ({}).".format(sub_station.name, e.message))
+
+                # circuit id
+                try:
+                    pmp_sm_row['Circuit ID'] = circuit.circuit_id
+                except Exception as e:
+                    logger.info("Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss ip
+                try:
+                    pmp_sm_row['SS IP'] = sub_station.device.ip_address
+                except Exception as e:
+                    logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # qos bandwidth
+                try:
+                    pmp_sm_row['QOS (BW)'] = circuit.qos_bandwidth
+                except Exception as e:
+                    logger.info("QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # latitude
+                try:
+                    pmp_sm_row['Latitude'] = sub_station.latitude
+                except Exception as e:
+                    logger.info("Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # longitude
+                try:
+                    pmp_sm_row['Longitude'] = sub_station.longitude
+                except Exception as e:
+                    logger.info("Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # mac address
+                try:
+                    pmp_sm_row['MAC'] = State.objects.get(pk=base_station.state).state_name
+                except Exception as e:
+                    logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # building height
+                try:
+                    pmp_sm_row['Building Height'] = sub_station.building_height
+                except Exception as e:
+                    logger.info("Building Height not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # tower/pole height
+                try:
+                    pmp_sm_row['Tower/Pole Height'] = sub_station.tower_height
+                except Exception as e:
+                    logger.info("Tower/Pole Height not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # antenna height
+                try:
+                    pmp_sm_row['Antenna Height'] = sub_station.antenna.height
+                except Exception as e:
+                    logger.info("Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # antenna beamwidth
+                try:
+                    pmp_sm_row['Antenna Beamwidth'] = sub_station.antenna.beam_width
+                except Exception as e:
+                    logger.info("Antenna Beamwidth not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # polarization
+                try:
+                    pmp_sm_row['Polarization'] = sub_station.antenna.polarization
+                except Exception as e:
+                    logger.info("Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # antenna type
+                try:
+                    pmp_sm_row['Antenna Type'] = sub_station.antenna.antenna_type
+                except Exception as e:
+                    logger.info("Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss mount type
+                try:
+                    pmp_sm_row['SS Mount Type'] = sub_station.antenna.mount_type
+                except Exception as e:
+                    logger.info("SS Mount Type not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ethernet extender
+                try:
+                    pmp_sm_row['Ethernet Extender'] = sub_station.ethernet_extender
+                except Exception as e:
+                    logger.info("Ethernet Extender not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # cable length
+                try:
+                    pmp_sm_row['Cable Length'] = sub_station.cable_length
+                except Exception as e:
+                    logger.info("Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # rssi during acceptance
+                try:
+                    pmp_sm_row['RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
+                except Exception as e:
+                    logger.info("RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
+                                                                                                e.message))
+
+                # cinr during acceptance
+                try:
+                    pmp_sm_row['CINR During Acceptance'] = circuit.dl_cinr_during_acceptance
+                except Exception as e:
+                    logger.info("CINR During Acceptance not exist for sub station ({}).".format(sub_station.name,
+                                                                                                e.message))
+
+                # Customer Address
+                try:
+                    pmp_sm_row['Customer Address'] = customer.address
+                except Exception as e:
+                    logger.info("Customer Address not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # date of acceptance
+                try:
+                    pmp_sm_row['Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
+                except Exception as e:
+                    logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
+                                                                                             e.message))
+
+                # append 'pmp_bs_row' dictionary in 'pmp_bs_rows'
+                pmp_bs_rows.append(pmp_bs_row)
+
+                # append 'pmp_sm_row' dictionary in 'pmp_sm_rows'
+                pmp_sm_rows.append(pmp_sm_row)
+
+        # insert 'pmp bs' rows in result dictionary
+        result['pmp_bs'] = pmp_bs_rows if pmp_bs_rows else ""
+
+        # insert 'pmp sm' rows in result dictionary
+        result['pmp_sm'] = pmp_sm_rows if pmp_sm_rows else ""
+
+
+        return result
+
+    def get_selected_wimax_inventory(self, base_station, sector):
+        # result dictionary (contains ptp and ptp bh inventory)
+        result = dict()
+
+        # wimax bs rows list
+        wimax_bs_rows = list()
+
+        # wimax ss rows list
+        wimax_ss_rows = list()
+
+        # circuits associated with current sector
+        circuits = sector.circuit_set.all()
+
+        # loop through circuits; if available to get inventory rows
+        if circuits:
+            for circuit in circuits:
+                # sub station
+                sub_station = circuit.sub_station
+
+                # backhaul
+                backhaul = base_station.backhaul
+
+                # customer
+                customer = circuit.customer
+
+                # ptp row dictionary
+                wimax_bs_row = dict()
+
+                # ptp row dictionary
+                wimax_ss_row = dict()
+
+                # *********************************** Near End (Wimax BS) *********************************
+                # state
+                try:
+                    wimax_bs_row['State'] = State.objects.get(pk=base_station.state).state_name
+                except Exception as e:
+                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+                # city
+                try:
+                    wimax_bs_row['City'] = City.objects.get(pk=base_station.city).city_name
+                except Exception as e:
+                    logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
+
+                # address
+                try:
+                    wimax_bs_row['Address'] = base_station.address
+                except Exception as e:
+                    logger.info("Address not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs name
+                try:
+                    wimax_bs_row['BS Name'] = base_station.alias
+                except Exception as e:
+                    logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
+
+                # type of bs (technology)
+                try:
+                    wimax_bs_row['Type Of BS (Technology)'] = base_station.bs_type
+                except Exception as e:
+                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, e.message))
+
+                # site type
+                try:
+                    wimax_bs_row['Site Type'] = base_station.bs_site_type
+                except Exception as e:
+                    logger.info("Site Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # infra provider
+                try:
+                    wimax_bs_row['Infra Provider'] = base_station.infra_provider
+                except Exception as e:
+                    logger.info("Infra Provider not exist for base station ({}).".format(base_station.name, e.message))
+
+                # building height
+                try:
+                    wimax_bs_row['Building Height'] = base_station.building_height
+                except Exception as e:
+                    logger.info("Building Height not exist for base station ({}).".format(base_station.name, e.message))
+
+                # tower height
+                try:
+                    wimax_bs_row['Tower Height'] = base_station.tower_height
+                except Exception as e:
+                    logger.info("Tower Height not exist for base station ({}).".format(base_station.name, e.message))
+
+                # latitude
+                try:
+                    wimax_bs_row['Latitude'] = base_station.latitude
+                except Exception as e:
+                    logger.info("Latitude not exist for base station ({}).".format(base_station.name, e.message))
+
+                # longitude
+                try:
+                    wimax_bs_row['Longitude'] = base_station.longitude
+                except Exception as e:
+                    logger.info("Longitude not exist for base station ({}).".format(base_station.name, e.message))
+
+                # idu ip
+                try:
+                    wimax_bs_row['IDU IP'] = sector.sector_configured_on.ip_address
+                except Exception as e:
+                    logger.info("IDU IP not exist for base station ({}).".format(base_station.name, e.message))
+
+                # sector name
+                try:
+                    wimax_bs_row['Sector Name'] = sector.name.split("_")[-1]
+                except Exception as e:
+                    logger.info("Sector Name not exist for base station ({}).".format(base_station.name, e.message))
+
+                # make of antenna
+                try:
+                    wimax_bs_row['Make Of Antenna'] = sector.antenna.make_of_antenna
+                except Exception as e:
+                    logger.info("Make Of Antenna not exist for base station ({}).".format(base_station.name,
+                                                                                          e.message))
+
+                # polarization
+                try:
+                    wimax_bs_row['Polarization'] = sector.antenna.polarization
+                except Exception as e:
+                    logger.info("Polarization not exist for base station ({}).".format(base_station.name, e.message))
+
+                # antenna tilt
+                try:
+                    wimax_bs_row['Antenna Tilt'] = sector.antenna.tilt
+                except Exception as e:
+                    logger.info("Antenna Tilt not exist for base station ({}).".format(base_station.name, e.message))
+
+                # antenna height
+                try:
+                    wimax_bs_row['Antenna Height'] = sector.antenna.height
+                except Exception as e:
+                    logger.info("Antenna Height not exist for base station ({}).".format(base_station.name, e.message))
+
+                # antenna beamwidth
+                try:
+                    wimax_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
+                except Exception as e:
+                    logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name, e.message))
+
+                # azimuth
+                try:
+                    wimax_bs_row['Azimuth'] = sector.antenna.azimuth_angle
+                except Exception as e:
+                    logger.info("Azimuth not exist for base station ({}).".format(base_station.name, e.message))
+
+                # installation of splitter
+                try:
+                    wimax_bs_row['Installation Of Splitter'] = sector.antenna.sync_splitter_used
+                except Exception as e:
+                    logger.info("Installation Of Splitter not exist for base station ({}).".format(base_station.name, e.message))
+
+                # type of gps
+                try:
+                    wimax_bs_row['Type Of GPS'] = base_station.gps_type
+                except Exception as e:
+                    logger.info("Type Of GPS not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs switch ip
+                try:
+                    wimax_bs_row['BS Switch IP'] = base_station.bs_switch.ip_address
+                except Exception as e:
+                    logger.info("BS Switch IP not exist for base station ({}).".format(base_station.name, e.message))
+
+                # aggregation switch
+                try:
+                    wimax_bs_row['Aggregation Switch'] = backhaul.aggregator.ip_address
+                except Exception as e:
+                    logger.info("Aggregation Switch not exist for base station ({}).".format(base_station.name,
+                                                                                             e.message))
+
+                # aggregation switch port
+                try:
+                    wimax_bs_row['Aggregation Switch Port'] = backhaul.aggregator_port_name
+                except Exception as e:
+                    logger.info("Aggregation Switch Port not exist for base station ({}).".format(base_station.name,
+                                                                                                  e.message))
+
+                # bs converter ip
+                try:
+                    wimax_bs_row['BS Converter IP'] = backhaul.bh_switch.ip_address
+                except Exception as e:
+                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pop converter ip
+                try:
+                    wimax_bs_row['POP Converter IP'] = backhaul.pop.ip_address
+                except Exception as e:
+                    logger.info("POP Converter IP not exist for base station ({}).".format(base_station.name,
+                                                                                           e.message))
+
+                # converter type
+                try:
+                    wimax_bs_row['Converter Type'] = DeviceType.objects.get(pk=backhaul.bh_switch.device_type).alias
+                except Exception as e:
+                    logger.info("Converter Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bh configured switch or converter
+                try:
+                    wimax_bs_row['BH Configured On Switch/Converter'] = backhaul.bh_configured_on.ip_address
+                except Exception as e:
+                    logger.info("BH Configured On Switch/Converter not exist for base station ({}).".format(
+                        base_station.name,
+                        e.message))
+
+                # bh configured switch or converter port
+                try:
+                    wimax_bs_row['Switch/Converter Port'] = backhaul.bh_port_name
+                except Exception as e:
+                    logger.info("Switch/Converter Port not exist for base station ({}).".format(base_station.name,
+                                                                                                e.message))
+
+                # bh capacity
+                try:
+                    wimax_bs_row['BH Capacity'] = backhaul.bh_capacity
+                except Exception as e:
+                    logger.info("BH Capacity not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bh offnet/onnet
+                try:
+                    wimax_bs_row['BH Offnet/Onnet'] = backhaul.bh_connectivity
+                except Exception as e:
+                    logger.info("BH Offnet/Onnet not exist for base station ({}).".format(base_station.name, e.message))
+
+                # backhaul type
+                try:
+                    wimax_bs_row['Backhaul Type'] = backhaul.bh_type
+                except Exception as e:
+                    logger.info("Backhaul Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bh circuit id
+                try:
+                    wimax_bs_row['BH Circuit ID'] = backhaul.bh_circuit_id
+                except Exception as e:
+                    logger.info("BH Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pe hostname
+                try:
+                    wimax_bs_row['PE Hostname'] = backhaul.pe_hostname
+                except Exception as e:
+                    logger.info("PE Hostname not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pe ip
+                try:
+                    wimax_bs_row['PE IP'] = backhaul.pe_ip
+                except Exception as e:
+                    logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bso circuit id
+                try:
+                    wimax_bs_row['BSO Circuit ID'] = backhaul.ttsl_circuit_id
+                except Exception as e:
+                    logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # dr site
+                try:
+                    wimax_bs_row['DR Site'] = sector.dr_site
+                except Exception as e:
+                    logger.info("DR Site not exist for base station ({}).".format(base_station.name, e.message))
+
+                # sector id
+                try:
+                    wimax_bs_row['Sector ID'] = sector.sector_id
+                except Exception as e:
+                    logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pmp
+                try:
+                    wimax_bs_row['PMP'] = sector.name.split("_")[-1]
+                except Exception as e:
+                    logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # sector id
+                try:
+                    wimax_bs_row['Sector ID'] = sector.sector_id
+                except Exception as e:
+                    logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # ********************************** Far End (wimax ss) ********************************
+
+                # customer name
+                try:
+                    wimax_ss_row['Customer Name'] = customer.alias
+                except Exception as e:
+                    logger.info("Customer Name not exist for base station ({}).".format(sub_station.name, e.message))
+
+                # circuit id
+                try:
+                    wimax_ss_row['Circuit ID'] = circuit.circuit_id
+                except Exception as e:
+                    logger.info("Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss ip
+                try:
+                    wimax_ss_row['SS IP'] = sub_station.device.ip_address
+                except Exception as e:
+                    logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # qos bandwidth
+                try:
+                    wimax_ss_row['QOS (BW)'] = circuit.qos_bandwidth
+                except Exception as e:
+                    logger.info("QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # latitude
+                try:
+                    wimax_ss_row['Latitude'] = sub_station.latitude
+                except Exception as e:
+                    logger.info("Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # longitude
+                try:
+                    wimax_ss_row['Longitude'] = sub_station.longitude
+                except Exception as e:
+                    logger.info("Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # mac address
+                try:
+                    wimax_ss_row['MAC'] = State.objects.get(pk=base_station.state).state_name
+                except Exception as e:
+                    logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # building height
+                try:
+                    wimax_ss_row['Building Height'] = sub_station.building_height
+                except Exception as e:
+                    logger.info("Building Height not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # tower/pole height
+                try:
+                    wimax_ss_row['Tower/Pole Height'] = sub_station.tower_height
+                except Exception as e:
+                    logger.info("Tower/Pole Height not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # antenna height
+                try:
+                    wimax_ss_row['Antenna Height'] = sub_station.antenna.height
+                except Exception as e:
+                    logger.info("Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # antenna beamwidth
+                try:
+                    wimax_ss_row['Antenna Beamwidth'] = sub_station.antenna.beam_width
+                except Exception as e:
+                    logger.info("Antenna Beamwidth not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # polarization
+                try:
+                    wimax_ss_row['Polarization'] = sub_station.antenna.polarization
+                except Exception as e:
+                    logger.info("Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # antenna type
+                try:
+                    wimax_ss_row['Antenna Type'] = sub_station.antenna.antenna_type
+                except Exception as e:
+                    logger.info("Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss mount type
+                try:
+                    wimax_ss_row['SS Mount Type'] = sub_station.antenna.mount_type
+                except Exception as e:
+                    logger.info("SS Mount Type not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ethernet extender
+                try:
+                    wimax_ss_row['Ethernet Extender'] = sub_station.ethernet_extender
+                except Exception as e:
+                    logger.info("Ethernet Extender not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # cable length
+                try:
+                    wimax_ss_row['Cable Length'] = sub_station.cable_length
+                except Exception as e:
+                    logger.info("Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # rssi during acceptance
+                try:
+                    wimax_ss_row['RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
+                except Exception as e:
+                    logger.info("RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
+                                                                                                e.message))
+
+                # cinr during acceptance
+                try:
+                    wimax_ss_row['CINR During Acceptance'] = circuit.dl_cinr_during_acceptance
+                except Exception as e:
+                    logger.info("CINR During Acceptance not exist for sub station ({}).".format(sub_station.name,
+                                                                                                e.message))
+
+                # Customer Address
+                try:
+                    wimax_ss_row['Customer Address'] = customer.address
+                except Exception as e:
+                    logger.info("Customer Address not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # date of acceptance
+                try:
+                    wimax_ss_row['Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
+                except Exception as e:
+                    logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
+                                                                                             e.message))
+
+                # append 'wimax_bs_row' dictionary in 'wimax_bs_rows'
+                wimax_bs_rows.append(wimax_bs_row)
+
+                # append 'wimax_ss_row' dictionary in 'wimax_ss_rows'
+                wimax_ss_rows.append(wimax_ss_row)
+
+        # insert 'wimax bs' rows in result dictionary
+        result['wimax_bs'] = wimax_bs_rows if wimax_bs_rows else ""
+
+        # insert 'wimax ss' rows in result dictionary
+        result['wimax_ss'] = wimax_ss_rows if wimax_ss_rows else ""
+
+        return result
