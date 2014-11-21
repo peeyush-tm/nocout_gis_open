@@ -38,6 +38,9 @@ class SessionSecurityMiddleware(object):
             key_from_cookie = request.session.session_key
             session_key_in_visitor_db = request.user.visitor.session_key
 
+            if request.path != '/user/change_password/' and not request.user.userprofile.password_changed_at:
+                logout(request)
+
             if session_key_in_visitor_db != key_from_cookie and request.path != '/sm/dialog_action/':
                 logout(request)
 
