@@ -779,7 +779,7 @@ var state_wise_device_label_text= {};
 						var clusterIconStyle = ge.createStyle(''); //create a new style
 						clusterIconStyle.getIconStyle().setIcon(clusterIcon); //apply the icon to the style
 						device_counter_label.setStyleSelector(clusterIconStyle); //apply the style to the placemark
-						clusterIconStyle.getIconStyle().setScale(5.0);
+						clusterIconStyle.getIconStyle().setScale(6.0);
 
 			   			//Set the placemark location;
 			   			var clusterPoint = ge.createPoint('');
@@ -872,7 +872,7 @@ var state_wise_device_label_text= {};
 								var clusterIconStyle = ge.createStyle(''); //create a new style
 								clusterIconStyle.getIconStyle().setIcon(clusterIcon); //apply the icon to the style
 								device_counter_label.setStyleSelector(clusterIconStyle); //apply the style to the placemark
-								clusterIconStyle.getIconStyle().setScale(5.0);
+								clusterIconStyle.getIconStyle().setScale(6.0);
 
 
 					   			//Set the placemark location;
@@ -1470,6 +1470,82 @@ var state_wise_device_label_text= {};
 
 		
 		}
+	};
+
+	/**
+	 * This function plot the point on google map as per the given details
+	 * @method plotPoint_gmap
+	 * @param {Object} infoObj, It contains information regarding plotting(i.e. lat,lon etc)
+	 */
+	this.plotPoint_earth = function(infoObj) {
+
+		// var image = new google.maps.MarkerImage(base_url+"/"+infoObj.icon_url,null,null,null,new google.maps.Size(32, 37));
+		var map_point_obj = {
+			position   	    	 : {lat: infoObj.lat, lon: infoObj.lon},
+			map 	   	    	 : 'current',
+			icon 	   	    	 : base_url+"/"+infoObj.icon_url,
+			icon_url   	    	 : infoObj.icon_url,
+			zIndex 	   	    	 : 500,
+			point_name 	    	 : infoObj.name,
+			lat 		    	 : infoObj.lat,
+			lon 		    	 : infoObj.lon,
+			connected_lat   	 : infoObj.connected_lat,
+			connected_lon   	 : infoObj.connected_lon,
+			connected_point_type : infoObj.connected_point_type,
+			connected_point_info : infoObj.connected_point_info,
+			point_desc 	    	 : infoObj.desc,
+			point_id 	    	 : infoObj.point_id,
+			is_delete_req   	 : infoObj.is_delete_req,
+			is_update_req   	 : infoObj.is_update_req
+		};
+
+		var uniqueId = "point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-");
+//iconHref, latitude, longitude, placemarkId, description
+		var pointPlacemark= earth_self.makePlacemark(base_url+"/"+infoObj.icon_url, infoObj.lat, infoObj.lon, uniqueId, map_point_obj);
+
+		point_data_obj["point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-")] = "";
+		point_data_obj["point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-")] = pointPlacemark;
+
+		// // Bind right click event to marker
+		// (function bindRightMenuToMarker(marker) {
+		// 	var markerRightClick= google.earth.addEventListener(marker, 'rightclick', function(event) {
+		// 		gmap_self.openPointRightClickMenu(this);
+		// 	});
+
+		// 	// return markerRightClick;
+		// })(pointPlacemark);
+
+		// Bind click event to marker
+		(function bindClickToMarker(marker) {
+
+			google.earth.addEventListener(marker, 'click', function(e) {
+				// console.log('clicked here');
+				// if it is a right-click 
+				// console.log(e.getButton());
+				if (e && e.getButton() == 2) {
+					// console.log('hi');
+					gmap_self.openPointRightClickMenu(marker);
+					event.preventDefault(); // optional, depending on your requirements
+					event.stopPropagation(); // optional, depending on your requirements
+					// openMenu(e.getScreenX(), e.getScreenY());
+				} else {
+					if(marker.point_id) {
+						connected_end_obj = {
+							"lat" : marker.lat,
+							"lon" : marker.lon
+						};
+
+						if(current_point_for_line) {
+							gmap_self.plot_point_line(marker);
+						}
+					} else {
+						bootbox.alert("This point not saved yet. Please select another.")
+					}
+				}
+			});
+
+			// return markerRightClick;
+		})(pointPlacemark);
 	};
 
 	/**
@@ -2282,7 +2358,7 @@ var state_wise_device_label_text= {};
     				}
     			},
     			error : function(err) {
-    				// console.log(err.statusText);
+    				console.log(err.statusText);
     			}
 			});
 		}

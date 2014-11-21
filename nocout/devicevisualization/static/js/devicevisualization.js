@@ -902,6 +902,7 @@ $("#ruler_select").click(function(e) {
     networkMapInstance.addRulerTool_gmap();
 });
 
+
 $("#ruler_remove").click(function(e) {
     pointAdded= -1;
     is_line_active= -1;
@@ -922,6 +923,11 @@ $("#line_select").click(function(e) {
     pointAdded= -1;
     is_line_active= 1;
     is_ruler_active= -1;
+
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+    } else {
+
+    }
 
     networkMapInstance.clearLineTool_gmap();
 
@@ -946,12 +952,22 @@ $("#line_remove").click(function(e) {
     networkMapInstance.clearLineTool_gmap();
 });
 
+
+var pointEventHandler = "";
+
 $("#point_select").click(function(e) {
     pointAdded= 1;
     is_line_active= -1;
     is_ruler_active= -1;
 
-    google.maps.event.clearListeners(mapInstance, 'click');
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        if(pointEventHandler) {
+            google.earth.removeEventListener(ge.getGlobe(), 'mousedown', pointEventHandler);
+            pointEventHandler = "";
+        }
+    } else {
+        google.maps.event.clearListeners(mapInstance, 'click');
+    }
 
     // $("#point_remove").removeClass("hide");
     $(this).removeClass('btn-info').addClass('btn-warning');
