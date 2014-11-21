@@ -479,7 +479,7 @@ function googleEarthClass() {
 
             // var bounds = new google.maps.LatLngBounds();
             for (var i = 0, place; place = places[i]; i++) {
-            	
+
 				var marker = earth_self.makePlacemark(place.icon, place.geometry.location.k, place.geometry.location.B, place.place_id, {});
             	folderBoundArray.push({lat: place.geometry.location.k, lon: place.geometry.location.B});
 				place_markers.push(marker);
@@ -1223,8 +1223,8 @@ var state_wise_device_label_text= {};
 							deviceExtraInfo: sectorsArray[j].info,
 							deviceInfo: sectorsArray[j].device_info,
 							poll_info: [],
-							pl: "hallo",
-							rta: "hallo",
+							pl: "",
+							rta: "",
 							sectorName: sectorsArray[j].sector_configured_on,
 							device_name: sectorsArray[j].sector_configured_on_device,
 							name: sectorsArray[j].sector_configured_on_device,
@@ -2775,6 +2775,11 @@ var state_wise_device_label_text= {};
 		return colorObject;
 	};
 
+	/**
+	 * This function points to a specific Lat long at zoom level 15
+	 * @param  {String} lat_lon_str [Contains a strinfied form of Lat and Long to point at]
+	 * @return {[Boolean]}             []
+	 */
 	this.pointToLatLon = function(lat_lon_str) {
 		
 		var lat = +lat_lon_str.split(",")[0],
@@ -2784,12 +2789,14 @@ var state_wise_device_label_text= {};
 		var lookAt = ge.createLookAt('');
 
 		// Set the position values.
+		lookAt.setRange(ZoomToAlt(15)); //default is 0.0
 		lookAt.setLatitude(lat);
 		lookAt.setLongitude(lng);
-		lookAt.setRange(ZoomToAlt(15)); //default is 0.0
 
 		// Update the view in Google Earth.
 		ge.getView().setAbstractView(lookAt);
+
+		return true;
 	};
 
 	/**
