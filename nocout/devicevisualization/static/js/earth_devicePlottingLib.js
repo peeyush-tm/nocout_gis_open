@@ -130,7 +130,7 @@ function googleEarthClass() {
 		var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 		lookAt.setLatitude(21.0000);
 		lookAt.setLongitude(78.0000);
-		lookAt.setRange(ZoomToAlt(2));
+		lookAt.setRange(ZoomToAlt(4));
 
 		// Update the view in Google Earth 
 		ge.getView().setAbstractView(lookAt); 
@@ -1493,7 +1493,11 @@ var state_wise_device_label_text= {};
 		
 		var style = ge.createStyle(''); //create a new style
 		style.getIconStyle().setIcon(icon); //apply the icon to the style
-		style.getIconStyle().setScale(0.7);
+		if(description.pointType === "base_station") {
+			style.getIconStyle().setScale(1.4);
+		} else {
+			style.getIconStyle().setScale(0.8);
+		}
 		placemark.setStyleSelector(style); //apply the style to the placemark
 
 		var point = ge.createPoint('');
