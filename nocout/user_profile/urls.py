@@ -12,5 +12,5 @@ urlpatterns = patterns('',
   url(r'userarchivedlistingtable/', views.UserArchivedListingTable.as_view(), name= 'UserArchivedListingTable'),
   url(r'organisation/user/list/$', views.organisation_user_list, name= 'organisation-user-list'),
   url(r'organisation/user/select/$', views.organisation_user_select, name= 'organisation-user-select'),
-
+  url(r'change_password/$', views.change_password, name= 'change_password'),
 )

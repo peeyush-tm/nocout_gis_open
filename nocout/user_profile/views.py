@@ -7,10 +7,13 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin, BaseUpdateView
 from django.core.urlresolvers import reverse_lazy
 from mptt.forms import TreeNodeChoiceField
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib import auth
+from django.utils import timezone
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from user_profile.models import UserProfile, Roles
 from organization.models import Organization
-from forms import UserForm
+from forms import UserForm, UserPasswordForm
 from django.http.response import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.hashers import make_password
 from collections import OrderedDict
@@ -301,3 +304,64 @@ def organisation_user_select(request):
     html = "<option value=>Select</option>"
     html += "<option value={0}>{1}</option>".format(parent_select.id, parent_select.username)
     return HttpResponse( html )
+
+@csrf_exempt
+def change_password(request):
+    """
+    The Action of the Dialog box appears on the screen.
+    If the action is continue then the user get prompt to set new password.
+    """
+    url = request.POST.get('url', '/home/')
+    if request.POST.get('action') == 'continue':
+        form = UserPasswordForm(request.POST)
+        if form.is_valid():
+            kwargs=dict(password=make_password(form.data['new_pwd']),
+                        password_changed_at=timezone.now())
+            UserProfile.objects.filter(id=request.POST.get('user_id')).update(**kwargs)
+            result = {
+                "success": 1,  # 0 - fail, 1 - success, 2 - exception
+                "message": "Success/Fail message.",
+                "data": {
+                    "meta": {},
+                    "objects": {
+                        'url': url,
+                    }
+                }
+            }
+            return HttpResponse(json.dumps(result), mimetype='application/json')
+
+        else:
+            if '_session_security' in request.session:
+                del request.session["_session_security"]
+
+            auth.logout(request)
+            result = {
+                "success": 1,  # 0 - fail, 1 - success, 2 - exception
+                "message": "Success/Fail message.",
+                "data": {
+                    "meta": {},
+                    "objects": {
+                        'url': url
+                    }
+                }
+            }
+            return HttpResponse(json.dumps(result), mimetype='application/json')
+    elif request.POST.get('action') == 'logout':
+        #since we are having auto-logoff functionality with us as well
+        #we need to check for session parameter _session_security
+        #_session_security is used by session security to judge the
+        #auto logoff of the user
+        if '_session_security' in request.session:
+            del request.session["_session_security"]
+
+        result = {
+            "success": 1,  # 0 - fail, 1 - success, 2 - exception
+            "message": "Success/Fail message.",
+            "data": {
+                "meta": {},
+                "objects": {
+                    'url': '/login/'
+                }
+            }
+        }
+        return HttpResponse(json.dumps(result), mimetype='application/json')

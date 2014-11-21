@@ -147,3 +147,19 @@ class UserForm(forms.ModelForm):
                 return password1
         else:
             pass
+
+
+class UserPasswordForm(forms.Form):
+    """
+    check new password are same or not during first time login.
+    """
+    new_pwd = forms.CharField(max_length=128, required=True)
+    confirm_pwd = forms.CharField(max_length=128, required=True)
+
+    def confirm_pwd(self):
+        # Check that the two password entries match
+        password2 = self.cleaned_data.get("confirm_pwd")
+        password1 = self.cleaned_data.get("new_pwd")
+        if (password1 or password2) and password1 != password2:
+            raise forms.ValidationError("Passwords don't match")
+        return password2
