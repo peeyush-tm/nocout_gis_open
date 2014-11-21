@@ -195,9 +195,6 @@
         <div id="selectDeviceContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Select Devices</h4>
             <ul class="list-unstyled list-inline">
-                <li class="hide">Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS"
-                                                          onclick="networkMapInstance.plotAllDevice_gmap()"
-                                                          style="vertical-align: text-top;" checked="checked"/></li>
                 <!-- <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
                                                    onclick="networkMapInstance.showConnectionLines_gmap()"
                                                    style="vertical-align: text-top;" checked="checked"/></li> -->
@@ -232,9 +229,18 @@
                 <li>
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
                 </li>
-                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+                <li>
+                    <input type="checkbox" name="showConnLines" id="showConnLines"
                                                    onclick="earth_instance.showConnectionLines_earth()"
-                                                   style="vertical-align: text-top;" checked="checked"/></li>
+                                                   style="vertical-align: text-top;" checked="checked"/>
+                    Show Connectivity Lines
+                </li>
+                <li>
+                    <input type="checkbox" name="showAllSS" id="showAllSS"
+                                                          onclick="earth_instance.showSubStations_earth()"
+                                                          style="vertical-align: text-top;" checked="checked"/>
+                    Show Connected SS
+                </li>
                 <li class="fright">
                     <form action="#" class="form-horizontal">
                         <div class="form-group">

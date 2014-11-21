@@ -1793,7 +1793,7 @@ var state_wise_device_label_text= {};
 	 * This function show/hide the connection line between BS & SS.
 	 * @method showConnectionLines_gmap
 	 */
-	this.showConnectionLines_gmap = function() {
+	this.showConnectionLines_earth = function() {
 
 		var isLineChecked = $("#showConnLines:checked").length;
 
@@ -1815,7 +1815,6 @@ var state_wise_device_label_text= {};
 		}
 	};
 
-
 	/**
 	 * This function show/hide the sub-stations.
 	 * @method showSubStations_earth
@@ -1823,7 +1822,6 @@ var state_wise_device_label_text= {};
 	this.showSubStations_earth = function() {
 
 		var isSSChecked = $("#showAllSS:checked").length;
-
 		/*Unchecked case*/
 		if(isSSChecked == 0) {
 			for(key in allMarkersObject_earth['sub_station']) {
@@ -1959,30 +1957,6 @@ var state_wise_device_label_text= {};
 			$("#infoWindowContainer").removeClass('hide');
 			event.preventDefault();
 		});
-	};
-
-	/**
-	 * This function show/hide the connection line between BS & SS.
-	 * @method showConnectionLines_earth
-	 */
-	this.showConnectionLines_earth = function() {
-
-		var isLineChecked = $("#showConnLines:checked").length;
-
-		var existing_lines = ssLinkArray_filtered;
-
-		/*Unchecked case*/
-		if(isLineChecked == 0) {
-
-			for (var i = 0; i < plottedLinks_earth.length; i++) {
-				plottedLinks_earth[i].setVisibility(false);
-			}
-
-		} else {
-			for (var i = 0; i < plottedLinks_earth.length; i++) {
-				plottedLinks_earth[i].setVisibility(true);
-			}
-		}
 	};
 
 	/**
