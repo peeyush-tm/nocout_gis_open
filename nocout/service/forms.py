@@ -1,20 +1,36 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from models import Service, ServiceParameters, ServiceDataSource, Protocol
+from models import Service, ServiceParameters, ServiceDataSource, Protocol, ServiceSpecificDataSource
 import re
 from django.forms.util import ErrorList
+from django.forms.models import inlineformset_factory,  BaseInlineFormSet
 import logging
 logger = logging.getLogger(__name__)
 
 
 #************************************* Service ******************************************
+class BaseServiceDataSourceFormset(BaseInlineFormSet):
+    """
+    Custome Inline formest.
+    """
+    def __init__(self, *args, **kwargs):
+
+        super(BaseServiceDataSourceFormset, self).__init__(*args, **kwargs)
+        for form in self.forms:
+            form.fields['service_data_sources'].empty_label = 'Select'
+
+    def clean(self):
+        for form in self.forms:
+            if not len(form.cleaned_data.keys()):
+                raise forms.ValidationError('This field is required.')
+
 class ServiceForm(forms.ModelForm):
     """
     Class Based Service Model Form.
     """
     def __init__(self, *args, **kwargs):
         # removing help text for service_data_sources 'select' field
-        self.base_fields['service_data_sources'].help_text = ''
+        #self.base_fields['service_data_sources'].help_text = ''
 
         try:
             if 'instance' in kwargs:
@@ -43,6 +59,7 @@ class ServiceForm(forms.ModelForm):
         Meta Information
         """
         model = Service
+        fields = ('name', 'alias', 'parameters', 'command', 'description')
 
     def clean_name(self):
         """
@@ -73,6 +90,15 @@ class ServiceForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+widgets = {
+           'critical': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'warning': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'service_data_sources': forms.Select(attrs= {'class' : 'form-control'})
+    }
+ServiceDataSourceCreateFormSet = inlineformset_factory(Service, ServiceSpecificDataSource, formset=BaseServiceDataSourceFormset,
+    extra=1, widgets=widgets, can_delete=True)
+ServiceDataSourceUpdateFormSet = inlineformset_factory(Service, ServiceSpecificDataSource, formset=BaseServiceDataSourceFormset,
+    extra=0, widgets=widgets, can_delete=True)
 
 
 #************************************** Service Data Source ****************************************
@@ -288,3 +314,5 @@ class ProtocolForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+
+

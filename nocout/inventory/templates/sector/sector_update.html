@@ -71,7 +71,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/sector/list/sector/",
+                    url: "/inventory/list/device/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -93,15 +93,15 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/sector/select/sector/" + id, {
+                        $.ajax("/inventory/select/device/" + id, {
                             dataType: "json"
                         }).done(function(data) {
-                            callback({id: id, alias: data[0]});
+                            callback({id: id, device_alias: data[0]});
                             });
                     }
                 },
-                formatResult: repoSectorFormatResult, // omitted for brevity, see the source of this page
-                formatSelection: repoSectorFormatSelection,  // omitted for brevity, see the source of this page
+                formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoDeviceFormatSelection,  // omitted for brevity, see the source of this page
             });
 
             $("#id_base_station").select2({
@@ -181,12 +181,12 @@
             });
         });
 
-        function repoSectorFormatResult(sector) {
-          return sector.alias;
+        function repoDeviceFormatResult(device) {
+          return device.device_alias;
         }
 
-        function repoSectorFormatSelection(sector) {
-          return sector.alias;
+        function repoDeviceFormatSelection(device) {
+          return device.device_alias;
         }
 
         function repoBSFormatResult(basestation) {
