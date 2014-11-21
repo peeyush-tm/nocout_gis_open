@@ -22,7 +22,8 @@ var g_earth = "",
 	showLimit = 0,
 	devicesCount = 0,
 	counter = -999,
-	marker_count = 0;
+	marker_count = 0,
+	place_markers= [];
 var markersMasterObj;
 var allMarkersObject_earth= {
 	'base_station': {},
@@ -453,6 +454,44 @@ function googleEarthClass() {
 		state_lat_lon_db.insert({"name" : "Lakshadweep","lat" : 10.5700,"lon" : 72.6300});
 		state_lat_lon_db.insert({"name" : "Pondicherry","lat" : 11.9300,"lon" : 79.8300});
 		state_lat_lon_db.insert({"name" : "Dadra And Nagar Haveli","lat" : 20.2700,"lon" : 73.0200});
+
+		/*Search text box object*/
+		var searchTxt = document.getElementById('google_loc_search');
+
+		/*google search object for search text box*/
+		var searchBox = new google.maps.places.SearchBox(searchTxt);
+
+		/*Event listener for search text box*/
+		google.maps.event.addListener(searchBox, 'places_changed', function() {
+			/*place object returned from map API*/
+    		var places = searchBox.getPlaces();
+            if (places.length == 0) {
+            	return;
+            }
+
+            for (var i = 0, marker; marker = place_markers[i]; i++) {
+            	marker.setVisibility(false);
+            	deleteGoogleEarthPlacemarker(marker.getId());
+            }
+            // For each place, get the icon, place name, and location.
+            place_markers = []; 
+            var folderBoundArray = [];
+
+            // var bounds = new google.maps.LatLngBounds();
+            for (var i = 0, place; place = places[i]; i++) {
+            	
+				var marker = earth_self.makePlacemark(place.icon, place.geometry.location.k, place.geometry.location.B, place.place_id, {});
+            	folderBoundArray.push({lat: place.geometry.location.k, lon: place.geometry.location.B});
+				place_markers.push(marker);
+            }
+
+        	showGoogleEarthInBounds(folderBoundArray, function() {
+
+				if(AltToZoom(getEarthZoomLevel()) > 15) {
+					setEarthZoomLevel(ZoomToAlt(15));
+				}
+			});
+        });
 
 		/*Call get devices function*/
 		earth_self.getDevicesData_earth();
@@ -1799,8 +1838,6 @@ var state_wise_device_label_text= {};
 			}
 		}
 	};
-
-
 	/**
 	 * This function plot the sector for given lat-lon points
 	 * @method plotSector_earth.
@@ -2635,11 +2672,6 @@ var state_wise_device_label_text= {};
 	 */
 	this.clearPolygon = function() {
 		
-		/*Reset drawing object if exists*/
-		// if(drawingManager) {
-		// 	drawingManager.setDrawingMode(null);
-		// }
-
 		/*Clear polygon if exist*/
 		if(Object.keys(currentPolygon).length > 0) {
 			/*Remove the current polygon from the map*/

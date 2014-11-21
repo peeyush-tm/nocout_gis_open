@@ -22,7 +22,6 @@ if(!$.cookie("isFreezeSelected")) {
 
 if(!$.cookie("freezedAt")) {
     $.cookie("freezedAt", 0, {path: '/', secure: true});
-
 }
 
 

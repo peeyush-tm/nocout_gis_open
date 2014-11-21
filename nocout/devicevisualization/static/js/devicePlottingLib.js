@@ -797,48 +797,48 @@ function devicePlottingClass_gmap() {
 			google.maps.event.addListener(searchBox, 'places_changed', function() {
 				/*place object returned from map API*/
 	    		var places = searchBox.getPlaces();
-            if (places.length == 0) {
-            	return;
-            }
+	            if (places.length == 0) {
+	            	return;
+	            }
 
-            for (var i = 0, marker; marker = place_markers[i]; i++) {
-            	marker.setMap(null);
-            }
-            // For each place, get the icon, place name, and location.
-            place_markers = [];
+	            for (var i = 0, marker; marker = place_markers[i]; i++) {
+	            	marker.setMap(null);
+	            }
+	            // For each place, get the icon, place name, and location.
+	            place_markers = [];
 
-            var bounds = new google.maps.LatLngBounds();
-            for (var i = 0, place; place = places[i]; i++) {
-            	var image = {
-            		url: place.icon,
-                  size: new google.maps.Size(71, 71),
-                  origin: new google.maps.Point(0, 0),
-                  anchor: new google.maps.Point(17, 34),
-                  scaledSize: new google.maps.Size(25, 25)
-               };
+	            var bounds = new google.maps.LatLngBounds();
+	            for (var i = 0, place; place = places[i]; i++) {
+	            	var image = {
+	            		url: place.icon,
+	                  size: new google.maps.Size(71, 71),
+	                  origin: new google.maps.Point(0, 0),
+	                  anchor: new google.maps.Point(17, 34),
+	                  scaledSize: new google.maps.Size(25, 25)
+	               };
 
-               // Create a marker for each place.
-               var marker = new google.maps.Marker({
-               	map: mapInstance,
-                  icon: image,
-                  title: place.name,
-                  position: place.geometry.location
-               });
+	               // Create a marker for each place.
+	               var marker = new google.maps.Marker({
+	               	map: mapInstance,
+	                  icon: image,
+	                  title: place.name,
+	                  position: place.geometry.location
+	               });
 
-               place_markers.push(marker);
-               bounds.extend(place.geometry.location);
-            }
-            mapInstance.fitBounds(bounds);
+	               place_markers.push(marker);
+	               bounds.extend(place.geometry.location);
+	            }
+	            mapInstance.fitBounds(bounds);
 
-            /*Listener to reset zoom level if it exceeds to particular value*/
-            var listener = google.maps.event.addListener(mapInstance, "idle", function() {
-            	/*check for current zoom level*/
-            	if(mapInstance.getZoom() >= 15) {
-            		mapInstance.setZoom(15);
-            	}
-            	google.maps.event.removeListener(listener);
-            });
-        });
+	            /*Listener to reset zoom level if it exceeds to particular value*/
+	            var listener = google.maps.event.addListener(mapInstance, "idle", function() {
+	            	/*check for current zoom level*/
+	            	if(mapInstance.getZoom() >= 15) {
+	            		mapInstance.setZoom(15);
+	            	}
+	            	google.maps.event.removeListener(listener);
+	            });
+	        });
 
 
 			var fullScreenCustomDiv = document.createElement('div');
@@ -3920,13 +3920,7 @@ function devicePlottingClass_gmap() {
 		    if(isSearchApplied && data_to_plot.length > 0) {
 
 		    	if(window.location.pathname.indexOf("googleEarth") > -1) {
-		    				// if(filteredBsArray.length) {
-		    			
-			   			//  		folder = gexInstance.dom.addFolder(folderBoundArray);
-
-						// var bounds = gexInstance.dom.computeBounds(folder);
-						// gexInstance.view.setToBoundsView(bounds, { aspectRatio: 1.0 });
-						// 
+		    		
 					showGoogleEarthInBounds(folderBoundArray, function() {
 
 						if(AltToZoom(getEarthZoomLevel()) > 15) {
@@ -3939,48 +3933,8 @@ function devicePlottingClass_gmap() {
 								searchMarkers_global[i].setVisibility(false);
 							}
 						},350);
-						// setTimeout(function() {
-						// 	$.grep(allMarkersArray_earth,function(marker) {
-						// 		marker.isActive= 0;
-						// 		marker.setVisibility(false);
-						// 	});
-
-						// 	allMarkersArray_earth = [];
-						// 	main_devices_data_earth = [];
-						// 	plottedBsIds = [];
-						// 	currentlyPlottedDevices = [];
-						// 	allMarkersObject_earth= {
-						// 		'base_station': {},
-						// 		'path': {},
-						// 		'sub_station': {},
-						// 		'sector_device': {},
-						// 		'sector_polygon': {}
-						// 	};
-
-						// 	main_devices_data_earth = data_to_plot;
-
-				  //           var inBoundData = earth_instance.getNewBoundsDevices();
-
-						// 	currentlyPlottedDevices = inBoundData;
-
-				  //           // Plot devices
-				  //           earth_instance.plotDevices_earth(inBoundData,"base_station");
-
-				  //           if(AltToZoom(getEarthZoomLevel) > 15) {
-				  //           	setEarthZoomLevel(ZoomToAlt(15));
-				  //           }
-
-						// 	// Show search marker after some timeout
-						// 	setTimeout(function() {
-						// 		for(var i=0;i<searchMarkers_global.length;i++) {
-						// 	    	searchMarkers_global[i].setVisibility(true);
-						// 	    }
-						// 	},300);
-						// }, 1000);
 					});
 
-
-		    		// }
 		    	} else {
 			    	//Zoom in to selected state
 					mapInstance.fitBounds(bounds_lat_lon);

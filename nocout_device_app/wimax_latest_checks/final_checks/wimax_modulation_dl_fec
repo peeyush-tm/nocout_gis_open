@@ -70,7 +70,7 @@ def live_query_modulation_dl_fec(mac):
 
 
 
-def check_wimax_modulation_dl_fec(item, _no_params, info):
+def check_wimax_modulation_dl_fec(item, params, info):
     """
             check_wimax_modulation_dl_fec function calcdlates the operating ptx
 
@@ -97,8 +97,8 @@ def check_wimax_modulation_dl_fec(item, _no_params, info):
     infotext = "unknown_value"
     modulation_dl_fec =None
     dl_fec_normal =  ["qam16-3/4", "qam64-2/3","qam64-3/4"]
-    dl_fec_warning = ["qpsk3/4","qam16 1/2"]
-    dl_fec_critical = ["bpsk1/2", "qpsk1/2"]
+    dl_fec_warning = params[0]
+    dl_fec_critical = params[1]
 
     try:
 	if info[1]:
@@ -109,12 +109,15 @@ def check_wimax_modulation_dl_fec(item, _no_params, info):
                 if ss_mac:
                         modulation_dl_fec = live_query_modulation_dl_fec(ss_mac )
 			if modulation_dl_fec:
-				if modulation_dl_fec in dl_fec_normal:
-					state  = 0
+				if modulation_dl_fec in dl_fec_critical:
+					state  = 2
 				elif modulation_dl_fec in dl_fec_warning:
 					state  = 1
+				elif modulation_dl_fec in dl_fec_normal:
+					state  = 0
 				else:
-					state  = 2
+					state = 3
+					modulation_dl_fec = None
 				infotext = "Device downlink modulation FEC is %s " % modulation_dl_fec	
     except ValueError:
         infotext = "type_mismatch_value"

@@ -69,7 +69,7 @@ def live_query_modulation_ul_fec(mac):
 
 
 
-def check_wimax_modulation_ul_fec(item, _no_params, info):
+def check_wimax_modulation_ul_fec(item, params, info):
     """
             check_wimax_modulation_ul_fec function calcdlates the operating ptx
 
@@ -96,8 +96,8 @@ def check_wimax_modulation_ul_fec(item, _no_params, info):
     infotext = "unknown_value"
     modulation_ul_fec =None
     ul_fec_normal = ["qam16-1/2", "qam16-3/4", "qam64-2/3","qam64-3/4"]
-    ul_fec_warning = ["qpsk3/4"]
-    ul_fec_critical = ["bpsk1/2", "qpsk1/2"]
+    ul_fec_warning = params[0]
+    ul_fec_critical = params[1]
 
     try:
 	if info[1]:
@@ -109,12 +109,15 @@ def check_wimax_modulation_ul_fec(item, _no_params, info):
                 if ss_mac:
                         modulation_ul_fec = live_query_modulation_ul_fec(ss_mac )
 			if modulation_ul_fec:
-				if modulation_ul_fec in ul_fec_normal:
-					state  = 0
+				if modulation_ul_fec in ul_fec_critical:
+					state  = 2
 				elif modulation_ul_fec in ul_fec_warning:
 					state  = 1
+				elif modulation_ul_fec in ul_fec_normal:
+					state  = 0
 				else:
-					state  = 2
+					state = 3
+					modulation_ul_fec = None
 				infotext = "Device uplink modulation FEC is %s " % modulation_ul_fec	
     except ValueError:
         infotext = "type_mismatch_value"
