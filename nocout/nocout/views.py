@@ -121,7 +121,30 @@ def auth_view(request):
     password = request.POST.get('password', '')
     user = auth.authenticate(username=username, password=password)
 
-    if user is not None and user.is_active:
+    if user is not None and user.is_active and not user.userprofile.password_changed_at:
+        auth.login(request, user)
+        next_url = '/' + request.POST.get('next', 'home/')
+        key_from_cookie = request.session.session_key
+        Visitor.objects.create(user=request.user, session_key=key_from_cookie)
+        objects_values = dict(dialog=True, url=next_url, user_id=user.id, username=user.username)
+
+        # values to store in user audit logs
+        user_audit = {
+            "userid": request.user.id,
+            "module": "auth",
+            "action": "loggedin from IP address : %s"
+                    % (get_client_ip(request)),
+        }
+        result = {
+            "success": 3,  # 0 - fail, 1 - success, 2 - exception, 3 - first time login
+            "message": "Logged in successfully.",
+            "data": {
+                "meta": {},
+                "objects": objects_values
+            }
+        }
+
+    elif user is not None and user.is_active:
 
         auth.login(request, user)
         next_url = '/' + request.POST.get('next', 'home/')
