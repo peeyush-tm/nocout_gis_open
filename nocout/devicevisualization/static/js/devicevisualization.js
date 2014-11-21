@@ -194,7 +194,7 @@ $("#resetFilters").click(function(e) {
         var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
         lookAt.setLatitude(21.0000);
         lookAt.setLongitude(78.0000);
-        lookAt.setRange(6019955);
+        lookAt.setRange(6892875.865539902);
         // lookAt.setZoom
         // Update the view in Google Earth 
         ge.getView().setAbstractView(lookAt); 
