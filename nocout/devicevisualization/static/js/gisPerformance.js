@@ -413,12 +413,13 @@ function GisPerformance() {
                     if(window.location.pathname.indexOf("googleEarth") > -1) {
                         sector_polygon.setOuterBoundary(polyPoints);
 
+                        var poly_sector_color = earth_self.makeRgbaObject(sector_color);
                         // Color can also be specified by individual color components.
                         var polyColor = sectorPolygonObj.getStyleSelector().getPolyStyle().getColor();
                         polyColor.setA(200);
-                        polyColor.setR((+sector_color.r));
-                        polyColor.setG((+sector_color.g));
-                        polyColor.setB((+sector_color.b));
+                        polyColor.setR((+poly_sector_color.r));
+                        polyColor.setG((+poly_sector_color.g));
+                        polyColor.setB((+poly_sector_color.b));
                     } else {
                         // Update sector Path & color.
                         sector_polygon.setOptions({
