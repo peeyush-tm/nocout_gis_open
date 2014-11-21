@@ -18,6 +18,7 @@ class UserProfile(MPTTModel, User):
     address = models.CharField('Address', max_length=150, null=True, blank=True)
     comment = models.TextField('Comment', null=True, blank=True)
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
+    password_changed_at = models.DateTimeField('Password changed at', null=True, blank=True)
 
 # user roles class
 class Roles(models.Model):
