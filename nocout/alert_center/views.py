@@ -15,7 +15,6 @@ from performance.views import ptp_device_circuit_backhaul, \
     organization_customer_devices, \
     organization_network_devices, \
     organization_backhaul_devices, \
-    indexed_gis_devices, \
     combined_indexed_gis_devices,\
     indexed_polled_results,\
     filter_devices,\
