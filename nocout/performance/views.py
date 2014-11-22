@@ -2308,13 +2308,13 @@ def get_performance_data(device_list, machine, model):
     st = datetime.datetime.now()
 
     device_result = {}
-    perf_result = {"packet_loss": "N/A",
-                   "latency": "N/A",
-                   "last_updated": "N/A",
-                   "last_updated_date": "N/A",
-                   "last_updated_time": "N/A",
-                   "age": "N/A"
-                  }
+    # perf_result = {"packet_loss": "N/A",
+    #                "latency": "N/A",
+    #                "last_updated": "N/A",
+    #                "last_updated_date": "N/A",
+    #                "last_updated_time": "N/A",
+    #                "age": "N/A"
+    #               }
 
     if DEBUG:
         log.debug("preparing polled results : query")
@@ -2329,9 +2329,9 @@ def get_performance_data(device_list, machine, model):
     indexed_perf_data = indexed_polled_results(performance_data)
 
     # (len(performance_data))
-    for device in device_list:
-        if device not in device_result:
-            device_result[device] = perf_result
+    # for device in device_list:
+    #     if device not in device_result:
+    #         device_result[device] = perf_result
 
     if DEBUG:
         endtime = datetime.datetime.now()
