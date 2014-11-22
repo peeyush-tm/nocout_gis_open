@@ -6,6 +6,8 @@ from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.models import User
 from nocout import settings
 from session_management.models import Visitor
+from datetime import timedelta
+from django.utils import timezone
 
 ##error pages
 from django.shortcuts import render_to_response
@@ -121,7 +123,13 @@ def auth_view(request):
     password = request.POST.get('password', '')
     user = auth.authenticate(username=username, password=password)
 
-    if user is not None and user.is_active and not user.userprofile.password_changed_at:
+    if user is not None:
+        already_logged = user.userprofile.password_changed_at
+        password_expire = True
+        if already_logged:
+            password_expire = already_logged + timedelta(days=30) < timezone.now()
+
+    if user is not None and user.is_active and (not already_logged or password_expire):
         auth.login(request, user)
         next_url = '/' + request.POST.get('next', 'home/')
         key_from_cookie = request.session.session_key
