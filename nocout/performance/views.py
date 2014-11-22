@@ -663,25 +663,38 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
 def map_results(perf_result, qs):
     """
     """
+    st = datetime.datetime.now()
+    if DEBUG:
+        if DEBUG:
+            log.debug("MAP RESULTS : Start")
+            log.debug("START %s" %st)
+
     result_qs = qs
     performance = perf_result
-
     processed = []
-    for device_result in performance:
-        for p_result in device_result:
-            if p_result not in processed:
-                processed.append(p_result)
-                for dct in result_qs:
-                    result = device_result[p_result]
-                    if dct["device_name"] == p_result:
-                        try:
-                            dct["packet_loss"] = float(result["packet_loss"])
-                            dct["latency"] = float(result["latency"])
-                        except Exception as e:
-                            dct["packet_loss"] = result["packet_loss"]
-                            dct["latency"] = result["latency"]
-                        dct["last_updated"] = result["last_updated"]
-                        dct["age"] = result["age"]
+    for dct in result_qs:
+        device_name = dct["device_name"]
+        if device_name not in processed:
+            processed.append(device_name)
+            for perf in performance:
+                try:
+                    result = perf[device_name]
+                    try:
+                        dct["packet_loss"] = float(result["packet_loss"])
+                        dct["latency"] = float(result["latency"])
+                    except Exception as e:
+                        dct["packet_loss"] = result["packet_loss"]
+                        dct["latency"] = result["latency"]
+                    dct["last_updated"] = result["last_updated"]
+                    dct["age"] = result["age"]
+                except:
+                    continue
+
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        log.debug("MAPPING END {}".format(divmod(elapsed.total_seconds(), 60)))
+        log.debug("MAP RESULTS  : RETURN")
     return result_qs
 
 
