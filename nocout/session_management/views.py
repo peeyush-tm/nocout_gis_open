@@ -83,7 +83,7 @@ class UserStatusTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-       
+
         if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
             organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
                                     .values_list('id', flat=True))
@@ -207,7 +207,8 @@ def dialog_action(request):
             "data": {
                 "meta": {},
                 "objects": {
-                    'url': url
+                    'url': url,
+                    'password_expires_on': request.POST.get('password_expires_on')
                 }
             }
         }

@@ -126,8 +126,11 @@ def auth_view(request):
     if user is not None:
         already_logged = user.userprofile.password_changed_at
         password_expire = True
+        password_expire_alert = False
         if already_logged:
-            password_expire = already_logged + timedelta(days=30) < timezone.now()
+            password_expires_on = already_logged + timedelta(days=30)
+            password_expire = password_expires_on < timezone.now()
+            password_expire_alert = already_logged + timedelta(days=20) < timezone.now()
 
     if user is not None and user.is_active and (not already_logged or password_expire):
         auth.login(request, user)
@@ -161,14 +164,19 @@ def auth_view(request):
             session_key_in_visitor_db = request.user.visitor.session_key
 
             if session_key_in_visitor_db != key_from_cookie:
-                objects_values = dict(dialog=True, url=next_url)
+                objects_values = dict(dialog=True, url=next_url,
+                        password_expires_on=unicode(password_expires_on.date()))
 
             else:
                 objects_values = dict(url=next_url)
 
         else:
             Visitor.objects.create(user=request.user, session_key=key_from_cookie)
-            objects_values = dict(url=next_url)
+            if password_expire_alert:
+                objects_values = dict(password_expire_alert=True , url=next_url,
+                        password_expires_on=unicode(password_expires_on.date()))
+            else:
+                objects_values = dict(url=next_url)
 
         # values to store in user audit logs
         user_audit = {

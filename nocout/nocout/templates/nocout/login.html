@@ -86,7 +86,7 @@
         </div>
         <div id="page_content_div">
         	<div class="hide" id="ajax_spinner" align="center"></div>
-        </div>        
+        </div>
     </section>
     <!--/LOGIN -->
   </section>
@@ -152,7 +152,7 @@
           showSpinner();
 
           /*Make ajax call to the server*/
-          $.ajax({   
+          $.ajax({
             url: "/auth/",
             type: "POST",
             data: $("#login_form").serialize(true) + location.search.replace('?','&'),
@@ -181,8 +181,8 @@
                     '<span class="help-block">Same as above password.</span> </div> ' +
                     '</div> ' +
                     '<div class="form-group"> <div class="col-md-12"> ' +
-                    '<span id="id_error_message" name="id_error_message"></span> </div> ' +
-                    '</div> ' +
+                    '<span id="id_error_message" name="id_error_message" style="color:Red;">' +
+                    '</span> </div> </div> ' +
                     '</form> </div> </div>',
                     title: "Set New Password",
                     onEscape: function() {
@@ -263,14 +263,19 @@
                             className: "btn-success",
                             callback: function () {
                                 $.ajax({
-                                           url: "/sm/dialog_action/",
-                                           type: "POST",
-                                           data: { action: 'continue', url:data.data.objects.url },
-                                           dataType: "json",
-                                           success: function (data) {
-                                               window.location.replace(data.data.objects.url)
-                                           }//success
-                                       });//ajax
+                                   url: "/sm/dialog_action/",
+                                   type: "POST",
+                                   data: { action: 'continue', url:data.data.objects.url,
+                                    password_expires_on:data.data.objects.password_expires_on },
+                                   dataType: "json",
+                                   success: function (data) {
+                                        bootbox.alert("Change your password, password will " +
+                                            "expire on " +
+                                            data.data.objects.password_expires_on, function() {
+                                            window.location.replace(data.data.objects.url);
+                                        });
+                                   }//success
+                               });//ajax
                             }//callback function
                         },//buttonsuccess
 
@@ -293,6 +298,12 @@
                       } //button
                   });//bootbox end
                 }// if end for data dialogue
+                else if(data.data.objects.password_expire_alert){
+                    bootbox.alert("Change your password, password will expire on " +
+                        data.data.objects.password_expires_on, function() {
+                        window.location.replace(data.data.objects.url);
+                    });
+                }
                 else {
                   window.location.replace(data.data.objects.url);
                 }
@@ -314,14 +325,14 @@
 
               /*Hide spinner*/
               hideSpinner();
-              
+
             }//success
           });//Ajax
         }
         return false;
       });//onclick
 
-      
+
 
   </script>
 <!-- /JAVASCRIPTS -->
