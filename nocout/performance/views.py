@@ -213,6 +213,7 @@ class Live_Performance(ListView):
                 {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+                {'mData': 'age', 'sTitle': 'Age', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
             ]
         elif page_type in ["network"]:
@@ -233,6 +234,7 @@ class Live_Performance(ListView):
                 {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+                {'mData': 'age', 'sTitle': 'Age', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
             ]
         else:
@@ -251,6 +253,7 @@ class Live_Performance(ListView):
                 {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+                {'mData': 'age', 'sTitle': 'Age', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
             ]
 
@@ -279,12 +282,14 @@ class LivePerformanceListing(BaseDatatableView):
                'state',
                'packet_loss',
                'latency',
-               'last_updated'
+               'last_updated',
+               'age'
     ]
     polled_columns = [
         'packet_loss',
        'latency',
-       'last_updated'
+       'last_updated',
+       'age'
     ]
 
     def get_initial_queryset(self):
@@ -322,24 +327,6 @@ class LivePerformanceListing(BaseDatatableView):
                                  page_type=page_type,
                                  required_value_list=required_value_list
         )
-
-        for device in devices:
-            device.update({
-                "page_type":page_type,
-                "packet_loss": "NA",
-                "latency": "NA",
-                "last_updated": "NA",
-                "last_updated_date": "NA",
-                "last_updated_time": "NA",
-                "sector_id": "NA",
-                "circuit_id": "NA",
-                "customer_name": "NA",
-                "bs_name": "NA",
-                "city": "NA",
-                "state": "NA",
-                "device_type": "NA",
-                "device_technology": "NA"
-            })
 
         return devices
 
@@ -398,7 +385,8 @@ class LivePerformanceListing(BaseDatatableView):
                'state',
                'packet_loss',
                'latency',
-               'last_updated'
+               'last_updated',
+               'age'
             ]
         elif page_type == 'network':
             columns = ['id',
@@ -411,7 +399,8 @@ class LivePerformanceListing(BaseDatatableView):
                'state',
                'packet_loss',
                'latency',
-               'last_updated'
+               'last_updated',
+               'age'
             ]
         else:
             columns = ['id',
@@ -423,7 +412,8 @@ class LivePerformanceListing(BaseDatatableView):
                'state',
                'packet_loss',
                'latency',
-               'last_updated'
+               'last_updated',
+               'age'
             ]
 
         i_sort_col = 0
@@ -445,7 +435,7 @@ class LivePerformanceListing(BaseDatatableView):
             # sorting order
             s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
 
-            reverse = False if s_sort_dir == 'desc' else True
+            reverse = True if s_sort_dir == 'desc' else False
 
         if i_sorting_cols and i_sort_col:
             self.is_initialised = False
@@ -463,8 +453,8 @@ class LivePerformanceListing(BaseDatatableView):
                     ##we can quickly call upon prepare_devices
                     machines = self.prepare_machines(sort_data)
                     #preparing the polled results
-                    qs = self.prepare_polled_results(sort_data, multi_proc=False, machine_dict=machines)
-                    sort_data = qs
+                    result_qs = self.prepare_polled_results(sort_data, multi_proc=False, machine_dict=machines)
+                    sort_data = result_qs
                 else:
                     self.is_polled = False
                 sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
@@ -533,15 +523,16 @@ class LivePerformanceListing(BaseDatatableView):
         """
         if DEBUG:
             log.debug("preparing final result")
+        page_type = self.request.GET['page_type']
         if qs:
             for dct in qs:
                 # device = Device.objects.get(id=dct['id'])
-                if dct['page_type'] in ["customer", "network"]:
+                if page_type in ["customer", "network"]:
                     dct.update(
                         actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                         <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
                         <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                        .format(dct['page_type'],
+                        .format(page_type,
                                 dct['id'],
                                 'ping')
                     )
@@ -549,7 +540,7 @@ class LivePerformanceListing(BaseDatatableView):
                     dct.update(
                         actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                         <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                        .format(dct['page_type'],
+                        .format(page_type,
                                 dct['id']
                         )
                     )
@@ -690,6 +681,7 @@ def map_results(perf_result, qs):
                             dct["packet_loss"] = result["packet_loss"]
                             dct["latency"] = result["latency"]
                         dct["last_updated"] = result["last_updated"]
+                        dct["age"] = result["age"]
     return result_qs
 
 
@@ -1748,9 +1740,10 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
             table_1.device_name as device_name,
             table_1.current_value as pl,
             table_2.current_value as rta,
-            table_1.sys_timestamp
+            table_1.sys_timestamp as sys_timestamp,
+            table_1.age as age
         from (
-        select `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
+        select `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`, `age`
         from
             (
                 select `id`,
@@ -1758,13 +1751,13 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
                 `device_name`,
                 `data_source`,
                 `current_value`,
-                `sys_timestamp`
+                `sys_timestamp`,
+                `age`
                 from `performance_networkstatus`
                 where
                     `performance_networkstatus`.`device_name` in ({0})
-                    and `performance_networkstatus`.`data_source` in ( 'pl','rta' )
-            order by `performance_networkstatus`.sys_timestamp desc) as `derived_table`
-        group by `derived_table`.`device_name`, `derived_table`.`data_source`
+                    and `performance_networkstatus`.`data_source` in ( 'pl' )
+            ) as `derived_table`
         ) as table_1
         join (
             select `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
@@ -1775,15 +1768,17 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
                     `device_name`,
                     `data_source`,
                     `current_value`,
-                    `sys_timestamp` from
-                    `performance_networkstatus`
+                    `sys_timestamp`
+                    from `performance_networkstatus`
                     where
-                    `performance_networkstatus`.`device_name` in ({0})
-                    and `performance_networkstatus`.`data_source` in ( 'pl','rta' )
-                order by `performance_networkstatus`.sys_timestamp desc) as `derived_table`
-            group by `derived_table`.`device_name`, `derived_table`.`data_source`
+                        `performance_networkstatus`.`device_name` in ({0})
+                        and `performance_networkstatus`.`data_source` in ( 'rta' )
+              ) as `derived_table`
         ) as table_2
-        on (table_1.device_name = table_2.device_name and table_1.data_source != table_2.data_source)
+        on (table_1.device_name = table_2.device_name
+            and table_1.data_source != table_2.data_source
+            and table_1.sys_timestamp = table_2.sys_timestamp
+            )
         group by (table_1.device_name);
     """.format(",".join(map(in_string, devices)))
 
@@ -2108,6 +2103,17 @@ def prepare_gis_devices(devices, page_type):
 
     for device in devices:
 
+        device.update({
+            "sector_id": "",
+            "circuit_id": "",
+            "customer_name": "",
+            "bs_name": "",
+            "city": "",
+            "state": "",
+            "device_type": "",
+            "device_technology": ""
+        })
+
         is_sector = False
         is_ss = False
         is_bh = False
@@ -2152,8 +2158,9 @@ def prepare_gis_devices(devices, page_type):
                     })
                 if is_ss:
                     device.update({
-                        "device_type": format_value(bs_row['SS_TYPE']),
                         "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']),
+                        "device_type": format_value(bs_row['SS_TYPE']),
+                        "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
                 elif is_bh:
                     device.update({
@@ -2191,7 +2198,7 @@ def indexed_polled_results(performance_data):
 ## function to accept machine wise device list
 ## and fetch result from the desired machine
 ## max processes = 7 (number of total machines)
-
+@cache_for(300)
 def get_multiprocessing_performance_data(q,device_list, machine, model):
     """
     Consolidated Performance Data from the Data base.
@@ -2205,12 +2212,13 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
     st = datetime.datetime.now()
 
     device_result = {}
-    perf_result = {"packet_loss": "N/A",
-                   "latency": "N/A",
-                   "last_updated": "N/A",
-                   "last_updated_date": "N/A",
-                   "last_updated_time": "N/A"
-                  }
+    # perf_result = {"packet_loss": "N/A",
+    #                "latency": "N/A",
+    #                "last_updated": "N/A",
+    #                "last_updated_date": "N/A",
+    #                "last_updated_time": "N/A",
+    #                "age": "N/A"
+    #               }
 
     if DEBUG:
         log.debug("preparing polled results : query")
@@ -2218,14 +2226,6 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
 
     query = prepare_row_query(table_name="performance_networkstatus",
                           devices=device_list,
-                          data_sources=["pl", "rta"],
-                          columns=["id",
-                                   "service_name",
-                                   "device_name",
-                                   "data_source",
-                                   "current_value",
-                                   "sys_timestamp"
-                          ]
     )
     # (query)
     performance_data = fetch_raw_result(query=query,machine=machine)#model.objects.raw(query).using(alias=machine)
@@ -2233,9 +2233,9 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
     indexed_perf_data = indexed_polled_results(performance_data)
 
     # (len(performance_data))
-    for device in device_list:
-        if device not in device_result:
-            device_result[device] = perf_result
+    # for device in device_list:
+    #     if device not in device_result:
+    #         device_result[device] = perf_result
 
     if DEBUG:
         endtime = datetime.datetime.now()
@@ -2258,7 +2258,8 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
                            "last_updated": "N/A",
                            "last_updated_date": "N/A",
                            "last_updated_time": "N/A",
-                           "device_name" : "N/A",
+                           "device_name": "N/A",
+                           "age": "N/A",
             }
             data = indexed_perf_data[device]
             # for data in performance_data:
@@ -2275,7 +2276,11 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
 
             perf_result["last_updated"] = datetime.datetime.fromtimestamp(
                 float(data['sys_timestamp'])
-            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
+
+            perf_result["age"] = datetime.datetime.fromtimestamp(
+                float(data['age'])
+            ).strftime("%d days %H:%M:%S")
 
             device_result[device] = perf_result
     # (device_result)
@@ -2292,6 +2297,7 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
         log.exception(e.message)
 
 
+@cache_for(300)
 def get_performance_data(device_list, machine, model):
     """
     Consolidated Performance Data from the Data base.
@@ -2306,7 +2312,8 @@ def get_performance_data(device_list, machine, model):
                    "latency": "N/A",
                    "last_updated": "N/A",
                    "last_updated_date": "N/A",
-                   "last_updated_time": "N/A"
+                   "last_updated_time": "N/A",
+                   "age": "N/A"
                   }
 
     if DEBUG:
@@ -2314,15 +2321,7 @@ def get_performance_data(device_list, machine, model):
         log.debug("start time %s" %st)
 
     query = prepare_row_query(table_name="performance_networkstatus",
-                          devices=device_list,
-                          data_sources=["pl", "rta"],
-                          columns=["id",
-                                   "service_name",
-                                   "device_name",
-                                   "data_source",
-                                   "current_value",
-                                   "sys_timestamp"
-                          ]
+                          devices=device_list
     )
 
     performance_data = fetch_raw_result(query=query,machine=machine)#model.objects.raw(query).using(alias=machine)
@@ -2357,6 +2356,7 @@ def get_performance_data(device_list, machine, model):
                            "last_updated_date": "N/A",
                            "last_updated_time": "N/A",
                            "device_name" : "N/A",
+                           "age" : "N/A",
             }
             data = indexed_perf_data[device]
             # for data in performance_data:
@@ -2373,7 +2373,11 @@ def get_performance_data(device_list, machine, model):
 
             perf_result["last_updated"] = datetime.datetime.fromtimestamp(
                 float(data['sys_timestamp'])
-            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+            ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
+
+            perf_result["age"] = datetime.datetime.fromtimestamp(
+                float(data['age'])
+            ).strftime("%d days %H:%M:%S")
 
             device_result[device] = perf_result
     # (device_result)
