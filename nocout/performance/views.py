@@ -660,6 +660,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     return result_qs
 
 
+@cache_for(300)
 def map_results(perf_result, qs):
     """
     """
