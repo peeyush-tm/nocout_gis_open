@@ -194,68 +194,52 @@ class Live_Performance(ListView):
         """
         context = super(Live_Performance, self).get_context_data(**kwargs)
         page_type = self.kwargs['page_type']
+
+        hidden_headers = [
+            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+        ]
+
+        common_headers = [
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+
+        ]
+
+        polled_headers = [
+            {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Age', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+        ]
+
+        action_headers = [
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
+        ]
+
         if page_type in ["customer"]:
             datatable_headers = [
-                # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-                {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
-                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
-                # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
-                {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                # {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
-                {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'age', 'sTitle': 'Age', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
+                {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+                {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             ]
+
         elif page_type in ["network"]:
             datatable_headers = [
-                # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-                {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
-                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
-                # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
-                {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                # {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'age', 'sTitle': 'Age', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
             ]
+
         else:
             datatable_headers = [
-                # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-                {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
-                # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
-                {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'age', 'sTitle': 'Age', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-                {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
             ]
+
+        datatable_headers = hidden_headers
+        datatable_headers += common_headers
+        datatable_headers += polled_headers
+        datatable_headers += action_headers
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['page_type'] = page_type
@@ -273,23 +257,26 @@ class LivePerformanceListing(BaseDatatableView):
     is_searched = False
     is_initialised = True
 
-    columns = ['id',
-               'ip_address',
-               'device_technology',
-               'device_type',
-               'bs_name',
-               'city',
-               'state',
-               'packet_loss',
-               'latency',
-               'last_updated',
-               'age'
+    columns = [
+        'id',
+        'circuit_id',
+        'sector_id',
+        'customer_name',
+        'ip_address',
+        'device_type',
+        'bs_name',
+        'city',
+        'state',
+        'packet_loss',
+        'latency',
+        'last_updated',
+        'age'
     ]
     polled_columns = [
         'packet_loss',
-       'latency',
-       'last_updated',
-       'age'
+        'latency',
+        'last_updated',
+        'age'
     ]
 
     def get_initial_queryset(self):
@@ -371,49 +358,50 @@ class LivePerformanceListing(BaseDatatableView):
         request = self.request
 
         page_type = request.GET['page_type']
-        
 
         if page_type == 'customer':
-            columns = ['id',
-               'ip_address',
-               'device_technology',
-               'device_type',
-               'bs_name',
-               'circuit_id',
-               'customer_name',
-               'city',
-               'state',
-               'packet_loss',
-               'latency',
-               'last_updated',
-               'age'
+            columns = [
+                'id',
+                'circuit_id',
+                'sector_id',
+                'customer_name',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'packet_loss',
+                'latency',
+                'last_updated',
+                'age'
             ]
         elif page_type == 'network':
-            columns = ['id',
-               'ip_address',
-               'device_technology',
-               'device_type',
-               'bs_name',
-               'sector_id',
-               'city',
-               'state',
-               'packet_loss',
-               'latency',
-               'last_updated',
-               'age'
+            columns = [
+                'id',
+                'sector_id',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'packet_loss',
+                'latency',
+                'last_updated',
+                'age'
             ]
         else:
-            columns = ['id',
-               'ip_address',
-               'device_technology',
-               'device_type',
-               'bs_name',
-               'city',
-               'state',
-               'packet_loss',
-               'latency',
-               'last_updated',
-               'age'
+            columns = [
+                'id',
+                'device_technology',
+                'ip_address',
+                'device_type',
+                'bs_name',
+                'city',
+                'state',
+                'packet_loss',
+                'latency',
+                'last_updated',
+                'age'
             ]
 
         i_sort_col = 0
