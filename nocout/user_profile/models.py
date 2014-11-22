@@ -31,4 +31,10 @@ class Roles(models.Model):
     def __unicode__(self):
         return self.role_description
 
-
+class UserPasswordRecord(models.Model):
+    """
+    To keep the record of the password used by user.
+    """
+    user_id = models.IntegerField('User Id', null=True, blank=True)
+    password_used = models.CharField('Password', max_length=100, null=True, blank=True)
+    password_used_on = models.DateTimeField('Password Used On', auto_now_add=True)
