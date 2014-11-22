@@ -601,104 +601,6 @@ class LivePerformanceListing(BaseDatatableView):
         return ret
 
 
-@cache_for(300)
-def prepare_machines(device_list):
-    """
-
-    :return:
-    """
-    # Unique machine from the device_list
-    unique_device_machine_list = {device['device_machine']: True for device in device_list}.keys()
-
-    machine_dict = {}
-    #Creating the machine as a key and device_name as a list for that machine.
-    for machine in unique_device_machine_list:
-        machine_dict[machine] = [device['device_name'] for device in device_list if
-                                 device['device_machine'] == machine]
-
-    return machine_dict
-
-
-@cache_for(300)
-def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
-    """
-    ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
-    """
-    #Fetching the data for the device w.r.t to their machine.
-    ## multi processing module here
-    ## to fetch the deice results from corrosponding machines
-    model = model_is
-    devices = qs
-    processed = []
-    perf_result = []
-    if multi_proc:
-
-        q = Queue()
-        jobs = [
-            Process(
-                target=get_multiprocessing_performance_data,
-                args=(q,machine_device_list, machine,model)
-            ) for machine, machine_device_list in machine_dict.items()
-        ]
-
-        for j in jobs:
-            j.start()
-        for k in jobs:
-            k.join()
-
-        while True:
-            if not q.empty():
-                perf_result.append(q.get())
-            else:
-                break
-
-    else:
-        for machine, machine_device_list in machine_dict.items():
-            perf_result.append(get_performance_data(machine_device_list, machine, model))
-
-    result_qs = map_results(perf_result,devices)
-    return result_qs
-
-
-@cache_for(300)
-def map_results(perf_result, qs):
-    """
-    """
-    st = datetime.datetime.now()
-    if DEBUG:
-        if DEBUG:
-            log.debug("MAP RESULTS : Start")
-            log.debug("START %s" %st)
-
-    result_qs = qs
-    performance = perf_result
-    processed = []
-    for dct in result_qs:
-        device_name = dct["device_name"]
-        if device_name not in processed:
-            processed.append(device_name)
-            for perf in performance:
-                try:
-                    result = perf[device_name]
-                    try:
-                        dct["packet_loss"] = float(result["packet_loss"])
-                        dct["latency"] = float(result["latency"])
-                    except Exception as e:
-                        dct["packet_loss"] = result["packet_loss"]
-                        dct["latency"] = result["latency"]
-                    dct["last_updated"] = result["last_updated"]
-                    dct["age"] = result["age"]
-                except:
-                    continue
-
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("MAPPING END {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("MAP RESULTS  : RETURN")
-    return result_qs
-
-
 class Get_Perfomance(View):
     """
     The Class based View to get performance page for the single device.
@@ -2007,6 +1909,104 @@ def filter_devices(organizations=[],
     ]
 
     return organization_devices
+
+
+@cache_for(300)
+def prepare_machines(device_list):
+    """
+
+    :return:
+    """
+    # Unique machine from the device_list
+    unique_device_machine_list = {device['device_machine']: True for device in device_list}.keys()
+
+    machine_dict = {}
+    #Creating the machine as a key and device_name as a list for that machine.
+    for machine in unique_device_machine_list:
+        machine_dict[machine] = [device['device_name'] for device in device_list if
+                                 device['device_machine'] == machine]
+
+    return machine_dict
+
+
+@cache_for(300)
+def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
+    """
+    ##since the perfomance status data would be refreshed per 5 minutes## we will cache it
+    """
+    #Fetching the data for the device w.r.t to their machine.
+    ## multi processing module here
+    ## to fetch the deice results from corrosponding machines
+    model = model_is
+    devices = qs
+    processed = []
+    perf_result = []
+    if multi_proc:
+
+        q = Queue()
+        jobs = [
+            Process(
+                target=get_multiprocessing_performance_data,
+                args=(q,machine_device_list, machine,model)
+            ) for machine, machine_device_list in machine_dict.items()
+        ]
+
+        for j in jobs:
+            j.start()
+        for k in jobs:
+            k.join()
+
+        while True:
+            if not q.empty():
+                perf_result.append(q.get())
+            else:
+                break
+
+    else:
+        for machine, machine_device_list in machine_dict.items():
+            perf_result.append(get_performance_data(machine_device_list, machine, model))
+
+    result_qs = map_results(perf_result,devices)
+    return result_qs
+
+
+# @cache_for(300)
+def map_results(perf_result, qs):
+    """
+    """
+    st = datetime.datetime.now()
+    if DEBUG:
+        if DEBUG:
+            log.debug("MAP RESULTS : Start")
+            log.debug("START %s" %st)
+
+    result_qs = qs
+    performance = perf_result
+    processed = []
+    for dct in result_qs:
+        device_name = dct["device_name"]
+        if device_name not in processed:
+            processed.append(device_name)
+            for perf in performance:
+                try:
+                    result = perf[device_name]
+                    try:
+                        dct["packet_loss"] = float(result["packet_loss"])
+                        dct["latency"] = float(result["latency"])
+                    except Exception as e:
+                        dct["packet_loss"] = result["packet_loss"]
+                        dct["latency"] = result["latency"]
+                    dct["last_updated"] = result["last_updated"]
+                    dct["age"] = result["age"]
+                except:
+                    continue
+
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        log.debug("MAPPING END {}".format(divmod(elapsed.total_seconds(), 60)))
+        log.debug("MAP RESULTS  : RETURN")
+    return result_qs
 
 
 @cache_for(300)
