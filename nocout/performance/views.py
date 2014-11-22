@@ -1997,24 +1997,24 @@ def map_results(perf_result, qs):
     return result_qs
 
 
-@cache_for(300)
-def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
-    """
-
-    :return:
-    """
-
-    raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
-
-    indexed_raw_results = {}
-
-    for result in raw_results:
-        defined_index = result[indexed]
-        if defined_index not in indexed_raw_results:
-            indexed_raw_results[defined_index] = []
-        indexed_raw_results[defined_index].append(result)
-
-    return indexed_raw_results
+# @cache_for(300)
+# def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
+#     """
+#
+#     :return:
+#     """
+#
+#     raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
+#
+#     indexed_raw_results = {}
+#
+#     for result in raw_results:
+#         defined_index = result[indexed]
+#         if defined_index not in indexed_raw_results:
+#             indexed_raw_results[defined_index] = []
+#         indexed_raw_results[defined_index].append(result)
+#
+#     return indexed_raw_results
 
 
 @cache_for(300)
