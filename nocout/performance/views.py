@@ -220,23 +220,24 @@ class Live_Performance(ListView):
         ]
 
         if page_type in ["customer"]:
-            datatable_headers = [
+            specific_headers = [
                 {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             ]
 
         elif page_type in ["network"]:
-            datatable_headers = [
+            specific_headers = [
                 {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             ]
 
         else:
-            datatable_headers = [
+            specific_headers = [
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             ]
 
         datatable_headers = hidden_headers
+        datatable_headers += specific_headers
         datatable_headers += common_headers
         datatable_headers += polled_headers
         datatable_headers += action_headers
