@@ -1,12 +1,12 @@
 """
-mongo_aggregation_to_mysql.py
+historical_mongo_to_mysql.py
 ========================================
 
 Usage:
-python mongo_aggregation_to_mysql.py -t 0.5 -s service_perf_half_hourly -d performance_performanceservicebihourly
-python mongo_aggregation_to_mysql.py -t 0.5 -s network_perf_half_hourly -d performance_performancenetworkbihourly
-python mongo_aggregation_to_mysql.py -t 1 -s network_perf_hourly -d performance_performancenetworkhourly
-python mongo_aggregation_to_mysql.py -t 168 -s inventory_perf_weekly -d performance_performanceinventoryweekly
+python historical_mongo_to_mysql.py -t 0.5 -s service_perf_half_hourly -d performance_performanceservicebihourly
+python historical_mongo_to_mysql.py -t 0.5 -s network_perf_half_hourly -d performance_performancenetworkbihourly
+python historical_mongo_to_mysql.py -t 1 -s network_perf_hourly -d performance_performancenetworkhourly
+python historical_mongo_to_mysql.py -t 168 -s inventory_perf_weekly -d performance_performanceinventoryweekly
 Options ::
 t - Time frame for which data to be imported [Hours]
 s - Source mongodb collection

@@ -189,8 +189,8 @@ def get_settings():
 
 def get_threshold(service):
     result = ()
-    if not len(service['warning']) or not len(service['critical']):
-        pass
+    if service.get('service_warning') or service.get('service_critical'):
+        result = (int(service['service_warning']), int('service_critical'))
     else:
         try:
 	    if service.get('service') in wimax_mod_services:
@@ -198,7 +198,8 @@ def get_threshold(service):
 	    else:
 		    result = (int(service['warning']), int(service['critical']))
         except:
-            result = (service['warning'], service['critical'])
+	    pass
+            #result = (service['warning'], service['critical'])
     return result
 
 
