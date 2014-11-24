@@ -54,6 +54,14 @@
                         Selection
                     </button>
                 </li>
+                <li>
+                    <button type="button" class="btn btn-sm btn-info" id="export_data_gmap"
+                            data-complete-text="<i class='fa fa-download'></i> Export Devices"
+                            data-loading-text="Please Wait..."><i class='fa fa-download'></i> Export Devices</button>
+                    <button type="button" class="btn btn-xs btn-danger hide" id="clearExportDataBtn"><i class="fa fa-times"></i> Clear
+                        Selection
+                    </button>
+                </li>
                 {% for group in user.groups.all %}
                     {% if group.name == 'group_admin' or group.name == 'group_operator' %}
                         <li>
