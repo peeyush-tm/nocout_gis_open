@@ -19,7 +19,8 @@ from performance.views import ptp_device_circuit_backhaul, \
     indexed_polled_results,\
     filter_devices,\
     prepare_machines,\
-    prepare_gis_devices
+    prepare_gis_devices,\
+    pre_map_indexing
 
 from django.utils.dateformat import format
 from django.db.models import Q
@@ -557,7 +558,7 @@ class AlertCenterListing(ListView):
         data_tab=self.kwargs.get('data_tab')
 
         datatable_headers = [
-            # {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'auto', 'sClass': 'hidden-xs',
@@ -706,7 +707,7 @@ class AlertListingTable(BaseDatatableView):
 
         return devices
 
-    def prepare_devices(self,qs):
+    def prepare_devices(self,qs, perf_results):
         """
 
         :param device_list:
@@ -731,7 +732,7 @@ class AlertListingTable(BaseDatatableView):
 
         return prepare_machines(device_list)
 
-    def prepare_polled_results(self, qs, machine_dict={}):
+    def prepare_polled_results(self, qs, machine_dict=None):
         """
         preparing polled results
         after creating static inventory first
@@ -784,10 +785,8 @@ class AlertListingTable(BaseDatatableView):
                                                   condition=extra_query_condition if extra_query_condition else None
             )
 
+            device_list = prepare_raw_alert_results(performance_data=performance_data)
 
-            device_list = prepare_raw_alert_results(device_list,performance_data)
-
-            # sorted_device_list += sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
             sorted_device_list += device_list
 
         return sorted_device_list
@@ -803,7 +802,6 @@ class AlertListingTable(BaseDatatableView):
         page_type=self.request.GET.get('page_type')
 
         if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
             data_unit = "%"
             service_tab = 'down'
             # figure out which tab call is made.
@@ -818,7 +816,6 @@ class AlertListingTable(BaseDatatableView):
                 service_tab = 'service'
 
             for dct in qs:
-                device = Device.objects.get(device_name= dct['device_name'])
                 try:
                     dct.update(current_value = float(dct["current_value"]))
                 except:
@@ -826,7 +823,7 @@ class AlertListingTable(BaseDatatableView):
                 dct.update(action='<a href="/alert_center/{2}/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
                                        <a href="/performance/{2}_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                                        <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
-                               format(device.id, service_tab, page_type ))
+                               format(dct['id'], service_tab, page_type ))
 
             return common_prepare_results(qs)
 
@@ -848,11 +845,11 @@ class AlertListingTable(BaseDatatableView):
         #machines dict
 
         #prepare the polled results
-        qs = self.prepare_polled_results(qs, machine_dict=machines)
+        perf_results = self.prepare_polled_results(qs, machine_dict=machines)
         # this is query set with complete polled result
-
+        qs = map_results(perf_results, qs)
         #this function is for mapping to GIS inventory
-        qs = self.prepare_devices(qs)
+        qs = self.prepare_devices(qs, perf_results)
         #this function is for mapping to GIS inventory
 
         # number of records before filtering
@@ -1350,7 +1347,7 @@ def indexed_alert_results(performance_data):
 
 
 @cache_for(300)
-def prepare_raw_alert_results(device_list=[], performance_data=None):
+def prepare_raw_alert_results(performance_data=None):
     """
     prepare GIS result using raw query
 
@@ -1364,6 +1361,8 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
         logger.debug("START TIME : %s" %st)
 
     indexed_alert_data = indexed_alert_results(performance_data)
+
+    device_list = list()
 
     for device_alert in indexed_alert_data:
         # the data would be a tuple of ("device_name"."data_source")
@@ -1384,26 +1383,8 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
 
         data = indexed_alert_data[device_alert]
 
-        static_gis_keys = {
-                "page_type": "NA",
-                "device_type": "NA",
-                "severity": "NA",
-                "bs_name": "NA",
-                "circuit_id": "NA",
-                "sector_id": "NA",
-                "city": "NA",
-                "state": "NA",
-                "customer_name": "NA",
-                "data_source_name": "NA",
-                "current_value": "NA",
-                "max_value": "NA",
-                "sys_timestamp": "NA",
-                "age": "NA",
-                'description': "NA"
-        }
-
         if severity_level_check(list_to_check=[data['severity']]):
-            device_events = static_gis_keys
+            device_events = {}
             device_events.update({
                 'device_name': device_name,
                 'severity': data['severity'],
@@ -1429,3 +1410,38 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
         logger.debug("ALERT : Preparing ALERT POLLED Results : COMPLETED")
 
     return device_list
+
+
+@cache_for(300)
+def map_results(perf_result, qs):
+    """
+
+    :param perf_result:
+    :param qs:
+    :return:
+    """
+    result_qs = []
+    st = datetime.datetime.now()
+    if DEBUG:
+        if DEBUG:
+            logger.debug("ALERT : MAP RESULTS : Start")
+            logger.debug("START %s" %st)
+
+    indexed_qs = pre_map_indexing(index_dict=qs)
+    indexed_perf = pre_map_indexing(index_dict=perf_result)
+
+    for device in indexed_qs:
+        try:
+            device_info = indexed_qs[device][0].items()
+            map_perf = indexed_perf[device]
+            for data_source in map_perf:
+                result_qs.append(dict(device_info + data_source.items()))
+        except Exception as e:
+            continue
+    if DEBUG:
+        endtime = datetime.datetime.now()
+        elapsed = endtime - st
+        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
+        logger.debug("ALERT : FINAL RESULTS : Inventory Mapped : COMPLETED")
+
+    return result_qs
