@@ -204,10 +204,12 @@ class UserUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     def form_valid(self, form):
         """
         To update the form before submitting and log the user activity.
+        To update the record of the password used by user
         """
         self.object = form.save(commit=False)
         if form.cleaned_data["password2"]:
             self.object.set_password(form.cleaned_data["password2"])
+            UserPasswordRecord.objects.create(user_id=self.object.id, password_used=self.object.password)
 
         role = form.cleaned_data['role'][0]
         project_group_name = project_group_role_dict_mapper[role.role_name]
@@ -262,6 +264,8 @@ class CurrentUserProfileUpdate(FormRequestMixin, UpdateView):
     def form_valid(self, form):
         """
         To log the user activity before submitting the form.
+        To update the record of the password used by user
+        And delete old password other than five previously used.
         """
 
         self.object = form.save(commit=False)
@@ -317,9 +321,11 @@ def change_password(request):
     if request.POST.get('action') == 'continue':
         form = UserPasswordForm(request.POST)
         if form.is_valid():
+            user_id = request.POST.get('user_id')
             kwargs=dict(password=make_password(form.data['confirm_pwd']),
                         password_changed_at=timezone.now())
-            UserProfile.objects.filter(id=request.POST.get('user_id')).update(**kwargs)
+            UserProfile.objects.filter(id=user_id).update(**kwargs)
+            UserPasswordRecord.objects.create(user_id=user_id, password_used=kwargs['password'])
             result = {
                 "success": 1,  # 0 - fail, 1 - success, 2 - exception
                 "message": "Success/Fail message.",
