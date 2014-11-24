@@ -1959,7 +1959,25 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
     return result_qs
 
 
-# @cache_for(300)
+@cache_for(300)
+def pre_map_indexing(index_dict, index_on='device_name'):
+    """
+
+    :param index_dict:
+    :param index_on:
+    :return:
+    """
+    indexed_results = {}
+    for data in index_dict:
+        defined_index = data['device_name']
+        if defined_index not in indexed_results:
+            indexed_results[defined_index] = []
+        indexed_results[defined_index].append(data)
+
+    return indexed_results
+
+
+@cache_for(300)
 def map_results(perf_result, qs):
     """
     """
@@ -1969,26 +1987,21 @@ def map_results(perf_result, qs):
             log.debug("MAP RESULTS : Start")
             log.debug("START %s" %st)
 
-    result_qs = qs
+    result_qs = []
     performance = perf_result
     processed = []
-    for dct in result_qs:
-        device_name = dct["device_name"]
-        if device_name not in processed:
-            processed.append(device_name)
-            for perf in performance:
-                try:
-                    result = perf[device_name]
-                    try:
-                        dct["packet_loss"] = float(result["packet_loss"])
-                        dct["latency"] = float(result["latency"])
-                    except Exception as e:
-                        dct["packet_loss"] = result["packet_loss"]
-                        dct["latency"] = result["latency"]
-                    dct["last_updated"] = result["last_updated"]
-                    dct["age"] = result["age"]
-                except:
-                    continue
+
+    indexed_qs = pre_map_indexing(index_dict=qs)
+
+    for device in indexed_qs:
+        for perf in performance: #may run 7 times : per machine once
+            try:
+                device_info = indexed_qs[device][0].items()
+                data_source = perf[device]
+                result_qs.append(dict(device_info + data_source.items()))
+            except Exception as e:
+                log.exception(e.message)
+                continue
 
     if DEBUG:
         endtime = datetime.datetime.now()
@@ -1996,26 +2009,6 @@ def map_results(perf_result, qs):
         log.debug("MAPPING END {}".format(divmod(elapsed.total_seconds(), 60)))
         log.debug("MAP RESULTS  : RETURN")
     return result_qs
-
-
-# @cache_for(300)
-# def indexed_gis_devices(indexed="SECTOR_CONF_ON_ID"):
-#     """
-#
-#     :return:
-#     """
-#
-#     raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
-#
-#     indexed_raw_results = {}
-#
-#     for result in raw_results:
-#         defined_index = result[indexed]
-#         if defined_index not in indexed_raw_results:
-#             indexed_raw_results[defined_index] = []
-#         indexed_raw_results[defined_index].append(result)
-#
-#     return indexed_raw_results
 
 
 @cache_for(300)
@@ -2272,18 +2265,23 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
             # d_src = str(data['data_source']).strip().lower()
             # current_val = str(data['current_value'])
 
-            # if d_src == "pl":
-            perf_result["packet_loss"] = data['pl']
-            # if d_src == "rta":
-            perf_result["latency"] = data['rta']
+            try:
+                # if d_src == "pl":
+                perf_result["packet_loss"] = float(data['pl'])
+                # if d_src == "rta":
+                perf_result["latency"] = float(data['rta'])
+            except:
+                # if d_src == "pl":
+                perf_result["packet_loss"] = data['pl']
+                # if d_src == "rta":
+                perf_result["latency"] = data['rta']
 
             perf_result["last_updated"] = datetime.datetime.fromtimestamp(
                 float(data['sys_timestamp'])
             ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                float(data['age'])
-            ).strftime("%d days %H:%M:%S")
+                    float(data["age"])).strftime("%d days %H:%M:%S") if data["age"] else ""
 
             device_result[device] = perf_result
     # (device_result)
@@ -2368,19 +2366,24 @@ def get_performance_data(device_list, machine, model):
 
             # d_src = str(data['data_source']).strip().lower()
             # current_val = str(data['current_value'])
-
-            # if d_src == "pl":
-            perf_result["packet_loss"] = data['pl']
-            # if d_src == "rta":
-            perf_result["latency"] = data['rta']
+            try:
+                # if d_src == "pl":
+                perf_result["packet_loss"] = float(data['pl'])
+                # if d_src == "rta":
+                perf_result["latency"] = float(data['rta'])
+            except:
+                # if d_src == "pl":
+                perf_result["packet_loss"] = data['pl']
+                # if d_src == "rta":
+                perf_result["latency"] = data['rta']
 
             perf_result["last_updated"] = datetime.datetime.fromtimestamp(
                 float(data['sys_timestamp'])
             ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                float(data['age'])
-            ).strftime("%d days %H:%M:%S")
+                    float(data["age"])).strftime("%d days %H:%M:%S") if data["age"] else ""
+
 
             device_result[device] = perf_result
     # (device_result)

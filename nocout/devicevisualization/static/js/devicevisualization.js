@@ -587,6 +587,8 @@ $("select#icon_Size_Select_In_Tools").change(function() {
     defaultIconSize= val;
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.updateMarkersSize(val);
+    } else if (window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.updateAllMarkersWithNewIcon(val);
     } else {
         networkMapInstance.updateAllMarkersWithNewIcon(val);
         
@@ -912,6 +914,7 @@ $("#ruler_select").click(function(e) {
     networkMapInstance.addRulerTool_gmap();
 });
 
+
 $("#ruler_remove").click(function(e) {
     pointAdded= -1;
     is_line_active= -1;
@@ -932,6 +935,11 @@ $("#line_select").click(function(e) {
     pointAdded= -1;
     is_line_active= 1;
     is_ruler_active= -1;
+
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+    } else {
+
+    }
 
     networkMapInstance.clearLineTool_gmap();
 
@@ -956,12 +964,22 @@ $("#line_remove").click(function(e) {
     networkMapInstance.clearLineTool_gmap();
 });
 
+
+var pointEventHandler = "";
+
 $("#point_select").click(function(e) {
     pointAdded= 1;
     is_line_active= -1;
     is_ruler_active= -1;
 
-    google.maps.event.clearListeners(mapInstance, 'click');
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        if(pointEventHandler) {
+            google.earth.removeEventListener(ge.getGlobe(), 'mousedown', pointEventHandler);
+            pointEventHandler = "";
+        }
+    } else {
+        google.maps.event.clearListeners(mapInstance, 'click');
+    }
 
     // $("#point_remove").removeClass("hide");
     $(this).removeClass('btn-info').addClass('btn-warning');
@@ -1188,8 +1206,13 @@ $("#export_data_gmap").click(function(e) {
 
     //enable the flag
     isExportDataActive = 1;
+
     // call function to select data to be export & then export selected data
-    networkMapInstance.exportData_gmap();
+    if(window.location.pathname.indexOf('googleEarth') > -1) {
+        earth_instance.exportData_earth();
+    } else {
+        networkMapInstance.exportData_gmap();    
+    }
 });
 
 $("#clearExportDataBtn").click(function(e) {
@@ -1319,6 +1342,16 @@ function updateGoogleEarthPlacemark(placemark, newIcon) {
     var style = ge.createStyle('');
     style.getIconStyle().setIcon(icon);
     // style.getIconStyle().setScale(5.0);
+    placemark.setStyleSelector(style);
+}
+
+function updateGoogleEarthPlacedmarkNewSize(placemark, newSize) {
+    // Define a custom icon.next_polling_btn
+    var icon = ge.createIcon('');
+    icon.setHref(placemark.icon);
+    var style = ge.createStyle('');
+    style.getIconStyle().setIcon(icon);
+    style.getIconStyle().setScale(newSize);
     placemark.setStyleSelector(style);
 }
 
