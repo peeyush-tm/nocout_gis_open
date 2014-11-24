@@ -1466,11 +1466,8 @@ var state_wise_device_label_text= {};
 		(function bindClickToMarker(marker) {
 
 			google.earth.addEventListener(marker, 'click', function(e) {
-				// console.log('clicked here');
 				// if it is a right-click 
-				// console.log(e.getButton());
 				if (e && e.getButton() == 2) {
-					// console.log('hi');
 					gmap_self.openPointRightClickMenu(marker);
 					event.preventDefault(); // optional, depending on your requirements
 					event.stopPropagation(); // optional, depending on your requirements

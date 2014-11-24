@@ -5626,7 +5626,6 @@ function devicePlottingClass_gmap() {
 
 		// openGoogleEarthBaloon(right_click_html, marker)
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
-			// console.log('yosh');
 			openGoogleEarthBaloon(right_click_html, marker);
 		} else {
 
