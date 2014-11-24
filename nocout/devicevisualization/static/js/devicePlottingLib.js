@@ -5626,7 +5626,6 @@ function devicePlottingClass_gmap() {
 
 		// openGoogleEarthBaloon(right_click_html, marker)
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
-			// console.log('yosh');
 			openGoogleEarthBaloon(right_click_html, marker);
 		} else {
 
@@ -6654,7 +6653,9 @@ function devicePlottingClass_gmap() {
 		if(window.location.pathname.indexOf('googleEarth') > -1) {
 			if(polyPlacemark) {
 				gexInstance.edit.endEditLineString(polyPlacemark);
+				polyPlacemark.setVisibility(false);
 			}
+			$("#exportDevices_Iframe").addClass('hide');
 		} else {
 			if(drawingManager) {
 				drawingManager.setDrawingMode(null);
