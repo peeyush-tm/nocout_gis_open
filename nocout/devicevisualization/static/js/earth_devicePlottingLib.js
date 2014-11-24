@@ -2145,6 +2145,7 @@ var state_wise_device_label_text= {};
 								finishCallback: function() {
 									if(pollingPolygonLatLngArr.length) {
 										gexInstance.edit.endEditLineString(polyPlacemark);
+										// polyPlacemark.setVisibility(false);
 
 										pathArray = pollingPolygonLatLngArr;
 										polygon = polyPlacemark;
@@ -2183,6 +2184,7 @@ var state_wise_device_label_text= {};
 										if(polygonSelectedDevices.length == 0) {
 
 											gexInstance.edit.endEditLineString(polyPlacemark);
+											// polyPlacemark.setVisibility(false);
 
 											if(Object.keys(currentPolygon).length > 0) {
 												/*Remove the current polygon from the map*/
@@ -2200,6 +2202,7 @@ var state_wise_device_label_text= {};
 										} else if(polygonSelectedDevices.length > 200) {
 
 											gexInstance.edit.endEditLineString(polyPlacemark);
+											// polyPlacemark.setVisibility(false);
 
 											if(Object.keys(currentPolygon).length > 0) {
 												/*Remove the current polygon from the map*/
@@ -2850,13 +2853,13 @@ var state_wise_device_label_text= {};
 			finishCallback: function() {
 
 				gexInstance.edit.endEditLineString(polyPlacemark);
+				// polyPlacemark.setVisibility(false);
 
 				var pathArray = pollingPolygonLatLngArr,
 					polygon = polyPlacemark;
 
 				exportDataPolygon = polyPlacemark;
 				exportDataPolygon.type = 'Export Polygon';
-
 				// If markers showing
 				if(getRangeInZoom() > 7) {
 					var bs_obj = allMarkersObject_earth['base_station'],
@@ -2883,9 +2886,10 @@ var state_wise_device_label_text= {};
 							var current_bs = selected_bs_markers[i];
 							devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.filter_data.bs_id+'"><h5>'+(i+1)+'.) '+current_bs.bs_alias+'</h5></div>';
 						}
+						
+						$("#exportDevices_Iframe").removeClass('hide');
 
 						$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
-
 						if($("#exportDeviceContainerBlock").hasClass('hide')) {
 							$("#exportDeviceContainerBlock").removeClass('hide');
 						}
@@ -2919,7 +2923,7 @@ var state_wise_device_label_text= {};
 						isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City';
 
 					var states_within_polygon = state_lat_lon_db.where(function(obj) {
-	        			return  isPointInPoly({lat: obj.lat, lon: obj.lon}, pollingPolygonLatLngArr);
+	        			return  isPointInPoly(pollingPolygonLatLngArr, {lat: obj.lat, lon: obj.lon});
 	        		});
 
 	        		for(var i=0;i<states_within_polygon.length;i++) {
@@ -2927,7 +2931,6 @@ var state_wise_device_label_text= {};
 	        				states_array.push(states_within_polygon[i].name);
 	        			}
 	        		}
-
 
 	        		if(states_within_polygon.length > 0) {
 						
@@ -3029,13 +3032,15 @@ var state_wise_device_label_text= {};
 								devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.originalId+'"><h5>'+(i+1)+'.) '+current_bs.alias+'</h5></div>';
 							}
 
+							$("#exportDevices_Iframe").removeClass('hide');
+
 							$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
 
 							if($("#exportDeviceContainerBlock").hasClass('hide')) {
 								$("#exportDeviceContainerBlock").removeClass('hide');
 							}
 
-							gmap_self.downloadInventory_gmap(bs_id_array);
+							// gmap_self.downloadInventory_gmap(bs_id_array);
 
 						} else {
 							gmap_self.removeInventorySelection();
