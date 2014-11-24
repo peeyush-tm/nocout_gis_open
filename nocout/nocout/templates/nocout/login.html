@@ -218,7 +218,22 @@
                                    },
                                    dataType: "json",
                                    success: function (data) {
-                                       window.location.replace(data.data.objects.url)
+                                       if (data.success == 0){
+                                            $("#password").val('');
+                                            var unique_gritter = $.gritter.add({
+                                                title: data.message,
+                                                text: data.reason,
+                                                sticky: false,
+                                                time : 2000,
+                                                after_close: function () {
+                                                    $.gritter.removeAll();
+                                                    window.location.replace(data.data.objects.url)
+                                                }
+                                            });
+                                        }
+                                        else{
+                                            window.location.replace(data.data.objects.url)
+                                        }
                                    }//success
                                });//ajax
                             }//if
