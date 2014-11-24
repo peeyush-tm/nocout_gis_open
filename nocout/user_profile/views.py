@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib import auth
 from django.utils import timezone
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
-from user_profile.models import UserProfile, Roles
+from user_profile.models import UserProfile, Roles, UserPasswordRecord
 from organization.models import Organization
 from forms import UserForm, UserPasswordForm
 from django.http.response import HttpResponseRedirect, HttpResponse
@@ -271,7 +271,9 @@ class CurrentUserProfileUpdate(FormRequestMixin, UpdateView):
 
             #Adding the user log for the password change
         if  form.cleaned_data['password2']:
-            kwargs.update({'password': make_password(form.cleaned_data['password2'])})
+            password = make_password(form.cleaned_data['password2'])
+            kwargs.update({'password': password, 'password_changed_at': timezone.now()})
+            UserPasswordRecord.objects.create(user_id=self.object.id, password_used=password)
 
         UserProfile.objects.filter(id=self.object.id).update(**kwargs)
         return super(ModelFormMixin, self).form_valid(form)
@@ -315,7 +317,7 @@ def change_password(request):
     if request.POST.get('action') == 'continue':
         form = UserPasswordForm(request.POST)
         if form.is_valid():
-            kwargs=dict(password=make_password(form.data['new_pwd']),
+            kwargs=dict(password=make_password(form.data['confirm_pwd']),
                         password_changed_at=timezone.now())
             UserProfile.objects.filter(id=request.POST.get('user_id')).update(**kwargs)
             result = {
@@ -336,12 +338,13 @@ def change_password(request):
 
             auth.logout(request)
             result = {
-                "success": 1,  # 0 - fail, 1 - success, 2 - exception
-                "message": "Success/Fail message.",
+                "success": 0,  # 0 - fail, 1 - success, 2 - exception
+                "message": "Invalid Password",
+                "reason": "Ignore dictionary common words",
                 "data": {
                     "meta": {},
                     "objects": {
-                        'url': url
+                        'url': '/login/'
                     }
                 }
             }

@@ -1,7 +1,8 @@
 from django import forms
 import enchant
 from enchant.tokenize import get_tokenizer
-from user_profile.models import UserProfile
+from django.contrib.auth.hashers import check_password
+from user_profile.models import UserProfile, UserPasswordRecord
 from nocout.widgets import MultipleToSingleSelectionWidget
 from user_profile.fields import PasswordField
 from organization.models import Organization
@@ -127,6 +128,7 @@ class UserForm(forms.ModelForm):
         else:
             return role
 
+
     def clean_password1(self):
         """
         Username and password must not be identical.
@@ -143,10 +145,17 @@ class UserForm(forms.ModelForm):
                 raise forms.ValidationError("User ID and password should not be identical")
             elif check_word.count(True) > 0:    # if contain any dictionay common word.
                 raise forms.ValidationError("Ignore dictionay common words")
-            else:
-                return password1
-        else:
-            pass
+            if password1:
+                user = UserProfile.objects.filter(username=username)
+                if user.exists():
+                    user_password_used = UserPasswordRecord.objects.filter(user_id=user[0].id).\
+                        order_by('-password_used_on').values_list('password_used', flat=True)[:5]
+                    for pwd in user_password_used:
+                        if check_password(password1, pwd):
+                            raise forms.ValidationError("This password is recently used")
+
+            return password1
+
 
 
 class UserPasswordForm(forms.Form):
@@ -156,10 +165,13 @@ class UserPasswordForm(forms.Form):
     new_pwd = forms.CharField(max_length=128, required=True)
     confirm_pwd = forms.CharField(max_length=128, required=True)
 
-    def confirm_pwd(self):
+    def clean_confirm_pwd(self):
         # Check that the two password entries match
-        password2 = self.cleaned_data.get("confirm_pwd")
-        password1 = self.cleaned_data.get("new_pwd")
-        if (password1 or password2) and password1 != password2:
-            raise forms.ValidationError("Passwords don't match")
-        return password2
+        confirm_pwd = self.cleaned_data.get("confirm_pwd")
+        tknzr, enchant_obj = get_tokenizer("en_US"), enchant.Dict("en_US")
+        words = list(filter(lambda x: len(x)>2, [word[0] for word in tknzr(confirm_pwd.lower())] ))
+        check_word = [enchant_obj.check(w) for w in words]  # check if the words are dictionary common word or not.
+        if check_word.count(True) > 0:
+            raise forms.ValidationError("Ignore dictionay common words")
+        else:
+            return confirm_pwd
