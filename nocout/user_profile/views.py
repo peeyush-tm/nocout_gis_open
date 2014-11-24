@@ -323,7 +323,7 @@ def change_password(request):
         if form.is_valid():
             user_id = request.POST.get('user_id')
             kwargs=dict(password=make_password(form.data['confirm_pwd']),
-                        password_changed_at=timezone.now())
+                        password_changed_at=timezone.now(), user_invalid_attempt=0)
             UserProfile.objects.filter(id=user_id).update(**kwargs)
             UserPasswordRecord.objects.create(user_id=user_id, password_used=kwargs['password'])
             result = {

@@ -14,6 +14,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 ##error pages
 from activity_stream.models import UserAction
+from user_profile.models import UserProfile
 import logging
 
 logger = logging.getLogger(__name__)
@@ -175,6 +176,8 @@ def auth_view(request):
 
         else:
             Visitor.objects.create(user=request.user, session_key=key_from_cookie)
+
+            UserProfile.objects.filter(id=user.id).update(user_invalid_attempt=0)   # empty the user invalid attempts on successful login
             if password_expire_alert:
                 objects_values = dict(password_expire_alert=True , url=next_url,
                         password_expires_on=unicode(password_expires_on.date()))
@@ -241,6 +244,25 @@ def auth_view(request):
                 }
             }
         }
+
+        # Count the invalid attempts of the user and not of the superuser.
+        user_profile = UserProfile.objects.filter(username=username)
+        if user_profile.exists() and not user_profile[0].is_superuser:
+            user_profile.update(user_invalid_attempt=user_profile[0].user_invalid_attempt+1)
+            if user_profile[0].user_invalid_attempt >= 5:
+                user_profile.update(is_active=False)
+                result = {
+                    "success": 0,  # 0 - fail, 1 - success, 2 - exception
+                    "message": "Account Locked By Administrator",
+                    "data": {
+                        "meta": {},
+                        "objects": {
+                            "reason": "The account has been locked by the application administrator. \
+                                        Please contact application administrator to continue.",
+                        }
+                    }
+                }
+
 
     try:
         UserAction.objects.create(user_id=user_audit["userid"], module=user_audit["module"],
