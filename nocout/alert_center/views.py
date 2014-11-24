@@ -557,6 +557,7 @@ class AlertCenterListing(ListView):
         data_tab=self.kwargs.get('data_tab')
 
         datatable_headers = [
+            # {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'auto', 'sClass': 'hidden-xs',
@@ -1203,63 +1204,6 @@ def prepare_query(table_name=None,
     return query
 
 
-def common_get_performance_data(model=EventNetwork,
-                                table_name="performance_networkstatus",
-                                device_list=[],
-                                data_sources_list=["pl", "rta"],
-                                columns=None):
-    """
-
-
-
-    :param model:
-    :param table_name:
-    :param columns:
-    :param data_sources_list:
-    :param device_list:
-    :return:
-    """
-    if not columns:
-        columns = ["id", "service_name", "ip_address", "device_name", "data_source", "severity", "current_value", "sys_timestamp",
-                   #"description"
-        ]
-
-    query = prepare_query(table_name=table_name,
-                          devices=device_list,
-                          data_sources=data_sources_list,
-                          columns=columns
-    )
-
-    device_result = {}
-    perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A", "description": "N/A"}
-
-    performance_data = model.objects.raw(query)
-
-    for device in device_list:
-        if device not in device_result:
-            device_result[device] = perf_result
-
-    for device in device_result:
-        perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A", "description": "N/A"}
-
-        for data in performance_data:
-            if str(data.device_name).strip().lower() == str(device).strip().lower():
-                d_src = str(data.data_source).strip().lower()
-                current_val = str(data.current_value)
-
-                perf_result["severity"] = str(data.severity).strip().upper()
-
-                perf_result["current_value"] = current_val
-
-                perf_result["sys_timestamp"] = str(datetime.datetime.fromtimestamp(float(data.sys_timestamp)))
-
-                perf_result["description"] = ''#data.description
-
-                device_result[device] = perf_result
-
-    return device_result
-
-
 def common_prepare_results(qs):
     """
     Common function to prepare result on query set
@@ -1346,23 +1290,23 @@ def raw_prepare_result(performance_data,
 
     count = 0
 
-    while count <= math.ceil(len(devices) / limit):
+    # while count <= math.ceil(len(devices) / limit):
 
-        query = prepare_query(table_name=table_name,
-                              devices=devices[limit * count:limit * (count + 1)],# spilicing the devices here
-                              data_sources=data_sources,
-                              columns=columns,
-                              condition=condition,
-                              offset=offset,
-                              limit=limit
-        )
-        # print(query)
-        if query:
-            performance_data += fetch_raw_result(query, machine)
-        else:
-            break
+    query = prepare_query(table_name=table_name,
+                          devices=devices, #[limit * count:limit * (count + 1)],# spilicing the devices here
+                          data_sources=data_sources,
+                          columns=columns,
+                          condition=condition,
+                          offset=offset,
+                          limit=None
+    )
+    # print(query)
+    if query:
+        performance_data += fetch_raw_result(query, machine)
+    else:
+        return []
 
-        count += 1
+        # count += 1
 
     if DEBUG:
         endtime = datetime.datetime.now()
