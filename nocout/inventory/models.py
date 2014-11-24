@@ -15,7 +15,7 @@ from user_profile.models import UserProfile
 from organization.models import Organization
 from inventory.signals import auto_assign_thematic
 from django.db.models.signals import post_save, pre_save
-from inventory.signals import resize_icon_size
+from inventory.signals import resize_icon_size, record_user_password
 
 
 def get_default_org():
@@ -468,3 +468,4 @@ class UserPingThematicSettings(models.Model):
 
 post_save.connect(auto_assign_thematic, sender=UserProfile)
 pre_save.connect(resize_icon_size, sender=IconSettings)
+post_save.connect(record_user_password, sender=User)

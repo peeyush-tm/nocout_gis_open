@@ -91,3 +91,26 @@ def resize_icon_size(sender, instance=None, **kwargs):
         pass
     except IOError:
         pass
+
+
+def record_user_password(sender, instance=None, created=False, **kwargs):
+    """
+    To store the password of user on create/update user profile
+    and delete old used password.
+    """
+    print('+++++++++++++++++signal start')
+    UserPasswordRecord = get_model('user_profile', 'UserPasswordRecord', seed_cache=True)
+    new_password = instance.password
+    current_password = ''
+    user_password = UserPasswordRecord.objects.filter(user_id=instance.id)
+    print('+++++++++++++++++not user_password.exists')
+    if user_password.exists():
+        print('+++++++++++++++++user_password.exists')
+        current_password = user_password.values_list('password_used', flat=True).\
+                            order_by('-password_used_on')[0]
+    if new_password != current_password:
+        print('+++++++++++++++++new_password!=current_password')
+        password_other_than_previous_five = UserPasswordRecord.objects.filter(user_id=instance.id).order_by('-password_used_on')[5:]
+        for record in password_other_than_previous_five:
+            record.delete()
+        UserPasswordRecord.objects.create(user_id=instance.id, password_used=instance.password)
