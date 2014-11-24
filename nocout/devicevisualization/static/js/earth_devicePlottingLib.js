@@ -73,6 +73,11 @@ var polygonSelectedDevices= [],
 	polyPlacemark,
 	pollingPolygonLatLngArr= [];
 
+//2837
+//Exprt Data variables
+var exportDataPolygon= {};
+
+
 /**
  * Performance
  */
@@ -779,7 +784,7 @@ var state_wise_device_label_text= {};
 						var clusterIconStyle = ge.createStyle(''); //create a new style
 						clusterIconStyle.getIconStyle().setIcon(clusterIcon); //apply the icon to the style
 						device_counter_label.setStyleSelector(clusterIconStyle); //apply the style to the placemark
-						clusterIconStyle.getIconStyle().setScale(5.0);
+						clusterIconStyle.getIconStyle().setScale(6.0);
 
 			   			//Set the placemark location;
 			   			var clusterPoint = ge.createPoint('');
@@ -796,36 +801,6 @@ var state_wise_device_label_text= {};
 				   			});
 
 						}(state_param));
-
-						// (function() {
-				  //       	// Create the placemark.
-						// 	var device_counter_text = ge.createPlacemark('');
-						// 	device_counter_text.setName(String(state_wise_device_counters[state]));
-
-						// 	// Define a custom icon.
-						// 	var icon = ge.createIcon('');
-						// 	icon.setHref(base_url+'/static/img/icons/1x1.png');
-						// 	var style = ge.createStyle(''); //create a new style
-						// 	style.getIconStyle().setIcon(icon); //apply the icon to the style
-						// 	device_counter_text.setStyleSelector(style); //apply the style to the placemark
-						// 	style.getIconStyle().setScale(0);
-
-						// 	// Set the placemark's location.  
-						// 	var point = ge.createPoint('');
-						// 	var nLat = ((+state_lat_lon_obj.lat*1000)-0)/1000;
-						// 	var nLng = ((+state_lat_lon_obj.lon*1000)-0)/1000;
-						// 	point.setLatitude(nLat);
-						// 	point.setLongitude(nLng);
-						// 	device_counter_text.setGeometry(point);
-
-						// 	device_counter_text.placemarkerType = 'label_icon';
-
-						// 	// Add the placemark to Earth.
-						// 	ge.getFeatures().appendChild(device_counter_text);
-
-					 //        state_wise_device_label_text[state] = device_counter_text;
-
-				  //       }());
 					}
 			        state_wise_device_labels[state] = device_counter_label;
 				}
@@ -872,7 +847,7 @@ var state_wise_device_label_text= {};
 								var clusterIconStyle = ge.createStyle(''); //create a new style
 								clusterIconStyle.getIconStyle().setIcon(clusterIcon); //apply the icon to the style
 								device_counter_label.setStyleSelector(clusterIconStyle); //apply the style to the placemark
-								clusterIconStyle.getIconStyle().setScale(5.0);
+								clusterIconStyle.getIconStyle().setScale(6.0);
 
 
 					   			//Set the placemark location;
@@ -894,36 +869,6 @@ var state_wise_device_label_text= {};
 								ge.getFeatures().appendChild(device_counter_label);
 
 								state_wise_device_labels[current_state_name] = device_counter_label;
-
-								// (function() {
-							 //        // Create the placemark.
-								// 	var device_counter_text = ge.createPlacemark('');
-								// 	device_counter_text.setName(String(state_wise_device_counters[state]));
-
-								// 	// Define a custom icon.
-								// 	var icon = ge.createIcon('');
-								// 	icon.setHref(base_url+'/static/img/icons/1x1.png');
-								// 	var style = ge.createStyle(''); //create a new style
-								// 	style.getIconStyle().setIcon(icon); //apply the icon to the style
-								// 	device_counter_text.setStyleSelector(style); //apply the style to the placemark
-								// 	style.getIconStyle().setScale(0);
-
-								// 	// Set the placemark's location.  
-								// 	var point = ge.createPoint('');
-								// 	var nLat = ((+state_lat_lon_obj.lat*1000)-0)/1000;
-								// 	var nLng = ((+state_lat_lon_obj.lon*1000)-0)/1000;
-								// 	point.setLatitude(nLat);
-								// 	point.setLongitude(nLng);
-								// 	device_counter_text.setGeometry(point);
-
-								// 	device_counter_text.placemarkerType = 'label_icon';
-
-								// 	// Add the placemark to Earth.
-								// 	ge.getFeatures().appendChild(device_counter_text);
-
-							 //        state_wise_device_label_text[state] = device_counter_text;
-
-						  //       }());
 							}
 
 							// Break for loop if state found
@@ -1104,6 +1049,7 @@ var state_wise_device_label_text= {};
 				oldIcon: base_url+"/static/img/icons/bs.png",
 				clusterIcon: base_url+"/static/img/icons/bs.png",
 				pointType: "base_station",
+				bs_alias 		   :    resultantMarkers[i].alias,
 				child_ss: resultantMarkers[i].data.param.sector,
 				dataset: resultantMarkers[i].data.param.base_station,
 				device_name: resultantMarkers[i].data.device_name,
@@ -1121,6 +1067,7 @@ var state_wise_device_label_text= {};
 
 			// Create BS placemark.
 			var bs_marker = earth_self.makePlacemark(bs_marker_icon,resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,'bs_'+resultantMarkers[i].id,bsInfo);
+
 
 			/*Push BS placemark to bs placemark array*/
 			plotted_bs_earth.push(bs_marker);
@@ -1467,9 +1414,85 @@ var state_wise_device_label_text= {};
 				var basic_filter_data = prepare_data_for_filter();
 				networkMapInstance.getBasicFilters(basic_filter_data);
 			}
-
-		
 		}
+
+		this.updateAllMarkersWithNewIcon($("select#icon_Size_Select_In_Tools").val());
+	};
+
+	/**
+	 * This function plot the point on google map as per the given details
+	 * @method plotPoint_gmap
+	 * @param {Object} infoObj, It contains information regarding plotting(i.e. lat,lon etc)
+	 */
+	this.plotPoint_earth = function(infoObj) {
+
+		// var image = new google.maps.MarkerImage(base_url+"/"+infoObj.icon_url,null,null,null,new google.maps.Size(32, 37));
+		var map_point_obj = {
+			position   	    	 : {lat: infoObj.lat, lon: infoObj.lon},
+			map 	   	    	 : 'current',
+			icon 	   	    	 : base_url+"/"+infoObj.icon_url,
+			icon_url   	    	 : infoObj.icon_url,
+			zIndex 	   	    	 : 500,
+			point_name 	    	 : infoObj.name,
+			lat 		    	 : infoObj.lat,
+			lon 		    	 : infoObj.lon,
+			connected_lat   	 : infoObj.connected_lat,
+			connected_lon   	 : infoObj.connected_lon,
+			connected_point_type : infoObj.connected_point_type,
+			connected_point_info : infoObj.connected_point_info,
+			point_desc 	    	 : infoObj.desc,
+			point_id 	    	 : infoObj.point_id,
+			is_delete_req   	 : infoObj.is_delete_req,
+			is_update_req   	 : infoObj.is_update_req
+		};
+
+		var uniqueId = "point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-");
+//iconHref, latitude, longitude, placemarkId, description
+		var pointPlacemark= earth_self.makePlacemark(base_url+"/"+infoObj.icon_url, infoObj.lat, infoObj.lon, uniqueId, map_point_obj);
+
+		point_data_obj["point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-")] = "";
+		point_data_obj["point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-")] = pointPlacemark;
+
+		// // Bind right click event to marker
+		// (function bindRightMenuToMarker(marker) {
+		// 	var markerRightClick= google.earth.addEventListener(marker, 'rightclick', function(event) {
+		// 		gmap_self.openPointRightClickMenu(this);
+		// 	});
+
+		// 	// return markerRightClick;
+		// })(pointPlacemark);
+
+		// Bind click event to marker
+		(function bindClickToMarker(marker) {
+
+			google.earth.addEventListener(marker, 'click', function(e) {
+				// console.log('clicked here');
+				// if it is a right-click 
+				// console.log(e.getButton());
+				if (e && e.getButton() == 2) {
+					// console.log('hi');
+					gmap_self.openPointRightClickMenu(marker);
+					event.preventDefault(); // optional, depending on your requirements
+					event.stopPropagation(); // optional, depending on your requirements
+					// openMenu(e.getScreenX(), e.getScreenY());
+				} else {
+					if(marker.point_id) {
+						connected_end_obj = {
+							"lat" : marker.lat,
+							"lon" : marker.lon
+						};
+
+						if(current_point_for_line) {
+							gmap_self.plot_point_line(marker);
+						}
+					} else {
+						bootbox.alert("This point not saved yet. Please select another.")
+					}
+				}
+			});
+
+			// return markerRightClick;
+		})(pointPlacemark);
 	};
 
 	/**
@@ -1493,11 +1516,7 @@ var state_wise_device_label_text= {};
 		
 		var style = ge.createStyle(''); //create a new style
 		style.getIconStyle().setIcon(icon); //apply the icon to the style
-		if(description.pointType === "base_station") {
-			style.getIconStyle().setScale(1.4);
-		} else {
-			style.getIconStyle().setScale(0.8);
-		}
+		
 		placemark.setStyleSelector(style); //apply the style to the placemark
 
 		var point = ge.createPoint('');
@@ -1509,7 +1528,6 @@ var state_wise_device_label_text= {};
 		for(var key in description) {
 			placemark[key] = description[key];
 		}
-
 
 		ge.getFeatures().appendChild(placemark);
 		return placemark;
@@ -2282,7 +2300,7 @@ var state_wise_device_label_text= {};
     				}
     			},
     			error : function(err) {
-    				// console.log(err.statusText);
+    				console.log(err.statusText);
     			}
 			});
 		}
@@ -2737,6 +2755,34 @@ var state_wise_device_label_text= {};
     	}
 	};
 
+	this.updateAllMarkersWithNewIcon = function(iconSize) {
+		var scaleValue = 1;
+		if(iconSize=== 'small') {
+			scaleValue = 0.7;
+		} else if(iconSize=== 'medium') {
+			scaleValue = 1;
+		} else {
+			scaleValue = 1.4;
+		}
+
+		//Loop through the sector markers
+		for(i=0; i< sector_MarkersArray.length; i++) {
+			(function updateSectMarker(markerIcon) {
+				updateGoogleEarthPlacedmarkNewSize(markerIcon, scaleValue);
+			})(sector_MarkersArray[i]);
+		}
+		//End of Loop through the sector markers
+
+
+		//Loop through the Master Markers
+		for(var i=0; i< masterMarkersObj_earth.length; i++ ) {
+			(function updateMasterMarker(markerIcon) {
+				updateGoogleEarthPlacedmarkNewSize(markerIcon, scaleValue);
+			})(masterMarkersObj_earth[i]);
+		}
+		//End of Loop through the Master Markers
+	}
+
 	/**
 	 * This function make "r,g,b,a" color object from rgba color string
 	 * @method makeRgbaObject
@@ -2776,6 +2822,236 @@ var state_wise_device_label_text= {};
 
 		return true;
 	};
+
+	/**
+	 * This function export selected data by calling respective API
+	 * @method exportData_earth
+	 */
+	this.exportData_earth= function() {
+		exportDataPolygon = {};
+
+		/*Initialize create Polygon functionality*/
+		/*Code to draw polygon on click*/
+		polyPlacemark = gexInstance.dom.addPolygonPlacemark([], {
+			style: {
+				poly: {color: 'black', opacity: 0},
+				line: { width: 3, color: '#333333' }
+			}
+		});
+
+		var coords = polyPlacemark.getGeometry().getOuterBoundary().getCoordinates();
+		pollingPolygonLatLngArr = [];
+
+		gexInstance.edit.drawLineString(polyPlacemark.getGeometry().getOuterBoundary(), {
+			drawCallback : function(coordIndex) {
+				var coord = coords.get(coordIndex);
+				pollingPolygonLatLngArr.push({lat: coord.getLatitude(), lon: coord.getLongitude()});
+			},
+			finishCallback: function() {
+
+				gexInstance.edit.endEditLineString(polyPlacemark);
+
+				var pathArray = pollingPolygonLatLngArr,
+					polygon = polyPlacemark;
+
+				exportDataPolygon = polyPlacemark;
+				exportDataPolygon.type = 'Export Polygon';
+
+				// If markers showing
+				if(getRangeInZoom() > 7) {
+					var bs_obj = allMarkersObject_earth['base_station'],
+						selected_bs_ids = [],
+						selected_bs_markers = [];
+					for(key in bs_obj) {
+						var point = {lat: bs_obj[key].ptLat, lon: bs_obj[key].ptLon};
+						var markerVisible = bs_obj[key].map;
+			            if(markerVisible) {
+			            	if(isPointInPoly(pollingPolygonLatLngArr, point)) {
+			            		if(selected_bs_ids.indexOf(bs_obj[key].filter_data.bs_id) == -1) {
+			            			selected_bs_ids.push(bs_obj[key].filter_data.bs_id);
+			            			selected_bs_markers.push(bs_obj[key]);
+			            		} 
+			            			
+			            	}
+		            	}
+					}
+					// If any bs exists
+					if(selected_bs_ids.length > 0) {
+
+						var devicesTemplate = "";
+						for(var i=0;i<selected_bs_markers.length;i++) {
+							var current_bs = selected_bs_markers[i];
+							devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.filter_data.bs_id+'"><h5>'+(i+1)+'.) '+current_bs.bs_alias+'</h5></div>';
+						}
+
+						$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
+
+						if($("#exportDeviceContainerBlock").hasClass('hide')) {
+							$("#exportDeviceContainerBlock").removeClass('hide');
+						}
+
+					} else {
+
+						gmap_self.removeInventorySelection();
+
+						bootbox.alert("No BS found in the selected area.");
+					}
+
+				} else {
+						
+					var bs_id_array = [],
+						bs_obj_array = [],
+	        			states_array = [];
+
+					var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
+						vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
+						city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
+						state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
+						frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
+						polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
+						filterObj = {
+							"technology" : $.trim($("#technology option:selected").text()),
+							"vendor" : $.trim($("#vendor option:selected").text()),
+							"state" : $.trim($("#state option:selected").text()),
+							"city" : $.trim($("#city option:selected").text())
+						},
+						isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+						isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City';
+
+					var states_within_polygon = state_lat_lon_db.where(function(obj) {
+	        			return  isPointInPoly({lat: obj.lat, lon: obj.lon}, pollingPolygonLatLngArr);
+	        		});
+
+	        		for(var i=0;i<states_within_polygon.length;i++) {
+	        			if(state_wise_device_labels[states_within_polygon[i].name]) {
+	        				states_array.push(states_within_polygon[i].name);
+	        			}
+	        		}
+
+
+	        		if(states_within_polygon.length > 0) {
+						
+						var current_bound_devices = all_devices_loki_db.where(function( obj ) {
+	            			if(!isAdvanceFilterApplied && !isBasicFilterApplied) {
+	            				if(states_array.indexOf(obj.data.state) > -1) {
+		            				bs_id_array.push(obj.originalId);
+		            				return true;
+	            				} else {
+	            					return false;
+	            				}
+	            			} else if(isAdvanceFilterApplied) {
+	            				var technology_count = technology_filter.length >  0 ? $.grep(obj.sector_ss_technology.split("|"), function (elem) {
+							        	return technology_filter.indexOf(elem) > -1;
+							        }).length : 1,
+					            	filter_condition1 = technology_count > 0 ? true : false,
+					            	vendor_count = vendor_filter.length >  0 ? $.grep(obj.sector_ss_vendor.split("|"), function (elem) {
+							        	return vendor_filter.indexOf(elem) > -1;
+							        }).length : 1,
+					                filter_condition2 = vendor_count > 0 ? true : false,
+					                filter_condition3 = state_filter.length > 0 ? state_filter.indexOf(obj.data.state) > -1 : true,
+					                filter_condition4 = city_filter.length > 0 ? city_filter.indexOf(obj.data.city) > -1 : true;
+						            
+						            // Condition to check for applied advance filters
+						            if(filter_condition1 && filter_condition2 && filter_condition3 && filter_condition4) {
+						            	if(states_array.indexOf(obj.data.state) > -1) {
+				            				bs_id_array.push(obj.originalId);
+				            				return true;
+			            				} else {
+			            					return false;
+			            				}
+						            } else {
+						                return false;
+						            }
+	            			} else if(isBasicFilterApplied) {
+
+	            				var sectors = obj.data.param.sector,
+									basic_filter_condition1 = filterObj['state'] != 'Select State' ? obj.data.state == filterObj['state'] : true,
+									basic_filter_condition2 = filterObj['city'] != 'Select City' ? obj.data.city == filterObj['city'] : true;;
+								for(var i=sectors.length;i--;) {
+									var basic_filter_condition3 = filterObj['technology'] != 'Select Technology' ? $.trim(sectors[i]['technology'].toLowerCase()) == $.trim(filterObj['technology'].toLowerCase()) : true,
+										basic_filter_condition4 = filterObj['vendor'] != 'Select Vendor' ? $.trim(sectors[i]['vendor'].toLowerCase()) == $.trim(filterObj['vendor'].toLowerCase()) : true
+
+									if(basic_filter_condition1 && basic_filter_condition2 && basic_filter_condition3 && basic_filter_condition4) {
+										if(states_array.indexOf(obj.data.state) > -1) {
+				            				bs_id_array.push(obj.id);
+				            				return true;
+			            				} else {
+			            					return false;
+			            				}
+									} else {
+										return false;
+									}
+								}
+	        				}
+	            		});
+						
+						// Remove unmatched sectors
+						for(var x=0;x<current_bound_devices.length;x++) {
+							var sectors = current_bound_devices[x].data.param.sector,
+								delete_index = [];
+							for(var y=0;y<sectors.length;y++) {
+								var sector_technology = $.trim(sectors[y].technology),
+									sector_vendor = $.trim(sectors[y].vendor);
+								if(technology_filter.length > 0 || vendor_filter.length > 0) {
+									var advance_filter_condition1 = technology_filter.length ? technology_filter.indexOf(sector_technology) > -1 : true,
+										advance_filter_condition1 = vendor_filter.length ? vendor_filter.indexOf(sector_vendor) > -1 : true;
+										
+									if(!advance_filter_condition1 || !advance_filter_condition2) {
+										delete_index.push(y);
+									}
+
+								} else {
+
+									if(filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor') {
+										var basic_filter_technology = filterObj['technology'] != 'Select Technology' ? filterObj['technology'] : false,
+											basic_filter_vendor = filterObj['vendor'] != 'Select Vendor' ? filterObj['vendor'] : false,
+											basic_filter_condition1 = basic_filter_technology ? basic_filter_technology === sector_technology : true,
+											basic_filter_condition2 = basic_filter_vendor ? basic_filter_vendor === sector_vendor : true;
+											
+										if(!basic_filter_condition1 || !basic_filter_condition2) {
+											delete_index.push(y);
+										}
+									}
+								}
+							}
+							// Delete Unmatched Values
+							for(var z=0;z<delete_index.length;z++) {
+								current_bound_devices[x].data.param.sector.splice(delete_index[z],1);
+							}
+						}
+
+						// If any bs exists
+						if(bs_id_array.length > 0) {
+
+							var devicesTemplate = "";
+							for(var i=0;i<current_bound_devices.length;i++) {
+								var current_bs = current_bound_devices[i];
+								devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.originalId+'"><h5>'+(i+1)+'.) '+current_bs.alias+'</h5></div>';
+							}
+
+							$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
+
+							if($("#exportDeviceContainerBlock").hasClass('hide')) {
+								$("#exportDeviceContainerBlock").removeClass('hide');
+							}
+
+							gmap_self.downloadInventory_gmap(bs_id_array);
+
+						} else {
+							gmap_self.removeInventorySelection();
+
+							bootbox.alert("No BS found in the selected area.");	
+						}
+
+	        		} else {
+	        			gmap_self.removeInventorySelection();
+
+						bootbox.alert("No BS found in the selected area.");	
+	        		}
+				}
+			}
+		});
+	}
 
 	/**
      * This function resets the global variables & again call the api calling function after given timeout i.e. 5 minutes

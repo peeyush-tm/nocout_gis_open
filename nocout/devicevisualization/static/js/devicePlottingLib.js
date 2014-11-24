@@ -5462,33 +5462,71 @@ function devicePlottingClass_gmap() {
 	 * @method addPointTool_gmap
 	 */
 	this.addPointTool_gmap = function() {
-        //first clear the listners. as ruler tool might be in place
-        google.maps.event.clearListeners(mapInstance,'click');
 
-		google.maps.event.addListener(mapInstance,'click',function(e) {
-			
-			if(pointAdded == 1) {
-
-				var infoObj = {};
-
-				infoObj = {
-					'lat' : e.latLng.lat(),
-					'lon' : e.latLng.lng(),
-					'name' : "",
-					'desc' : "",
-					'connected_lat' : 0,
-					'connected_lon' : 0,
-					'connected_point_type' : '',
-					'connected_point_info' : '',
-					'is_delete_req' : 0,
-					'is_update_req' : 0,
-					'point_id' : "",
-					"icon_url" : point_icon_url
-				};
-				/*Call function to plot point on gmap*/
-				gmap_self.plotPoint_gmap(infoObj);
+		if(window.location.pathname.indexOf("googleEarth") > -1) {
+			if(pointEventHandler) {
+				google.earth.removeEventListener(ge.getGlobe(), 'mousedown', pointEventHandler);
+				pointEventHandler = "";
 			}
-		});
+
+			pointEventHandler = google.earth.addEventListener(ge.getWindow(), 'mousedown', function(event) {
+				if (event.getTarget().getType() == 'KmlPlacemark' && event.getTarget().getGeometry().getType() == 'KmlPoint') {
+					var placemark = event.getTarget();
+					// event.preventDefault();
+					// event.stopPropagation();
+				} else {
+					if(pointAdded == 1) {
+						var infoObj = {};
+
+						infoObj = {
+							'lat' : event.getLatitude(),
+							'lon' : event.getLongitude(),
+							'name' : "",
+							'desc' : "",
+							'connected_lat' : 0,
+							'connected_lon' : 0,
+							'connected_point_type' : '',
+							'connected_point_info' : '',
+							'is_delete_req' : 0,
+							'is_update_req' : 0,
+							'point_id' : "",
+							"icon_url" : point_icon_url
+						};
+						/*Call function to plot point on gmap*/
+						earth_self.plotPoint_earth(infoObj);
+					}
+				}
+			});
+
+		} else {
+	        //first clear the listners. as ruler tool might be in place
+	        google.maps.event.clearListeners(mapInstance,'click');
+
+			google.maps.event.addListener(mapInstance,'click',function(e) {
+				
+				if(pointAdded == 1) {
+
+					var infoObj = {};
+
+					infoObj = {
+						'lat' : e.latLng.lat(),
+						'lon' : e.latLng.lng(),
+						'name' : "",
+						'desc' : "",
+						'connected_lat' : 0,
+						'connected_lon' : 0,
+						'connected_point_type' : '',
+						'connected_point_info' : '',
+						'is_delete_req' : 0,
+						'is_update_req' : 0,
+						'point_id' : "",
+						"icon_url" : point_icon_url
+					};
+					/*Call function to plot point on gmap*/
+					gmap_self.plotPoint_gmap(infoObj);
+				}
+			});
+		}
 	};
 
 	/**
@@ -5585,13 +5623,22 @@ function devicePlottingClass_gmap() {
 		right_click_html +="</tbody></table>";
 		right_click_html += "<div class='clearfix'></div></div></div>";
 
-		/*Close infowindow if any opened*/
-		infowindow.close();
 
-		/*Set the content for infowindow*/
-		infowindow.setContent(right_click_html);
-		/*Open the info window*/
-		infowindow.open(mapInstance,marker);
+		// openGoogleEarthBaloon(right_click_html, marker)
+		if(window.location.pathname.indexOf("googleEarth") > -1) {
+			// console.log('yosh');
+			openGoogleEarthBaloon(right_click_html, marker);
+		} else {
+
+			/*Close infowindow if any opened*/
+			infowindow.close();
+
+			/*Set the content for infowindow*/
+			infowindow.setContent(right_click_html);
+			/*Open the info window*/
+			infowindow.open(mapInstance,marker);
+			
+		}
 	};
 
 	/**
@@ -6002,10 +6049,17 @@ function devicePlottingClass_gmap() {
 	 	freezedAt = (new Date()).getTime();
 	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
+	 	var current_zoom_level = "";
+
+	 	if(window.location.pathname.indexOf("googleEarth") > -1) {
+	 		current_zoom_level = getRangeInZoom();
+	 	} else {
+	 		current_zoom_level = mapInstance.getZoom();
+	 	}
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 1;
-	 	var current_zoom_level = mapInstance.getZoom();
+	 	
 		if(current_zoom_level > 7) {
 		 	var bs_list = getMarkerInCurrentBound();
 	    	if(bs_list.length > 0 && isCallCompleted == 1) {
@@ -6034,8 +6088,12 @@ function devicePlottingClass_gmap() {
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 0;
-
-	 	var current_zoom_level = mapInstance.getZoom();
+	 	var current_zoom_level = "";
+	 	if(window.location.pathname.indexOf("googleEarth") > -1) {
+	 		current_zoom_level = getRangeInZoom();
+	 	} else {
+	 		current_zoom_level = mapInstance.getZoom();
+	 	}
 		if(current_zoom_level > 7) {
 		 	var bs_list = getMarkerInCurrentBound();
 	    	if(bs_list.length > 0 && isCallCompleted == 1) {
@@ -6047,8 +6105,6 @@ function devicePlottingClass_gmap() {
 	    	}
     	}
 
-	 	/*Recall the server*/
-	 	// gmap_self.recallServer_gmap();
 	 };
 
 	/**
@@ -6595,13 +6651,24 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Reset the drawing object if exist*/
-		if(drawingManager) {
-			drawingManager.setDrawingMode(null);
+		if(window.location.pathname.indexOf('googleEarth') > -1) {
+			if(polyPlacemark) {
+				gexInstance.edit.endEditLineString(polyPlacemark);
+			}
+		} else {
+			if(drawingManager) {
+				drawingManager.setDrawingMode(null);
+			}
 		}
 
 		/*Remove the polygon if exists*/
 		if(Object.keys(exportDataPolygon).length > 0) {
-			exportDataPolygon.setMap(null);
+			if(window.location.pathname.indexOf('googleEarth') > -1) {
+				exportDataPolygon.setVisibility(false);
+				exportDataPolygon.map = '';
+			} else {
+				exportDataPolygon.setMap(null);
+			}
 			exportDataPolygon = {}
 		}
 	};
