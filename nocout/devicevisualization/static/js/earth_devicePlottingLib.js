@@ -73,6 +73,11 @@ var polygonSelectedDevices= [],
 	polyPlacemark,
 	pollingPolygonLatLngArr= [];
 
+//2837
+//Exprt Data variables
+var exportDataPolygon= {};
+
+
 /**
  * Performance
  */
@@ -1044,6 +1049,7 @@ var state_wise_device_label_text= {};
 				oldIcon: base_url+"/static/img/icons/bs.png",
 				clusterIcon: base_url+"/static/img/icons/bs.png",
 				pointType: "base_station",
+				bs_alias 		   :    resultantMarkers[i].alias,
 				child_ss: resultantMarkers[i].data.param.sector,
 				dataset: resultantMarkers[i].data.param.base_station,
 				device_name: resultantMarkers[i].data.device_name,
@@ -2816,6 +2822,236 @@ var state_wise_device_label_text= {};
 
 		return true;
 	};
+
+	/**
+	 * This function export selected data by calling respective API
+	 * @method exportData_earth
+	 */
+	this.exportData_earth= function() {
+		exportDataPolygon = {};
+
+		/*Initialize create Polygon functionality*/
+		/*Code to draw polygon on click*/
+		polyPlacemark = gexInstance.dom.addPolygonPlacemark([], {
+			style: {
+				poly: {color: 'black', opacity: 0},
+				line: { width: 3, color: '#333333' }
+			}
+		});
+
+		var coords = polyPlacemark.getGeometry().getOuterBoundary().getCoordinates();
+		pollingPolygonLatLngArr = [];
+
+		gexInstance.edit.drawLineString(polyPlacemark.getGeometry().getOuterBoundary(), {
+			drawCallback : function(coordIndex) {
+				var coord = coords.get(coordIndex);
+				pollingPolygonLatLngArr.push({lat: coord.getLatitude(), lon: coord.getLongitude()});
+			},
+			finishCallback: function() {
+
+				gexInstance.edit.endEditLineString(polyPlacemark);
+
+				var pathArray = pollingPolygonLatLngArr,
+					polygon = polyPlacemark;
+
+				exportDataPolygon = polyPlacemark;
+				exportDataPolygon.type = 'Export Polygon';
+
+				// If markers showing
+				if(getRangeInZoom() > 7) {
+					var bs_obj = allMarkersObject_earth['base_station'],
+						selected_bs_ids = [],
+						selected_bs_markers = [];
+					for(key in bs_obj) {
+						var point = {lat: bs_obj[key].ptLat, lon: bs_obj[key].ptLon};
+						var markerVisible = bs_obj[key].map;
+			            if(markerVisible) {
+			            	if(isPointInPoly(pollingPolygonLatLngArr, point)) {
+			            		if(selected_bs_ids.indexOf(bs_obj[key].filter_data.bs_id) == -1) {
+			            			selected_bs_ids.push(bs_obj[key].filter_data.bs_id);
+			            			selected_bs_markers.push(bs_obj[key]);
+			            		} 
+			            			
+			            	}
+		            	}
+					}
+					// If any bs exists
+					if(selected_bs_ids.length > 0) {
+
+						var devicesTemplate = "";
+						for(var i=0;i<selected_bs_markers.length;i++) {
+							var current_bs = selected_bs_markers[i];
+							devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.filter_data.bs_id+'"><h5>'+(i+1)+'.) '+current_bs.bs_alias+'</h5></div>';
+						}
+
+						$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
+
+						if($("#exportDeviceContainerBlock").hasClass('hide')) {
+							$("#exportDeviceContainerBlock").removeClass('hide');
+						}
+
+					} else {
+
+						gmap_self.removeInventorySelection();
+
+						bootbox.alert("No BS found in the selected area.");
+					}
+
+				} else {
+						
+					var bs_id_array = [],
+						bs_obj_array = [],
+	        			states_array = [];
+
+					var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
+						vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
+						city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
+						state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
+						frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
+						polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
+						filterObj = {
+							"technology" : $.trim($("#technology option:selected").text()),
+							"vendor" : $.trim($("#vendor option:selected").text()),
+							"state" : $.trim($("#state option:selected").text()),
+							"city" : $.trim($("#city option:selected").text())
+						},
+						isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+						isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City';
+
+					var states_within_polygon = state_lat_lon_db.where(function(obj) {
+	        			return  isPointInPoly({lat: obj.lat, lon: obj.lon}, pollingPolygonLatLngArr);
+	        		});
+
+	        		for(var i=0;i<states_within_polygon.length;i++) {
+	        			if(state_wise_device_labels[states_within_polygon[i].name]) {
+	        				states_array.push(states_within_polygon[i].name);
+	        			}
+	        		}
+
+
+	        		if(states_within_polygon.length > 0) {
+						
+						var current_bound_devices = all_devices_loki_db.where(function( obj ) {
+	            			if(!isAdvanceFilterApplied && !isBasicFilterApplied) {
+	            				if(states_array.indexOf(obj.data.state) > -1) {
+		            				bs_id_array.push(obj.originalId);
+		            				return true;
+	            				} else {
+	            					return false;
+	            				}
+	            			} else if(isAdvanceFilterApplied) {
+	            				var technology_count = technology_filter.length >  0 ? $.grep(obj.sector_ss_technology.split("|"), function (elem) {
+							        	return technology_filter.indexOf(elem) > -1;
+							        }).length : 1,
+					            	filter_condition1 = technology_count > 0 ? true : false,
+					            	vendor_count = vendor_filter.length >  0 ? $.grep(obj.sector_ss_vendor.split("|"), function (elem) {
+							        	return vendor_filter.indexOf(elem) > -1;
+							        }).length : 1,
+					                filter_condition2 = vendor_count > 0 ? true : false,
+					                filter_condition3 = state_filter.length > 0 ? state_filter.indexOf(obj.data.state) > -1 : true,
+					                filter_condition4 = city_filter.length > 0 ? city_filter.indexOf(obj.data.city) > -1 : true;
+						            
+						            // Condition to check for applied advance filters
+						            if(filter_condition1 && filter_condition2 && filter_condition3 && filter_condition4) {
+						            	if(states_array.indexOf(obj.data.state) > -1) {
+				            				bs_id_array.push(obj.originalId);
+				            				return true;
+			            				} else {
+			            					return false;
+			            				}
+						            } else {
+						                return false;
+						            }
+	            			} else if(isBasicFilterApplied) {
+
+	            				var sectors = obj.data.param.sector,
+									basic_filter_condition1 = filterObj['state'] != 'Select State' ? obj.data.state == filterObj['state'] : true,
+									basic_filter_condition2 = filterObj['city'] != 'Select City' ? obj.data.city == filterObj['city'] : true;;
+								for(var i=sectors.length;i--;) {
+									var basic_filter_condition3 = filterObj['technology'] != 'Select Technology' ? $.trim(sectors[i]['technology'].toLowerCase()) == $.trim(filterObj['technology'].toLowerCase()) : true,
+										basic_filter_condition4 = filterObj['vendor'] != 'Select Vendor' ? $.trim(sectors[i]['vendor'].toLowerCase()) == $.trim(filterObj['vendor'].toLowerCase()) : true
+
+									if(basic_filter_condition1 && basic_filter_condition2 && basic_filter_condition3 && basic_filter_condition4) {
+										if(states_array.indexOf(obj.data.state) > -1) {
+				            				bs_id_array.push(obj.id);
+				            				return true;
+			            				} else {
+			            					return false;
+			            				}
+									} else {
+										return false;
+									}
+								}
+	        				}
+	            		});
+						
+						// Remove unmatched sectors
+						for(var x=0;x<current_bound_devices.length;x++) {
+							var sectors = current_bound_devices[x].data.param.sector,
+								delete_index = [];
+							for(var y=0;y<sectors.length;y++) {
+								var sector_technology = $.trim(sectors[y].technology),
+									sector_vendor = $.trim(sectors[y].vendor);
+								if(technology_filter.length > 0 || vendor_filter.length > 0) {
+									var advance_filter_condition1 = technology_filter.length ? technology_filter.indexOf(sector_technology) > -1 : true,
+										advance_filter_condition1 = vendor_filter.length ? vendor_filter.indexOf(sector_vendor) > -1 : true;
+										
+									if(!advance_filter_condition1 || !advance_filter_condition2) {
+										delete_index.push(y);
+									}
+
+								} else {
+
+									if(filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor') {
+										var basic_filter_technology = filterObj['technology'] != 'Select Technology' ? filterObj['technology'] : false,
+											basic_filter_vendor = filterObj['vendor'] != 'Select Vendor' ? filterObj['vendor'] : false,
+											basic_filter_condition1 = basic_filter_technology ? basic_filter_technology === sector_technology : true,
+											basic_filter_condition2 = basic_filter_vendor ? basic_filter_vendor === sector_vendor : true;
+											
+										if(!basic_filter_condition1 || !basic_filter_condition2) {
+											delete_index.push(y);
+										}
+									}
+								}
+							}
+							// Delete Unmatched Values
+							for(var z=0;z<delete_index.length;z++) {
+								current_bound_devices[x].data.param.sector.splice(delete_index[z],1);
+							}
+						}
+
+						// If any bs exists
+						if(bs_id_array.length > 0) {
+
+							var devicesTemplate = "";
+							for(var i=0;i<current_bound_devices.length;i++) {
+								var current_bs = current_bound_devices[i];
+								devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.originalId+'"><h5>'+(i+1)+'.) '+current_bs.alias+'</h5></div>';
+							}
+
+							$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
+
+							if($("#exportDeviceContainerBlock").hasClass('hide')) {
+								$("#exportDeviceContainerBlock").removeClass('hide');
+							}
+
+							gmap_self.downloadInventory_gmap(bs_id_array);
+
+						} else {
+							gmap_self.removeInventorySelection();
+
+							bootbox.alert("No BS found in the selected area.");	
+						}
+
+	        		} else {
+	        			gmap_self.removeInventorySelection();
+
+						bootbox.alert("No BS found in the selected area.");	
+	        		}
+				}
+			}
+		});
+	}
 
 	/**
      * This function resets the global variables & again call the api calling function after given timeout i.e. 5 minutes
