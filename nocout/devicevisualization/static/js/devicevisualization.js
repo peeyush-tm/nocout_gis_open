@@ -273,6 +273,11 @@ $("#setAdvSearchBtn").click(function(e) {
 
         // If any value is selected in searcg
         if(isSearchApplied) {
+
+            if($("#removeSearchBtn").hasClass('hide')) {
+                $("#removeSearchBtn").removeClass('hide');
+            }
+
             // Set Advance Search Flag
             isAdvanceSearch = 1;
             advJustSearch.showNotification();
@@ -322,6 +327,10 @@ $("#resetSearchForm").click(function(e) {
         $("#search_sector_configured_on").select2("val","");
         $("#search_circuit_ids").select2("val","");
         $("#search_city").select2("val","");
+
+        if(!$("#removeSearchBtn").hasClass('hide')) {
+            $("#removeSearchBtn").addClass('hide');
+        }
 
         // Reset Advance Search Flag
         isAdvanceSearch = 0;
@@ -389,6 +398,7 @@ $("#setAdvFilterBtn").click(function(e) {
         if(total_selected_items > 0) {
             // Set Advance Filters Flag
             isAdvanceFilter = 1;
+
             // Call function to plot the data on map as per the applied filters
             gmap_self.applyAdvanceFilters();
         } else {
@@ -589,7 +599,7 @@ Function is used to Disable Advance Search, Advance Filter Button when Call for 
 When call is completed, we use the same function to enable Button by passing 'no' in parameter.
  */
 function disableAdvanceButton(status) {
-    var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn'];
+    var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn','export_data_gmap'];
     var selectBoxes= ['technology', 'vendor', 'state', 'city'];
     var textBoxes= ['google_loc_search','lat_lon_search'];
     var disablingBit = false;
@@ -1168,15 +1178,25 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
  */
 $("#export_data_gmap").click(function(e) {
 
-    if($("#export_data_gmap").hasClass('btn-info')) {
-        $("#export_data_gmap").removeClass('btn-info');
-        $("#export_data_gmap").addClass('btn-warning');
+    if($("#clearExportDataBtn").hasClass('hide')) {
+        $("#clearExportDataBtn").removeClass('hide');
+    }
+
+    if(!$("#export_data_gmap").hasClass('hide')) {
+        $("#export_data_gmap").addClass('hide');
     }
 
     //enable the flag
     isExportDataActive = 1;
     // call function to select data to be export & then export selected data
     networkMapInstance.exportData_gmap();
+});
+
+$("#clearExportDataBtn").click(function(e) {
+    //disable the flag
+    isExportDataActive = 0;
+    // call function to select data to be export & then export selected data
+    networkMapInstance.removeInventorySelection();
 });
 
 

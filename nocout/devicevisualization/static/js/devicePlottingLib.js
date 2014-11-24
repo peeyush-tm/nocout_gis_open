@@ -82,7 +82,8 @@ var main_devices_data_gmaps = [],
 	total_polled_occurence = 0,
 	nav_click_counter = 0,
 	polled_device_count = {},
-	currentDevicesObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}};
+	currentDevicesObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}},
+	exportDataPolygon = {};
 
 /*Tools Global Variables*/
 var is_line_active = 0,
@@ -1284,52 +1285,90 @@ function devicePlottingClass_gmap() {
 				basic_filter_condition2 = filterObj['city'] != 'Select City' ? obj.data.city == filterObj['city'] : true,
 				advance_filter_condition1 = state_filter.length > 0 ? state_filter.indexOf(obj.data.state) > -1 : true,
 				advance_filter_condition2 = city_filter.length > 0 ? city_filter.indexOf(obj.data.city) > -1 : true;
-
         	// If any basic filter is applied
         	if(isBasicFilterApplied) {
+        		if($.trim($("#technology").val()) || $.trim($("#vendor").val())) {
+					for(var i=sectors.length;i--;) {
 
-				for(var i=sectors.length;i--;) {
+						var basic_filter_condition3 = $.trim($("#technology").val()) ? sectors[i].technology ===  filterObj['technology'] : true,
+							basic_filter_condition4 = $.trim($("#vendor").val()) ? sectors[i].vendor ===  filterObj['vendor'] : true;
 
-					var basic_filter_condition3 = $.trim($("#technology").val()) ? sectors[i].technology ===  filterObj['technology'] : true,
-						basic_filter_condition4 = $.trim($("#vendor").val()) ? sectors[i].vendor ===  filterObj['vendor'] : true;
+						if(basic_filter_condition1 && basic_filter_condition2 && basic_filter_condition3 && basic_filter_condition4) {
+							// If advance Filters Applied
+							if(isAdvanceFilterApplied) {
+								var advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technology) > -1 : true,
+					                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor) > -1 : true,
+					            	advance_filter_condition5 = frequency_filter.length > 0 ? frequency_filter.indexOf(sectors[i].planned_frequenc) > -1 : true,
+					            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
 
-					if(basic_filter_condition1 && basic_filter_condition2 && basic_filter_condition3 && basic_filter_condition4) {
-						// If advance Filters Applied
+					            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
+					                return true
+					            } else {
+					                return false;
+					            }
+							} else {
+								return true;
+							}
+						} else {
+							return false;
+						}
+					}
+        		} else {
+        			if(basic_filter_condition1 && basic_filter_condition2) {
+        				// If advance Filters Applied
 						if(isAdvanceFilterApplied) {
-							var advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technology) > -1 : true,
-				                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor) > -1 : true,
-				            	advance_filter_condition5 = frequency_filter.length > 0 ? frequency_filter.indexOf(sectors[i].planned_frequenc) > -1 : true,
-				            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
+	        				if(technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0) {
+				        		for(var i=0;i<sectors.length;i++) {
 
-				            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
-				                return true
-				            } else {
-				                return false;
-				            }
+					        		var advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technoloy) > -1 : true,
+						                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor) > -1 : true,
+						            	advance_filter_condition5 = frequency_filter.length > 0 ? frequency_filter.indexOf(sectors[i].planned_frequenc) > -1 : true,
+						            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
+
+						            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
+						                return true
+						            } else {
+						                return false;
+						            }
+					            }
+							} else {
+								if(advance_filter_condition1 && advance_filter_condition2) {
+					                return true
+					            } else {
+					                return false;
+					            }
+							}
 						} else {
 							return true;
 						}
-					} else {
-						return false;
-					}
-				}
+        			} else {
+        				return false;
+        			}
+        		}
 
 
         	} else if(isAdvanceFilterApplied) {
-        		
-        		for(var i=0;i<sectors.length;i++) {
+				if(technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0) {
+	        		for(var i=0;i<sectors.length;i++) {
 
-	        		var advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technology) > -1 : true,
-		                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor) > -1 : true,
-		            	advance_filter_condition5 = frequency_filter.length > 0 ? frequency_filter.indexOf(sectors[i].planned_frequenc) > -1 : true,
-		            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
+		        		var advance_filter_condition3 = technology_filter.length > 0 ? technology_filter.indexOf(sectors[i].technoloy) > -1 : true,
+			                advance_filter_condition4 = vendor_filter.length > 0 ? vendor_filter.indexOf(sectors[i].vendor) > -1 : true,
+			            	advance_filter_condition5 = frequency_filter.length > 0 ? frequency_filter.indexOf(sectors[i].planned_frequenc) > -1 : true,
+			            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
 
-		            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
+			            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
+			                return true
+			            } else {
+			                return false;
+			            }
+		            }
+				} else {
+					if(advance_filter_condition1 && advance_filter_condition2) {
 		                return true
 		            } else {
 		                return false;
 		            }
-	            }
+				}
         	} else {
         		return true;
         	}
@@ -1412,6 +1451,7 @@ function devicePlottingClass_gmap() {
 				bsInfo 			   : 	bs_ss_devices[i].data.param.base_station,
 				bhInfo 			   : 	bs_ss_devices[i].data.param.backhual,
 				bs_name 		   : 	bs_ss_devices[i].name,
+				bs_alias 		   :    bs_ss_devices[i].alias,
 				name 		 	   : 	bs_ss_devices[i].name,
 				filter_data 	   : 	{"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId},
 				antenna_height     : 	bs_ss_devices[i].data.antenna_height,
@@ -6256,7 +6296,7 @@ function devicePlottingClass_gmap() {
 	 */
 	this.exportData_gmap = function() {
 
-		var exportDataPolygon = {};
+		exportDataPolygon = {};
 
 		/*Initialize create Polygon functionality*/
 		drawingManager = new google.maps.drawing.DrawingManager({
@@ -6287,8 +6327,7 @@ function devicePlottingClass_gmap() {
 			drawingManager.setDrawingMode(null);
 
 			var pathArray = e.overlay.getPath().getArray(),
-				polygon = new google.maps.Polygon({"path" : pathArray}),
-				bs_ss_array = masterMarkersObj;
+				polygon = new google.maps.Polygon({"path" : pathArray});
 
 			exportDataPolygon = e.overlay;
 			exportDataPolygon.type = e.type;
@@ -6296,55 +6335,48 @@ function devicePlottingClass_gmap() {
 			// If markers showing
 			if(mapInstance.getZoom() > 7) {
 				var bs_obj = allMarkersObject_gmap['base_station'],
-					selected_bs = [];
+					selected_bs_ids = [],
+					selected_bs_markers = [];
 				for(key in bs_obj) {
 					var markerVisible = mapInstance.getBounds().contains(bs_obj[key].getPosition());
 		            if(markerVisible) {
 		            	if(google.maps.geometry.poly.containsLocation(bs_obj[key].getPosition(),polygon)) {
-		            		if(selected_bs.indexOf(bs_obj[key].filter_data.bs_id) == -1) {
-		            			selected_bs.push(bs_obj[key].filter_data.bs_id);
+		            		if(selected_bs_ids.indexOf(bs_obj[key].filter_data.bs_id) == -1) {
+		            			selected_bs_ids.push(bs_obj[key].filter_data.bs_id);
+		            			selected_bs_markers.push(bs_obj[key]);
 		            		} 
 		            			
 		            	}
 	            	}
 				}
 				// If any bs exists
-				if(selected_bs.length > 0) {
+				if(selected_bs_ids.length > 0) {
 
-					// Send ajax call to download selected inventory report
-					$.ajax({
-						url : base_url+"/?ids="+JSON.stringify(selected_bs),
-						type : "GET",
-						success : function(result) {
-							console.log(result);
-						},
-						error : function(err) {
-							console.log(err.statusText);
-						},
-						complete : function() {
-							/*Reset the drawing object if exist*/
-							if(drawingManager) {
-								drawingManager.setDrawingMode(null);
-							}
+					var devicesTemplate = "";
+					for(var i=0;i<selected_bs_markers.length;i++) {
+						var current_bs = selected_bs_markers[i];
+						devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.filter_data.bs_id+'"><h5>'+(i+1)+'.) '+current_bs.bs_alias+'</h5></div>';
+					}
 
-							/*Remove the polygon if exists*/
-							if(Object.keys(exportDataPolygon).length > 0) {
-								exportDataPolygon.setMap(null);
-								exportDataPolygon = {}
-							}
+					$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
 
-							if($("#export_data_gmap").hasClass('btn-warning')) {
-						        $("#export_data_gmap").removeClass('btn-warning');
-						        $("#export_data_gmap").addClass('btn-info');
-						    }
-						}
-					});
+					if($("#exportDeviceContainerBlock").hasClass('hide')) {
+						$("#exportDeviceContainerBlock").removeClass('hide');
+					}
+
 				} else {
-					bootbox.alert("No BS found in the selected area.");	
+
+					gmap_self.removeInventorySelection();
+
+					bootbox.alert("No BS found in the selected area.");
 				}
 
 			} else {
-			
+					
+				var bs_id_array = [],
+					bs_obj_array = [],
+        			states_array = [];
+
 				var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
 					vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
 					city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
@@ -6364,9 +6396,6 @@ function devicePlottingClass_gmap() {
         			return google.maps.geometry.poly.containsLocation(new google.maps.LatLng(obj.lat,obj.lon),polygon);
         		});
 
-        		var bs_id_array = [],
-        			states_array = [];
-
         		for(var i=0;i<states_within_polygon.length;i++) {
         			if(state_wise_device_labels[states_within_polygon[i].name]) {
         				states_array.push(states_within_polygon[i].name);
@@ -6379,7 +6408,7 @@ function devicePlottingClass_gmap() {
 					var current_bound_devices = all_devices_loki_db.where(function( obj ) {
             			if(!isAdvanceFilterApplied && !isBasicFilterApplied) {
             				if(states_array.indexOf(obj.data.state) > -1) {
-	            				bs_id_array.push(obj.id);
+	            				bs_id_array.push(obj.originalId);
 	            				return true;
             				} else {
             					return false;
@@ -6399,7 +6428,7 @@ function devicePlottingClass_gmap() {
 					            // Condition to check for applied advance filters
 					            if(filter_condition1 && filter_condition2 && filter_condition3 && filter_condition4) {
 					            	if(states_array.indexOf(obj.data.state) > -1) {
-			            				bs_id_array.push(obj.id);
+			            				bs_id_array.push(obj.originalId);
 			            				return true;
 		            				} else {
 		            					return false;
@@ -6468,45 +6497,104 @@ function devicePlottingClass_gmap() {
 					// If any bs exists
 					if(bs_id_array.length > 0) {
 
-						// Send ajax call to download selected inventory report
-						$.ajax({
-							url : base_url+"/?ids="+JSON.stringify(bs_id_array),
-							type : "GET",
-							success : function(result) {
-								console.log(result);
-							},
-							error : function(err) {
-								console.log(err.statusText);
-							},
-							complete : function() {
-								/*Reset the drawing object if exist*/
-								if(drawingManager) {
-									drawingManager.setDrawingMode(null);
-								}
+						var devicesTemplate = "";
+						for(var i=0;i<current_bound_devices.length;i++) {
+							var current_bs = current_bound_devices[i];
+							devicesTemplate += '<div class="well well-sm" id="bs_'+current_bs.originalId+'"><h5>'+(i+1)+'.) '+current_bs.alias+'</h5></div>';
+						}
 
-								/*Remove the polygon if exists*/
-								if(Object.keys(exportDataPolygon).length > 0) {
-									exportDataPolygon.setMap(null);
-									exportDataPolygon = {}
-								}
+						$("#exportData_sideInfo > .panel-body > .bs_list").html(devicesTemplate);
 
-								if($("#export_data_gmap").hasClass('btn-warning')) {
-							        $("#export_data_gmap").removeClass('btn-warning');
-							        $("#export_data_gmap").addClass('btn-info');
-							    }
-							}
-						});
+						if($("#exportDeviceContainerBlock").hasClass('hide')) {
+							$("#exportDeviceContainerBlock").removeClass('hide');
+						}
+
+						gmap_self.downloadInventory_gmap(bs_id_array);
+
 					} else {
+						gmap_self.removeInventorySelection();
+
 						bootbox.alert("No BS found in the selected area.");	
 					}
 
         		} else {
-        			bootbox.alert("No BS found in the selected area.");
+        			gmap_self.removeInventorySelection();
+
+					bootbox.alert("No BS found in the selected area.");	
         		}
 			}
 		});
-
 	};
+
+	/**
+     * This function make ajax request to download select bs inventory report
+     * @method downloadInventory_gmap
+     * @param bs_id_list {Array}, It contains ID's of selected base stations.
+     */
+    this.downloadInventory_gmap = function(bs_id_list) {
+
+    	// Send ajax call to download selected inventory report
+		$.ajax({
+			url : base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(bs_id_list),
+			type : "GET",
+			success : function(result) {
+				// window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(bs_id_list),'_blank');
+				// console.log(result);
+				$.gritter.add({
+		            // (string | mandatory) the heading of the notification
+		            title: 'Inventory Download',
+		            // (string | mandatory) the text inside the notification
+		            text: 'Selected BS inventory downloaded successfully.',
+		            // (bool | optional) if you want it to fade out on its own or just sit there
+		            sticky: false
+		        });
+			},
+			error : function(err) {
+				// console.log(err.statusText);
+				$.gritter.add({
+		            // (string | mandatory) the heading of the notification
+		            title: 'Inventory Download',
+		            // (string | mandatory) the text inside the notification
+		            text: 'Inventory not downloaded. Please try again later.',
+		            // (bool | optional) if you want it to fade out on its own or just sit there
+		            sticky: false
+		        });
+			}
+		});
+	};
+
+	/**
+     * This function remove the selection of downloaded inventory and clear & hide bs list container DIV
+     * @method removeInventorySelection
+     */
+	this.removeInventorySelection = function() {
+
+		$("#exportData_sideInfo > .panel-body > .bs_list").html("");
+
+		if(!$("#exportDeviceContainerBlock").hasClass('hide')) {
+			$("#exportDeviceContainerBlock").addClass('hide');
+		}
+
+		if(!$("#clearExportDataBtn").hasClass('hide')) {
+			$("#clearExportDataBtn").addClass('hide');
+		}
+
+		if($("#export_data_gmap").hasClass('hide')) {
+			$("#export_data_gmap").removeClass('hide');
+		}
+
+		/*Reset the drawing object if exist*/
+		if(drawingManager) {
+			drawingManager.setDrawingMode(null);
+		}
+
+		/*Remove the polygon if exists*/
+		if(Object.keys(exportDataPolygon).length > 0) {
+			exportDataPolygon.setMap(null);
+			exportDataPolygon = {}
+		}
+	};
+
     /**
      * This function resets the global variables & again call the api calling function after given timeout i.e. 5 minutes
      * @method recallServer_gmap
