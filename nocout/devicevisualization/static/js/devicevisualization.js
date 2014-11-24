@@ -587,6 +587,8 @@ $("select#icon_Size_Select_In_Tools").change(function() {
     defaultIconSize= val;
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.updateMarkersSize(val);
+    } else if (window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.updateAllMarkersWithNewIcon(val);
     } else {
         networkMapInstance.updateAllMarkersWithNewIcon(val);
         
@@ -1330,6 +1332,16 @@ function updateGoogleEarthPlacemark(placemark, newIcon) {
     var style = ge.createStyle('');
     style.getIconStyle().setIcon(icon);
     // style.getIconStyle().setScale(5.0);
+    placemark.setStyleSelector(style);
+}
+
+function updateGoogleEarthPlacedmarkNewSize(placemark, newSize) {
+    // Define a custom icon.next_polling_btn
+    var icon = ge.createIcon('');
+    icon.setHref(placemark.icon);
+    var style = ge.createStyle('');
+    style.getIconStyle().setIcon(icon);
+    style.getIconStyle().setScale(newSize);
     placemark.setStyleSelector(style);
 }
 
