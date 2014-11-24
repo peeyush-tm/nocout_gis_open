@@ -1222,6 +1222,11 @@ $("#clearExportDataBtn").click(function(e) {
     networkMapInstance.removeInventorySelection();
 });
 
+$("#download_inventory").click(function(e) {
+    //call function to download selected inventory.
+    networkMapInstance.downloadInventory_gmap(); 
+});
+
 
 function isPointInPoly(poly, pt){
     for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)

@@ -83,7 +83,8 @@ var main_devices_data_gmaps = [],
 	nav_click_counter = 0,
 	polled_device_count = {},
 	currentDevicesObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}},
-	exportDataPolygon = {};
+	exportDataPolygon = {},
+	inventory_bs_ids = [];
 
 /*Tools Global Variables*/
 var is_line_active = 0,
@@ -1081,7 +1082,7 @@ function devicePlottingClass_gmap() {
 					var current_state_boundries = allStateBoundries[y].boundries,
 						current_state_name = allStateBoundries[y].name,
 						latLonArray = [];
-						
+
 					if(current_state_boundries.length > 0) {
 						for(var z=current_state_boundries.length;z--;) {
 							// latLonArray.push(new google.maps.LatLng(current_state_boundries[z].lat,current_state_boundries[z].lon));
@@ -6412,6 +6413,8 @@ function devicePlottingClass_gmap() {
 				// If any bs exists
 				if(selected_bs_ids.length > 0) {
 
+					inventory_bs_ids = selected_bs_ids;
+
 					var devicesTemplate = "";
 					for(var i=0;i<selected_bs_markers.length;i++) {
 						var current_bs = selected_bs_markers[i];
@@ -6557,6 +6560,8 @@ function devicePlottingClass_gmap() {
 					// If any bs exists
 					if(bs_id_array.length > 0) {
 
+						inventory_bs_ids = bs_id_array;
+
 						var devicesTemplate = "";
 						for(var i=0;i<current_bound_devices.length;i++) {
 							var current_bs = current_bound_devices[i];
@@ -6569,7 +6574,7 @@ function devicePlottingClass_gmap() {
 							$("#exportDeviceContainerBlock").removeClass('hide');
 						}
 
-						gmap_self.downloadInventory_gmap(bs_id_array);
+						// gmap_self.downloadInventory_gmap(bs_id_array);
 
 					} else {
 						gmap_self.removeInventorySelection();
@@ -6587,40 +6592,42 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
-     * This function make ajax request to download select bs inventory report
+     * This function download select bs inventory report
      * @method downloadInventory_gmap
-     * @param bs_id_list {Array}, It contains ID's of selected base stations.
      */
-    this.downloadInventory_gmap = function(bs_id_list) {
+    this.downloadInventory_gmap = function() {
+
+    	// Open API url in new tab to download inventory report
+    	window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(inventory_bs_ids),"_blank");
 
     	// Send ajax call to download selected inventory report
-		$.ajax({
-			url : base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(bs_id_list),
-			type : "GET",
-			success : function(result) {
-				// window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(bs_id_list),'_blank');
-				// console.log(result);
-				$.gritter.add({
-		            // (string | mandatory) the heading of the notification
-		            title: 'Inventory Download',
-		            // (string | mandatory) the text inside the notification
-		            text: 'Selected BS inventory downloaded successfully.',
-		            // (bool | optional) if you want it to fade out on its own or just sit there
-		            sticky: false
-		        });
-			},
-			error : function(err) {
-				// console.log(err.statusText);
-				$.gritter.add({
-		            // (string | mandatory) the heading of the notification
-		            title: 'Inventory Download',
-		            // (string | mandatory) the text inside the notification
-		            text: 'Inventory not downloaded. Please try again later.',
-		            // (bool | optional) if you want it to fade out on its own or just sit there
-		            sticky: false
-		        });
-			}
-		});
+		// $.ajax({
+		// 	url : base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(bs_id_list),
+		// 	type : "GET",
+		// 	success : function(result) {
+		// 		// window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(bs_id_list),'_blank');
+		// 		// console.log(result);
+		// 		$.gritter.add({
+		//             // (string | mandatory) the heading of the notification
+		//             title: 'Inventory Download',
+		//             // (string | mandatory) the text inside the notification
+		//             text: 'Selected BS inventory downloaded successfully.',
+		//             // (bool | optional) if you want it to fade out on its own or just sit there
+		//             sticky: false
+		//         });
+		// 	},
+		// 	error : function(err) {
+		// 		// console.log(err.statusText);
+		// 		$.gritter.add({
+		//             // (string | mandatory) the heading of the notification
+		//             title: 'Inventory Download',
+		//             // (string | mandatory) the text inside the notification
+		//             text: 'Inventory not downloaded. Please try again later.',
+		//             // (bool | optional) if you want it to fade out on its own or just sit there
+		//             sticky: false
+		//         });
+		// 	}
+		// });
 	};
 
 	/**
