@@ -5373,19 +5373,31 @@ function devicePlottingClass_gmap() {
 
     	//Remove Ruler markers
     	for(var i=0;i<ruler_array.length;i++) {
-    		ruler_array[i].setMap(null);
+    		if(window.location.pathname.indexOf('googleEarth') > -1) {
+    			ruler_array[i].setVisibility(false);
+    		} else {
+    			ruler_array[i].setMap(null);	
+    		}
     	}
     	ruler_array = [];
 
     	/*Remove line between two points*/
     	for(var j=0;j<tools_rule_array.length;j++) {
-    		tools_rule_array[j].setMap(null);
+    		if(window.location.pathname.indexOf('googleEarth') > -1) {
+    			tools_rule_array[j].setVisibility(false);
+    		} else {
+    			tools_rule_array[j].setMap(null);
+    		}
     	}
     	tools_rule_array = [];
 
     	/*Remove Distance Label*/
     	if(distance_label.map != undefined) {
-    		distance_label.setMap(null);
+    		if(window.location.pathname.indexOf('googleEarth') > -1) {
+    			distance_label.setVisibility(false);
+    		} else {
+    			distance_label.setMap(null);
+    		}
     	}
 
     	//set isCreated = 0
@@ -5672,17 +5684,14 @@ function devicePlottingClass_gmap() {
 	this.addPointTool_gmap = function() {
 
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
+			console.log(pointEventHandler);
 			if(pointEventHandler) {
-				google.earth.removeEventListener(ge.getGlobe(), 'mousedown', pointEventHandler);
+				google.earth.removeEventListener(ge.getGlobe(), 'click', pointEventHandler);
 				pointEventHandler = "";
 			}
 
-			pointEventHandler = google.earth.addEventListener(ge.getWindow(), 'mousedown', function(event) {
-				if (event.getTarget().getType() == 'KmlPlacemark' && event.getTarget().getGeometry().getType() == 'KmlPoint') {
-					var placemark = event.getTarget();
-					// event.preventDefault();
-					// event.stopPropagation();
-				} else {
+			pointEventHandler = function(event) {
+				if (!(event.getTarget().getType() == 'KmlPlacemark' && event.getTarget().getGeometry().getType() == 'KmlPoint') && event.getButton() == 0) {
 					if(pointAdded == 1) {
 						var infoObj = {};
 
@@ -5704,8 +5713,10 @@ function devicePlottingClass_gmap() {
 						earth_self.plotPoint_earth(infoObj);
 					}
 				}
-			});
-
+				event.preventDefault();
+				event.stopPropagation();
+			};
+			google.earth.addEventListener(ge.getGlobe(), 'click', pointEventHandler);
 		} else {
 	        //first clear the listners. as ruler tool might be in place
 	        google.maps.event.clearListeners(mapInstance,'click');
@@ -5913,11 +5924,17 @@ function devicePlottingClass_gmap() {
             	success : function(result) {
             		if(result.success === 1) {
             			/*Remove point marker from google map*/
-						current_marker.setMap(null);
-						if(current_line) {
-							current_line.setMap(null);
+            			if(window.location.pathname.indexOf('googleEarth') > -1) {
+							current_marker.setVisibility(false);
+							if(current_line) {
+								current_line.setVisibility(false);
+							}
+						} else {
+							current_marker.setMap(null);
+							if(current_line) {
+								current_line.setMap(null);
+							}
 						}
-
 						/*Delete point from global object*/
 						delete point_data_obj["point_"+String(marker.lat).split(".").join("-")+"_"+String(marker.lon).split(".").join("-")];
 						delete line_data_obj["point_"+String(marker.lat).split(".").join("-")+"_"+String(marker.lon).split(".").join("-")];
@@ -5931,10 +5948,18 @@ function devicePlottingClass_gmap() {
 			});
 		} else {
 			/*Remove point marker from google map*/
-			current_marker.setMap(null);
-			if(current_line) {
-				current_line.setMap(null);
+			if(window.location.pathname.indexOf('googleEarth') > -1) {
+				current_marker.setVisibility(false);
+				if(current_line) {
+					current_line.setVisibility(false);
+				}
+			} else {
+				current_marker.setMap(null);
+				if(current_line) {
+					current_line.setMap(null);
+				}
 			}
+			
 			/*Delete point from global object*/
 			delete point_data_obj["point_"+String(marker.lat).split(".").join("-")+"_"+String(marker.lon).split(".").join("-")];
 			delete line_data_obj["point_"+String(marker.lat).split(".").join("-")+"_"+String(marker.lon).split(".").join("-")];
@@ -5955,17 +5980,32 @@ function devicePlottingClass_gmap() {
 		$("#infoWindowContainer").addClass('hide');
 
 		//first clear the listners. as ruler tool might be in place
-        google.maps.event.clearListeners(mapInstance,'click');
+		if(window.location.pathname.indexOf("googleEarth") > -1) {
+			google.earth.removeEventListener(ge.getGlobe(), 'click', pointEventHandler);
+			pointEventHandler = "";
 
-		google.maps.event.addListener(mapInstance,'click',function(e) {
-
-			if(Object.keys(connected_end_obj).length === 0) {
-				alert("Please select other point");
-			} else {
-				$("#point_select").trigger("click");
-				connected_end_obj = {};
+			pointEventHandler = function(e) {
+				if(Object.keys(connected_end_obj).length === 0) {
+					alert("Please select other point");
+				} else {
+					$("#point_select").trigger("click");
+					connected_end_obj = {};
+				}
 			}
-		});
+			google.earth.addEventListener(ge.getGlobe(), 'click', pointEventHandler);
+		} else {
+	        google.maps.event.clearListeners(mapInstance,'click');
+
+			google.maps.event.addListener(mapInstance,'click',function(e) {
+
+				if(Object.keys(connected_end_obj).length === 0) {
+					alert("Please select other point");
+				} else {
+					$("#point_select").trigger("click");
+					connected_end_obj = {};
+				}
+			});
+		}
 	};
 
 	/**

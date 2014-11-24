@@ -899,9 +899,16 @@ function removetoolsPanel() {
 
 $("#ruler_select").click(function(e) {
 
-    google.maps.event.clearListeners(mapInstance, 'click');
-
+    if(window.location.pathname.indexOf('googleEarth') > -1) {
+        if(pointEventHandler) {
+            google.earth.removeEventListener(ge.getGlobe(), 'mousedown', pointEventHandler);
+            pointEventHandler = "";
+        }
+    } else {
+        google.maps.event.clearListeners(mapInstance, 'click');
+    }
     networkMapInstance.clearRulerTool_gmap();
+
 
     // Set/Reset variables
     pointAdded= -1;
@@ -911,7 +918,11 @@ $("#ruler_select").click(function(e) {
     $(this).addClass("hide");
     $("#ruler_remove").removeClass("hide");
 
-    networkMapInstance.addRulerTool_gmap();
+    if(window.location.pathname.indexOf('googleEarth') > -1) {
+        earth_instance.addRulerTool_earth();
+    } else {
+        networkMapInstance.addRulerTool_gmap();
+    }
 });
 
 
@@ -974,7 +985,7 @@ $("#point_select").click(function(e) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
         if(pointEventHandler) {
-            google.earth.removeEventListener(ge.getGlobe(), 'mousedown', pointEventHandler);
+            google.earth.removeEventListener(ge.getGlobe(), 'click', pointEventHandler);
             pointEventHandler = "";
         }
     } else {

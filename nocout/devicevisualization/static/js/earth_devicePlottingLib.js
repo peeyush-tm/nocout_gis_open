@@ -626,6 +626,8 @@ function googleEarthClass() {
 								// earth_self.plotDevices_earth([],"base_station");
 								earth_self.showStateWiseData_earth([],"base_station");
 
+								earth_self.get_tools_data_earth();
+
 								disableAdvanceButton('no');
 
 								/*Recall the server after particular timeout if system is not freezed*/
@@ -649,6 +651,8 @@ function googleEarthClass() {
 							// earth_self.plotDevices_earth([],"base_station");
 							earth_self.showStateWiseData_earth([],"base_station");
 
+							earth_self.get_tools_data_earth();
+
 							get_page_status();
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
@@ -669,6 +673,8 @@ function googleEarthClass() {
 						disableAdvanceButton('no');
 						// earth_self.plotDevices_earth([],"base_station");
 						earth_self.showStateWiseData_earth([],"base_station");
+
+						earth_self.get_tools_data_earth();
 
 						get_page_status();
 						disableAdvanceButton('no, enable it.');
@@ -712,6 +718,8 @@ function googleEarthClass() {
 			/*Ajax call not completed yet*/
 			isCallCompleted = 1;
 			disableAdvanceButton('no');
+
+			earth_self.get_tools_data_earth();
 			// earth_self.plotDevices_earth([],"base_station");
 			earth_self.showStateWiseData_earth([],"base_station");
 
@@ -1453,19 +1461,11 @@ var state_wise_device_label_text= {};
 		point_data_obj["point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-")] = "";
 		point_data_obj["point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-")] = pointPlacemark;
 
-		// // Bind right click event to marker
-		// (function bindRightMenuToMarker(marker) {
-		// 	var markerRightClick= google.earth.addEventListener(marker, 'rightclick', function(event) {
-		// 		gmap_self.openPointRightClickMenu(this);
-		// 	});
-
-		// 	// return markerRightClick;
-		// })(pointPlacemark);
-
 		// Bind click event to marker
 		(function bindClickToMarker(marker) {
 
 			google.earth.addEventListener(marker, 'click', function(e) {
+				
 				// if it is a right-click 
 				if (e && e.getButton() == 2) {
 					gmap_self.openPointRightClickMenu(marker);
@@ -1513,6 +1513,7 @@ var state_wise_device_label_text= {};
 		
 		var style = ge.createStyle(''); //create a new style
 		style.getIconStyle().setIcon(icon); //apply the icon to the style
+		style.getIconStyle().setScale(1.0);
 		
 		placemark.setStyleSelector(style); //apply the style to the placemark
 
@@ -2304,7 +2305,6 @@ var state_wise_device_label_text= {};
     			}
 			});
 		}
-		
 	}
 
 	/**
@@ -2783,6 +2783,12 @@ var state_wise_device_label_text= {};
 		//End of Loop through the Master Markers
 	}
 
+
+	this.addRulerTool_earth = function() {
+
+	}
+
+
 	/**
 	 * This function make "r,g,b,a" color object from rgba color string
 	 * @method makeRgbaObject
@@ -3053,6 +3059,10 @@ var state_wise_device_label_text= {};
 				}
 			}
 		});
+	}
+
+	this.get_tools_data_earth= function() {
+
 	}
 
 	/**
