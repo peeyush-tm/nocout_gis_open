@@ -31,19 +31,50 @@
     </div>
 </div>
 
-    <!-- Google Map Library-->
-    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
+    <!-- OpenLayers Map Library-->
+    <script type="text/javascript" src={% static "js/OpenLayers/OpenLayers.js" %}></script>
     <!-- Script Library for COokies -->
     <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
+
     <script type="text/javascript">
 
-        var networkMapInstance = "",
-            file_url = "";
+        var file_url = "",
+            base_url = "";
 
         $(document).ready(function (e) {
             file_url = "{{file_url}}";
-            console.log(file_url)
-            // networkMapInstance.createMap("deviceMap");
+
+            /*Set the base url of application for ajax calls*/
+            if(window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            }
+
+            var kmlUrl = base_url+'/media/'+file_url;
+
+            var ccpl_map = new OpenLayers.Map({
+                div: "deviceMap",
+                layers: [
+                    new OpenLayers.Layer.WMS(
+                        "WMS", "http://i.codescape.in:887/geoserver/wms",
+                        {layers: "Test2:IND_adm1"}
+                    ),
+                    new OpenLayers.Layer.Vector("KML", {
+                        strategies: [new OpenLayers.Strategy.Fixed()],
+                        protocol: new OpenLayers.Protocol.HTTP({
+                            url: kmlUrl,
+                            format: new OpenLayers.Format.KML({
+                                extractStyles: true, 
+                                extractAttributes: true,
+                                maxDepth: 2
+                            })
+                        })
+                    })
+                ]
+            });
+
+            ccpl_map.zoomToExtent(new OpenLayers.Bounds([68.498, 7.925, 97.335, 35.501]));
         });
     </script>
 {% endblock %}

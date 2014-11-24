@@ -24,7 +24,7 @@ def status_perf_data(site,hostlist):
 	query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 	for entry in query_output:
 		if int(entry[2]) == 1:
-			return
+			continue
 		service_state = entry[4]
                 host = entry[0]
                 if service_state == 0:

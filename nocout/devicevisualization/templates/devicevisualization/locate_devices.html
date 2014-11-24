@@ -21,41 +21,55 @@
     <span class="date-range pull-right">
         <div class="btn-group">
             <ul class="list-unstyled list-inline gis_page_setting">
-                <li class="alert alert-block alert-info">
+                <!-- <li class="alert alert-block alert-info">
                     <b>Status</b><br/> <ul id="gis_status_txt" class="list-unstyled "></ul>
-                </li>
-                <li><button type="button" id="advSearchBtn" class="btn btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
-                            data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
-                    <i class="fa fa-filter"></i>Advance Search
-                </button></li>
+                </li> -->
                 <li>
-                    <button type="button" id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();"
+                    <button type="button" id="advSearchBtn" class="btn btn-sm btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
+                                data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
+                        <i class="fa fa-filter"></i>Advance Search
+                    </button>
+                    <button type="button" id="removeSearchBtn" class="btn btn-sm btn-danger hide" onclick="resetAdvanceSearch();"
+                            style="margin-left:10px;">
+                        <i class='fa fa-times'></i> Remove Search
+                    </button>
+                </li>
+                <li>
+                    <button type="button" id="advFilterBtn" class="btn btn-sm btn-info" onclick="showAdvFilters();"
                             data-complete-text="<i class='fa fa-filter'></i> Advance Filters"
                             data-loading-text="Please Wait...">
                         <i class='fa fa-filter'></i> Advance Filters
                     </button>
-                    <button type="button" id="removeFilterBtn" class="btn btn-danger hide" onclick="removeAdvFilters();"
+                    <button type="button" id="removeFilterBtn" class="btn btn-sm btn-danger hide" onclick="removeAdvFilters();"
                             style="margin-left:10px;" title="Click to Advance Filter">
                         <i class='fa fa-times'></i> Remove Filters
                     </button>
                 </li>
                 <li>
-                    <button type="button" class="btn btn-info" id="createPolygonBtn"
-                            data-complete-text="<i class='fa fa-location-arrow'></i> Select Devices"
-                            data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Select Devices
+                    <button type="button" class="btn btn-sm btn-info" id="createPolygonBtn"
+                            data-complete-text="<i class='fa fa-location-arrow'></i> Live Poll"
+                            data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Live Poll
                     </button>
                     <button type="button" class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear
+                        Selection
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="btn btn-sm btn-info" id="export_data_gmap"
+                            data-complete-text="<i class='fa fa-download'></i> Export Devices"
+                            data-loading-text="Please Wait..."><i class='fa fa-download'></i> Export Devices</button>
+                    <button type="button" class="btn btn-xs btn-danger hide" id="clearExportDataBtn"><i class="fa fa-times"></i> Clear
                         Selection
                     </button>
                 </li>
                 {% for group in user.groups.all %}
                     {% if group.name == 'group_admin' or group.name == 'group_operator' %}
                         <li>
-                            <button type="button" id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
+                            <button type="button" id="showToolsBtn" class="btn btn-sm btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
                             data-loading-text="Please Wait...">
                                 <i class='fa fa-cog'></i> Show Tools
                             </button>
-                            <button type="button" id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();">
+                            <button type="button" id="removeToolsBtn" class="btn btn-sm btn-danger hide" onclick="removetoolsPanel();">
                                 <i class='fa fa-times'></i> Hide Tools
                             </button>
                         </li>
@@ -229,9 +243,6 @@
                     <button type="button" id="freeze_remove" class="btn btn-sm btn-danger hide">Un-Freeze</button>
                 </li>
                 <li>
-                    <button type="button" class="btn btn-sm btn-info" id="export_data_gmap">Export Data</button>
-                </li>
-                <li>
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked="checked" style="vertical-align: text-top;"> 
                     Show Labels
                 </li>
@@ -330,6 +341,28 @@
             <div id="infoWindowContainer" class="sideInfoContainer col-md-5 col-md-offset-7 hide" style="z-index:200;"></div>
 
             <!--Info Window Content Container END-->
+
+            <!-- Export Data Content Start-->
+            <div id="exportDeviceContainerBlock" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:199;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#exportData_sideInfo">
+                                Selected Devices
+                            </a>
+                        </h3>
+                    </div>
+                    <div id="exportData_sideInfo" class="panel-collapse in">
+                        <div class="panel-body">
+                            <div class="bs_list">
+                            
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="divide-20"></div>
+            </div>
+            <!-- Export Data Content End-->
 
             <!--SideInfo Panel Start-->
             <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:199;">
