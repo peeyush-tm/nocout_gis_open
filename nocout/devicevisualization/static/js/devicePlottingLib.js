@@ -1073,20 +1073,24 @@ function devicePlottingClass_gmap() {
 			} else {
 				var lat = current_bs.data.lat,
 					lon = current_bs.data.lon,
-					allStateBoundries = state_boundries_db.data,
-					bs_point = new google.maps.LatLng(lat,lon);
+					allStateBoundries = state_boundries_db.data;
+					// bs_point = new google.maps.LatLng(lat,lon);
 
 				// Loop to find that the lat lon of BS lies in which state.
 				for(var y=allStateBoundries.length;y--;) {
 					var current_state_boundries = allStateBoundries[y].boundries,
 						current_state_name = allStateBoundries[y].name,
-						latLonArray = [];;
+						latLonArray = [];
+						
 					if(current_state_boundries.length > 0) {
 						for(var z=current_state_boundries.length;z--;) {
-							latLonArray.push(new google.maps.LatLng(current_state_boundries[z].lat,current_state_boundries[z].lon));
+							// latLonArray.push(new google.maps.LatLng(current_state_boundries[z].lat,current_state_boundries[z].lon));
+							latLonArray.push({lat: current_state_boundries[z].lat, lon: current_state_boundries[z].lon});
 						}
-						var state_polygon = new google.maps.Polygon({"path" : latLonArray});
-						if(google.maps.geometry.poly.containsLocation(bs_point, state_polygon)) {
+
+						// var state_polygon = new google.maps.Polygon({"path" : latLonArray});
+						// if(google.maps.geometry.poly.containsLocation(bs_point, state_polygon)) {
+						if(isPointInPoly(latLonArray, {lat: lat, lon: lon})) {
 							//Update json with state name
 							dataset[i]['data']['state'] = current_state_name;
 							state = current_state_name;
