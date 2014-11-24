@@ -13,6 +13,10 @@ from django.db import connections
 
 date_handler = lambda obj: obj.strftime('%Y-%m-%d %H:%M:%S') if isinstance(obj, datetime.datetime) else None
 
+#for managing the slave-master connections
+from django.conf import settings
+import socket
+#http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 
 class DictDiffer(object):
     """
@@ -42,7 +46,26 @@ project_group_role_dict_mapper={
     'viewer':'group_viewer',
 }
 
-#code duplication
+#http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+def test_connection_to_db(database_name):
+    """
+
+    :param database_name:
+    :return:
+    """
+    try:
+        db_definition = getattr(settings, 'DATABASES')[database_name]
+        #if it gets a socket connection in 2 seconds
+        s = socket.create_connection((db_definition['HOST'], db_definition['PORT']), 2)
+        #if it gets a socket connection in 2 seconds
+        s.close()
+        return True
+    except Exception as e:
+        #general exception handelling
+        #because connection might not exists in settings file
+        return False
+
+
 def fetch_raw_result(query, machine='default'):
     """
     django raw query does not get result in a single call, it iterates and calls the same query a lot of time
@@ -52,8 +75,12 @@ def fetch_raw_result(query, machine='default'):
     :param machine: machine name
     :return:the data fetched in form of a dictionary
     """
+    db = machine
+    db_slave = db + "_slave"
+    if test_connection_to_db(database_name=db_slave):
+        db = db_slave
 
-    cursor = connections[machine].cursor()
+    cursor = connections[db].cursor()
     cursor.execute(query)
 
     return dict_fetchall(cursor)

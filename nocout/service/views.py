@@ -12,6 +12,7 @@ from django.db.models import Q
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
+from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet
 
 # ########################################################
 from django.conf import settings
@@ -50,7 +51,7 @@ class ServiceList(PermissionsRequiredMixin, ListView):
         return context
 
 
-class ServiceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Service Listing Table.
     """
@@ -58,6 +59,12 @@ class ServiceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, Datatab
     required_permissions = ('service.view_service',)
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
     order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        qs = self.model.objects.filter()
+        return qs.prefetch_related('service_data_sources')
 
     def prepare_results(self, qs):
         """
@@ -67,10 +74,17 @@ class ServiceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, Datatab
         :return qs
 
         """
-        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in json_data:
+        json_data = []
+        for obj in qs:
+            dct = {}
+            dct.update(name=obj.name)
+            dct.update(alias=obj.alias)
+            dct.update(parameters__parameter_description=obj.parameters.parameter_description)
+            dct.update(description=obj.description)
+            dct.update(service_data_sources__alias=', '.join(list(obj.service_data_sources.values_list('alias', flat=True))))
             dct.update(actions='<a href="/service/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/service/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/service/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj.id))
+            json_data.append(dct)
         return json_data
 
 
@@ -94,6 +108,54 @@ class ServiceCreate(PermissionsRequiredMixin, CreateView):
     success_url = reverse_lazy('services_list')
     required_permissions = ('service.add_service',)
 
+    def get(self, request, *args, **kwargs):
+        """
+        Handles GET requests and instantiates blank versions of the form
+        and its inline formsets.
+        """
+        self.object = None
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        Service_data_form = ServiceDataSourceCreateFormSet()
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  service_data_form=Service_data_form))
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests, instantiating a form instance and its inline
+        formsets with the passed POST variables and then checking them for
+        validity.
+        """
+        self.object = None
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        service_data_form = ServiceDataSourceCreateFormSet(self.request.POST)
+        if (form.is_valid() and service_data_form.is_valid()):
+            return self.form_valid(form, service_data_form)
+        else:
+            return self.form_invalid(form, service_data_form)
+
+    def form_valid(self, form, service_data_form):
+        """
+        Called if all forms are valid. Creates a Recipe instance along with
+        associated Ingredients and Instructions and then redirects to a
+        success page.
+        """
+        self.object = form.save()
+        service_data_form.instance = self.object
+        service_data_form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, service_data_form):
+        """
+        Called if a form is invalid. Re-renders the context data with the
+        data-filled forms and errors.
+        """
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  service_data_form=service_data_form))
+
 
 class ServiceUpdate(PermissionsRequiredMixin, UpdateView):
     """
@@ -104,6 +166,58 @@ class ServiceUpdate(PermissionsRequiredMixin, UpdateView):
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
     required_permissions = ('service.change_service',)
+
+    def get(self, request, *args, **kwargs):
+        """
+        Handles GET requests and instantiates blank versions of the form
+        and its inline formsets.
+        """
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = ServiceForm(instance=self.object)
+        Service_data_form = ServiceDataSourceUpdateFormSet(instance=self.object)
+        if len(Service_data_form):
+            Service_data_form = ServiceDataSourceUpdateFormSet(instance=self.object)
+        else:
+            Service_data_form = ServiceDataSourceCreateFormSet()
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  service_data_form=Service_data_form))
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests, instantiating a form instance and its inline
+        formsets with the passed POST variables and then checking them for
+        validity.
+        """
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        service_data_form = ServiceDataSourceUpdateFormSet(self.request.POST, instance=self.object)
+        if (form.is_valid() and service_data_form.is_valid()):
+            return self.form_valid(form, service_data_form)
+        else:
+            return self.form_invalid(form, service_data_form)
+
+    def form_valid(self, form, service_data_form):
+        """
+        Called if all forms are valid. Creates a Recipe instance along with
+        associated Ingredients and Instructions and then redirects to a
+        success page.
+        """
+        self.object = form.save()
+        service_data_form.instance = self.object
+        service_data_form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, service_data_form):
+        """
+        Called if a form is invalid. Re-renders the context data with the
+        data-filled forms and errors.
+        """
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  service_data_form=service_data_form))
 
 
 class ServiceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):

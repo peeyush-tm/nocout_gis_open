@@ -165,6 +165,7 @@ INSTALLED_APPS = (
     'django_extensions',
     'session_security',
     'south',
+    'nocout.signals', # Load before nocout apps
     'user_profile',
     'user_group',
     'device',

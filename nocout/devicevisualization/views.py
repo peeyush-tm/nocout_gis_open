@@ -6,6 +6,8 @@ from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 import logging
+from zipfile import ZipFile
+import glob
 from nocout.settings import MEDIA_ROOT, MEDIA_URL
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView, View
@@ -786,8 +788,19 @@ class KmzViewAction(View):
         page_type = self.kwargs['page_type']
         kmz_id = self.kwargs['kmz_id']
 
-        file_url = KMZReport.objects.filter(pk=kmz_id).values('filename')
-        context_data['file_url'] = file_url[0]['filename']
+        kmz_resultset = KMZReport.objects.filter(pk=kmz_id).values()
+        context_data['file_url'] = kmz_resultset[0]['filename']
+
+        # If page_type is other than google earth & file type is kmz then extract kmz file & pass kml file url
+        if page_type != 'google_earth':
+            if context_data['file_url'].find(".kmz") > -1 :
+                try:
+                    kmz_file = ZipFile(str(MEDIA_ROOT+"/"+context_data['file_url']))
+                    kml_file_instance = kmz_file.extractall(str(MEDIA_ROOT+"uploaded/kml/"+kmz_resultset[0]['name']+"/"))
+                    kml_file = glob.glob(str(MEDIA_ROOT+"uploaded/kml/"+kmz_resultset[0]['name']+"/*.kml"))[0]
+                    context_data['file_url'] = "uploaded/kml/"+kmz_resultset[0]['name']+"/"+kml_file[kml_file.rfind("/") + 1:len(kml_file)]
+                except Exception, e:
+                    logger.info(e.message)
 
         if page_type == 'white_background':
             template = 'devicevisualization/kmz_whitebg.html'
@@ -966,82 +979,6 @@ class PointListingTable(BaseDatatableView):
                'aaData': aaData
         }
         return ret
-
-
-class DownloadSelectedBSInventory(View):
-    """ Download GIS Inventory excel sheet of selected Base Stations
-
-        :Parameters:
-            - 'base_stations' (str) - list of base stations in form of string i.e. [1, 2, 3, 4]
-
-        :Returns:
-           - 'file' (file) - inventory excel sheet
-    """
-    def get(self, request):
-        # get base stations id's list
-        bs_ids = eval(str(self.request.GET.get('base_stations', None)))
-
-        # list of ptp rows
-        ptp_rows_list = []
-
-        # list of ptp bh rows
-        ptp_bh_rows_list = []
-
-        # list of pmp bs
-        pmp_bs_rows_list = []
-
-        # list of pmp sm sheet
-        pmp_sm_rows_list = []
-
-        # list of wimax bs rows
-        wimax_bs_rows_list = []
-
-        # list of wimax ss rows
-        wimax_ss_rows_list = []
-
-        # headers for excel sheet
-        headers = ['City', ]
-
-        # ptp dictionary
-        ptp_fields = {'State', 'City', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
-                      'QOS (BW)', 'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height', 'Polarization',
-                      'Antenna Type', 'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
-                      'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance', 'Throughput During Acceptance',
-                      'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU Used', 'BS Switch IP', 'Aggregation Switch',
-                      'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP', 'Converter Type',
-                      'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet',
-                      'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'BSO CKT ID', 'SS City', 'SS State',
-                      'SS Circuit ID', 'SS Customer Name', 'SS Customer Address', 'SS BS Name', 'SS QOS (BW)',
-                      'SS Latitude', 'SS Longitude', 'SS Antenna Height', 'SS Antenna Type', 'SS Antenna Gain',
-                      'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
-                      'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
-                      'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC'}
-
-        # ptp bh dictionary
-        ptp_bh_fields = {'State', 'City', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
-                         'QOS (BW)', 'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height', 'Polarization',
-                         'Antenna Type', 'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
-                         'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance', 'Throughput During Acceptance',
-                         'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU Used', 'BS Switch IP', 'Aggregation Switch',
-                         'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP', 'Converter Type',
-                         'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet',
-                         'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'BSO CKT ID', 'SS City', 'SS State',
-                         'SS Circuit ID', 'SS Customer Name', 'SS Customer Address', 'SS BS Name', 'SS QOS (BW)',
-                         'SS Latitude', 'SS Longitude', 'SS Antenna Height', 'SS Antenna Type', 'SS Antenna Gain',
-                         'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
-                         'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
-                         'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC', 'SS MIMO/Diversity',
-                         'SS Polarization'}
-
-        # pmp bs dictionary
-        pmp_bs_fields = {'State', 'City', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
-                         'Infra Provider', 'Site ID', 'Building Height', 'Tower Height', 'Latitude', 'Longitude',
-                         'ODU IP', 'Sector Name', 'Make Of Antenna', 'Polarization', 'Antenna Tilt', 'Antenna Height',
-                         'Antenna Beamwidth', 'Azimuth', 'Sync Splitter Used', 'Type Of GPS', 'BS Switch IP',
-                         'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
-                         'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity',
-                         'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'DR Site',
-                         'Sector ID', 'BSO Circuit ID'}
 
 
 class GISPerfData(View):

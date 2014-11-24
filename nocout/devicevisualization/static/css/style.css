@@ -401,3 +401,28 @@
     position: relative;
     z-index: 9999;
 }
+
+/**
+ * Google earth style css
+ */
+
+#sideInfoContainer .panel {
+    z-index:200;
+    position:relative;
+    max-height:400px;
+    overflow-y:auto;
+    min-height: 200px;
+    height: auto;
+}
+
+iframe {
+    position:absolute; 
+    top:10px; 
+    right:10px; 
+    overflow: auto; 
+    padding:0px; 
+    height:100%; 
+    max-height: 550px; 
+    overflow:auto; 
+    z-index:100;
+}
