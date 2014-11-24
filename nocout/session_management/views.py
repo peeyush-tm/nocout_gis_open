@@ -201,17 +201,29 @@ def dialog_action(request):
         if hasattr(request.user, 'visitor'):
             Session.objects.filter(session_key=request.user.visitor.session_key).delete()
         Visitor.objects.create(session_key=session_key, user=request.user)
-        result = {
-            "success": 1,  # 0 - fail, 1 - success, 2 - exception
-            "message": "Success/Fail message.",
-            "data": {
-                "meta": {},
-                "objects": {
-                    'url': url,
-                    'password_expires_on': request.POST.get('password_expires_on')
+        if request.POST.get('password_alert'):
+            result = {
+                "success": 1,  # 0 - fail, 1 - success, 2 - exception
+                "message": "Success/Fail message.",
+                "data": {
+                    "meta": {},
+                    "objects": {
+                        'url': url,
+                        'password_expires_on': request.POST.get('password_expires_on')
+                    }
                 }
             }
-        }
+        else:
+            result = {
+                "success": 1,  # 0 - fail, 1 - success, 2 - exception
+                "message": "Success/Fail message.",
+                "data": {
+                    "meta": {},
+                    "objects": {
+                        'url': url,
+                    }
+                }
+            }
         return HttpResponse(json.dumps(result), mimetype='application/json')
 
     elif request.POST.get('action') == 'logout':

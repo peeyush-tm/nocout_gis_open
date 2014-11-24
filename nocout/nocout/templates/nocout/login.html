@@ -281,14 +281,20 @@
                                    url: "/sm/dialog_action/",
                                    type: "POST",
                                    data: { action: 'continue', url:data.data.objects.url,
-                                    password_expires_on:data.data.objects.password_expires_on },
+                                    'password_alert':data.data.objects.password_expire_alert,
+                                    'password_expires_on': data.data.objects.password_expires_on },
                                    dataType: "json",
                                    success: function (data) {
-                                        bootbox.alert("Change your password, password will " +
+                                        if (data.data.objects.password_expires_on == null){
+                                            window.location.replace(data.data.objects.url);
+                                        }
+                                        else{
+                                            bootbox.alert("Change your password, password will " +
                                             "expire on " +
                                             data.data.objects.password_expires_on, function() {
                                             window.location.replace(data.data.objects.url);
-                                        });
+                                            });
+                                        }
                                    }//success
                                });//ajax
                             }//callback function

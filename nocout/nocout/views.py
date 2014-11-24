@@ -164,8 +164,11 @@ def auth_view(request):
             session_key_in_visitor_db = request.user.visitor.session_key
 
             if session_key_in_visitor_db != key_from_cookie:
-                objects_values = dict(dialog=True, url=next_url,
-                        password_expires_on=unicode(password_expires_on.date()))
+                if password_expire_alert:
+                    objects_values = dict(password_expire_alert=True, dialog=True, url=next_url,
+                            password_expires_on=unicode(password_expires_on.date()))
+                else:
+                    objects_values = dict(password_expire_alert=False, dialog=True, url=next_url)
 
             else:
                 objects_values = dict(url=next_url)
