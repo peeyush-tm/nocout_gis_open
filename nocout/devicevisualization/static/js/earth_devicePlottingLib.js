@@ -779,7 +779,7 @@ var state_wise_device_label_text= {};
 						var clusterIconStyle = ge.createStyle(''); //create a new style
 						clusterIconStyle.getIconStyle().setIcon(clusterIcon); //apply the icon to the style
 						device_counter_label.setStyleSelector(clusterIconStyle); //apply the style to the placemark
-						clusterIconStyle.getIconStyle().setScale(5.0);
+						clusterIconStyle.getIconStyle().setScale(6.0);
 
 			   			//Set the placemark location;
 			   			var clusterPoint = ge.createPoint('');
@@ -796,36 +796,6 @@ var state_wise_device_label_text= {};
 				   			});
 
 						}(state_param));
-
-						// (function() {
-				  //       	// Create the placemark.
-						// 	var device_counter_text = ge.createPlacemark('');
-						// 	device_counter_text.setName(String(state_wise_device_counters[state]));
-
-						// 	// Define a custom icon.
-						// 	var icon = ge.createIcon('');
-						// 	icon.setHref(base_url+'/static/img/icons/1x1.png');
-						// 	var style = ge.createStyle(''); //create a new style
-						// 	style.getIconStyle().setIcon(icon); //apply the icon to the style
-						// 	device_counter_text.setStyleSelector(style); //apply the style to the placemark
-						// 	style.getIconStyle().setScale(0);
-
-						// 	// Set the placemark's location.  
-						// 	var point = ge.createPoint('');
-						// 	var nLat = ((+state_lat_lon_obj.lat*1000)-0)/1000;
-						// 	var nLng = ((+state_lat_lon_obj.lon*1000)-0)/1000;
-						// 	point.setLatitude(nLat);
-						// 	point.setLongitude(nLng);
-						// 	device_counter_text.setGeometry(point);
-
-						// 	device_counter_text.placemarkerType = 'label_icon';
-
-						// 	// Add the placemark to Earth.
-						// 	ge.getFeatures().appendChild(device_counter_text);
-
-					 //        state_wise_device_label_text[state] = device_counter_text;
-
-				  //       }());
 					}
 			        state_wise_device_labels[state] = device_counter_label;
 				}
@@ -872,7 +842,7 @@ var state_wise_device_label_text= {};
 								var clusterIconStyle = ge.createStyle(''); //create a new style
 								clusterIconStyle.getIconStyle().setIcon(clusterIcon); //apply the icon to the style
 								device_counter_label.setStyleSelector(clusterIconStyle); //apply the style to the placemark
-								clusterIconStyle.getIconStyle().setScale(5.0);
+								clusterIconStyle.getIconStyle().setScale(6.0);
 
 
 					   			//Set the placemark location;
@@ -894,36 +864,6 @@ var state_wise_device_label_text= {};
 								ge.getFeatures().appendChild(device_counter_label);
 
 								state_wise_device_labels[current_state_name] = device_counter_label;
-
-								// (function() {
-							 //        // Create the placemark.
-								// 	var device_counter_text = ge.createPlacemark('');
-								// 	device_counter_text.setName(String(state_wise_device_counters[state]));
-
-								// 	// Define a custom icon.
-								// 	var icon = ge.createIcon('');
-								// 	icon.setHref(base_url+'/static/img/icons/1x1.png');
-								// 	var style = ge.createStyle(''); //create a new style
-								// 	style.getIconStyle().setIcon(icon); //apply the icon to the style
-								// 	device_counter_text.setStyleSelector(style); //apply the style to the placemark
-								// 	style.getIconStyle().setScale(0);
-
-								// 	// Set the placemark's location.  
-								// 	var point = ge.createPoint('');
-								// 	var nLat = ((+state_lat_lon_obj.lat*1000)-0)/1000;
-								// 	var nLng = ((+state_lat_lon_obj.lon*1000)-0)/1000;
-								// 	point.setLatitude(nLat);
-								// 	point.setLongitude(nLng);
-								// 	device_counter_text.setGeometry(point);
-
-								// 	device_counter_text.placemarkerType = 'label_icon';
-
-								// 	// Add the placemark to Earth.
-								// 	ge.getFeatures().appendChild(device_counter_text);
-
-							 //        state_wise_device_label_text[state] = device_counter_text;
-
-						  //       }());
 							}
 
 							// Break for loop if state found
@@ -1121,6 +1061,7 @@ var state_wise_device_label_text= {};
 
 			// Create BS placemark.
 			var bs_marker = earth_self.makePlacemark(bs_marker_icon,resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,'bs_'+resultantMarkers[i].id,bsInfo);
+
 
 			/*Push BS placemark to bs placemark array*/
 			plotted_bs_earth.push(bs_marker);
@@ -1467,9 +1408,85 @@ var state_wise_device_label_text= {};
 				var basic_filter_data = prepare_data_for_filter();
 				networkMapInstance.getBasicFilters(basic_filter_data);
 			}
-
-		
 		}
+
+		this.updateAllMarkersWithNewIcon($("select#icon_Size_Select_In_Tools").val());
+	};
+
+	/**
+	 * This function plot the point on google map as per the given details
+	 * @method plotPoint_gmap
+	 * @param {Object} infoObj, It contains information regarding plotting(i.e. lat,lon etc)
+	 */
+	this.plotPoint_earth = function(infoObj) {
+
+		// var image = new google.maps.MarkerImage(base_url+"/"+infoObj.icon_url,null,null,null,new google.maps.Size(32, 37));
+		var map_point_obj = {
+			position   	    	 : {lat: infoObj.lat, lon: infoObj.lon},
+			map 	   	    	 : 'current',
+			icon 	   	    	 : base_url+"/"+infoObj.icon_url,
+			icon_url   	    	 : infoObj.icon_url,
+			zIndex 	   	    	 : 500,
+			point_name 	    	 : infoObj.name,
+			lat 		    	 : infoObj.lat,
+			lon 		    	 : infoObj.lon,
+			connected_lat   	 : infoObj.connected_lat,
+			connected_lon   	 : infoObj.connected_lon,
+			connected_point_type : infoObj.connected_point_type,
+			connected_point_info : infoObj.connected_point_info,
+			point_desc 	    	 : infoObj.desc,
+			point_id 	    	 : infoObj.point_id,
+			is_delete_req   	 : infoObj.is_delete_req,
+			is_update_req   	 : infoObj.is_update_req
+		};
+
+		var uniqueId = "point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-");
+//iconHref, latitude, longitude, placemarkId, description
+		var pointPlacemark= earth_self.makePlacemark(base_url+"/"+infoObj.icon_url, infoObj.lat, infoObj.lon, uniqueId, map_point_obj);
+
+		point_data_obj["point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-")] = "";
+		point_data_obj["point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-")] = pointPlacemark;
+
+		// // Bind right click event to marker
+		// (function bindRightMenuToMarker(marker) {
+		// 	var markerRightClick= google.earth.addEventListener(marker, 'rightclick', function(event) {
+		// 		gmap_self.openPointRightClickMenu(this);
+		// 	});
+
+		// 	// return markerRightClick;
+		// })(pointPlacemark);
+
+		// Bind click event to marker
+		(function bindClickToMarker(marker) {
+
+			google.earth.addEventListener(marker, 'click', function(e) {
+				// console.log('clicked here');
+				// if it is a right-click 
+				// console.log(e.getButton());
+				if (e && e.getButton() == 2) {
+					// console.log('hi');
+					gmap_self.openPointRightClickMenu(marker);
+					event.preventDefault(); // optional, depending on your requirements
+					event.stopPropagation(); // optional, depending on your requirements
+					// openMenu(e.getScreenX(), e.getScreenY());
+				} else {
+					if(marker.point_id) {
+						connected_end_obj = {
+							"lat" : marker.lat,
+							"lon" : marker.lon
+						};
+
+						if(current_point_for_line) {
+							gmap_self.plot_point_line(marker);
+						}
+					} else {
+						bootbox.alert("This point not saved yet. Please select another.")
+					}
+				}
+			});
+
+			// return markerRightClick;
+		})(pointPlacemark);
 	};
 
 	/**
@@ -1493,11 +1510,7 @@ var state_wise_device_label_text= {};
 		
 		var style = ge.createStyle(''); //create a new style
 		style.getIconStyle().setIcon(icon); //apply the icon to the style
-		if(description.pointType === "base_station") {
-			style.getIconStyle().setScale(1.4);
-		} else {
-			style.getIconStyle().setScale(0.8);
-		}
+		
 		placemark.setStyleSelector(style); //apply the style to the placemark
 
 		var point = ge.createPoint('');
@@ -1509,7 +1522,6 @@ var state_wise_device_label_text= {};
 		for(var key in description) {
 			placemark[key] = description[key];
 		}
-
 
 		ge.getFeatures().appendChild(placemark);
 		return placemark;
@@ -2282,7 +2294,7 @@ var state_wise_device_label_text= {};
     				}
     			},
     			error : function(err) {
-    				// console.log(err.statusText);
+    				console.log(err.statusText);
     			}
 			});
 		}
@@ -2736,6 +2748,34 @@ var state_wise_device_label_text= {};
 	    	gisPerformanceClass.restart();
     	}
 	};
+
+	this.updateAllMarkersWithNewIcon = function(iconSize) {
+		var scaleValue = 1;
+		if(iconSize=== 'small') {
+			scaleValue = 0.7;
+		} else if(iconSize=== 'medium') {
+			scaleValue = 1;
+		} else {
+			scaleValue = 1.4;
+		}
+
+		//Loop through the sector markers
+		for(i=0; i< sector_MarkersArray.length; i++) {
+			(function updateSectMarker(markerIcon) {
+				updateGoogleEarthPlacedmarkNewSize(markerIcon, scaleValue);
+			})(sector_MarkersArray[i]);
+		}
+		//End of Loop through the sector markers
+
+
+		//Loop through the Master Markers
+		for(var i=0; i< masterMarkersObj_earth.length; i++ ) {
+			(function updateMasterMarker(markerIcon) {
+				updateGoogleEarthPlacedmarkNewSize(markerIcon, scaleValue);
+			})(masterMarkersObj_earth[i]);
+		}
+		//End of Loop through the Master Markers
+	}
 
 	/**
 	 * This function make "r,g,b,a" color object from rgba color string
