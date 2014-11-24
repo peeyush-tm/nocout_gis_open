@@ -1206,8 +1206,13 @@ $("#export_data_gmap").click(function(e) {
 
     //enable the flag
     isExportDataActive = 1;
+
     // call function to select data to be export & then export selected data
-    networkMapInstance.exportData_gmap();
+    if(window.location.pathname.indexOf('googleEarth') > -1) {
+        earth_instance.exportData_earth();
+    } else {
+        networkMapInstance.exportData_gmap();    
+    }
 });
 
 $("#clearExportDataBtn").click(function(e) {

@@ -6651,13 +6651,24 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Reset the drawing object if exist*/
-		if(drawingManager) {
-			drawingManager.setDrawingMode(null);
+		if(window.location.pathname.indexOf('googleEarth') > -1) {
+			if(polyPlacemark) {
+				gexInstance.edit.endEditLineString(polyPlacemark);
+			}
+		} else {
+			if(drawingManager) {
+				drawingManager.setDrawingMode(null);
+			}
 		}
 
 		/*Remove the polygon if exists*/
 		if(Object.keys(exportDataPolygon).length > 0) {
-			exportDataPolygon.setMap(null);
+			if(window.location.pathname.indexOf('googleEarth') > -1) {
+				exportDataPolygon.setVisibility(false);
+				exportDataPolygon.map = '';
+			} else {
+				exportDataPolygon.setMap(null);
+			}
 			exportDataPolygon = {}
 		}
 	};

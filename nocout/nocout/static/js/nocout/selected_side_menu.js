@@ -196,18 +196,18 @@ $("#headerToggleBtn").click(function(e) {
         $("#headerToggleBtn").removeClass('btn-info');
         $("#headerToggleBtn").addClass('btn-danger');
 
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
-            $("#page_content_div .box-title").removeClass('hide');
-        }
+        // if(window.location.pathname.indexOf("googleEarth") > -1) {
+        //     $("#page_content_div .box-title").removeClass('hide');
+        // }
     } else {
         $("#headerToggleBtn").html('<i class="fa fa-eye"></i> Show Page Controls');
         $("#headerToggleBtn").removeClass('btn-danger');
         $("#headerToggleBtn").addClass('btn-info');
         $("#page_content_div .box-title").removeClass('hide');
 
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
-            $("#page_content_div .box-title").addClass('hide');
-        }
+        // if(window.location.pathname.indexOf("googleEarth") > -1) {
+        //     $("#page_content_div .box-title").addClass('hide');
+        // }
     }
 
     /*Toggle Page Header*/
