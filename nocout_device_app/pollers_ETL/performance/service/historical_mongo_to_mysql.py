@@ -100,16 +100,6 @@ def read_historical_mongo_data(start_time, end_time, **configs):
 	#print 'start_time, end_time ---'
 	print start_time, end_time
 	if db:
-		#if hist_perf_table == 'service_perf_half_hourly':
-		#	cur = db.service_perf_half_hourly.find({"time": {"$gt": start_time, "$lt": end_time}})
-		#elif hist_perf_table == 'network_perf_half_hourly':
-		#	cur = db.network_perf_half_hourly.find({"time": {"$gt": start_time, "$lt": end_time}})
-		#elif hist_perf_table == 'service_perf_hourly':
-		#	cur = db.service_perf_hourly.find({"time": {"$gt": start_time, "$lt": end_time}})
-		#elif hist_perf_table == 'network_perf_hourly':
-		#	cur = db.network_perf_hourly.find({"time": {"$gt": start_time, "$lt": end_time}})
-		#elif hist_perf_table == 'network_perf_daily':
-		#	cur = db.network_perf_daily.find({"time": {"$gt": start_time, "$lt": end_time}})
 		cur = db[hist_perf_table].find({'time': {'$gt': start_time, '$lt': end_time}})
         
 	for doc in cur:
