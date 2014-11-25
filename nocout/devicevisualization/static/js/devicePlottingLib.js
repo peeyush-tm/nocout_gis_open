@@ -1336,14 +1336,18 @@ function devicePlottingClass_gmap() {
 			isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City';
 
 		var filtered_Data = all_devices_loki_db.where(function(obj) {
+
 			var sectors = obj.data.param.sector,
 				basic_filter_condition1 = filterObj['state'] != 'Select State' ? obj.data.state == filterObj['state'] : true,
 				basic_filter_condition2 = filterObj['city'] != 'Select City' ? obj.data.city == filterObj['city'] : true,
 				advance_filter_condition1 = state_filter.length > 0 ? state_filter.indexOf(obj.data.state) > -1 : true,
 				advance_filter_condition2 = city_filter.length > 0 ? city_filter.indexOf(obj.data.city) > -1 : true;
+
         	// If any basic filter is applied
         	if(isBasicFilterApplied) {
+        		
         		if($.trim($("#technology").val()) || $.trim($("#vendor").val())) {
+        			var isCorrect = false;
 					for(var i=sectors.length;i--;) {
 
 						var basic_filter_condition3 = $.trim($("#technology").val()) ? sectors[i].technology ===  filterObj['technology'] : true,
@@ -1358,19 +1362,21 @@ function devicePlottingClass_gmap() {
 					            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
 
 					            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
-					                return true
-					            } else {
-					                return false;
+					                // return true;
+					                isCorrect = true;
+					                break;
 					            }
 							} else {
-								return true;
+								// return true;
+				                isCorrect = true;
+				                break;
 							}
-						} else {
-							return false;
 						}
 					}
+					return isCorrect;
         		} else {
         			if(basic_filter_condition1 && basic_filter_condition2) {
+        				var isCorrect = false;
         				// If advance Filters Applied
 						if(isAdvanceFilterApplied) {
 	        				if(technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0) {
@@ -1382,11 +1388,12 @@ function devicePlottingClass_gmap() {
 						            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
 
 						            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
-						                return true
-						            } else {
-						                return false;
+						                // return true;
+						                isCorrect = true;
+				                		break;
 						            }
 					            }
+					            return isCorrect;
 							} else {
 								if(advance_filter_condition1 && advance_filter_condition2) {
 					                return true
@@ -1401,8 +1408,6 @@ function devicePlottingClass_gmap() {
         				return false;
         			}
         		}
-
-
         	} else if(isAdvanceFilterApplied) {
 
 				if(technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0) {
@@ -3568,6 +3573,8 @@ function devicePlottingClass_gmap() {
     	} else {
     		data_to_plot = filtered_data;
     	}
+
+    	console.log(data_to_plot);
 
         /*Hide the spinner*/
         hideSpinner();
