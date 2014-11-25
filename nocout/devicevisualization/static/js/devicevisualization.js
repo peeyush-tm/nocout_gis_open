@@ -223,7 +223,8 @@ $("#resetFilters").click(function(e) {
         mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
         mapInstance.setZoom(5);
         // Load all counters
-        gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
+        // gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
+        networkMapInstance.updateStateCounter_gmaps();
     }
 });
 
