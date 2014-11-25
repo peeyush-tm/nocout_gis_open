@@ -323,26 +323,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
                       "age"
                       # "description"
     ]
-
-    def filter_queryset(self, qs):
-
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return result_list:
-        """
-
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            result_list = list()
-            for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        break
-            return result_list
-        return qs
+    data_sources = []
+    table_name = "performance_servicestatus"
 
     def get_initial_queryset(self):
         """
@@ -352,138 +334,116 @@ class GetNetworkAlertDetail(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        logged_in_user = self.request.user.userprofile
+        organizations = logged_in_user_organizations(self)
 
-        if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
-        else:
-            organizations = [logged_in_user.organization]
-        sector_configured_on_devices_ids = list()
-        #here we would have to get the TAB wise content
-        # we need to check the tabs
-        # we need to check the data requested
-        tab_id = None
+        required_value_list = ['id','machine__name','device_name','ip_address']
+
+        page_type = self.request.GET.get('page_type', "network")
+
 
         if self.request.GET.get("data_source"):
             tab_id = self.request.GET.get("data_source")
         else:
             return []
 
-        sector_configured_on_devices = list()
-        data_sources_list = list()
-        device_list = list()
-        performance_data = list()
-        required_data_columns = self.polled_columns
-
-        table_name = "performance_servicestatus"
-
         is_bh = False
-        multi_tech = False
-        technology = []
 
         if tab_id:
             device_list = []
             if tab_id == "P2P":
-                technology = [int(P2P.ID)]
-                #need to add device with Circuit Type as : Backhaul
-                # (@TODO: make this a dropdown menu item and must for the user)
-                #INVALID :::: for technology = PTP and Circuit Type as Backhaul get the Device BH Configured On ::: INVALID
-                #VALID :::: confusion HERE. What we want is that CIRCUIT TYPE BACKHAUL's both SS and BS elements should
-                #be visible on network alert center ::: VALID
-            elif tab_id == "WiMAX":
-                technology = [int(WiMAX.ID)]
+                technology = [tab_id]
+            elif tab_id in "WiMAX":
+                technology = [tab_id]
             elif tab_id == "PMP":
-                technology = [int(PMP.ID)]
+                technology = [tab_id]
             elif tab_id == "Temperature":
                 #for handelling the temperature alarms
                 #temperature alarms would be for WiMAX
-                technology = [int(WiMAX.ID)]
-                data_sources_list = ['fan_temp','acb_temp']
-            elif tab_id == "Backhaul":
+                technology = ["WiMAX"]
+                self.data_sources = ['fan_temp','acb_temp']
+            elif tab_id in ["ULIssue","SectorUtil"]:
+                technology = [int(WiMAX.ID), int(PMP.ID)]
+            elif tab_id in ["Backhaul", "BackhaulUtil"]:
                 technology = None
                 is_bh = True
-            elif tab_id == "ULIssue":
-                technology = [int(WiMAX.ID), int(PMP.ID)]
-            elif tab_id == "SectorUtil":
-                technology = [int(WiMAX.ID), int(PMP.ID)]
-            elif tab_id == "BackhaulUtil":
-                technology = None
-                is_bh = True
+                page_type = "other"
             else:
                 return []
 
             if not is_bh:
                 for techno in technology:
-                    device_list += organization_network_devices(organizations, technology=techno)
+                    device_list += filter_devices(organizations=organizations,
+                                 data_tab=techno,
+                                 page_type=page_type,
+                                 required_value_list=required_value_list
+                    )
             else:
-                device_list = organization_backhaul_devices(organizations)
+                device_list += filter_devices(organizations=organizations,
+                                 data_tab=None,
+                                 page_type=page_type,
+                                 required_value_list=required_value_list
+                    )
 
-            sector_configured_on_devices = [
-                                {'device_name': device.device_name, 'machine__name': device.machine.name}
-                                for device in device_list
-            ]
+            return device_list
+
         else:
             return []
 
+    def prepare_polled_results(self, qs, machine_dict=None):
+        """
+        preparing polled results
+        after creating static inventory first
+        """
 
-        # Unique machine from the sector_configured_on_devices
-        unique_device_machine_list = {device['machine__name']: True for device in sector_configured_on_devices}.keys()
+        search_table = self.table_name
 
-        machine_dict, device_data = dict(), list()
-        # Creating the machine as a key and device_name as a list for that machine.
+        extra_query_condition = ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
 
-        for machine in unique_device_machine_list:
-            machine_dict[machine] = [device['device_name']
-                                     for device in sector_configured_on_devices
-                                     if device['machine__name'] == machine]
+        sorted_device_list = list()
 
         #Fetching the data for the device w.r.t to their machine.
         for machine, machine_device_list in machine_dict.items():
-
-            device_data += self.collective_query_result(
-                machine = machine,
-                table_name = table_name,
-                devices = machine_device_list,
-                data_sources = data_sources_list,
-                columns = required_data_columns
+            device_list = list()
+            performance_data = list()
+            performance_data = raw_prepare_result(performance_data=performance_data,
+                                                  machine=machine,
+                                                  table_name=search_table,
+                                                  devices=machine_device_list,
+                                                  data_sources=self.data_sources,
+                                                  columns=self.polled_columns,
+                                                  condition=extra_query_condition if extra_query_condition else None
             )
 
-        if device_data:
-            return device_data
+            device_list = prepare_raw_alert_results(performance_data=performance_data)
 
-        return []
+            sorted_device_list += device_list
 
-    def collective_query_result(self, machine, table_name, devices, data_sources, columns):
+        return sorted_device_list
 
-        performance_data = list()
-        performance_data = raw_prepare_result(performance_data=performance_data,
-                                              machine=machine,
-                                              table_name=table_name,
-                                              devices=devices,
-                                              data_sources=data_sources,
-                                              columns=columns)
-
-
-        device_list = []
-
-        # now considering all the cases. we should also consider this that there is a normal case
-        # when all the devices are substations
-        # and another case where we are getting the sector devices as well
-        # and those sector devices are as said PTP !!!
-        # we should start with getting the
-        # device and substation
-
-        device_list = prepare_raw_alert_results(device_list, performance_data)
-
-        return device_list
-
-    def prepare_devices(self,qs):
+    def prepare_devices(self,qs, perf_results):
         """
 
         :param device_list:
         :return:
         """
-        return prepare_gis_devices(qs, None)
+        page_type = self.request.GET.get('page_type', "network")
+        return prepare_gis_devices(qs, page_type)
+
+    def prepare_machines(self, qs):
+        """
+        """
+        device_list = []
+        for device in qs:
+            device_list.append(
+                {
+                    'device_name': device['device_name'],
+                    'device_machine': device['machine_name'],
+                    'id': device['id'],
+                    'ip_address': device['ip_address']
+                }
+            )
+
+        return prepare_machines(device_list)
 
     def prepare_results(self, qs):
         """
@@ -492,15 +452,18 @@ class GetNetworkAlertDetail(BaseDatatableView):
         :param qs:
         :return queryset.
         """
-
+        page_type = self.request.GET.get('page_type', "network")
         if qs:
             service_tab_name = 'service'
             for dct in qs:
-                device_id = Device.objects.get(device_name=dct['device_name']).id
-                dct.update(action='<a href="/alert_center/network/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
-                                   <a href="/performance/network_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                                   <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.format(device_id,
-                                                                                                              service_tab_name))
+
+                dct.update(action='<a href="/alert_center/{2}/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
+                                   <a href="/performance/{2}_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                                   <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
+                            format(dct["id"],
+                            service_tab_name,
+                            page_type)
+                )
 
         return common_prepare_results(qs)
 
@@ -515,18 +478,28 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         qs = self.get_initial_queryset()
 
+        #machines dict
+        machines = self.prepare_machines(qs)
+        #machines dict
+
+        #prepare the polled results
+        perf_results = self.prepare_polled_results(qs, machine_dict=machines)
+        # this is query set with complete polled result
+
+        qs = map_results(perf_results, qs)
+
+        #this function is for mapping to GIS inventory
+        qs = self.prepare_devices(qs, perf_results)
+        #this function is for mapping to GIS inventory
+
         # number of records before filtering
         total_records = len(qs)
-
-        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
 
-        qs = self.prepare_devices(qs)
-
         # qs = self.ordering(qs)
-        # qs = self.paging(qs)  # Removing pagination as of now to render all the data at once.
+        # qs = self.paging(qs) #Removing pagination as of now to render all the data at once.
         # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
