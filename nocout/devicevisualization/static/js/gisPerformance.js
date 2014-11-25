@@ -836,7 +836,9 @@ function GisPerformance() {
                     }
 
                     if(window.location.pathname.indexOf("googleEarth") > -1) {
-                        console.log(perf_val);
+                        ss_marker_obj.perf_val = perf_val;
+                        //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
+                        // console.log(perf_val);
                     } else {
                         if(perf_val && $.trim(perf_val)) {
                             var perf_infobox = new InfoBox({

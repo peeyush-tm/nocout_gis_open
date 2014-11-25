@@ -1314,7 +1314,8 @@ var state_wise_device_label_text= {};
 						sector_ip: sectorsArray[j].sector_configured_on,
 						hasPerf: 0,
 						isActive: 1,
-						state: resultantMarkers[i].data.state
+						state: resultantMarkers[i].data.state,
+						perf_val: ""
 					};
 
 					if(ssDataObj.data.lat && ssDataObj.data.lon) {
@@ -1354,17 +1355,20 @@ var state_wise_device_label_text= {};
 
 							google.earth.addEventListener(ss_marker, 'mouseover', function(event) {
 								var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-								condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+								condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A'),
+								condition3 = ($.trim(this.perf_val) && $.trim(this.perf_val) != 'N/A');
 
-								if(condition1 || condition2) {
+								if(condition1 || condition2 || condition3) {
 									var pl = $.trim(this.pl) ? this.pl : "N/A",
 										rta = $.trim(this.rta) ? this.rta : "N/A",
+										perf_val = $.trim(this.perf_val) ? this.perf_val : "N/A",
 										info_html = '';
 
 									// Create hover infowindow html content
 									info_html += '<table class="table table-responsive table-bordered table-hover">';
 									info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
 									info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+									info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+perf_val+'</strong></td></tr>';
 									info_html += '</table>';
 
 							    	setTimeout(function() {
