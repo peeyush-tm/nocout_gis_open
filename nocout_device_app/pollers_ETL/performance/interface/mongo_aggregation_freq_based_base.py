@@ -173,11 +173,8 @@ def insert_aggregated_data(docs):
 			db_name=mongo_configs.get('db_name')
 			)
 	if db:
-		#if hist_perf_table == 'interface_perf_daily':
-		#	db.interface_perf_daily.update(find_query, doc,upsert=True)
-		#elif hist_perf_table == 'inventory_perf_weekly':
-		#	db.inventory_perf_weekly.update(find_query, doc,upsert=True)
-		db[hist_perf_table].insert(docs)
+		if len(docs):
+			db[hist_perf_table].insert(docs)
 
 def find_existing_entry(find_query):
 	"""
