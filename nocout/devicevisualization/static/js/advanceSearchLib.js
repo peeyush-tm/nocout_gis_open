@@ -871,7 +871,8 @@ function advanceSearchClass() {
 		advSearch_self.resetVariables();
 
 		/*Click The Refresh Button*/
-		$("#resetFilters").click();
+		// $("#resetFilters").click();
+		networkMapInstance.updateStateCounter_gmaps();
 	};
 
 	/**
