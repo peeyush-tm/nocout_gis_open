@@ -135,7 +135,7 @@ function googleEarthClass() {
 		var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 		lookAt.setLatitude(21.0000);
 		lookAt.setLongitude(78.0000);
-		lookAt.setRange(6892875.865539902);
+		lookAt.setRange(5492875.865539902);
 
 		// Update the view in Google Earth 
 		ge.getView().setAbstractView(lookAt); 
@@ -1090,6 +1090,27 @@ var state_wise_device_label_text= {};
 			markersMasterObj['BSNamae'][String(resultantMarkers[i].name)]= bs_marker;
 
 			google.earth.addEventListener(bs_marker, 'click', function(event) {
+
+				if(pointAdded === 1) {
+			
+					connected_end_obj = {
+						"lat" : bs_marker.ptLat,
+						"lon" : bs_marker.ptLon
+					};
+
+					if(current_point_for_line) {
+						gmap_self.plot_point_line(bs_marker);
+					}
+
+					return ;
+				}
+
+				if(is_line_active == 1) {
+					is_bs_clicked = 1;
+					// line_pt_array.push(e.latLng);
+					return ;
+				}
+
 				var content = gmap_self.makeWindowContent(bs_marker);
 				$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
 				$("#infoWindowContainer").html(content);
@@ -1303,6 +1324,27 @@ var state_wise_device_label_text= {};
 
 						(function(ss_marker) {
 							google.earth.addEventListener(ss_marker, 'click', function(event) {
+
+								if(pointAdded === 1) {
+			
+									connected_end_obj = {
+										"lat" : ss_marker.ptLat,
+										"lon" : ss_marker.ptLon
+									};
+
+									if(current_point_for_line) {
+										gmap_self.plot_point_line(ss_marker);
+									}
+
+									return ;
+								}
+
+								if(is_line_active == 1) {
+									is_bs_clicked = 1;
+									// line_pt_array.push(e.latLng);
+									return ;
+								}
+
 								var content = gmap_self.makeWindowContent(ss_marker);
 								$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
 								$("#infoWindowContainer").html(content);
@@ -1465,7 +1507,7 @@ var state_wise_device_label_text= {};
 		(function bindClickToMarker(marker) {
 
 			google.earth.addEventListener(marker, 'click', function(e) {
-				
+
 				// if it is a right-click 
 				if (e && e.getButton() == 2) {
 					gmap_self.openPointRightClickMenu(marker);
@@ -1568,7 +1610,7 @@ var state_wise_device_label_text= {};
 
         linkObject= {
         	map: 'current',
-        	strokeColor: link_path_color,
+        	strokeColor: link_path_color ? link_path_color : 'rgba(74,72,94,0.58)',
         	strokeOpacity: 1.0,
         	strokeWeight: 3,
         	pointType: "path",
@@ -1608,7 +1650,7 @@ var state_wise_device_label_text= {};
 		lineStyle.setWidth(4);
 
 		/*Color for the link line*/
-		var link_color_obj = earth_self.makeRgbaObject(linkColor);
+		var link_color_obj = earth_self.makeRgbaObject('rgba(74,72,94,0.58)');
 
 		lineStyle.getColor().setA(200);
 		lineStyle.getColor().setB((+link_color_obj.b));
@@ -1620,13 +1662,36 @@ var state_wise_device_label_text= {};
 		}
 
 		google.earth.addEventListener(lineStringPlacemark, 'click', function(event) {
-			/*Call the function to create info window content*/
-			var content = gmap_self.makeWindowContent(lineStringPlacemark);
-			
-			$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
 
-			$("#infoWindowContainer").html(content);
-			$("#infoWindowContainer").removeClass('hide');
+			if(arguments.length == 1 && event && event.getButton() == 2) {
+
+				ge.setBalloon(null);
+
+				var current_line_ptr = this,
+					info_window_content = "<button class='btn btn-danger btn-xs' id='remove_tool_line'>Remove Line</button>";
+
+				openGoogleEarthBaloon(info_window_content, lineStringPlacemark);
+				setTimeout(function() {
+					/*Triggers when remove line button clicked*/
+					$("#remove_tool_line").click(function(e) {
+
+						ge.setBalloon(null);
+
+						var current_pt = current_point_for_line;
+
+						gmap_self.remove_point_line(current_pt,current_line_ptr);
+					});
+				}, 40);
+			} else {
+				/*Call the function to create info window content*/
+				var content = gmap_self.makeWindowContent(lineStringPlacemark);
+				
+				$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
+
+				$("#infoWindowContainer").html(content);
+				$("#infoWindowContainer").removeClass('hide');
+			}
+
 			event.preventDefault();
 		});
 
@@ -3062,7 +3127,7 @@ var state_wise_device_label_text= {};
 	}
 
 	this.get_tools_data_earth= function() {
-
+		gmap_self.get_tools_data_gmap();
 	}
 
 	/**
