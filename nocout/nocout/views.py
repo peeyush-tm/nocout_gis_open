@@ -128,10 +128,19 @@ def auth_view(request):
         already_logged = user.userprofile.password_changed_at
         password_expire = True
         password_expire_alert = False
+        lock_time = user.userprofile.user_invalid_attempt_at
         if already_logged:
             password_expires_on = already_logged + timedelta(days=30)
             password_expire = password_expires_on < timezone.now()
             password_expire_alert = already_logged + timedelta(days=20) < timezone.now()
+
+        # unlock the user after 30 minutes if user locked due to invalid password attempt.
+        if lock_time and (user.userprofile.user_invalid_attempt >= 5 ):
+            unlock_time = lock_time + timedelta(minutes=30)
+            if timezone.now().time() > unlock_time.time():
+                user_profile = UserProfile.objects.filter(id=user.id)
+                user_profile.update(user_invalid_attempt=0, is_active=True)
+                user.is_active = True
 
     if user is not None and user.is_active and (not already_logged or password_expire):
         auth.login(request, user)
@@ -246,11 +255,24 @@ def auth_view(request):
         }
 
         # Count the invalid attempts of the user and not of the superuser.
+        # And lock the user after 5 invalid attempt.
         user_profile = UserProfile.objects.filter(username=username)
         if user_profile.exists() and not user_profile[0].is_superuser:
             user_profile.update(user_invalid_attempt=user_profile[0].user_invalid_attempt+1)
-            if user_profile[0].user_invalid_attempt >= 5:
-                user_profile.update(is_active=False)
+
+            if user_profile[0].user_invalid_attempt == 3:
+                result = {
+                    "success": 0,  # 0 - fail, 1 - success, 2 - exception
+                    "message": "Two attempts remaining",
+                    "data": {
+                        "meta": {},
+                        "objects": {
+                            "reason": "The user will be locked if next two password are wrong."
+                        }
+                    }
+                }
+            elif user_profile[0].user_invalid_attempt >= 5:
+                user_profile.update(is_active=False, user_invalid_attempt_at=timezone.now())
                 result = {
                     "success": 0,  # 0 - fail, 1 - success, 2 - exception
                     "message": "Account Locked By Administrator",

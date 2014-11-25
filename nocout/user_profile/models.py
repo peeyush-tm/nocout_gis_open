@@ -20,6 +20,7 @@ class UserProfile(MPTTModel, User):
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
     password_changed_at = models.DateTimeField('Password changed at', null=True, blank=True)
     user_invalid_attempt = models.IntegerField('Invalid attempt', null=True, blank=True, default=0)
+    user_invalid_attempt_at = models.DateTimeField('Invalid attemp at', null=True, blank=False)
 
 # user roles class
 class Roles(models.Model):
