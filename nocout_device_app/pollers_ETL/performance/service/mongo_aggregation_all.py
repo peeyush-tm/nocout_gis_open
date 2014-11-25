@@ -3,12 +3,12 @@ mongo_aggregation_all.py
 ==================================
 
 Usage ::
-python mongo_aggregation_all.py -t 1 -f hourly -s network_perf_half_hourly -d network_perf_hourly
-python mongo_aggregation_all.py -t 1 -f hourly -s service_perf_half_hourly -d service_perf_hourly
-python mongo_aggregation_all.py -t 24 -f daily -s network_perf_hourly -d network_perf_daily
-python mongo_aggregation_all.py -t 24 -f daily -s service_perf_hourly -d service_perf_daily
-python mongo_aggregation_all.py -t 168 -f weekly -s service_perf_daily -d service_perf_weekly
-python mongo_aggregation_all.py -t 168 -f weekly -s inventory_perf_daily -d inventory_perf_weekly
+python mongo_aggregation_all.py -t 1 -s hourly -s network_perf_half_hourly -d network_perf_hourly
+python mongo_aggregation_all.py -t 1 -s hourly -d service_perf_half_hourly -d service_perf_hourly
+python mongo_aggregation_all.py -t 24 -s daily -d network_perf_hourly -d network_perf_daily
+python mongo_aggregation_all.py -t 24 -s daily -d service_perf_hourly -d service_perf_daily
+python mongo_aggregation_all.py -t (7*24) -s weekly -d service_perf_daily -d service_perf_weekly
+python mongo_aggregation_all.py -t (7*24) -s weekly -d inventory_perf_daily -d inventory_perf_weekly
 Options ::
 t - Time frame for read operation [Hours]
 s - Source Mongodb collection
@@ -25,7 +25,7 @@ from pprint import pprint
 import collections
 import optparse
 
-mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_mod = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 configs = config_mod.parse_config_obj(historical_conf=True)
@@ -39,9 +39,9 @@ mongo_configs = {
 		}
 parser = optparse.OptionParser()
 parser.add_option('-s', '--source', dest='source_db', type='choice', choices=['service_perf_half_hourly',
-'network_perf_half_hourly', 'service_perf_hourly', 'network_perf_hourly', 'interface_perf_daily', 'inventory_perf_daily'])
+'network_perf_half_hourly', 'service_perf_hourly', 'network_perf_hourly', 'network_perf_daily', 'service_perf_daily', 'nocout_inventory_service_perf', 'interface_perf_daily', 'inventory_perf_daily'])
 parser.add_option('-d', '--destination', dest='destination_db', type='choice', choices=['service_perf_hourly',
-'network_perf_hourly', 'network_perf_daily', 'service_perf_daily', 'interface_perf_weekly', 'inventory_perf_weekly'])
+'network_perf_hourly', 'network_perf_daily', 'service_perf_daily', 'network_perf_weekly', 'service_perf_weekly', 'interface_perf_weekly', 'inventory_perf_weekly'])
 parser.add_option('-t', '--hours', dest='hours', type='choice', choices=['1', '24', '168'])
 parser.add_option('-f', '--timeframe', dest='timeframe', type='choice', choices=['hourly', 'daily', 'weekly'])
 options, remainder = parser.parse_args(sys.argv[1:])
@@ -200,19 +200,8 @@ def insert_aggregated_data(doc):
 			db_name=mongo_configs.get('db_name')
 			)
 	if db:
-		#if hist_perf_table == 'network_perf_hourly':
-		#        db.network_perf_hourly.update(find_query, doc,upsert=True)
-		#elif hist_perf_table == 'service_perf_hourly':
-		#        db.service_perf_hourly.update(find_query, doc,upsert=True)
-		#elif hist_perf_table == 'network_perf_daily':
-		#        db.network_perf_daily.update(find_query, doc,upsert=True)
-		#elif hist_perf_table == 'service_perf_daily':
-		#        db.service_perf_daily.update(find_query, doc,upsert=True)
-		#elif hist_perf_table == 'interface_perf_weekly':
-		#        db.interface_perf_weekly.update(find_query, doc,upsert=True)
-		#elif hist_perf_table == 'inventory_perf_weekly':
-		#        db.inventory_perf_weekly.update(find_query, doc,upsert=True)
-		db[hist_perf_table].insert(doc)
+		if len(doc):
+			db[hist_perf_table].insert(doc)
 
 def find_existing_entry(find_query):
 	"""
@@ -253,5 +242,4 @@ def usage():
 
 if __name__ == '__main__':
 	main()
-	print aggregated_data_values
 	insert_aggregated_data(aggregated_data_values)

@@ -3434,7 +3434,7 @@ function devicePlottingClass_gmap() {
 		} else if (page_type && page_type == 'white_background') {
 			current_data = main_devices_data_wmap;
 		} else {
-			current_data = main_devices_data_gmaps
+			current_data = currentlyPlottedDevices;
 		}
 
 
@@ -4268,16 +4268,16 @@ function devicePlottingClass_gmap() {
         if(filtersLength > 0) {
         	
         	if($.trim(mapPageType) == "googleEarth") {
-        		gmap_self.updateStateCounter_gmaps(appliedFilterObj_gmaps);
+        		gmap_self.updateStateCounter_gmaps();
         		// gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
     		} else if($.trim(mapPageType) == "white_background") {
     			gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
 			} else {
-				if(mapInstance.getZoom() < 7) {
-					gmap_self.updateStateCounter_gmaps(appliedFilterObj_gmaps);
-				} else {
-					gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
-				}
+				// if(mapInstance.getZoom() <= 7) {
+					gmap_self.updateStateCounter_gmaps();
+				// } else {
+				// 	gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
+				// }
 			}
         }
         /*If no filter is applied the load all the devices*/
@@ -4322,44 +4322,49 @@ function devicePlottingClass_gmap() {
 		    	whiteMapClass.showAllFeatures();
         	} else {
 
-        		/*Clear Existing Labels & Reset Counters*/
-				gmap_self.clearStateCounters();
+				
+				// if(mapInstance.getZoom() <= 7) {
+	        		/*Clear Existing Labels & Reset Counters*/
+					gmap_self.clearStateCounters();
 
-				isCallCompleted = 1;
-				mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
-				mapInstance.setZoom(5);
-				data_for_filters = all_devices_loki_db.data;
-				isApiResponse = 0;
-				// Load all counters
-				gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
+					isCallCompleted = 1;
+					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+					mapInstance.setZoom(5);
+					data_for_filters = all_devices_loki_db.data;
+					isApiResponse = 0;
+					// Load all counters
+					gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
+				// } else {
 
+	   //      		gmap_self.show_all_elements_gmap();
 
+				// 	/*Call showLinesInBounds to show the line within the bounds*/
+				// 	/* When zoom level is greater than 11 show lines */
+				// 	if(mapInstance.getZoom() > 11) {
+				// 		/*
+				// 		setTimeout is added because idle is event is trigger by marker cluster library when clicked on cluster,
+				// 		so this function not called.Hence I called it after 0.35 sec
+				// 		*/
+				// 		setTimeout(function(){
+				// 			gmap_self.showLinesInBounds();
+				// 			gmap_self.showSubStaionsInBounds();
+				// 			gmap_self.showBaseStaionsInBounds();
+				// 			gmap_self.showSectorDevicesInBounds();
+				// 			gmap_self.showSectorPolygonInBounds();
+				// 		},350);
+				// 	}
 
-    //     		gmap_self.show_all_elements_gmap();
+	   //      		/*Save updated data to global variable*/
+				// 	data_for_filters = currentlyPlottedDevices;
 
-				// /*Call showLinesInBounds to show the line within the bounds*/
-				// /* When zoom level is greater than 8 show lines */
-				// if(mapInstance.getZoom() > 8) {
-				// 	/*
-				// 	setTimeout is added because idle is event is trigger by marker cluster library when clicked on cluster,
-				// 	so this function not called.Hence I called it after 0.35 sec
-				// 	*/
-				// 	setTimeout(function(){
-				// 		gmap_self.showLinesInBounds();
-				// 		gmap_self.showSubStaionsInBounds();
-				// 		gmap_self.showBaseStaionsInBounds();
-				// 		gmap_self.showSectorDevicesInBounds();
-				// 		gmap_self.showSectorPolygonInBounds();
-				// 	},350);
+				// 	/*Filtered links global variable*/
+				// 	ssLinkArray_filtered = ssLinkArray;
+
+				// 	gmap_self.getFilteredLineLabel(data_for_filters);
 				// }
 
-    //     		/*Save updated data to global variable*/
-				// data_for_filters = main_devices_data_gmaps;
 
-				// /*Filtered links global variable*/
-				// ssLinkArray_filtered = ssLinkArray;
 
-				// gmap_self.getFilteredLineLabel(data_for_filters);
         	}
         }
     };
@@ -4367,9 +4372,8 @@ function devicePlottingClass_gmap() {
     /**
 	 * This function updates the states devices counter as per the applied filter
 	 * @method updateStateCounter_gmaps
-	 * @param filterObj, It contains the applied basic filters data object
 	 */
-	this.updateStateCounter_gmaps = function(filterObj) {
+	this.updateStateCounter_gmaps = function() {
 
 		/*Clear Existing Labels & Reset Counters*/
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
@@ -4385,7 +4389,7 @@ function devicePlottingClass_gmap() {
 			frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
 			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
 			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-			isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City',
+			isBasicFilterApplied = $.trim($("#technology").val()) || $.trim($("#vendor").val()) || $.trim($("#state").val()) || $.trim($("#city").val()),
 			basic_filter_condition = $.trim($("#technology").val()) || $.trim($("#vendor").val()),
 			advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
 			filtered_data = [],
