@@ -1112,6 +1112,9 @@ var state_wise_device_label_text= {};
 				}
 
 				var content = gmap_self.makeWindowContent(bs_marker);
+				if($("iframe.windowIFrame").length) {
+					$("iframe.windowIFrame").remove();
+				}
 				$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
 				$("#infoWindowContainer").html(content);
 				$("#infoWindowContainer").removeClass('hide');
@@ -1225,7 +1228,10 @@ var state_wise_device_label_text= {};
 						(function(sector_marker) {
 							google.earth.addEventListener(sector_marker, 'click', function(event) {
 								var content = gmap_self.makeWindowContent(sector_marker);
-								$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
+								if($("iframe.windowIFrame").length) {
+									$("iframe.windowIFrame").remove();
+								}
+								$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 475px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
 								$("#infoWindowContainer").html(content);
 								$("#infoWindowContainer").removeClass('hide');
 								event.preventDefault();
@@ -1345,7 +1351,9 @@ var state_wise_device_label_text= {};
 									// line_pt_array.push(e.latLng);
 									return ;
 								}
-
+								if($("iframe.windowIFrame").length) {
+									$("iframe.windowIFrame").remove();
+								}
 								var content = gmap_self.makeWindowContent(ss_marker);
 								$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
 								$("#infoWindowContainer").html(content);

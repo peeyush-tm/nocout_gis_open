@@ -425,4 +425,5 @@ iframe {
     max-height: 550px; 
     overflow:auto; 
     z-index:100;
+    border: 0px none;
 }
