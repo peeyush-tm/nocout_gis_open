@@ -1,5 +1,8 @@
 from mysql_connection import mysql_conn, dict_rows
-from pprint import pprint, pformat
+from pprint import pformat
+from nocout_logger import nocout_log
+
+logger = nocout_log()
 
 db = mysql_conn()
 
@@ -54,6 +57,8 @@ extra_service_conf['normal_check_interval'] = [
 wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
 
 def main():
+    global default_snmp_ports
+    global default_snmp_communities
     get_settings()
 
     #pprint(ping_levels_db)
@@ -140,12 +145,16 @@ def prepare_query():
 
 def get_settings():
     global default_checks
+    data = []
     default_checks = prepare_priority_checks()
     query = prepare_query()
-    cur = db.cursor()
-    cur.execute(query)
-    data = dict_rows(cur)
-    cur.close()
+    try:
+	    cur = db.cursor()
+	    cur.execute(query)
+	    data = dict_rows(cur)
+	    cur.close()
+    except Exception, exp:
+	    logger.error('Exception in get_settings: ' + pformat(exp))
     processed = []
     for service in data:
         """from pprint import pprint
@@ -174,7 +183,10 @@ def get_settings():
             ping_levels_db.append(ping_config)
             processed.append(service['devicetype'])
         if service['service']:        
-            threshold = get_threshold(service)
+	    try:
+		    threshold = get_threshold(service)
+	    except Exception, exp:
+		    logger.error('Exception in get_threshold: ' + pformat(exp))
             service_config = [service['devicetype']], ['@all'], service['service'], None, threshold
             default_checks.append(service_config)
             if service['port'] and service['community']:
@@ -189,29 +201,33 @@ def get_settings():
 
 def get_threshold(service):
     result = ()
-    if service.get('service_warning') or service.get('service_critical'):
-        result = (int(service['service_warning']), int('service_critical'))
-    else:
-        try:
-	    if service.get('service') in wimax_mod_services:
-		    result = (map(str, service['warning'].replace(' ', '').split(',')), map(str, service['critical'].replace(' ', '').split(',')))
-	    else:
-		    result = (int(service['warning']), int(service['critical']))
-        except:
+    try:
+	    if service.get('service_warning') or service.get('service_critical'):
+		result = (float(service['service_warning']), float('service_critical'))
+	    elif service.get('warning') or service.get('critical'):
+		    if service.get('service') in wimax_mod_services:
+			    result = (map(str, service['warning'].replace(' ', '').split(',')), map(str, service['critical'].replace(' ', '').split(',')))
+		    else:
+			    result = (int(service['warning']), int(service['critical']))
+    except Exception:
 	    pass
-            #result = (service['warning'], service['critical'])
+
     return result
 
 
 def prepare_priority_checks():
+        global db
+	data_values = []
 	query = """
 	SELECT DISTINCT service_name, device_name, warning, critical
 	FROM service_deviceserviceconfiguration
 	"""
-
-	cur = db.cursor()
-	cur.execute(query)
-	data_values = dict_rows(cur)
+        try:
+		cur = db.cursor()
+		cur.execute(query)
+	        data_values = dict_rows(cur)
+	except Exception, exp:
+		logger.error('Exception in priority_checks: ' + pformat(exp)) 
 	data_values = filter(lambda d: d['warning'] or d['critical'], data_values)
 	processed_values = []
 	for entry in data_values:
