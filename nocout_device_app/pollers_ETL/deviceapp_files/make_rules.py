@@ -216,6 +216,8 @@ def get_threshold(service):
 
 
 def prepare_priority_checks():
+        global db
+	data_values = []
 	query = """
 	SELECT DISTINCT service_name, device_name, warning, critical
 	FROM service_deviceserviceconfiguration
@@ -223,9 +225,9 @@ def prepare_priority_checks():
         try:
 		cur = db.cursor()
 		cur.execute(query)
+	        data_values = dict_rows(cur)
 	except Exception, exp:
 		logger.error('Exception in priority_checks: ' + pformat(exp)) 
-	data_values = dict_rows(cur)
 	data_values = filter(lambda d: d['warning'] or d['critical'], data_values)
 	processed_values = []
 	for entry in data_values:
