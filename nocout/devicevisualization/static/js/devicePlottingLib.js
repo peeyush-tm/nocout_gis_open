@@ -109,7 +109,9 @@ var is_line_active = 0,
 	point_data_obj = {},
 	line_data_obj = {},
 	connected_end_obj = {},
-	current_point_for_line = "";
+	current_point_for_line = "",
+	last_selected_label = "",
+	tooltipInfoLabel = {};
 
 /*Variables used in fresnel zone feature*/
 var isDialogOpen = true,
@@ -694,24 +696,20 @@ function devicePlottingClass_gmap() {
 	            			recallPerf = "";
 	            		}
 
-						/*Loop to hide Marker Labels*/
-	        			for (var x = 0; x < labelsArray.length; x++) {
-	                        var move_listener_obj = labelsArray[x].moveListener_;
-	                        if (move_listener_obj) {
-	                            var keys_array = Object.keys(move_listener_obj);
-	                            for(var z=0;z<keys_array.length;z++) {
-	                            	var label_marker = move_listener_obj[keys_array[z]];
-	                                if(typeof label_marker === 'object') {
-	                                   if((label_marker && label_marker["filter_data"]["bs_name"]) && (label_marker && label_marker["filter_data"]["sector_name"])) {
-	                                   		labelsArray[x].close();
-	                                   }
-	                                }
-	                            }
-	                        }
-	                    }
+						// Hide perf info label
+					    for (var x = 0; x < labelsArray.length; x++) {
+					        labelsArray[x].close();
+					    }
+
+					    // Hide tooltip info label
+					    for (key in tooltipInfoLabel) {
+					        tooltipInfoLabel[key].close();
+					    }
+					    
 
 	                    // Reset labels array 
 	                    labelsArray = [];
+	                    tooltipInfoLabel = {};
 
 	                    /*Clear all everything from map*/
 						$.grep(allMarkersArray_gmap,function(marker) {
@@ -1763,6 +1761,40 @@ function devicePlottingClass_gmap() {
 
 				    /*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
+
+				    if($.trim(last_selected_label)) {
+				    	var labelHtml = "";
+				    	for(var z=ss_marker.dataset.length;z--;) {
+				    		if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
+				    			labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
+				    		}
+				    	}
+				    	// If any html created then show label on ss
+				    	if(labelHtml) {
+							var perf_infobox = new InfoBox({
+	                            content: labelHtml,
+	                            boxStyle: {
+	                                border: "1px solid #B0AEAE",
+	                                background: "white",
+	                                textAlign: "center",
+	                                fontSize: "10px",
+	                                color: "black",
+	                                padding: '2px',
+	                                borderRadius: "5px",
+	                                width : '110px'
+	                            },
+	                            pixelOffset : new google.maps.Size(-120,-10),
+	                            disableAutoPan: true,
+	                            position: ss_marker.getPosition(),
+	                            closeBoxURL: "",
+	                            isHidden: false,
+	                            enableEventPropagation: true,
+	                            zIndex: 80
+	                        });
+	                        perf_infobox.open(mapInstance, ss_marker);
+	                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = perf_infobox;
+				    	}
+				    }
 
 				    // Mouseover event on sub-station marker
 					google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
@@ -3391,6 +3423,37 @@ function devicePlottingClass_gmap() {
 
 		// Load Advance Filter
 		gmap_self.loadAdvanceFilters();
+
+		var BsObj = all_devices_loki_db.chain().where(function(obj){
+			var sector = obj.data.param.sector,
+				isSS = false;
+
+			for(var i=0;i<sector.length;i++) {
+				if(sector[i].sub_station.length > 0) {
+					isSS = true;
+					break;
+				}
+			}
+			return isSS;
+		}).limit(1).data();
+
+		var SSToolTipInfo = BsObj.length > 0 ? BsObj[0].data.param.sector[0].sub_station[0].data.param.sub_station : false;
+
+		if(SSToolTipInfo) {
+			var labelSelectHtml = '<option value="">Select Label</option>';
+			//Loop ss info to populate 'Select Label' selectbox
+			for(var i=0;i<SSToolTipInfo.length;i++) {
+				var isSelected = "";
+				if($.trim(last_selected_label) === $.trim(SSToolTipInfo[i]['name'])) {
+					isSelected = 'selected="selected"';
+				}
+				labelSelectHtml += '<option value="'+$.trim(SSToolTipInfo[i]['name'])+'" '+isSelected+'>'+$.trim(SSToolTipInfo[i]['title'])+'</option>';
+			}
+			// If select box exist them update the HTML.
+			if($("#static_label").length) {
+				$("#static_label").html(labelSelectHtml);
+			}
+		}
 
 		/*Reset the flag*/
 		isFirstTime = 0;
@@ -6912,35 +6975,6 @@ function devicePlottingClass_gmap() {
 
     	// Open API url in new tab to download inventory report
     	window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(inventory_bs_ids),"_blank");
-
-    	// Send ajax call to download selected inventory report
-		// $.ajax({
-		// 	url : base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(bs_id_list),
-		// 	type : "GET",
-		// 	success : function(result) {
-		// 		// window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(bs_id_list),'_blank');
-		// 		// console.log(result);
-		// 		$.gritter.add({
-		//             // (string | mandatory) the heading of the notification
-		//             title: 'Inventory Download',
-		//             // (string | mandatory) the text inside the notification
-		//             text: 'Selected BS inventory downloaded successfully.',
-		//             // (bool | optional) if you want it to fade out on its own or just sit there
-		//             sticky: false
-		//         });
-		// 	},
-		// 	error : function(err) {
-		// 		// console.log(err.statusText);
-		// 		$.gritter.add({
-		//             // (string | mandatory) the heading of the notification
-		//             title: 'Inventory Download',
-		//             // (string | mandatory) the text inside the notification
-		//             text: 'Inventory not downloaded. Please try again later.',
-		//             // (bool | optional) if you want it to fade out on its own or just sit there
-		//             sticky: false
-		//         });
-		// 	}
-		// });
 	};
 
 	/**
@@ -6986,6 +7020,102 @@ function devicePlottingClass_gmap() {
 			}
 			exportDataPolygon = {}
 		}
+	};
+
+	/**
+     * This function create/update selected tooltip value label from/on ss marker
+     * @method updateTooltipLabel_gmap
+     */
+	this.updateTooltipLabel_gmap = function() {
+
+		var hide_flag = !$("#show_hide_label")[0].checked;
+		// If any tooltip label exist
+		if(Object.keys(tooltipInfoLabel).length === 0) {
+			var ss_list = allMarkersObject_gmap['sub_station'];
+			for(key in ss_list) {
+				var ss_marker = ss_list[key],
+					labelHtml = "";
+
+				for(var z=ss_marker.dataset.length;z--;) {
+                    if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
+                        labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
+                    }
+                }
+
+                var toolTip_infobox = new InfoBox({
+                    content: labelHtml,
+                    boxStyle: {
+                        border: "1px solid #B0AEAE",
+                        background: "white",
+                        textAlign: "center",
+                        fontSize: "10px",
+                        color: "black",
+                        padding: '2px',
+                        borderRadius: "5px",
+                        width : '110px'
+                    },
+                    pixelOffset : new google.maps.Size(-120,-10),
+                    disableAutoPan: true,
+                    position: ss_marker.getPosition(),
+                    closeBoxURL: "",
+                    isHidden: hide_flag,
+                    enableEventPropagation: true,
+                    zIndex: 80
+                });
+
+                toolTip_infobox.open(mapInstance, ss_marker);
+                tooltipInfoLabel[key] = toolTip_infobox;
+			}
+		} else {
+
+			var ss_list = allMarkersObject_gmap['sub_station'];
+			for(key in ss_list) {
+				var ss_marker = ss_list[key],
+					labelHtml = "";
+
+				for(var z=ss_marker.dataset.length;z--;) {
+                    if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
+                        labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
+                    }
+                }
+
+                // If label exist for current ss
+                if(tooltipInfoLabel[key]) {
+                	tooltipInfoLabel[key].setContent(labelHtml);
+                } else {
+                	var toolTip_infobox = new InfoBox({
+	                    content: labelHtml,
+	                    boxStyle: {
+	                        border: "1px solid #B0AEAE",
+	                        background: "white",
+	                        textAlign: "center",
+	                        fontSize: "10px",
+	                        color: "black",
+	                        padding: '2px',
+	                        borderRadius: "5px",
+	                        width : '110px'
+	                    },
+	                    pixelOffset : new google.maps.Size(-120,-10),
+	                    disableAutoPan: true,
+	                    position: ss_marker.getPosition(),
+	                    closeBoxURL: "",
+	                    isHidden: hide_flag,
+	                    enableEventPropagation: true,
+	                    zIndex: 80
+	                });
+
+	                toolTip_infobox.open(mapInstance, ss_marker);
+	                tooltipInfoLabel[key] = toolTip_infobox;
+                }
+			}
+		}
+
+		$.gritter.add({
+            title: "SS Parameter Label",
+            text: $.trim($("#static_label option:selected").text())+" - Label Applied Successfully.",
+            sticky: false,
+            time : 1000
+        });
 	};
 
     /**
