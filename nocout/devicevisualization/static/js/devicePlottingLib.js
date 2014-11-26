@@ -3574,7 +3574,7 @@ function devicePlottingClass_gmap() {
     		data_to_plot = filtered_data;
     	}
 
-    	console.log(data_to_plot);
+    	// console.log(data_to_plot);
 
         /*Hide the spinner*/
         hideSpinner();
@@ -3623,8 +3623,7 @@ function devicePlottingClass_gmap() {
 	            mapInstance.setZoom(5);
 	            data_for_filters = data_to_plot;
 	            isApiResponse = 0;
-	            gmap_self.showStateWiseData_gmap(data_to_plot);
-        		
+	            gmap_self.showStateWiseData_gmap(data_to_plot);        		
         	}
 
         } else {
@@ -4340,7 +4339,8 @@ function devicePlottingClass_gmap() {
 					data_for_filters = all_devices_loki_db.data;
 					isApiResponse = 0;
 					// Load all counters
-					gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
+					// gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
+					networkMapInstance.updateStateCounter_gmaps();
 				// } else {
 
 	   //      		gmap_self.show_all_elements_gmap();
@@ -4369,9 +4369,6 @@ function devicePlottingClass_gmap() {
 
 				// 	gmap_self.getFilteredLineLabel(data_for_filters);
 				// }
-
-
-
         	}
         }
     };
