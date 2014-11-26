@@ -96,75 +96,87 @@
             $("label[for=id_timeout]").text('Timeout (ms)');
 
         })
-        $("#id_service").change(function() {
+
+        // if service is already selected
+        if ($("#id_service").find("option:selected").val()){
+            var service = $("form").find(".row").find("#id_service")
+            service.each(function() {
+              var service_id = $(this).find("option:selected").val()
+              var parameter = $(this).parent(".row .inline").find("#id_parameter")
+              var row_inline = $(this).parent(".row .inline")
+              get_attribute_of_service(service_id, parameter, row_inline)
+            });
+        }
+
+        // if service is changed by the user
+        $("form").find(".row").find("#id_service").change(function(){
             var service_id = $(this).find("option:selected").val()
             var parameter = $(this).parent(".row .inline").find("#id_parameter")
             var row_inline = $(this).parent(".row .inline")
-            get_parameter_of_service()
-
-            //function to get the list of the parent according to the ogranisation.
-            function get_parameter_of_service(){
-                //if no organisation is selected.
-                if(service_id == '' ){
-                    alert('select the service')
-                }
-                else{
-                    $.ajax({
-                        url : "/service/select/service/"+ service_id,
-                        type : "GET",
-                        dataType: "json",
-                        data: {
-                            service_id : service_id
-                        },
-                        success : function(service) {
-                            var parameter_option = parameter.find("select option:selected")
-                            parameter_option.val(service.parameters_id)
-                            parameter_option.html(service.parameters_name)
-                            row_inline.children().filter('.form-group').slice(2).remove()
-                            for(var count=0; count<service.total_sds; count++){
-                                var form_group =
-                                '<div class="form-group"> ' +
-                                    '<label class="col-sm-3 control-label">'+
-                                    '<u><b>Service Data Source</b></u></label>'+
-                                    '<div class="col-sm-9">'+
-                                        '<div class="col-md-8">'+
-                                        '<label class="col-sm-3 control-label"'+
-                                        'style="color:#5e87b0;">'+
-                                service.sds[count].service_data_sources__name+'</label>'+
-                                        '</div> </div> </div>'+
-                                '<div class="form-group"> ' +
-                                    '<label class="col-sm-3 control-label">'+
-                                    '<span class="mandatory">*</span> Warning </label>'+
-                                    '<div class="col-sm-9">'+
-                                        '<div class="col-md-8">'+
-                                            '<input class="form-control"'+
-                                            'id="id_warning_'+count+'"'+
-                                            'name="warning'+count+'" type="number"'+
-                                            'required>('+service.sds[count].warning+')'+
-                                        '</div> </div> </div>'+
-                                '<div class="form-group"> ' +
-                                    '<label class="col-sm-3 control-label">'+
-                                    '<span class="mandatory">*</span> Critical </label>'+
-                                    '<div class="col-sm-9">'+
-                                        '<div class="col-md-8">'+
-                                            '<input class="form-control"'+
-                                            'id="id_critical_'+count+'"'+
-                                            'name="critical_'+count+'" type="number"'+
-                                            'required>('+service.sds[count].critical+')'+
-                                        '</div> </div> </div>'
-                                row_inline.append(form_group)
-                                $("#id_warning_"+count).val(service.sds[count].warning)
-                                $("#id_critical_"+count).val(service.sds[count].critical)
-                            }
-                        },
-                        error : function(xhr,errmsg,err) {
-                            alert(xhr.status + ": " + xhr.responseText);
-                        }
-                    });
-                    return false;
-                }
-            }
+            get_attribute_of_service(service_id, parameter, row_inline)
         });
+
+
+        function get_attribute_of_service(service_id, parameter, row_inline){
+            if(service_id == '' ){
+                bootbox.alert('Select the service')
+            }
+            else{
+                $.ajax({
+                    url : "/service/select/service/"+ service_id,
+                    type : "GET",
+                    dataType: "json",
+                    data: {
+                        service_id : service_id
+                    },
+                    success : function(service) {
+                        var parameter_option = parameter.find("select option:selected")
+                        parameter_option.val(service.parameters_id)
+                        parameter_option.html(service.parameters_name)
+                        row_inline.children().filter('.form-group').slice(2).remove()
+                        for(var count=0; count<service.total_sds; count++){
+                            var form_group =
+                            '<div class="form-group"> ' +
+                                '<label class="col-sm-3 control-label">'+
+                                '<u><b>Service Data Source</b></u></label>'+
+                                '<div class="col-sm-9">'+
+                                    '<div class="col-md-8">'+
+                                    '<label class="col-sm-3 control-label"'+
+                                    'style="color:#5e87b0;">'+
+                            service.sds[count].service_data_sources__name+'</label>'+
+                                    '</div> </div> </div>'+
+                            '<div class="form-group"> ' +
+                                '<label class="col-sm-3 control-label">'+
+                                '<span class="mandatory">*</span> Warning </label>'+
+                                '<div class="col-sm-9">'+
+                                    '<div class="col-md-8">'+
+                                        '<input class="form-control"'+
+                                        'id="id_warning_'+count+'"'+
+                                        'name="warning'+count+'" type="number"'+
+                                        'required>('+service.sds[count].warning+')'+
+                                    '</div> </div> </div>'+
+                            '<div class="form-group"> ' +
+                                '<label class="col-sm-3 control-label">'+
+                                '<span class="mandatory">*</span> Critical </label>'+
+                                '<div class="col-sm-9">'+
+                                    '<div class="col-md-8">'+
+                                        '<input class="form-control"'+
+                                        'id="id_critical_'+count+'"'+
+                                        'name="critical_'+count+'" type="number"'+
+                                        'required>('+service.sds[count].critical+')'+
+                                    '</div> </div> </div>'
+                            row_inline.append(form_group)
+                            $("#id_warning_"+count).val(service.sds[count].warning)
+                            $("#id_critical_"+count).val(service.sds[count].critical)
+                        }
+                    },
+                    error : function(xhr,errmsg,err) {
+                        alert(xhr.status + ": " + xhr.responseText);
+                    }
+                });
+                return false;
+            }
+        }
     </script>
     <script type="text/javascript">
        $(function() {
