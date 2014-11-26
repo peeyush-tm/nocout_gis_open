@@ -8,4 +8,5 @@ urlpatterns = patterns('',
   url(r'^(?P<pk>\d+)/edit/$', views.ServiceUpdate.as_view(), name='service_edit'),
   url(r'^(?P<pk>\d+)/delete/$', views.ServiceDelete.as_view(), name='service_delete'),
   url(r'^servicelistingtable/', views.ServiceListingTable.as_view(), name='ServiceListingTable'),
+  url(r'^select/service/(?P<pk>\d+)/$', views.select_service, name='select-service'),
 )

@@ -1,12 +1,12 @@
 import json
 from django.db.models.query import ValuesQuerySet
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from models import Service, ServiceParameters, ServiceDataSource, Protocol, DeviceServiceConfiguration
-from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm
+from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm, ServiceSpecificDataSource
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
 from nocout.mixins.user_action import UserLogDeleteMixin
@@ -229,6 +229,21 @@ class ServiceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     success_url = reverse_lazy('services_list')
     required_permissions = ('service.delete_service',)
 
+
+def select_service(request, pk):
+    """
+    return value list of data_source when the servie is selected in device type.
+    """
+    service = Service.objects.get(id=pk)
+    parameters = service.parameters
+    service_data_sources = ServiceSpecificDataSource.objects.filter(service=service).\
+                            values('service_data_sources__name','warning', 'critical')
+    return HttpResponse(json.dumps({
+        "total_sds": service_data_sources.count(),
+        "parameters_id": parameters.id,
+        "parameters_name": parameters.parameter_description,
+        "sds" : list(service_data_sources)
+    }))
 
 #************************************* Service Parameters *****************************************
 class ServiceParametersList(PermissionsRequiredMixin, ListView):
