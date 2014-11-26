@@ -1,5 +1,8 @@
 from mysql_connection import mysql_conn
 from pprint import pformat
+from nocout_logger import nocout_log
+
+logger = nocout_log()
 
 
 db = None
@@ -16,8 +19,14 @@ def main():
 	# This file contains device names, to be updated in configuration db
 	open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
 	db = mysql_conn()
-	make_BS_data()
-	make_SS_data()
+	try:
+		make_BS_data()
+	except Exception, exp:
+		logger.error('Exception in make_BS_data: ' + pformat(exp))
+	try:
+		make_SS_data()
+	except Exception, exp:
+		logger.error('Exception in make_SS_data: ' + pformat(exp))
 	write_data()
 
 
