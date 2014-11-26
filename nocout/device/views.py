@@ -14,7 +14,7 @@ from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFields
     DeviceFrequency
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm, DevicePortForm, DeviceFrequencyForm, \
-    CountryForm, StateForm, CityForm
+    CountryForm, StateForm, CityForm, DeviceTypeServiceCreateFormset
 from nocout.utils.util import DictDiffer
 from django.http.response import HttpResponseRedirect
 from organization.models import Organization
@@ -2492,6 +2492,55 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
     required_permissions = ('device.add_devicetype',)
+
+    def get(self, request, *args, **kwargs):
+        """
+        Handles GET requests and instantiates blank versions of the form
+        and its inline formsets.
+        """
+        self.object = None
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        device_type_service_form = DeviceTypeServiceCreateFormset()
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  device_type_service_form=device_type_service_form,))
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests, instantiating a form instance and its inline
+        formsets with the passed POST variables and then checking them for
+        validity.
+        """
+        self.object = None
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST)
+        if (form.is_valid() and device_type_service_form.is_valid()):
+            return self.form_valid(form, device_type_service_form)
+        else:
+            return self.form_invalid(form, device_type_service_form)
+
+    def form_valid(self, form, device_type_service_form):
+        pass
+    #     """
+    #     Called if all forms are valid. Creates a Recipe instance along with
+    #     associated Ingredients and Instructions and then redirects to a
+    #     success page.
+    #     """
+    #     self.object = form.save()
+    #     device_type_service_form.instance = self.object
+    #     device_type_service_form.save()
+    #     return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, device_type_service_form):
+        """
+        Called if a form is invalid. Re-renders the context data with the
+        data-filled forms and errors.
+        """
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  device_type_service_form=device_type_service_form))
 
 
 class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
