@@ -1464,7 +1464,12 @@ function devicePlottingClass_gmap() {
 		for(var i=dataset.length;i--;) {
 
 			var current_device_set = dataset[i],
+				isDeviceInBound = "";
+			if(window.location.pathname.indexOf("white_background")) {
+				isDeviceInBound = whiteMapClass.checkIfPointLiesInside({lon: current_device_set.data.lon, lat: current_device_set.data.lat});
+			} else {
 				isDeviceInBound = mapInstance.getBounds().contains(new google.maps.LatLng(current_device_set.data.lat,current_device_set.data.lon));
+			}
 			if(isDeviceInBound) {
 				inBoundDevices.push(current_device_set);
 				plottedBsIds.push(current_device_set.originalId);
@@ -1496,7 +1501,12 @@ function devicePlottingClass_gmap() {
 			var current_device_set = main_devices_data_gmaps[i];
 
 			if(plottedBsIds.indexOf(current_device_set.originalId) === -1) {
-				var isDeviceInBound = mapInstance.getBounds().contains(new google.maps.LatLng(current_device_set.data.lat,current_device_set.data.lon));
+				var isDeviceInBound = "";
+				if(window.location.pathname.indexOf("white_background") > -1) {
+					isDeviceInBound = whiteMapClass.checkIfPointLiesInside({lon: current_device_set.data.lon, lat: current_device_set.data.lat});
+				} else {
+					isDeviceInBound = mapInstance.getBounds().contains(new google.maps.LatLng(current_device_set.data.lat,current_device_set.data.lon));
+				}
 				if(isDeviceInBound) {
 					newInBoundDevices.push(current_device_set);
 					// Push plotted base-station id to global array
@@ -1910,19 +1920,19 @@ function devicePlottingClass_gmap() {
 			}
 
 			/*Loop to change the icon for same location SS markers(to cluster icon)*/
-//			for(var k=0;k<oms_ss_markers.length;k++) {
-//
-//				if(oms_ss_markers[k] != undefined) {
-//
-//					/*if two BS or SS on same position*/
-//					var bsLatOccurence = $.grep(ssLatArray, function (elem) {return elem === oms_ss_markers[k].ptLat;}).length;
-//					var bsLonOccurence = $.grep(ssLonArray, function (elem) {return elem === oms_ss_markers[k].ptLon;}).length;
-//
-//					if(bsLatOccurence > 1 && bsLonOccurence > 1) {
-//						oms_ss_markers[k].setOptions({"icon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,new google.maps.Size(1,1))});
-//					}
-//				}
-//			}
+			//			for(var k=0;k<oms_ss_markers.length;k++) {
+			//
+			//				if(oms_ss_markers[k] != undefined) {
+			//
+			//					/*if two BS or SS on same position*/
+			//					var bsLatOccurence = $.grep(ssLatArray, function (elem) {return elem === oms_ss_markers[k].ptLat;}).length;
+			//					var bsLonOccurence = $.grep(ssLonArray, function (elem) {return elem === oms_ss_markers[k].ptLon;}).length;
+			//
+			//					if(bsLatOccurence > 1 && bsLonOccurence > 1) {
+			//						oms_ss_markers[k].setOptions({"icon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,new google.maps.Size(1,1))});
+			//					}
+			//				}
+			//			}
 			
 			if(isFirstTime == 1) {
 				/*Load data for basic filters*/
@@ -7477,6 +7487,8 @@ function getMarkerInCurrentBound() {
         	if(window.location.pathname.indexOf("googleEarth") > -1) {
         		var earthBounds = getCurrentEarthBoundPolygon();
         		markerVisible =  isPointInPoly(earthBounds, {lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon});
+        	} else if(window.location.pathname.indexOf("white_background") > -1) {
+        		markerVisible =  global_this.checkIfPointLiesInside({lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon})
         	} else {
 				markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
         	}
