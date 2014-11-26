@@ -201,17 +201,17 @@ def get_settings():
 
 def get_threshold(service):
     result = ()
-    if service.get('service_warning') or service.get('service_critical'):
-        result = (int(service['service_warning']), int('service_critical'))
-    else:
-        try:
-	    if service.get('service') in wimax_mod_services:
-		    result = (map(str, service['warning'].replace(' ', '').split(',')), map(str, service['critical'].replace(' ', '').split(',')))
-	    else:
-		    result = (int(service['warning']), int(service['critical']))
-        except:
+    try:
+	    if service.get('service_warning') or service.get('service_critical'):
+		result = (float(service['service_warning']), float('service_critical'))
+	    elif service.get('warning') or service.get('critical'):
+		    if service.get('service') in wimax_mod_services:
+			    result = (map(str, service['warning'].replace(' ', '').split(',')), map(str, service['critical'].replace(' ', '').split(',')))
+		    else:
+			    result = (int(service['warning']), int(service['critical']))
+    except Exception:
 	    pass
-            #result = (service['warning'], service['critical'])
+
     return result
 
 
