@@ -3,9 +3,10 @@ from inventory.models import BaseStation, Customer, Antenna
 from device.models import DeviceType, DeviceVendor, DeviceTechnology, City
 from random import randint, uniform
 
-from nocout.utils.util import format_value
+from nocout.utils.util import format_value, cache_for
 
 logger = logging.getLogger(__name__)
+
 
 def tech_marker_url(device_type, techno, ms=True):
     """
@@ -45,6 +46,7 @@ def tech_marker_url_master(techno, master=True):
     else:
         return tech_marker_url_slave(techno)
 
+
 def tech_marker_url_slave(techno):
     """
 
@@ -60,87 +62,6 @@ def tech_marker_url_slave(techno):
     else:
         return "static/img/marker/icon4_small.png"
 
-def prepare_basestation(base_station, bs_city_name, bs_state_name):
-    try:
-        base_station_info = [
-            {
-                'name': 'name',
-                'title': 'Base-Station Name',
-                'show': 0,
-                'value': base_station.name if base_station.name else 'N/A'
-            },
-            {
-                'name': 'alias',
-                'title': 'Base-Station Name',
-                'show': 1,
-                'value': base_station.alias if base_station.name else 'N/A'
-            },
-            {
-                'name': 'bs_site_id',
-                'title': 'BS Site Name',
-                'show': 1,
-                'value': base_station.bs_site_id if base_station.bs_site_id else 'N/A'
-            },
-            {
-                'name': 'bs_site_type',
-                'title': 'BS Site Type',
-                'show': 1,
-                'value': base_station.bs_site_type if base_station.bs_site_type else 'N/A'
-            },
-            {
-                'name': 'building_height',
-                'title': 'Building Height',
-                'show': 1,
-                'value': base_station.building_height if base_station.building_height else 'N/A'
-            },
-            {
-                'name': 'tower_height',
-                'title': 'Tower Height',
-                'show': 1,
-                'value': base_station.tower_height if base_station.tower_height else 'N/A'
-            },
-            {
-                'name': 'bs_city',
-                'title': 'City',
-                'show': 1,
-                'value': bs_city_name
-            },
-            {
-                'name': 'bs_state',
-                'title': 'State',
-                'show': 1,
-                'value': bs_state_name
-            },
-            {
-                'name': 'bs_address',
-                'title': 'Address',
-                'show': 1,
-                'value': base_station.address if base_station.address else 'N/A'
-            },
-            {
-                'name': 'bs_gps_type',
-                'title': 'GPS Type',
-                'show': 1,
-                'value': base_station.gps_type if base_station.gps_type else 'N/A'
-            },
-            {
-                'name':'bs_type',
-                'title':'BS Type',
-                'show':1,
-                'value': base_station.bs_type if base_station.bs_type else 'N/A'
-            },
-            {
-                'name':'bs_switch',
-                'title':'BS Switch',
-                'show':1,
-                'value': base_station.bs_switch.ip_address
-                        if (base_station and base_station.bs_switch and base_station.bs_switch.ip_address)
-                        else 'N/A'
-            }
-        ]
-        return base_station_info
-    except Exception as no_basestation:
-        return []
 
 def prepare_raw_basestation(base_station=None):
     """
@@ -226,65 +147,6 @@ def prepare_raw_basestation(base_station=None):
         return base_station_info
     return []
 
-def prepare_backhaul(backhaul):
-    try:
-        backhaul_info = [
-            {
-                'name': 'bh_configured_on',
-                'title': 'BH Configured On',
-                'show': 1,
-                'value': backhaul.bh_configured_on.device_name if backhaul else 'N/A'
-            },
-            {
-                'name': 'bh_capacity',
-                'title': 'BH Capacity',
-                'show': 1,
-                'value': backhaul.bh_capacity if backhaul else 'N/A'
-            },
-            {
-                'name': 'bh_type',
-                'title': 'BH Type',
-                'show': 1,
-                'value': backhaul.bh_type if backhaul else 'N/A'
-            },
-            {
-                'name': 'pe_ip',
-                'title': 'PE IP',
-                'show': 1,
-                'value': backhaul.pe_ip if backhaul else 'N/A'
-            },
-            {
-                'name': 'bh_connectivity',
-                'title': 'BH Connectivity',
-                'show': 1,
-                'value': backhaul.bh_connectivity if backhaul else 'N/A'
-            },
-            {
-                'name': 'aggregation_switch',
-                'title': 'Aggregation Switch',
-                'show': 1,
-                'value': backhaul.aggregator.ip_address
-                        if (backhaul and  backhaul.aggregator)
-                        else 'N/A'
-            },
-            {
-                'name': 'aggregation_port',
-                'title': 'Aggregation Port',
-                'show': 1,
-                'value': str(backhaul.aggregator_port_name) + "/" + str(backhaul.aggregator_port)
-                        if (backhaul and  backhaul.aggregator_port_name and backhaul.aggregator_port)
-                        else 'N/A'
-            },
-            {
-                'name': 'bs_converter_ip',
-                'title': 'BS Converter IP',
-                'show': 1,
-                'value': str(backhaul.bh_switch.ip_address) if (backhaul and backhaul.bh_switch) else 'N/A'
-            }
-        ]
-        return backhaul_info
-    except Exception as no_backhaul:
-        return []
 
 def prepare_raw_backhaul(backhaul):
     """
