@@ -2140,7 +2140,7 @@ def prepare_gis_devices(devices, page_type):
                     sector_id.append(bs_row['SECTOR_SECTOR_ID'])
 
         for bs_row in raw_result:
-            if device_name is not None and device_name not in processed_device:
+            if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
                         "sector_id": ", ".join(sector_id),
