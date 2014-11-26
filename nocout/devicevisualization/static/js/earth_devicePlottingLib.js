@@ -1559,7 +1559,12 @@ var state_wise_device_label_text= {};
 		
 		var style = ge.createStyle(''); //create a new style
 		style.getIconStyle().setIcon(icon); //apply the icon to the style
-		style.getIconStyle().setScale(1.0);
+		if(description.pointType === "base_station") {
+			style.getIconStyle().setScale(1.3);
+		} else {
+			style.getIconStyle().setScale(1.0);
+		}
+		
 		
 		placemark.setStyleSelector(style); //apply the style to the placemark
 
@@ -1994,7 +1999,7 @@ var state_wise_device_label_text= {};
 		
 		/*Loop to get the polygon point n plot the coordinates*/
 		for(var i=0;i<pointsArray.length;i++) {
-			polyPoints.getCoordinates().pushLatLngAlt(pointsArray[i].lat, pointsArray[i].lon, 700);
+			polyPoints.getCoordinates().pushLatLngAlt(pointsArray[i].lat, pointsArray[i].lon, 50);
 		}
 
 		sector_polygon.setOuterBoundary(polyPoints);
