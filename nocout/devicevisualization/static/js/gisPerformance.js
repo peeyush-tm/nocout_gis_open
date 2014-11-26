@@ -713,9 +713,43 @@ function GisPerformance() {
                     
                     /*Add BS Marker To Cluster*/
                     masterClusterInstance.addMarker(ss_marker);
+
+                    var hide_flag = !$("#show_hide_label")[0].checked;
+
+                    if(last_selected_label && $.trim(last_selected_label)) {
+                        var labelHtml = "";
+                        for(var z=ss_marker.dataset.length;z--;) {
+                            if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
+                                labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
+                            }
+                        }
+                        // If any html created then show label on ss
+                        if(labelHtml) {
+                            var toolTip_infobox = new InfoBox({
+                                content: labelHtml,
+                                boxStyle: {
+                                    border: "1px solid #B0AEAE",
+                                    background: "white",
+                                    textAlign: "center",
+                                    fontSize: "10px",
+                                    color: "black",
+                                    padding: '2px',
+                                    borderRadius: "5px",
+                                    width : '110px'
+                                },
+                                pixelOffset : new google.maps.Size(-120,-10),
+                                disableAutoPan: true,
+                                position: ss_marker.getPosition(),
+                                closeBoxURL: "",
+                                isHidden: hide_flag,
+                                enableEventPropagation: true,
+                                zIndex: 80
+                            });
+                            toolTip_infobox.open(mapInstance, ss_marker);
+                            tooltipInfoLabel['ss_'+ss_marker_obj.name] = toolTip_infobox;
+                        }
+                    }
                 }
-
-
 
                 markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
                 markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
@@ -812,11 +846,6 @@ function GisPerformance() {
                     if (existing_index >= 0) {
                         labelsArray.splice(existing_index, 1);
                     }
-
-                    var visible_flag = false;
-                    if (!$("#show_hide_label")[0].checked) {
-                        visible_flag = true;
-                    }
                     
                     var ss_val = ss_marker_obj.data.perf_value,
                         perf_val = "";
@@ -842,19 +871,19 @@ function GisPerformance() {
                             var perf_infobox = new InfoBox({
                                 content: perf_val,
                                 boxStyle: {
-                                    border: "1px solid black",
+                                    border: "1px solid #B0AEAE",
                                     background: "white",
                                     textAlign: "center",
-                                    fontSize: "9pt",
+                                    fontSize: "10px",
                                     color: "black",
                                     padding: '2px',
                                     width : '90px'
                                 },
+                                pixelOffset : new google.maps.Size(10,-10),
                                 disableAutoPan: true,
-                                position: new google.maps.LatLng(ss_marker.ptLat, ss_marker.ptLon),
+                                position: ss_marker.getPosition(),
                                 closeBoxURL: "",
-                                isHidden: visible_flag,
-                                // visible : visible_flag,
+                                isHidden: hide_flag,
                                 enableEventPropagation: true,
                                 zIndex: 80
                             });
