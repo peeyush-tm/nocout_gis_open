@@ -1593,6 +1593,8 @@ var state_wise_device_label_text= {};
 	 */
 	this.createLink_earth = function(startEndObj,linkColor,bs_info,ss_info,sect_height,sector_name,ss_name,bs_name,bs_id,sector_id) {
 
+		var argumentsLength= arguments.length;
+
 		var  linkObject = {}, link_path_color = linkColor;
 		var ss_info_obj = "", ss_height = 40;
 		if(ss_info != undefined || ss_info == "") {
@@ -1672,8 +1674,11 @@ var state_wise_device_label_text= {};
 
 		google.earth.addEventListener(lineStringPlacemark, 'click', function(event) {
 
-			if(arguments.length == 1 && event && event.getButton() == 2) {
 
+			if(event.getButton() == 2) {
+				if(argumentsLength > 1) {
+					return;
+				}
 				ge.setBalloon(null);
 
 				var current_line_ptr = this,
