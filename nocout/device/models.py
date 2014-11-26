@@ -2,7 +2,7 @@ from django.db import models
 from machine.models import Machine
 from organization.models import Organization
 from site_instance.models import SiteInstance
-from service.models import Service, ServiceParameters
+from service.models import Service, ServiceParameters, ServiceDataSource
 from mptt.models import MPTTModel
 
 
@@ -88,11 +88,18 @@ class DeviceType(models.Model):
         super(DeviceType, self).delete(*args, **kwargs)
 
 
-# device type with specific info table
+# device type with specific service info table
 class DeviceTypeService(models.Model):
     device_type = models.ForeignKey(DeviceType)
     service = models.ForeignKey(Service)
     parameter = models.ForeignKey(ServiceParameters)
+    service_data_sources = models.ManyToManyField(ServiceDataSource, through="DeviceTypeServiceDataSource")
+
+
+# device type with specific service data source info table
+class DeviceTypeServiceDataSource(models.Model):
+    device_type_service = models.ForeignKey(DeviceTypeService)
+    service_data_sources = models.ForeignKey(ServiceDataSource)
     warning = models.CharField('Warning', max_length=255, null=True, blank=True)
     critical = models.CharField('Critical', max_length=255, null=True, blank=True)
 
