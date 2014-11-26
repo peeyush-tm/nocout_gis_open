@@ -109,7 +109,9 @@ var is_line_active = 0,
 	point_data_obj = {},
 	line_data_obj = {},
 	connected_end_obj = {},
-	current_point_for_line = "";
+	current_point_for_line = "",
+	last_selected_label = "",
+	tooltipInfoLabel = {};
 
 /*Variables used in fresnel zone feature*/
 var isDialogOpen = true,
@@ -694,24 +696,20 @@ function devicePlottingClass_gmap() {
 	            			recallPerf = "";
 	            		}
 
-						/*Loop to hide Marker Labels*/
-	        			for (var x = 0; x < labelsArray.length; x++) {
-	                        var move_listener_obj = labelsArray[x].moveListener_;
-	                        if (move_listener_obj) {
-	                            var keys_array = Object.keys(move_listener_obj);
-	                            for(var z=0;z<keys_array.length;z++) {
-	                            	var label_marker = move_listener_obj[keys_array[z]];
-	                                if(typeof label_marker === 'object') {
-	                                   if((label_marker && label_marker["filter_data"]["bs_name"]) && (label_marker && label_marker["filter_data"]["sector_name"])) {
-	                                   		labelsArray[x].close();
-	                                   }
-	                                }
-	                            }
-	                        }
-	                    }
+						// Hide perf info label
+					    for (var x = 0; x < labelsArray.length; x++) {
+					        labelsArray[x].close();
+					    }
+
+					    // Hide tooltip info label
+					    for (key in tooltipInfoLabel) {
+					        tooltipInfoLabel[key].close();
+					    }
+					    
 
 	                    // Reset labels array 
 	                    labelsArray = [];
+	                    tooltipInfoLabel = {};
 
 	                    /*Clear all everything from map*/
 						$.grep(allMarkersArray_gmap,function(marker) {
@@ -1764,6 +1762,40 @@ function devicePlottingClass_gmap() {
 				    /*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
+				    if($.trim(last_selected_label)) {
+				    	var labelHtml = "";
+				    	for(var z=ss_marker.dataset.length;z--;) {
+				    		if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
+				    			labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
+				    		}
+				    	}
+				    	// If any html created then show label on ss
+				    	if(labelHtml) {
+							var perf_infobox = new InfoBox({
+	                            content: labelHtml,
+	                            boxStyle: {
+	                                border: "1px solid #B0AEAE",
+	                                background: "white",
+	                                textAlign: "center",
+	                                fontSize: "10px",
+	                                color: "black",
+	                                padding: '2px',
+	                                borderRadius: "5px",
+	                                width : '110px'
+	                            },
+	                            pixelOffset : new google.maps.Size(-120,-10),
+	                            disableAutoPan: true,
+	                            position: ss_marker.getPosition(),
+	                            closeBoxURL: "",
+	                            isHidden: false,
+	                            enableEventPropagation: true,
+	                            zIndex: 80
+	                        });
+	                        perf_infobox.open(mapInstance, ss_marker);
+	                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = perf_infobox;
+				    	}
+				    }
+
 				    // Mouseover event on sub-station marker
 					google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
 						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
@@ -2588,9 +2620,11 @@ function devicePlottingClass_gmap() {
 					link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
 
 				infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
+				var report_download_btn = "";
 				if(path_circuit_id) {
 					infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
 					infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
+					report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
 				}
 				infoTable += "</tbody></table>";
 				/*SS Info End*/
@@ -2617,8 +2651,6 @@ function devicePlottingClass_gmap() {
 					ss_circuitId: contentObject.ss_info.length >= 4 ? contentObject.ss_info[3].value : " ",
 					isBSLeft : isBSLeft
 				};
-
-				var report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
 
 				var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
@@ -3074,7 +3106,11 @@ function devicePlottingClass_gmap() {
 			var middleBlock = '<div class="col-md-8 mid_fresnel_container"><div align="center"><div class="col-md-12">Clearance Factor</div><div class="col-md-4 col-md-offset-3"><div id="clear-factor" class="slider slider-red"></div></div><div class="col-md-2"><input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'"></div><div class="clearfix"></div></div><div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div><div class="clearfix divide-10"></div><div id="pin-points-container" class="col-md-12" align="center"></div></div>';
 			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div>'+right_str+'</div>';
 
-			var fresnelTemplate = "<div class='fresnelContainer row' style='height:400px;overflow-y:auto;'>"+leftSlider+" "+middleBlock+" "+rightSlider+"</div>"+chart_detail;
+			var fresnelTemplate = "<div class='fresnelContainer row' style='height:400px;overflow-y:auto;z-index:9999;position:relative;'>"+leftSlider+" "+middleBlock+" "+rightSlider+"</div>"+chart_detail;
+
+			// if(window.location.pathname.indexOf("googleEarth")> -1) {
+			// 	fresnelTemplate = '<iframe allowTransparency="true"></iframe>'+fresnelTemplate; 
+			// }
 
 			/*Call the bootbox to show the popup with Fresnel Zone Graph*/
 			bootbox.dialog({
@@ -3388,6 +3424,37 @@ function devicePlottingClass_gmap() {
 		// Load Advance Filter
 		gmap_self.loadAdvanceFilters();
 
+		var BsObj = all_devices_loki_db.chain().where(function(obj){
+			var sector = obj.data.param.sector,
+				isSS = false;
+
+			for(var i=0;i<sector.length;i++) {
+				if(sector[i].sub_station.length > 0) {
+					isSS = true;
+					break;
+				}
+			}
+			return isSS;
+		}).limit(1).data();
+
+		var SSToolTipInfo = BsObj.length > 0 ? BsObj[0].data.param.sector[0].sub_station[0].data.param.sub_station : false;
+
+		if(SSToolTipInfo) {
+			var labelSelectHtml = '<option value="">Select Label</option>';
+			//Loop ss info to populate 'Select Label' selectbox
+			for(var i=0;i<SSToolTipInfo.length;i++) {
+				var isSelected = "";
+				if($.trim(last_selected_label) === $.trim(SSToolTipInfo[i]['name'])) {
+					isSelected = 'selected="selected"';
+				}
+				labelSelectHtml += '<option value="'+$.trim(SSToolTipInfo[i]['name'])+'" '+isSelected+'>'+$.trim(SSToolTipInfo[i]['title'])+'</option>';
+			}
+			// If select box exist them update the HTML.
+			if($("#static_label").length) {
+				$("#static_label").html(labelSelectHtml);
+			}
+		}
+
 		/*Reset the flag*/
 		isFirstTime = 0;
 	};
@@ -3574,7 +3641,7 @@ function devicePlottingClass_gmap() {
     		data_to_plot = filtered_data;
     	}
 
-    	console.log(data_to_plot);
+    	// console.log(data_to_plot);
 
         /*Hide the spinner*/
         hideSpinner();
@@ -3605,7 +3672,7 @@ function devicePlottingClass_gmap() {
 		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(6892875.865539902);
+				lookAt.setRange(5492875.865539902);
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -3623,8 +3690,7 @@ function devicePlottingClass_gmap() {
 	            mapInstance.setZoom(5);
 	            data_for_filters = data_to_plot;
 	            isApiResponse = 0;
-	            gmap_self.showStateWiseData_gmap(data_to_plot);
-        		
+	            gmap_self.showStateWiseData_gmap(data_to_plot);        		
         	}
 
         } else {
@@ -4306,7 +4372,7 @@ function devicePlottingClass_gmap() {
 		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(6892875.865539902);
+				lookAt.setRange(5492875.865539902);
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -4340,7 +4406,8 @@ function devicePlottingClass_gmap() {
 					data_for_filters = all_devices_loki_db.data;
 					isApiResponse = 0;
 					// Load all counters
-					gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
+					// gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
+					networkMapInstance.updateStateCounter_gmaps();
 				// } else {
 
 	   //      		gmap_self.show_all_elements_gmap();
@@ -4369,9 +4436,6 @@ function devicePlottingClass_gmap() {
 
 				// 	gmap_self.getFilteredLineLabel(data_for_filters);
 				// }
-
-
-
         	}
         }
     };
@@ -4422,7 +4486,7 @@ function devicePlottingClass_gmap() {
 				var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
-				lookAt.setRange(6892875.865539902);
+				lookAt.setRange(5492875.865539902);
 				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
@@ -4729,7 +4793,7 @@ function devicePlottingClass_gmap() {
 										devices_counter = polygonSelectedDevices[i].device_name;
 									}
 
-                                        if(!polled_device_count[devices_counter]) {
+                                    if(!polled_device_count[devices_counter]) {
 										polled_device_count[devices_counter]  = 1;
 									} else {
 										polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
@@ -4758,8 +4822,8 @@ function devicePlottingClass_gmap() {
 										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
 
 									} else {
-										if(polled_device_count[devices_counter] ) //<= 1) //why do we have this condition ???
-                                        {
+										// if(polled_device_count[devices_counter] ) //<= 1) //why do we have this condition ???
+                                        if(polled_device_count[devices_counter] <= 1) {
 											var device_end_txt = "",
 												point_name = "";
 											if(polygonSelectedDevices[i].pointType == 'sub_station') {
@@ -5800,7 +5864,7 @@ function devicePlottingClass_gmap() {
 
 		// Bind click event to marker
 		(function bindClickToMarker(marker) {
-			var markerRightClick= google.maps.event.addListener(marker, 'click', function(event) {
+			var markerClick= google.maps.event.addListener(marker, 'click', function(event) {
 				if(marker.point_id) {
 					connected_end_obj = {
 						"lat" : marker.lat,
@@ -5815,7 +5879,7 @@ function devicePlottingClass_gmap() {
 				}
 			});
 
-			return markerRightClick;
+			return markerClick;
 		})(map_point);
 	};
 
@@ -5983,6 +6047,13 @@ function devicePlottingClass_gmap() {
 	 */
 	this.addLineToPoint_gmap = function(marker) {
 
+		// Close current info window
+		if(window.location.pathname.indexOf("googleEarth") > -1) {
+			ge.setBalloon(null);
+		} else {
+			infowindow.close();
+		}
+
 		pointAdded= 1;
 
 		current_point_for_line = "point_"+String(marker.lat).split(".").join("-")+"_"+String(marker.lon).split(".").join("-");
@@ -5992,25 +6063,25 @@ function devicePlottingClass_gmap() {
 
 		//first clear the listners. as ruler tool might be in place
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
-			google.earth.removeEventListener(ge.getGlobe(), 'click', pointEventHandler);
 			pointEventHandler = "";
+			google.earth.removeEventListener(ge.getGlobe(), 'click', pointEventHandler);
+			google.earth.addEventListener(ge.getGlobe(), 'click', pointEventHandler);
 
 			pointEventHandler = function(e) {
 				if(Object.keys(connected_end_obj).length === 0) {
-					alert("Please select other point");
+					bootbox.alert("Please select other point");
 				} else {
 					$("#point_select").trigger("click");
 					connected_end_obj = {};
 				}
 			}
-			google.earth.addEventListener(ge.getGlobe(), 'click', pointEventHandler);
 		} else {
 	        google.maps.event.clearListeners(mapInstance,'click');
 
 			google.maps.event.addListener(mapInstance,'click',function(e) {
 
 				if(Object.keys(connected_end_obj).length === 0) {
-					alert("Please select other point");
+					bootbox.alert("Please select other point");
 				} else {
 					$("#point_select").trigger("click");
 					connected_end_obj = {};
@@ -6036,14 +6107,26 @@ function devicePlottingClass_gmap() {
 			"nearEndLon" : point_data_obj[current_pt].lon,
 		};
 
-
+		var current_line;
 		/*Create line between the point & device*/
-		var current_line =  gmap_self.createLink_gmaps(line_obj);
-		/*Show Line on Map*/
-		if(mapInstance.getZoom() > 7) {
-			current_line.setMap(mapInstance);
+		if(window.location.pathname.indexOf("googleEarth") > -1) {
+			current_line = earth_instance.createLink_earth(line_obj);		
 		} else {
-			current_line.setMap(null);
+			current_line =  gmap_self.createLink_gmaps(line_obj);
+		}
+		/*Show Line on Map*/
+		if(window.location.pathname.indexOf("googleEarth") > -1) {
+			if(getRangeInZoom() > 7) {
+				current_line.setVisibility(true);
+			} else {
+				current_line.setVisibility(false);
+			}
+		} else {
+			if(mapInstance.getZoom() > 7) {
+				current_line.setMap(mapInstance);
+			} else {
+				current_line.setMap(null);
+			}
 		}
 		/*Update Connected Lat Lon info in marker object*/
 		point_data_obj[current_pt].connected_lat = connected_end_obj.lat;
@@ -6084,33 +6167,39 @@ function devicePlottingClass_gmap() {
         	}
     	});
 
-		google.maps.event.addListener(current_line, 'rightclick', function(e) {
-			
-			var current_line_ptr = this,
-				info_window_content = "<button class='btn btn-danger btn-xs' id='remove_tool_line'>Remove Line</button>";
-			
-			/*Close infowindow if any opened*/
-			infowindow.close();
-			// $("#infoWindowContainer").addClass('hide');
 
-			/*Set the content for new infowindow*/
-			infowindow.setContent(info_window_content);
+		if(window.location.pathname.indexOf("googleEarth") > -1) {
 			
-			/*Set The Position for InfoWindow*/
-			infowindow.setPosition(e.latLng);
-			
-			/*Open the info window*/
-			infowindow.open(mapInstance);
+		} else {
+			google.maps.event.addListener(current_line, 'rightclick', function(e) {
+				
+				var current_line_ptr = this,
+					info_window_content = "<button class='btn btn-danger btn-xs' id='remove_tool_line'>Remove Line</button>";
+				
+				/*Close infowindow if any opened*/
+				infowindow.close();
+				// $("#infoWindowContainer").addClass('hide');
 
-			// $("#infoWindowContainer").html(info_window_content);
-			// $("#infoWindowContainer").removeClass('hide');
-			
-			/*Triggers when remove line button clicked*/
-			$("#remove_tool_line").click(function(e) {
+				/*Set the content for new infowindow*/
+				infowindow.setContent(info_window_content);
+				
+				/*Set The Position for InfoWindow*/
+				infowindow.setPosition(e.latLng);
+				
+				/*Open the info window*/
+				infowindow.open(mapInstance);
 
-				gmap_self.remove_point_line(current_pt,current_line_ptr);
+				// $("#infoWindowContainer").html(info_window_content);
+				// $("#infoWindowContainer").removeClass('hide');
+				
+				/*Triggers when remove line button clicked*/
+				$("#remove_tool_line").click(function(e) {
+					/*Close infowindow if any opened*/
+					infowindow.close();
+					gmap_self.remove_point_line(current_pt,current_line_ptr);
+				});
 			});
-		});
+		}
 
 		current_point_for_line = "";
 	};
@@ -6120,44 +6209,52 @@ function devicePlottingClass_gmap() {
 	 * @method remove_point_line
 	 */
 	this.remove_point_line = function(current_pt,current_line_ptr) {
+		if(point_data_obj[current_pt]) {
+			var request_obj = {
+				"point_id" 		: point_data_obj[current_pt].point_id,
+				'name' 			: point_data_obj[current_pt].point_name,
+				'desc' 			: point_data_obj[current_pt].point_desc,
+				'connected_lat' : 0,
+				'connected_lon' : 0,
+				'connected_point_type' : '',
+				'connected_point_info' : '',
+				'is_delete_req' : 0,
+				'is_update_req' : 1
+			};
+			/*Save connected line info in db*/
+			$.ajax({
+	        	url: base_url+'/network_maps/tools/point/',
+	        	data: JSON.stringify(request_obj),
+	        	type: 'POST',
+	        	dataType: 'json',
+	        	success : function(result) {
+	        		if(result.success === 1) {
+						
+						// infowindow.close();
+						$("#infoWindowContainer").addClass('hide');
+						if(window.location.pathname.indexOf("googleEarth") > -1) {
+							console.log('hallo');
+							current_line_ptr.setVisibility(false);
+						} else {
+							current_line_ptr.setMap(null);
+						}
+						// Remove line object from global array
+						delete line_data_obj[current_pt];
 
-		/*Update marker object*/
-		point_data_obj[current_pt].connected_lat = 0;
-		point_data_obj[current_pt].connected_lon = 0;
-		
-		// infowindow.close();
-		$("#infoWindowContainer").addClass('hide');
-		current_line_ptr.setMap(null);
-
-		var request_obj = {
-			"point_id" 		: point_data_obj[current_pt].point_id,
-			'name' 			: point_data_obj[current_pt].point_name,
-			'desc' 			: point_data_obj[current_pt].point_desc,
-			'connected_lat' : 0,
-			'connected_lon' : 0,
-			'connected_point_type' : '',
-			'connected_point_info' : '',
-			'is_delete_req' : 0,
-			'is_update_req' : 1
-		};
-		/*Save connected line info in db*/
-		$.ajax({
-        	url: base_url+'/network_maps/tools/point/',
-        	data: JSON.stringify(request_obj),
-        	type: 'POST',
-        	dataType: 'json',
-        	success : function(result) {
-        		if(result.success === 1) {
-        			point_data_obj[current_pt].point_id = result.data.point_id;
-        			point_data_obj[current_pt].is_update_req = result.data.point_id;
-        			point_data_obj[current_pt].connected_point_type = '';
-        			point_data_obj[current_pt].connected_point_info = '';
-        		}
-        	},
-        	error : function(err) {
-        		console.log(err);
-        	}
-    	});
+						/*Update marker object*/
+						point_data_obj[current_pt].connected_lat = 0;
+						point_data_obj[current_pt].connected_lon = 0;
+	        			point_data_obj[current_pt].point_id = result.data.point_id;
+	        			point_data_obj[current_pt].is_update_req = result.data.point_id;
+	        			point_data_obj[current_pt].connected_point_type = '';
+	        			point_data_obj[current_pt].connected_point_info = '';
+	        		}
+	        	},
+	        	error : function(err) {
+	        		console.log(err);
+	        	}
+	    	});
+		}
 	};
 
 	/**
@@ -6197,7 +6294,11 @@ function devicePlottingClass_gmap() {
 						"icon_url" : current_point.icon_url
 					};
 					/*Call function to plot point on gmap*/
-					gmap_self.plotPoint_gmap(infoObj);
+					if(window.location.pathname.indexOf('googleEarth') > -1) {
+						earth_self.plotPoint_earth(infoObj);
+					} else {
+						gmap_self.plotPoint_gmap(infoObj);	
+					}
 
 					if(current_point.connected_lat != 0 && current_point.connected_lon != 0) {
 						var point_custom_id = "point_"+String(current_point.lat).split(".").join("-")+"_"+String(current_point.lon).split(".").join("-");
@@ -6211,43 +6312,60 @@ function devicePlottingClass_gmap() {
 						};
 
 						/*Create line between the point & device*/
-						var current_line =  gmap_self.createLink_gmaps(line_obj);
-						if(mapInstance.getZoom() > 7) {
-							current_line.setMap(mapInstance);
+						var current_line = "";
+						if(window.location.pathname.indexOf('googleEarth') > -1) {
+							current_line =  earth_self.createLink_earth(line_obj);
 						} else {
-							current_line.setMap(null);
+							current_line =  gmap_self.createLink_gmaps(line_obj);
+						}
+						
+						if(window.location.pathname.indexOf("googleEarth") > -1) {
+							if(getRangeInZoom() > 7) {
+								current_line.setVisibility(true);
+							} else {
+								current_line.setVisibility(false);
+							}
+						} else {
+							if(mapInstance.getZoom() > 7) {
+								current_line.setMap(mapInstance);
+							} else {
+								current_line.setMap(null);
+							}
 						}
 						line_data_obj[point_custom_id] = current_line;
 
-						google.maps.event.addListener(current_line, 'rightclick', function(e) {
-					
-							var current_line_ptr = this,
-								info_window_content = "<button class='btn btn-danger btn-xs' id='remove_tool_line'>Remove Line</button>";
-							
-							/*Close infowindow if any opened*/
-							infowindow.close();
-							// $("#infoWindowContainer").addClass('hide');
+						if(window.location.pathname.indexOf("googleEarth") > -1) {
 
-							/*Set the content for new infowindow*/
-							infowindow.setContent(info_window_content);
-							
-							/*Set The Position for InfoWindow*/
-							infowindow.setPosition(e.latLng);
-							
-							/*Open the info window*/
-							infowindow.open(mapInstance);
-							// $("#infoWindowContainer").html(info_window_content);
-							// $("#infoWindowContainer").removeClass('hide');
-							
-							/*Triggers when remove line button clicked*/
-							$("#remove_tool_line").click(function(e) {
+						} else {
+							google.maps.event.addListener(current_line, 'rightclick', function(e) {
+						
+								var current_line_ptr = this,
+									info_window_content = "<button class='btn btn-danger btn-xs' id='remove_tool_line'>Remove Line</button>";
+								
+								/*Close infowindow if any opened*/
+								infowindow.close();
+								// $("#infoWindowContainer").addClass('hide');
 
-								gmap_self.remove_point_line(point_custom_id,current_line_ptr);
+								/*Set the content for new infowindow*/
+								infowindow.setContent(info_window_content);
+								
+								/*Set The Position for InfoWindow*/
+								infowindow.setPosition(e.latLng);
+								
+								/*Open the info window*/
+								infowindow.open(mapInstance);
+								// $("#infoWindowContainer").html(info_window_content);
+								// $("#infoWindowContainer").removeClass('hide');
+								
+								/*Triggers when remove line button clicked*/
+								$("#remove_tool_line").click(function(e) {
+
+									gmap_self.remove_point_line(point_custom_id,current_line_ptr);
+								});
 							});
-						});
+						}
 					}
 				}
-
 			},
 			error : function(err) {
 				console.log(err.statusText);
@@ -6857,35 +6975,6 @@ function devicePlottingClass_gmap() {
 
     	// Open API url in new tab to download inventory report
     	window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(inventory_bs_ids),"_blank");
-
-    	// Send ajax call to download selected inventory report
-		// $.ajax({
-		// 	url : base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(bs_id_list),
-		// 	type : "GET",
-		// 	success : function(result) {
-		// 		// window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(bs_id_list),'_blank');
-		// 		// console.log(result);
-		// 		$.gritter.add({
-		//             // (string | mandatory) the heading of the notification
-		//             title: 'Inventory Download',
-		//             // (string | mandatory) the text inside the notification
-		//             text: 'Selected BS inventory downloaded successfully.',
-		//             // (bool | optional) if you want it to fade out on its own or just sit there
-		//             sticky: false
-		//         });
-		// 	},
-		// 	error : function(err) {
-		// 		// console.log(err.statusText);
-		// 		$.gritter.add({
-		//             // (string | mandatory) the heading of the notification
-		//             title: 'Inventory Download',
-		//             // (string | mandatory) the text inside the notification
-		//             text: 'Inventory not downloaded. Please try again later.',
-		//             // (bool | optional) if you want it to fade out on its own or just sit there
-		//             sticky: false
-		//         });
-		// 	}
-		// });
 	};
 
 	/**
@@ -6931,6 +7020,102 @@ function devicePlottingClass_gmap() {
 			}
 			exportDataPolygon = {}
 		}
+	};
+
+	/**
+     * This function create/update selected tooltip value label from/on ss marker
+     * @method updateTooltipLabel_gmap
+     */
+	this.updateTooltipLabel_gmap = function() {
+
+		var hide_flag = !$("#show_hide_label")[0].checked;
+		// If any tooltip label exist
+		if(Object.keys(tooltipInfoLabel).length === 0) {
+			var ss_list = allMarkersObject_gmap['sub_station'];
+			for(key in ss_list) {
+				var ss_marker = ss_list[key],
+					labelHtml = "";
+
+				for(var z=ss_marker.dataset.length;z--;) {
+                    if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
+                        labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
+                    }
+                }
+
+                var toolTip_infobox = new InfoBox({
+                    content: labelHtml,
+                    boxStyle: {
+                        border: "1px solid #B0AEAE",
+                        background: "white",
+                        textAlign: "center",
+                        fontSize: "10px",
+                        color: "black",
+                        padding: '2px',
+                        borderRadius: "5px",
+                        width : '110px'
+                    },
+                    pixelOffset : new google.maps.Size(-120,-10),
+                    disableAutoPan: true,
+                    position: ss_marker.getPosition(),
+                    closeBoxURL: "",
+                    isHidden: hide_flag,
+                    enableEventPropagation: true,
+                    zIndex: 80
+                });
+
+                toolTip_infobox.open(mapInstance, ss_marker);
+                tooltipInfoLabel[key] = toolTip_infobox;
+			}
+		} else {
+
+			var ss_list = allMarkersObject_gmap['sub_station'];
+			for(key in ss_list) {
+				var ss_marker = ss_list[key],
+					labelHtml = "";
+
+				for(var z=ss_marker.dataset.length;z--;) {
+                    if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
+                        labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
+                    }
+                }
+
+                // If label exist for current ss
+                if(tooltipInfoLabel[key]) {
+                	tooltipInfoLabel[key].setContent(labelHtml);
+                } else {
+                	var toolTip_infobox = new InfoBox({
+	                    content: labelHtml,
+	                    boxStyle: {
+	                        border: "1px solid #B0AEAE",
+	                        background: "white",
+	                        textAlign: "center",
+	                        fontSize: "10px",
+	                        color: "black",
+	                        padding: '2px',
+	                        borderRadius: "5px",
+	                        width : '110px'
+	                    },
+	                    pixelOffset : new google.maps.Size(-120,-10),
+	                    disableAutoPan: true,
+	                    position: ss_marker.getPosition(),
+	                    closeBoxURL: "",
+	                    isHidden: hide_flag,
+	                    enableEventPropagation: true,
+	                    zIndex: 80
+	                });
+
+	                toolTip_infobox.open(mapInstance, ss_marker);
+	                tooltipInfoLabel[key] = toolTip_infobox;
+                }
+			}
+		}
+
+		$.gritter.add({
+            title: "SS Parameter Label",
+            text: $.trim($("#static_label option:selected").text())+" - Label Applied Successfully.",
+            sticky: false,
+            time : 1000
+        });
 	};
 
     /**
