@@ -2522,16 +2522,15 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
             return self.form_invalid(form, device_type_service_form)
 
     def form_valid(self, form, device_type_service_form):
-        pass
-    #     """
-    #     Called if all forms are valid. Creates a Recipe instance along with
-    #     associated Ingredients and Instructions and then redirects to a
-    #     success page.
-    #     """
-    #     self.object = form.save()
-    #     device_type_service_form.instance = self.object
-    #     device_type_service_form.save()
-    #     return HttpResponseRedirect(self.get_success_url())
+        """
+        Called if all forms are valid. Creates a Recipe instance along with
+        associated Ingredients and Instructions and then redirects to a
+        success page.
+        """
+        self.object = form.save()
+        device_type_service_form.instance = self.object
+        device_type_service_form.save()
+        return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, device_type_service_form):
         """

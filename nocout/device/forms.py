@@ -559,10 +559,9 @@ class BaseDeviceTypeServiceFormset(BaseInlineFormSet):
             form.fields['service'].empty_label = 'Select'
 
     def clean(self):
-        pass
-        # for form in self.forms:
-        #     if not len(form.cleaned_data.keys()):
-        #         raise forms.ValidationError('This field is required.')
+        for form in self.forms:
+            if not len(form.cleaned_data.keys()):
+                raise forms.ValidationError('This field is required.')
 
 class DeviceTypeForm(forms.ModelForm):
     """
@@ -645,7 +644,7 @@ widgets = {
            'parameter': forms.Select(attrs= {'class' : 'form-control'}),
     }
 DeviceTypeServiceCreateFormset = inlineformset_factory(DeviceType, DeviceTypeService, formset=BaseDeviceTypeServiceFormset,
-    extra=1, widgets=widgets, can_delete=True)
+    fields=('service', 'parameter'), extra=1, widgets=widgets, can_delete=True)
 
 
 # ******************************************* Device Type *******************************************
