@@ -1924,7 +1924,6 @@ class GISPerfData(View):
                 "show": 1,
                 "value": perf['current_value'],
             }
-
             device_info.append(perf_info)
 
         for perf in device_network_info:
@@ -1934,7 +1933,6 @@ class GISPerfData(View):
                 "show": 1,
                 "value": perf['current_value'],
             }
-
             device_info.append(perf_info)
 
         return device_info
@@ -2201,8 +2199,9 @@ class GISPerfData(View):
         marker_url = ""
         try:
             gmap_icon = str(DeviceType.objects.get(id=substation_device.device_type).device_gmap_icon)
-            icon_path = "".join(gmap_icon.split("/media"))
-            marker_url = MEDIA_ROOT + icon_path
+            # icon_path = "".join(gmap_icon.split("/media"))
+            # marker_url = MEDIA_ROOT + icon_path
+            marker_url = gmap_icon
         except Exception as e:
             logger.info("No GMAP Icon for device type. Exception: ", e.message)
 
