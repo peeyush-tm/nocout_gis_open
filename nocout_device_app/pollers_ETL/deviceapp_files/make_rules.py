@@ -152,6 +152,7 @@ def get_settings():
 	    cur = db.cursor()
 	    cur.execute(query)
 	    data = dict_rows(cur)
+	    #logger.debug('data in get_settings: ' + pformat(data))
 	    cur.close()
     except Exception, exp:
 	    logger.error('Exception in get_settings: ' + pformat(exp))
@@ -206,7 +207,7 @@ def get_threshold(service):
 		result = (float(service['service_warning']), float('service_critical'))
 	    elif service.get('warning') or service.get('critical'):
 		    if service.get('service') in wimax_mod_services:
-			    result = (map(str, service['warning'].replace(' ', '').split(',')), map(str, service['critical'].replace(' ', '').split(',')))
+			    result = (map(lambda x: x.strip(), service['warning'].split(',')), (map(lambda x: x.strip(), service['critical'].split(','))))
 		    else:
 			    result = (int(service['warning']), int(service['critical']))
     except Exception:
