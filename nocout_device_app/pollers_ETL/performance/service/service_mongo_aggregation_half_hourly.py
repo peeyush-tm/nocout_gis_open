@@ -3,8 +3,8 @@ service_mongo_aggregation_half_hourly.py
 =======================================
 
 Usage ::
-python service_mongo_aggregation_half_hourly.py -t 30 -s network_perf -d network_perf_half_hourly
-python service_mongo_aggregation_half_hourly.py -t 30 -s service_perf -d service_perf_half_hourly
+python service_mongo_aggregation_half_hourly.py -t 30 -s network_perf -d performance_performancenetworkbihourly
+python service_mongo_aggregation_half_hourly.py -t 30 -s service_perf -d performance_performanceneservicebihourly
 Options ::
 t - Time frame for which data to be read from Mongodb (minutes)
 s - Mongodb source collection name to read data from
@@ -20,6 +20,7 @@ from operator import itemgetter
 from pprint import pprint, pformat
 import collections
 import optparse
+from historical_mysql_export import mysql_conn, mysql_export
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_mod = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
@@ -33,9 +34,16 @@ mongo_configs = {
 		'port': int(desired_config.get('port')),
 		'db_name': desired_config.get('nosql_db')
 		}
+mysql_configs = {
+		'host': desired_config.get('ip'),
+		'port': int(desired_config.get('sql_port')),
+		'user': desired_config.get('user'),
+		'password': desired_config.get('sql_passwd'),
+		'database': desired_config.get('sql_db')
+		}
 parser = optparse.OptionParser()
 parser.add_option('-s', '--source', dest='source_db', type='choice', choices=['service_perf', 'network_perf'])
-parser.add_option('-d', '--destination', dest='destination_db', type='choice', choices=['service_perf_half_hourly', 'network_perf_half_hourly'])
+parser.add_option('-d', '--destination', dest='destination_db', type='choice', choices=['performance_performancenetworkbihourly', 'performance_performanceservicebihourly'])
 parser.add_option('-t', '--timeframe', dest='mins', type='choice', choices=['30'])
 options, remainder = parser.parse_args(sys.argv[1:])
 if options.source_db and options.destination_db and options.mins:
@@ -179,11 +187,11 @@ def make_half_hourly_data(docs):
 					'time': aggr_data.get('time')
 					}
 			existing_doc = find_existing_entry(find_query)
-			print '========================='
-			print 'existing_doc'
-			print existing_doc
-			print 'aggr_data'
-			print aggr_data
+			#print '========================='
+			#print 'existing_doc'
+			#print existing_doc
+			#print 'aggr_data'
+			#print aggr_data
 			if existing_doc:
 				existing_doc = existing_doc[0]
 				if service in wimax_mrotek_services:
@@ -210,8 +218,8 @@ def make_half_hourly_data(docs):
 					})
 				# First remove the existing entry from aggregated_data_values
 				aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
-			print 'Updated aggr_data'
-			print aggr_data
+			#print 'Updated aggr_data'
+			#print aggr_data
 			#upsert_aggregated_data(find_query, aggr_data)
 			aggregated_data_values.append(aggr_data)
 
@@ -256,11 +264,11 @@ def make_half_hourly_data(docs):
 					'time': aggr_data.get('time')
 					}
 			existing_doc = find_existing_entry(find_query)
-			print '========================='
-			print 'existing_doc'
-			print existing_doc
-			print 'aggr_data'
-			print aggr_data
+			#print '========================='
+			#print 'existing_doc'
+			#print existing_doc
+			#print 'aggr_data'
+			#print aggr_data
 			if existing_doc:
 				existing_doc = existing_doc[0]
 				if service in wimax_mrotek_services:
@@ -287,8 +295,8 @@ def make_half_hourly_data(docs):
 					})
 				# First remove the existing entry from aggregated_data_values
 				aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
-			print 'Updated aggr_data'
-			print aggr_data
+			#print 'Updated aggr_data'
+			#print aggr_data
 			#upsert_aggregated_data(find_query, aggr_data)
 			aggregated_data_values.append(aggr_data)
 
@@ -308,61 +316,15 @@ def convert(data):
 	        return data
 
 
-def insert_aggregated_data(docs):
-	"""
-	Insert the data into historical mongodb
-	"""
-
-        global mongo_configs
-        # Mongodb connection object
-       	db = mongo_module.mongo_conn(
-		host=mongo_configs.get('host'),
-			port=mongo_configs.get('port'),
-			db_name=mongo_configs.get('db_name')
-			)
-	if db:
-		#if hist_perf_table == 'network_perf_half_hourly':
-		#	db.network_perf_half_hourly.update(find_query, doc,upsert=True)
-		#elif hist_perf_table == 'service_perf_half_hourly':
-		#	db.service_perf_half_hourly.update(find_query, doc,upsert=True)
-		db[hist_perf_table].insert(docs)
-
 def find_existing_entry(find_query):
 	"""
 	Find the doc for update query
 	"""
 
-        #global mongo_configs
 	docs = []
-        # Mongodb connection object
-       	#db = mongo_module.mongo_conn(
-	#	host=mongo_configs.get('host'),
-	#		port=mongo_configs.get('port'),
-	#		db_name=mongo_configs.get('db_name')
-	#		)
-	#if db:
-	#	#if hist_perf_table == 'network_perf_half_hourly':
-	#	#        cur = db.network_perf_half_hourly.find(find_query)
-	#	#elif hist_perf_table == 'service_perf_half_hourly':
-	#	#        cur = db.service_perf_half_hourly.find(find_query)
-	#	cur = db[hist_perf_table].find(find_query)
-	#for doc in cur:
-	#	docs.append(doc)
 	docs = filter(lambda d: set(find_query.values()) <= set(d.values()), aggregated_data_values)
 
 	return docs
-
-
-#def main(argv):
-#	parser = optparse.OptionParser()
-#	parser.add_option('-p', '--perf', dest='perf', type='choice', choices=['service_perf', 'network_perf'])
-#	parser.add_option('-s', '--historical', dest='hist', type='choice', choices=['service_perf_half_hourly', 'network_perf_half_hourly'])
-#	options, remainder = parser.parse_args(argv)
-#	if options.perf and options.hist:
-#	        mongo_main(perf_table=options.perf, hist_perf_table=options.hist)
-#	else:
-#		usage()
-#		sys.exit(2)
 
 
 def usage():
@@ -371,4 +333,5 @@ def usage():
 
 if __name__ == '__main__':
 	mongo_main()
-	insert_aggregated_data(aggregated_data_values)
+	db = mysql_conn(mysql_configs=mysql_configs)
+	mysql_export(hist_perf_table, db, aggregated_data_values)

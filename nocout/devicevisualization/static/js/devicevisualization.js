@@ -5,7 +5,8 @@ var mapPageType = "",
     freezedAt = 0,
     tools_ruler= "",
     tools_line = ""
-    base_url = "";
+    base_url = "",
+    last_selected_label = "";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -14,23 +15,13 @@ if(window.location.origin) {
     base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
 }
 
-/*Set cookies if not exist*/
-if(!$.cookie("isFreezeSelected")) {
-
-    $.cookie("isFreezeSelected", 0, {path: '/', secure: true});
-}
-
-if(!$.cookie("freezedAt")) {
-    $.cookie("freezedAt", 0, {path: '/', secure: true});
-}
-
-
 
 /*Save cookie value to variable*/
-isFreeze = $.cookie("isFreezeSelected");
+isFreeze = $.cookie("isFreezeSelected") ? $.cookie("isFreezeSelected") : 0;
 freezedAt = $.cookie("freezedAt") ? $.cookie("freezedAt") : 0;
-tools_ruler = $.cookie("tools_ruler");        
-tools_line = $.cookie("tools_line");
+tools_ruler = $.cookie("tools_ruler") ? $.cookie("tools_ruler") : 0;        
+tools_line = $.cookie("tools_line") ? $.cookie("tools_line") : 0;
+last_selected_label = $.cookie("tooltipLabel") ? $.cookie("tooltipLabel") : "";
 
 isPollingActive = 0;
 
@@ -1102,16 +1093,33 @@ $("#show_hide_label").click(function(e) {
         labelsArray_filtered[x].setVisible(e.currentTarget.checked);
     }
 
-
+    // Hide perf info label
     for (var x = 0; x < labelsArray.length; x++) {
         var move_listener_obj = labelsArray[x].moveListener_;
-        if (move_listener_obj) {
+        if(move_listener_obj) {
             var keys_array = Object.keys(move_listener_obj);
             for(var z=0;z<keys_array.length;z++) {
                 if(typeof move_listener_obj[keys_array[z]] === 'object') {
                    if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
                         if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
                             labelsArray[x].setVisible(e.currentTarget.checked);
+                        }
+                   }
+                }
+            }
+        }
+    }
+
+    // Hide tooltip info label
+    for (key in tooltipInfoLabel) {
+        var move_listener_obj = tooltipInfoLabel[key].moveListener_;
+        if(move_listener_obj) {
+            var keys_array = Object.keys(move_listener_obj);
+            for(var z=0;z<keys_array.length;z++) {
+                if(typeof move_listener_obj[keys_array[z]] === 'object') {
+                   if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+                        if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
+                            tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
                         }
                    }
                 }
@@ -1426,3 +1434,54 @@ function deleteGoogleEarthPlacemarker(uniqueID) {
         }
     }
 }
+
+
+/**
+ * This event trigger when 'Apply Label' button in tools section clicked.
+ * @event click
+ */
+$("#apply_label").click(function(e) {
+    var selected_val = $.trim($("#static_label").val());
+
+    if(last_selected_label != "" && selected_val == "") {
+        // Save selected value to global variable
+        last_selected_label = selected_val;
+        // Update cookie value with the selected value.
+        $.cookie("tooltipLabel", last_selected_label, {path: '/', secure: true});
+
+        // Remove tooltip info label
+        for (key in tooltipInfoLabel) {
+            tooltipInfoLabel[key].close();
+        }
+        // Reset Variables
+        tooltipInfoLabel = {};
+
+    } else {
+        if((selected_val) && (selected_val != last_selected_label)) {
+            // Save selected value to global variable
+            last_selected_label = selected_val;
+            // Update cookie value with the selected value.
+            $.cookie("tooltipLabel", last_selected_label, {path: '/', secure: true});
+
+            if(window.location.pathname.indexOf("googleEarth") > -1) {
+            
+            } else if(window.location.pathname.indexOf("white_background") > -1) {
+
+            } else {
+                // If current zoom level is greater the 7
+                if(mapInstance && mapInstance.getZoom() > 7) {
+                    networkMapInstance.updateTooltipLabel_gmap();
+                } else {
+                    $.gritter.add({
+                        title: "SS Parameter Label",
+                        text: $.trim($("#static_label option:selected").text())+" - Label Applied Successfully.",
+                        sticky: false,
+                        time : 1000
+                    });
+                }
+            }
+        } else {
+            bootbox.alert("Please select different value.");
+        }
+    }
+});

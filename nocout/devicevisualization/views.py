@@ -1,5 +1,5 @@
 import json
-import os
+import os, datetime
 from django.http import HttpResponseRedirect, HttpResponse
 from operator import itemgetter
 from django.db.models.query import ValuesQuerySet
@@ -1285,31 +1285,37 @@ class GISPerfData(View):
                         sector_dict['sub_station'] = list()
 
                         # get all substations associated with sector from 'Topology' model in performance
-                        topolopies_for_ss = Topology.objects.filter(sector_id=sector.id)
+                        ##replaceing topology code
+                        ##as the topology is auto-updated
+                        ##using celery beat
+                        subs = SubStation.objects.filter(id__in = sector.circuit_set.values_list('sub_station', flat=True))
+                        # topolopies_for_ss = Topology.objects.filter(sector_id=sector.id)
 
                         # list of all associated substations ip's
-                        substations_ips_list = list()
-                        for topology in topolopies_for_ss:
-                            substations_ips_list.append(topology.connected_device_ip)
+                        # substations_ips_list = list()
+                        # for topology in topolopies_for_ss:
+                        #     substations_ips_list.append(topology.connected_device_ip)
 
                         # loop through all substations using ips in 'substations_ips_list'
-                        for ss_ip in substations_ips_list:
+                        for ss in subs:
                             # substation
-                            substation = ""
-                            try:
-                                substation = SubStation.objects.get(device__ip_address=ss_ip)
-                            except Exception as e:
-                                logger.info("Sub Station not exist. Exception: ", e.message)
+                            substation = None
+                            substation = ss
+                            # try:
+                            #     substation = SubStation.objects.get(device__ip_address=ss_ip)
+                            # except Exception as e:
+                            #     logger.info("Sub Station not exist. Exception: ", e.message)
 
                             # substation device
-                            substation_device = ""
+                            substation_device = None
                             try:
-                                substation_device = Device.objects.get(ip_address=ss_ip)
+                                substation_device = ss.device
+                                #Device.objects.get(ip_address=ss_ip)
                             except Exception as e:
                                 logger.info("Sub Station device not exist. Exception: ", e.message)
 
                             ss_dict = dict()
-                            if substation:
+                            if substation and substation_device:
                                 ss_dict['device_name'] = substation_device.device_name
                                 ss_dict['id'] = substation_device.id
                                 ss_dict['name'] = substation.name
@@ -1676,7 +1682,7 @@ class GISPerfData(View):
             # date of acceptance
             date_of_acceptance = ""
             try:
-                date_of_acceptance = substation.circuit_set.all()[0].date_of_acceptance
+                date_of_acceptance = str(substation.circuit_set.all()[0].date_of_acceptance)
             except Exception as e:
                 logger.info("Date Of Acceptance not exist. Exception: ", e.message)
 
