@@ -123,7 +123,7 @@
             }
             else{
                 $.ajax({
-                    url : "/service/select/service/"+ service_id,
+                    url : "/service/select/service/data_source/"+ service_id,
                     type : "GET",
                     dataType: "json",
                     data: {
@@ -134,44 +134,11 @@
                         parameter_option.val(service.parameters_id)
                         parameter_option.html(service.parameters_name)
                         row_inline.children().filter('.form-group').slice(2).remove()
-                        for(var count=0; count<service.total_sds; count++){
-                            var sds_name = service.sds[count].service_data_sources__name
-                            var form_group =
-                            '<div class="form-group"> ' +
-                                '<label class="col-sm-3 control-label">'+
-                                '<u><b>Service Data Source</b></u></label>'+
-                                '<div class="col-sm-9">'+
-                                    '<div class="col-md-8">'+
-                                    '<label class="col-sm-3 control-label"'+
-                                    'style="color:#5e87b0;">'+sds_name+'</label>'+
-                                    '</div> </div> </div>'+
-                            '<div class="form-group"> ' +
-                                '<label class="col-sm-3 control-label">'+
-                                '<span class="mandatory">*</span> Warning </label>'+
-                                '<div class="col-sm-9">'+
-                                    '<div class="col-md-8">'+
-                                        '<input class="form-control"'+
-                                        'id="id_'+sds_name+'_warning_'+count+'"'+
-                                        'name="'+sds_name+'_warning_'+count+'"type="number"'+
-                                        'required>('+service.sds[count].warning+')'+
-                                    '</div> </div> </div>'+
-                            '<div class="form-group"> ' +
-                                '<label class="col-sm-3 control-label">'+
-                                '<span class="mandatory">*</span> Critical </label>'+
-                                '<div class="col-sm-9">'+
-                                    '<div class="col-md-8">'+
-                                        '<input class="form-control"'+
-                                        'id="id_'+sds_name+'_critical_'+count+'"'+
-                                       'name="'+sds_name+'_critical_'+count+'"type="number"'+
-                                        'required>('+service.sds[count].critical+')'+
-                                    '</div> </div> </div>'
-                            row_inline.append(form_group)
-                            $("#id_"+sds_name+"_warning_"+count).val(service.sds[count].warning)
-                            $("#id_"+sds_name+"_critical_"+count).val(service.sds[count].critical)
-                        }
+
+                        row_inline.append(service.service_attributes)
                     },
                     error : function(xhr,errmsg,err) {
-                        alert(xhr.status + ": " + xhr.responseText);
+                        console.log(xhr.status + ": " + xhr.responseText);
                     }
                 });
                 return false;

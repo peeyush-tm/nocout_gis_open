@@ -1,0 +1,30 @@
+{{ sds_fromset.management_form }}
+{% for sds in service_data_sources %}
+    {% for field in sds_fromset %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"> Service Data Sources</label>
+            <div class="col-sm-9">
+                <div class="col-md-8" style="color:#5e87b0;">
+                    {{ field.service_data_sources }}
+                    {{ field.service_data_sources.value|default_if_none:sds.service_data_sources__name }}
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Warning</label>
+            <div class="col-sm-9">
+                <div class="col-md-8">
+                    {{field.warning}}( {{field.warning.value|default_if_none:sds.warning }} )
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Critical</label>
+            <div class="col-sm-9">
+                <div class="col-md-8">
+                    {{field.critical}}( {{field.warning.value|default_if_none:sds.critical }} )
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endfor %}

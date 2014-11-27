@@ -9,10 +9,12 @@ from models import Service, ServiceParameters, ServiceDataSource, Protocol, Devi
 from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm, ServiceSpecificDataSource
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
+from django.template.loader import render_to_string
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet
+from device.forms import DeviceTypeServiceDataSourceCreateFormset
 
 # ########################################################
 from django.conf import settings
@@ -230,20 +232,29 @@ class ServiceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('service.delete_service',)
 
 
-def select_service(request, pk):
+def select_service_data_source(request, pk):
     """
     return value list of data_source when the servie is selected in device type.
     """
     service = Service.objects.get(id=pk)
     parameters = service.parameters
-    service_data_sources = ServiceSpecificDataSource.objects.filter(service=service).\
-                            values('service_data_sources__name','warning', 'critical')
-    return HttpResponse(json.dumps({
-        "total_sds": service_data_sources.count(),
+    service_specific_data_sources = ServiceSpecificDataSource.objects.filter(service=service)
+    service_data_sources = service_specific_data_sources.values('service_data_sources__name','warning', 'critical')
+
+    data_source_create_formset = DeviceTypeServiceDataSourceCreateFormset()
+
+    ctx_dict = {
+                'service_data_sources': service_data_sources,
+                'sds_fromset': data_source_create_formset,
+            }
+    service_attributes = render_to_string('service/service_attributes.html', ctx_dict)
+    service_attributes.content_subtype = "html"
+    return HttpResponse( json.dumps({
         "parameters_id": parameters.id,
         "parameters_name": parameters.parameter_description,
-        "sds" : list(service_data_sources)
-    }))
+        "service_attributes": service_attributes,
+        }) )
+
 
 #************************************* Service Parameters *****************************************
 class ServiceParametersList(PermissionsRequiredMixin, ListView):
