@@ -4773,7 +4773,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 except Exception as e:
                     logger.info("Sector Configured On port not present. Exception: ", e.message)
 
-
                 # sector name
                 name = '{}_{}_{}'.format(
                     special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
