@@ -1351,7 +1351,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
     # pass machine name as argument
     vrfprv_machine_and_site_info = get_machine_details('vrfprv')
 
-    # get 'ospf5' machine and associated sites a in dictionary
+    # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
 
@@ -2496,7 +2496,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
         complete_d.append(d)
 
-    # get 'ospf5' machine and associated sites a in dictionary
+    # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
 
@@ -3316,7 +3316,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
     machine_and_site_info = get_machine_details('ospf', [1])
 
-    # get 'ospf5' machine and associated sites a in dictionary
+    # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
 
@@ -4244,7 +4244,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
     machine_and_site_info = get_machine_details('ospf', [2])
 
-    # get 'ospf5' machine and associated sites a in dictionary
+    # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
 
@@ -4772,7 +4772,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     port = create_device_port(port_name, port_alias, port_value)
                 except Exception as e:
                     logger.info("Sector Configured On port not present. Exception: ", e.message)
-
 
                 # sector name
                 name = '{}_{}_{}'.format(
