@@ -7,6 +7,7 @@ and write to historical mysql table
 
 Usage ::
 python events_aggregation_base.py -t 24 -f daily -s nocout_host_event_log -d performance_eventnetworkdaily
+python events_aggregation_base.py -t 24 -f daily -s nocout_service_event_log -d performance_eventservicedaily
 Options ::
 t - Time frame for read operation [Hours]
 s - Source Mongodb collection

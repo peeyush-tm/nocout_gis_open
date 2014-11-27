@@ -76,7 +76,7 @@ def quantify_events_data(aggregated_data_values=[]):
 		host, ip_address = doc.get('device_name'), doc.get('ip_address')
 		ds, service = doc.get('data_source'), doc.get('service_name')
 		severity = doc.get('severity')
-		current_value = doc.get('current_value')
+		current_value = int(doc.get('current_value'))
 		site = doc.get('site_name')
 		original_time = doc.get('sys_timestamp') if doc.get('sys_timestamp') else doc.get('time')
 		time = datetime.fromtimestamp(original_time)
@@ -125,14 +125,13 @@ def quantify_events_data(aggregated_data_values=[]):
 		existing_doc = find_existing_entry(find_query, aggregated_data_values)
 		#print 'existing_doc'
 		#print existing_doc
-		current_value = 1
 		if existing_doc:
 			existing_doc = existing_doc[0]
 			max_val = max([aggr_data.get('max'), existing_doc.get('max')])
 			min_val = min([aggr_data.get('min'), aggr_data.get('min')])
 			avg_val = sum([max_val + min_val])/2
 			# Update the count for service state
-			current_value += aggr_data['current_value']
+			current_value += int(existing_doc['current_value'])
 			aggr_data.update({
 				'min': min_val,
 				'max': max_val,
