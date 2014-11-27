@@ -135,6 +135,7 @@
                         parameter_option.html(service.parameters_name)
                         row_inline.children().filter('.form-group').slice(2).remove()
                         for(var count=0; count<service.total_sds; count++){
+                            var sds_name = service.sds[count].service_data_sources__name
                             var form_group =
                             '<div class="form-group"> ' +
                                 '<label class="col-sm-3 control-label">'+
@@ -142,8 +143,7 @@
                                 '<div class="col-sm-9">'+
                                     '<div class="col-md-8">'+
                                     '<label class="col-sm-3 control-label"'+
-                                    'style="color:#5e87b0;">'+
-                            service.sds[count].service_data_sources__name+'</label>'+
+                                    'style="color:#5e87b0;">'+sds_name+'</label>'+
                                     '</div> </div> </div>'+
                             '<div class="form-group"> ' +
                                 '<label class="col-sm-3 control-label">'+
@@ -151,8 +151,8 @@
                                 '<div class="col-sm-9">'+
                                     '<div class="col-md-8">'+
                                         '<input class="form-control"'+
-                                        'id="id_warning_'+count+'"'+
-                                        'name="warning'+count+'" type="number"'+
+                                        'id="id_'+sds_name+'_warning_'+count+'"'+
+                                        'name="'+sds_name+'_warning_'+count+'"type="number"'+
                                         'required>('+service.sds[count].warning+')'+
                                     '</div> </div> </div>'+
                             '<div class="form-group"> ' +
@@ -161,13 +161,13 @@
                                 '<div class="col-sm-9">'+
                                     '<div class="col-md-8">'+
                                         '<input class="form-control"'+
-                                        'id="id_critical_'+count+'"'+
-                                        'name="critical_'+count+'" type="number"'+
+                                        'id="id_'+sds_name+'_critical_'+count+'"'+
+                                       'name="'+sds_name+'_critical_'+count+'"type="number"'+
                                         'required>('+service.sds[count].critical+')'+
                                     '</div> </div> </div>'
                             row_inline.append(form_group)
-                            $("#id_warning_"+count).val(service.sds[count].warning)
-                            $("#id_critical_"+count).val(service.sds[count].critical)
+                            $("#id_"+sds_name+"_warning_"+count).val(service.sds[count].warning)
+                            $("#id_"+sds_name+"_critical_"+count).val(service.sds[count].critical)
                         }
                     },
                     error : function(xhr,errmsg,err) {
