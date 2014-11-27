@@ -41,14 +41,13 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 		}
 		// Save current zoom value in global variable
     	current_zoom = ccpl_map.getZoom();
-    	
     	/* When zoom level is greater than 8 show lines */
     	if(ccpl_map.getZoom() > 7) {
 
     		if(ccpl_map.getZoom() < 12 || searchResultData.length > 0) {
 
     			var states_with_bounds = state_lat_lon_db.where(function(obj) {
-    				return checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
+    				return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
         		});
 
         		var states_array = [];
@@ -58,8 +57,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         			if(state_wise_device_labels[states_with_bounds[i].name]) {
         				states_array.push(states_with_bounds[i].name);
             			if(!(state_wise_device_labels[states_with_bounds[i].name].isHidden_)) {
-	            			// Hide Label
-							state_wise_device_labels[states_with_bounds[i].name].hide();
+            				hideOpenLayerFeature(state_wise_device_labels[states_with_bounds[i].name]);
             			}
         			}
         		}
@@ -81,10 +79,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 					advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
 					basic_filter_condition = $.trim($("#technology").val()) || $.trim($("#vendor").val()),
 					data_to_plot = [];
-
-        		// if(searchResultData.length > 0) {
-        		// 	data_to_plot = searchResultData;
-        		// } else {
 
         			var filtered_devices = [],
         				current_bound_devices = [];
@@ -130,10 +124,11 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         			if(currentlyPlottedDevices.length === 0) {
 	            		/*Clear all everything from map*/
 						$.grep(allMarkersArray_wmap,function(marker) {
-							var markerLayer = marker.layerReference;
-							marker.style.display = 'none';
-							marker.map = '';
-							markerLayer.redraw();
+							hideOpenLayerFeature(marker);
+							// var markerLayer = marker.layerReference;
+							// marker.style.display = 'none';
+							// marker.map = '';
+							// markerLayer.redraw();
 							// var markerLayer = marker.layerReference;
 							// markerLayer.removeFeatures(marker);
 						});
@@ -159,7 +154,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         			}
 
         			// Call function to plot devices on gmap
-					whiteMapClass.plotDevices_wmaps(inBoundData,"base_station";
+					whiteMapClass.plotDevices_wmaps(inBoundData,"base_station");
 
 					if(searchResultData.length == 0 || ccpl_map.getZoom() === 8) {
 						var polylines = allMarkersObject_wmap['path'],
@@ -170,10 +165,11 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 							var current_line = polylines[key];
 							// If shown
 							if(current_line.map) {
-								var markerLayer = current_line.layerReference;
-								current_line.style.display = 'none';
-								current_line.map = '';
-								markerLayer.redraw();
+								hideOpenLayerFeature(current_line);
+								// var markerLayer = current_line.layerReference;
+								// current_line.style.display = 'none';
+								// current_line.map = '';
+								// markerLayer.redraw();
 							}
 						}
 
@@ -182,14 +178,15 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 							var current_polygons = polygons[key];
 							// If shown
 							if(current_polygons.map) {
-								var markerLayer = current_polygons.layerReference;
-								current_polygons.style.display = 'none';
-								current_polygons.map = '';
-								markerLayer.redraw();
+								hideOpenLayerFeature(current_polygons);
+								// var markerLayer = current_polygons.layerReference;
+								// current_polygons.style.display = 'none';
+								// current_polygons.map = '';
+								// markerLayer.redraw();
 							}
 						}
 					} else {
-						if(mapInstance.getZoom() > 11) {
+						if(ccpl_map.getZoom() > 11) {
 							whiteMapClass.showSubStaionsInBounds();
 							whiteMapClass.showBaseStaionsInBounds();
 							whiteMapClass.showSectorDevicesInBounds();
@@ -201,10 +198,11 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         		// Show points line if exist
         		for(key in line_data_obj) {
         			if(!line_data_obj[key].map) {
-        				var markerLayer = line_data_obj[key].layerReference;
-        				line_data_obj[key].style.display = '';
-        				line_data_obj[key].map = 'current';
-        				markerLayer.redraw();
+        				showOpenLayerFeature(line_data_obj[key]);
+        				// var markerLayer = line_data_obj[key].layerReference;
+        				// line_data_obj[key].style.display = '';
+        				// line_data_obj[key].map = 'current';
+        				// markerLayer.redraw();
         			}
         		}
     		// 8 LEVEL ZOOM CONDITION
@@ -274,7 +272,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 			};
 
 			/*Clear master marker cluster objects*/
-			ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
+			// ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
 
 			var states_with_bounds = state_lat_lon_db.where(function(obj) {
     			return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
@@ -283,14 +281,14 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 			for(var i=states_with_bounds.length;i--;) {
 				if(state_wise_device_labels[states_with_bounds[i].name]) {
 					if(state_wise_device_labels[states_with_bounds[i].name].isHidden_) {
-						whiteMapClass.showOpenLayerFeature(state_wise_device_labels[states_with_bounds[i].name]);
+						showOpenLayerFeature(state_wise_device_labels[states_with_bounds[i].name]);
 					}
 				}
 			}
 
 			state_lat_lon_db.where(function(obj) {
 				if(state_wise_device_labels[obj.name]) {
-					whiteMapClass.showOpenLayerFeature(state_wise_device_labels[obj.name]);
+					showOpenLayerFeature(state_wise_device_labels[obj.name]);
 					return ;
 				}
 			});
@@ -298,7 +296,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 			// Hide points line if exist
     		for(key in line_data_obj) {
     			if(line_data_obj[key].map) {
-    				whiteMapClass.hideOpenLayerFeature(line_data_obj[key]);
+    				hideOpenLayerFeature(line_data_obj[key]);
     			}
     		}
         }

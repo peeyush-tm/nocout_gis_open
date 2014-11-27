@@ -348,26 +348,18 @@ $("#resetSearchForm").click(function(e) {
 function showAdvFilters() {
     /*Show the spinner*/
     showSpinner();
-    
-    if (window.location.pathname.indexOf("white_background") > -1) {
-        $("#advSearchContainerBlock").hide();
-        $("#advFilterContainerBlock").show();
-        advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
-    } else {
-
-        if(!isAdvanceSearch) {
-            resetAdvanceSearch();
-        }
-
-        if(!$("#advSearchContainerBlock").hasClass("hide")) {
-            $("#advSearchContainerBlock").addClass("hide");
-        }
-
-        if($("#advFilterContainerBlock").hasClass("hide")) {
-            $("#advFilterContainerBlock").removeClass("hide");
-        }
-        hideSpinner();
+    if(!isAdvanceSearch) {
+        resetAdvanceSearch();
     }
+
+    if(!$("#advSearchContainerBlock").hasClass("hide")) {
+        $("#advSearchContainerBlock").addClass("hide");
+    }
+
+    if($("#advFilterContainerBlock").hasClass("hide")) {
+        $("#advFilterContainerBlock").removeClass("hide");
+    }
+    hideSpinner();
 }
     
 /*If 'Filter' button of advance filter is clicked*/

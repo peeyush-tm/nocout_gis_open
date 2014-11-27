@@ -32,13 +32,15 @@ var bs_loki_db = [],
 	currentlyPlottedDevices = [],
 	plottedBsIds = [],
 	sector_MarkersArray= [],
-	markersMasterObj= {},
+	markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}},
 	masterMarkersObj= [],
 	bsLatArray = [],
 	bsLonArray = [],
 	ssLatArray = [],
 	ssLonArray = [],
-	 ssLinkArray_filtered = [];
+	ssLinkArray_filtered = [],
+	isFirstTime= 1,
+	isExportDataActive= 0;
 
 var bsDevicesObj = {};
 var tempbsDeviceObj = {};
@@ -58,6 +60,9 @@ var allSSIds = [],
 	total_polled_occurence = 0,
 	nav_click_counter = 0,
 	polled_device_count = {};
+var pollableDevices = [];
+var polled_devices_names= [];
+
 
 var bs_obj= {};
 var isCallCompleted;
@@ -68,53 +73,14 @@ function WhiteMapClass() {
 	/*
 	 *
 	 * Public Variables
-	*/		
-
-		//Live Poll Polygon on off control
+	*/
 		this.livePollingPolygonControl = "";
 	/*
 	 *
 	 * Private Variables
 	*/	
-		var global_this = "";
-
-		var total_count = 0, device_count= 0, limit= 0, loop_count = 0;
-
-		var wmAdvanceFilterClass = "", wmAdvanceSearchClass = "";
-
-		
-		//Variable to Store JSON data of Markers
-		var bs_data_list = [];
-		//Variable to Store All Markers
-		var bs_ss_features_list= [];
-		var filtered_Features = {markers: [], lines: [], sectors: []};
-		var main_devices_marker_features_wmaps = [], filtered_lines_main_devices_marker_features_wmaps= [];
-		var main_lines_sectors_features_wmaps= {'lines': [], 'sectors': []}, filtered_lines_sectors_features = [];
-		var devicesMarkersArray= [];
-		
-
-		var pollableDevices = [];
-		var polled_devices_names= [];
-
-		var hasAdvFilter= 0, hasAdvSearch = 0;
-		//Variable to hold Markers
-		var deviceMarkerObj = {}, cktLinesObj = {}, sectorsObj = {}, cktLinesBsObj = {}, sectorsBsObj= {}, ssAndDeviceArray= [];
-		//Variable to hold device markers currently displayed on map
-		var devices_Marker_On_Map = [], devices_Lines_On_Map = [];
-		//Variable to hold Searched Markers List
-		var searched_markers = [];
-		/*
-		Variables to hold Data which Technologies, State, Cities
-		*/
-		var technology = [], vendor = [], state = [], city = [], bs_name = [], ip = [], cktId = [];
-
-		
-		//Variable flag to start Performance
-		this.startPerformance = false;
-		//Variable flag to stop Performance
-		this.toStartPerformance = false;
-		this.controls = "";
-
+		var global_this = "",
+			total_count = 0, device_count= 0, limit= 0, loop_count = 0;
 
 		/*
 		Marker Spidifier For BS
@@ -219,43 +185,6 @@ function WhiteMapClass() {
 			}
 		}
 
-
-	/**
-	 *
-	 * Gis Performance Section
-	 */
-		
-		function getMarkerInCurrentBound() {
-			var bsMarkersInBound = [];
-			for(var key in bs_obj) {
-				if(bs_obj.hasOwnProperty(key)) {
-					if (bs_obj[key].geometry.getBounds().intersectsBounds(ccpl_map.getExtent())) { 
-						if(bs_obj[key].attributes.isActive  && bs_obj[key].attributes.isActive != 0) {
-							bsMarkersInBound.push(bs_obj[key]['name']);
-						}
-					}
-				}
-			}
-			return bsMarkersInBound;
-		}
-
-
-		/**
-		 * This function show Features[Markers, Lines, Sector, Devices] in currentBounds
-		 */
-		this.showFeatuesInCurrentBounds = function() {
-			
-		}
-
-		function updateBsMarker() {}
-		function createRequestJson() {}
-		function sendAjaxRequest() {}
-		function gisPerformanceStop() {}
-		function gisPerformanceStart() {}
-	/**
-	 *
-	 * End of Gis Performance Section
-	 */
 
 	/**
 	 * 
@@ -1075,7 +1004,8 @@ function WhiteMapClass() {
 			}
 		}
 		/*
-		This function toggles all Station Markers size based on the Value selected in the dropdown.
+		This function toggles all Station Marker
+		s size based on the Value selected in the dropdown.
 		 */
 		this.updateMarkersSize = function(iconSize) {
 			global_this.unSpiderifyBsMarker();
@@ -1557,11 +1487,15 @@ function WhiteMapClass() {
 				            var point = new OpenLayers.Geometry.Point(state_lat_lon_obj.lon, state_lat_lon_obj.lat);
 				            var device_counter_label = new OpenLayers.Feature.Vector(point);
 				            device_counter_label.attributes = {
-				                label: state_wise_device_counters[state]
+				                label: state_wise_device_counters[state],
+				                state: state,
+				                state_param: state_lat_lon_obj,
+				                cursor: "pointer",
+				                title: "Load "+ state+ " Data"
 				            };
+				            device_counter_label.map = 'current';
 				            ccpl_map.getLayersByName('States')[0].addFeatures([device_counter_label]);
 						}
-
 				        state_wise_device_labels[state] = device_counter_label;
 					}
 				} else {
@@ -1578,12 +1512,9 @@ function WhiteMapClass() {
 
 						if(current_state_boundries.length > 0) {
 							for(var z=current_state_boundries.length;z--;) {
-								// latLonArray.push(new google.maps.LatLng(current_state_boundries[z].lat,current_state_boundries[z].lon));
 								latLonArray.push({lat: current_state_boundries[z].lat, lon: current_state_boundries[z].lon});
 							}
 
-							// var state_polygon = new google.maps.Polygon({"path" : latLonArray});
-							// if(google.maps.geometry.poly.containsLocation(bs_point, state_polygon)) {
 							if(isPointInPoly(latLonArray, {lat: lat, lon: lon})) {
 								//Update json with state name
 								dataset[i]['data']['state'] = current_state_name;
@@ -1605,8 +1536,13 @@ function WhiteMapClass() {
 						            var point = new OpenLayers.Geometry.Point(new_lat_lon_obj[0].lon, new_lat_lon_obj[0].lat);
 						            var device_counter_label = new OpenLayers.Feature.Vector(point);
 						            device_counter_label.attributes = {
-						                label: state_wise_device_counters[current_state_name]
+						                label: state_wise_device_counters[current_state_name],
+						                state: current_state_name,
+				                		state_param: state_lat_lon_obj,
+				                		title: "Load "+ current_state_name+ " Data",
+				                		cursor: "pointer",
 						            };
+						            device_counter_label.map = 'current';
 						            ccpl_map.getLayersByName('States')[0].addFeatures([device_counter_label]);
 							        state_wise_device_labels[current_state_name] = device_counter_label;
 								}
@@ -1656,6 +1592,9 @@ function WhiteMapClass() {
 				}
 			}
 
+			ccpl_map.getLayersByName('States')[0].refresh();
+			ccpl_map.getLayersByName('States')[0].redraw();
+
 			if(isDebug) {
 				console.log("State Cluster Plotting End Time :- "+ new Date().toLocaleString());
 				console.log("*******************************************");
@@ -1681,10 +1620,10 @@ function WhiteMapClass() {
 			//Loop through the bs_ss_devices
 			for(var i=0; i< bs_ss_devices.length; i++) {
 				
-				var lon = markerData.data.lon, 
-					lat = markerData.data.lat, 
+				var lon = bs_ss_devices[i].data.lon, 
+					lat = bs_ss_devices[i].data.lat, 
 					icon = base_url+"/static/img/icons/bs.png", 
-					size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height), 
+					size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height);
 				/*Create BS Marker Object*/
 				var bs_marker_object = {
 					position  	       : 	{lat: bs_ss_devices[i].data.lat, lon: bs_ss_devices[i].data.lon},
@@ -1759,15 +1698,14 @@ function WhiteMapClass() {
 							
 								var halfPt = Math.floor(pointsArray.length / (+2));
 
-								var plottedSector = global_this.plotSector_wmap(sectorPoints, sectorCustomInfo);
-									/*Plot sector on map with the retrived points*/
-									whiteMapClass.plotSector_wmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation,rad,azimuth,beam_width);
+								/*Plot sector on map with the retrived points*/
+								whiteMapClass.plotSector_wmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation,rad,azimuth,beam_width);
 
-									startEndObj["startLat"] = pointsArray[halfPt].lat;
-									startEndObj["startLon"] = pointsArray[halfPt].lon;
+								startEndObj["startLat"] = pointsArray[halfPt].lat;
+								startEndObj["startLon"] = pointsArray[halfPt].lon;
 
-									startEndObj["sectorLat"] = pointsArray[halfPt].lat;
-									startEndObj["sectorLon"] = pointsArray[halfPt].lon;
+								startEndObj["sectorLat"] = pointsArray[halfPt].lat;
+								startEndObj["sectorLon"] = pointsArray[halfPt].lon;
 							});
 						// }
 
@@ -1824,35 +1762,35 @@ function WhiteMapClass() {
 
 						(function(sector_Marker) {
 							//here add mouseover event
-							sector_Marker.events.register('mouseover', sector_Marker, function(evt) {
-								setTimeout(function() {
-									var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-										condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+							// sector_Marker.events.register('mouseover', sector_Marker, function(evt) {
+							// 	setTimeout(function() {
+							// 		var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+							// 			condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
-									if(condition1 || condition2) {
-										var pl = $.trim(this.pl) ? this.pl : "N/A",
-											rta = $.trim(this.rta) ? this.rta : "N/A",
-											info_html = '';
+							// 		if(condition1 || condition2) {
+							// 			var pl = $.trim(this.pl) ? this.pl : "N/A",
+							// 				rta = $.trim(this.rta) ? this.rta : "N/A",
+							// 				info_html = '';
 
-										// Create hover infowindow html content
-										info_html += '<table class="table table-responsive table-bordered table-hover">';
-										info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-										info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
-										info_html += '</table>';
+							// 			// Create hover infowindow html content
+							// 			info_html += '<table class="table table-responsive table-bordered table-hover">';
+							// 			info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
+							// 			info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+							// 			info_html += '</table>';
 
-										global_this.openInfoWindow(sector_Marker, info_html);
-									}
-								}, 40);
-							});
-							//here add mouseout event
-							sector_Marker.events.register('mouseout', sector_Marker, function(evt) {
-								var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-									condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+							// 			global_this.openInfoWindow(sector_Marker, info_html);
+							// 		}
+							// 	}, 40);
+							// });
+							// //here add mouseout event
+							// sector_Marker.events.register('mouseout', sector_Marker, function(evt) {
+							// 	var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+							// 		condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
-								if(condition1 || condition2) {
-							    	global_this.closeInfoWindow();
-							    }
-							});
+							// 	if(condition1 || condition2) {
+							//     	global_this.closeInfoWindow();
+							//     }
+							// });
 						}(sector_Marker));
 
 
@@ -1922,43 +1860,40 @@ function WhiteMapClass() {
 
 					    (function(ss_marker) {
 
-					    	ss_marker.events.register('mouseover', ss_marker, function(evt) {
-								setTimeout(function() {
-									var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-										condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+					  //   	ss_marker.events.register('mouseover', ss_marker, function(evt) {
+							// 	setTimeout(function() {
+							// 		var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+							// 			condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
-									if(condition1 || condition2) {
-										var pl = $.trim(this.pl) ? this.pl : "N/A",
-											rta = $.trim(this.rta) ? this.rta : "N/A",
-											info_html = '';
+							// 		if(condition1 || condition2) {
+							// 			var pl = $.trim(this.pl) ? this.pl : "N/A",
+							// 				rta = $.trim(this.rta) ? this.rta : "N/A",
+							// 				info_html = '';
 
-										// Create hover infowindow html content
-										info_html += '<table class="table table-responsive table-bordered table-hover">';
-										info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-										info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
-										info_html += '</table>';
+							// 			// Create hover infowindow html content
+							// 			info_html += '<table class="table table-responsive table-bordered table-hover">';
+							// 			info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
+							// 			info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+							// 			info_html += '</table>';
 
-										global_this.openInfoWindow(ss_marker, info_html);
-									}
-								}, 40);
-							});
-							//here add mouseout event
-							ss_marker.events.register('mouseout', ss_marker, function(evt) {
-								var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-									condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+							// 			global_this.openInfoWindow(ss_marker, info_html);
+							// 		}
+							// 	}, 40);
+							// });
+							// //here add mouseout event
+							// ss_marker.events.register('mouseout', ss_marker, function(evt) {
+							// 	var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+							// 		condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
-								if(condition1 || condition2) {
-							    	global_this.closeInfoWindow();
-							    }
-							});
+							// 	if(condition1 || condition2) {
+							//     	global_this.closeInfoWindow();
+							//     }
+							// });
 
 					    }(ss_marker));
 
-					    markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
-					    markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
-
-					    /*Add the master marker to the global master markers array*/
-				    	masterMarkersObj.push(ss_marker);
+						markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
+				    	markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
 
 				    	allMarkersObject_wmap['sub_station']['ss_'+ss_marker_obj.name] = ss_marker;
 
@@ -2006,6 +1941,9 @@ function WhiteMapClass() {
 						    	ssLinkArray_filtered = ssLinkArray;
 
 						    	allMarkersObject_wmap['path']['line_'+ss_marker_obj.name] = ss_link_line;
+
+						    	markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= ss_link_line;
+								markersMasterObj['LinesName'][String(bs_name)+ ss_name]= ss_link_line;
 
 						    	allMarkersArray_wmap.push(ss_link_line);
 			    			}
@@ -2073,6 +2011,7 @@ function WhiteMapClass() {
 
 					if(response.success == 1) {
 
+						var result = response;
 						//First Time, find how many times Ajax Request is to be sent.
 						if (i === 1) {
 							total_count = response.data.meta.total_count;
@@ -2099,6 +2038,8 @@ function WhiteMapClass() {
 								isCallCompleted = 1;
 								//hide Loading
 								global_this.hideLoading();
+
+								gmap_self.getBasicFilters();
 
 								return;
 							}
@@ -2339,7 +2280,7 @@ function WhiteMapClass() {
 		state_lat_lon_db.insert({"name" : "Lakshadweep","lat" : 10.5700,"lon" : 72.6300});
 		state_lat_lon_db.insert({"name" : "Pondicherry","lat" : 11.9300,"lon" : 79.8300});
 		state_lat_lon_db.insert({"name" : "Dadra And Nagar Haveli","lat" : 20.2700,"lon" : 73.0200});
-
+		isDebug= 1;
 		//Call prototype method createOpenLayerMap() to create White Map and in the callback. Start Ajax Request to get Data.
 		this.createOpenLayerMap(function() {			
 			//start ajax request

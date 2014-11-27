@@ -1210,16 +1210,27 @@ function devicePlottingClass_gmap() {
 		if(isExportDataActive == 0) {
 			var clicked_state = state_obj ? state_obj.name : "",
 				selected_state_devices = [];
-
 			if(clicked_state) {
 				//Zoom in to selected state
-				mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(state_obj.lat,state_obj.lon)));
-				mapInstance.setZoom(8);
+				if(window.location.pathname.indexOf("white_background") > -1) {
+					var bounds = new OpenLayers.Bounds();
+					bounds.extend(new OpenLayers.LonLat(state_obj.lon, state_obj.lat));
+					ccpl_map.zoomToExtent(bounds);
+
+					ccpl_map.zoomTo(8);
+				} else {
+					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(state_obj.lat,state_obj.lon)));
+					mapInstance.setZoom(8);
+				}
 
 				// Hide Clicked state Label
 				if(!(state_wise_device_labels[clicked_state].isHidden_)) {
         			// Hide Label
-					state_wise_device_labels[clicked_state].hide();
+					if(window.location.pathname.indexOf("white_background") > -1) {
+						hideOpenLayerFeature(state_wise_device_labels[clicked_state]);
+					} else {
+						state_wise_device_labels[clicked_state].hide();	
+					}
     			}
 			}
 		}
@@ -3360,6 +3371,7 @@ function devicePlottingClass_gmap() {
 	 * @method getBasicFilters
 	 */
 	this.getBasicFilters = function() {
+		console.log('here');
 		/*Populate City & State*/
 		var state_array = Object.keys(state_city_obj);
 

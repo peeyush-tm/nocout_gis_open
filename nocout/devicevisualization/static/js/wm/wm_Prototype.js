@@ -5,69 +5,118 @@
  */
 WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
-		var format, domEl, layers= {}, that= this;
+	var format, domEl, layers= {}, that= this;
 
-		format = whiteMapSettings.format; 
-		domEl= whiteMapSettings.domElement;		
+	format = whiteMapSettings.format; 
+	domEl= whiteMapSettings.domElement;		
 
-		//Options for our White Map. Add navigation, panZoombar bar and mouse position
-		var wmap_options = { 
-			controls: [
-				new OpenLayers.Control.Navigation({ dragPanOptions: { enableKinetic: true } }),
-				new OpenLayers.Control.PanZoomBar(),
-				new OpenLayers.Control.MousePosition({
-					prefix: whiteMapSettings.latLngPrefixLabel
-				})
-				// new OpenLayers.Control.LayerSwitcher()
-			],
-			//Bounds for our Open layer.
-			maxExtent: new OpenLayers.Bounds(whiteMapSettings.initial_bounds),
-			//Resolution of Open Layer
-			maxResolution: whiteMapSettings.maxResolution,
-			//Projection of Open Layer
-			projection: whiteMapSettings.projection,
-			//Unit of Open Layer
-			units: whiteMapSettings.units
-		};
+	//Options for our White Map. Add navigation, panZoombar bar and mouse position
+	var wmap_options = { 
+		controls: [
+			new OpenLayers.Control.Navigation({ dragPanOptions: { enableKinetic: true } }),
+			new OpenLayers.Control.PanZoomBar(),
+			new OpenLayers.Control.MousePosition({
+				prefix: whiteMapSettings.latLngPrefixLabel
+			}),
+			new OpenLayers.Control.LayerSwitcher()
+		],
+		//Bounds for our Open layer.
+		maxExtent: new OpenLayers.Bounds(whiteMapSettings.initial_bounds),
+		//Resolution of Open Layer
+		maxResolution: whiteMapSettings.maxResolution,
+		//Projection of Open Layer
+		projection: whiteMapSettings.projection,
+		//Unit of Open Layer
+		units: whiteMapSettings.units
+	};
 
-		//Create Open Layer map on '#map' with our wmap_options
-		ccpl_map = new OpenLayers.Map(domEl, wmap_options);
+	//Create Open Layer map on '#map' with our wmap_options
+	ccpl_map = new OpenLayers.Map(domEl, wmap_options);
 
-		//Click a Click Control for OpenLayer
-		var mapClick = new OpenLayers.Control.Click();
-		//Add control to Map
-		ccpl_map.addControl(mapClick);
-		//Activate Click
-		mapClick.activate();
+	//Click a Click Control for OpenLayer
+	var mapClick = new OpenLayers.Control.Click();
+	//Add control to Map
+	ccpl_map.addControl(mapClick);
+	//Activate Click
+	mapClick.activate();
 
-		//Map moveend event
-		ccpl_map.events.register("moveend", ccpl_map, function(e){
-			that.mapIdleCondition();
-			return;
+	//Map moveend event
+	ccpl_map.events.register("moveend", ccpl_map, function(e){
+		that.mapIdleCondition();
+		return;
+	});
+
+	//Create WMS layer to load Map from our geoserver.
+	layers.india_Layer = new OpenLayers.Layer.WMS(
+		"india_Layer", whiteMapSettings.geoserver_url_India, {
+			layers: whiteMapSettings.layer
+		}
+	);
+
+	//Add layer to Map
+	ccpl_map.addLayer(layers.india_Layer);
+
+	/*
+	OpenLayer Vector Layer For Showing State Labels
+	 */
+		//State Label Default Style
+		var stateLabelStyle = new OpenLayers.Style({
+			externalGraphic: base_url+"/static/js/OpenLayers/img/state_cluster.png",
+			fontSize: "8px",
+			fontWeight: clustererSettings.fontWeight,
+			fontColor: clustererSettings.fontColor,
+			fontFamily: clustererSettings.fontFamily,
+			//get cursor from feature attribute cursor property
+			cursor: "${cursor}",
+			graphicWidth: "65",
+			graphicHeight: "65",
+			//get title from feature attribute title property
+			title: "${title}",
+			//get label for feature attribute label property
+			label: "${label}"
 		});
 
-		//Create WMS layer to load Map from our geoserver.
-		layers.india_Layer = new OpenLayers.Layer.WMS(
-			"india_Layer", whiteMapSettings.geoserver_url_India, {
-				layers: whiteMapSettings.layer
-			}
-		);
 
-		//Add layer to Map
-		ccpl_map.addLayer(layers.india_Layer);
+		//Create OpenLayers StyleMap. Set default to the stateLabelStyle
+		var stateLayerStyleMap = new OpenLayers.StyleMap({
+			'default': stateLabelStyle
+		});
 
-		layers.stateLabelLayer = new OpenLayers.Layer.Vector("States", {
-                styleMap: new OpenLayers.StyleMap({'default':{
-                	externalGraphic: base_url+"/static/js/OpenLayers/img/state_cluster.png",
-                	graphicWidth: 50,
-                	graphicHeight: 50,
-                    label : "${count}",
-                }})
-            });
+		//Create OpenLayer Vector Layer for States Label and set it styleMap to the one created above.
+		layers.stateLabelLayer = new OpenLayers.Layer.Vector("States", {styleMap: stateLayerStyleMap});
 
+		//Add Layer to the Map
 		ccpl_map.addLayer(layers.stateLabelLayer);
 
-		//Create a vector Layer for Search Markers
+		//Create a OpenLayer Control to enable and listen Feature click event on States layer
+		// var stateClickCtrl = new OpenLayers.Control.SelectFeature(
+		// 	[layers.stateLabelLayer], {
+		// 		clickout: true,
+		// 		eventListeners: {
+		// 			//on feature click
+		// 			featurehighlighted: function(e) {
+		// 				var feature = e.feature;
+		// 				console.log(feature);
+		// 				gmap_self.state_label_clicked(feature.attributes.state_param);
+		// 				return false;
+		// 			}
+		// 		}
+		// 	}
+		// );
+
+		// //Add control to the map
+		// ccpl_map.addControl(stateClickCtrl);
+
+		// //And activate it
+		// stateClickCtrl.activate();
+	/*
+	End of OpenLayer Vector Layer For Showing State Labels
+	 */
+
+	 /*
+	OpenLayer Vector Layer For Showing Search Markers
+	 */
+		//OpenLayers Vector Layer for Search Marker
 		layers.searchMarkerLayer = new OpenLayers.Layer.Vector("Search Layer", {
             styleMap: new OpenLayers.StyleMap({
                 "default": new OpenLayers.Style(OpenLayers.Util.applyDefaults({
@@ -81,75 +130,76 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
             })
         });
 
-		//Add layer to the map
-		ccpl_map.addLayer(layers.searchMarkerLayer);
+        ccpl_map.addLayer(layers.searchMarkerLayer);
+	/*
+	End of OpenLayer Vector Layer For Showing Search Markers
+	 */
 
-		layers.searchMarkerLayer.setVisibility(false);
-
+	 /*
+	End of OpenLayer Vector Layer For Showing KML Layer
+	 */
 		// KML 	FILE CODE
-		 // var kmlUrl = base_url+'/static/doc.kml';
-		 // var groundOverlay = new OpenLayers.Layer.Vector("KML2", {
-		 // 	renderers: location.search.indexOf('Canvas') >= 0 ? ['Canvas', 'SVG', 'VML'] : ['SVG', 'VML', 'Canvas'],
-		 // 	projection: ccpl_map.displayProjection,
-		 // 	strategies: [new OpenLayers.Strategy.Fixed()],
-		 // 	protocol: new OpenLayers.Protocol.HTTP({
-		 // 		url: kmlUrl,
-		 // 		format: new OpenLayers.Format.KML({
-		 // 			maxDepth: 1,
-		 // 			baseUrl: kmlUrl,
-		 // 			extractStyles: true,
-		 // 			extractAttributes: true
-		 // 		})
-		 // 	})
-		 // });
-
-		 // ccpl_map.addLayer(groundOverlay);
-		
-		// var kmlFileExample = new OpenLayers.Layer.Vector("kml layer", {
-		// 	// projection: new OpenLayers.Projection("EPSG:4326"),
-		// 	sphericalMercator: true,
+		// var kmlUrl = base_url+'/static/doc.kml';
+		// var groundOverlay = new OpenLayers.Layer.Vector("KML2", {
+		// 	renderers: location.search.indexOf('Canvas') >= 0 ? ['Canvas', 'SVG', 'VML'] : ['SVG', 'VML', 'Canvas'],
+		// 	projection: ccpl_map.displayProjection,
 		// 	strategies: [new OpenLayers.Strategy.Fixed()],
 		// 	protocol: new OpenLayers.Protocol.HTTP({
-		// 		url: base_url+'/static/doc.kml',
+		// 		url: kmlUrl,
 		// 		format: new OpenLayers.Format.KML({
+		// 			maxDepth: 1,
+		// 			baseUrl: kmlUrl,
 		// 			extractStyles: true,
-		// 			extractAttributes: true,
-		// 			maxDepth: 10
+		// 			extractAttributes: true
 		// 		})
-		// 	}),
-		// 	visible: true
+		// 	})
 		// });
-		// kmlFileExample.setVisibility(true);
-		// ccpl_map.addLayer(kmlFileExample);
 
-		//Event listener of Features (Line, Sector, Devices)
-		// var featureEventListener = {
-		// 	featureclick: function(e) { 
-		// 		that.onFeatureSelect(e); 
-		// 		return false; 
-		// 	}
-		// };
+		// ccpl_map.addLayer(groundOverlay);
+	/*
+	End of OpenLayer Vector Layer For Showing KML Layer
+	 */
 
+
+	 /*
+	OpenLayer Vector Layer For Showing Wimax-PMP Sectors Polygon
+	 */
 		//Create a Vector Layer which will hold Sectors
 		layers.sectorsLayer = new OpenLayers.Layer.Vector('Sectors');
 
 		//Add Sectors Layer to the Map
 		ccpl_map.addLayer(layers.sectorsLayer);
-
+	/*
+	End of OpenLayer Layer Vector For Showing Wimax-PMP Sectors Polygon
+	 */
+	
+	 /*
+	OpenLayer Vector Layer For Showing Lines
+	 */
 		//Create a Vector Layer which will hold Lines
 		layers.linesLayer = new OpenLayers.Layer.Vector('Lines');
 
-		layers.linesLayer.setVisibility(false);
-
-		//Add Lines Layer to the map
+		//Add Lines Layer to the Map
 		ccpl_map.addLayer(layers.linesLayer);
+	/*
+	End of OpenLayer Layer Vector For Showing Lines
+	 */
+	
+	 /*
+	OpenLayer Vector Layer For Showing Sector Devices
+	 */
+		//Create a Vector Layer which will hold Sectors
+		layers.markerDevicesLayer = new OpenLayers.Layer.Vector('Devices');
 
-		//vector Layer for Devices Marker
-		layers.markerDevicesLayer = new OpenLayers.Layer.Vector("Devices");
-
-		//Add layer to the map
+		//Add Devices Layer to the Map
 		ccpl_map.addLayer(layers.markerDevicesLayer);
-
+	/*
+	End of OpenLayer Layer Vector For Showing Sector Devices
+	 */
+	
+	 /*
+	OpenLayer Vector Layer For Showing BS and SS
+	 */
 		var clusterStyle, styleMap, strategy;
 
 		//Marker Clusterer Styling
@@ -245,63 +295,129 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//Add layer to the map
 		ccpl_map.addLayer(layers.markersLayer);
-
-		//Click control for Marker Layer feature to call markerClicked()
+	 /*
+	End of OpenLayer Vector Layer For Showing BS and SS
+	 */
+	
+	/*
+	Select Control for BS, SS, Devices, Lines and Sectors Layer[Click event]
+	 */
+		//Select Control for Openlayers layer.
 		var selectCtrl = new OpenLayers.Control.SelectFeature(
-			[layers.markersLayer, layers.markerDevicesLayer, layers.linesLayer, layers.sectorsLayer], {
-				clickout: true,
-				eventListeners: {
-					//on feature click
-					featurehighlighted: function(feature) {
-						that.layerFeatureClicked(feature);
-						selectCtrl.unselectAll();
-						return false;
-					}
-				}
+			[layers. stateLabelLayer,layers.markersLayer, layers.markerDevicesLayer, layers.linesLayer, layers.sectorsLayer], 
+			{
+				clickout: true
+				// eventListeners: {
+				// 	//on feature click
+				// 	featurehighlighted: function(feature) {
+				// 		//trigger layerFeatureClicked()
+				// 		that.layerFeatureClicked(feature);
+				// 		//remove selection to hide highlighted class
+				// 		selectCtrl.unselectAll();
+				// 		return false;
+				// 	}
+				// }
 			}
 		);
 
 		//Add control to the map
 		ccpl_map.addControl(selectCtrl);
 
-		//And activate it
+		//Activate Control
 		selectCtrl.activate();
 
-		//vector Layer for Live Poll Polygon, before Adding feature, remove any previous feature created.
+		layers.stateLabelLayer.events.on({
+			"featureselected": function(e) {
+				var feature = e.feature;
+				gmap_self.state_label_clicked(feature.attributes.state_param);
+			}
+		});
+
+		layers.markersLayer.events.on({
+			"featureselected": function(e) {
+				that.layerFeatureClicked(feature);
+				selectCtrl.unselectAll();
+				return false;
+			}
+		});
+
+		layers.markerDevicesLayer.events.on({
+			"featureselected": function(e) {
+				that.layerFeatureClicked(feature);
+				selectCtrl.unselectAll();
+				return false;
+			}
+		});
+
+		layers.linesLayer.events.on({
+			"featureselected": function(e) {
+				that.layerFeatureClicked(feature);
+				selectCtrl.unselectAll();
+				return false;
+			}
+		});
+
+		layers.sectorsLayer.events.on({
+			"featureselected": function(e) {
+				that.layerFeatureClicked(feature);
+				selectCtrl.unselectAll();
+				return false;
+			}
+		});
+	 /*
+	End of Select Control for BS, SS, Devices, Lines and Sectors Layer[Click event]
+	 */
+
+	/*
+	OpenLayer Vector Layer For Creating Polygon[for Live Polling or Export Data]
+	 */
+		//OpenLayers Vector Layer for creating Polygons [Live POll and Export Data]
 		layers.livePollFeatureLayer= new OpenLayers.Layer.Vector("Polling", {
 			eventListeners: {
+				//Before adding new feature
 				"beforefeatureadded": function() {
+					//If already a feature is present on the layer
 					if(this.features.length) {
+						//remove previous all features.
 						this.destroyFeatures();						
 					}
 				}
 			}
 		});
 
+		//Add layer to the map
 		ccpl_map.addLayer(layers.livePollFeatureLayer);
 
-		//Live Poll Polygon Control
+		//Polygon Control which will be used to Draw Polygon on the map. Call livePollingPolygonAdded() when polygon is created.
 		var polygonControl = new OpenLayers.Control.DrawFeature(layers.livePollFeatureLayer, OpenLayers.Handler.Polygon, {
 			eventListeners: {
 				"featureadded": this.livePollingPolygonAdded
 			}
 		});
 
+		//set this control to a public variable
 		this.livePollingPolygonControl = polygonControl;
 
+		//add control to the map
 		ccpl_map.addControl(polygonControl);
-		
-		var panel = new OpenLayers.Control.Panel();
+	/*
+	End of OpenLayer Vector Layer For Creating Polygon[for Live Polling or Export Data]
+	 */
 
-		panel.addControls([new OpenLayers.Control.FullScreen()]);
-		
-		ccpl_map.addControl(panel);
-		
-		//Map set Extend to our bounds
-		ccpl_map.zoomToExtent(new OpenLayers.Bounds(whiteMapSettings.initial_bounds));
+	//Get Control Panels
+	var panel = new OpenLayers.Control.Panel();
 
-		//return
-		callback();
+	//Add Full Screen Control Panel to it
+	panel.addControls([new OpenLayers.Control.FullScreen()]);
+	
+	//Show Panel on the map.
+	ccpl_map.addControl(panel);
+	
+	//Map set Extend to our bounds
+	ccpl_map.zoomToExtent(new OpenLayers.Bounds(whiteMapSettings.initial_bounds));
+
+	//return
+	callback();
 }
 
 /**
@@ -603,7 +719,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
  * @return {[type]}         [description]
  */
 WhiteMapClass.prototype.checkIfPointLiesInside = function(point, polygon) {
-	var mapBounds = []:
+	var mapBounds = [];
 	//get map extent
 	var mapBoundsArray = ccpl_map.getExtent().toArray();
 
@@ -639,10 +755,15 @@ WhiteMapClass.prototype.checkIfPointLiesInside = function(point, polygon) {
  * @return {[type]}         [description]
  */
 function showOpenLayerFeature(feature) {
-	var markerLayer = feature.layerReference;
-	feature.style.display = '';
-	feature.map = 'current';
-	markerLayer.redraw();
+	if(!feature.map) {
+		if(!feature.style) {
+			feature.style = {};
+		}
+		feature.style.display = '';
+		feature.map = 'current';
+		// var markerLayer = feature.layerReference;
+		// markerLayer.redraw();
+	}
 }
 
 /**
@@ -651,8 +772,13 @@ function showOpenLayerFeature(feature) {
  * @return {[type]}         [description]
  */
 function hideOpenLayerFeature(feature) {
-	var markerLayer = feature.layerReference;
-	feature.style.display = 'none';
-	feature.map = '';
-	markerLayer.redraw();
+	if(feature.map) {
+		if(!feature.style) {
+			feature.style = {};
+		}
+		feature.style.display = 'none';
+		feature.map = '';
+	}
+	// var markerLayer = feature.layerReference;
+	// markerLayer.redraw();
 }
