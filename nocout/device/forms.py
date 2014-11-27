@@ -1,6 +1,6 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency, DeviceTypeService
+    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency, DeviceTypeService, DeviceTypeServiceDataSource
 from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory,  BaseInlineFormSet
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
@@ -556,7 +556,8 @@ class BaseDeviceTypeServiceFormset(BaseInlineFormSet):
 
         super(BaseDeviceTypeServiceFormset, self).__init__(*args, **kwargs)
         for form in self.forms:
-            form.fields['service'].empty_label = 'Select'
+            pass
+            # form.fields['service'].empty_label = 'Select'
 
     def clean(self):
         for form in self.forms:
@@ -642,9 +643,14 @@ class DeviceTypeForm(forms.ModelForm):
 widgets = {
            'service': forms.Select(attrs= {'class' : 'form-control'}),
            'parameter': forms.Select(attrs= {'class' : 'form-control'}),
+           'critical': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'warning': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'service_data_sources': forms.Select(attrs= {'class' : 'form-control'}),
     }
 DeviceTypeServiceCreateFormset = inlineformset_factory(DeviceType, DeviceTypeService, formset=BaseDeviceTypeServiceFormset,
     fields=('service', 'parameter'), extra=1, widgets=widgets, can_delete=True)
+DeviceTypeServiceDataSourceCreateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource, formset=BaseDeviceTypeServiceFormset,
+    extra=1, widgets=widgets,)
 
 
 # ******************************************* Device Type *******************************************
