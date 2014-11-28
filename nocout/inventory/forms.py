@@ -979,6 +979,86 @@ class IconSettingsForm(forms.ModelForm):
             logger.info(e.message)
         return self.cleaned_data
 
+#*********************************** ServiceThresholdConfiguration *****************************
+class ServiceThresholdConfigurationForm(forms.ModelForm):
+
+    """
+    Class Based View  Service Threshold Configuration Model form to update and create.
+    """
+    def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(ServiceThresholdConfigurationForm, self).__init__(*args, **kwargs)
+        #self.fields['live_polling_template'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            field.widget.attrs.update({'style': 'width:30%'})
+            if name.endswith('start'):
+                field.widget.attrs.update({'placeholder': 'Start'})
+            else:
+                field.widget.attrs.update({'placeholder': 'End'})
+
+            field.widget.attrs.update({'class': 'form-control col-md-4'})
+            # if field.widget.attrs.has_key('class'):
+            #     if isinstance(field.widget, forms.widgets.Select):
+            #         field.widget.attrs['class'] += ' col-md-12'
+            #         field.widget.attrs['class'] += ' select2select'
+            #     else:
+            #         field.widget.attrs['class'] += ' form-control'
+            # else:
+            #     if isinstance(field.widget, forms.widgets.Select):
+            #         field.widget.attrs.update({'class': 'col-md-12 select2select'})
+            #     else:
+            #         field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = ThresholdConfiguration
+        exclude = ('name', 'alias', 'live_polling_template')
+
+#*********************************** ServiceLivePollingSettings ********************************
+class ServiceLivePollingSettingsForm(forms.ModelForm):
+    """
+    Class Based View ServiceLivePollingSettings Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(ServiceLivePollingSettingsForm, self).__init__(*args, **kwargs)
+        self.fields['technology'].empty_label = 'Select'
+        self.fields['service'].empty_label = 'Select'
+        self.fields['data_source'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = LivePollingSettings
+        exclude = ('name', 'alias')
 
 #*********************************** LivePollingSettings ***************************************
 class LivePollingSettingsForm(forms.ModelForm):
@@ -1047,35 +1127,6 @@ class LivePollingSettingsForm(forms.ModelForm):
             logger.info(e.message)
         return self.cleaned_data
 
-widgets = {
-           'range1_start': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'Start'}),
-           'range1_end': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'End'}),
-           'range2_start': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'Start'}),
-           'range2_end': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'End'}),
-           'range3_start': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'Start'}),
-           'range3_end': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'End'}),
-           'range4_start': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'Start'}),
-           'range4_end': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'End'}),
-           'range5_start': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'Start'}),
-           'range5_end': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'End'}),
-           'range6_start': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'Start'}),
-           'range6_end': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'End'}),
-           'range7_start': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'Start'}),
-           'range7_end': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'End'}),
-           'range8_start': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'Start'}),
-           'range8_end': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'End'}),
-           'range9_start': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'Start'}),
-           'range9_end': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'End'}),
-           'range10_start': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'Start'}),
-           'range10_end': forms.TextInput(attrs= {'class' : 'form-control col-md-4', 'style':'width:45%', 'placeholder': 'End'}),
-    }
-fields = ('range1_start', 'range1_end', 'range2_start', 'range2_end', 'range3_start' ,'range3_end',
-           'range4_start', 'range4_end', 'range5_start', 'range5_end', 'range6_start', 'range6_end',
-           'range7_start', 'range7_end', 'range8_start', 'range8_end', 'range9_start', 'range9_end',
-           'range10_start', 'range10_end',)
-
-ThresholdConfigurationCreateFormSet = inlineformset_factory(LivePollingSettings, ThresholdConfiguration,
-    fields=fields ,widgets=widgets, extra=1, can_delete=True)
 
 #*********************************** LivePollingSettings ***************************************
 class ThresholdConfigurationForm(forms.ModelForm):
@@ -1142,13 +1193,6 @@ class ThresholdConfigurationForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-
-widgets = {
-            'is_global': forms.CheckboxInput(attrs= {'class' : 'form-control'}),
-}
-
-ServiceThematicSettingsCreateFormSet = inlineformset_factory(ThresholdConfiguration, ThematicSettings,
-    fields=('is_global', 'icon_settings'), widgets=widgets, extra=1, can_delete=True)
 
 
 #*********************************** LivePollingSettings ***************************************
@@ -1228,7 +1272,7 @@ class ServiceThematicSettingsForm(forms.ModelForm):
             logger.info(e.message)
 
         super(ServiceThematicSettingsForm, self).__init__(*args, **kwargs)
-        self.fields['threshold_template'].empty_label = 'Select'
+        #self.fields['threshold_template'].empty_label = 'Select'
         # if self.instance.pk:
         #     self.fields['threshold_template'].widget.attrs['disabled'] = 'disabled'
         for name, field in self.fields.items():
@@ -1248,7 +1292,7 @@ class ServiceThematicSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = ThematicSettings
-        exclude =['icon_settings', 'user_profile']
+        exclude =['icon_settings', 'user_profile', 'threshold_template']
 
     def clean_name(self):
         """
