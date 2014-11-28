@@ -1,0 +1,175 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+
+{% block css %}
+	<!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+{% endblock %}
+{% block content_title %}Edit Thematic Settings{% endblock %}
+{% block content_description %}Edit thematic settings{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i>THEMATIC SETTINGS : {{ object.name }}</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/thematic_settings/')"><i class="fa fa-times"></i> Cancel</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function(){
+
+            function toTitleCase(str) {
+
+            return str.replace(/(?:^|\s)\w/g, function(match) { return match.toUpperCase() });
+
+            }
+
+            var thematic_setting_name= $('#id_name').val();
+            var threshold_template_id= $('#id_threshold_template').val();
+            $.ajax({
+                url:'{% url "get_range_and_icon_for_thematic_setting" %}',
+                data:{ 'thematic_setting_name': thematic_setting_name,
+                       'update':true,
+                       'threshold_template_id': threshold_template_id },
+                dataType:"json",
+                success:function(result){
+                    response= result;
+                    if (result.data.objects.range_list != undefined && result.data.objects.range_list.length !=0  ){
+                            // Remove any element present before appending any other element to it.
+                            $('#id_threshold_template').parent().parent().parent().not(':last').nextAll('div').remove();
+
+                            //select box
+                            var select_box='<div class="col-sm-9">' +
+                                       '<div class="col-md-8">' +
+                                       '<select class="col-md-12 (1)" id="id_icon_settings_(0)" name="icon_settings(0)">'+
+                                       '<option value="">Select</option>';
+
+                            //range label
+                            for(var i=0;i<result.data.objects.range_list.length;i++){
+                                html=''
+                                var select= select_box;
+                                select= select.replace('(1)', 'update'+ result.data.objects.range_list[i].split(' ')[1].toString());
+                                select= select.split('(0)').join(result.data.objects.range_list[i].split(' ')[1].toString());
+                                //if (result.data.objects.icon_details_selected){
+                                    selected_range_value= result.data.objects.icon_details_selected[result.data.objects.range_list[i]];
+
+                                        for(var j=0;j<result.data.objects.icon_details.length;j++) {
+                                            var selected = "";
+                                            image_path= result.data.objects.icon_details[j].upload_image;
+                                            if($.trim(selected_range_value) === $.trim(image_path)) {
+                                                selected = "selected";
+                                            } else {
+                                                selected = "";
+                                            }
+                                            select+='<option value='+ image_path +' '+selected+'>' + result.data.objects.icon_details[j].name + '</option>';
+                                        }
+                                        //selected_range_value_last_index= select.lastIndexOf(selected_range_value) + selected_range_value.length;
+                                        //select=[select.slice(0, selected_range_value_last_index), " selected='selected'", select.slice(selected_range_value_last_index)].join('');
+
+                                //}
+
+                                html+='<div class="form-group"><label for="id_range"' +
+                                      'class="col-sm-3 control-label">'
+                                       + toTitleCase(result.data.objects.range_list[i].toString()) +
+                                      '</label>'+ select + '</div>'
+
+                                $('#id_threshold_template').parent().parent().parent().after(html);
+
+                            }
+                            select_box+='</select></div></div>';
+
+
+
+                            //Loop through all select div
+                            var divForm= $("#id_threshold_template").parent().parent().parent();
+                            $(divForm.nextAll()).each(function(i, el) {
+                                var selectEl= $(el).find('select');
+
+                                function formatResult(item) {
+                                    if(item.id) {
+                                        var id_is = item.id;
+                                        if (id_is.indexOf('uploaded') !=-1){
+                                            id_is="/media/"+ id_is;
+                                        }else{
+                                            id_is="/static/img/"+ id_is;
+                                        }
+
+                                        return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
+                                    } else {
+                                        return item.text;
+                                    }
+                                }
+
+                                function formatSelection(item) {
+                                    if(item.id) {
+                                        var id_is = item.id;
+                                        if (id_is.indexOf('uploaded') !=-1){
+                                            id_is="/media/"+ id_is
+                                        }else{
+                                            id_is="/static/img/"+ id_is;
+                                        }
+
+                                        return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
+                                    } else {
+                                        return item.text;
+                                    }
+                                }
+
+                                // $(selectEl).select2("destroy");
+                                $(selectEl).select2({
+                                    formatResult: formatResult,
+                                    formatSelection: formatSelection
+                                });
+                            });
+
+
+                    }else if (result.data.objects.range_list ==undefined || result.data.objects.range_list.length == 0 ){
+
+                        $('#id_threshold_template').parent().parent().parent().nextAll('div').remove()
+                    }
+
+            }//Success ends
+        });
+
+
+        });
+    </script>
+{% endblock %}
