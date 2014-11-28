@@ -2264,7 +2264,7 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         form_class = self.get_form_class()
         form = ServiceThematicSettingsForm(self.request.POST, instance=self.object)
         threshold_configuration_form = ServiceThresholdConfigurationForm(self.request.POST, instance=self.object.threshold_template)
-        live_polling_settings_form = ServiceLivePollingSettingsForm(self.request.POST, instance=self.object.threshold_template)
+        live_polling_settings_form = ServiceLivePollingSettingsForm(self.request.POST, instance=self.object.threshold_template.live_polling_template)
         if (form.is_valid() and threshold_configuration_form.is_valid() and live_polling_settings_form.is_valid()):
             return self.form_valid(form, threshold_configuration_form, live_polling_settings_form)
         else:
