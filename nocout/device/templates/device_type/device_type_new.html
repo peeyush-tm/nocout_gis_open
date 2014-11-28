@@ -137,7 +137,7 @@
                         row_inline.children().slice(2).remove()
 
                         row_inline.append(service.service_attributes)
-                        row_inline.children().slice(2).find("select").attr('disabled', true);
+                        row_inline.children().slice(2).find("select").attr('readonly', true);
                     },
                     error : function(xhr,errmsg,err) {
                         console.log(xhr.status + ": " + xhr.responseText);
