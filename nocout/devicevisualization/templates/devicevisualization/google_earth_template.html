@@ -21,9 +21,12 @@
     <span class="date-range pull-right">
         <div class="btn-group">
             <ul class="list-unstyled list-inline gis_page_setting">
-                <!-- <li class="alert alert-block alert-info">
-                    <b>Status</b><br/> <span id="gis_status_txt"></span>
-                </li> -->
+                <li>
+                    <input type="radio" name="thematic_type" style="vertical-align:sub;" value="ping"> Ping Thematics
+                </li>
+                <li>
+                    <input type="radio" name="thematic_type" style="vertical-align:sub;" value="normal" checked=""> Service Thematics
+                </li>
                 <li>
                     <button type="button" id="advSearchBtn" class="btn btn-sm btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
                                 data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
@@ -398,8 +401,42 @@
                                 <div class="divide-20 clearfix"></div>
                                 <div class="template_container"></div>
                                 <div class="divide-10"></div>
+                                <div id="timeInterval_container" class="hide">
+                                    <select name="poll_interval" id="poll_interval" class="form-control">
+                                        <option value="">Select Poll Interval</option>
+                                        <option value="10">10 Seconds</option>
+                                        <option value="20">20 Seconds</option>
+                                        <option value="30">30 Seconds</option>
+                                        <option value="60">60 Seconds</option>
+                                    </select>
+                                    <div class="divide-10"></div>
+                                    <select name="poll_maxInterval" id="poll_maxInterval" class="form-control">
+                                        <option value="">Select Maximum Interval</option>
+                                        <option value="1">1 Minute</option>
+                                        <option value="2">2 Minute</option>
+                                        <option value="3">3 Minute</option>
+                                        <option value="4">4 Minute</option>
+                                    </select>
+                                </div>
+                                <div class="divide-10"></div>
                                 <div class="">
-                                    <button type="button" class="btn btn-primary hide" data-complete-text="Poll Now" data-loading-text="Please Wait..." id="fetch_polling">Poll Now <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i></button>
+                                    <button type="button" class="btn btn-primary hide" data-complete-text="Fetch" data-loading-text="Please Wait... <i class='fa fa-spinner fa fa-spin'> </i>" id="fetch_polling" title="Fetch">
+                                        Fetch
+                                    </button>
+                                    <div class="pull-right">
+                                        <button class="btn btn-success play_pause_btns hide" data-complete-text="<i class='fa fa-play'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Play" id="play_btn">
+                                            <i class="fa fa-play"> </i>
+                                        </button>
+                                        <button class="btn btn-warning play_pause_btns hide" data-complete-text="<i class='fa fa-pause'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Pause" id="pause_btn">
+                                            <i class="fa fa-pause"> </i>
+                                        </button>
+                                        <button class="btn btn-danger play_pause_btns hide" data-complete-text="<i class='fa fa-stop'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Stop" id="stop_btn">
+                                            <i class="fa fa-stop"> </i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="clearfix"></div>
+                                <div>
                                     <button type="button" class="btn btn-primary pull-right hide" data-complete-text="Tabular View" data-loading-text="Please Wait..." id="polling_tabular_view"><i class="fa fa-table"></i> Tabular View</button>
                                 </div>
                                 <div class="divide-20 clearfix"></div>
@@ -413,7 +450,6 @@
                                 </div>
                                 <div class="clearfix"></div>
                                 <div class="devices_container"></div>
-
                             </div>
                         </div>
                     </div>

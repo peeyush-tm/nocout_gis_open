@@ -68,13 +68,17 @@ var main_devices_data_gmaps = [],
 	ssLinkArray = [],
 	ssLinkArray_filtered = [],
 	lastSearchedPt = {},
-	pollableDevices = [],
     data_for_filters = [],
     sector_MarkersArray= [],
     sectorMarkersMasterObj= {},
     sectorMarkerConfiguredOn= [],
     place_markers = [],
-    allSSIds = [],
+	currentDevicesObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}},
+	exportDataPolygon = {},
+	inventory_bs_ids = [];
+
+/* Live Polling Variables */
+var allSSIds = [],
 	polygonSelectedDevices = [],
 	currentPolygon = {},
 	polled_devices_names = [],
@@ -83,9 +87,13 @@ var main_devices_data_gmaps = [],
 	total_polled_occurence = 0,
 	nav_click_counter = 0,
 	polled_device_count = {},
-	currentDevicesObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}},
-	exportDataPolygon = {},
-	inventory_bs_ids = [];
+	pollableDevices = [],
+	pollCallingTimeout = "",
+	remainingPollCalls = 0,
+	pollingInterval = 10,
+	pollingMaxInterval = 1,
+	isPollingPaused = 0,
+	isPerfCallStopped = 1;
 
 /*Tools Global Variables*/
 var is_line_active = 0,
@@ -514,6 +522,9 @@ function devicePlottingClass_gmap() {
 	            	/* When zoom level is greater than 8 show lines */
 	            	if(mapInstance.getZoom() > 7) {
 
+	            		// Reset Flag
+            			isPerfCallStopped = 0;
+
 	            		if(mapInstance.getZoom() < 12 || searchResultData.length > 0) {
 
 	            			var states_with_bounds = state_lat_lon_db.where(function(obj) {
@@ -676,17 +687,19 @@ function devicePlottingClass_gmap() {
 							gmap_self.showSectorPolygonInBounds();
 	            		}
 
-	            		// Start performance calling after 1.5 Second
-						setTimeout(function() {
-		    				var bs_id_list = getMarkerInCurrentBound();
-			            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
-			            		if(recallPerf != "") {
-			            			clearTimeout(recallPerf);
-			            			recallPerf = "";
-			            		}
-			            		gisPerformanceClass.start(bs_id_list);
-			            	}
-		            	},500);
+	            		if(isPerfCallStopped === 0) {
+		            		// Start performance calling after 1.5 Second
+							setTimeout(function() {
+			    				var bs_id_list = getMarkerInCurrentBound();
+				            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
+				            		if(recallPerf != "") {
+				            			clearTimeout(recallPerf);
+				            			recallPerf = "";
+				            		}
+				            		gisPerformanceClass.start(bs_id_list);
+				            	}
+			            	},500);
+	            		}
 
 		            } else if(mapInstance.getZoom() <= 7) {
 		            	
@@ -695,6 +708,8 @@ function devicePlottingClass_gmap() {
 	            			clearTimeout(recallPerf);
 	            			recallPerf = "";
 	            		}
+            			// Set Flag
+            			isPerfCallStopped = 1;
 
 						// Hide perf info label
 					    for (var x = 0; x < labelsArray.length; x++) {
@@ -969,7 +984,7 @@ function devicePlottingClass_gmap() {
 
 					setTimeout(function() {
 						var current_zoom_level = mapInstance.getZoom();
-    					if(current_zoom_level > 7) {
+    					if(current_zoom_level > 7 && isPerfCallStopped == 0) {
 							var bs_list = getMarkerInCurrentBound();
 			            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
 			            		if(recallPerf != "") {
@@ -1006,7 +1021,7 @@ function devicePlottingClass_gmap() {
 			gmap_self.showStateWiseData_gmap([]);
 			setTimeout(function() {
 				var current_zoom_level = mapInstance.getZoom();
-				if(current_zoom_level > 7) {
+				if(current_zoom_level > 7 && isPerfCallStopped == 0) {
 					var bs_list = getMarkerInCurrentBound();
 	            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
 	            		if(recallPerf != "") {
@@ -1360,12 +1375,10 @@ function devicePlottingClass_gmap() {
 					            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
 
 					            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
-					                // return true;
 					                isCorrect = true;
 					                break;
 					            }
 							} else {
-								// return true;
 				                isCorrect = true;
 				                break;
 							}
@@ -1386,7 +1399,6 @@ function devicePlottingClass_gmap() {
 						            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
 
 						            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
-						                // return true;
 						                isCorrect = true;
 				                		break;
 						            }
@@ -1441,7 +1453,7 @@ function devicePlottingClass_gmap() {
 			console.log("********************************");
 		}
 
-		return filtered_Data;
+		return JSON.parse(JSON.stringify(filtered_Data));
 	};
 
 	/**
@@ -3479,7 +3491,7 @@ function devicePlottingClass_gmap() {
 		/*Restart Perf call as per new data*/
 		setTimeout(function() {
 			var current_zoom_level = mapInstance.getZoom();
-			if(current_zoom_level > 7) {
+			if(current_zoom_level > 7 && isPerfCallStopped == 0) {
 	    		var bs_list = getMarkerInCurrentBound();
 	        	if(bs_list.length > 0 && isCallCompleted == 1) {
 	        		gisPerformanceClass.start(bs_list);
@@ -3609,40 +3621,6 @@ function devicePlottingClass_gmap() {
 	 */
 	this.applyAdvanceFilters = function() {
 
-		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
-			vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
-			city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
-			state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
-			frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
-			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
-			filterObj = {
-				"technology" : $.trim($("#technology option:selected").text()),
-				"vendor" : $.trim($("#vendor option:selected").text()),
-				"state" : $.trim($("#state option:selected").text()),
-				"city" : $.trim($("#city option:selected").text())
-			},
-			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-			isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City';
-
-		var data_to_plot = [],
-			filtered_data = [],
-			advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-			basic_filter_condition = $.trim($("#technology").val()) || $.trim($("#vendor").val());
-
-		if(isAdvanceFilterApplied || isBasicFilterApplied) {
-        	filtered_data = gmap_self.getFilteredData_gmap();
-    	} else {
-    		filtered_data = all_devices_loki_db.data;
-    	}
-
-		if(advance_filter_condition || basic_filter_condition) {
-        	data_to_plot = gmap_self.getFilteredBySectors(filtered_data);
-    	} else {
-    		data_to_plot = filtered_data;
-    	}
-
-    	// console.log(data_to_plot);
-
         /*Hide the spinner*/
         hideSpinner();
 
@@ -3659,50 +3637,24 @@ function devicePlottingClass_gmap() {
         /*Enable the refresh button*/
         $("#resetFilters").button("loading");
 
-        if(data_to_plot.length > 0) {
+    	if(window.location.pathname.indexOf("googleEarth") > -1) {
+    		/************************Google Earth Code***********************/
+	        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+			lookAt.setLatitude(21.0000);
+			lookAt.setLongitude(78.0000);
+			lookAt.setRange(5492875.865539902);
+			// Update the view in Google Earth 
+			ge.getView().setAbstractView(lookAt);
 
-        	if(window.location.pathname.indexOf("googleEarth") > -1) {
-        		/************************Google Earth Code***********************/
+    	} else {
+            /*Clear Existing Labels & Reset Counters*/
+            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+            mapInstance.setZoom(5);
+    	}
 
-        		/*Clear all the elements from google earth*/
-		        earth_instance.clearEarthElements();
-		        earth_instance.clearStateCounters();
-
-
-		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
-				lookAt.setLatitude(21.0000);
-				lookAt.setLongitude(78.0000);
-				lookAt.setRange(5492875.865539902);
-				// lookAt.setZoom
-				// Update the view in Google Earth 
-				ge.getView().setAbstractView(lookAt); 
-				
-				data_for_filters_earth = data_to_plot;
-
-				isApiResponse = 0;
-				// Load all counters
-				earth_instance.showStateWiseData_earth(data_to_plot);
-
-        	} else {
-	            /*Clear Existing Labels & Reset Counters*/
-	            gmap_self.clearStateCounters();
-	            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
-	            mapInstance.setZoom(5);
-	            data_for_filters = data_to_plot;
-	            isApiResponse = 0;
-	            gmap_self.showStateWiseData_gmap(data_to_plot);        		
-        	}
-
-        } else {
-            $.gritter.add({
-                // (string | mandatory) the heading of the notification
-                title: 'GIS : Advance Filters',
-                // (string | mandatory) the text inside the notification
-                text: 'No data available for applied filters.',
-                // (bool | optional) if you want it to fade out on its own or just sit there
-                sticky: false
-            });
-        }
+    	isApiResponse = 0;
+        // update state counters
+		gmap_self.updateStateCounter_gmaps();
 	};
 
 	
@@ -4469,7 +4421,7 @@ function devicePlottingClass_gmap() {
 		if(isAdvanceFilterApplied || isBasicFilterApplied) {
 			filtered_data = gmap_self.getFilteredData_gmap();	
 		} else {
-			filtered_data = all_devices_loki_db.data;
+			filtered_data = all_devices_loki_db.data.length > 0 ? JSON.parse(JSON.stringify(all_devices_loki_db.data)) : [];
 		}
 			
 		if(advance_filter_condition || basic_filter_condition) {
@@ -4588,6 +4540,18 @@ function devicePlottingClass_gmap() {
 	    	$("#tech_send").button("complete");
 			$("#sideInfo .panel-body .col-md-12 .template_container").html("");
 
+			if(!($("#timeInterval_container").hasClass("hide"))) {
+				$("#timeInterval_container").addClass("hide");
+			}
+
+			if(!($(".play_pause_btns").hasClass("hide"))) {
+				$(".play_pause_btns").addClass("hide");
+			}
+
+			if(($(".play_pause_btns").hasClass("disabled"))) {
+				$(".play_pause_btns").removeClass("disabled");
+			}
+
 			if(!($("#fetch_polling").hasClass("hide"))) {
 				$("#fetch_polling").addClass("hide");
 			}
@@ -4612,8 +4576,17 @@ function devicePlottingClass_gmap() {
 			if($("#clearPolygonBtn").hasClass("hide")) {
 				$("#clearPolygonBtn").removeClass("hide");
 			}
+
+			/*Disable poll interval & max interval dropdown*/
+            $("#poll_interval").removeAttr("disabled");
+            $("#poll_maxInterval").removeAttr("disabled");
+
+            /*Select default value*/
+            $("#poll_interval").val($("#poll_interval option:first").val());
+            $("#poll_maxInterval").val($("#poll_maxInterval option:first").val());
+
     	} else {
-    		bootbox.alert("Please zoom in for live poll devices.There are too many devices.");
+    		bootbox.alert("<p style='position:relative;z-index:9999;'>Please zoom in for live poll devices.There are too many devices.</p>");
     		$("#clearPolygonBtn").trigger('click');
     	}
     };
@@ -4665,6 +4638,18 @@ function devicePlottingClass_gmap() {
     					if($("#fetch_polling").hasClass("hide")) {
     						$("#fetch_polling").removeClass("hide");
     					}
+
+    					if(($("#timeInterval_container").hasClass("hide"))) {
+							$("#timeInterval_container").removeClass("hide");
+						}
+
+						if(($(".play_pause_btns").hasClass("hide"))) {
+							$(".play_pause_btns").removeClass("hide");
+						}
+
+						if(($(".play_pause_btns").hasClass("disabled"))) {
+							$(".play_pause_btns").removeClass("disabled");
+						}
 
     					$("#tech_send").button("complete");
 
@@ -4772,7 +4757,7 @@ function devicePlottingClass_gmap() {
 							} else {
 
 								var devicesTemplate = "<div class='deviceWellContainer'>";
-
+								var num_counter = 0;
 								for(var i=0;i<polygonSelectedDevices.length;i++) {
 									
 									var new_device_name = "";
@@ -4810,13 +4795,16 @@ function devicePlottingClass_gmap() {
 										}
 
 										if(polled_device_count[devices_counter] <= 1) {
-											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].sector_ip+'</h5>';
+											num_counter++;
+											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+num_counter+'.) '+polygonSelectedDevices[i].sector_ip+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
 											devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
 											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
 										}
 
-										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].ss_ip+'</h5>';
+										num_counter++;
+
+										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+num_counter+'.) '+polygonSelectedDevices[i].ss_ip+'</h5>';
 										devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 										devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
@@ -4833,8 +4821,8 @@ function devicePlottingClass_gmap() {
 												device_end_txt = "Near End";
 												point_name = polygonSelectedDevices[i].sectorName
 											}
-
-											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+(i+1)+'.) '+point_name+'</h5>';
+											num_counter++;
+											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+num_counter+'.) '+point_name+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 											devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
@@ -4853,6 +4841,18 @@ function devicePlottingClass_gmap() {
     					
     					$("#tech_send").button("complete");
     					$("#sideInfo .panel-body .col-md-12 .template_container").html("");
+
+    					if(!($("#timeInterval_container").hasClass("hide"))) {
+							$("#timeInterval_container").addClass("hide");
+						}
+
+						if(!($(".play_pause_btns").hasClass("hide"))) {
+							$(".play_pause_btns").addClass("hide");
+						}
+
+						if(($(".play_pause_btns").hasClass("disabled"))) {
+							$(".play_pause_btns").removeClass("disabled");
+						}
 
     					if(!($("#fetch_polling").hasClass("hide"))) {
     						$("#fetch_polling").addClass("hide");
@@ -4873,6 +4873,18 @@ function devicePlottingClass_gmap() {
     				
     				$("#tech_send").button("complete");
     				$("#sideInfo .panel-body .col-md-12 .template_container").html("");
+
+    				if(!($("#timeInterval_container").hasClass("hide"))) {
+						$("#timeInterval_container").addClass("hide");
+					}
+
+					if(!($(".play_pause_btns").hasClass("hide"))) {
+						$(".play_pause_btns").addClass("hide");
+					}
+
+					if(($(".play_pause_btns").hasClass("disabled"))) {
+						$(".play_pause_btns").removeClass("disabled");
+					}
 
     				if(!($("#fetch_polling").hasClass("hide"))) {
 						$("#fetch_polling").addClass("hide");
@@ -4895,228 +4907,259 @@ function devicePlottingClass_gmap() {
     };
 
     /**
-	 * This function fetch the polling value for selected devices
-	 * @method getDevicesPollingData
+	 * This function fetch the polling value for selected devices periodically as per the selected intervals.
+	 * @method startDevicePolling_gmap
 	 */
-    this.getDevicesPollingData = function() {
+    this.startDevicePolling_gmap = function() {
+    	if(remainingPollCalls > 0) {
+			if(isPollingPaused == 0) {
+				// Call function to fetch polled data for selected devices
+				gmap_self.getPollingData_gmap(function(response) {
+					pollCallingTimeout = setTimeout(function() {
+						remainingPollCalls--;
+						gmap_self.startDevicePolling_gmap();
+					},pollingInterval);
+				});
+			} else {
+				if($("#play_btn").hasClass("disabled")) {
+	                $("#play_btn").removeClass("disabled");
+	            }
+	    		clearTimeout(pollCallingTimeout);
+			}
+    	} else {
+    		if($("#play_btn").hasClass("disabled")) {
+                $("#play_btn").removeClass("disabled");
+            }
+    		clearTimeout(pollCallingTimeout);
+    	}
+    };
+
+    /**
+	 * This function calls getPollingData_gmap() to fetch polled data for selected devices once.
+	 * @method fetchDevicesPollingData
+	 */
+    this.fetchDevicesPollingData = function() {
 
     	if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
 
-    		var service_type = $("#isPing")[0].checked ? "ping" : "other";
+    		$("#fetch_polling").button("loading");
 
-    		$("#getDevicesPollingData").button("loading");
-
-    		/*Disable service templates dropdown*/
-    		$("#lp_template_select").attr("disabled","disabled");
-
-			var selected_lp_template = $("#lp_template_select").val();
-
-            // start spinner
-            if($("#fetch_spinner").hasClass("hide")) {
-				$("#fetch_spinner").removeClass("hide");
+			if(!($(".play_pause_btns").hasClass("disabled"))) {
+				$(".play_pause_btns").addClass("disabled");
 			}
 
-	    	$.ajax({
-				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
-				// url : base_url+"/"+"static/services.json",
-				success : function(results) {
-					var result = "";
+			// Call function to fetch polled data for selected devices
+    		gmap_self.getPollingData_gmap(function(response) {
+    			// console.log(response);
+    			if(($(".play_pause_btns").hasClass("disabled"))) {
+					$(".play_pause_btns").removeClass("disabled");
+				}
+    		});
 
-					if(typeof results === 'string') {
-						result = JSON.parse(results);
-					} else {
-						result = results;
+    	} else {
+    		bootbox.alert("Please select devices & polling template first.");
+    	}
+    };
+
+    /**
+	 * This function fetch the polled data for selected devices.
+	 * @method getPollingData_gmap
+	 */
+    this.getPollingData_gmap = function(callback) {
+
+    	var service_type = $("#isPing")[0].checked ? "ping" : "other";
+
+		/*Disable service templates dropdown*/
+		$("#lp_template_select").attr("disabled","disabled");
+
+		var selected_lp_template = $("#lp_template_select").val();
+
+    	$.ajax({
+			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
+			// url : base_url+"/"+"static/services.json",
+			success : function(results) {
+				var result = "";
+
+				if(typeof results === 'string') {
+					result = JSON.parse(results);
+				} else {
+					result = results;
+				}
+				
+				if(result.success == 1) {
+
+					/*Remove 'text-info' class from all li's*/
+					if($(".deviceWellContainer div div ul li")) {
+						$(".deviceWellContainer div div ul li").removeClass("text-info");
 					}
-					
-					if(result.success == 1) {
 
-						$("#getDevicesPollingData").button("complete");
+					if($(".devices_container").hasClass("hide")) {
+						$(".devices_container").removeClass("hide");
+					}
+					var hasPolledInfo = true;
+					for(var i=allSSIds.length;i--;) {
 
-						/*Remove 'text-info' class from all li's*/
-						if($(".deviceWellContainer div div ul li")) {
-							$(".deviceWellContainer div div ul li").removeClass("text-info");
+						var new_device_name = "";
+						if(allSSIds[i] && allSSIds[i].indexOf(".") != -1) {
+							new_device_name = allSSIds[i].split('.');
+							new_device_name = new_device_name.join('-');
+						} else {
+							new_device_name = allSSIds[i];
 						}
 
-                        // stop spinner
-                        if(!($("#fetch_spinner").hasClass("hide"))) {
-                            $("#fetch_spinner").addClass("hide");
-                        }
+						if(result.data.devices[allSSIds[i]] != undefined) {
 
-						if($(".devices_container").hasClass("hide")) {
-							$(".devices_container").removeClass("hide");
-						}
-						var hasPolledInfo = true;
-						for(var i=allSSIds.length;i--;) {
+							if(hasPolledInfo) {
+								if($("#polling_tabular_view").hasClass("hide")) {
+					    			$("#polling_tabular_view").removeClass("hide");
+					    		}
 
-							var new_device_name = "";
-							if(allSSIds[i] && allSSIds[i].indexOf(".") != -1) {
-								new_device_name = allSSIds[i].split('.');
-								new_device_name = new_device_name.join('-');
-							} else {
-								new_device_name = allSSIds[i];
+					    		/*Remove hide class to navigation container on polling widget*/
+								if($("#navigation_container").hasClass("hide")) {
+									$("#navigation_container").removeClass("hide");
+								}
+								hasPolledInfo = false;
 							}
 
-							if(result.data.devices[allSSIds[i]] != undefined) {
+							var dateObj = new Date(),
+								current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+								final_chart_data = [];
+							
+							if($("#pollVal_"+new_device_name+" li").length == 0) {
 
-								if(hasPolledInfo) {
-									if($("#polling_tabular_view").hasClass("hide")) {
-						    			$("#polling_tabular_view").removeClass("hide");
-						    		}
+								var fetchValString = "";
+								fetchValString += "<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")  <input type='hidden' name='chartVal_"+new_device_name+"' id='chartVal_"+new_device_name+"' value='"+result.data.devices[allSSIds[i]].value+"'/></li>";
 
-						    		/*Remove hide class to navigation container on polling widget*/
-									if($("#navigation_container").hasClass("hide")) {
-										$("#navigation_container").removeClass("hide");
-									}
-									hasPolledInfo = false;
-								}
+								$("#pollVal_"+new_device_name).append(fetchValString);
+								/*Sparkline Chart Data*/
+								final_chart_data.push((+result.data.devices[allSSIds[i]].value));
+							
+							} else {
 
-								var dateObj = new Date(),
-									current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
-									final_chart_data = [];
-								
-								if($("#pollVal_"+new_device_name+" li").length == 0) {
+								var	string_val = [];
 
-									var fetchValString = "";
-									fetchValString += "<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")  <input type='hidden' name='chartVal_"+new_device_name+"' id='chartVal_"+new_device_name+"' value='"+result.data.devices[allSSIds[i]].value+"'/></li>";
+								$("#chartVal_"+new_device_name).val($("#chartVal_"+new_device_name).val()+","+result.data.devices[allSSIds[i]].value);
 
-									$("#pollVal_"+new_device_name).append(fetchValString);
-									/*Sparkline Chart Data*/
-									final_chart_data.push((+result.data.devices[allSSIds[i]].value));
-								
-								} else {
+								string_val = $("#chartVal_"+new_device_name).val().split(",");
 
-									var	string_val = [];
+								/*Create integer array from fetched values for sparkline chart*/
+								var chart_data = string_val.map(function(item) {
+								    return parseInt(item, 10);
+								});
 
-									$("#chartVal_"+new_device_name).val($("#chartVal_"+new_device_name).val()+","+result.data.devices[allSSIds[i]].value);
-
-									string_val = $("#chartVal_"+new_device_name).val().split(",");
-
-									/*Create integer array from fetched values for sparkline chart*/
-									var chart_data = string_val.map(function(item) {
-									    return parseInt(item, 10);
-									});
-
-									$("#pollVal_"+new_device_name).append("<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> , (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")</li>");
-									/*Sparkline Chart Data*/
-									final_chart_data = chart_data;
-								}
+								$("#pollVal_"+new_device_name).append("<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> , (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")</li>");
+								/*Sparkline Chart Data*/
+								final_chart_data = chart_data;
+							}
 
 
-								/*Plot sparkline chart with the fetched polling value*/
-								$("#sparkline_"+new_device_name).sparkline(final_chart_data, {
-							        type: "line",
-							        lineColor: "blue",
-							        spotColor : "orange",
-							        defaultPixelsPerValue : 10
-							    });
+							/*Plot sparkline chart with the fetched polling value*/
+							$("#sparkline_"+new_device_name).sparkline(final_chart_data, {
+						        type: "line",
+						        lineColor: "blue",
+						        spotColor : "orange",
+						        defaultPixelsPerValue : 10
+						    });
 
-								var marker_name = "",
-									sector_ip = "";
+							var marker_name = "",
+								sector_ip = "";
 
-								for(var x=0;x<polygonSelectedDevices.length;x++) {
-									if(polygonSelectedDevices[x].device_name === allSSIds[i]) {
-										marker_name = polygonSelectedDevices[x].name
-										if(polygonSelectedDevices[x].pointType === 'sub_station') {
-											sector_ip = polygonSelectedDevices[x].sector_ip ? polygonSelectedDevices[x].sector_ip : "";
-										} else {
-											sector_ip = polygonSelectedDevices[x].sectorName ? polygonSelectedDevices[x].sectorName : "";
-										}
+							for(var x=0;x<polygonSelectedDevices.length;x++) {
+								if(polygonSelectedDevices[x].device_name === allSSIds[i]) {
+									marker_name = polygonSelectedDevices[x].name
+									if(polygonSelectedDevices[x].pointType === 'sub_station') {
+										sector_ip = polygonSelectedDevices[x].sector_ip ? polygonSelectedDevices[x].sector_ip : "";
+									} else {
+										sector_ip = polygonSelectedDevices[x].sectorName ? polygonSelectedDevices[x].sectorName : "";
 									}
 								}
+							}
 
-								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon;
-								// var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
-								// var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png",
-								var ss_marker = allMarkersObject_gmap['sub_station']['ss_'+marker_name],
-									sector_marker = allMarkersObject_gmap['sector_device']['sector_'+sector_ip],
-									marker_polling_obj = {
-										"device_name" : allSSIds[i],
-										"polling_icon" : newIcon,
-										"polling_time" : current_time,
-										"polling_value" : result.data.devices[allSSIds[i]].value,
-										"ip": ""
-									};
+							var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon;
+							// var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
+							// var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png",
+							var ss_marker = allMarkersObject_gmap['sub_station']['ss_'+marker_name],
+								sector_marker = allMarkersObject_gmap['sector_device']['sector_'+sector_ip],
+								marker_polling_obj = {
+									"device_name" : allSSIds[i],
+									"polling_icon" : newIcon,
+									"polling_time" : current_time,
+									"polling_value" : result.data.devices[allSSIds[i]].value,
+									"ip": ""
+								};
 
-								if(polled_devices_names.indexOf(allSSIds[i]) == -1) {
-									polled_devices_names.push(allSSIds[i]);
-								}
-								
-								if(!complete_polled_devices_icon[allSSIds[i]]) {
-									complete_polled_devices_icon[allSSIds[i]] = [];
-								}
-								complete_polled_devices_icon[allSSIds[i]].push(newIcon);
-								
-								/*Update the marker icons*/
-								if(ss_marker) {
-									ss_marker.setOptions({
-										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
-									});
-									marker_polling_obj.ip = ss_marker.ss_ip;
-								} else if(sector_marker) {
-									sector_marker.setOptions({
-										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
-									});
-									marker_polling_obj.ip = sector_marker.sectorName;
-								}
+							if(polled_devices_names.indexOf(allSSIds[i]) == -1) {
+								polled_devices_names.push(allSSIds[i]);
+							}
+							
+							if(!complete_polled_devices_icon[allSSIds[i]]) {
+								complete_polled_devices_icon[allSSIds[i]] = [];
+							}
+							complete_polled_devices_icon[allSSIds[i]].push(newIcon);
+							
+							/*Update the marker icons*/
+							if(ss_marker) {
+								ss_marker.setOptions({
+									"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+								});
+								marker_polling_obj.ip = ss_marker.ss_ip;
+							} else if(sector_marker) {
+								sector_marker.setOptions({
+									"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+								});
+								marker_polling_obj.ip = sector_marker.sectorName;
+							}
 
-								complete_polled_devices_data.push(marker_polling_obj);
+							complete_polled_devices_data.push(marker_polling_obj);
 
-								/*total Polled Occurence*/
-								total_polled_occurence = complete_polled_devices_icon[allSSIds[i]].length;
+							/*total Polled Occurence*/
+							total_polled_occurence = complete_polled_devices_icon[allSSIds[i]].length;
 
-								if(complete_polled_devices_icon[allSSIds[i]] && complete_polled_devices_icon[allSSIds[i]].length <= 1) {
-									$("#navigation_container button").addClass('disabled');
-								} else if(complete_polled_devices_icon[allSSIds[i]] && complete_polled_devices_icon[allSSIds[i]].length > 1) {
-									$("#navigation_container button#previous_polling_btn").removeClass('disabled');
-									$("#navigation_container button#next_polling_btn").addClass('disabled');
-									/*Update previous counter with number of polled occurences*/
-									nav_click_counter = total_polled_occurence;
-								}
+							if(complete_polled_devices_icon[allSSIds[i]] && complete_polled_devices_icon[allSSIds[i]].length <= 1) {
+								$("#navigation_container button").addClass('disabled');
+							} else if(complete_polled_devices_icon[allSSIds[i]] && complete_polled_devices_icon[allSSIds[i]].length > 1) {
+								$("#navigation_container button#previous_polling_btn").removeClass('disabled');
+								$("#navigation_container button#next_polling_btn").addClass('disabled');
+								/*Update previous counter with number of polled occurences*/
+								nav_click_counter = total_polled_occurence;
+							}
 
-							} // End of for loop
-						}
-					} else {
-
-						$("#getDevicesPollingData").button("complete");
-
-						// stop spinner
-	                    if(!($("#fetch_spinner").hasClass("hide"))) {
-							$("#fetch_spinner").addClass("hide");
-						}
-
-						$.gritter.add({
-				            // (string | mandatory) the heading of the notification
-				            title: 'Live Polling - Error',
-				            // (string | mandatory) the text inside the notification
-				            text: result.message,
-				            // (bool | optional) if you want it to fade out on its own or just sit there
-				            sticky: false
-				        });
+						} // End of for loop
 					}
-				},
-				error : function(err) {
-
-                    $("#getDevicesPollingData").button("complete");
-
-                    // stop spinner
-                    if(!($("#fetch_spinner").hasClass("hide"))) {
-						$("#fetch_spinner").addClass("hide");
-					}
+					// callback with true
+					callback(true);
+				} else {
 
 					$.gritter.add({
 			            // (string | mandatory) the heading of the notification
 			            title: 'Live Polling - Error',
 			            // (string | mandatory) the text inside the notification
-			            text: err.statusText,
+			            text: result.message,
 			            // (bool | optional) if you want it to fade out on its own or just sit there
 			            sticky: false
 			        });
-				}
-			});
 
-    	} else {
-    		bootbox.alert("Please select devices & polling template first.");
-    	}
+					// callback with false
+			        callback(false);
+				}
+			},
+			error : function(err) {
+
+				$.gritter.add({
+		            // (string | mandatory) the heading of the notification
+		            title: 'Live Polling - Error',
+		            // (string | mandatory) the text inside the notification
+		            text: err.statusText,
+		            // (bool | optional) if you want it to fade out on its own or just sit there
+		            sticky: false
+		        });
+		        // callback with false
+		        callback(false);
+			},
+			complete : function() {
+				$("#fetch_polling").button("complete");
+			}
+		});
     };
 
     /**
@@ -5320,6 +5363,14 @@ function devicePlottingClass_gmap() {
     	/*Enable 'Reset' button*/
     	$("#resetFilters").button("complete");
 
+    	/*Disable poll interval & max interval dropdown*/
+        $("#poll_interval").removeAttr("disabled");
+        $("#poll_maxInterval").removeAttr("disabled");
+        
+        /*Select default value*/
+        $("#poll_interval").val($("#poll_interval option:first").val());
+        $("#poll_maxInterval").val($("#poll_maxInterval option:first").val());
+
 		/*Reset isPollingActive flag*/
     	isPollingActive = 0;
 
@@ -5335,7 +5386,7 @@ function devicePlottingClass_gmap() {
 		polled_device_count = {};
 
 		var current_zoom_level = mapInstance.getZoom();
-		if(current_zoom_level > 7) {
+		if(current_zoom_level > 7 && isPerfCallStopped == 0) {
 			/*Restart performance calling*/
 	    	gisPerformanceClass.restart();
     	}
@@ -6436,7 +6487,7 @@ function devicePlottingClass_gmap() {
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 1;
 	 	
-		if(current_zoom_level > 7) {
+		if(current_zoom_level > 7 && isPerfCallStopped == 0) {
 		 	var bs_list = getMarkerInCurrentBound();
 	    	if(bs_list.length > 0 && isCallCompleted == 1) {
 	    		if(recallPerf != "") {
@@ -6445,6 +6496,10 @@ function devicePlottingClass_gmap() {
 	    		}
 	    		gisPerformanceClass.start(bs_list);
 	    	}
+    	} else {
+    		clearTimeout(recallPerf);
+            recallPerf = "";
+            current_bs_list = [];
     	}
 	 };
 
@@ -6470,7 +6525,8 @@ function devicePlottingClass_gmap() {
 	 	} else {
 	 		current_zoom_level = mapInstance.getZoom();
 	 	}
-		if(current_zoom_level > 7) {
+
+		if(current_zoom_level > 7 && isPerfCallStopped == 0) {
 		 	var bs_list = getMarkerInCurrentBound();
 	    	if(bs_list.length > 0 && isCallCompleted == 1) {
 	    		if(recallPerf != "") {
@@ -6479,6 +6535,10 @@ function devicePlottingClass_gmap() {
 	    		}
 	    		gisPerformanceClass.start(bs_list);
 	    	}
+    	} else {
+    		clearTimeout(recallPerf);
+            recallPerf = "";
+            current_bs_list = [];
     	}
 
 	 };

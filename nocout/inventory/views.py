@@ -35,7 +35,7 @@ from user_group.models import UserGroup
 from user_profile.models import UserProfile
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm, CircuitL2ReportForm
-from device.models import Country, State, City, Device
+from device.models import Country, State, City, Device, DeviceType
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from user_profile.models import UserProfile
 import xlrd
@@ -1829,7 +1829,7 @@ class LivePollingSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, De
     required_permissions = ('inventory.delete_livepollingsettings',)
 
 
-#**************************************** ThresholdConfiguration *********************************************
+# **************************************** ThresholdConfiguration *********************************************
 class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render ThresholdConfiguration List Page.
@@ -1837,7 +1837,6 @@ class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
     model = ThresholdConfiguration
     template_name = 'threshold_configuration/threshold_configuration_list.html'
     required_permissions = ('inventory.view_thresholdconfiguration',)
-
 
     def get_context_data(self, **kwargs):
         """
@@ -1849,7 +1848,7 @@ class ThresholdConfigurationList(PermissionsRequiredMixin, ListView):
             {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'auto'},
             ]
         user_id = self.request.user.id
-        #if user is superadmin or gisadmin
+        # if user is superadmin or gisadmin
         if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
@@ -3281,7 +3280,7 @@ class DownloadSelectedBSInventory(View):
             inventory_wb.save(response)
         except Exception as e:
             logger.info(e.message)
-        # ***************************** Saving Excel End **********************************
+        # ***************************** Saving Excel (End) **********************************
 
         return response
 
@@ -3751,7 +3750,6 @@ class DownloadSelectedBSInventory(View):
         # insert 'ptp bh' rows in result dictionary
         result['ptp_bh'] = ptp_bh_rows if ptp_bh_rows else ""
 
-
         return result
 
     def get_selected_pmp_inventory(self, base_station, sector):
@@ -4158,7 +4156,6 @@ class DownloadSelectedBSInventory(View):
 
         # insert 'pmp sm' rows in result dictionary
         result['pmp_sm'] = pmp_sm_rows if pmp_sm_rows else ""
-
 
         return result
 
