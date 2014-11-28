@@ -3201,6 +3201,9 @@ class DownloadSelectedBSInventory(View):
             logger.info("Problem in creating excel rows. Exception: ", e.message)
 
         # ***************************** Wimax BS *******************************
+        # remove duplicate dictionaries from wimax bs list
+        wimax_bs_rows = remove_duplicate_dict_from_list(wimax_bs_rows)
+
         # wimax bs excel rows
         wimax_bs_excel_rows = []
         for val in wimax_bs_rows:
@@ -3212,6 +3215,8 @@ class DownloadSelectedBSInventory(View):
                     temp_list.append("")
                     logger.info(e.message)
             wimax_bs_excel_rows.append(temp_list)
+
+        print "************************ WIMAX BS ROWS - ", wimax_bs_rows
 
         # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
         ws_wimax_bs = inventory_wb.add_sheet("Wimax BS")
@@ -3750,6 +3755,7 @@ class DownloadSelectedBSInventory(View):
         # insert 'ptp bh' rows in result dictionary
         result['ptp_bh'] = ptp_bh_rows if ptp_bh_rows else ""
 
+        print "****************************** ptp (result) - ", result
         return result
 
     def get_selected_pmp_inventory(self, base_station, sector):
@@ -4156,6 +4162,8 @@ class DownloadSelectedBSInventory(View):
 
         # insert 'pmp sm' rows in result dictionary
         result['pmp_sm'] = pmp_sm_rows if pmp_sm_rows else ""
+
+        print "****************************** pmp (result) - ", result
 
         return result
 
@@ -4575,4 +4583,199 @@ class DownloadSelectedBSInventory(View):
         # insert 'wimax ss' rows in result dictionary
         result['wimax_ss'] = wimax_ss_rows if wimax_ss_rows else ""
 
+        print "****************************** wimax (result) - ", result
+
         return result
+
+
+def remove_duplicate_dict_from_list(input_list=None):
+    """ Remove duplicate dictionaries from list of dictionaries
+
+        :Parameters:
+            - 'input_list' (list) - list of dictionaries for e.g.
+                                        [
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            },
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            },
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            }
+                                        ]
+
+        :Returns:
+           - 'result_list' (list) - list of dictionaries containing unique dictionaries for e.g.
+                                        [
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            }
+                                        ]
+    """
+
+    # list of dictionaries to be returned as a result
+    result_list = []
+
+    # temporary set containing dictionaries values in tuples for e.g
+    # set([((key, value), (key, value), (key, value)), ((key, value), (key, value), (key, value))]
+
+    temp_set = set()
+
+    # loop through input list (list of dictionaries which needs to be filtered)
+    for d in input_list:
+        # t is set of dictionary values tuple for e.g
+        # ((key, value), (key, value), (key, value), (key, value))
+        # (('City', u'Kolkata'), ('Antenna Height', 29.0), ('BH Circuit ID', u'COPF-571'), ('PE IP', u'192.168.216.37'))
+        t = tuple(d.items())
+        if t not in temp_set:
+            # adding tuple t to 'temp_set'
+            temp_set.add(t)
+            # append dictionary 'd' to 'result_list'
+            result_list.append(d)
+
+    return result_list
