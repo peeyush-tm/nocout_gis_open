@@ -222,7 +222,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
             			clearTimeout(recallPerf);
             			recallPerf = "";
             		}
-            		gisPerformanceClass.start(bs_id_list);
+            		// gisPerformanceClass.start(bs_id_list);
             	}
         	},500);
 

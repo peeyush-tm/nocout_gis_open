@@ -62,7 +62,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//State Label Default Style
 		var stateLabelStyle = new OpenLayers.Style({
 			externalGraphic: base_url+"/static/js/OpenLayers/img/state_cluster.png",
-			fontSize: "8px",
+			fontSize: clustererSettings.fontSize,
 			fontWeight: clustererSettings.fontWeight,
 			fontColor: clustererSettings.fontColor,
 			fontFamily: clustererSettings.fontFamily,
@@ -73,7 +73,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			//get title from feature attribute title property
 			title: "${title}",
 			//get label for feature attribute label property
-			label: "${label}"
+			label: "${label}",
+			display: "${display}"
 		});
 
 
@@ -640,7 +641,7 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 		sWidth = 2;
 	}
 
-	var linearRing = new OpenLayers.Geometry.LinearRing(pointsList);
+	var linearRing = new OpenLayers.Geometry.LinearRing(polyPathArray);
 
 	var sector = new OpenLayers.Geometry.Polygon([linearRing]);
 

@@ -158,6 +158,24 @@ $("#resetFilters").click(function(e) {
 
         $("#resetFilters").button("loading");
 
+        var city_option = "";
+        city_option = "<option value=''>Select City</option>";
+
+        for(var i=all_cities_array.length;i--;) {
+            city_option += "<option value='"+i+1+"'>"+all_cities_array[i]+"</option>";
+        }
+
+        $("#city").html(city_option);
+
+        var vendor_option = "";
+        vendor_option = "<option value=''>Select Vendor</option>";
+
+        for(var i=all_vendor_array.length;i--;) {
+            vendor_option += "<option value='"+i+1+"'>"+all_vendor_array[i]+"</option>";
+        }
+
+        $("#vendor").html(vendor_option);
+
         /*Reset The basic filters dropdown*/
         $("#technology").val($("#technology option:first").val());
         $("#vendor").val($("#vendor option:first").val());
@@ -166,10 +184,6 @@ $("#resetFilters").click(function(e) {
         /*Reset search txt box*/
         $("#google_loc_search").val("");
         $("#lat_lon_search").val("");
-
-        $("#vendor option").each(function(i, el) {
-            $(el).show();
-        });
         
         isCallCompleted = 1;/*Remove this call if server call is started on click of reset button*/
 
@@ -202,11 +216,17 @@ $("#resetFilters").click(function(e) {
             // Load all counters
             earth_instance.showStateWiseData_earth(all_devices_loki_db.data);
         } else if(window.location.pathname.indexOf("white_background") > -1) {
-            whiteMapClass.hideAllFeatures();
+            /*Reset filter object variable*/
+            appliedFilterObj_wmaps = {};
 
-            data_for_filter_wmap = main_devices_data_wmap;
+            /*Clear Existing Labels & Reset Counters*/
+            whiteMapClass.clearStateCounters_wmaps();
 
-            showWmapFilteredData(main_devices_data_wmap);
+            isApiResponse = 0;
+
+            ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+            // Load all counters
+            networkMapInstance.updateStateCounter_gmaps();
         } else {
 
             /*Reset filter object variable*/
@@ -370,37 +390,35 @@ $("#setAdvFilterBtn").click(function(e) {
 
     /*Reset advance filter status flag*/
     hasAdvFilter = 1;
-    if(window.location.pathname.indexOf("white_background") > -1) {
-        advSearch.callSetFilter();
+    var filtered_data = [],
+        technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
+        vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
+        city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
+        state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
+        frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
+        polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
+        total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length + frequency_filter.length + polarization_filter.length;
+
+    // If any value is selected in filter
+    if(total_selected_items > 0) {
+        // Set Advance Filters Flag
+        isAdvanceFilter = 1;
+
+        // Call function to plot the data on map as per the applied filters
+        gmap_self.applyAdvanceFilters();
     } else {
-        
-        var filtered_data = [],
-            technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
-            vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
-            city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
-            state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
-            frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
-            polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
-            total_selected_items = technology_filter.length + vendor_filter.length + state_filter.length + city_filter.length + frequency_filter.length + polarization_filter.length;
+        /*Hide the spinner*/
+        hideSpinner();
 
-        // If any value is selected in filter
-        if(total_selected_items > 0) {
-            // Set Advance Filters Flag
-            isAdvanceFilter = 1;
+        // Set Advance Filters Flag
+        isAdvanceFilter = 0;
 
-            // Call function to plot the data on map as per the applied filters
-            gmap_self.applyAdvanceFilters();
-        } else {
-            /*Hide the spinner*/
-            hideSpinner();
-
-            // Set Advance Filters Flag
-            isAdvanceFilter = 0;
-
-            bootbox.alert("Please select any filter");
-        }
-
+        bootbox.alert("Please select any filter");
     }
+    // if(window.location.pathname.indexOf("white_background") > -1) {
+    //     advSearch.callSetFilter();
+    // } else {
+    // }
 
     /*Call get_page_status function to show the current status*/
     get_page_status();
@@ -410,11 +428,11 @@ $("#setAdvFilterBtn").click(function(e) {
 /*If 'Cancel' button of advance filter form is clicked*/
 $("#cancelAdvFilterBtn").click(function(e) {
 
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        // $("#advFilterFormContainer").html("");
-    } else if(window.location.pathname.indexOf("white_background") > -1) {
-        $("#advFilterFormContainer").html("");
-    }
+    // if(window.location.pathname.indexOf("googleEarth") > -1) {
+    //     // $("#advFilterFormContainer").html("");
+    // } else if(window.location.pathname.indexOf("white_background") > -1) {
+    //     $("#advFilterFormContainer").html("");
+    // }
 
     if(!($("#advFilterContainerBlock").hasClass("hide"))) {
         $("#advFilterContainerBlock").addClass("hide");
@@ -433,13 +451,13 @@ function removeAdvFilters() {
 
     advSearch.removeFilters();
 
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        // data_for_filters_earth = main_devices_data_earth;
-    } else if(window.location.pathname.indexOf("white_background") > -1) {
-        data_for_filters = main_devices_data_wmap;
-    } else {
+    // if(window.location.pathname.indexOf("googleEarth") > -1) {
+    //     // data_for_filters_earth = main_devices_data_earth;
+    // } else if(window.location.pathname.indexOf("white_background") > -1) {
+    //     data_for_filters = main_devices_data_wmap;
+    // } else {
 
-    }
+    // }
 
     /*Call get_page_status function to show the current status*/
     get_page_status();

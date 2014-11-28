@@ -1471,7 +1471,7 @@ function devicePlottingClass_gmap() {
 
 			var current_device_set = dataset[i],
 				isDeviceInBound = "";
-			if(window.location.pathname.indexOf("white_background")) {
+			if(window.location.pathname.indexOf("white_background")> -1) {
 				isDeviceInBound = whiteMapClass.checkIfPointLiesInside({lon: current_device_set.data.lon, lat: current_device_set.data.lat});
 			} else {
 				isDeviceInBound = mapInstance.getBounds().contains(new google.maps.LatLng(current_device_set.data.lat,current_device_set.data.lon));
@@ -3368,7 +3368,6 @@ function devicePlottingClass_gmap() {
 	 * @method getBasicFilters
 	 */
 	this.getBasicFilters = function() {
-		console.log('here');
 		/*Populate City & State*/
 		var state_array = Object.keys(state_city_obj);
 
@@ -3653,6 +3652,8 @@ function devicePlottingClass_gmap() {
 			// Update the view in Google Earth 
 			ge.getView().setAbstractView(lookAt);
 
+    	} else if (window.location.pathname.indexOf('white_background') > -1) {
+			ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);    		
     	} else {
             /*Clear Existing Labels & Reset Counters*/
             mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
@@ -4298,19 +4299,7 @@ function devicePlottingClass_gmap() {
         var filtersLength = Object.keys(appliedFilterObj_gmaps).length;
         /*If any filter is applied then filter the data*/
         if(filtersLength > 0) {
-        	
-        	if($.trim(mapPageType) == "googleEarth") {
-        		gmap_self.updateStateCounter_gmaps();
-        		// gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
-    		} else if($.trim(mapPageType) == "white_background") {
-    			gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
-			} else {
-				// if(mapInstance.getZoom() <= 7) {
-					gmap_self.updateStateCounter_gmaps();
-				// } else {
-				// 	gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,$.trim(mapPageType));
-				// }
-			}
+        	gmap_self.updateStateCounter_gmaps();
         }
         /*If no filter is applied the load all the devices*/
         else {
@@ -4347,54 +4336,26 @@ function devicePlottingClass_gmap() {
 		        /*create the BS-SS network on the google earth*/
 		        // earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
 		    } else if($.trim(mapPageType) == "white_background") {
-
-		    	whiteMapClass.hideAllFeatures();
-		    	data_for_filter_wmap = main_devices_data_wmap;
-		    	
-		    	whiteMapClass.showAllFeatures();
+		    	whiteMapClass.clearStateCounters_wmaps();
+		    	isCallCompleted = 1;
+		    	ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+		    	data_for_filter_wmap = all_devices_loki_db.data;
+		    	isApiResponse= 0;
+		    	networkMapInstance.updateStateCounter_gmaps();
         	} else {
 
 				
 				// if(mapInstance.getZoom() <= 7) {
 	        		/*Clear Existing Labels & Reset Counters*/
-					gmap_self.clearStateCounters();
+				gmap_self.clearStateCounters();
 
-					isCallCompleted = 1;
-					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
-					mapInstance.setZoom(5);
-					data_for_filters = all_devices_loki_db.data;
-					isApiResponse = 0;
-					// Load all counters
-					// gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
-					networkMapInstance.updateStateCounter_gmaps();
-				// } else {
-
-	   //      		gmap_self.show_all_elements_gmap();
-
-				// 	/*Call showLinesInBounds to show the line within the bounds*/
-				// 	/* When zoom level is greater than 11 show lines */
-				// 	if(mapInstance.getZoom() > 11) {
-				// 		/*
-				// 		setTimeout is added because idle is event is trigger by marker cluster library when clicked on cluster,
-				// 		so this function not called.Hence I called it after 0.35 sec
-				// 		*/
-				// 		setTimeout(function(){
-				// 			gmap_self.showLinesInBounds();
-				// 			gmap_self.showSubStaionsInBounds();
-				// 			gmap_self.showBaseStaionsInBounds();
-				// 			gmap_self.showSectorDevicesInBounds();
-				// 			gmap_self.showSectorPolygonInBounds();
-				// 		},350);
-				// 	}
-
-	   //      		/*Save updated data to global variable*/
-				// 	data_for_filters = currentlyPlottedDevices;
-
-				// 	/*Filtered links global variable*/
-				// 	ssLinkArray_filtered = ssLinkArray;
-
-				// 	gmap_self.getFilteredLineLabel(data_for_filters);
-				// }
+				isCallCompleted = 1;
+				mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+				mapInstance.setZoom(5);
+				data_for_filters = all_devices_loki_db.data;
+				isApiResponse = 0;
+				// Load all counters
+				networkMapInstance.updateStateCounter_gmaps();
         	}
         }
     };
@@ -4408,7 +4369,9 @@ function devicePlottingClass_gmap() {
 		/*Clear Existing Labels & Reset Counters*/
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
 			earth_self.clearStateCounters();
-		} else {
+		} else if (window.location.pathname.indexOf("white_background") > -1) { 
+			whiteMapClass.clearStateCounters_wmaps();			
+		}else {
 			gmap_self.clearStateCounters();
 		}
 
@@ -4452,6 +4415,12 @@ function devicePlottingClass_gmap() {
 
 				isApiResponse = 0;
 				earth_self.showStateWiseData_earth(data_to_plot);
+			} else if (window.location.pathname.indexOf("white_background") > -1) {
+				data_for_filter_wmap = data_to_plot;
+				isCallCompleted = 1;
+				ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+				isApiResponse = 0;
+				whiteMapClass.showStateWiseData_wmap(data_to_plot);
 			} else {
 				data_for_filters = data_to_plot;
 				isCallCompleted = 1;
@@ -7567,7 +7536,7 @@ function getMarkerInCurrentBound() {
         		var earthBounds = getCurrentEarthBoundPolygon();
         		markerVisible =  isPointInPoly(earthBounds, {lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon});
         	} else if(window.location.pathname.indexOf("white_background") > -1) {
-        		markerVisible =  global_this.checkIfPointLiesInside({lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon})
+        		markerVisible =  whiteMapClass.checkIfPointLiesInside({lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon})
         	} else {
 				markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
         	}

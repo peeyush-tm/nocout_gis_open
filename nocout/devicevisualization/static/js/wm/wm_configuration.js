@@ -13,13 +13,14 @@ var whiteMapSettings = {
 	devices_size: {
 		medium: {width: 32, height: 37}
 	},
-	zoomLevelAfterLineAppears: 7,
-	zoomLevelAtClusterUpdates: 7,
-	latLngPrefixLabel: 'Longitude, Latitude: '
+	zoomLevelAfterLineAppears: 10,
+	zoomLevelAtClusterUpdates: 10,
+	latLngPrefixLabel: 'Longitude, Latitude: ',
+	mapCenter: [82.9165, 21.713]
 }
 
 var clustererSettings = {
-	fontSize: 11,
+	fontSize: 10,
 	fontWeight: 'bold',
 	fontColor: 'black',
 	fontFamily: 'Arial,sans-serif',

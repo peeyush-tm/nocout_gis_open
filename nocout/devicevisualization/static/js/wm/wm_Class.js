@@ -66,7 +66,7 @@ var polled_devices_names= [];
 
 var bs_obj= {};
 var isCallCompleted;
-var gisPerformanceClass = "";
+// var gisPerformanceClass = "";
 
 function WhiteMapClass() {
 
@@ -1435,6 +1435,15 @@ function WhiteMapClass() {
 	 * Plotting Section
 	 */
 	
+		this.clearStateCounters_wmaps = function() {
+			for(key in state_wise_device_counters) {
+				state_wise_device_counters[key] = 0;
+				if(state_wise_device_labels[key]) {
+					state_wise_device_labels[key].destroy();
+				}
+			}
+			ccpl_map.getLayersByName('States')[0].redraw();
+		}
 	 	
 	 	/**
 	 	* This function show counter of state wise data on gmap
@@ -1479,8 +1488,10 @@ function WhiteMapClass() {
 						if(state_lat_lon_obj) {
 							// Update the content of state counter label as per devices count
 							state_wise_device_labels[state].attributes.label = state_wise_device_counters[state];
+							state_wise_device_labels[state].attributes.display = '';
 						}
 					} else {
+						console.log("Wow");
 						state_wise_device_counters[state] = 1;
 						if(state_lat_lon_obj) {
 					        // create a point feature
@@ -1491,9 +1502,11 @@ function WhiteMapClass() {
 				                state: state,
 				                state_param: state_lat_lon_obj,
 				                cursor: "pointer",
-				                title: "Load "+ state+ " Data"
+				                title: "Load "+ state+ " Data",
+				                display: ''
 				            };
 				            device_counter_label.map = 'current';
+				            
 				            ccpl_map.getLayersByName('States')[0].addFeatures([device_counter_label]);
 						}
 				        state_wise_device_labels[state] = device_counter_label;
@@ -1529,6 +1542,7 @@ function WhiteMapClass() {
 								if(state_wise_device_counters[current_state_name]) {
 									state_wise_device_counters[current_state_name] += 1;
 									state_wise_device_labels[current_state_name].attributes.label = state_wise_device_counters[current_state_name];
+									state_wise_device_labels[current_state_name].attributes.display = '';
 								} else {
 									state_wise_device_counters[current_state_name] = 1;
 									
@@ -1541,8 +1555,10 @@ function WhiteMapClass() {
 				                		state_param: state_lat_lon_obj,
 				                		title: "Load "+ current_state_name+ " Data",
 				                		cursor: "pointer",
+				                		display: ''
 						            };
 						            device_counter_label.map = 'current';
+
 						            ccpl_map.getLayersByName('States')[0].addFeatures([device_counter_label]);
 							        state_wise_device_labels[current_state_name] = device_counter_label;
 								}
@@ -1608,7 +1624,7 @@ function WhiteMapClass() {
 		 * @param stationType {String}, It contains that the points are for BS or SS.
 		 */
 	    this.plotDevices_wmaps = function(bs_ss_devices, stationType) {
-			
+			var bs_ss_markers= [];
 			if(isDebug) {
 				console.log("Plot Devices Function");
 				console.log("Plot Devices Start Time :- "+ new Date().toLocaleString());
@@ -1653,6 +1669,7 @@ function WhiteMapClass() {
 				};
 
 				var bs_marker = global_this.createOpenLayerVectorMarker(size, icon, lon, lat, bs_marker_object);
+				bs_ss_markers.push(bs_marker);
 
 				ccpl_map.getLayersByName("Markers")[0].addFeatures([bs_marker]);
 
@@ -1703,7 +1720,6 @@ function WhiteMapClass() {
 
 								startEndObj["startLat"] = pointsArray[halfPt].lat;
 								startEndObj["startLon"] = pointsArray[halfPt].lon;
-
 								startEndObj["sectorLat"] = pointsArray[halfPt].lat;
 								startEndObj["sectorLon"] = pointsArray[halfPt].lon;
 							});
@@ -1855,7 +1871,7 @@ function WhiteMapClass() {
 
 					    /*Create SS Marker*/
 					    var ss_marker = global_this.createOpenLayerVectorMarker(size, ss_marker_object.icon, ss_marker_object.ptLon, ss_marker_object.ptLat, ss_marker_object);
-
+					    bs_ss_markers.push(ss_marker);
 					    ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
 
 					    (function(ss_marker) {
@@ -1943,7 +1959,7 @@ function WhiteMapClass() {
 						    	allMarkersObject_wmap['path']['line_'+ss_marker_obj.name] = ss_link_line;
 
 						    	markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= ss_link_line;
-								markersMasterObj['LinesName'][String(bs_name)+ ss_name]= ss_link_line;
+								markersMasterObj['LinesName'][String(bs_ss_devices[i].name)+ ss_marker_obj.name]= ss_link_line;
 
 						    	allMarkersArray_wmap.push(ss_link_line);
 			    			}
@@ -1983,7 +1999,11 @@ function WhiteMapClass() {
 				global_this.updateMarkersSize('medium');
 			}
 
+			// ccpl_map.getLayersByName("Markers")[0].addFeatures([bs_ss_markers]);
 			ccpl_map.getLayersByName('Markers')[0].strategies[0].activate();
+			ccpl_map.getLayersByName('Markers')[0].strategies[0].distance = 70;
+			ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold= 2
+			ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 
 			if(isDebug) {
 				console.log("Plot Devices End Time :- "+ new Date().toLocaleString());
@@ -2024,7 +2044,7 @@ function WhiteMapClass() {
 						if(result.data.objects) {
 							main_devices_data_wmap = main_devices_data_wmap.concat(result.data.objects.children);
 
-							data_for_filters = main_devices_data_wmap;
+							data_for_filter_wmap = main_devices_data_wmap;
 
 							global_this.showStateWiseData_wmap(result.data.objects.children);
 						}
@@ -2086,10 +2106,10 @@ function WhiteMapClass() {
 			            			clearTimeout(recallPerf);
 			            			recallPerf = "";
 			            		}
-			            		gisPerformanceClass.start(bs_list);
+			            		// gisPerformanceClass.start(bs_list);
 			            	}
 		            	}
-						// gisPerformanceClass.start(getMarkerInCurrentBound());
+						gisPerformanceClass.start(getMarkerInCurrentBound());
 					}, 30000);
 
 					/*Recall the server after particular timeout if system is not freezed*/
