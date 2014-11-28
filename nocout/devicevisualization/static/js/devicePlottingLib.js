@@ -1360,12 +1360,10 @@ function devicePlottingClass_gmap() {
 					            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
 
 					            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
-					                // return true;
 					                isCorrect = true;
 					                break;
 					            }
 							} else {
-								// return true;
 				                isCorrect = true;
 				                break;
 							}
@@ -1386,7 +1384,6 @@ function devicePlottingClass_gmap() {
 						            	advance_filter_condition6 = polarization_filter.length > 0 ? polarization_filter.indexOf(sectors[i].orientation) > -1 : true;
 
 						            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4 && advance_filter_condition5 && advance_filter_condition6) {
-						                // return true;
 						                isCorrect = true;
 				                		break;
 						            }
@@ -1441,7 +1438,7 @@ function devicePlottingClass_gmap() {
 			console.log("********************************");
 		}
 
-		return filtered_Data;
+		return JSON.parse(JSON.stringify(filtered_Data));
 	};
 
 	/**
@@ -3609,40 +3606,6 @@ function devicePlottingClass_gmap() {
 	 */
 	this.applyAdvanceFilters = function() {
 
-		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
-			vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
-			city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
-			state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
-			frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
-			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
-			filterObj = {
-				"technology" : $.trim($("#technology option:selected").text()),
-				"vendor" : $.trim($("#vendor option:selected").text()),
-				"state" : $.trim($("#state option:selected").text()),
-				"city" : $.trim($("#city option:selected").text())
-			},
-			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-			isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City';
-
-		var data_to_plot = [],
-			filtered_data = [],
-			advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-			basic_filter_condition = $.trim($("#technology").val()) || $.trim($("#vendor").val());
-
-		if(isAdvanceFilterApplied || isBasicFilterApplied) {
-        	filtered_data = gmap_self.getFilteredData_gmap();
-    	} else {
-    		filtered_data = all_devices_loki_db.data;
-    	}
-
-		if(advance_filter_condition || basic_filter_condition) {
-        	data_to_plot = gmap_self.getFilteredBySectors(filtered_data);
-    	} else {
-    		data_to_plot = filtered_data;
-    	}
-
-    	// console.log(data_to_plot);
-
         /*Hide the spinner*/
         hideSpinner();
 
@@ -3659,50 +3622,24 @@ function devicePlottingClass_gmap() {
         /*Enable the refresh button*/
         $("#resetFilters").button("loading");
 
-        if(data_to_plot.length > 0) {
+    	if(window.location.pathname.indexOf("googleEarth") > -1) {
+    		/************************Google Earth Code***********************/
+	        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+			lookAt.setLatitude(21.0000);
+			lookAt.setLongitude(78.0000);
+			lookAt.setRange(5492875.865539902);
+			// Update the view in Google Earth 
+			ge.getView().setAbstractView(lookAt);
 
-        	if(window.location.pathname.indexOf("googleEarth") > -1) {
-        		/************************Google Earth Code***********************/
+    	} else {
+            /*Clear Existing Labels & Reset Counters*/
+            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+            mapInstance.setZoom(5);
+    	}
 
-        		/*Clear all the elements from google earth*/
-		        earth_instance.clearEarthElements();
-		        earth_instance.clearStateCounters();
-
-
-		        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
-				lookAt.setLatitude(21.0000);
-				lookAt.setLongitude(78.0000);
-				lookAt.setRange(5492875.865539902);
-				// lookAt.setZoom
-				// Update the view in Google Earth 
-				ge.getView().setAbstractView(lookAt); 
-				
-				data_for_filters_earth = data_to_plot;
-
-				isApiResponse = 0;
-				// Load all counters
-				earth_instance.showStateWiseData_earth(data_to_plot);
-
-        	} else {
-	            /*Clear Existing Labels & Reset Counters*/
-	            gmap_self.clearStateCounters();
-	            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
-	            mapInstance.setZoom(5);
-	            data_for_filters = data_to_plot;
-	            isApiResponse = 0;
-	            gmap_self.showStateWiseData_gmap(data_to_plot);        		
-        	}
-
-        } else {
-            $.gritter.add({
-                // (string | mandatory) the heading of the notification
-                title: 'GIS : Advance Filters',
-                // (string | mandatory) the text inside the notification
-                text: 'No data available for applied filters.',
-                // (bool | optional) if you want it to fade out on its own or just sit there
-                sticky: false
-            });
-        }
+    	isApiResponse = 0;
+        // update state counters
+		gmap_self.updateStateCounter_gmaps();
 	};
 
 	
@@ -4469,7 +4406,7 @@ function devicePlottingClass_gmap() {
 		if(isAdvanceFilterApplied || isBasicFilterApplied) {
 			filtered_data = gmap_self.getFilteredData_gmap();	
 		} else {
-			filtered_data = all_devices_loki_db.data;
+			filtered_data = all_devices_loki_db.data.length > 0 ? JSON.parse(JSON.stringify(all_devices_loki_db.data)) : [];
 		}
 			
 		if(advance_filter_condition || basic_filter_condition) {
