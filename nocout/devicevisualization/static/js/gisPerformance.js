@@ -102,11 +102,11 @@ function GisPerformance() {
 
         //If isFrozen is false and Cookie value for freezeSelected is also false
         var zoom_condition = current_zoom ? current_zoom > 7 : true;
-        // if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0 && zoom_condition) {
+        if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0 && zoom_condition) {
             var gisPerformance_this = this;
             //Call waitAndSend function with BS Json Data and counter value
             gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
-        // }
+        }
     }
 
     /*
