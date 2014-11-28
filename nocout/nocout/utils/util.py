@@ -12,6 +12,68 @@ from random import randint, uniform
 from django.db import connections
 
 date_handler = lambda obj: obj.strftime('%Y-%m-%d %H:%M:%S') if isinstance(obj, datetime.datetime) else None
+# Sector columns list
+sector_key_list = [
+    'SECTOR_ID',
+    'SECTOR_NAME',
+    'SECTOR_ALIAS',
+    'SECTOR_SECTOR_ID',
+    'SECTOR_BS_ID',
+    'SECTOR_MRC',
+    'SECTOR_TX',
+    'SECTOR_RX',
+    'SECTOR_RFBW',
+    'SECTOR_FRAME_LENGTH',
+    'SECTOR_CELL_RADIUS',
+    'SECTOR_MODULATION',
+    'SECTOR_TECH',
+    'SECTOR_VENDOR',
+    'SECTOR_TYPE',
+    'SECTOR_ICON',
+    'SECTOR_GMAP_ICON',
+    'SECTOR_CONF_ON_ID',
+    'SECTOR_CONF_ON',
+    'SECTOR_CONF_ON_NAME',
+    'SECTOR_CONF_ON_ALIAS',
+    'SECTOR_CONF_ON_IP',
+    'SECTOR_CONF_ON_MAC',
+    'SECTOR_ANTENNA_TYPE',
+    'SECTOR_ANTENNA_HEIGHT',
+    'SECTOR_ANTENNA_POLARIZATION',
+    'SECTOR_ANTENNA_TILT',
+    'SECTOR_ANTENNA_GAIN',
+    'SECTORANTENNAMOUNTTYPE',
+    'SECTOR_BEAM_WIDTH',
+    'SECTOR_ANTENNA_AZMINUTH_ANGLE',
+    'SECTOR_ANTENNA_REFLECTOR',
+    'SECTOR_ANTENNA_SPLITTER',
+    'SECTOR_ANTENNA_SYNC_SPLITTER',
+    'SECTOR_ANTENNA_MAKE',
+    'SECTOR_FREQUENCY_COLOR',
+    'SECTOR_FREQUENCY_RADIUS',
+    'SECTOR_FREQUENCY'
+]
+
+# BACKHUAL columns list
+backhaul_key_list = [
+    'BHID',
+    'BH_NAME',
+    'BH_ALIAS',
+    'BH_PORT',
+    'BH_TYPE',
+    'BH_PE_HOSTNAME',
+    'BH_PE_IP',
+    'BH_CONNECTIVITY',
+    'BH_CIRCUIT_ID',
+    'BH_CAPACITY',
+    'BH_TTSL_CIRCUIT_ID',
+    'BH_DEVICE_ID',
+    'BHCONF',
+    'BHCONF_IP',
+    'BHTECH',
+    'BHTYPE',
+    'BHTYPEID'
+]
 
 #for managing the slave-master connections
 from django.conf import settings
@@ -389,6 +451,8 @@ on (sect_ckt.SECTOR_BS_ID = bs_info.BSID)
 left join
     (
         select bh_info.BHID as BHID,
+                bh_info.BH_NAME as BH_NAME,
+                bh_info.BH_ALIAS as BH_ALIAS,
                 bh_info.BH_PORT as BH_PORT,
                 bh_info.BH_TYPE as BH_TYPE,
                 bh_info.BH_PE_HOSTNAME as BH_PE_HOSTNAME,
@@ -404,13 +468,15 @@ left join
                 bh_info.BHCONF_IP as BHCONF_IP,
                 bh_info.BHTECH as BHTECH,
                 bh_info.BHTYPE as BHTYPE,
-
+                bh_info.BHTYPEID as BHTYPEID,
                 POP_IP,
                 AGGR_IP,
                 BSCONV_IP
 
         from (
         select backhaul.id as BHID,
+                backhaul.name as BH_NAME,
+                backhaul.alias as BH_ALIAS,
                 backhaul.bh_port_name as BH_PORT,
                 backhaul.bh_type as BH_TYPE,
                 backhaul.pe_hostname as BH_PE_HOSTNAME,
@@ -425,6 +491,7 @@ left join
                 device.device_name as BHCONF,
                 device.ip_address as BHCONF_IP,
                 tech.name as BHTECH,
+                devicetype.id as BHTYPEID,
                 devicetype.name as BHTYPE
 
         from inventory_backhaul as backhaul
@@ -691,6 +758,8 @@ on (sect_ckt.SECTOR_BS_ID = bs_info.BSID)
 left join
     (
         select bh_info.BHID as BHID,
+                bh_info.BH_NAME as BH_NAME,
+                bh_info.BH_ALIAS as BH_ALIAS,
                 bh_info.BH_PORT as BH_PORT,
                 bh_info.BH_TYPE as BH_TYPE,
                 bh_info.BH_PE_HOSTNAME as BH_PE_HOSTNAME,
@@ -706,13 +775,15 @@ left join
                 bh_info.BHCONF_IP as BHCONF_IP,
                 bh_info.BHTECH as BHTECH,
                 bh_info.BHTYPE as BHTYPE,
-
+                bh_info.BHTYPEID as BHTYPEID,
                 POP_IP,
                 AGGR_IP,
                 BSCONV_IP
 
         from (
         select backhaul.id as BHID,
+                backhaul.name as BH_NAME,
+                backhaul.alias as BH_ALIAS,
                 backhaul.bh_port_name as BH_PORT,
                 backhaul.bh_type as BH_TYPE,
                 backhaul.pe_hostname as BH_PE_HOSTNAME,
@@ -727,6 +798,7 @@ left join
                 device.device_name as BHCONF,
                 device.ip_address as BHCONF_IP,
                 tech.name as BHTECH,
+                devicetype.id as BHTYPEID,
                 devicetype.name as BHTYPE
 
         from inventory_backhaul as backhaul

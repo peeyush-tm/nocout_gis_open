@@ -2,8 +2,10 @@ import logging
 from inventory.models import BaseStation, Customer, Antenna
 from device.models import DeviceType, DeviceVendor, DeviceTechnology, City
 from random import randint, uniform
+import datetime
+from nocout.settings import DEBUG
 
-from nocout.utils.util import format_value, cache_for
+from nocout.utils.util import format_value, cache_for, backhaul_key_list, sector_key_list
 
 logger = logging.getLogger(__name__)
 
@@ -148,65 +150,90 @@ def prepare_raw_basestation(base_station=None):
     return []
 
 
-def prepare_raw_backhaul(backhaul):
+def prepare_raw_backhaul(basestations):
     """
 
-    :param backhaul:
+    :param basestations:
     :return:
     """
+
     backhaul_info = []
-    if backhaul:
-        if backhaul['BHID']:
-            backhaul_info = [
-                {
-                    'name': 'bh_configured_on',
-                    'title': 'BH Configured On',
-                    'show': 1,
-                    'value': format_value(backhaul['BHCONF_IP'])
-                },
-                {
-                    'name': 'bh_capacity',
-                    'title': 'BH Capacity',
-                    'show': 1,
-                    'value': format_value(backhaul['BH_CAPACITY'])
-                },
-                {
-                    'name': 'bh_type',
-                    'title': 'BH Type',
-                    'show': 1,
-                    'value': format_value(backhaul['BH_TYPE'])
-                },
-                {
-                    'name': 'pe_ip',
-                    'title': 'PE IP',
-                    'show': 1,
-                    'value': format_value(backhaul['BH_PE_IP'])
-                },
-                {
-                    'name': 'bh_connectivity',
-                    'title': 'BH Connectivity',
-                    'show': 1,
-                    'value': format_value(backhaul['BH_CONNECTIVITY'])
-                },
-                {
-                    'name': 'aggregation_switch',
-                    'title': 'Aggregation Switch',
-                    'show': 1,
-                    'value': format_value(backhaul['AGGR_IP'])
-                },
-                {
-                    'name': 'pop',
-                    'title': 'POP IP',
-                    'show': 1,
-                    'value': format_value(backhaul['POP_IP'])
-                },
-                {
-                    'name': 'bs_converter_ip',
-                    'title': 'BS Converter IP',
-                    'show': 1,
-                    'value': format_value(backhaul['BSCONV_IP'])
-                }
-            ]
+    backhaul_list = []
+
+    if basestations:
+        for backhaul in basestations:
+            if backhaul['BHID']:
+                if backhaul['BHID'] not in backhaul_list:
+                    # Save BHID in list to reduce redundancy
+                    backhaul_list.append(backhaul['BHID'])
+                    # Create backhaul info dict list
+                    backhaul_info.append({
+                        "id" : backhaul['BHID'],
+                        "name" : format_value(backhaul['BH_NAME']),
+                        "alias" : format_value(backhaul['BH_ALIAS']),
+                        "bh_ip" : format_value(backhaul['BHCONF_IP']),
+                        "bh_tech" : format_value(backhaul['BHTECH']),
+                        "markerUrl": tech_marker_url(backhaul['BHTYPEID'],backhaul['BHTECH']),
+                        'info': [
+                            {
+                                'name': 'bh_configured_on',
+                                'title': 'BH Configured On',
+                                'show': 1,
+                                'value': format_value(backhaul['BHCONF_IP'])
+                            },
+                            {
+                                'name': 'bh_capacity',
+                                'title': 'BH Capacity',
+                                'show': 1,
+                                'value': format_value(backhaul['BH_CAPACITY'])
+                            },
+                            {
+                                'name': 'bh_tech',
+                                'title': 'BH Technology',
+                                'show': 1,
+                                'value': format_value(backhaul['BHTECH'])
+                            },
+                            {
+                                'name': 'bh_type',
+                                'title': 'BH Type',
+                                'show': 1,
+                                'value': format_value(backhaul['BH_TYPE'])
+                            },
+                            {
+                                'name': 'pe_ip',
+                                'title': 'PE IP',
+                                'show': 1,
+                                'value': format_value(backhaul['BH_PE_IP'])
+                            },
+                            {
+                                'name': 'bh_connectivity',
+                                'title': 'BH Connectivity',
+                                'show': 1,
+                                'value': format_value(backhaul['BH_CONNECTIVITY'])
+                            },
+                            {
+                                'name': 'aggregation_switch',
+                                'title': 'Aggregation Switch',
+                                'show': 1,
+                                'value': format_value(backhaul['AGGR_IP'])
+                            },
+                            {
+                                'name': 'pop',
+                                'title': 'POP IP',
+                                'show': 1,
+                                'value': format_value(backhaul['POP_IP'])
+                            },
+                            {
+                                'name': 'bs_converter_ip',
+                                'title': 'BS Converter IP',
+                                'show': 1,
+                                'value': format_value(backhaul['BSCONV_IP'])
+                            }           
+                        ]
+                    })
+                else:
+                    break
+
     return backhaul_info
 
 def prepare_raw_sector(basestations):
@@ -223,7 +250,6 @@ def prepare_raw_sector(basestations):
     sector_configured_on_devices = []
     sector_planned_frequencies = []
     circuit_ids = []
-
     if basestations:
         for sector in basestations:
             if sector['SECTOR_ID']:
@@ -231,10 +257,14 @@ def prepare_raw_sector(basestations):
                     sector_list.append(sector['SECTOR_ID'])
                     #prepare sector vendor list
                     sector_ss_vendor.append(format_value(format_this=sector['SECTOR_VENDOR']))
-                    #prepare technology list
+                    #prepare Sector technology list
                     sector_ss_technology.append(format_value(format_this=sector['SECTOR_TECH']))
+                    #prepare BH technology list
+                    sector_ss_technology.append(format_value(format_this=sector['BHTECH']))
                     #prepare sector configured on device
                     sector_configured_on_devices.append(format_value(format_this=sector['SECTOR_CONF_ON_IP']))
+                    #prepare BH configured on device
+                    sector_configured_on_devices.append(format_value(format_this=sector['BHCONF_IP']))
 
                     #circuit id prepare ?
                     substation, circuit_id, substation_ip = prepare_raw_ss_result(basestations=basestations,
@@ -551,11 +581,11 @@ def prepare_raw_bs_result(bs_result=None):
                 'city': base_station['BSCITY'],
                 'state': base_station['BSSTATE'],
                 'param': {
-                    'base_station': prepare_raw_basestation(base_station=base_station),
-                    'backhual': prepare_raw_backhaul(backhaul=base_station)
+                    'base_station': prepare_raw_basestation(base_station=base_station)
                 }
             },
         }
+
         sector_info, \
         sector_ss_vendor, \
         sector_ss_technology, \
@@ -563,7 +593,10 @@ def prepare_raw_bs_result(bs_result=None):
         circuit_ids, \
         sector_planned_frequencies = prepare_raw_sector(basestations=bs_result)
 
+        backhaul_info = prepare_raw_backhaul(basestations=bs_result)
+
         base_station_info['data']['param']['sector'] = sector_info
+        base_station_info['data']['param']['backhual'] = backhaul_info
         base_station_info['sector_ss_vendor'] = "|".join(sector_ss_vendor)
         base_station_info['sector_ss_technology'] = "|".join(sector_ss_technology)
         base_station_info['sector_configured_on_devices'] = "|".join(sector_configured_on_devices)
