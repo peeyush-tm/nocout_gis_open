@@ -4550,7 +4550,7 @@ function devicePlottingClass_gmap() {
 				$("#clearPolygonBtn").removeClass("hide");
 			}
     	} else {
-    		bootbox.alert("Please zoom in for live poll devices.There are too many devices.");
+    		bootbox.alert("<p style='position:relative;z-index:9999;'>Please zoom in for live poll devices.There are too many devices.</p>");
     		$("#clearPolygonBtn").trigger('click');
     	}
     };
@@ -4709,7 +4709,7 @@ function devicePlottingClass_gmap() {
 							} else {
 
 								var devicesTemplate = "<div class='deviceWellContainer'>";
-
+								var num_counter = 0;
 								for(var i=0;i<polygonSelectedDevices.length;i++) {
 									
 									var new_device_name = "";
@@ -4747,13 +4747,16 @@ function devicePlottingClass_gmap() {
 										}
 
 										if(polled_device_count[devices_counter] <= 1) {
-											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].sector_ip+'</h5>';
+											num_counter++;
+											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+num_counter+'.) '+polygonSelectedDevices[i].sector_ip+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
 											devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
 											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
 										}
 
-										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].ss_ip+'</h5>';
+										num_counter++;
+
+										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+num_counter+'.) '+polygonSelectedDevices[i].ss_ip+'</h5>';
 										devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 										devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
@@ -4770,8 +4773,8 @@ function devicePlottingClass_gmap() {
 												device_end_txt = "Near End";
 												point_name = polygonSelectedDevices[i].sectorName
 											}
-
-											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+(i+1)+'.) '+point_name+'</h5>';
+											num_counter++;
+											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+num_counter+'.) '+point_name+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 											devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
