@@ -3750,7 +3750,6 @@ class DownloadSelectedBSInventory(View):
         # insert 'ptp bh' rows in result dictionary
         result['ptp_bh'] = ptp_bh_rows if ptp_bh_rows else ""
 
-
         return result
 
     def get_selected_pmp_inventory(self, base_station, sector):
