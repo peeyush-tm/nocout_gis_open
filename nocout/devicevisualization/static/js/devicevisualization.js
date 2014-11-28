@@ -507,7 +507,111 @@ $("#fetch_polling").click(function(e) {
     } else if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.getDevicesPollingData_wmaps();
     } else {
-        networkMapInstance.getDevicesPollingData();
+        networkMapInstance.fetchDevicesPollingData();
+    }
+});
+
+$("#play_btn").click(function(e) {
+    
+    if($(".play_pause_btns").hasClass("disabled")) {
+        $(".play_pause_btns").removeClass("disabled");
+    }
+
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        
+    } else {
+        if(polygonSelectedDevices && (polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "")) {
+            if(!$("#play_btn").hasClass("disabled")) {
+                $("#play_btn").addClass("disabled");
+            }
+
+            if(!($("#fetch_polling").hasClass("disabled"))) {
+                $("#fetch_polling").addClass("disabled");
+            }
+
+            /*Disable poll interval & max interval dropdown*/
+            $("#poll_interval").attr("disabled","disabled");
+            $("#poll_maxInterval").attr("disabled","disabled");
+
+            pollCallingTimeout = "";
+            pollingInterval = $("#poll_interval").val() ? +($("#poll_interval").val()) : 10;
+            pollingMaxInterval = $("#poll_maxInterval").val() ? +($("#poll_maxInterval").val()) : 1;
+            remainingPollCalls = Math.floor((60*pollingMaxInterval)/pollingInterval);
+            isPollingPaused = 0;
+
+            networkMapInstance.startDevicePolling_gmap();
+
+        } else {
+            bootbox.alert("Please select devices & polling template first.");
+        }
+    }
+});
+
+$("#pause_btn").click(function(e) {
+    
+    if($(".play_pause_btns").hasClass("disabled")) {
+        $(".play_pause_btns").removeClass("disabled");
+    }
+
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        
+    } else {
+        if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
+            if(remainingPollCalls > 0) {
+                if(!$("#pause_btn").hasClass("disabled")) {
+                    $("#pause_btn").addClass("disabled");
+                }
+
+                //stop perf calling
+                if(pollCallingTimeout) {
+                    clearTimeout(pollCallingTimeout);
+                    pollCallingTimeout = "";
+                }
+                isPollingPaused = 1;
+            }
+        } else {
+            bootbox.alert("Please select devices & polling template first.");
+        }
+    }
+});
+
+$("#stop_btn").click(function(e) {
+
+    if($(".play_pause_btns").hasClass("disabled")) {
+        $(".play_pause_btns").removeClass("disabled");
+    }
+
+    if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
+        if(remainingPollCalls > 0) {
+            /*Disable poll interval & max interval dropdown*/
+            $("#poll_interval").removeAttr("disabled");
+            $("#poll_maxInterval").removeAttr("disabled");
+
+            if($(".play_pause_btns").hasClass("disabled")) {
+                $(".play_pause_btns").removeClass("disabled");
+            }
+
+            if($("#fetch_polling").hasClass("disabled")) {
+                $("#fetch_polling").removeClass("disabled");
+            }
+
+            if(pollCallingTimeout) {
+                clearTimeout(pollCallingTimeout);
+                pollCallingTimeout = "";
+            }
+
+            pollingInterval = 10;
+            pollingMaxInterval = 1;
+            remainingPollCalls = 0;
+            isPollingPaused = 0;
+        }
+
+    } else {
+        bootbox.alert("Please select devices & polling template first.");
     }
 });
 
