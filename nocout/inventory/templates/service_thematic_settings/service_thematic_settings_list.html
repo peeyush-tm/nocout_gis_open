@@ -1,0 +1,147 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+
+{% block content_title %}Thematic Settings Management{% endblock %}
+{% block content_description %}List of thematic settings{% endblock %}
+{% block content %}
+        {% if user.is_superuser %}
+            <p><a href="/serv_thematic_settings/new"><i class="fa fa-plus">&nbsp;</i> Create Service Thematic Settings</a></p>
+        {% endif %}
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>Service THEMATIC SETTINGS LISTING</h4>
+        </div>
+        <div id="tableContainer" class="box-body">
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                        <li><a href="#network_wifi_block" id="network_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
+                        <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                        <li class="active"><a href="#network_p2p_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
+                </ul>
+                <div class="tab-content" style="overflow:auto;">
+                    <div class="tab-pane in active" id="network_p2p_block">
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThematicSettingsListingTable_ptp">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_pmp_block">
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThematicSettingsListingTable_pmp">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_wifi_block">
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThematicSettingsListingTable_wimax">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+            <!-- <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThematicSettingsListingTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table> -->
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
+            var is_global = '{{ is_global }}';
+
+            var ajax_url_ptp = '{% url "ThematicSettingsListingTable" technology="p2p" %}';
+            var ajax_url_pmp = '{% url "ThematicSettingsListingTable" technology="pmp" %}';
+            var ajax_url_wimax = '{% url "ThematicSettingsListingTable" technology="wimax" %}';
+
+
+            /*Ajax url to get grid data*/
+            if (is_global == 'true') {
+                ajax_url_ptp = '{% url "ThematicSettingsListingTable" technology="p2p" %}' + '?admin=1';
+                ajax_url_pmp = '{% url "ThematicSettingsListingTable" technology="pmp" %}' + '?admin=1';
+                ajax_url_wimax = '{% url "ThematicSettingsListingTable" technology="wimax" %}' + '?admin=1';
+            }
+
+            var destroy = false;
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable("ThematicSettingsListingTable_ptp", gridHeadersObj, ajax_url_ptp, destroy);
+            dataTableInstance.createDataTable("ThematicSettingsListingTable_pmp", gridHeadersObj, ajax_url_pmp, destroy);
+            dataTableInstance.createDataTable("ThematicSettingsListingTable_wimax", gridHeadersObj, ajax_url_wimax, destroy);
+        });
+
+		/*Change event for PTP checkboxes*/
+        $(document).on('change', '#ThematicSettingsListingTable_ptp .check_class', function() {
+			select_theme("ThematicSettingsListingTable_ptp", this);
+        });
+
+        /*Change event for PMP checkboxes*/
+        $(document).on('change', '#ThematicSettingsListingTable_pmp .check_class', function() {
+			select_theme("ThematicSettingsListingTable_pmp", this);
+        });
+
+        /*Change event for Wimax checkboxes*/
+        $(document).on('change', '#ThematicSettingsListingTable_wimax .check_class', function() {
+			select_theme("ThematicSettingsListingTable_wimax", this);
+        });
+
+        /*This function select the check theme*/
+        function select_theme(tab_id, current_checkbox) {
+        	if (current_checkbox.checked) {
+                $('#'+tab_id+' input.check_class').not(current_checkbox).prop('checked', false);
+                $.ajax({
+                    url:'{% url "update_user_thematic_setting" %}',
+                    data:{ 'threshold_template_id': current_checkbox.value },
+                    dataType:"json",
+                    success:function(result){
+                        if(result.success){
+                            dialog_box_message= "Thematic Setting (0) is assigned to User: (1)".replace('(0)', result.data.objects.thematic_setting_name)
+                            dialog_box_message= dialog_box_message.replace('(1)', result.data.objects.username);
+                            bootbox.dialog({
+                                message:dialog_box_message,
+                                title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
+                                buttons: {
+                                    success: {
+                                        label: "OK",
+                                        className: "btn-success",
+                                        callback: function () {
+                                            $(".bootbox").modal("hide");
+                                        }
+                                    }
+                                }
+                            });
+                    	}
+                	}
+                });//ajax ends
+            }
+            else{
+		        bootbox.dialog({
+                    message:"You can not Uncheck the Selected Settings, Please Select the other setting.",
+                    title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
+                    buttons: {
+                        success: {
+                            label: "OK",
+                            className: "btn-success",
+                            callback: function () {
+                                $(".bootbox").modal("hide");
+                            }
+                        }
+                    }
+                });
+                $(current_checkbox).prop('checked', true);
+            }
+        }
+    </script>
+{% endblock %}
