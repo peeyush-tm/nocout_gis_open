@@ -18,11 +18,33 @@
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br />
-                                    <form action="/serv_thematic_settings/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
-                                        <div class="form-group">
-                                            {% for field in form %}
+                                   <form action="" method="post" class="form-horizontal" role="form" onsubmit="return validateRangeForm();">{% csrf_token %}
                                                 <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ field.label|title }}</label>
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>Name</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ form.name }} {{ form.name.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ form.name.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>alias</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ form.alias }} {{ form.alias.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ form.alias.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <div class="form-group">
+                                            {% for field in live_polling_settings_form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
                                                             {{ field }} {{ field.errors }}
@@ -35,19 +57,21 @@
                                             {% endfor %}
                                         </div>
                                         <div class="form-group">
-                                            {{ threshold_configuration_form.management_form }}
-                                            {% for field in threshold_configuration_form %}
-                                            <div class="row inline {{ service_thematic_settings_form.prefix }}">
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range1</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field.range1_start }}
+                                                            {{ threshold_configuration_form.range1_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
-                                                            {{ field.range1_end }}
+                                                            {{ threshold_configuration_form.range1_end }}
+                                                            <select class=" select2select col-md-4" id="id_icon_settings1" name="icon_settings1" style="margin-left:20px"><option value="" selected="selected">Select</option>
+                                                            {% for icon in icon_settings %}
+                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            {% endfor %}
+                                                            </select>
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {{ threshold_configuration_form.range1_end.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -55,12 +79,17 @@
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range2</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field.range2_start }}
+                                                            {{ threshold_configuration_form.range2_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
-                                                            {{ field.range2_end }}
+                                                            {{ threshold_configuration_form.range2_end }}
+                                                            <select class=" select2select col-md-4" id="id_icon_settings2" name="icon_settings2" style="margin-left:22px"><option value=''>Select</option>
+                                                            {% for icon in icon_settings %}
+                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            {% endfor %}
+                                                            </select>
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {{ threshold_configuration_form.range2_end.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -68,12 +97,17 @@
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range3</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field.range3_start }}
+                                                            {{ threshold_configuration_form.range3_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
-                                                            {{ field.range3_end }}
+                                                            {{ threshold_configuration_form.range3_end }}
+                                                            <select class=" select2select col-md-4" id="id_icon_settings3" name="icon_settings3" style="margin-left:22px"><option value=''>Select</option>
+                                                            {% for icon in icon_settings %}
+                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            {% endfor %}
+                                                            </select>
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {{ threshold_configuration_form.range3_end.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -81,12 +115,17 @@
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range4</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field.range4_start }}
+                                                            {{ threshold_configuration_form.range4_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
-                                                            {{ field.range4_end }}
+                                                            {{ threshold_configuration_form.range4_end }}
+                                                            <select class=" select2select col-md-4" id="id_icon_settings4" name="icon_settings4" style="margin-left:22px"><option value=''>Select</option>
+                                                            {% for icon in icon_settings %}
+                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            {% endfor %}
+                                                            </select>
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {{ threshold_configuration_form.range4_end.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -94,12 +133,17 @@
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range5</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field.range5_start }}
+                                                            {{ threshold_configuration_form.range5_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
-                                                            {{ field.range5_end }}
+                                                            {{ threshold_configuration_form.range5_end }}
+                                                            <select class=" select2select col-md-4" id="id_icon_settings5" name="icon_settings5" style="margin-left:22px"><option value=''>Select</option>
+                                                            {% for icon in icon_settings %}
+                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            {% endfor %}
+                                                            </select>
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {{ threshold_configuration_form.range5_end.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -107,12 +151,17 @@
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range6</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field.range6_start }}
+                                                            {{ threshold_configuration_form.range6_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
-                                                            {{ field.range6_end }}
+                                                            {{ threshold_configuration_form.range6_end }}
+                                                            <select class=" select2select col-md-4" id="id_icon_settings6" name="icon_settings6" style="margin-left:22px"><option value=''>Select</option>
+                                                            {% for icon in icon_settings %}
+                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            {% endfor %}
+                                                            </select>
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {{ threshold_configuration_form.range6_end.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -120,12 +169,17 @@
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range7</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field.range7_start }}
+                                                            {{ threshold_configuration_form.range7_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
-                                                            {{ field.range7_end }}
+                                                            {{ threshold_configuration_form.range7_end }}
+                                                            <select class=" select2select col-md-4" id="id_icon_settings7" name="icon_settings7" style="margin-left:22px"><option value=''>Select</option>
+                                                            {% for icon in icon_settings %}
+                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            {% endfor %}
+                                                            </select>
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {{ threshold_configuration_form.range7_end.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -133,12 +187,17 @@
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range8</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field.range8_start }}
+                                                            {{ threshold_configuration_form.range8_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
-                                                            {{ field.range8_end }}
+                                                            {{ threshold_configuration_form.range8_end }}
+                                                            <select class=" select2select col-md-4" id="id_icon_settings8" name="icon_settings8" style="margin-left:22px"><option value=''>Select</option>
+                                                            {% for icon in icon_settings %}
+                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            {% endfor %}
+                                                            </select>
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {{ threshold_configuration_form.range8_end.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -146,12 +205,17 @@
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range9</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field.range9_start }}
+                                                            {{ threshold_configuration_form.range9_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
-                                                            {{ field.range9_end }}
+                                                            {{ threshold_configuration_form.range9_end }}
+                                                            <select class=" select2select col-md-4" id="id_icon_settings9" name="icon_settings9" style="margin-left:22px"><option value=''>Select</option>
+                                                            {% for icon in icon_settings %}
+                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            {% endfor %}
+                                                            </select>
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {{ threshold_configuration_form.range9_end.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -159,48 +223,42 @@
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range10</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field.range10_start }}
+                                                            {{ threshold_configuration_form.range10_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
-                                                            {{ field.range10_end }}
+                                                            {{ threshold_configuration_form.range10_end }}
+                                                            <select class=" select2select col-md-4" id="id_icon_settings10" name="icon_settings10" style="margin-left:22px"><option value="" selected="selected">Select</option>
+                                                            {% for icon in icon_settings %}
+                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            {% endfor %}
+                                                            </select>
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {{ threshold_configuration_form.range10_end.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            {% endfor %}
                                         </div>
-                                        {{ service_thematic_settings_form.management_form }}
-                                            {% for field in service_thematic_settings_form %}
-                                            <div class="row inline {{ service_thematic_settings_form.prefix }}">
-                                                <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"> Global Setting</label>
-                                                    <div class="col-sm-9">
-                                                        <div class="col-md-8">
-                                                            {{ field.is_global }}
-                                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-group">
+                                                <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Global Settings</label>
+                                                <div class="col-sm-9">
+                                                    <div class="col-md-8">
+                                                        {{ form.is_global }} {{ form.is_global.errors }}
                                                     </div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"> Icon Settings</label>
-                                                    <div class="col-sm-9">
-                                                        <div class="col-md-8">
-                                                            {{ field.icon_settings }}
-                                                        </div>
+                                                    <div class="col-md-4 help_text">
+                                                        {{ form.is_global.help_text }}
                                                     </div>
                                                 </div>
                                             </div>
-                                            {% endfor %}
+                                        </div>
                                         <div class="form-group">
                                             <div class="col-sm-offset-3 col-sm-9">
-                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
-                                                &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/thematic_settings/')"><i class="fa fa-times"></i>Cancel</button>
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/thematic_settings/')"><i class="fa fa-times"></i> Cancel</button>
                                             </div>
                                         </div>
+
                                     </form>
                                 </div>
                                 <div class="clearfix"></div>
@@ -214,109 +272,184 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
+        var id_technology = "#id_technology";
+        var id_data_source = "#id_data_source";
+        var id_service = "#id_service";
         $(document).ready(function(){
+            // Initialize the select2 selectbox.
             $(".select2select").select2();
 
-        function toTitleCase(str) {
-            return str.replace(/(?:^|\s)\w/g, function(match) {
-            return match.toUpperCase();
+            // reset data sources and service if technology is not selected, else if it has value
+            // then update service and reset data sources
+            if ($(id_technology).val()){
+                $(id_data_source).empty();
+                $(id_data_source).select2("val","Select");
+                Dajaxice.inventory.update_services_as_per_technology(Dajax.process, {'tech_id': $(id_technology).val()});
+            }
+            else{
+                $(id_service).empty();
+                $(id_service).select2("val","Select");
+                $(id_data_source).empty();
+                $(id_data_source).select2("val","Select");
+            }
+
+            // reset data sources if service is not selected, else if it has value
+            // then update data sources
+            if ($(id_service).val()){
+                Dajaxice.inventory.update_data_sources_as_per_service(Dajax.process, {'svc_id': $(id_service).val()});
+            }
+            else{
+                $(id_data_source).select2("val","");
+                $(id_data_source).empty();
+            }
         });
-    }
+        // update 'device vendor' on selecting 'device technology'
+        $("#id_technology").change(function () {
+            if ($(id_technology).val()) {
+                $(id_data_source).select2("val","Select");
+                $(id_data_source).empty();
+                Dajaxice.inventory.update_services_as_per_technology(Dajax.process, {'tech_id': $(id_technology).val()});
+            }
+            else{
+                $(id_service).select2("val","Select");
+                $(id_service).empty();
+                $(id_data_source).select2("val","Select");
+                $(id_data_source).empty();
+            }
+        });
+        // update 'data sources' on selecting 'service'
+        $(id_service).change(function () {
+            if ($(id_service).val()) {
+                Dajaxice.inventory.update_data_sources_as_per_service(Dajax.process, {'svc_id': $(id_service).val()});
+            }
+            else{
+                $(id_data_source).select2("val","");
+                $(id_data_source).empty();
+            }
+        });
 
-        var response=0;
-        $('#id_threshold_template').on('change', function(){
-        var threshold_template_id= $('#id_threshold_template').val();
-        $.ajax({
-            url:'{% url "get_range_and_icon_for_thematic_setting" %}',
-            data:{ 'threshold_template_id': threshold_template_id },
-            dataType:"json",
-            success:function(result){
-                response= result;
-                if (result.data.objects.range_list != undefined && result.data.objects.range_list.length !=0  ){
-                        // Remove any element present before appending any other element to it.
-                        $('#id_threshold_template').parent().parent().parent().not(':last').nextAll('div').remove();
+        /*Number of range inputs*/
+        var total_label = $("label").length,
+            range_count = 0;
 
-                        //select box
-                        var select_box='<div class="col-sm-9">' +
-                                   '<div class="col-md-8">' +
-                                   '<select class="col-md-12 (1)" id="id_icon_settings_(0)" name="icon_settings(0)">'+
-                                   '<option value="" selected="selected">Select</option>';
+        for(var i=0;i<total_label;i++) {
+            if($("label")[i].innerHTML.indexOf("Range") > -1) {
+                range_count++;
+            }
+        }
 
-                        for(var j=0;j<result.data.objects.icon_details.length;j++){
-                                    image_path= result.data.objects.icon_details[j].upload_image;
+        /**
+         * This function validates the "Range" fields as per the validation rules
+         * @method validateRangeForm
+         */
 
-                                select_box+='<option value='+ image_path +'>'+
-                                      result.data.objects.icon_details[j].name + '</option>'
-                            }
-                        select_box+='</select></div></div>'
+        function validateRangeForm() {
+            hide_error_messages()
 
-                        //range label
-                        for(var i=0;i<result.data.objects.range_list.length;i++){
-                            html=''
-                            var select= select_box;
-                            select= select.replace('(1)', 'update'+ result.data.objects.range_list[i].split(' ')[1].toString());
-                            select= select.split('(0)').join(result.data.objects.range_list[i].split(' ')[1].toString());
-                            html+='<div class="form-group"><label for="id_range"' +
-                                  'class="col-sm-3 control-label">' +
-                                  '<span class="mandatory">*</span>'+ toTitleCase(result.data.objects.range_list[i].toString()) +
-                                  '</label>'+ select + '</div>'
+            var error_obj = {},
+                range_bug_array = [],
+                overlapping_bug_array = [],
+                empty_start_array = [],
+                empty_end_array = [],
+                bugs_array = [];
 
-                        $('#id_threshold_template').parent().parent().parent().after(html)
+            for(var i=1;i<=range_count;i++) {
+
+                var startingValue = parseInt($("input#id_range"+i+"_start").val(), 10);
+                var endValue = parseInt($("input#id_range"+i+"_end").val(), 10);
+
+                if((startingValue=== 0 || startingValue) && (endValue===0 || endValue)) {
+                    if(startingValue > endValue) {
+                        range_bug_array.push(i);
+
+                        if(bugs_array.indexOf("range_bug_array") == -1) {
+                            bugs_array.push("range_bug_array");
                         }
 
-                        //Loop through all select div
-                        var divForm= $("#id_threshold_template").parent().parent().parent();
-                        $(divForm.nextAll()).each(function(i, el) {
-                            var selectEl= $(el).find('select');
+                    } else {
+                        for(var j=i;j<=range_count/2;j++) {
+                            if(j != i) {
+                                var startingValue2 = parseInt($("input#id_range"+j+"_start").val(), 10);
+                                var endValue2 = parseInt($("input#id_range"+j+"_end").val(), 10);
+                                if((startingValue2 >= startingValue && startingValue2 <= endValue) || (endValue2 >= startingValue && endValue2 <= endValue)) {
+                                    if(overlapping_bug_array.indexOf(j) == -1 && range_bug_array.indexOf(j) == -1) {
+                                        overlapping_bug_array.push(j);
 
-                            function formatResult(item) {
-                                    if(item.id) {
-                                        var id_is = item.id;
-                                        if (id_is.indexOf('uploaded') !=-1){
-                                            id_is="/media/"+ id_is;
-                                        }else{
-                                            id_is="/static/img/"+ id_is;
+                                        if(bugs_array.indexOf("overlapping_bug_array") == -1) {
+                                            bugs_array.push("overlapping_bug_array");
                                         }
-
-                                        return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
-                                    } else {
-                                        return item.text;
                                     }
                                 }
+                            }
+                        }
+                    }
 
-                                function formatSelection(item) {
-                                    if(item.id) {
-                                        var id_is = item.id;
-                                        if (id_is.indexOf('uploaded') !=-1){
-                                            id_is="/media/"+ id_is
-                                        }else{
-                                            id_is="/static/img/"+ id_is;
-                                        }
+                } else if((startingValue===0 || startingValue) && !endValue) {
 
-                                        return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
-                                    } else {
-                                        return item.text;
-                                    }
-                                }
+                    empty_end_array.push(i);
+                    if(bugs_array.indexOf("empty_end_array") == -1) {
+                        bugs_array.push("empty_end_array");
+                    }
 
-                            // $(selectEl).select2("destroy");
-                            $(selectEl).select2({
-                                formatResult: formatResult,
-                                formatSelection: formatSelection
-                            });
-                        });
+                } else if(!startingValue && (endValue===0 || endValue)) {
 
+                    empty_start_array.push(i);
+                    if(bugs_array.indexOf("empty_start_array") == -1) {
+                        bugs_array.push("empty_start_array");
+                    }
 
-                }else if (result.data.objects.range_list ==undefined || result.data.objects.range_list.length == 0 ){
-
-                    $('#id_threshold_template').parent().parent().parent().nextAll('div').remove()
                 }
+            }
 
-            }//Success ends
-        }); //ajax ends
-    });
-});
-</script>
+            error_obj = {
+                "range_bug_array" : {
+                    "data" : range_bug_array,
+                    message : "Start range can't be greater than end range."
+                },
+                "overlapping_bug_array" : {
+                    data : overlapping_bug_array,
+                    message : "Value can't be overlapped by preceding range values."
+                },
+                "empty_start_array" : {
+                    data : empty_start_array,
+                    message : "Please fill the start value."
+                },
+                "empty_end_array" : {
+                    data : empty_end_array,
+                    message : "Please fill the end value."
+                }
+            };
+
+            if(bugs_array.length > 0) {
+
+                for(var i=0;i<bugs_array.length;i++) {
+                    var error_array = bugs_array[i];
+                    show_error_msg(error_obj[error_array].data,error_obj[error_array].message);
+                }
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        /**
+         * This function shows the error message passed as param in front of respective text box present in array
+         * @prama id_array [Array], It contain the input id counter which has error
+         * @prama msg [String], It contain the error message
+         */
+        function show_error_msg(id_array,msg) {
+
+            for(var k=0;k<id_array.length;k++) {
+                $("input#id_range"+id_array[k]+"_end").closest(".col-sm-9").children()[1].innerHTML = msg;
+            }
+        }
+
+        function hide_error_messages() {
+            $('.col-md-4.help_text').each(function(i, el) {
+                $(el).html('');
+            })
+        }
+    </script>
 {% endblock %}
 
 
