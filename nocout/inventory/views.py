@@ -28,7 +28,8 @@ from models import Inventory, DeviceTechnology, IconSettings, LivePollingSetting
     ThematicSettings, GISInventoryBulkImport, UserThematicSettings, CircuitL2Report, PingThematicSettings, \
     UserPingThematicSettings
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
-    ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm, PingThematicSettingsForm
+    ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm, PingThematicSettingsForm, \
+    ServiceThematicSettingsForm, ServiceThematicSettingsCreateFormSet, ThresholdConfigurationCreateFormSet
 from organization.models import Organization
 from site_instance.models import SiteInstance
 from user_group.models import UserGroup
@@ -2030,8 +2031,241 @@ class Update_User_Thematic_Setting(View):
 
         return HttpResponse(json.dumps(self.result))
 
+#************************************ Service Thematic Settings ******************************************
+class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
+    """
+    Class Based View to render ServiceThematicSettings List Page.
+    """
+    model = ThematicSettings
+    template_name = 'service_thematic_settings/service_thematic_settings_list.html'
+    required_permissions = ('inventory.view_thematicsettings',)
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(ServiceThematicSettingsList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
+            {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
+            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
+            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto'},]
+
+        # user_id = self.request.user.id
+
+        #if user is superadmin or gisadmin
+        if self.request.user.is_superuser:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+
+        is_global = False
+        if 'admin' in self.request.path:
+            is_global = True
+
+        context['is_global'] = json.dumps(is_global)
+
+        return context
+
+
+class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
+    """
+    Class based View to render Thematic Settings Data table.
+    """
+    model = ThematicSettings
+    required_permissions = ('inventory.view_thematicsettings',)
+    columns = ['alias', 'threshold_template', 'icon_settings']
+    order_columns = ['alias', 'threshold_template']
+    search_columns = ['alias', 'icon_settings']
+
+    tab_search = {
+        "tab_kwarg": 'technology',
+        "tab_attr": "threshold_template__live_polling_template__technology__name",
+    }
+
+    def get_initial_queryset(self):
+        is_global = 1
+        if self.request.GET.get('admin'):
+            is_global = 0
+
+        qs = super(ServiceThematicSettingsListingTable, self).get_initial_queryset()
+
+        return qs.filter(is_global=is_global)
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+        print ">>>>>>>>>>>>>>>>>>>>>>>"
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            threshold_config = ThresholdConfiguration.objects.get(id=int(dct['threshold_template']))
+            image_string, range_text, full_string='','',''
+            if dct['icon_settings'] and dct['icon_settings'] !='NULL':
+                ###@nishant-teatrix. PLEASE SHOW THE RANGE MIN < ICON < RANGE MAX
+                for d in eval(dct['icon_settings']):
+                    img_url = str("/media/"+ (d.values()[0]) if "uploaded" in d.values()[0] else static("img/" + d.values()[0]))
+                    image_string= '<img src="{0}" style="height:25px; width:25px">'.format(img_url.strip())
+                    range_id_groups = re.match(r'[a-zA-Z_]+(\d+)', d.keys()[0])
+                    if range_id_groups:
+                        range_id = range_id_groups.groups()[-1]
+                        range_text= ' Range '+ range_id +', '
+                        range_start = 'range' + range_id +'_start'
+                        range_end = 'range' + range_id +'_end'
+                        range_start_value = getattr(threshold_config, range_start)
+                        range_end_value = getattr(threshold_config, range_end)
+                    else:
+                        range_text = ''
+                        range_start_value = ''
+                        range_end_value = ''
+
+                    full_string += image_string + range_text + "(" + range_start_value + ", " + range_end_value + ")" + "</br>"
+            else:
+                full_string='N/A'
+            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user_profile.values_list('id', flat=True)
+            checkbox_checked_true='checked' if user_current_thematic_setting else ''
+            dct.update(
+                threshold_template=threshold_config.name,
+                icon_settings= full_string,
+                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
+                actions='<a href="/serv_thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return json_data
+
+
+class ServiceThematicSettingsDetail(PermissionsRequiredMixin, DetailView):
+    """
+    Class based view to render the Service Thematic Settings detail.
+    """
+    model = ThematicSettings
+    required_permissions = ('inventory.view_thematicsettings',)
+    template_name = 'service_thematic_settings/service_thematic_settings_detail.html'
+
+
+class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
+    """
+    Class based view to create new ServiceThematicSettings.
+    """
+    template_name = 'service_thematic_settings/service_thematic_settings_new.html'
+    model = LivePollingSettings
+    form_class = LivePollingSettingsForm
+    success_url = reverse_lazy('service_thematic_settings_list')
+    required_permissions = ('inventory.add_thematicsettings',)
+
+    def get(self, request, *args, **kwargs):
+        """
+        Handles GET requests and instantiates blank versions of the form
+        and its inline formsets.
+        """
+        self.object = None
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        threshold_configuration_form = ThresholdConfigurationCreateFormSet()
+        service_thematic_settings_form = ServiceThematicSettingsCreateFormSet()
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  threshold_configuration_form=threshold_configuration_form,
+                                  service_thematic_settings_form=service_thematic_settings_form))
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests, instantiating a form instance and its inline
+        formsets with the passed POST variables and then checking them for
+        validity.
+        """
+        self.object = None
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        threshold_configuration_form = ThresholdConfigurationCreateFormSet(self.request.POST)
+        service_thematic_settings_form = ServiceThematicSettingsCreateFormSet(self.request.POST)
+        if (form.is_valid() and threshold_configuration_form.is_valid() and service_thematic_settings_form.is_valid()):
+            return self.form_valid(form, threshold_configuration_form, service_thematic_settings_form)
+        else:
+            return self.form_invalid(form, threshold_configuration_form, service_thematic_settings_form)
+
+    def form_valid(self, form, threshold_configuration_form, service_thematic_settings_form):
+        """
+        Called if all forms are valid. Creates a Recipe instance along with
+        associated Ingredients and Instructions and then redirects to a
+        success page.
+        """
+        self.object = form.save()
+        name = self.object.name
+        alias = self.object.alias
+        threshold_configuration_form.instance = self.object
+        self.threshold_configuration = threshold_configuration_form.save(commit=False)
+        self.threshold_configuration = self.threshold_configuration[0]
+        self.threshold_configuration.name = name
+        self.threshold_configuration.alias = alias
+        self.threshold_configuration.save()
+        service_thematic_settings_form.instance = self.threshold_configuration
+        self.thematic_settings = service_thematic_settings_form.save(commit=False)
+        self.thematic_settings[0].name = name
+        self.thematic_settings[0].alias = alias
+        self.thematic_settings[0].save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, threshold_configuration_form, service_thematic_settings_form):
+        """
+        Called if a form is invalid. Re-renders the context data with the
+        data-filled forms and errors.
+        """
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  threshold_configuration_form=threshold_configuration_form,
+                                  service_thematic_settings_form=service_thematic_settings_form))
+
+    # def form_valid(self, form):
+    #     """
+    #     Submit the form and to log the user activity.
+    #     """
+    #     icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
+    #     icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
+    #     self.object = form.save()
+    #     self.object.icon_settings=icon_settings_values_list
+    #     self.object.save()
+    #     return HttpResponseRedirect(ThematicSettingsCreate.success_url)
+
+
+class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
+    """
+    Class based view to update Thematic Settings.
+    """
+    template_name = 'service_thematic_settings/service_thematic_settings_update.html'
+    model = ThematicSettings
+    form_class = ThematicSettingsForm
+    success_url = reverse_lazy('service_thematic_settings_list')
+    required_permissions = ('inventory.change_thematicsettings',)
+
+    def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
+        icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
+        icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
+        self.object = form.save()
+        self.object.icon_settings=icon_settings_values_list
+        self.object.save()
+        # self.object = form.save()
+        return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
+
+
+class ServiceThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
+    """
+    Class based View to delete the Thematic Settings.
+    """
+    model = ThematicSettings
+    template_name = 'service_thematic_settings/service_thematic_settings_delete.html'
+    success_url = reverse_lazy('service_thematic_settings_list')
+    required_permissions = ('inventory.delete_thematicsettings',)
+
 
 #************************************ GIS Inventory Bulk Upload ******************************************
+
 class GISInventoryBulkImportView(FormView):
     template_name = 'bulk_import/gis_bulk_import.html'
     success_url = '/bulk_import/'
