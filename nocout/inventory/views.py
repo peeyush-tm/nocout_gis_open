@@ -29,7 +29,7 @@ from models import Inventory, DeviceTechnology, IconSettings, LivePollingSetting
     UserPingThematicSettings
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm, PingThematicSettingsForm, \
-    ServiceThematicSettingsForm, ServiceThematicSettingsCreateFormSet, ThresholdConfigurationCreateFormSet
+    ServiceThematicSettingsForm, ServiceThresholdConfigurationForm, ServiceLivePollingSettingsForm
 from organization.models import Organization
 from site_instance.models import SiteInstance
 from user_group.models import UserGroup
@@ -2099,7 +2099,6 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
         :param qs:
         :return qs
         """
-        print ">>>>>>>>>>>>>>>>>>>>>>>"
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
@@ -2151,10 +2150,13 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
     Class based view to create new ServiceThematicSettings.
     """
     template_name = 'service_thematic_settings/service_thematic_settings_new.html'
-    model = LivePollingSettings
-    form_class = LivePollingSettingsForm
+    model = ThematicSettings
+    form_class = ThematicSettingsForm
     success_url = reverse_lazy('service_thematic_settings_list')
     required_permissions = ('inventory.add_thematicsettings',)
+    icon_settings_keys = ( 'icon_settings1', 'icon_settings2', 'icon_settings3', 'icon_settings4', 'icon_settings5',
+                           'icon_settings6', 'icon_settings7', 'icon_settings8', 'icon_settings9', 'icon_settings10'
+            )
 
     def get(self, request, *args, **kwargs):
         """
@@ -2163,13 +2165,15 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         """
         self.object = None
         form_class = self.get_form_class()
-        form = self.get_form(form_class)
-        threshold_configuration_form = ThresholdConfigurationCreateFormSet()
-        service_thematic_settings_form = ServiceThematicSettingsCreateFormSet()
+        form = ServiceThematicSettingsForm()
+        icon_settings = IconSettings.objects.all()
+        threshold_configuration_form = ServiceThresholdConfigurationForm()
+        live_polling_settings_form = ServiceLivePollingSettingsForm()
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
-                                  service_thematic_settings_form=service_thematic_settings_form))
+                                  live_polling_settings_form=live_polling_settings_form,
+                                  icon_settings=icon_settings))
 
     def post(self, request, *args, **kwargs):
         """
@@ -2179,79 +2183,116 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         """
         self.object = None
         form_class = self.get_form_class()
-        form = self.get_form(form_class)
-        threshold_configuration_form = ThresholdConfigurationCreateFormSet(self.request.POST)
-        service_thematic_settings_form = ServiceThematicSettingsCreateFormSet(self.request.POST)
-        if (form.is_valid() and threshold_configuration_form.is_valid() and service_thematic_settings_form.is_valid()):
-            return self.form_valid(form, threshold_configuration_form, service_thematic_settings_form)
+        form = ServiceThematicSettingsForm(self.request.POST)
+        threshold_configuration_form = ServiceThresholdConfigurationForm(self.request.POST)
+        live_polling_settings_form = ServiceLivePollingSettingsForm(self.request.POST)
+        if (form.is_valid() and threshold_configuration_form.is_valid() and live_polling_settings_form.is_valid()):
+            return self.form_valid(form, threshold_configuration_form, live_polling_settings_form)
         else:
-            return self.form_invalid(form, threshold_configuration_form, service_thematic_settings_form)
+            return self.form_invalid(form, threshold_configuration_form, live_polling_settings_form)
 
-    def form_valid(self, form, threshold_configuration_form, service_thematic_settings_form):
+    def form_valid(self, form, threshold_configuration_form, live_polling_settings_form):
         """
-        Called if all forms are valid. Creates a Recipe instance along with
-        associated Ingredients and Instructions and then redirects to a
-        success page.
+        Called if all forms are valid. Creates a ThematicSettings, LivePollingSettings and IconSettings.
         """
+        name = form.instance.name
+        alias = form.instance.alias
+        live_polling_settings_form.instance.name = name
+        live_polling_settings_form.instance.alias = alias
+        live_polling_object = live_polling_settings_form.save()
+        threshold_configuration_form.instance.name = name
+        threshold_configuration_form.instance.alias = alias
+        threshold_configuration_form.instance.live_polling_template = live_polling_object
+        threshold_configuration_object = threshold_configuration_form.save()
+        form.instance.threshold_template = threshold_configuration_object
+        icon_settings_values_list = [ { key: form.data[key] }  for key in self.icon_settings_keys if form.data[key]]
+        form.instance.icon_settings = icon_settings_values_list
         self.object = form.save()
-        name = self.object.name
-        alias = self.object.alias
-        threshold_configuration_form.instance = self.object
-        self.threshold_configuration = threshold_configuration_form.save(commit=False)
-        self.threshold_configuration = self.threshold_configuration[0]
-        self.threshold_configuration.name = name
-        self.threshold_configuration.alias = alias
-        self.threshold_configuration.save()
-        service_thematic_settings_form.instance = self.threshold_configuration
-        self.thematic_settings = service_thematic_settings_form.save(commit=False)
-        self.thematic_settings[0].name = name
-        self.thematic_settings[0].alias = alias
-        self.thematic_settings[0].save()
+
         return HttpResponseRedirect(self.get_success_url())
 
-    def form_invalid(self, form, threshold_configuration_form, service_thematic_settings_form):
+    def form_invalid(self, form, threshold_configuration_form, live_polling_settings_form):
         """
         Called if a form is invalid. Re-renders the context data with the
         data-filled forms and errors.
         """
+        icon_settings = IconSettings.objects.all()
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
-                                  service_thematic_settings_form=service_thematic_settings_form))
-
-    # def form_valid(self, form):
-    #     """
-    #     Submit the form and to log the user activity.
-    #     """
-    #     icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
-    #     icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
-    #     self.object = form.save()
-    #     self.object.icon_settings=icon_settings_values_list
-    #     self.object.save()
-    #     return HttpResponseRedirect(ThematicSettingsCreate.success_url)
+                                  live_polling_settings_form=live_polling_settings_form,
+                                  icon_settings=icon_settings))
 
 
 class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
     """
-    Class based view to update Thematic Settings.
+    Class based view to update Service Thematic Settings.
     """
     template_name = 'service_thematic_settings/service_thematic_settings_update.html'
     model = ThematicSettings
-    form_class = ThematicSettingsForm
+    form_class = ServiceThematicSettingsForm
     success_url = reverse_lazy('service_thematic_settings_list')
     required_permissions = ('inventory.change_thematicsettings',)
+    icon_settings_keys = ( 'icon_settings1', 'icon_settings2', 'icon_settings3', 'icon_settings4', 'icon_settings5',
+                           'icon_settings6', 'icon_settings7', 'icon_settings8', 'icon_settings9', 'icon_settings10'
+            )
 
-    def form_valid(self, form):
+    def get(self, request, *args, **kwargs):
         """
-        Submit the form and to log the user activity.
+        Handles GET requests and instantiates blank versions of the form
+        and its inline formsets.
         """
-        icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
-        icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
-        self.object = form.save()
-        self.object.icon_settings=icon_settings_values_list
-        self.object.save()
-        # self.object = form.save()
-        return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = ServiceThematicSettingsForm(instance=self.object)
+        icon_settings = IconSettings.objects.all()
+        threshold_configuration_form = ServiceThresholdConfigurationForm(instance=self.object.threshold_template)
+        live_polling_settings_form = ServiceLivePollingSettingsForm(instance=self.object.threshold_template.live_polling_template)
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  threshold_configuration_form=threshold_configuration_form,
+                                  live_polling_settings_form=live_polling_settings_form,
+                                  icon_settings=icon_settings))
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests, instantiating a form instance and its inline
+        formsets with the passed POST variables and then checking them for
+        validity.
+        """
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = ServiceThematicSettingsForm(self.request.POST, instance=self.object)
+        threshold_configuration_form = ServiceThresholdConfigurationForm(self.request.POST, instance=self.object.threshold_template)
+        live_polling_settings_form = ServiceLivePollingSettingsForm(self.request.POST, instance=self.object.threshold_template)
+        if (form.is_valid() and threshold_configuration_form.is_valid() and live_polling_settings_form.is_valid()):
+            return self.form_valid(form, threshold_configuration_form, live_polling_settings_form)
+        else:
+            return self.form_invalid(form, threshold_configuration_form, live_polling_settings_form)
+
+    def form_valid(self, form, threshold_configuration_form, live_polling_settings_form):
+        """
+        Called if all forms are valid. Updates ThematicSettings, LivePollingSettings and IconSettings.
+        """
+        self.object = self.get_object()
+        icon_settings_values_list = [ { key: form.data[key] }  for key in self.icon_settings_keys if form.data[key]]
+        form.instance.icon_settings = icon_settings_values_list
+        form.save()
+        threshold_configuration_form.save()
+        live_polling_settings_form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, threshold_configuration_form, live_polling_settings_form):
+        """
+        Called if a form is invalid. Re-renders the context data with the
+        data-filled forms and errors.
+        """
+        icon_settings = IconSettings.objects.all()
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  threshold_configuration_form=threshold_configuration_form,
+                                  live_polling_settings_form=live_polling_settings_form,
+                                  icon_settings=icon_settings))
 
 
 class ServiceThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
