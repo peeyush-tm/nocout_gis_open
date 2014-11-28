@@ -1,0 +1,322 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+
+{% block css %}
+	<!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+{% endblock %}
+{% block content_title %}Add Thematic Settings{% endblock %}
+{% block content_description %}Add thematic settings{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i>SERVICE THEMATIC SETTINGS</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form action="/serv_thematic_settings/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ field.label|title }}</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            {{ threshold_configuration_form.management_form }}
+                                            {% for field in threshold_configuration_form %}
+                                            <div class="row inline {{ service_thematic_settings_form.prefix }}">
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range1</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.range1_start }}
+                                                            <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
+                                                            {{ field.range1_end }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range2</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.range2_start }}
+                                                            <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
+                                                            {{ field.range2_end }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range3</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.range3_start }}
+                                                            <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
+                                                            {{ field.range3_end }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range4</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.range4_start }}
+                                                            <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
+                                                            {{ field.range4_end }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range5</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.range5_start }}
+                                                            <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
+                                                            {{ field.range5_end }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range6</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.range6_start }}
+                                                            <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
+                                                            {{ field.range6_end }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range7</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.range7_start }}
+                                                            <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
+                                                            {{ field.range7_end }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range8</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.range8_start }}
+                                                            <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
+                                                            {{ field.range8_end }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range9</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.range9_start }}
+                                                            <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
+                                                            {{ field.range9_end }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range10</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.range10_start }}
+                                                            <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
+                                                            {{ field.range10_end }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {{ field.help_text }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {{ service_thematic_settings_form.management_form }}
+                                            {% for field in service_thematic_settings_form %}
+                                            <div class="row inline {{ service_thematic_settings_form.prefix }}">
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"> Global Setting</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.is_global }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"> Icon Settings</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field.icon_settings }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/thematic_settings/')"><i class="fa fa-times"></i>Cancel</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function(){
+            $(".select2select").select2();
+
+        function toTitleCase(str) {
+            return str.replace(/(?:^|\s)\w/g, function(match) {
+            return match.toUpperCase();
+        });
+    }
+
+        var response=0;
+        $('#id_threshold_template').on('change', function(){
+        var threshold_template_id= $('#id_threshold_template').val();
+        $.ajax({
+            url:'{% url "get_range_and_icon_for_thematic_setting" %}',
+            data:{ 'threshold_template_id': threshold_template_id },
+            dataType:"json",
+            success:function(result){
+                response= result;
+                if (result.data.objects.range_list != undefined && result.data.objects.range_list.length !=0  ){
+                        // Remove any element present before appending any other element to it.
+                        $('#id_threshold_template').parent().parent().parent().not(':last').nextAll('div').remove();
+
+                        //select box
+                        var select_box='<div class="col-sm-9">' +
+                                   '<div class="col-md-8">' +
+                                   '<select class="col-md-12 (1)" id="id_icon_settings_(0)" name="icon_settings(0)">'+
+                                   '<option value="" selected="selected">Select</option>';
+
+                        for(var j=0;j<result.data.objects.icon_details.length;j++){
+                                    image_path= result.data.objects.icon_details[j].upload_image;
+
+                                select_box+='<option value='+ image_path +'>'+
+                                      result.data.objects.icon_details[j].name + '</option>'
+                            }
+                        select_box+='</select></div></div>'
+
+                        //range label
+                        for(var i=0;i<result.data.objects.range_list.length;i++){
+                            html=''
+                            var select= select_box;
+                            select= select.replace('(1)', 'update'+ result.data.objects.range_list[i].split(' ')[1].toString());
+                            select= select.split('(0)').join(result.data.objects.range_list[i].split(' ')[1].toString());
+                            html+='<div class="form-group"><label for="id_range"' +
+                                  'class="col-sm-3 control-label">' +
+                                  '<span class="mandatory">*</span>'+ toTitleCase(result.data.objects.range_list[i].toString()) +
+                                  '</label>'+ select + '</div>'
+
+                        $('#id_threshold_template').parent().parent().parent().after(html)
+                        }
+
+                        //Loop through all select div
+                        var divForm= $("#id_threshold_template").parent().parent().parent();
+                        $(divForm.nextAll()).each(function(i, el) {
+                            var selectEl= $(el).find('select');
+
+                            function formatResult(item) {
+                                    if(item.id) {
+                                        var id_is = item.id;
+                                        if (id_is.indexOf('uploaded') !=-1){
+                                            id_is="/media/"+ id_is;
+                                        }else{
+                                            id_is="/static/img/"+ id_is;
+                                        }
+
+                                        return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
+                                    } else {
+                                        return item.text;
+                                    }
+                                }
+
+                                function formatSelection(item) {
+                                    if(item.id) {
+                                        var id_is = item.id;
+                                        if (id_is.indexOf('uploaded') !=-1){
+                                            id_is="/media/"+ id_is
+                                        }else{
+                                            id_is="/static/img/"+ id_is;
+                                        }
+
+                                        return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
+                                    } else {
+                                        return item.text;
+                                    }
+                                }
+
+                            // $(selectEl).select2("destroy");
+                            $(selectEl).select2({
+                                formatResult: formatResult,
+                                formatSelection: formatSelection
+                            });
+                        });
+
+
+                }else if (result.data.objects.range_list ==undefined || result.data.objects.range_list.length == 0 ){
+
+                    $('#id_threshold_template').parent().parent().parent().nextAll('div').remove()
+                }
+
+            }//Success ends
+        }); //ajax ends
+    });
+});
+</script>
+{% endblock %}
+
+
