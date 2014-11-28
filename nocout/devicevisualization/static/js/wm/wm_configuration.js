@@ -24,5 +24,6 @@ var clustererSettings = {
 	fontWeight: 'bold',
 	fontColor: 'black',
 	fontFamily: 'Arial,sans-serif',
-	clustererDistance: 70
+	clustererDistance: 70,
+	threshold: 3
 }

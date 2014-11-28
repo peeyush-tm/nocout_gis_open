@@ -247,75 +247,75 @@ $("#resetFilters").click(function(e) {
 function showAdvSearch() {
     showSpinner();
     // advJustSearch.getFilterInfofrompagedata("searchInfoModal", "advSearchBtn");
-    if (window.location.pathname.indexOf("white_background") > -1) {
-        $("#advFilterContainerBlock").hide();
-        $("#advSearchContainerBlock").show();
-        advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
-    } else {
-        if(!isAdvanceFilter) {
-            $("#filter_technology").select2("val","");
-            $("#filter_vendor").select2("val","");
-            $("#filter_state").select2("val","");
-            $("#filter_city").select2("val","");
-            $("#filter_frequency").select2("val","");
-            $("#filter_polarization").select2("val","");
+    if(!isAdvanceFilter) {
+        $("#filter_technology").select2("val","");
+        $("#filter_vendor").select2("val","");
+        $("#filter_state").select2("val","");
+        $("#filter_city").select2("val","");
+        $("#filter_frequency").select2("val","");
+        $("#filter_polarization").select2("val","");
 
-            // Reset Advance Filters Flag
-            isAdvanceFilter = 0;
-        }
-        if(!$("#advFilterContainerBlock").hasClass("hide")) {
-            $("#advFilterContainerBlock").addClass("hide");
-        }
-
-        if($("#advSearchContainerBlock").hasClass("hide")) {
-            $("#advSearchContainerBlock").removeClass("hide");
-        }
-        hideSpinner();
+        // Reset Advance Filters Flag
+        isAdvanceFilter = 0;
     }
+    if(!$("#advFilterContainerBlock").hasClass("hide")) {
+        $("#advFilterContainerBlock").addClass("hide");
+    }
+
+    if($("#advSearchContainerBlock").hasClass("hide")) {
+        $("#advSearchContainerBlock").removeClass("hide");
+    }
+    hideSpinner();
+    // if (window.location.pathname.indexOf("white_background") > -1) {
+    //     $("#advFilterContainerBlock").hide();
+    //     $("#advSearchContainerBlock").show();
+    //     advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
+    // } else {
+    // }
 }
 
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
     
-    if(window.location.pathname.indexOf("white_background") > -1) {
-        advJustSearch.showNotification();
-        advJustSearch.searchAndCenterData(data_for_filter_wmap);
-    } else {
+    var selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').split(',') : [],
+        selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').split(',') : [],
+        selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').split(',') : [],
+        selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').split(',') : [],
+        isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0;
 
-        var selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').split(',') : [],
-            selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').split(',') : [],
-            selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').split(',') : [],
-            selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').split(',') : [],
-            isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0;
+    // If any value is selected in searcg
+    if(isSearchApplied) {
 
-        // If any value is selected in searcg
-        if(isSearchApplied) {
-
-            if($("#removeSearchBtn").hasClass('hide')) {
-                $("#removeSearchBtn").removeClass('hide');
-            }
-
-            // Set Advance Search Flag
-            isAdvanceSearch = 1;
-            advJustSearch.showNotification();
-            gmap_self.advanceSearchFunc();
-        } else {
-            // Reset Advance Search Flag
-            isAdvanceSearch = 0;
-            /*Hide the spinner*/
-            hideSpinner();
-            bootbox.alert("Please select atleast one field.");
+        if($("#removeSearchBtn").hasClass('hide')) {
+            $("#removeSearchBtn").removeClass('hide');
         }
+
+        // Set Advance Search Flag
+        isAdvanceSearch = 1;
+        advJustSearch.showNotification();
+        gmap_self.advanceSearchFunc();
+    } else {
+        // Reset Advance Search Flag
+        isAdvanceSearch = 0;
+        /*Hide the spinner*/
+        hideSpinner();
+        bootbox.alert("Please select atleast one field.");
     }
+    // if(window.location.pathname.indexOf("white_background") > -1) {
+    //     advJustSearch.showNotification();
+    //     advJustSearch.searchAndCenterData(data_for_filter_wmap);
+    // } else {
+
+    // }
 });
 
 $("#cancelAdvSearchBtn").click(function(e) {
     
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        $("#advSearchContainerBlock").addClass("hide");
-    } else if (window.location.pathname.indexOf("white_background") > -1) {
-        $("#advFilterSearchContainerBlock").html("");
-    }
+    // if(window.location.pathname.indexOf("googleEarth") > -1) {
+    //     $("#advSearchContainerBlock").addClass("hide");
+    // } else if (window.location.pathname.indexOf("white_background") > -1) {
+    //     $("#advFilterSearchContainerBlock").html("");
+    // }
 
     if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
         $("#advSearchContainerBlock").addClass("hide");
@@ -329,29 +329,33 @@ function resetAdvanceSearch() {
 
 $("#resetSearchForm").click(function(e) {
     
-    if (window.location.pathname.indexOf("white_background") > -1) {
-        $("form#searchInfoModal_form").find('select').each(function(i, el) {
-            $(el).select2("val", [])
-            if(i== $("form#searchInfoModal_form").find('select').length-1) {
-                //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
-                //     $("#advSearchContainerBlock").addClass("hide");
-                // } 
-            }
-        });
-    } else {
-        // Reset Search Fields
-        $("#search_name").select2("val","");
-        $("#search_sector_configured_on").select2("val","");
-        $("#search_circuit_ids").select2("val","");
-        $("#search_city").select2("val","");
+    $("#search_name").select2("val","");
+    $("#search_sector_configured_on").select2("val","");
+    $("#search_circuit_ids").select2("val","");
+    $("#search_city").select2("val","");
 
-        if(!$("#removeSearchBtn").hasClass('hide')) {
-            $("#removeSearchBtn").addClass('hide');
-        }
-
-        // Reset Advance Search Flag
-        isAdvanceSearch = 0;
+    if(!$("#removeSearchBtn").hasClass('hide')) {
+        $("#removeSearchBtn").addClass('hide');
     }
+
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        ccpl_map.getLayersByName("Search Layer")[0].setVisibility(false);
+    }
+
+    // Reset Advance Search Flag
+    isAdvanceSearch = 0;
+    // if (window.location.pathname.indexOf("white_background") > -1) {
+    //     $("form#searchInfoModal_form").find('select').each(function(i, el) {
+    //         $(el).select2("val", [])
+    //         if(i== $("form#searchInfoModal_form").find('select').length-1) {
+    //             //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
+    //             //     $("#advSearchContainerBlock").addClass("hide");
+    //             // } 
+    //         }
+    //     });
+    // } else {
+    //     // Reset Search Fields
+    // }
 
     advJustSearch.removeSearchMarkers();
     advJustSearch.resetVariables();

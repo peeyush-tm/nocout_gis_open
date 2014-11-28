@@ -20,7 +20,7 @@ var bs_loki_db = [],
     all_devices_loki_db= [],
 	state_lat_lon_db= [],
 	searchResultData= [],
-	state_wise_device_labels= [],
+	state_wise_device_labels= {},
 	allMarkersObject_wmap= {
 		'base_station': {},
 		'path': {},
@@ -90,7 +90,7 @@ function WhiteMapClass() {
 		this.unSpiderifyBsMarker= function() {
 			if(markerSpiderfied) {
 				ccpl_map.getLayersByName("Devices")[0].removeAllFeatures();
-				var finalLatLong = new OpenLayers.LonLat(markerSpiderfied.attributes.ptLon, markerSpiderfied.attributes.ptLat);
+				var finalLatLong = new OpenLayers.LonLat(markerSpiderfied.ptLon, markerSpiderfied.ptLat);
 				markerSpiderfied.move(finalLatLong);
 				markerSpiderfied= "";
 			}
@@ -105,33 +105,33 @@ function WhiteMapClass() {
 				global_this.unSpiderifyBsMarker();
 
 			}
-			var bsData = wm_obj.data[feature.attributes.bs_name];
+			var bsData = wm_obj.data[feature.bs_name];
 			var bsSectors = bsDevicesObj[bsData.name];
 			// var bsSectorLength = bsData.data.param.sector.length;
 			if(bsSectors && bsSectors.length) {
 				var currentAngle = 0;
 				for(var i=0; i<= bsSectors.length; i++) {
 					if(i=== bsSectors.length) {
-						var bsMarker = wm_obj['features'][bsData.name];						
+						var bsMarker = allMarkersObject_wmap['base_station']['bs_'+bsData.name];						
 						var xyDirection= "";
 						if(ccpl_map.getZoom() < 9) {
-							xyDirection = getAtXYDirection(currentAngle, 7, feature.attributes.ptLon, feature.attributes.ptLat);
+							xyDirection = getAtXYDirection(currentAngle, 7, feature.ptLon, feature.ptLat);
 						} else {
 							if(ccpl_map.getZoom() >= 12) {
 								if(ccpl_map.getZoom() >= 14) {
-									xyDirection = getAtXYDirection(currentAngle, 0.3, feature.attributes.ptLon, feature.attributes.ptLat);		
+									xyDirection = getAtXYDirection(currentAngle, 0.3, feature.ptLon, feature.ptLat);		
 								} else {
-									xyDirection = getAtXYDirection(currentAngle, 1, feature.attributes.ptLon, feature.attributes.ptLat);		
+									xyDirection = getAtXYDirection(currentAngle, 1, feature.ptLon, feature.ptLat);		
 								}
 							} else {
-								xyDirection = getAtXYDirection(currentAngle, 3, feature.attributes.ptLon, feature.attributes.ptLat);	
+								xyDirection = getAtXYDirection(currentAngle, 3, feature.ptLon, feature.ptLat);	
 							}
 							
 						}					
 
 						var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat);
 											
-						var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
+						var start_point = new OpenLayers.Geometry.Point(feature.ptLon,feature.ptLat);
 						var end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
 
 						ccpl_map.getLayersByName("Devices")[0].addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
@@ -140,32 +140,32 @@ function WhiteMapClass() {
 						markerSpiderfied = feature;
 					} else {
 						var sector = bsData.data.param.sector[i];
-						var sectorMarker = wm_obj['devices']['sector_'+sector.sector_configured_on];
+						var sectorMarker = allMarkersObject_wmap['sector_device']['sector_'+sector.sector_configured_on];
 						var xyDirection= "";
 						if(ccpl_map.getZoom() < 9) {
-							xyDirection = getAtXYDirection(currentAngle, 7, feature.attributes.ptLon, feature.attributes.ptLat);
+							xyDirection = getAtXYDirection(currentAngle, 7, feature.ptLon, feature.ptLat);
 						} else {
 							if(ccpl_map.getZoom() >= 12) {
 								if(ccpl_map.getZoom() >= 14) {
-									xyDirection = getAtXYDirection(currentAngle, 0.3, feature.attributes.ptLon, feature.attributes.ptLat);		
+									xyDirection = getAtXYDirection(currentAngle, 0.3, feature.ptLon, feature.ptLat);		
 								} else {
-									xyDirection = getAtXYDirection(currentAngle, 1, feature.attributes.ptLon, feature.attributes.ptLat);		
+									xyDirection = getAtXYDirection(currentAngle, 1, feature.ptLon, feature.ptLat);		
 								}
 							} else {
-								xyDirection = getAtXYDirection(currentAngle, 3, feature.attributes.ptLon, feature.attributes.ptLat);	
+								xyDirection = getAtXYDirection(currentAngle, 3, feature.ptLon, feature.ptLat);	
 							}
 							
 						}					
 
 						var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat);
 											
-						var start_point = new OpenLayers.Geometry.Point(feature.attributes.ptLon,feature.attributes.ptLat);
+						var start_point = new OpenLayers.Geometry.Point(feature.ptLon,feature.ptLat);
 						var end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
 
 						ccpl_map.getLayersByName("Devices")[0].addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
 						ccpl_map.getLayersByName("Devices")[0].addFeatures([sectorMarker]);
 						sectorMarker.move(finalLatLong);
-						sectorMarker.style.externalGraphic = sectorMarker.attributes.pollingIcon ? sectorMarker.attributes.pollingIcon : sectorMarker.attributes.clusterIcon;
+						sectorMarker.style.externalGraphic = sectorMarker.pollingIcon ? sectorMarker.pollingIcon : sectorMarker.oldIcon;
 					}
 					currentAngle= currentAngle+(360/(bsSectors.length+1));
 				}
@@ -1491,7 +1491,6 @@ function WhiteMapClass() {
 							state_wise_device_labels[state].attributes.display = '';
 						}
 					} else {
-						console.log("Wow");
 						state_wise_device_counters[state] = 1;
 						if(state_lat_lon_obj) {
 					        // create a point feature
@@ -1631,10 +1630,9 @@ function WhiteMapClass() {
 			}
 			var zoom_level = ccpl_map.getZoom();
 
-			ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
-
 			//Loop through the bs_ss_devices
 			for(var i=0; i< bs_ss_devices.length; i++) {
+				wm_obj.data[bs_ss_devices[i].name] = bs_ss_devices[i];
 				
 				var lon = bs_ss_devices[i].data.lon, 
 					lat = bs_ss_devices[i].data.lat, 
@@ -1671,7 +1669,7 @@ function WhiteMapClass() {
 				var bs_marker = global_this.createOpenLayerVectorMarker(size, icon, lon, lat, bs_marker_object);
 				bs_ss_markers.push(bs_marker);
 
-				ccpl_map.getLayersByName("Markers")[0].addFeatures([bs_marker]);
+				// ccpl_map.getLayersByName("Markers")[0].addFeatures([bs_marker]);
 
 				/*Sectors Array*/
 				var sector_array = bs_ss_devices[i].data.param.sector;
@@ -1774,6 +1772,13 @@ function WhiteMapClass() {
 						/*Create Sector Marker*/
 						var sector_Marker = global_this.createOpenLayerVectorMarker(size, sectors_Markers_Obj.icon, lon, lat, sectors_Markers_Obj);
 
+						bsDevicesObj
+
+						if(!bsDevicesObj[bs_ss_devices[i].name]) {
+							bsDevicesObj[bs_ss_devices[i].name]= [];
+						}
+						bsDevicesObj[bs_ss_devices[i].name].push(sector_Marker);
+
 						ccpl_map.getLayersByName("Devices")[0].addFeatures([sector_Marker]);
 
 						(function(sector_Marker) {
@@ -1872,7 +1877,7 @@ function WhiteMapClass() {
 					    /*Create SS Marker*/
 					    var ss_marker = global_this.createOpenLayerVectorMarker(size, ss_marker_object.icon, ss_marker_object.ptLon, ss_marker_object.ptLat, ss_marker_object);
 					    bs_ss_markers.push(ss_marker);
-					    ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
+					    // ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
 
 					    (function(ss_marker) {
 
@@ -1999,11 +2004,11 @@ function WhiteMapClass() {
 				global_this.updateMarkersSize('medium');
 			}
 
-			// ccpl_map.getLayersByName("Markers")[0].addFeatures([bs_ss_markers]);
-			ccpl_map.getLayersByName('Markers')[0].strategies[0].activate();
-			ccpl_map.getLayersByName('Markers')[0].strategies[0].distance = 70;
-			ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold= 2
-			ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
+			if(bs_ss_markers.length> 0) {
+				ccpl_map.getLayersByName("Markers")[0].addFeatures(bs_ss_markers);
+			}
+
+			// console.log('is end plotting');
 
 			if(isDebug) {
 				console.log("Plot Devices End Time :- "+ new Date().toLocaleString());
@@ -2300,7 +2305,6 @@ function WhiteMapClass() {
 		state_lat_lon_db.insert({"name" : "Lakshadweep","lat" : 10.5700,"lon" : 72.6300});
 		state_lat_lon_db.insert({"name" : "Pondicherry","lat" : 11.9300,"lon" : 79.8300});
 		state_lat_lon_db.insert({"name" : "Dadra And Nagar Haveli","lat" : 20.2700,"lon" : 73.0200});
-		isDebug= 1;
 		//Call prototype method createOpenLayerMap() to create White Map and in the callback. Start Ajax Request to get Data.
 		this.createOpenLayerMap(function() {			
 			//start ajax request

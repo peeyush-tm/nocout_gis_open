@@ -42,9 +42,8 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 		// Save current zoom value in global variable
     	current_zoom = ccpl_map.getZoom();
     	/* When zoom level is greater than 8 show lines */
-    	if(ccpl_map.getZoom() > 7) {
-
-    		if(ccpl_map.getZoom() < 12 || searchResultData.length > 0) {
+    	if(ccpl_map.getZoom() > 5) {
+    		if(ccpl_map.getZoom() < 8 || searchResultData.length > 0) {
 
     			var states_with_bounds = state_lat_lon_db.where(function(obj) {
     				return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
@@ -56,9 +55,8 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         		for(var i=states_with_bounds.length;i--;) {
         			if(state_wise_device_labels[states_with_bounds[i].name]) {
         				states_array.push(states_with_bounds[i].name);
-            			if(!(state_wise_device_labels[states_with_bounds[i].name].isHidden_)) {
-            				hideOpenLayerFeature(state_wise_device_labels[states_with_bounds[i].name]);
-            			}
+        				state_wise_device_labels[states_with_bounds[i].name].attributes.display = 'none';
+        				ccpl_map.getLayersByName("States")[0].redraw();
         			}
         		}
 
@@ -80,34 +78,35 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 					basic_filter_condition = $.trim($("#technology").val()) || $.trim($("#vendor").val()),
 					data_to_plot = [];
 
-        			var filtered_devices = [],
-        				current_bound_devices = [];
+    			var filtered_devices = [],
+    				current_bound_devices = [];
 
-        			if(isAdvanceFilterApplied || isBasicFilterApplied) {
-        				filtered_devices = gmap_self.getFilteredData_gmap();
-    				} else {
-    					filtered_devices = all_devices_loki_db.data;
+    			if(isAdvanceFilterApplied || isBasicFilterApplied) {
+    				filtered_devices = gmap_self.getFilteredData_gmap();
+				} else {
+					filtered_devices = all_devices_loki_db.data;
+				}
+
+				// IF any states exists
+				if(states_array.length > 0) {
+    				for(var i=filtered_devices.length;i--;) {
+						var current_bs = filtered_devices[i];
+						if(states_array.indexOf(current_bs.data.state) > -1) {
+							current_bound_devices.push(current_bs);
+						}
     				}
+				} else {
+					current_bound_devices = filtered_devices;
+				}
 
-    				// IF any states exists
-    				if(states_array.length > 0) {
-        				for(var i=filtered_devices.length;i--;) {
-							var current_bs = filtered_devices[i];
-							if(states_array.indexOf(current_bs.data.state) > -1) {
-								current_bound_devices.push(current_bs);
-							}
-        				}
-    				} else {
-    					current_bound_devices = filtered_devices;
-    				}
+				if(advance_filter_condition || basic_filter_condition) {
+					data_to_plot = gmap_self.getFilteredBySectors(current_bound_devices);
+				} else {
+        			data_to_plot = current_bound_devices;
+				}
 
-					if(advance_filter_condition || basic_filter_condition) {
-						data_to_plot = gmap_self.getFilteredBySectors(current_bound_devices);
-					} else {
-            			data_to_plot = current_bound_devices;
-					}
-        		// }
         		var inBoundData = [];
+        		
         		// If any data exists
         		if(data_to_plot.length > 0) {
 
@@ -121,17 +120,17 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     				}
 
         			main_devices_data_wmap = data_to_plot;
+
         			if(currentlyPlottedDevices.length === 0) {
+        				ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
 	            		/*Clear all everything from map*/
 						$.grep(allMarkersArray_wmap,function(marker) {
-							hideOpenLayerFeature(marker);
-							// var markerLayer = marker.layerReference;
-							// marker.style.display = 'none';
-							// marker.map = '';
-							// markerLayer.redraw();
-							// var markerLayer = marker.layerReference;
-							// markerLayer.removeFeatures(marker);
+							var markerLayer = marker.layer ? marker.layer : marker.layerReference;
+							marker.isActive = 0;
+							marker.style.display = 'none';
+							markerLayer.redraw();
 						});
+						ccpl_map.getLayersByName('Markers')[0].strategies[0].activate();
 						// Reset Variables
 						allMarkersArray_wmap = [];
 						main_devices_data_wmap = [];
@@ -155,6 +154,8 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
         			// Call function to plot devices on gmap
 					whiteMapClass.plotDevices_wmaps(inBoundData,"base_station");
+					ccpl_map.getLayersByName('Markers')[0].refresh({forces:true});
+					ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 
 					if(searchResultData.length == 0 || ccpl_map.getZoom() === 8) {
 						var polylines = allMarkersObject_wmap['path'],
@@ -226,7 +227,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
             	}
         	},500);
 
-        } else if(ccpl_map.getZoom() <= 7) {
+        } else if(ccpl_map.getZoom() <= 5) {
         	
 			// Clear performance calling timeout
 			if(recallPerf != "") {
@@ -243,7 +244,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
                     	var label_marker = move_listener_obj[keys_array[z]];
                         if(typeof label_marker === 'object') {
                            if((label_marker && label_marker["filter_data"]["bs_name"]) && (label_marker && label_marker["filter_data"]["sector_name"])) {
-                           		labelsArray[x].close();
+                           		labelsArray[x].destroy();
                            }
                         }
                     }
@@ -253,11 +254,21 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
             // Reset labels array 
             labelsArray = [];
 
+            /*Clear master marker cluster objects*/
+            // Deactivate Marker Clustering Strategy
+            ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
+
             /*Clear all everything from map*/
 			$.grep(allMarkersArray_wmap,function(marker) {
+				var markerLayer = marker.layer ? marker.layer : marker.layerReference;
 				marker.isActive = 0;
-				hideOpenLayerFeature(marker);
+				marker.style.display = 'none';
+				markerLayer.redraw();
 			});
+
+			ccpl_map.getLayersByName('Markers')[0].destroyFeatures(ccpl_map.getLayersByName('Markers')[0].features);
+			ccpl_map.getLayersByName('Markers')[0].redraw();
+
 			// Reset Variables
 			allMarkersArray_wmap = [];
 			main_devices_data_wmap = [];
@@ -271,24 +282,21 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				'sector_polygon': {}
 			};
 
-			/*Clear master marker cluster objects*/
-			// ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
-
 			var states_with_bounds = state_lat_lon_db.where(function(obj) {
     			return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
     		});
 
 			for(var i=states_with_bounds.length;i--;) {
 				if(state_wise_device_labels[states_with_bounds[i].name]) {
-					if(state_wise_device_labels[states_with_bounds[i].name].isHidden_) {
-						showOpenLayerFeature(state_wise_device_labels[states_with_bounds[i].name]);
-					}
+					state_wise_device_labels[states_with_bounds[i].name].attributes.display = '';
+					ccpl_map.getLayersByName("States")[0].redraw();
 				}
 			}
 
 			state_lat_lon_db.where(function(obj) {
 				if(state_wise_device_labels[obj.name]) {
-					showOpenLayerFeature(state_wise_device_labels[obj.name]);
+					state_wise_device_labels[obj.name].attributes.display = '';
+					ccpl_map.getLayersByName("States")[0].redraw();
 					return ;
 				}
 			});
@@ -308,68 +316,65 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 			console.log("*************************************");
 		}
 	},300);
-	
-	// if(ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAtClusterUpdates) {
-	// 	ccpl_map.getLayersByName('Markers')[0].strategies[0].distance = 40;
-	// 	ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold = 7;
-	// } else {
-	// 	ccpl_map.getLayersByName('Markers')[0].strategies[0].distance = 70;
-	// 	ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold = "";
-	// }
-	// ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 };
 
 
 /**
- * This function is triggered when Click on Layer Feature is done(Markers, Lines, Sectors). Zoom on cluster else open infowindow for it.
+ * This function is triggered when Click on Layer Features is done(Statem, Markers, Lines, Sectors). Zoom on cluster if present else open infowindow for it.
  * @param  {[type]} e [description]
  * @return {[type]}   [description]
  */
-WhiteMapClass.prototype.layerFeatureClicked = function(e) {
-	var feature = e.feature;
-
+WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 	/**
 	 * This function shows create and display InfoWindow content for the feature.
 	 * @param  {[OpenLayers Feature]} feature Feature on which Click was done
 	 * @return {[type]}         ;
 	 */
 	function showInfoWindow(feature) {
-		var content = gmap_self.makeWindowContent(poly);
+		var content = gmap_self.makeWindowContent(feature);
 		$("#infoWindowContainer").html(content);
 		$("#infoWindowContainer").removeClass('hide');
 	}
 
-	if(feature) {
-		//if cluster is present
-		if(feature.cluster) {
-			//if cluster of length gt 2 is there, expand the cluster
-			if(feature.cluster.length >= 2) {
-				var clusterPoints = [];
-				for(var i = 0; i< feature.cluster.length; i++){
-					clusterPoints.push(feature.cluster[i].geometry);
-				}
-				var lineString = new OpenLayers.Geometry.LineString(clusterPoints);
-				ccpl_map.zoomToExtent(lineString.getBounds());
-			//else get item at 0 index, show infowindow for it.
-			} else {
-				feature = feature.cluster[0].attributes;
-				showInfoWindow(feature);
+	//Check if feature clicked was a cluster
+	if(feature.cluster) {
+		//If feature cluster was present
+		if(feature.cluster.length >= 2) {
+			console.log(feature.cluster);
+			var clusterPoints = [];
+			//Loop through all the points in cluster
+			for(var i = 0; i< feature.cluster.length; i++){
+				//Add geometry to the clusterPoints array
+				clusterPoints.push(feature.cluster[i].geometry);
 			}
+			//Create a OpenLayer Geometry with our Clusterpoint
+			var lineString = new OpenLayers.Geometry.LineString(clusterPoints);
+			//Set Zoom to LineString
+			ccpl_map.zoomToExtent(lineString.getBounds());
 		} else {
-			//if path or sector is clicked
-			if(feature.pointType === "path" || feature.pointType === "sector") {
+			//Show infoWindow
+			showInfoWindow(feature.cluster[0]);
+		}
+	} else {
+		//If clicked feature was not base setation
+		if(feature.pointType !== "base_station") {
+			//Show Info Window for it
+			showInfoWindow(feature);
+			//If line was clicked, hide Freshnel Zone button on the infoWindowContainer
+			if(feature.pointType === 'path') {
+				setTimeout(function() {
+					//remove freshnel zone button
+					$("#infoWindowContainer").find('ul.list-unstyled.list-inline li:first-child').addClass('hide');
+				}, 10);
+			}
+		//Else if base station was clicked
+		} else {
+			//First spiderify base station is not spiderfied, else open Info Window for it.
+			if(this.spiderifyMarker(feature)) {
 				showInfoWindow(feature);
-			//if bs or ss is clicked
-			} else {
-				if(feature.attributes.pointType === "base_station") {
-					if(this.spiderifyMarker(feature)) {
-						showInfoWindow(feature.attributes);		
-					}
-				} else {
-					showInfoWindow(feature.attributes);
-				}
 			}
 		}
 	}
+	//return
 	return ;
 }

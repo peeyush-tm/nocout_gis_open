@@ -88,28 +88,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//Add Layer to the Map
 		ccpl_map.addLayer(layers.stateLabelLayer);
-
-		//Create a OpenLayer Control to enable and listen Feature click event on States layer
-		// var stateClickCtrl = new OpenLayers.Control.SelectFeature(
-		// 	[layers.stateLabelLayer], {
-		// 		clickout: true,
-		// 		eventListeners: {
-		// 			//on feature click
-		// 			featurehighlighted: function(e) {
-		// 				var feature = e.feature;
-		// 				console.log(feature);
-		// 				gmap_self.state_label_clicked(feature.attributes.state_param);
-		// 				return false;
-		// 			}
-		// 		}
-		// 	}
-		// );
-
-		// //Add control to the map
-		// ccpl_map.addControl(stateClickCtrl);
-
-		// //And activate it
-		// stateClickCtrl.activate();
 	/*
 	End of OpenLayer Vector Layer For Showing State Labels
 	 */
@@ -126,7 +104,8 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
                 	//dynamic graphic width
                 	graphicWidth: 71,
                 	//dymanic graphic height
-                	graphicHeight: 77
+                	graphicHeight: 77,
+                	graphicYOffset: -77
                 }, OpenLayers.Feature.Vector.style["default"]))
             })
         });
@@ -253,7 +232,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 						return clusterImg;
 					}
 
-					return feature.cluster.length > 1 ? clusterImg(feature.cluster.length) : feature.cluster[0].style.externalGraphic;
+					return feature.cluster.length > 1 ? clusterImg(feature.cluster.length) : feature.cluster[0].icon;
 				},
 				graphicWidth: function(feature) {
 					if(feature.cluster.length > 1) {
@@ -284,11 +263,16 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		//OpenLayr Style Map for Markers Layer
 		styleMap = new OpenLayers.StyleMap({
-			'default': clusterStyle
+			"default": clusterStyle
 		});
 
 		//Create a OpenLayer Strategy Cluster
-		strategy= new OpenLayers.Strategy.Cluster({distance: clustererSettings.clustererDistance});
+		strategy= new OpenLayers.Strategy.Cluster({
+			"distance": clustererSettings.clustererDistance, 
+			"threshold": clustererSettings.threshold,
+			"autoActivate": false,
+			"autoDestroy": false
+		});
 
 
 		//Create a Vector Layer for Markers with styleMap and strategy
@@ -304,22 +288,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	Select Control for BS, SS, Devices, Lines and Sectors Layer[Click event]
 	 */
 		//Select Control for Openlayers layer.
-		var selectCtrl = new OpenLayers.Control.SelectFeature(
-			[layers. stateLabelLayer,layers.markersLayer, layers.markerDevicesLayer, layers.linesLayer, layers.sectorsLayer], 
-			{
-				clickout: true
-				// eventListeners: {
-				// 	//on feature click
-				// 	featurehighlighted: function(feature) {
-				// 		//trigger layerFeatureClicked()
-				// 		that.layerFeatureClicked(feature);
-				// 		//remove selection to hide highlighted class
-				// 		selectCtrl.unselectAll();
-				// 		return false;
-				// 	}
-				// }
-			}
-		);
+		var selectCtrl = new OpenLayers.Control.SelectFeature( [layers. stateLabelLayer,layers.markersLayer, layers.markerDevicesLayer, layers.linesLayer, layers.sectorsLayer],  { clickout: true } );
 
 		//Add control to the map
 		ccpl_map.addControl(selectCtrl);
@@ -336,6 +305,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		layers.markersLayer.events.on({
 			"featureselected": function(e) {
+				var feature = e.feature;
 				that.layerFeatureClicked(feature);
 				selectCtrl.unselectAll();
 				return false;
@@ -344,6 +314,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		layers.markerDevicesLayer.events.on({
 			"featureselected": function(e) {
+				var feature = e.feature;
 				that.layerFeatureClicked(feature);
 				selectCtrl.unselectAll();
 				return false;
@@ -352,6 +323,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		layers.linesLayer.events.on({
 			"featureselected": function(e) {
+				var feature = e.feature;
 				that.layerFeatureClicked(feature);
 				selectCtrl.unselectAll();
 				return false;
@@ -360,6 +332,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		layers.sectorsLayer.events.on({
 			"featureselected": function(e) {
+				var feature = e.feature;
 				that.layerFeatureClicked(feature);
 				selectCtrl.unselectAll();
 				return false;
@@ -450,50 +423,6 @@ WhiteMapClass.prototype.createOpenLayerVectorMarker= function(size, iconUrl, lon
 	return feature;
 }
 
-
-var infoWindow, lastFeature;
-/*
-This function closes Info Window if it is showing.
- */
-WhiteMapClass.prototype.closeInfoWindow = function() {
-	if(infoWindow) {
-		infoWindow.hide();
-		infoWindow.destroy();
-		if(lastFeature) {
-			lastFeature.popup = "";
-		}
-		infoWindow= "";
-		return  true;
-	}
-	return false;
-}
-/*
-This function open Info Window for the Marker.
-@param e {Mouse Click Event} Event Info 
-@param feature {Open Layer Marker Object} Marker on which Info Window is to be open
-@param infoHTML {Object} Data to show on InfoWindow
- */
-WhiteMapClass.prototype.openInfoWindow = function(feature, infoHTML) {
-	
-	closeInfoWindow();
-
-	//Create a OpenLayer Popup.
-	infoWindow = new OpenLayers.Popup(feature.name,
-		feature.lonlat,
-		null,
-		infoHTML,
-		true);
-
-	feature.popup = infoWindow;
-	//Add popup to ccpl_map
-	ccpl_map.addPopup(infoWindow);
-	//Update Size for InfoWindow
-	infoWindow.updateSize();
-	//Show InfoWndow
-	infoWindow.show();
-	lastFeature = feature;
-}
-
 /**
  * This function creates a link between Bs & SS
  * @method plotLines_wmap. 
@@ -516,8 +445,8 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 	}
 
 	var pathDataObject = new OpenLayers.Geometry.LineString([
-		new OpenLayers.Geometry.Point(startEndObj.startLat,startEndObj.startLon),
-		new OpenLayers.Geometry.Point(startEndObj.endLat,startEndObj.endLon)
+		new OpenLayers.Geometry.Point(startEndObj.startLon, startEndObj.startLat),
+		new OpenLayers.Geometry.Point(startEndObj.endLon, startEndObj.endLat)
 	]);
 	var linkObject = {},
 		link_path_color = linkColor;
@@ -598,10 +527,6 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 
 	return pathConnector;
 }
-
-//-----------------------------------------------------------
-var lastInfoOpen = null;
-//Function to bind info window to a marker
 
 /**
  * This function plot the sector for given lat-lon points
@@ -713,73 +638,45 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 	return poly;
 }
 
-/**
- * This function checks if given feature lies in bound of polygon if polygon is provided else, in map bounds.
- * @param  {Object} point   Point which is to be check. It contains Lat Lng keys.
- * @param  {OpenLayer Polygon Feature} polygon Optional Param. If passed, check inside of polygon else use mapextend
- * @return {[type]}         [description]
+var infoWindow, lastFeature;
+/*
+This function closes Info Window if it is showing.
  */
-WhiteMapClass.prototype.checkIfPointLiesInside = function(point, polygon) {
-	var mapBounds = [];
-	//get map extent
-	var mapBoundsArray = ccpl_map.getExtent().toArray();
-
-	for(var i=0; i< mapBoundsArray.length; i++) {
-		var pointObj= {};
-		if(i=== 0) {
-			pointObj.lat = mapBoundsArray[1];
-			pointObj.lon = mapBoundsArray[0];
-		} else if (i=== 1) {
-			pointObj.lat = mapBoundsArray[3];
-			pointObj.lon = mapBoundsArray[0];
-		} else if (i=== 2) {
-			pointObj.lat = mapBoundsArray[3];
-			pointObj.lon = mapBoundsArray[2];
-		} else {
-			pointObj.lon = mapBoundsArray[2];
-			pointObj.lat = mapBoundsArray[1];
+WhiteMapClass.prototype.closeInfoWindow = function() {
+	if(infoWindow) {
+		infoWindow.hide();
+		infoWindow.destroy();
+		if(lastFeature) {
+			lastFeature.popup = "";
 		}
-		mapBounds.push(pointObj);
+		infoWindow= "";
+		return  true;
 	}
-	//check if point lies inside extend
-	if(isPointInPoly(mapBounds, point)) {
-		//return true if it does
-		return true;
-	}
-	//else return false
 	return false;
 }
-
-/**
- * This function shows a Feature
- * @param  {OpenLayer Feature} feature Feature which is to be shown
- * @return {[type]}         [description]
+/*
+This function open Info Window for the Marker.
+@param e {Mouse Click Event} Event Info 
+@param feature {Open Layer Marker Object} Marker on which Info Window is to be open
+@param infoHTML {Object} Data to show on InfoWindow
  */
-function showOpenLayerFeature(feature) {
-	if(!feature.map) {
-		if(!feature.style) {
-			feature.style = {};
-		}
-		feature.style.display = '';
-		feature.map = 'current';
-		// var markerLayer = feature.layerReference;
-		// markerLayer.redraw();
-	}
-}
+WhiteMapClass.prototype.openInfoWindow = function(feature, infoHTML) {
+	
+	closeInfoWindow();
 
-/**
- * This function hide a Feature
- * @param  {OpenLayer Feature} feature Feature which is to be shown
- * @return {[type]}         [description]
- */
-function hideOpenLayerFeature(feature) {
-	if(feature.map) {
-		if(!feature.style) {
-			feature.style = {};
-		}
-		feature.style.display = 'none';
-		feature.map = '';
-	}
-	// var markerLayer = feature.layerReference;
-	// markerLayer.redraw();
+	//Create a OpenLayer Popup.
+	infoWindow = new OpenLayers.Popup(feature.name,
+		feature.lonlat,
+		null,
+		infoHTML,
+		true);
+
+	feature.popup = infoWindow;
+	//Add popup to ccpl_map
+	ccpl_map.addPopup(infoWindow);
+	//Update Size for InfoWindow
+	infoWindow.updateSize();
+	//Show InfoWndow
+	infoWindow.show();
+	lastFeature = feature;
 }

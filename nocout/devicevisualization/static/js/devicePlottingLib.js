@@ -1217,7 +1217,7 @@ function devicePlottingClass_gmap() {
 					bounds.extend(new OpenLayers.LonLat(state_obj.lon, state_obj.lat));
 					ccpl_map.zoomToExtent(bounds);
 
-					ccpl_map.zoomTo(8);
+					ccpl_map.zoomTo(6);
 				} else {
 					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(state_obj.lat,state_obj.lon)));
 					mapInstance.setZoom(8);
@@ -4075,6 +4075,8 @@ function devicePlottingClass_gmap() {
 
 	    	if(window.location.pathname.indexOf("googleEarth") > -1) {
 	    		
+	    	} else if (window.location.pathname.indexOf("white_background") > -1) {
+	    		bounds_lat_lon = new OpenLayers.Bounds();
 	    	} else {
 	    		bounds_lat_lon = new google.maps.LatLngBounds();	
 	    	}
@@ -4091,6 +4093,8 @@ function devicePlottingClass_gmap() {
 		    		if(city_condition) {
 			    		if(window.location.pathname.indexOf("googleEarth") > -1) {
 							folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
+				    	} else if (window.location.pathname.indexOf("white_background") > -1) {
+				    		bounds_lat_lon.extend(new OpenLayers.LonLat(data_to_plot[i].data.lon, data_to_plot[i].data.lat));
 				    	} else {
 				    		bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].data.lat,data_to_plot[i].data.lon));
 				    	}
@@ -4103,6 +4107,8 @@ function devicePlottingClass_gmap() {
 			    			if(alias_condition) {
 			    				if(window.location.pathname.indexOf("googleEarth") > -1) {
 			    					folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
+						    	} else if (window.location.pathname.indexOf("white_background") > -1) {
+						    		bounds_lat_lon.extend(new OpenLayers.LonLat(data_to_plot[i].data.lon, data_to_plot[i].data.lat));
 						    	} else {
 						    		bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].data.lat,data_to_plot[i].data.lon));
 						    	}
@@ -4111,8 +4117,10 @@ function devicePlottingClass_gmap() {
 			    				if(state_wise_device_labels[data_to_plot[i].data.state] && !state_wise_device_labels[data_to_plot[i].data.state].isHidden_) {
 			    					if(window.location.pathname.indexOf("googleEarth") > -1) {
 			    						state_wise_device_labels[data_to_plot[i].data.state].setVisibility(false);
+			    					} else if (window.location.pathname.indexOf("white_background") > -1) {
+			    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].data.state]);
 			    					} else {
-			    						state_wise_device_labels[data_to_plot[i].data.state].hide();	
+			    						state_wise_device_labels[data_to_plot[i].data.state].hide();
 			    					}
 			    				}
 
@@ -4131,13 +4139,17 @@ function devicePlottingClass_gmap() {
 				    			if(sector_ip_condition) {
 				    				if(window.location.pathname.indexOf("googleEarth") > -1) {
 				    					folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
-				    				advanceSearchFunc} else {
+				    				} else if (window.location.pathname.indexOf("white_background") > -1) {
+				    					bounds_lat_lon.extend(new OpenLayers.LonLat(data_to_plot[i].data.lon, data_to_plot[i].data.lat));
+				    				} else {
 				    					bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].data.lat,data_to_plot[i].data.lon));
 				    				}
 				    				// Hide State Counter Label(If Visible)
 				    				if(state_wise_device_labels[data_to_plot[i].data.state] && !state_wise_device_labels[data_to_plot[i].data.state].isHidden_) {
 										if(window.location.pathname.indexOf("googleEarth") > -1) {
 				    						state_wise_device_labels[data_to_plot[i].data.state].setVisibility(false);
+				    					} else if (window.location.pathname.indexOf("white_background") > -1) {
+				    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].data.state]);
 				    					} else {
 				    						state_wise_device_labels[data_to_plot[i].data.state].hide();	
 				    					}
@@ -4157,6 +4169,8 @@ function devicePlottingClass_gmap() {
 					    			if(ss_ip_condition) {
 					    				if(window.location.pathname.indexOf("googleEarth") > -1) {
 					    					folderBoundArray.push({lat: sub_stations[k].data.lat, lon: sub_stations[k].data.lon});
+					    				} else if (window.location.pathname.indexOf("white_background") > -1) {
+					    					bounds_lat_lon.extend(new OpenLayers.LonLat(sub_stations[k].data.lon, sub_stations[k].data.lat));
 					    				} else {
 					    					bounds_lat_lon.extend(new google.maps.LatLng(sub_stations[k].data.lat,sub_stations[k].data.lon));	
 					    				}
@@ -4164,6 +4178,8 @@ function devicePlottingClass_gmap() {
 					    				if(state_wise_device_labels[data_to_plot[i].data.state] && !state_wise_device_labels[data_to_plot[i].data.state].isHidden_) {
 											if(window.location.pathname.indexOf("googleEarth") > -1) {
 					    						state_wise_device_labels[data_to_plot[i].data.state].setVisibility(false);
+					    					} else if (window.location.pathname.indexOf("white_background") > -1) {
+					    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].data.state]);
 					    					} else {
 					    						state_wise_device_labels[data_to_plot[i].data.state].hide();	
 					    					}
@@ -4179,6 +4195,9 @@ function devicePlottingClass_gmap() {
 					    				if(window.location.pathname.indexOf("googleEarth") > -1) {
 					    					folderBoundArray.push({lat: data_to_plot[k].data.lat, lon: data_to_plot[k].data.lon});
 					    					folderBoundArray.push({lat: data_to_plot[k].data.lat, lon: sub_stations[k].data.lon});
+					    				} else if (window.location.pathname.indexOf("white_background") > -1) {
+					    					bounds_lat_lon.extend(new OpenLayers.LonLat(data_to_plot[i].data.lon, data_to_plot[i].data.lat));
+					    					bounds_lat_lon.extend(new OpenLayers.LonLat(sub_stations[k].data.lon, sub_stations[k].data.lat));
 					    				} else {
 					    					bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].data.lat,data_to_plot[i].data.lon));
 					    					bounds_lat_lon.extend(new google.maps.LatLng(sub_stations[k].data.lat,sub_stations[k].data.lon));
@@ -4187,6 +4206,8 @@ function devicePlottingClass_gmap() {
 					    				if(state_wise_device_labels[data_to_plot[i].data.state] && !state_wise_device_labels[data_to_plot[i].data.state].isHidden_) {
 											if(window.location.pathname.indexOf("googleEarth") > -1) {
 					    						state_wise_device_labels[data_to_plot[i].data.state].setVisibility(false);
+					    					} else if (window.location.pathname.indexOf("white_background") > -1) {
+					    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].data.state]);
 					    					} else {
 					    						state_wise_device_labels[data_to_plot[i].data.state].hide();	
 					    					}
@@ -4221,6 +4242,12 @@ function devicePlottingClass_gmap() {
 						},350);
 					});
 
+		    	} else if (window.location.pathname.indexOf("white_background") > -1) {
+		    		//Zoom in to selected state
+		    		ccpl_map.zoomToExtent(bounds_lat_lon);
+		    		if(ccpl_map.getZoom() > 15) {
+		                ccpl_map.zoomTo(15);
+		            }
 		    	} else {
 			    	//Zoom in to selected state
 					mapInstance.fitBounds(bounds_lat_lon);

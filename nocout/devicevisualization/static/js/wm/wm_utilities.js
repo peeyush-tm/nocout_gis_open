@@ -49,6 +49,23 @@ function showErrorMessage(errormsg, response) {
     // console.log(errormsg, response);
 }
 
+/*
+OpenLayer KML extension to show KML on Openlayer
+ */
+OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.KML, {
+    CLASS_NAME: "OpenLayers.Format.KML",
+    parseStyle: function(node) {
+        var baseURI = node.baseURI.split("?")[0]; // remove query, if any
+        if (baseURI.lastIndexOf("/") != baseURI.length - 1) {
+            baseURI = baseURI.substr(0, baseURI.lastIndexOf("/") + 1);
+        }
+        var style = OpenLayers.Format.KML.prototype.parseStyle.call(this, node);
+        if (typeof style.externalGraphic != "undefined" && style.externalGraphic.match(new RegExp("(^/)|(://)")) == null) {
+            style.externalGraphic = baseURI + style.externalGraphic;
+        }
+        return style;
+    }
+});
 
 function displayBounds(feature, lon, lat){
     var bounds = feature.geometry.getBounds();
@@ -334,102 +351,6 @@ OpenLayers.Strategy.Cluster = OpenLayers.Class(OpenLayers.Strategy, {
     CLASS_NAME: "OpenLayers.Strategy.Cluster" 
 });
 
-
-function createAdvanceFilterHtml(formEl) {
-    var templateData= "", formElements= "";
-    var elementsArray = [];
-    templateData += '<div class="iframe-container"><div class="content-container"><div id="whiteMapAdvanceFilter" class="advanceFiltersContainer">';
-    templateData += '<form id="white_map_filter_form"><div class="form-group form-horizontal">';
-    for(var i=0;i<formEl.length;i++) {
-        if(formEl[i] != null) {
-            formElements += '<div class="form-group"><label for="'+formEl[i].key+'" class="col-sm-4 control-label">';
-            formElements += formEl[i].title;
-            formElements += '</label><div class="col-sm-8">';
-
-            var currentKey = $.trim(formEl[i].key);
-            var elementType = $.trim(formEl[i].element_type);
-
-            /*Check Element Type*/
-            if(elementType == "multiselect") {
-
-                var filterValues = formEl[i].values;
-                if(filterValues.length > 0) {
-                    formElements += '<select multiple class="multiSelectBox col-md-12" id="filter_'+formEl[i].key+'">';
-                    for(var j=0;j<filterValues.length;j++) {
-                        formElements += '<option value="'+filterValues[j]+'">'+filterValues[j]+'</option>';
-                    }
-                    formElements += '</select>';
-                } else {
-                    formElements += '<input type="text" id="filter_'+formEl[i].key+'" name="'+formEl[i].key+'"  class="form-control"/>';
-                }
-            }
-            formElements += '</div></div>';
-            elementsArray.push(formElements);
-            formElements = "";
-        }
-    }
-    templateData += elementsArray.join('');
-    templateData += '<div class="clearfix"></div></div><div class="clearfix"></div></form>';
-    templateData += '<div class="clearfix"></div></div></div><iframe class="iframeshim" frameborder="0" scrolling="no"></iframe></div><div class="clearfix"></div>';
-
-    $("#advFilterFormContainer").html(templateData);
-
-    if($("#advFilterContainerBlock").hasClass("hide")) {
-        $("#advFilterContainerBlock").removeClass("hide");
-    }
-
-    /*Initialize the select2*/
-    $(".advanceFiltersContainer select").select2();
-}
-
-function createAdvanceSearchHtml(formEl) {
-    var templateData= "", formElements= "";
-    var elementsArray = [];
-    templateData += '<div class="iframe-container"><div class="content-container"><div id="whiteMapAdvanceSearch" class="advanceSearchContainer">';
-    templateData += '<form id="white_map_search_form"><div class="form-group form-horizontal">';
-    for(var i=0;i<formEl.length;i++) {
-        if(formEl[i] != null) {
-            formElements += '<div class="form-group"><label for="'+formEl[i].key+'" class="col-sm-4 control-label">';
-            formElements += formEl[i].title;
-            formElements += '</label><div class="col-sm-8">';
-
-            var currentKey = $.trim(formEl[i].key);
-            var elementType = $.trim(formEl[i].element_type);
-
-            /*Check Element Type*/
-            if(elementType == "multiselect") {
-
-                var filterValues = formEl[i].values;
-                if(filterValues.length > 0) {
-                    formElements += '<select multiple class="multiSelectBox col-md-12" id="search_'+formEl[i].key+'">';
-                    for(var j=0;j<filterValues.length;j++) {
-                        formElements += '<option value="'+filterValues[j]+'">'+filterValues[j]+'</option>';
-                    }
-                    formElements += '</select>';
-                } else {
-                    formElements += '<input type="text" id="search_'+formEl[i].key+'" name="'+formEl[i].key+'"  class="form-control"/>';
-                }
-            }
-            formElements += '</div></div>';
-            elementsArray.push(formElements);
-            formElements = "";
-        }
-    }
-    templateData += elementsArray.join('');
-    templateData += '<div class="clearfix"></div></div><div class="clearfix"></div></form>';
-    templateData += '<div class="clearfix"></div></div></div><iframe class="iframeshim" frameborder="0" scrolling="no"></iframe></div><div class="clearfix"></div>';
-
-    $("#advSearchFormContainer").html(templateData);
-
-    if($("#advSearchContainerBlock").hasClass("hide")) {
-        $("#advSearchContainerBlock").removeClass("hide");
-    }
-
-    /*Initialize the select2*/
-    $(".advanceSearchContainer select").select2();
-}
-
-
 /**
 * This function creates data to plot sectors on google maps.
 * @method createSectorData.
@@ -582,20 +503,7 @@ function showWmapFilteredData(dataArray) {
     whiteMapClass.applyAdvanceFilter({data_for_filters: dataArray, filtered_Devices: bsDeviceObj_Filtered, filtered_Features: filtered_bs_ss_data, line_Features: filtered_line_data, sector_Features: filtered_sector_data});
 }
 
-OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.KML, {
-    CLASS_NAME: "OpenLayers.Format.KML",
-    parseStyle: function(node) {
-        var baseURI = node.baseURI.split("?")[0]; // remove query, if any
-        if (baseURI.lastIndexOf("/") != baseURI.length - 1) {
-            baseURI = baseURI.substr(0, baseURI.lastIndexOf("/") + 1);
-        }
-        var style = OpenLayers.Format.KML.prototype.parseStyle.call(this, node);
-        if (typeof style.externalGraphic != "undefined" && style.externalGraphic.match(new RegExp("(^/)|(://)")) == null) {
-            style.externalGraphic = baseURI + style.externalGraphic;
-        }
-        return style;
-    }
-});
+
 
 /*
 This function returns Size of the Markers to show accroding to the value selected in tools option
@@ -645,4 +553,67 @@ function getIconSize() {
             'graphicYOffset': bs_newGraphicYOffset  
         }
     }
+}
+
+/**
+ * This function shows a Feature
+ * @param  {OpenLayer Feature} feature Feature which is to be shown
+ * @return {[type]}         [description]
+ */
+function showOpenLayerFeature(feature) {
+    if(feature && feature.style) {
+        var featureLayer = feature.layer ? feature.layer : feature.layerReference;
+        feature.style.display = '';
+        featureLayer.redraw();
+    }
+}
+
+/**
+ * This function hide a Feature
+ * @param  {OpenLayer Feature} feature Feature which is to be shown
+ * @return {[type]}         [description]
+ */
+function hideOpenLayerFeature(feature) {
+    if(feature && feature.style) {
+        var featureLayer = feature.layer ? feature.layer : feature.layerReference;
+        feature.style.display = 'none';
+        featureLayer.redraw();
+    }
+}
+
+/**
+ * This function checks if given feature lies in bound of polygon if polygon is provided else, in map bounds.
+ * @param  {Object} point   Point which is to be check. It contains Lat Lng keys.
+ * @param  {OpenLayer Polygon Feature} polygon Optional Param. If passed, check inside of polygon else use mapextend
+ * @return {[type]}         [description]
+ */
+WhiteMapClass.prototype.checkIfPointLiesInside = function(point, polygon) {
+    var mapBounds = [];
+    //get map extent
+    var mapBoundsArray = ccpl_map.getExtent().toArray();
+
+    for(var i=0; i< mapBoundsArray.length; i++) {
+        var pointObj= {};
+        if(i=== 0) {
+            pointObj.lat = mapBoundsArray[1];
+            pointObj.lon = mapBoundsArray[0];
+        } else if (i=== 1) {
+            pointObj.lat = mapBoundsArray[3];
+            pointObj.lon = mapBoundsArray[0];
+        } else if (i=== 2) {
+            pointObj.lat = mapBoundsArray[3];
+            pointObj.lon = mapBoundsArray[2];
+        } else {
+            pointObj.lon = mapBoundsArray[2];
+            pointObj.lat = mapBoundsArray[1];
+        }
+        mapBounds.push(pointObj);
+    }
+    //check if point lies inside extend
+    if(isPointInPoly(mapBounds, point)) {
+        //return true if it does
+        return true;
+    }
+    //else return false
+    return false;
 }
