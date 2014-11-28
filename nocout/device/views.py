@@ -31,7 +31,7 @@ from nocout.mixins.permissions import PermissionsRequiredMixin, SuperUserRequire
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
 from django.db.models import Q
-
+from service.forms import DTServiceDataSourceUpdateFormSet
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -2515,15 +2515,16 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         self.object = None
         form_class = self.get_form_class()
         form = self.get_form(form_class)
+        service = Service.objects.get(id=1)
         device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST)
-        device_type_service_data_source_form = DeviceTypeServiceDataSourceCreateFormset(self.request.POST)
-        if (form.is_valid() and device_type_service_form.is_valid() and
-                            device_type_service_data_source_form.is_valid()):
-            return self.form_valid(form, device_type_service_form, device_type_service_data_source_form)
+        service_data_formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service)
+        if (form.is_valid() and device_type_service_form.is_valid()
+                            and service_data_formset.is_valid()):
+            return self.form_valid(form, device_type_service_form , service_data_formset)
         else:
-            return self.form_invalid(form, device_type_service_form, device_type_service_data_source_form)
+            return self.form_invalid(form, device_type_service_form , service_data_formset)
 
-    def form_valid(self, form, device_type_service_form, device_type_service_data_source_form):
+    def form_valid(self, form, device_type_service_form, service_data_formset):
         """
         Called if all forms are valid. Creates a Recipe instance along with
         associated Ingredients and Instructions and then redirects to a
@@ -2534,14 +2535,15 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         device_type_service_form.save()
         return HttpResponseRedirect(self.get_success_url())
 
-    def form_invalid(self, form, device_type_service_form, device_type_service_data_source_form):
+    def form_invalid(self, form, device_type_service_form, service_data_formset):
         """
         Called if a form is invalid. Re-renders the context data with the
         data-filled forms and errors.
         """
         return self.render_to_response(
             self.get_context_data(form=form,
-                                  device_type_service_form=device_type_service_form))
+                                  device_type_service_form=device_type_service_form,
+                                  service_data_formset=service_data_formset))
 
 
 class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):

@@ -13,8 +13,8 @@ from django.template.loader import render_to_string
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
-from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet
-from device.forms import DeviceTypeServiceDataSourceCreateFormset
+from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet,\
+                DTServiceDataSourceUpdateFormSet
 
 # ########################################################
 from django.conf import settings
@@ -238,16 +238,12 @@ def select_service_data_source(request, pk):
     """
     service = Service.objects.get(id=pk)
     parameters = service.parameters
-    service_specific_data_sources = ServiceSpecificDataSource.objects.filter(service=service)
-    service_data_sources = service_specific_data_sources.values('service_data_sources__name','warning', 'critical')
 
-    data_source_create_formset = DeviceTypeServiceDataSourceCreateFormset()
-
+    Service_data_formset = DTServiceDataSourceUpdateFormSet(instance=service)
     ctx_dict = {
-                'service_data_sources': service_data_sources,
-                'sds_fromset': data_source_create_formset,
+                'service_data_formset': Service_data_formset,
             }
-    service_attributes = render_to_string('service/service_attributes.html', ctx_dict)
+    service_attributes = render_to_string('service/service_attributes1.html', ctx_dict)
     service_attributes.content_subtype = "html"
     return HttpResponse( json.dumps({
         "parameters_id": parameters.id,
