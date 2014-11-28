@@ -668,11 +668,11 @@ function isLatLon(e) {
                         var converted_lng = dmsToDegree(dms_regex.exec(entered_txt.split(",")[1]));
                         
                         if(window.location.pathname.indexOf("white_background") > -1) {
-                            whiteMapClass.zoomToLonLat(entered_txt);
+                            whiteMapClass.zoomToLonLat(String(converted_lat)+","+String(converted_lng));
                         } else if(window.location.pathname.indexOf("googleEarth") > -1) {
-                            earth_instance.pointToLatLon(entered_txt);
+                            earth_instance.pointToLatLon(String(converted_lat)+","+String(converted_lng));
                         } else {
-                            networkMapInstance.pointToLatLon(entered_txt);
+                            networkMapInstance.pointToLatLon(String(converted_lat)+","+String(converted_lng));
                         }
                     }
                 } else {

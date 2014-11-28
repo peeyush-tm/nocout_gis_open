@@ -21,9 +21,12 @@
     <span class="date-range pull-right">
         <div class="btn-group">
             <ul class="list-unstyled list-inline gis_page_setting">
-                <!-- <li class="alert alert-block alert-info">
-                    <b>Status</b><br/> <span id="gis_status_txt"></span>
-                </li> -->
+                <li>
+                    <input type="radio" name="thematic_type" style="vertical-align:sub;" value="ping"> Ping Thematics
+                </li>
+                <li>
+                    <input type="radio" name="thematic_type" style="vertical-align:sub;" value="normal" checked=""> Service Thematics
+                </li>
                 <li>
                     <button type="button" id="advSearchBtn" class="btn btn-sm btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
                                 data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">

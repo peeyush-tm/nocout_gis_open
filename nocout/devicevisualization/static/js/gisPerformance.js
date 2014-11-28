@@ -102,11 +102,11 @@ function GisPerformance() {
 
         //If isFrozen is false and Cookie value for freezeSelected is also false
         var zoom_condition = current_zoom ? current_zoom > 7 : true;
-        if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0 && zoom_condition) {
+        // if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0 && zoom_condition) {
             var gisPerformance_this = this;
             //Call waitAndSend function with BS Json Data and counter value
             gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
-        }
+        // }
     }
 
     /*
@@ -136,9 +136,11 @@ function GisPerformance() {
             return;
         }
 
+        var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
+
         //Ajax Request
         $.ajax({
-            url: base_url + '/network_maps/perf_data/?base_stations=['+bs_id+']&freeze_time=' + freezedAt,
+            url: base_url + '/network_maps/perf_data/?base_stations=['+bs_id+']&ts='+selected_thematics+'&freeze_time=' + freezedAt,
             // url: base_url + '/static/new_perf_pmp.json',
             type: 'GET',
             dataType: 'json',
