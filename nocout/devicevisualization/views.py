@@ -2199,13 +2199,14 @@ class GISPerfData(View):
         marker_url = ""
         try:
             gmap_icon = str(DeviceType.objects.get(id=substation_device.device_type).device_gmap_icon)
-            # icon_path = "".join(gmap_icon.split("/media"))
-            # marker_url = MEDIA_ROOT + icon_path
-            marker_url = gmap_icon
+            marker_url = str("media/" + str(gmap_icon)) \
+                if "uploaded" in str(gmap_icon) \
+                else "static/img/" + str(gmap_icon)
         except Exception as e:
             logger.info("No GMAP Icon for device type. Exception: ", e.message)
 
         substation_info['markerUrl'] = marker_url
+
         substation_info['substation_device_ip_address'] = substation_device.ip_address
 
         return substation_info
