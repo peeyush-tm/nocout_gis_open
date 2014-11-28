@@ -238,13 +238,15 @@ def select_service_data_source(request, pk):
     """
     service = Service.objects.get(id=pk)
     parameters = service.parameters
-
-    Service_data_formset = DTServiceDataSourceUpdateFormSet(instance=service)
+    counter = request.GET['counter']
+    Service_data_formset = DTServiceDataSourceUpdateFormSet(instance=service, prefix='sds-{}'.format(counter))
     ctx_dict = {
                 'service_data_formset': Service_data_formset,
+                'counter': counter
             }
     service_attributes = render_to_string('service/service_attributes1.html', ctx_dict)
     service_attributes.content_subtype = "html"
+    # return HttpResponse( service_attributes )
     return HttpResponse( json.dumps({
         "parameters_id": parameters.id,
         "parameters_name": parameters.parameter_description,

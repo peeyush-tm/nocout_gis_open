@@ -96,7 +96,7 @@
             $("label[for=id_timeout]").text('Timeout (ms)');
 
         })
-
+        counter = -1
         // if service is already selected
         if ($("#id_service").find("option:selected").val()){
             var service = $("form").find(".row").find("#id_service")
@@ -116,10 +116,10 @@
             get_attribute_of_service(service_id, parameter, row_inline)
         });
 
-
         function get_attribute_of_service(service_id, parameter, row_inline){
+            counter = counter + 1
             if(service_id == '' ){
-                bootbox.alert('Select the service')
+                alert('Select the service')
             }
             else{
                 $.ajax({
@@ -128,6 +128,7 @@
                     dataType: "json",
                     data: {
                         service_id : service_id,
+                        counter : counter
                     },
                     success : function(service) {
                         var parameter_option = parameter.find("select option:selected")
@@ -136,11 +137,13 @@
                         row_inline.children().slice(2).remove()
 
                         row_inline.append(service.service_attributes)
+                        row_inline.children().slice(2).find("select").attr('disabled', true);
                     },
                     error : function(xhr,errmsg,err) {
                         console.log(xhr.status + ": " + xhr.responseText);
                     }
                 });
+
                 return false;
             }
         }

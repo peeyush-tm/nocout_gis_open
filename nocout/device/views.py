@@ -2501,10 +2501,10 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         self.object = None
         form_class = self.get_form_class()
         form = self.get_form(form_class)
-        device_type_service_form = DeviceTypeServiceCreateFormset()
+        device_type_service_form = DeviceTypeServiceCreateFormset(prefix='dts')
         return self.render_to_response(
             self.get_context_data(form=form,
-                                  device_type_service_form=device_type_service_form,))
+                                  device_type_service_form=device_type_service_form))
 
     def post(self, request, *args, **kwargs):
         """
@@ -2516,8 +2516,11 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         service = Service.objects.get(id=1)
-        device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST)
-        service_data_formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service)
+        sds_prefix = dict(self.request.POST)['sds_counter']
+        device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST, prefix='dts')
+        for sds in list(set(sds_prefix)):
+            service_data_formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='sds-{}'.format(sds))
+
         if (form.is_valid() and device_type_service_form.is_valid()
                             and service_data_formset.is_valid()):
             return self.form_valid(form, device_type_service_form , service_data_formset)
