@@ -1635,7 +1635,9 @@ function devicePlottingClass_gmap() {
 			console.log("Plot Devices Function");
 			console.log("Plot Devices Start Time :- "+ new Date().toLocaleString());
 		}
-		var zoom_level = mapInstance.getZoom();
+		var zoom_level = mapInstance.getZoom(),
+			hide_flag = !$("#show_hide_label")[0].checked;
+
 		// for(var i=0;i<bs_ss_devices.length;i++) {
 		for(var i=bs_ss_devices.length;i--;) {
 			
@@ -1941,7 +1943,7 @@ function devicePlottingClass_gmap() {
 	                            disableAutoPan: true,
 	                            position: ss_marker.getPosition(),
 	                            closeBoxURL: "",
-	                            isHidden: false,
+	                            isHidden: hide_flag,
 	                            enableEventPropagation: true,
 	                            zIndex: 80
 	                        });
@@ -4367,7 +4369,7 @@ function devicePlottingClass_gmap() {
 				    						state_wise_device_labels[data_to_plot[i].data.state].hide();	
 				    					}
 				    				}
-				    				
+
 				    				advJustSearch.applyIconToSearchedResult(data_to_plot[i].data.lat, data_to_plot[i].data.lon);
 				    			}
 	    						
