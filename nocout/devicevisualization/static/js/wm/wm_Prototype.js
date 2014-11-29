@@ -287,13 +287,35 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	/*
 	Select Control for BS, SS, Devices, Lines and Sectors Layer[Click event]
 	 */
+		//Hover Control for Openlayers layer
+		var hoverControl = new OpenLayers.Control.SelectFeature( [layers.markersLayer, layers.markerDevicesLayer],  { 
+			hover: true ,
+			highlightOnly: true,
+			renderIndent: "temporary",
+			eventListeners: {
+				beforefeaturehighlighted: function(e) {
+					whiteMapClass.mouseOutEvent();
+				},
+				featurehighlighted: function(e) {
+					setTimeout(function() {
+						whiteMapClass.mouseOverEvent(e);
+					}, 20);
+				},
+				featureunhighlighted: function(e) {
+					whiteMapClass.mouseOutEvent(e);
+				}
+			}
+		} );
+
 		//Select Control for Openlayers layer.
 		var selectCtrl = new OpenLayers.Control.SelectFeature( [layers. stateLabelLayer,layers.markersLayer, layers.markerDevicesLayer, layers.linesLayer, layers.sectorsLayer],  { clickout: true } );
 
 		//Add control to the map
+		ccpl_map.addControl(hoverControl);
 		ccpl_map.addControl(selectCtrl);
 
 		//Activate Control
+		hoverControl.activate();
 		selectCtrl.activate();
 
 		layers.stateLabelLayer.events.on({
@@ -662,11 +684,11 @@ This function open Info Window for the Marker.
  */
 WhiteMapClass.prototype.openInfoWindow = function(feature, infoHTML) {
 	
-	closeInfoWindow();
+	// closeInfoWindow();
 
 	//Create a OpenLayer Popup.
-	infoWindow = new OpenLayers.Popup(feature.name,
-		feature.lonlat,
+	var infoWindow = new OpenLayers.Popup(feature.name,
+		new OpenLayers.LonLat(feature.ptLon, feature.ptLat),
 		null,
 		infoHTML,
 		true);
@@ -679,4 +701,6 @@ WhiteMapClass.prototype.openInfoWindow = function(feature, infoHTML) {
 	//Show InfoWndow
 	infoWindow.show();
 	lastFeature = feature;
+
+	return infoWindow;
 }

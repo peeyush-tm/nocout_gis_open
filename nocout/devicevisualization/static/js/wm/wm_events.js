@@ -393,3 +393,53 @@ WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 	//return
 	return ;
 }
+
+/**
+ * This function is called when Mouseover is done over a feature in Markers layer or Devices Layer.
+ * @param  {OpenLayer Feature} e [Contains Information of Feature which is Hovered]
+ * @return {[type]}   [description]
+ */
+var featureHovered = "";
+WhiteMapClass.prototype.mouseOverEvent = function(e) {
+	var feature = e.feature;
+	featureHovered = feature;
+	setTimeout(function() {
+		var condition1 = ($.trim(feature.pl) && $.trim(feature.pl) != 'N/A'),
+		condition2 = ($.trim(feature.rta) && $.trim(feature.rta) != 'N/A');
+
+		if(condition1 || condition2) {
+			var pl = $.trim(feature.pl) ? feature.pl : "N/A",
+			rta = $.trim(feature.rta) ? feature.rta : "N/A",
+			info_html = '';
+
+			// Create hover infowindow html content
+			info_html += '<table class="table table-responsive table-bordered table-hover">';
+			info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
+			info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+			info_html += '</table>';
+
+			var infoWindow = whiteMapClass.openInfoWindow(feature, info_html);
+			feature.popup = infoWindow;
+		}
+	}, 40);
+}
+
+/**
+ * This function is called when Mouseout is done over a feature in Markers layer or Devices Layer.
+ * @param  {OpenLayer Feature} e [Contains Information of Feature which was unfocussed]
+ * @return {[type]}   [description]
+ */
+WhiteMapClass.prototype.mouseOutEvent = function(e) {
+	var feature = e ? e.feature : featureHovered;
+	var condition1 = ($.trim(feature.pl) && $.trim(feature.pl) != 'N/A'),
+		condition2 = ($.trim(feature.rta) && $.trim(feature.rta) != 'N/A');
+
+	if(condition1 || condition2) {
+		if(feature && feature.popup) {
+			feature.popup.hide();
+			feature.popup.destroy();
+			feature.popup = "";
+			featureHovered = "";
+		}
+	}
+}

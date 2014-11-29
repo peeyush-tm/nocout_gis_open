@@ -1778,40 +1778,6 @@ function WhiteMapClass() {
 
 						ccpl_map.getLayersByName("Devices")[0].addFeatures([sector_Marker]);
 
-						(function(sector_Marker) {
-							//here add mouseover event
-							// sector_Marker.events.register('mouseover', sector_Marker, function(evt) {
-							// 	setTimeout(function() {
-							// 		var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-							// 			condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
-
-							// 		if(condition1 || condition2) {
-							// 			var pl = $.trim(this.pl) ? this.pl : "N/A",
-							// 				rta = $.trim(this.rta) ? this.rta : "N/A",
-							// 				info_html = '';
-
-							// 			// Create hover infowindow html content
-							// 			info_html += '<table class="table table-responsive table-bordered table-hover">';
-							// 			info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-							// 			info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
-							// 			info_html += '</table>';
-
-							// 			global_this.openInfoWindow(sector_Marker, info_html);
-							// 		}
-							// 	}, 40);
-							// });
-							// //here add mouseout event
-							// sector_Marker.events.register('mouseout', sector_Marker, function(evt) {
-							// 	var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-							// 		condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
-
-							// 	if(condition1 || condition2) {
-							//     	global_this.closeInfoWindow();
-							//     }
-							// });
-						}(sector_Marker));
-
-
 						if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
 							sector_MarkersArray.push(sector_Marker);
 							allMarkersArray_wmap.push(sector_Marker);
@@ -1875,40 +1841,6 @@ function WhiteMapClass() {
 					    var ss_marker = global_this.createOpenLayerVectorMarker(size, ss_marker_object.icon, ss_marker_object.ptLon, ss_marker_object.ptLat, ss_marker_object);
 					    bs_ss_markers.push(ss_marker);
 					    // ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
-
-					    (function(ss_marker) {
-
-					  //   	ss_marker.events.register('mouseover', ss_marker, function(evt) {
-							// 	setTimeout(function() {
-							// 		var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-							// 			condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
-
-							// 		if(condition1 || condition2) {
-							// 			var pl = $.trim(this.pl) ? this.pl : "N/A",
-							// 				rta = $.trim(this.rta) ? this.rta : "N/A",
-							// 				info_html = '';
-
-							// 			// Create hover infowindow html content
-							// 			info_html += '<table class="table table-responsive table-bordered table-hover">';
-							// 			info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-							// 			info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
-							// 			info_html += '</table>';
-
-							// 			global_this.openInfoWindow(ss_marker, info_html);
-							// 		}
-							// 	}, 40);
-							// });
-							// //here add mouseout event
-							// ss_marker.events.register('mouseout', ss_marker, function(evt) {
-							// 	var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-							// 		condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
-
-							// 	if(condition1 || condition2) {
-							//     	global_this.closeInfoWindow();
-							//     }
-							// });
-
-					    }(ss_marker));
 
 						markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
 				    	markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
