@@ -30,6 +30,7 @@ from models import Inventory, DeviceTechnology, IconSettings, LivePollingSetting
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm, PingThematicSettingsForm
 from organization.models import Organization
+from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, Status
 from site_instance.models import SiteInstance
 from user_group.models import UserGroup
 from user_profile.models import UserProfile
@@ -2993,14 +2994,18 @@ class DownloadSelectedBSInventory(View):
                            'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
                            'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port',
                            'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname',
-                           'PE IP', 'DR Site', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor']
+                           'PE IP', 'DR Site', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Sector Utilization',
+                           'Frequency', 'MRC', 'IDU Type', 'System Uptime']
 
         # wimax ss dictionary
         wimax_ss_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
                            'Building Height', 'Tower/Pole Height', 'Antenna Height', 'Antenna Beamwidth',
                            'Polarization', 'Antenna Type', 'SS Mount Type', 'Ethernet Extender', 'Cable Length',
                            'RSSI During Acceptance', 'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance',
-                           'Vendor']
+                           'Vendor', 'Frequency', 'Sector ID', 'Polled SS IP', 'Polled SS MAC', 'RSSI DL', 'RSSI UL',
+                           'CINR DL', 'CINR UL', 'INTRF DL', 'INTRF UL', 'PTX', 'Session Uptime', 'Device Uptime',
+                           'Modulation UL FEC', 'Modulation DL FEC', 'Latency', 'PD', 'Utilization DL',
+                           'Utilization UL', 'Auto Negotiation', 'Duplex', 'Speed', 'Link']
 
         # loop on base stations by using bs_ids list conatining base stations id's
         try:
@@ -4170,6 +4175,20 @@ class DownloadSelectedBSInventory(View):
     def get_selected_wimax_inventory(self, base_station, sector):
         # result dictionary (contains ptp and ptp bh inventory)
         result = dict()
+        
+        # base station device name
+        bs_device_name = ""
+        try:
+            bs_device_name = sector.sector_configured_on.device_name
+        except Exception as e:
+            logger.info("BS Device not exist. Exception: ", e.message)
+
+        # base station machine
+        bs_machine_name = ""
+        try:
+            bs_machine_name = sector.sector_configured_on.machine.name
+        except Exception as e:
+            logger.info("BS Machine not found.  Exception: ", e.message)
 
         # wimax bs rows list
         wimax_bs_rows = list()
@@ -4185,6 +4204,20 @@ class DownloadSelectedBSInventory(View):
             for circuit in circuits:
                 # sub station
                 sub_station = circuit.sub_station
+                
+                # sub station device name
+                ss_device_name = ""
+                try:
+                    ss_device_name = sub_station.device.device_name
+                except Exception as e:
+                    logger.info("WiMAX SS device not found. Exception: ", e.message)
+
+                # sub station machine
+                ss_machine_name = ""
+                try:
+                    ss_machine_name = sub_station.device.machine.name
+                except Exception as e:
+                    logger.info("WiMAX SS machine not found. Exception: ", e.message)
 
                 # backhaul
                 backhaul = base_station.backhaul
@@ -4446,7 +4479,65 @@ class DownloadSelectedBSInventory(View):
                 except Exception as e:
                     logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
 
-                # ********************************** Far End (wimax ss) ********************************
+                # ************************************* BS Perf Parameters **********************************
+                # sector utilization
+                try:
+                    # by splitting last string after underscore from sector name; we get pmp port number
+                    if sector.name.split("_")[-1] == '1':
+                        wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                        data_source='wimax_pmp1_utilization ').using(
+                                                                        alias=bs_machine_name)
+                    elif sector.name.split("_")[-1] == '2':
+                        wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                        data_source='wimax_pmp2_utilization ').using(
+                                                                        alias=bs_machine_name)
+                    else:
+                        pass
+                except Exception as e:
+                    logger.info("Sector Utilization not exist for base station ({}).".format(base_station.name, 
+                                                                                             e.message))
+
+                # frequency
+                try:
+                    wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                               data_source='frequency').using(
+                                                                               alias=bs_machine_name)
+                except Exception as e:
+                    logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
+
+                # mrc
+                try:
+                    # by splitting last string after underscore from sector name; we get pmp port number
+                    if sector.name.split("_")[-1] == '1':
+                        wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                             data_source='pmp1_mrc ').using(
+                                                                             alias=bs_machine_name)
+                    elif sector.name.split("_")[-1] == '2':
+                        wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                             data_source='pmp2_mrc ').using(
+                                                                             alias=bs_machine_name)
+                    else:
+                        pass
+                except Exception as e:
+                    logger.info("MRC not exist for base station ({}).".format(base_station.name, e.message))
+
+                # idu type
+                try:
+                    wimax_bs_row['IDU Type'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                              data_source='idu_type').using(
+                                                                              alias=bs_machine_name)
+                except Exception as e:
+                    logger.info("IDU Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # system uptime
+                try:
+                    wimax_bs_row['System Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                                 data_source='bs_uptime').using(
+                                                                                 alias=bs_machine_name)
+                except Exception as e:
+                    logger.info("System Uptime not exist for base station ({}).".format(base_station.name, e.message))
+
+                # ********************************** Far End (Wimax SS) ********************************
 
                 # customer name
                 try:
@@ -4570,6 +4661,199 @@ class DownloadSelectedBSInventory(View):
                 except Exception as e:
                     logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
                                                                                              e.message))
+
+                # ************************************* SS Perf Parameters **********************************
+                # frequency
+                try:
+                    wimax_ss_row['Frequency'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                             data_source='frequency').using(
+                                                                             alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+                    
+                # sector id
+                try:
+                    # by splitting last string after underscore from sector name; we get pmp port number
+                    if sector.name.split("_")[-1] == '1':
+                        wimax_ss_row['Sector ID'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                        data_source='sector_id_pmp1').using(
+                                                                        alias=ss_machine_name)
+                    elif sector.name.split("_")[-1] == '2':
+                        wimax_ss_row['Sector ID'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                        data_source='sector_id_pmp2').using(
+                                                                        alias=ss_machine_name)
+                    else:
+                        pass
+                except Exception as e:
+                    logger.info("Sector ID not exist for sub station ({}).".format(sub_station.name, e.message))
+                    
+                # polled ss ip
+                try:
+                    wimax_ss_row['Polled SS IP'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source=' ss_ip').using(
+                                                                                alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                    
+                # polled ss mac
+                try:
+                    wimax_ss_row['Polled SS MAC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                             data_source='ss_mac').using(
+                                                                             alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # rssi dl
+                try:
+                    wimax_ss_row['RSSI DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='dl_rssi').using(
+                                                                           alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # rssi ul
+                try:
+                    wimax_ss_row['RSSI UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='ul_rssi').using(
+                                                                           alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # cinr dl
+                try:
+                    wimax_ss_row['CINR DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='dl_cinr').using(
+                                                                           alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("CINR DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # cinr ul
+                try:
+                    wimax_ss_row['CINR UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='ul_cinr').using(
+                                                                           alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("CINR UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # intrf dl
+                try:
+                    wimax_ss_row['INTRF DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='dl_intrf').using(
+                                                                            alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("INTRF DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # intrf ul
+                try:
+                    wimax_ss_row['INTRF UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='ul_intrf').using(
+                                                                            alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("INTRF UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ptx
+                try:
+                    wimax_ss_row['PTX'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                         data_source='ss_ptx').using(
+                                                                         alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("PTX not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # session uptime
+                try:
+                    wimax_ss_row['Session Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                                  data_source='session_uptime').using(
+                                                                                  alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # device uptime
+                try:
+                    wimax_ss_row['Device Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                                  data_source='uptime').using(
+                                                                                  alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Device Uptime  not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # modulation dl fec
+                try:
+                    wimax_ss_row['Modulation DL FEC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='modulation_dl_fec').using(
+                                                                            alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Modulation DL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # modulation ul fec
+                try:
+                    wimax_ss_row['Modulation UL FEC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='modulation_ul_fec').using(
+                                                                            alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Modulation UL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # latency
+                try:
+                    wimax_ss_row['Latency'] = NetworkStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='rta').using(
+                                                                           alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # pl (packet loss)
+                try:
+                    wimax_ss_row['PD'] = NetworkStatus.objects.filter(device_name=ss_device_name,
+                                                                      data_source='pl').using(
+                                                                      alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # utilization dl
+                try:
+                    wimax_ss_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='dl_utilization').using(
+                                                                            alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # utilization ul
+                try:
+                    wimax_ss_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='ul_utilization').using(
+                                                                            alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # auto negotiation
+                try:
+                    wimax_ss_row['Auto Negotiation'] = Status.objects.filter(device_name=ss_device_name,
+                                                                             data_source='autonegotiation').using(
+                                                                             alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # duplex
+                try:
+                    wimax_ss_row['Duplex'] = Status.objects.filter(device_name=ss_device_name,
+                                                                   data_source='duplex').using(
+                                                                   alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # speed
+                try:
+                    wimax_ss_row['Speed'] = Status.objects.filter(device_name=ss_device_name,
+                                                                   data_source='ss_speed').using(
+                                                                   alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # link
+                try:
+                    wimax_ss_row['Link'] = Status.objects.filter(device_name=ss_device_name,
+                                                                 data_source='link_state').using(
+                                                                 alias=ss_machine_name)
+                except Exception as e:
+                    logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # append 'wimax_bs_row' dictionary in 'wimax_bs_rows'
                 wimax_bs_rows.append(wimax_bs_row)
@@ -4773,7 +5057,7 @@ def remove_duplicate_dict_from_list(input_list=None):
         # (('City', u'Kolkata'), ('Antenna Height', 29.0), ('BH Circuit ID', u'COPF-571'), ('PE IP', u'192.168.216.37'))
         t = tuple(d.items())
         if t not in temp_set:
-            # adding tuple t to 'temp_set'
+            # adding tuple 't' to 'temp_set'
             temp_set.add(t)
             # append dictionary 'd' to 'result_list'
             result_list.append(d)
