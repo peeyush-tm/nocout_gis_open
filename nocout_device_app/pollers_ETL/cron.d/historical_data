@@ -3,14 +3,14 @@
 
 # Bihourly scripts
 */30 * * * * /usr/bin/python nocout/performance/service/service_mongo_aggregation_half_hourly.py -t 30 -s network_perf -d performance_performancenetworkbihourly
-*/30 * * * * /usr/bin/python nocout/performance/service/service_mongo_aggregation_half_hourly.py -t 30 -s service_perf -d performance_performanceneservicebihourly
+*/30 * * * * /usr/bin/python nocout/performance/service/service_mongo_aggregation_half_hourly.py -t 30 -s service_perf -d performance_performanceservicebihourly
 
 # Hourly scripts
 0 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 1 -f hourly -s performance_performancenetworkbihourly -d performance_performancenetworkhourly
-0 * * * * /usr/bin/python nocout/performance/service/mongo_aggregation_all.py -t 1 -f hourly -s performance_performanceservicebihourly -d performance_performanceservicehourly
+0 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 1 -f hourly -s performance_performanceservicebihourly -d performance_performanceservicehourly
 
 # Daily scripts
-0 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 24 -f daily -s prformance_performancenetworkhourly -d performance_performancenetworkdaily
+0 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 24 -f daily -s performance_performancenetworkhourly -d performance_performancenetworkdaily
 0 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 24 -f daily -s performance_performanceservicehourly -d performance_performanceservicedaily
 0 23 * * * /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 24 -f daily -s status_perf -d interface_perf_daily
 0 23 * * * /usr/bin/python nocout/performance/inventory/inventory_mongo_aggregation_daily.py
@@ -34,9 +34,9 @@
 
 # Daily Migration
 5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_host_event_log -d performance_eventnetworkdaily
-5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_service_event_log -d performance_eventservicedaily
+#5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_service_event_log -d performance_eventservicedaily
 
 # Weekly Migrtation
 5 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventnetworkdaily -d performance_eventnetworkweekly
-5 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventservicedaily -d performance_eventserviceweekly
+#5 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventservicedaily -d performance_eventserviceweekly
 #-------------------------------------------------------------------------------------------------------

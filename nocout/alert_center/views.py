@@ -621,7 +621,7 @@ class AlertCenterListing(ListView):
             ]
         datatable_headers += [
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
-            {'mData': 'age', 'sTitle': 'Age', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
             ]
 
@@ -1381,7 +1381,7 @@ def prepare_raw_alert_results(performance_data=None):
                 'sys_timestamp': datetime.datetime.fromtimestamp(
                     float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                 'age': datetime.datetime.fromtimestamp(
-                    float(data["age"])).strftime("%d days %H:%M:%S")
+                    float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S")
                     if data["age"]
                     else "",
                 'description': ''#data['description']
