@@ -31,117 +31,414 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
 /*
 Event triggered for Map Idle Condition. [Whenever Map is Zoomed, Panned or something else]
  */
-var isEventRepeated= true;
 var lastZoomLevel = 1;
 WhiteMapClass.prototype.mapIdleCondition = function() {
-	isEventRepeated = true;
-	/*
-	This function shpws LineLayer
-	@param display {boolean} Hide or show the layer
-	 */
-	function showLinesLayer(display) {
-		$("#showConnLines").prop('checked', display);
-		ccpl_map.getLayersByName("Lines")[0].setVisibility(display);
-	}
-
-	//do condition doesnt run when map is panned
-	if(lastZoomLevel !== ccpl_map.getZoom()) {
-
-		this.unSpiderifyBsMarker();
-
-		if((lastZoomLevel < whiteMapSettings.zoomLevelAfterLineAppears && ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAfterLineAppears) || (lastZoomLevel >= whiteMapSettings.zoomLevelAfterLineAppears && ccpl_map.getZoom() < whiteMapSettings.zoomLevelAfterLineAppears)) {
-			isEventRepeated = false;
+	
+	setTimeout(function() {
+    	if(isDebug) {
+			console.log("Google Map Idle Event");
+			console.log("Google Map Idle Event Start Time :- "+ new Date().toLocaleString());
 		}
+		// Save current zoom value in global variable
+    	current_zoom = ccpl_map.getZoom();
+    	/* When zoom level is greater than 8 show lines */
+    	if(ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAtWhichStateClusterExpands) {
 
-		//is event is not repeated
-		if(!isEventRepeated) {
-			//check if lines are to be toggled
-			if(ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAfterLineAppears) {
-				showLinesLayer(true);
-			} else {
-				showLinesLayer(false);
+    		isPerfCallStopped = 0;
+
+    		if(ccpl_map.getZoom() < 8 || searchResultData.length > 0) {
+
+    			var states_with_bounds = state_lat_lon_db.where(function(obj) {
+    				return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
+        		});
+
+        		var states_array = [];
+
+        		// Hide State Labels which are in current bounds
+        		for(var i=states_with_bounds.length;i--;) {
+        			if(state_wise_device_labels[states_with_bounds[i].name]) {
+        				states_array.push(states_with_bounds[i].name);
+        				state_wise_device_labels[states_with_bounds[i].name].attributes.display = 'none';
+        				ccpl_map.getLayersByName("States")[0].redraw();
+        			}
+        		}
+
+        		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
+					vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
+					city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
+					state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
+					frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
+					polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
+					filterObj = {
+						"technology" : $.trim($("#technology option:selected").text()),
+						"vendor" : $.trim($("#vendor option:selected").text()),
+						"state" : $.trim($("#state option:selected").text()),
+						"city" : $.trim($("#city option:selected").text())
+					},
+					isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+					isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City',
+					advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+					basic_filter_condition = $.trim($("#technology").val()) || $.trim($("#vendor").val()),
+					data_to_plot = [];
+
+    			var filtered_devices = [],
+    				current_bound_devices = [];
+
+    			if(isAdvanceFilterApplied || isBasicFilterApplied) {
+    				filtered_devices = gmap_self.getFilteredData_gmap();
+				} else {
+					filtered_devices = all_devices_loki_db.data;
+				}
+				// IF any states exists
+				if(states_array.length > 0) {
+    				for(var i=filtered_devices.length;i--;) {
+						var current_bs = filtered_devices[i];
+						if(states_array.indexOf(current_bs.data.state) > -1) {
+							current_bound_devices.push(current_bs);
+						}
+    				}
+				} else {
+					current_bound_devices = filtered_devices;
+				}
+
+				if(advance_filter_condition || basic_filter_condition) {
+					data_to_plot = gmap_self.getFilteredBySectors(current_bound_devices);
+				} else {
+        			data_to_plot = current_bound_devices;
+				}
+
+        		var inBoundData = [];
+        		
+        		// If any data exists
+        		if(data_to_plot.length > 0) {
+
+        			/**
+					 * If anything searched n user is on zoom level 8 then reset 
+					   currentlyPlottedDevices array for removing duplicacy.
+        			 */
+        			if(ccpl_map.getZoom() == 11 && searchResultData.length > 0) {
+        				// Reset currentlyPlottedDevices array
+        				currentlyPlottedDevices = [];
+    				}
+
+    				main_devices_data_wmap = data_to_plot;
+
+        			if(currentlyPlottedDevices.length === 0) {
+        				ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
+	            		/*Clear all everything from map*/
+						$.grep(allMarkersArray_wmap,function(marker) {
+							var markerLayer = marker.layer ? marker.layer : marker.layerReference;
+							marker.isActive = 0;
+							marker.style.display = 'none';
+							markerLayer.redraw();
+						});
+						ccpl_map.getLayersByName('Markers')[0].strategies[0].activate();
+						// Reset Variables
+						allMarkersArray_wmap = [];
+						main_devices_data_wmap = [];
+						currentlyPlottedDevices = [];
+						allMarkersObject_wmap= {
+							'base_station': {},
+							'path': {},
+							'sub_station': {},
+							'sector_device': {},
+							'sector_polygon': {},
+							'backhaul': {}
+						};
+						
+						inBoundData = gmap_self.getInBoundDevices(data_to_plot);
+						// Assign currently plotted devices to global array.
+						currentlyPlottedDevices = inBoundData;
+        			} else {
+        				inBoundData = gmap_self.getNewBoundsDevices();
+    					// Update currently plotted devices global array.
+        				currentlyPlottedDevices = currentlyPlottedDevices.concat(inBoundData);
+        			}
+
+        			// Call function to plot devices on gmap
+					whiteMapClass.plotDevices_wmaps(inBoundData,"base_station");
+					// ccpl_map.getLayersByName('Markers')[0].refresh({forces:true});
+					// ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
+
+					if(searchResultData.length == 0 || ccpl_map.getZoom() === 8) {
+						var polylines = allMarkersObject_wmap['path'],
+							polygons = allMarkersObject_wmap['sector_polygon'];
+
+						// Hide polylines if shown
+						for(key in polylines) {
+							var current_line = polylines[key];
+							// If shown
+							if(current_line.map) {
+								hideOpenLayerFeature(current_line);
+								// var markerLayer = current_line.layerReference;
+								// current_line.style.display = 'none';
+								// current_line.map = '';
+								// markerLayer.redraw();
+							}
+						}
+						// alert();
+						// Hide polygons if shown
+						for(key in polygons) {
+							var current_polygons = polygons[key];
+							// If shown
+							if(current_polygons.map) {
+								hideOpenLayerFeature(current_polygons);
+								// var markerLayer = current_polygons.layerReference;
+								// current_polygons.style.display = 'none';
+								// current_polygons.map = '';
+								// markerLayer.redraw();
+							}
+						}
+					} else {
+						if(ccpl_map.getZoom() > 11) {
+							whiteMapClass.showSubStaionsInBounds();
+							whiteMapClass.showBaseStaionsInBounds();
+							whiteMapClass.showSectorDevicesInBounds();
+							whiteMapClass.showLinesInBounds();
+							whiteMapClass.showSectorPolygonInBounds();
+							whiteMapClass.showBackhaulDevicesInBounds();
+						}
+					}
+
+        		}
+        		// Show points line if exist
+        		for(key in line_data_obj) {
+        			if(!line_data_obj[key].map) {
+        				showOpenLayerFeature(line_data_obj[key]);
+        				// var markerLayer = line_data_obj[key].layerReference;
+        				// line_data_obj[key].style.display = '';
+        				// line_data_obj[key].map = 'current';
+        				// markerLayer.redraw();
+        			}
+        		}
+
+        		//Update Clusters Threshold value and recluster it
+        		if(ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold !== clustererSettings.threshold) {
+					//Update Strategy with New Threshold and Distance Value
+					ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold = clustererSettings.threshold;
+					ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
+				}
+    		// 8 LEVEL ZOOM CONDITION
+    		} else {
+				whiteMapClass.showSubStaionsInBounds();
+				whiteMapClass.showBaseStaionsInBounds();
+				whiteMapClass.showSectorDevicesInBounds();
+				whiteMapClass.showLinesInBounds();
+				whiteMapClass.showSectorPolygonInBounds();
+				whiteMapClass.showBackhaulDevicesInBounds();
+
+				//Update Clusters Threshold value and recluster it
+				if(ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold !== clustererSettings.thresholdAtHighZoomLevel) {
+					//Update Strategy with New Threshold and Distance Value
+					ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold = clustererSettings.thresholdAtHighZoomLevel;
+					ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
+				}
+    		}
+
+    		var bs_id_list = getMarkerInCurrentBound();
+    		if(bs_id_list.length > 0 && isCallCompleted == 1) {
+    			gisPerformanceClass.start(bs_id_list);
+    		}
+        } else {
+        	// Set Flag
+			isPerfCallStopped = 1;
+
+			// Clear performance calling timeout
+			if(recallPerf != "") {
+    			clearTimeout(recallPerf);
+    			recallPerf = "";
+    		}
+
+    		// Reset Performance variables
+    		gisPerformanceClass.resetVariable();
+
+			// Hide perf info label
+		    for (var x = 0; x < labelsArray.length; x++) {
+		        labelsArray[x].destroy();
+		    }
+
+		    // Hide tooltip info label
+		    for (key in tooltipInfoLabel) {
+		        tooltipInfoLabel[key].destroy();
+		    }
+
+            // Reset labels array 
+            labelsArray = [];
+            tooltipInfoLabel = {};
+
+
+            /*Clear master marker cluster objects*/
+            // Deactivate Marker Clustering Strategy
+            ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
+
+            /*Clear all everything from map*/
+			$.grep(allMarkersArray_wmap,function(marker) {
+				var markerLayer = marker.layer ? marker.layer : marker.layerReference;
+				marker.isActive = 0;
+				marker.style.display = 'none';
+				markerLayer.redraw();
+			});
+
+			ccpl_map.getLayersByName('Markers')[0].destroyFeatures(ccpl_map.getLayersByName('Markers')[0].features);
+			ccpl_map.getLayersByName('Markers')[0].redraw();
+
+			// Reset Variables
+			allMarkersArray_wmap = [];
+			bs_ss_markers= [];
+			main_devices_data_wmap = [];
+			plottedBsIds = [];
+			currentlyPlottedDevices = [];
+			allMarkersObject_wmap= {
+				'base_station': {},
+				'path': {},
+				'sub_station': {},
+				'sector_device': {},
+				'sector_polygon': {},
+				'backhaul': {}
+			};
+
+			var states_with_bounds = state_lat_lon_db.where(function(obj) {
+    			return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
+    		});
+
+			for(var i=states_with_bounds.length;i--;) {
+				if(state_wise_device_labels[states_with_bounds[i].name]) {
+					state_wise_device_labels[states_with_bounds[i].name].attributes.display = '';
+					ccpl_map.getLayersByName("States")[0].redraw();
+				}
 			}
 
-			if(ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAtClusterUpdates) {
-				ccpl_map.getLayersByName('Markers')[0].strategies[0].distance = 40;
-				ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold = 7;
-			} else {
-				ccpl_map.getLayersByName('Markers')[0].strategies[0].distance = 70;
-				ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold = "";
-			}
-			ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
+			state_lat_lon_db.where(function(obj) {
+				if(state_wise_device_labels[obj.name]) {
+					state_wise_device_labels[obj.name].attributes.display = '';
+					ccpl_map.getLayersByName("States")[0].redraw();
+					return ;
+				}
+			});
 
-			// this.showFeatuesInCurrentBounds();
+			// Hide points line if exist
+    		for(key in line_data_obj) {
+    			if(line_data_obj[key].map) {
+    				hideOpenLayerFeature(line_data_obj[key]);
+    			}
+    		}
+        }
+
+        // Save last Zoom Value
+        lastZoomLevel = ccpl_map.getZoom();
+        if(isDebug) {
+			console.log("Google Map Idle Event End Time :- "+ new Date().toLocaleString());
+			console.log("*************************************");
 		}
-		lastZoomLevel = ccpl_map.getZoom();		
-	}
-
-	//check if to use icons here or use stylemap
-
-	// //gis performce calling
-	// setTimeout(function() {
-	// 	var bs_list = getMarkerInCurrentBound();
-	// 	if(bs_list.length > 0 && isCallCompleted == 1) {
-	// 		if(recallPerf != "") {
-	// 			clearTimeout(recallPerf);
-	// 			recallPerf = "";
-	// 		}
-	// 		// gisPerformanceClass.start(bs_list);
-	// 	}
-	// },1000);
+	},300);
 };
 
 
 /**
- * This function is triggered when Click on Layer Feature is done(Markers, Lines, Sectors). Zoom on cluster else open infowindow for it.
+ * This function is triggered when Click on Layer Features is done(Statem, Markers, Lines, Sectors). Zoom on cluster if present else open infowindow for it.
  * @param  {[type]} e [description]
  * @return {[type]}   [description]
  */
-WhiteMapClass.prototype.layerFeatureClicked = function(e) {
-	var feature = e.feature;
-
+WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 	/**
 	 * This function shows create and display InfoWindow content for the feature.
 	 * @param  {[OpenLayers Feature]} feature Feature on which Click was done
 	 * @return {[type]}         ;
 	 */
 	function showInfoWindow(feature) {
-		var infoWindowContent = gmap_self.makeWindowContent(feature);
-		$("#infoWindowContainer").html(infoWindowContent);
-		$("#infoWindowContainer").find('ul.list-unstyled.list-inline').remove();
+		var content = gmap_self.makeWindowContent(feature);
+		$("#infoWindowContainer").html(content);
 		$("#infoWindowContainer").removeClass('hide');
 	}
-	if(feature) {
-		//if cluster is present
-		if(feature.cluster) {
-			//if cluster of length gt 2 is there, expand the cluster
-			if(feature.cluster.length >= 2) {
-				var clusterPoints = [];
-				for(var i = 0; i< feature.cluster.length; i++){
-					clusterPoints.push(feature.cluster[i].geometry);
-				}
-				var lineString = new OpenLayers.Geometry.LineString(clusterPoints);
-				ccpl_map.zoomToExtent(lineString.getBounds());
-			//else get item at 0 index, show infowindow for it.
-			} else {
-				feature = feature.cluster[0].attributes;
-				showInfoWindow(feature);
+
+	//Check if feature clicked was a cluster
+	if(feature.cluster) {
+		//If feature cluster was present
+		if(feature.cluster.length >= 2) {
+			var clusterPoints = [];
+			//Loop through all the points in cluster
+			for(var i = 0; i< feature.cluster.length; i++){
+				//Add geometry to the clusterPoints array
+				clusterPoints.push(feature.cluster[i].geometry);
 			}
+			//Create a OpenLayer Geometry with our Clusterpoint
+			var lineString = new OpenLayers.Geometry.LineString(clusterPoints);
+			//Set Zoom to LineString
+			ccpl_map.zoomToExtent(lineString.getBounds());
 		} else {
-			//if path or sector is clicked
-			if(feature.pointType === "path" || feature.pointType === "sector") {
+			//Show infoWindow
+			showInfoWindow(feature.cluster[0]);
+		}
+	} else {
+		//If clicked feature was not base setation
+		if(feature.pointType !== "base_station") {
+			//Show Info Window for it
+			showInfoWindow(feature);
+			//If line was clicked, hide Freshnel Zone button on the infoWindowContainer
+			if(feature.pointType === 'path') {
+				setTimeout(function() {
+					//remove freshnel zone button
+					$("#infoWindowContainer").find('ul.list-unstyled.list-inline li:first-child').addClass('hide');
+				}, 10);
+			}
+		//Else if base station was clicked
+		} else {
+			//First spiderify base station is not spiderfied, else open Info Window for it.
+			if(this.spiderifyMarker(feature)) {
 				showInfoWindow(feature);
-			//if bs or ss is clicked
-			} else {
-				if(feature.attributes.pointType === "base_station") {
-					if(this.spiderifyMarker(feature)) {
-						showInfoWindow(feature.attributes);		
-					}
-				} else {
-					showInfoWindow(feature.attributes);
-				}
 			}
 		}
 	}
+	//return
 	return ;
+}
+
+/**
+ * This function is called when Mouseover is done over a feature in Markers layer or Devices Layer.
+ * @param  {OpenLayer Feature} e [Contains Information of Feature which is Hovered]
+ * @return {[type]}   [description]
+ */
+var featureHovered = "";
+WhiteMapClass.prototype.mouseOverEvent = function(e) {
+	var feature = e.feature;
+	featureHovered = feature;
+	setTimeout(function() {
+		var condition1 = ($.trim(feature.pl) && $.trim(feature.pl) != 'N/A'),
+		condition2 = ($.trim(feature.rta) && $.trim(feature.rta) != 'N/A');
+
+		if(condition1 || condition2) {
+			var pl = $.trim(feature.pl) ? feature.pl : "N/A",
+			rta = $.trim(feature.rta) ? feature.rta : "N/A",
+			info_html = '';
+
+			// Create hover infowindow html content
+			info_html += '<table class="table table-responsive table-bordered table-hover">';
+			info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
+			info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+			info_html += '</table>';
+
+			var infoWindow = whiteMapClass.openInfoWindow(feature, info_html);
+			feature.popup = infoWindow;
+		}
+	}, 40);
+}
+
+/**
+ * This function is called when Mouseout is done over a feature in Markers layer or Devices Layer.
+ * @param  {OpenLayer Feature} e [Contains Information of Feature which was unfocussed]
+ * @return {[type]}   [description]
+ */
+WhiteMapClass.prototype.mouseOutEvent = function(e) {
+	var feature = e ? e.feature : featureHovered;
+	var condition1 = ($.trim(feature.pl) && $.trim(feature.pl) != 'N/A'),
+		condition2 = ($.trim(feature.rta) && $.trim(feature.rta) != 'N/A');
+
+	if(condition1 || condition2) {
+		if(feature && feature.popup) {
+			feature.popup.hide();
+			feature.popup.destroy();
+			feature.popup = "";
+			featureHovered = "";
+		}
+	}
 }
