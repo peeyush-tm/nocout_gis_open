@@ -212,7 +212,7 @@ class Live_Performance(ListView):
             {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'age', 'sTitle': 'Age', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
         ]
 
         action_headers = [
@@ -2281,7 +2281,7 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
             ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                    float(data["age"])).strftime("%d days %H:%M:%S") if data["age"] else ""
+                    float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
 
             device_result[device] = perf_result
     # (device_result)
@@ -2382,7 +2382,7 @@ def get_performance_data(device_list, machine, model):
             ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                    float(data["age"])).strftime("%d days %H:%M:%S") if data["age"] else ""
+                    float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
 
 
             device_result[device] = perf_result

@@ -170,5 +170,6 @@ def usage():
 
 if __name__ == '__main__':
 	final_data_values = quantify_events_data()
-	db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)  
-	mysql_migration_mod.mysql_export(destination_perf_table, db, final_data_values)
+	if final_data_values:
+		db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)  
+		mysql_migration_mod.mysql_export(destination_perf_table, db, final_data_values)

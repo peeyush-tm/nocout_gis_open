@@ -46,21 +46,35 @@ function GisPerformance() {
      And start the setInterval function to updateMap every 10 secs.
      */
     this.start = function (bs_list) {
-        var gisPerformance_this = this;
 
-        var uncommon_bs_list = perf_self.get_intersection_bs(current_bs_list,bs_list);
-
-        //Reset Variable
-        gisPerformance_this.resetVariable();
-        this.bsNamesList = uncommon_bs_list;
-        //Store Length of Total BS
-        this.bsLength = this.bsNamesList.length;
-
-        if(uncommon_bs_list.length === bs_list.length) {
-            current_bs_list = uncommon_bs_list;
+        if(window.location.pathname.indexOf("googleEarth") > -1) {
+            current_zoom = getRangeInZoom();
         }
-        //Start Request for First BS
-        gisPerformance_this.sendRequest(0);
+
+        //If isFrozen is false and Cookie value for freezeSelected is also false
+        var zoom_condition = current_zoom ? current_zoom > 7 : true;
+
+        if(zoom_condition > 7 && isPerfCallStopped == 0) {
+            var gisPerformance_this = this;
+
+            var uncommon_bs_list = perf_self.get_intersection_bs(current_bs_list,bs_list);
+
+            //Reset Variable
+            gisPerformance_this.resetVariable();
+            this.bsNamesList = uncommon_bs_list;
+            //Store Length of Total BS
+            this.bsLength = this.bsNamesList.length;
+
+            if(uncommon_bs_list.length === bs_list.length) {
+                current_bs_list = uncommon_bs_list;
+            }
+            //Start Request for First BS
+            gisPerformance_this.sendRequest(0);
+        } else {
+            clearTimeout(recallPerf);
+            recallPerf = "";
+            current_bs_list = [];
+        }
     }
 
     /*
@@ -102,10 +116,14 @@ function GisPerformance() {
 
         //If isFrozen is false and Cookie value for freezeSelected is also false
         var zoom_condition = current_zoom ? current_zoom > 7 : true;
-        if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0 && zoom_condition) {
+        if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0  && isPerfCallStopped == 0) {
             var gisPerformance_this = this;
             //Call waitAndSend function with BS Json Data and counter value
             gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
+        } else {
+            clearTimeout(recallPerf);
+            recallPerf = "";
+            current_bs_list = [];
         }
     }
 
@@ -159,11 +177,13 @@ function GisPerformance() {
                         gisPerformance_this.updateMap();
                     }
                 }
-                //After 2 seconds timeout
+
+                //After 1 seconds timeout
                 recallPerf = setTimeout(function () {
                     //Send Request for the next counter
                     gisPerformance_this.sendRequest(counter);
                 }, 1000);
+
             },
             //On Error, do nothing
             error: function (err) {
