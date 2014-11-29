@@ -113,6 +113,7 @@ def build_data(doc):
         doc.get('site_name'),
 	doc.get('data_source'),
 	doc.get('ip_address'),
+	doc.get('age'),
 	machine_name
 	)
 	values_list.append(t)
@@ -135,8 +136,8 @@ def insert_data(table,data_values,**kwargs):
 		(device_name,service_name,sys_timestamp,check_timestamp,
 		description,severity,current_value,min_value,max_value,avg_value
 		,warning_threshold,critical_threshold,site_name,data_source,
-		ip_address,machine_name)
-		VALUES(%s, %s, %s, %s, %s, %s, %s,%s ,%s,%s,%s,%s,%s,%s,%s,%s)
+		ip_address,age,machine_name)
+		VALUES(%s, %s, %s, %s, %s, %s, %s,%s ,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     		"""
 	cursor = db.cursor()
     	try:

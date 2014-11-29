@@ -50,11 +50,11 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 
 	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output\n" + \
                 "Filter: service_description = cambium_topology_discover\nOutputFormat: json\n"
-	query_output = json.loads(utility_module.get_from_socket(site,query).strip()
+	query_output = json.loads(utility_module.get_from_socket(site,query).strip())
 
 	for entry in query_output:
 		try:
-			 if int(entry[2]) == 1:
+			if int(entry[2]) == 1:
                                 continue
                         service_state = entry[4]
                         host = entry[0]
@@ -70,7 +70,7 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
                         service = entry[3]
 			perf_data_output = entry[5]
 			if perf_data_output:
-				plugin_output = str(perf_data_output[0][1].split('- ')[1])
+				plugin_output = str(perf_data_output.split('- ')[1])
 				plugin_output =	[mac for mac in plugin_output.split(' ')]
 				ap_sector_id = plugin_output[1]
 				ap_mac= plugin_output[0]
@@ -80,7 +80,8 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 				ds="topology"
 			else:
 				continue
-		except:
+		except Exception ,e:
+			print e
 			continue
 		current_time = int(time.time())
 		topology_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host),
