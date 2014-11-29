@@ -2529,12 +2529,23 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
                 all_forms_valid = False
         print (device_type_service_form.is_valid())
         print (all_forms_valid)
+        if (device_type_service_form.is_valid()):
+            print('--valid--'*12)
+            return self.render_to_response(
+                self.get_context_data(form=form,
+                                      device_type_service_form=device_type_service_form,
+                                      service_data_formset=service_data_formset))
+        else:
+            print('--invalid--'*12)
+            return self.render_to_response(
+                self.get_context_data(form=form,
+                                      device_type_service_form=device_type_service_form,
+                                      service_data_formset=service_data_formset))
         # if (form.is_valid() and device_type_service_form.is_valid()
         #                     and all_forms_valid ):
-        if True:
-            return self.form_valid(form, device_type_service_form , service_data_formset)
-        else:
-            return self.form_invalid(form, device_type_service_form , service_data_formset)
+        #     return self.form_valid(form, device_type_service_form , service_data_formset)
+        # else:
+        #     return self.form_invalid(form, device_type_service_form , service_data_formset)
 
     def form_valid(self, form, device_type_service_form, service_data_formset):
         """
@@ -2546,12 +2557,7 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         device_type_service_form.instance = self.object
         dts = device_type_service_form.save()
         for dts_obj in dts:
-            print('+'*12)
-            print(dts_obj)
-            print(dts_obj.service.id)
-            print(service_data_formset)
             for sds_form in service_data_formset['{0}'.format(dts_obj.service.id)]:
-                print('+++++',sds_form)
                 sds_id = sds_form.cleaned_data['service_data_sources']
                 warning = sds_form.cleaned_data['warning']
                 critical = sds_form.cleaned_data['critical']
