@@ -42,7 +42,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 		// Save current zoom value in global variable
     	current_zoom = ccpl_map.getZoom();
     	/* When zoom level is greater than 8 show lines */
-    	if(ccpl_map.getZoom() > 5) {
+    	if(ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAtWhichStateClusterExpands) {
     		if(ccpl_map.getZoom() < 8 || searchResultData.length > 0) {
 
     			var states_with_bounds = state_lat_lon_db.where(function(obj) {
@@ -86,7 +86,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				} else {
 					filtered_devices = all_devices_loki_db.data;
 				}
-
 				// IF any states exists
 				if(states_array.length > 0) {
     				for(var i=filtered_devices.length;i--;) {
@@ -119,7 +118,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         				currentlyPlottedDevices = [];
     				}
 
-        			main_devices_data_wmap = data_to_plot;
+    				main_devices_data_wmap = data_to_plot;
 
         			if(currentlyPlottedDevices.length === 0) {
         				ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
@@ -154,8 +153,8 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
         			// Call function to plot devices on gmap
 					whiteMapClass.plotDevices_wmaps(inBoundData,"base_station");
-					ccpl_map.getLayersByName('Markers')[0].refresh({forces:true});
-					ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
+					// ccpl_map.getLayersByName('Markers')[0].refresh({forces:true});
+					// ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 
 					if(searchResultData.length == 0 || ccpl_map.getZoom() === 8) {
 						var polylines = allMarkersObject_wmap['path'],
@@ -173,7 +172,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 								// markerLayer.redraw();
 							}
 						}
-
+						// alert();
 						// Hide polygons if shown
 						for(key in polygons) {
 							var current_polygons = polygons[key];
@@ -195,6 +194,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 							whiteMapClass.showSectorPolygonInBounds();
 						}
 					}
+
         		}
         		// Show points line if exist
         		for(key in line_data_obj) {
@@ -206,6 +206,13 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         				// markerLayer.redraw();
         			}
         		}
+
+        		//Update Clusters Threshold value and recluster it
+        		if(ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold !== clustererSettings.threshold) {
+					//Update Strategy with New Threshold and Distance Value
+					ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold = clustererSettings.threshold;
+					ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
+				}
     		// 8 LEVEL ZOOM CONDITION
     		} else {
 				whiteMapClass.showSubStaionsInBounds();
@@ -213,6 +220,13 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				whiteMapClass.showSectorDevicesInBounds();
 				whiteMapClass.showLinesInBounds();
 				whiteMapClass.showSectorPolygonInBounds();
+
+				//Update Clusters Threshold value and recluster it
+				if(ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold !== clustererSettings.thresholdAtHighZoomLevel) {
+					//Update Strategy with New Threshold and Distance Value
+					ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold = clustererSettings.thresholdAtHighZoomLevel;
+					ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
+				}
     		}
 
     		// Start performance calling after 1.5 Second
@@ -227,7 +241,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
             	}
         	},500);
 
-        } else if(ccpl_map.getZoom() <= 5) {
+        } else {
         	
 			// Clear performance calling timeout
 			if(recallPerf != "") {
@@ -254,6 +268,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
             // Reset labels array 
             labelsArray = [];
 
+
             /*Clear master marker cluster objects*/
             // Deactivate Marker Clustering Strategy
             ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
@@ -271,6 +286,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
 			// Reset Variables
 			allMarkersArray_wmap = [];
+			bs_ss_markers= [];
 			main_devices_data_wmap = [];
 			plottedBsIds = [];
 			currentlyPlottedDevices = [];
@@ -340,7 +356,6 @@ WhiteMapClass.prototype.layerFeatureClicked = function(feature) {
 	if(feature.cluster) {
 		//If feature cluster was present
 		if(feature.cluster.length >= 2) {
-			console.log(feature.cluster);
 			var clusterPoints = [];
 			//Loop through all the points in cluster
 			for(var i = 0; i< feature.cluster.length; i++){

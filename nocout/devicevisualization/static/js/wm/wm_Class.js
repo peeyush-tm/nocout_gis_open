@@ -63,7 +63,7 @@ var allSSIds = [],
 var pollableDevices = [];
 var polled_devices_names= [];
 
-
+var bs_ss_markers = [];
 var bs_obj= {};
 var isCallCompleted;
 // var gisPerformanceClass = "";
@@ -1210,8 +1210,7 @@ function WhiteMapClass() {
 			console.log("Show in bound SS Function");
 			console.log("Show in bound SS Start Time :- "+ new Date().toLocaleString());
 		}
-
-		var isSSChecked = $("#showAllSS:checked").length;
+ 		var isSSChecked = $("#showAllSS:checked").length;
 
 		/*Checked case*/
 		if(isSSChecked > 0) {
@@ -1279,8 +1278,6 @@ function WhiteMapClass() {
 		}
 
 		// var sector_to_plot = all_devices_loki_db.where(function(obj){return plotted_bs_ids.indexOf(obj.originalId) > -1;});
-		// console.log(sector_to_plot);
-
 		if(isDebug) {
 			console.log("Show in bound BS End Time :- "+ new Date().toLocaleString());
 			console.log("**********************************");
@@ -1622,8 +1619,8 @@ function WhiteMapClass() {
 		 * @param bs_ss_devices {Object} In case of BS, it is the devies object array & for SS it contains BS marker object with SS & sector info
 		 * @param stationType {String}, It contains that the points are for BS or SS.
 		 */
+		
 	    this.plotDevices_wmaps = function(bs_ss_devices, stationType) {
-			var bs_ss_markers= [];
 			if(isDebug) {
 				console.log("Plot Devices Function");
 				console.log("Plot Devices Start Time :- "+ new Date().toLocaleString());
@@ -2007,8 +2004,6 @@ function WhiteMapClass() {
 			if(bs_ss_markers.length> 0) {
 				ccpl_map.getLayersByName("Markers")[0].addFeatures(bs_ss_markers);
 			}
-
-			// console.log('is end plotting');
 
 			if(isDebug) {
 				console.log("Plot Devices End Time :- "+ new Date().toLocaleString());

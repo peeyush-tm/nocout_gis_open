@@ -16,7 +16,8 @@ var whiteMapSettings = {
 	zoomLevelAfterLineAppears: 10,
 	zoomLevelAtClusterUpdates: 10,
 	latLngPrefixLabel: 'Longitude, Latitude: ',
-	mapCenter: [82.9165, 21.713]
+	mapCenter: [82.9165, 21.713],
+	zoomLevelAtWhichStateClusterExpands: 4
 }
 
 var clustererSettings = {
@@ -25,5 +26,6 @@ var clustererSettings = {
 	fontColor: 'black',
 	fontFamily: 'Arial,sans-serif',
 	clustererDistance: 70,
-	threshold: 3
+	threshold: 3,
+	thresholdAtHighZoomLevel: 7
 }

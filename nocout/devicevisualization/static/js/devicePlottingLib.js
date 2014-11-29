@@ -606,6 +606,10 @@ function devicePlottingClass_gmap() {
 		            				currentlyPlottedDevices = [];
 	            				}
 
+	            				console.log(data_to_plot.length);
+
+	            				console.log(currentlyPlottedDevices.length);
+
 		            			main_devices_data_gmaps = data_to_plot;
 		            			if(currentlyPlottedDevices.length === 0) {
 				            		/*Clear all everything from map*/
@@ -637,6 +641,8 @@ function devicePlottingClass_gmap() {
 	            					// Update currently plotted devices global array.
 		            				currentlyPlottedDevices = currentlyPlottedDevices.concat(inBoundData);
 		            			}
+
+		            			console.log(inBoundData.length);
 
 		            			// Call function to plot devices on gmap
 								gmap_self.plotDevices_gmap(inBoundData,"base_station");
@@ -1228,11 +1234,12 @@ function devicePlottingClass_gmap() {
 			if(clicked_state) {
 				//Zoom in to selected state
 				if(window.location.pathname.indexOf("white_background") > -1) {
-					var bounds = new OpenLayers.Bounds();
-					bounds.extend(new OpenLayers.LonLat(state_obj.lon, state_obj.lat));
-					ccpl_map.zoomToExtent(bounds);
+					// var bounds = new OpenLayers.Bounds();
+					// bounds.extend(new OpenLayers.LonLat(state_obj.lon, state_obj.lat));
+					// ccpl_map.zoomToExtent(bounds);
+					// ccpl_map.zoomTo(6);
 
-					ccpl_map.zoomTo(6);
+					ccpl_map.setCenter(new OpenLayers.LonLat(state_obj.lon, state_obj.lat), whiteMapSettings.zoomLevelAtWhichStateClusterExpands);
 				} else {
 					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(state_obj.lat,state_obj.lon)));
 					mapInstance.setZoom(8);
@@ -1496,6 +1503,7 @@ function devicePlottingClass_gmap() {
 				plottedBsIds.push(current_device_set.originalId);
 			}
 		}
+
 		if(isDebug) {
 			console.log("In Bound Devices End Time :- "+ new Date().toLocaleString());
 			console.log("********************************");
@@ -1517,9 +1525,15 @@ function devicePlottingClass_gmap() {
 		}
 
 		var newInBoundDevices = [];
+		var main_devices_data = [];
+		if(window.location.pathname.indexOf("white_background") > -1) {
+			main_devices_data = main_devices_data_wmap;
+		} else {
+			main_devices_data = main_devices_data_gmaps;
+		}
 
-		for(var i=main_devices_data_gmaps.length;i--;) {
-			var current_device_set = main_devices_data_gmaps[i];
+		for(var i=main_devices_data.length;i--;) {
+			var current_device_set = main_devices_data[i];
 
 			if(plottedBsIds.indexOf(current_device_set.originalId) === -1) {
 				var isDeviceInBound = "";
