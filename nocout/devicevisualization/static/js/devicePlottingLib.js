@@ -5110,8 +5110,15 @@ function devicePlottingClass_gmap() {
 							var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon;
 							// var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
 							// var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png",
-							var ss_marker = allMarkersObject_gmap['sub_station']['ss_'+marker_name],
-								sector_marker = allMarkersObject_gmap['sector_device']['sector_'+sector_ip],
+							// 
+							var allMarkerObject = {};
+							if(window.location.pathname.indexOf("white_background") > -1) {
+								allMarkerObject = allMarkersObject_wmap;
+							} else {
+								allMarkerObject = allMarkersObject_gmap;
+							}
+							var ss_marker = allMarkerObject['sub_station']['ss_'+marker_name],
+								sector_marker = allMarkerObject['sector_device']['sector_'+sector_ip],
 								marker_polling_obj = {
 									"device_name" : allSSIds[i],
 									"polling_icon" : newIcon,
@@ -5131,14 +5138,26 @@ function devicePlottingClass_gmap() {
 							
 							/*Update the marker icons*/
 							if(ss_marker) {
-								ss_marker.setOptions({
-									"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
-								});
+								if(window.location.pathname.indexOf("white_background") > -1) {
+									ss_marker.style.externalGraphic = newIcon;
+									var layer = ss_marker.layer ? ss_marker.layer : ss_marker.layerReference;
+									layer.redraw();
+								} else {
+									ss_marker.setOptions({
+										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+									});
+								}
 								marker_polling_obj.ip = ss_marker.ss_ip;
 							} else if(sector_marker) {
-								sector_marker.setOptions({
-									"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
-								});
+								if(window.location.pathname.indexOf("white_background") > -1) {
+									sector_marker.style.externalGraphic = newIcon
+									var layer = sector_marker.layer ? sector_marker.layer : sector_marker.layerReference;
+									layer.redraw();
+								} else {
+									sector_marker.setOptions({
+										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+									});
+								}
 								marker_polling_obj.ip = sector_marker.sectorName;
 							}
 

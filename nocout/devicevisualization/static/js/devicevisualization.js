@@ -518,8 +518,6 @@ $("#fetch_polling").click(function(e) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
         earth_instance.getDevicesPollingData_earth();
-    } else if(window.location.pathname.indexOf("white_background") > -1) {
-        whiteMapClass.getDevicesPollingData_wmaps();
     } else {
         networkMapInstance.fetchDevicesPollingData();
     }
@@ -532,8 +530,6 @@ $("#play_btn").click(function(e) {
     }
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
-        
-    } else if(window.location.pathname.indexOf("white_background") > -1) {
         
     } else {
         if(polygonSelectedDevices && (polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "")) {
@@ -555,7 +551,11 @@ $("#play_btn").click(function(e) {
             remainingPollCalls = Math.floor((60*pollingMaxInterval)/pollingInterval);
             isPollingPaused = 0;
 
-            networkMapInstance.startDevicePolling_gmap();
+            if(window.location.pathname.indexOf("white_background") > -1) {
+                whiteMapClass.startDevicePolling_wmap();
+            } else {
+                networkMapInstance.startDevicePolling_gmap();
+            }
 
         } else {
             bootbox.alert("Please select devices & polling template first.");
@@ -653,6 +653,8 @@ $("#polling_tabular_view").click(function(e) {
 $("#clearPolygonBtn").click(function(e) {
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.stopPolling();
+        hasSelectDevice = 0;
+        get_page_status();
     } else if(window.location.pathname.indexOf("googleEarth") > -1) {
         earth_instance.clearPolygon();
         hasSelectDevice = 0;

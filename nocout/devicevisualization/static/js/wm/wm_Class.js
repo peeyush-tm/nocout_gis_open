@@ -40,7 +40,12 @@ var bs_loki_db = [],
 	ssLonArray = [],
 	ssLinkArray_filtered = [],
 	isFirstTime= 1,
-	isExportDataActive= 0;
+	isExportDataActive= 0,
+	pollCallingTimeout = "",
+	remainingPollCalls = 0,
+	pollingInterval = 10,
+	pollingMaxInterval = 1,
+	isPollingPaused = 0;
 
 var bsDevicesObj = {};
 var tempbsDeviceObj = {};
@@ -193,84 +198,112 @@ function WhiteMapClass() {
 	
 		this.initLivePolling = function() {
 
-			/*Reset marker icon*/
-			for(var i=0;i<polygonSelectedDevices.length;i++) {
+			if(ccpl_map.getZoom() > whiteMapSettings.zoomLevelAtWhichStateClusterExpands) {
+				/*Reset marker icon*/
+				for(var i=0;i<polygonSelectedDevices.length;i++) {
 
-				var ss_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.name];
-				if(ss_marker) {
-					var pointType = ss_marker.attributes.pointType,
-						sector_marker = "";
+					var ss_marker = allMarkersObject_wmap['sub_station']['ss_'+polygonSelectedDevices[i].name],
+		            	sector_ip = "";
 
-					if(pointType === 'sub_station') {
-						sector_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.sector_ip];
-					} else {
-						sector_marker = wm_obj['devices']['sector_'+polygonSelectedDevices[i].attributes.sectorName];
-					}
+		            if(polygonSelectedDevices[i].pointType && ($.trim(polygonSelectedDevices[i].pointType) == 'sub_station')) {
+		            	sector_ip = polygonSelectedDevices[i].sector_ip;
+		            } else {
+		            	sector_ip = polygonSelectedDevices[i].sectorName;
+		            }
 
-					if(ss_marker) {
-						ss_marker.style.externalGraphic = ss_marker.attributes.oldIcon;
-						
+		            var sector_marker = allMarkersObject_wmap['sector_device']['sector_'+sector_ip];
+
+		            if(ss_marker) {
+		            	ss_marker.style.externalGraphic = ss_marker.oldIcon;
 					} else if(sector_marker) {
-						sector_marker.style.externalGraphic = sector_marker.attributes.oldIcon
+		            	sector_marker.style.externalGraphic = sector_marker.oldIcon;
 					}
 				}
+
+				ccpl_map.getLayersByName('Markers')[0].redraw();
+				ccpl_map.getLayersByName("Devices")[0].redraw();
+
+				ccpl_map.getLayersByName('Polling')[0].removeAllFeatures();
+
+				if(global_this.livePollingPolygonControl) {
+					global_this.livePollingPolygonControl.deactivate();
+				}
+
+				// ccpl_map.addLayer(ccpl_map.getLayersByName('Polling')[0]);
+				ccpl_map.getLayersByName('Polling')[0].setVisibility(true);
+
+				isPollingActive = 1;
+
+				/*Reset global variables*/
+				allSSIds = [];
+				polygonSelectedDevices = [];
+				currentPolygon = {};
+				polled_devices_names = [];
+				complete_polled_devices_data = [];
+				complete_polled_devices_icon = {};
+				total_polled_occurence = 0;
+				nav_click_counter = 0;
+				polled_device_count = {};
+
+				$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html("");
+
+		    	$("#tech_send").button("complete");
+				$("#sideInfo .panel-body .col-md-12 .template_container").html("");
+
+				if(!($("#timeInterval_container").hasClass("hide"))) {
+					$("#timeInterval_container").addClass("hide");
+				}
+
+				if(!($(".play_pause_btns").hasClass("hide"))) {
+					$(".play_pause_btns").addClass("hide");
+				}
+
+				if(($(".play_pause_btns").hasClass("disabled"))) {
+					$(".play_pause_btns").removeClass("disabled");
+				}
+
+				if(!($("#fetch_polling").hasClass("hide"))) {
+					$("#fetch_polling").addClass("hide");
+				}
+
+				if(!($("#polling_tabular_view").hasClass("hide"))) {
+					$("#polling_tabular_view").addClass("hide");
+				}
+
+				/*Add hide class to navigation container on polling widget*/
+				if(!$("#navigation_container").hasClass("hide")) {
+					$("#navigation_container").addClass("hide");
+				}
+
+		    	if($("#sideInfoContainer").hasClass("hide")) {
+					$("#sideInfoContainer").removeClass("hide");
+				}
+
+				if(!$("#createPolygonBtn").hasClass("hide")) {
+					$("#createPolygonBtn").addClass("hide");
+				}
+
+				if($("#clearPolygonBtn").hasClass("hide")) {
+					$("#clearPolygonBtn").removeClass("hide");
+				}
+
+				/*Disable poll interval & max interval dropdown*/
+	            $("#poll_interval").removeAttr("disabled");
+	            $("#poll_maxInterval").removeAttr("disabled");
+
+	            /*Select default value*/
+	            $("#poll_interval").val($("#poll_interval option:first").val());
+	            $("#poll_maxInterval").val($("#poll_maxInterval option:first").val());
+			} else {
+				bootbox.alert("<p style='position:relative;z-index:9999;'>Please zoom in for live poll devices.There are too many devices.</p>");
+				$("#clearPolygonBtn").trigger('click');
 			}
-			ccpl_map.getLayersByName('Markers')[0].redraw();
-			ccpl_map.getLayersByName("Devices")[0].redraw();
-
-			ccpl_map.getLayersByName('Polling')[0].removeAllFeatures();
-
-			if(global_this.livePollingPolygonControl) {
-				global_this.livePollingPolygonControl.deactivate();
-			}
-
-			// ccpl_map.addLayer(ccpl_map.getLayersByName('Polling')[0]);
-			ccpl_map.getLayersByName('Polling')[0].setVisibility(true);
-
-			isPollingActive = 1;
-
-			/*Reset global variables*/
-			allSSIds = [];
-			polygonSelectedDevices = [];
-			currentPolygon = {};
-			polled_devices_names = [];
-			complete_polled_devices_data = [];
-			complete_polled_devices_icon = {};
-			total_polled_occurence = 0;
-			nav_click_counter = 0;
-			polled_device_count = {};
-
-			$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html("");
-
-			$("#tech_send").button("complete");
-			$("#sideInfo .panel-body .col-md-12 .template_container").html("");
-
-			if(!($("#fetch_polling").hasClass("hide"))) {
-				$("#fetch_polling").addClass("hide");
-			}
-
-			if(!($("#polling_tabular_view").hasClass("hide"))) {
-				$("#polling_tabular_view").addClass("hide");
-			}
-
-			/*Add hide class to navigation container on polling widget*/
-			if(!$("#navigation_container").hasClass("hide")) {
-				$("#navigation_container").addClass("hide");
-			}
-
-			if($("#sideInfoContainer").hasClass("hide")) {
-				$("#sideInfoContainer").removeClass("hide");
-			}
-
-			if(!$("#createPolygonBtn").hasClass("hide")) {
-				$("#createPolygonBtn").addClass("hide");
-			}
-
-			if($("#clearPolygonBtn").hasClass("hide")) {
-				$("#clearPolygonBtn").removeClass("hide");
-			}	
 		}
 
+		 /**
+	     * This function initialize live polling
+	     * @method fetchPollingTemplate_gmap
+	     */
 		this.fetchPollingTemplate_wmap = function() {
 
 			var selected_technology = $("#polling_tech").val(),
@@ -285,6 +318,7 @@ function WhiteMapClass() {
 			/*Reset the variables*/
 			polygonSelectedDevices = [];
 			pointsArray = [];
+
 			if(selected_technology != "") {
 				$("#tech_send").button("loading");
 				/*ajax call for services & datasource*/
@@ -305,35 +339,88 @@ function WhiteMapClass() {
 
 							$("#sideInfo .panel-body .col-md-12 .template_container").html(polling_select);
 
-							if($("#fetch_polling").hasClass("hide")) {
-								$("#fetch_polling").removeClass("hide");
+	    					if($("#fetch_polling").hasClass("hide")) {
+	    						$("#fetch_polling").removeClass("hide");
+	    					}
+
+	    					if(($("#timeInterval_container").hasClass("hide"))) {
+								$("#timeInterval_container").removeClass("hide");
 							}
 
-							$("#tech_send").button("complete");
+							if(($(".play_pause_btns").hasClass("hide"))) {
+								$(".play_pause_btns").removeClass("hide");
+							}
+
+							if(($(".play_pause_btns").hasClass("disabled"))) {
+								$(".play_pause_btns").removeClass("disabled");
+							}
+
+	    					$("#tech_send").button("complete");
 
 							// ccpl_map.addLayer(ccpl_map.getLayersByName('Polling')[0]);
 							ccpl_map.getLayersByName('Polling')[0].setVisibility(true);
 
 							global_this.livePollingPolygonControl.activate();
-						}
+						} else {
+    					
+	    					$("#tech_send").button("complete");
+	    					$("#sideInfo .panel-body .col-md-12 .template_container").html("");
+
+	    					if(!($("#timeInterval_container").hasClass("hide"))) {
+								$("#timeInterval_container").addClass("hide");
+							}
+
+							if(!($(".play_pause_btns").hasClass("hide"))) {
+								$(".play_pause_btns").addClass("hide");
+							}
+
+							if(($(".play_pause_btns").hasClass("disabled"))) {
+								$(".play_pause_btns").removeClass("disabled");
+							}
+
+	    					if(!($("#fetch_polling").hasClass("hide"))) {
+	    						$("#fetch_polling").addClass("hide");
+	    					}
+
+	    					$.gritter.add({
+					            // (string | mandatory) the heading of the notification
+					            title: 'Live Polling - Error',
+					            // (string | mandatory) the text inside the notification
+					            text: result.message,
+					            // (bool | optional) if you want it to fade out on its own or just sit there
+					            sticky: false
+					        });
+	    				}
 					},
 					error : function(err) {
 						
 						$("#tech_send").button("complete");
-						$("#sideInfo .panel-body .col-md-12 .template_container").html("");
+	    				$("#sideInfo .panel-body .col-md-12 .template_container").html("");
 
-						if(!($("#fetch_polling").hasClass("hide"))) {
+	    				if(!($("#timeInterval_container").hasClass("hide"))) {
+							$("#timeInterval_container").addClass("hide");
+						}
+
+						if(!($(".play_pause_btns").hasClass("hide"))) {
+							$(".play_pause_btns").addClass("hide");
+						}
+
+						if(($(".play_pause_btns").hasClass("disabled"))) {
+							$(".play_pause_btns").removeClass("disabled");
+						}
+
+	    				if(!($("#fetch_polling").hasClass("hide"))) {
 							$("#fetch_polling").addClass("hide");
 						}
-						
-						$.gritter.add({
-							// (string | mandatory) the heading of the notification
-							title: 'Live Polling - Error',
-							// (string | mandatory) the text inside the notification
-							text: err.statusText,
-							// (bool | optional) if you want it to fade out on its own or just sit there
-							sticky: false
-						});
+	    				
+	    				$.gritter.add({
+				            // (string | mandatory) the heading of the notification
+				            title: 'Live Polling - Error',
+				            // (string | mandatory) the text inside the notification
+				            text: err.statusText,
+				            // (bool | optional) if you want it to fade out on its own or just sit there
+				            sticky: false
+				        });
 					}
 				});
 			} else {
@@ -347,22 +434,23 @@ function WhiteMapClass() {
 			/*Reset marker icon*/
 			for(var i=0;i<polygonSelectedDevices.length;i++) {
 
-				var ss_marker = wm_obj['features'][polygonSelectedDevices[i].attributes.name],
+				var ss_marker = allMarkersObject_wmap['sub_station']['ss_'+polygonSelectedDevices[i].name],
             		sector_ip = "";
             
-		        if(polygonSelectedDevices[i].attributes.pointType && ($.trim(polygonSelectedDevices[i].attributes.pointType) == 'sub_station')) {
-		        	sector_ip = polygonSelectedDevices[i].attributes.sector_ip;
+		        if(polygonSelectedDevices[i].pointType && ($.trim(polygonSelectedDevices[i].pointType) == 'sub_station')) {
+		        	sector_ip = polygonSelectedDevices[i].sector_ip;
 		        } else {
-		        	sector_ip = polygonSelectedDevices[i].attributes.sectorName;
+		        	sector_ip = polygonSelectedDevices[i].sectorName;
 		        }
 
-		        var sector_marker = wm_obj['devices']['sector_'+sector_ip];
+		        var sector_marker = allMarkersObject_wmap['sector_device']['sector_'+sector_ip];
 
 				if(ss_marker) {
-					ss_marker.style.externalGraphic = ss_marker.attributes.icon;
+					ss_marker.pollingIcon = "";
+					ss_marker.style.externalGraphic = ss_marker.icon;
 				} else if(sector_marker) {
-					sector_marker.attributes.pollingIcon = "";
-					sector_marker.style.externalGraphic = sector_marker.attributes.icon;
+					sector_marker.pollingIcon = "";
+					sector_marker.style.externalGraphic = sector_marker.icon;
 				}
 			}
 			ccpl_map.getLayersByName('Markers')[0].redraw();
@@ -419,32 +507,30 @@ function WhiteMapClass() {
 			global_this.livePollingPolygonControl.deactivate();
 			polygon = e.feature;
 			global_this.getMarkerInPolygon();
+			currentPolygon = e.feature;
 		}
 
 		this.getMarkerInPolygon = function() {
 			var allSS = pollableDevices;
 			allSSIds = [];
-			
 
 			var selected_polling_technology = $("#polling_tech option:selected").text();
 
 			for(var k=0;k<allSS.length;k++) {
-				if(filtered_devices_array.indexOf(allSS[k]) > -1 || filtered_Features.markers.indexOf(allSS[k]) > -1) {
-					if(polygon && allSS[k].attributes.ptLon && allSS[k].attributes.ptLat) {
-						if(displayBounds(polygon, allSS[k].attributes.ptLon, allSS[k].attributes.ptLat) === 'in') {
-							if($.trim(allSS[k].attributes.technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-								
-								if($.trim(allSS[k].attributes.technology.toLowerCase()) == "ptp" || $.trim(allSS[k].attributes.technology.toLowerCase()) == "p2p") {
-									if(allSS[k].attributes.device_name && (allSSIds.indexOf(allSS[k].attributes.device_name) == -1)) {
-										allSSIds.push(allSS[k].attributes.device_name);
+				
+				if(allSS[k].ptLon && allSS[k].ptLat && polygon) {
+					if (displayBounds(polygon, allSS[k].ptLon, allSS[k].ptLat) === 'in') {
+						if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
+							if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
+								if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+									allSSIds.push(allSS[k].device_name);
+									polygonSelectedDevices.push(allSS[k]);
+								}
+							} else {
+								if(allSS[k].pointType == 'sub_station') {
+									if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+										allSSIds.push(allSS[k].device_name);
 										polygonSelectedDevices.push(allSS[k]);
-									}
-								} else {
-									if(allSS[k].attributes.pointType == 'sub_station') {
-										if(allSS[k].attributes.device_name && (allSSIds.indexOf(allSS[k].attributes.device_name) == -1)) {
-											allSSIds.push(allSS[k].attributes.device_name);
-											polygonSelectedDevices.push(allSS[k]);
-										}
 									}
 								}
 							}
@@ -494,68 +580,84 @@ function WhiteMapClass() {
 			} else {
 
 				var devicesTemplate = "<div class='deviceWellContainer'>";
-
+				var num_counter = 0;
 				for(var i=0;i<polygonSelectedDevices.length;i++) {
 					
 					var new_device_name = "";
-					var current_technology = $.trim(polygonSelectedDevices[i].attributes.technology.toLowerCase());
+					var current_technology = $.trim(polygonSelectedDevices[i].technology.toLowerCase());
 					
-					if(polygonSelectedDevices[i].attributes.device_name.indexOf(".") != -1) {
-						new_device_name = polygonSelectedDevices[i].attributes.device_name.split(".");
+					if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
+						new_device_name = polygonSelectedDevices[i].device_name.split(".");
 						new_device_name = new_device_name.join("-");
 					} else {
-						new_device_name = polygonSelectedDevices[i].attributes.device_name;
+						new_device_name = polygonSelectedDevices[i].device_name;
 					}
 
 					var devices_counter = "";
-					
-					if(polygonSelectedDevices[i].attributes.pointType == 'sub_station') {
-						devices_counter = polygonSelectedDevices[i].attributes.bs_sector_device;
-					} else {
-						devices_counter = polygonSelectedDevices[i].attributes.device_name;
-					}
+					if(current_technology == "ptp" || current_technology == "p2p") {					
+						if(polygonSelectedDevices[i].pointType == 'sub_station') {
+							devices_counter = polygonSelectedDevices[i].bs_sector_device;
+						} else {
+							devices_counter = polygonSelectedDevices[i].device_name;
+						}
 
 						if(!polled_device_count[devices_counter]) {
-						polled_device_count[devices_counter]  = 1;
-					} else {
-						polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
+							polled_device_count[devices_counter]  = 1;
+						} else {
+							polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
+						}
 					}
 
 
-					if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i].attributes.pointType == 'sub_station') {
+					if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i].pointType == 'sub_station') {
 
-						if(polygonSelectedDevices[i].attributes.bs_sector_device.indexOf(".") != -1) {
-							var new_device_name2 = polygonSelectedDevices[i].attributes.bs_sector_device.split(".");
+						if(polygonSelectedDevices[i].bs_sector_device.indexOf(".") != -1) {
+							var new_device_name2 = polygonSelectedDevices[i].bs_sector_device.split(".");
 							new_device_name2 = new_device_name2.join("-");
 						} else {
-							var new_device_name2 = polygonSelectedDevices[i].attributes.bs_sector_device;
+							var new_device_name2 = polygonSelectedDevices[i].bs_sector_device;
 						}
 
 						if(polled_device_count[devices_counter] <= 1) {
-							devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].attributes.sector_ip+'</h5>';
+							num_counter++;
+							devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].sector_ip+'</h5>';
 							devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
 							devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
 							devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
 						}
 
-						devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].attributes.ss_ip+'</h5>';
+						num_counter++;
+
+						devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].ss_ip+'</h5>';
 						devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 						devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 						devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
 
 					} else {
-						if(polled_device_count[devices_counter] ) //<= 1) //why do we have this condition ???
-						{
-							var device_end_txt = "",
-								point_name = "";
-							if(polygonSelectedDevices[i].attributes.pointType == 'sub_station') {
-								device_end_txt = "Far End";
-								point_name = polygonSelectedDevices[i].attributes.ss_ip
-							} else {
-								device_end_txt = "Near End";
-								point_name = polygonSelectedDevices[i].attributes.sectorName
-							}
+						var device_end_txt = "",
+							point_name = "";
 
+						if(current_technology == "ptp" || current_technology == "p2p") {
+							if(polled_device_count[devices_counter] <= 1) {
+								if(polygonSelectedDevices[i].pointType == 'sub_station') {
+									device_end_txt = "Far End";
+									point_name = polygonSelectedDevices[i].ss_ip
+								} else {
+									device_end_txt = "Near End";
+									point_name = polygonSelectedDevices[i].sectorName
+								}
+
+								num_counter++;
+								devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+(i+1)+'.) '+point_name+'</h5>';
+								devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
+								devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
+								devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
+							}
+						} else {
+							device_end_txt = "Far End";
+							point_name = polygonSelectedDevices[i].ss_ip
+
+							num_counter++;
 							devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+(i+1)+'.) '+point_name+'</h5>';
 							devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 							devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
@@ -571,223 +673,33 @@ function WhiteMapClass() {
 		}
 
 		/**
-		 * This function fetch the polling value for selected devices
-		 * @method getDevicesPollingData
+		 * This function fetch the polling value for selected devices periodically as per the selected intervals.
+		 * @method startDevicePolling_gmap
 		 */
-		this.getDevicesPollingData_wmaps = function() {
-
-			if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
-
-				var service_type = $("#isPing")[0].checked ? "ping" : "other";
-				
-				$("#getDevicesPollingData").button("loading");
-
-				/*Disable service templates dropdown*/
-				$("#lp_template_select").attr("disabled","disabled");
-
-				var selected_lp_template = $("#lp_template_select").val();
-
-				// start spinner
-				if($("#fetch_spinner").hasClass("hide")) {
-					$("#fetch_spinner").removeClass("hide");
+	    this.startDevicePolling_wmap = function() {
+	    	if(remainingPollCalls > 0) {
+				if(isPollingPaused == 0) {
+					// Call function to fetch polled data for selected devices
+					gmap_self.getPollingData_gmap(function(response) {
+						pollCallingTimeout = setTimeout(function() {
+							remainingPollCalls--;
+							whiteMapClass.startDevicePolling_wmap();
+						},pollingInterval);
+					});
+				} else {
+					if($("#play_btn").hasClass("disabled")) {
+		                $("#play_btn").removeClass("disabled");
+		            }
+		    		clearTimeout(pollCallingTimeout);
 				}
+	    	} else {
+	    		if($("#play_btn").hasClass("disabled")) {
+	                $("#play_btn").removeClass("disabled");
+	            }
+	    		clearTimeout(pollCallingTimeout);
+	    	}
+	    };
 
-				$.ajax({
-					url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
-					// url : base_url+"/"+"static/services.json",
-					success : function(results) {
-						var result = "";
-
-						if(typeof results === 'string') {
-							result = JSON.parse(results);
-						} else {
-							result = results;
-						}
-						
-						if(result.success == 1) {
-							
-							$("#getDevicesPollingData").button("complete");
-
-
-							/*Remove 'text-info' class from all li's*/
-							if($(".deviceWellContainer div div ul li")) {
-								$(".deviceWellContainer div div ul li").removeClass("text-info");
-							}
-
-							// stop spinner
-							if(!($("#fetch_spinner").hasClass("hide"))) {
-								$("#fetch_spinner").addClass("hide");
-							}
-
-							if($(".devices_container").hasClass("hide")) {
-								$(".devices_container").removeClass("hide");
-							}
-
-
-							var hasPolledInfo = true;
-							for(var i=0;i<allSSIds.length;i++) {
-								var new_device_name = "";
-								if(allSSIds[i] && allSSIds[i].indexOf(".") != -1) {
-									new_device_name = allSSIds[i].split('.');
-									new_device_name = new_device_name.join('-');
-								} else {
-									new_device_name = allSSIds[i];
-								}
-								if(result.data.devices[allSSIds[i]] != undefined) {
-
-									if(hasPolledInfo) {
-										if($("#polling_tabular_view").hasClass("hide")) {
-											$("#polling_tabular_view").removeClass("hide");
-										}
-
-										/*Remove hide class to navigation container on polling widget*/
-										if($("#navigation_container").hasClass("hide")) {
-											$("#navigation_container").removeClass("hide");
-										}
-										hasPolledInfo = false;
-									}
-
-									var dateObj = new Date(),
-										current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
-										final_chart_data = [];
-									
-									if($("#pollVal_"+new_device_name+" li").length == 0) {
-
-										var fetchValString = "";
-										fetchValString += "<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")  <input type='hidden' name='chartVal_"+new_device_name+"' id='chartVal_"+new_device_name+"' value='"+result.data.devices[allSSIds[i]].value+"'/></li>";
-
-										$("#pollVal_"+new_device_name).append(fetchValString);
-										/*Sparkline Chart Data*/
-										final_chart_data.push((+result.data.devices[allSSIds[i]].value));
-									
-									} else {
-
-										var	string_val = [];
-
-										$("#chartVal_"+new_device_name).val($("#chartVal_"+new_device_name).val()+","+result.data.devices[allSSIds[i]].value);
-
-										string_val = $("#chartVal_"+new_device_name).val().split(",");
-
-										/*Create integer array from fetched values for sparkline chart*/
-										var chart_data = string_val.map(function(item) {
-											return parseInt(item, 10);
-										});
-
-										$("#pollVal_"+new_device_name).append("<li class='fetchVal_"+new_device_name+" text-info' style='padding:0px;'> , (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")</li>");
-										/*Sparkline Chart Data*/
-										final_chart_data = chart_data;
-									}
-
-
-									/*Plot sparkline chart with the fetched polling value*/
-									$("#sparkline_"+new_device_name).sparkline(final_chart_data, {
-										type: "line",
-										lineColor: "blue",
-										spotColor : "orange",
-										defaultPixelsPerValue : 10
-									});
-									var ss_name = "",
-										sector_ip = "";
-									for(var x=0;x<polygonSelectedDevices.length;x++) {
-										if(allSSIds[i] === polygonSelectedDevices[x].attributes.device_name) {
-											if(polygonSelectedDevices[x].attributes.pointType === 'sub_station') {
-												ss_name = polygonSelectedDevices[x].attributes.name;
-												sector_ip = polygonSelectedDevices[x].attributes.sector_ip;
-											} else {
-													ss_name = "";
-													sector_ip = polygonSelectedDevices[x].attributes.sectorName;  
-											}
-										}
-									}
-
-									var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon,
-										ss_marker = wm_obj['features'][ss_name],
-										sector_marker = wm_obj['devices']['sector_'+sector_ip],
-										marker_polling_obj = {
-											"device_name" : allSSIds[i],
-											"polling_icon" : newIcon,
-											"polling_time" : current_time,
-											"polling_value" : result.data.devices[allSSIds[i]].value
-										};
-
-									if(polled_devices_names.indexOf(allSSIds[i]) == -1) {
-										polled_devices_names.push(allSSIds[i]);
-									}
-									
-									if(!complete_polled_devices_icon[allSSIds[i]]) {
-										complete_polled_devices_icon[allSSIds[i]] = [];
-									}
-									complete_polled_devices_icon[allSSIds[i]].push(newIcon);
-									complete_polled_devices_data.push(marker_polling_obj);
-									
-									/*Update the marker icons*/
-									if(ss_marker) {
-										ss_marker.style.externalGraphic = newIcon;
-										ccpl_map.getLayersByName('Markers')[0].drawFeature(ss_marker);
-										ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
-									} else if(sector_marker) {
-										sector_marker.attributes.pollingIcon = newIcon;
-										sector_marker.style.externalGraphic = newIcon;
-										ccpl_map.getLayersByName("Devices")[0].redraw();
-									}
-
-									/*total Polled Occurence*/
-									total_polled_occurence = complete_polled_devices_icon[allSSIds[i]].length;
-
-									if(complete_polled_devices_icon[allSSIds[i]] && complete_polled_devices_icon[allSSIds[i]].length <= 1) {
-										$("#navigation_container button").addClass('disabled');
-									} else if(complete_polled_devices_icon[allSSIds[i]] && complete_polled_devices_icon[allSSIds[i]].length > 1) {
-										$("#navigation_container button#previous_polling_btn").removeClass('disabled');
-										$("#navigation_container button#next_polling_btn").addClass('disabled');
-										/*Update previous counter with number of polled occurences*/
-										nav_click_counter = total_polled_occurence;
-									}
-
-								} // End of for loop
-							}
-						} else {
-
-							$("#getDevicesPollingData").button("complete");
-
-							// stop spinner
-							if(!($("#fetch_spinner").hasClass("hide"))) {
-								$("#fetch_spinner").addClass("hide");
-							}
-
-							$.gritter.add({
-								// (string | mandatory) the heading of the notification
-								title: 'Live Polling - Error',
-								// (string | mandatory) the text inside the notification
-								text: result.message,
-								// (bool | optional) if you want it to fade out on its own or just sit there
-								sticky: false
-							});
-						}
-					},
-					error : function(err) {
-
-						$("#getDevicesPollingData").button("complete");
-
-						// stop spinner
-						if(!($("#fetch_spinner").hasClass("hide"))) {
-							$("#fetch_spinner").addClass("hide");
-						}
-
-						$.gritter.add({
-							// (string | mandatory) the heading of the notification
-							title: 'Live Polling - Error',
-							// (string | mandatory) the text inside the notification
-							text: err.statusText,
-							// (bool | optional) if you want it to fade out on its own or just sit there
-							sticky: false
-						});
-					}
-				});
-
-			} else {
-				bootbox.alert("Please select devices & polling template first.");
-			}
-		};
 
 		/**
 		 * This function show the polled devices data in tabular format & also give option to download that data
@@ -855,12 +767,12 @@ function WhiteMapClass() {
 					sector_ip = "";
 
 				for(var x=0;x<polygonSelectedDevices.length;x++) {
-					if(polygonSelectedDevices[x].attributes.device_name === polled_devices_names[i]) {
-						marker_name = polygonSelectedDevices[x].attributes.name;
-						if(polygonSelectedDevices[x].attributes.pointType === 'sub_station') {
-							sector_ip = polygonSelectedDevices[x].attributes.sector_ip ? polygonSelectedDevices[x].attributes.sector_ip : "";
+					if(polygonSelectedDevices[x].device_name === polled_devices_names[i]) {
+						marker_name = polygonSelectedDevices[x].name;
+						if(polygonSelectedDevices[x].pointType === 'sub_station') {
+							sector_ip = polygonSelectedDevices[x].sector_ip ? polygonSelectedDevices[x].sector_ip : "";
 						} else {
-							sector_ip = polygonSelectedDevices[x].attributes.sectorName ? polygonSelectedDevices[x].attributes.sectorName : "";
+							sector_ip = polygonSelectedDevices[x].sectorName ? polygonSelectedDevices[x].sectorName : "";
 						}
 					}
 				}
@@ -918,12 +830,12 @@ function WhiteMapClass() {
 					sector_ip = "";
 
 				for(var x=0;x<polygonSelectedDevices.length;x++) {
-					if(polygonSelectedDevices[x].attributes.device_name === polled_devices_names[i]) {
-						marker_name = polygonSelectedDevices[x].attributes.name;
-						if(polygonSelectedDevices[x].attributes.pointType === 'sub_station') {
-							sector_ip = polygonSelectedDevices[x].attributes.sector_ip ? polygonSelectedDevices[x].attributes.sector_ip : "";
+					if(polygonSelectedDevices[x].device_name === polled_devices_names[i]) {
+						marker_name = polygonSelectedDevices[x].name;
+						if(polygonSelectedDevices[x].pointType === 'sub_station') {
+							sector_ip = polygonSelectedDevices[x].sector_ip ? polygonSelectedDevices[x].sector_ip : "";
 						} else {
-							sector_ip = polygonSelectedDevices[x].attributes.sectorName ? polygonSelectedDevices[x].attributes.sectorName : "";
+							sector_ip = polygonSelectedDevices[x].sectorName ? polygonSelectedDevices[x].sectorName : "";
 						}
 					}
 				}
@@ -1051,7 +963,7 @@ function WhiteMapClass() {
 				(function updateMasterMarker(marker) {
 
 					var newGraphicHeight = 0, newGraphicWidth = 0, newGraphicXOffset = 0, newGraphicYOffset = 0;
-					if(marker.attributes.pointType=== "base_station") {
+					if(marker.pointType=== "base_station") {
 						newGraphicHeight= Math.ceil(hauteur_bs/divideBy)+5;
 						newGraphicWidth = Math.ceil(largeur_bs/divideBy)-5;
 						newGraphicXOffset = Math.ceil(16-(16*anchorX));
@@ -1064,7 +976,7 @@ function WhiteMapClass() {
 						
 						// 
 						ccpl_map.getLayersByName('Markers')[0].drawFeature(marker);
-					} else if (marker.attributes.pointType === "sub_station") {
+					} else if (marker.pointType === "sub_station") {
 						newGraphicWidth = Math.ceil(largeur/divideBy);
 						newGraphicHeight = Math.ceil(hauteur/divideBy);
 						newGraphicXOffset = Math.ceil(16-(16*anchorX));
@@ -1330,20 +1242,20 @@ function WhiteMapClass() {
 			console.log("Show in bound Sector Polygons Start Time :- "+ new Date().toLocaleString());
 		}
 		/*Loop for polylines*/
-		for(var key in allMarkersObject_gmap['sector_polygon']) {
-			if(allMarkersObject_gmap['sector_polygon'].hasOwnProperty(key)) {
-		    	var sector_polygon = allMarkersObject_gmap['sector_polygon'][key],
+		for(var key in allMarkersObject_wmap['sector_polygon']) {
+			if(allMarkersObject_wmap['sector_polygon'].hasOwnProperty(key)) {
+		    	var sector_polygon = allMarkersObject_wmap['sector_polygon'][key],
 		    		isMarkerExist = "";
 		    	isMarkerExist = global_this.checkIfPointLiesInside({lat: sector_polygon.ptLat, lon: sector_polygon.ptLon});
 	    		if(isMarkerExist) {
 			    	if(sector_polygon.isActive && +(sector_polygon.isActive) === 1) {
 			    		// If Polygon not shown then show the polygon
-			    		if(!allMarkersObject_gmap['sector_polygon'][key].map) {
+			    		if(!allMarkersObject_wmap['sector_polygon'][key].map) {
 			      			showOpenLayerFeature(allMarkersObject_wmap['sector_polygon'][key]);
 			    		}
 			    	} else {
 			    		// If Polygon shown then hide the polygon
-			    		if(allMarkersObject_gmap['sector_polygon'][key].map) {
+			    		if(allMarkersObject_wmap['sector_polygon'][key].map) {
 			      			hideOpenLayerFeature(allMarkersObject_wmap['sector_polygon'][key]);
 		    			}
 			        }
@@ -1407,15 +1319,15 @@ function WhiteMapClass() {
 
 		/*Unchecked case*/
 		if(isSSChecked == 0) {
-			for(key in allMarkersObject_gmap['sub_station']) {
-				if(allMarkersObject_gmap['sub_station'][key].map) {
+			for(key in allMarkersObject_wmap['sub_station']) {
+				if(allMarkersObject_wmap['sub_station'][key].map) {
 					hideOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
 				}
 			}
 
 		} else {
-			for(key in allMarkersObject_gmap['sub_station']) {
-				if(!allMarkersObject_gmap['sub_station'][key].map) {
+			for(key in allMarkersObject_wmap['sub_station']) {
+				if(!allMarkersObject_wmap['sub_station'][key].map) {
 					showOpenLayerFeature(allMarkersObject_wmap['sub_station'][key]);
 				}
 			}
