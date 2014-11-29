@@ -11,7 +11,7 @@ from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType, DevicePort, Country, State, City, \
-    DeviceFrequency, DeviceTypeServiceDataSource
+    DeviceFrequency, DeviceTypeServiceDataSource, DeviceTypeService
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm, DevicePortForm, DeviceFrequencyForm, \
     CountryForm, StateForm, CityForm, DeviceTypeServiceCreateFormset, DeviceTypeServiceUpdateFormset, \
@@ -2518,7 +2518,6 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         form = self.get_form(form_class)
         service_data_formset = {}
         all_forms_valid = True
-        print (self.request.POST)
         device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST, prefix='dts')
         if (device_type_service_form.is_valid()):
             # try:
@@ -2605,13 +2604,13 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
         formsets with the passed POST variables and then checking them for
         validity.
         """
-        self.object = None
+        self.object = self.get_object()
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         service_data_formset = {}
         all_forms_valid = True
         print (self.request.POST)
-        device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST, prefix='dts')
+        device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST, instance=self.object, prefix='dts')
         if (device_type_service_form.is_valid()):
             # try:
             sds_prefix = dict(self.request.POST)['sds_counter']
@@ -2620,10 +2619,14 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
             counter_prefix = []
             x = [counter_prefix.append(counter) for counter in sds_prefix if counter not in counter_prefix]
             for i,sds in enumerate(counter_prefix):
-                service_id = self.request.POST['dts-{}-service'.format(i)]
-                service = Service.objects.get(id=service_id)
-                formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='sds-{}'.format(sds))
+                # service_id = self.request.POST['dts-{}-service'.format(i)]
+                service_id = self.request.POST['dts-{}-id'.format(i)]
+                # service = Service.objects.get(id=service_id)
+                service = DeviceTypeService.objects.get(id=service_id)
+                # formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='sds-{}'.format(sds))
+                formset = DeviceTypeServiceDataSourceUpdateFormset(self.request.POST, instance=service, prefix='sds-{}'.format(sds))
                 service_data_formset.update({service_id: formset})
+                print(formset.is_valid() )
                 if not formset.is_valid():
                     all_forms_valid = False
         else:
