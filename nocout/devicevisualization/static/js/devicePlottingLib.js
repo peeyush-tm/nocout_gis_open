@@ -1267,10 +1267,7 @@ function devicePlottingClass_gmap() {
 			vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
 			frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
 			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
-			dataset_clone = clone(dataset);
-			console.log(dataset_clone[0])
-			console.log(dataset[0])
-			console.log(dataset_clone[0] == dataset[0]);
+			dataset_clone = JSON.parse(JSON.stringify(dataset));
 		// Remove unmatched sectors
 		for(var x=dataset_clone.length;x--;) {
 			var bs_sectors = dataset_clone[x].data.param.sector,
@@ -4655,32 +4652,16 @@ function devicePlottingClass_gmap() {
 			data_to_plot_1 = [];
 
 		if(isAdvanceFilterApplied || isBasicFilterApplied) {
-			filtered_data_1 = clone(gmap_self.getFilteredData_gmap());
-			
-			// db2 = new loki (JSON.stringify(gmap_self.getFilteredData_gmap()));
-
-
-
-			// console.log(filtered_devices_loki_db.data)
-			console.log(filtered_data_1.filter(function(obj){return obj.alias === 'Kagal Midc';})[0]);
-			console.log(all_devices_loki_db.data[0]);
-			console.log(filtered_data_1.filter(function(obj){return obj.alias === 'Kagal Midc';})[0] == all_devices_loki_db.data[0]);
+			filtered_data_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredData_gmap()));
 		} else {
-			filtered_data_1 = clone(all_devices_loki_db.data);
+			filtered_data_1 = JSON.parse(JSON.stringify(all_devices_loki_db.data));
 		}
 
-		console.log("BEFORE");
-		console.log(all_devices_loki_db.data[0].data.param);
-		console.log(filtered_data_1.filter(function(obj){return obj.alias === 'Kagal Midc';})[0] == all_devices_loki_db.data[0]);
 		if(advance_filter_condition || basic_filter_condition) {
-        	data_to_plot_1 = gmap_self.getFilteredBySectors(filtered_data_1);
+        	data_to_plot_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredBySectors(filtered_data_1)));
     	} else {
     		data_to_plot_1 = filtered_data_1;
     	}
-
-    	console.log("AFTER");
-    	console.log(all_devices_loki_db.data[0].data.param);
-    	console.log(filtered_data_1.filter(function(obj){return obj.alias === 'Kagal Midc';})[0] == all_devices_loki_db.data[0]);
 
 		if(data_to_plot_1.length > 0) {
 			if(window.location.pathname.indexOf("googleEarth") > -1) {
@@ -4691,7 +4672,6 @@ function devicePlottingClass_gmap() {
 				lookAt.setLatitude(21.0000);
 				lookAt.setLongitude(78.0000);
 				lookAt.setRange(5492875.865539902);
-				// lookAt.setZoom
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
 
@@ -4948,7 +4928,7 @@ function devicePlottingClass_gmap() {
 							for(var k=allSS.length;k--;) {
 								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
 								if(point) {
-									if (google.maps.geometry.poly.containsLocation(point, polygon)) {
+									if(google.maps.geometry.poly.containsLocation(point, polygon)) {
 										if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
 											if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
 												if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
@@ -5024,17 +5004,20 @@ function devicePlottingClass_gmap() {
 
 									var devices_counter = "";
 									
-									if(polygonSelectedDevices[i].pointType == 'sub_station') {
-										devices_counter = polygonSelectedDevices[i].bs_sector_device;
-									} else {
-										devices_counter = polygonSelectedDevices[i].device_name;
+									if($.trim(polygonSelectedDevices[i].technology.toLowerCase()) == "ptp" || $.trim(polygonSelectedDevices[i].technology.toLowerCase()) == "p2p") {
+										if(polygonSelectedDevices[i].pointType == 'sub_station') {
+											devices_counter = polygonSelectedDevices[i].bs_sector_device;
+										} else {
+											devices_counter = polygonSelectedDevices[i].device_name;
+										}
+
+	                                    if(!polled_device_count[devices_counter]) {
+											polled_device_count[devices_counter]  = 1;
+										} else {
+											polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
+										}
 									}
 
-                                    if(!polled_device_count[devices_counter]) {
-										polled_device_count[devices_counter]  = 1;
-									} else {
-										polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
-									}
 
 
 									if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i].pointType == 'sub_station') {
@@ -5062,17 +5045,28 @@ function devicePlottingClass_gmap() {
 										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
 
 									} else {
-										// if(polled_device_count[devices_counter] ) //<= 1) //why do we have this condition ???
-                                        if(polled_device_count[devices_counter] <= 1) {
-											var device_end_txt = "",
-												point_name = "";
-											if(polygonSelectedDevices[i].pointType == 'sub_station') {
-												device_end_txt = "Far End";
-												point_name = polygonSelectedDevices[i].ss_ip
-											} else {
-												device_end_txt = "Near End";
-												point_name = polygonSelectedDevices[i].sectorName
+										var device_end_txt = "",
+											point_name = "";
+
+										if($.trim(polygonSelectedDevices[i].technology.toLowerCase()) == "ptp" || $.trim(polygonSelectedDevices[i].technology.toLowerCase()) == "p2p") {
+	                                        if(polled_device_count[devices_counter] <= 1) {
+												if(polygonSelectedDevices[i].pointType == 'sub_station') {
+													device_end_txt = "Far End";
+													point_name = polygonSelectedDevices[i].ss_ip
+												} else {
+													device_end_txt = "Near End";
+													point_name = polygonSelectedDevices[i].sectorName
+												}
+												num_counter++;
+												devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+num_counter+'.) '+point_name+'</h5>';
+												devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
+												devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
+												devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
 											}
+										} else {
+
+											device_end_txt = "Far End";
+											point_name = polygonSelectedDevices[i].ss_ip
 											num_counter++;
 											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+num_counter+'.) '+point_name+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
