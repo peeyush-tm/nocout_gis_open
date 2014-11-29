@@ -651,8 +651,10 @@ widgets = {
     }
 DeviceTypeServiceCreateFormset = inlineformset_factory(DeviceType, DeviceTypeService, formset=BaseDeviceTypeServiceFormset,
     fields=('service', 'parameter'), extra=1, widgets=widgets, can_delete=True)
-DeviceTypeServiceDataSourceCreateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource, formset=BaseDeviceTypeServiceFormset,
-    extra=1, widgets=widgets,)
+DeviceTypeServiceUpdateFormset = inlineformset_factory(DeviceType, DeviceTypeService, formset=BaseDeviceTypeServiceFormset,
+    fields=('service', 'parameter'), extra=0, widgets=widgets, can_delete=True)
+DeviceTypeServiceDataSourceUpdateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource, formset=BaseDeviceTypeServiceFormset,
+    extra=0, widgets=widgets,)
 
 
 # ******************************************* Device Type *******************************************

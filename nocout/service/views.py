@@ -15,6 +15,8 @@ from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
 from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet,\
                 DTServiceDataSourceUpdateFormSet
+from device.forms import DeviceTypeServiceDataSourceUpdateFormset
+from device.models import DeviceTypeService
 
 # ########################################################
 from django.conf import settings
@@ -250,6 +252,33 @@ def select_service_data_source(request, pk):
     return HttpResponse( json.dumps({
         "parameters_id": parameters.id,
         "parameters_name": parameters.parameter_description,
+        "service_attributes": service_attributes,
+        }) )
+
+def select_data_source(request):
+    """
+    return value list of data_source when the servie is selected in device type.
+    """
+    dts_pk = request.GET['dts_id']
+    counter = request.GET['counter']
+    # service = Service.objects.get(id=pk)
+    # parameters = service.parameters
+    dts = DeviceTypeService.objects.get(id=dts_pk)
+    Service_data_formset = DeviceTypeServiceDataSourceUpdateFormset(instance=dts, prefix='sds-{}'.format(counter))
+    # if len(Service_data_formset):
+    #     Service_data_formset = Service_data_formset
+    # else:
+    #     Service_data_formset = DTServiceDataSourceUpdateFormSet(instance=service, prefix='sds-{}'.format(counter))
+    ctx_dict = {
+                'service_data_formset': Service_data_formset,
+                'counter': counter
+            }
+    service_attributes = render_to_string('service/service_attributes1.html', ctx_dict)
+    service_attributes.content_subtype = "html"
+    # return HttpResponse( service_attributes )
+    return HttpResponse( json.dumps({
+        # "parameters_id": parameters.id,
+        # "parameters_name": parameters.parameter_description,
         "service_attributes": service_attributes,
         }) )
 
