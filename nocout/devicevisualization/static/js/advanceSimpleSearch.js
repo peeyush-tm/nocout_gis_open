@@ -113,29 +113,29 @@ function advanceSearchMainClass() {
 
 
         } else if (window.location.pathname.indexOf("white_background") > -1) {
+            
+            ccpl_map.getLayersByName("Search Layer")[0].setVisibility(true);
 
-            var icon;
-            //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
-            searchedInputs= this.getInputArray();
-
-            if(searchedInputs['BS Name'].length || searchedInputs['Circuit Id'].length || searchedInputs['IP'].length) {
-                isOnlyStateorCityIsApplied= false;
-            }
-
-            if(!isOnlyStateorCityIsApplied) {
-                    if(iconUrl) {
-                        //set icon from global object
-                        icon = iconUrl; 
-                    } else {
-                        icon = this.constants.search_bs_icon
-                    }
+            //create a new marker
+            searchMarker = whiteMapClass.createOpenLayerVectorMarker(undefined, undefined, long, lat, {icon: icon});
+            if(iconUrl) {
+                //set icon from global object
+                searchMarker.attributes.icon = iconUrl;
+            } else {
+                //set icon from global object
+                searchMarker.attributes.icon = this.constants.search_bs_icon;
             }
             
-            searchMarker = whiteMapClass.createOpenLayerVectorMarker(undefined, undefined, long, lat, {icon: icon});
-            searchMarker.icon = iconUrl;
-            ccpl_map.getLayersByName("Search Layer")[0].setVisibility(true);
             // whiteMapClass.searchMarkerLayer.display(true);
             ccpl_map.getLayersByName("Search Layer")[0].addFeatures([searchMarker]);
+
+            // google.maps.event.addListener(searchMarker, 'click', function() {
+            //     if(iconUrl) {
+            //         google.maps.event.trigger(markersMasterObj['SS'][String(lat)+long], 'click');
+            //     } else {
+            //         google.maps.event.trigger(markersMasterObj['BS'][String(lat)+long], 'click');
+            //     }
+            // });
         } else {
 
             //create a new marker
