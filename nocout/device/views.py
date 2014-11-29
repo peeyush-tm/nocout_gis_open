@@ -2519,33 +2519,38 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         all_forms_valid = True
         print (self.request.POST)
         device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST, prefix='dts')
-        sds_prefix = dict(self.request.POST)['sds_counter']
-        for sds in list(set(sds_prefix)):
-            service_id = self.request.POST['dts-{}-service'.format(sds)]
-            service = Service.objects.get(id=service_id)
-            formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='sds-{}'.format(sds))
-            service_data_formset.update({service_id: formset})
-            if not formset.is_valid():
-                all_forms_valid = False
-        print (device_type_service_form.is_valid())
-        print (all_forms_valid)
         if (device_type_service_form.is_valid()):
-            print('--valid--'*12)
-            return self.render_to_response(
-                self.get_context_data(form=form,
-                                      device_type_service_form=device_type_service_form,
-                                      service_data_formset=service_data_formset))
+            # try:
+            sds_prefix = dict(self.request.POST)['sds_counter']
+            # except:
+                # sds_prefix = [u'0']
+
+            for sds in list(set(sds_prefix)):
+                service_id = self.request.POST['dts-{}-service'.format(sds)]
+                service = Service.objects.get(id=service_id)
+                formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='sds-{}'.format(sds))
+                service_data_formset.update({service_id: formset})
+                if not formset.is_valid():
+                    all_forms_valid = False
         else:
-            print('--invalid--'*12)
-            return self.render_to_response(
-                self.get_context_data(form=form,
-                                      device_type_service_form=device_type_service_form,
-                                      service_data_formset=service_data_formset))
-        # if (form.is_valid() and device_type_service_form.is_valid()
-        #                     and all_forms_valid ):
-        #     return self.form_valid(form, device_type_service_form , service_data_formset)
+            all_forms_valid = False
+        # if (device_type_service_form.is_valid()):
+        #     print('--valid--'*12)
+        #     return self.render_to_response(
+        #         self.get_context_data(form=form,
+        #                               device_type_service_form=device_type_service_form,
+        #                               service_data_formset=service_data_formset))
         # else:
-        #     return self.form_invalid(form, device_type_service_form , service_data_formset)
+        #     print('--invalid--'*12)
+        #     return self.render_to_response(
+        #         self.get_context_data(form=form,
+        #                               device_type_service_form=device_type_service_form,
+        #                               service_data_formset=service_data_formset))
+        if (form.is_valid() and device_type_service_form.is_valid()
+                            and all_forms_valid ):
+            return self.form_valid(form, device_type_service_form , service_data_formset)
+        else:
+            return self.form_invalid(form, device_type_service_form , service_data_formset)
 
     def form_valid(self, form, device_type_service_form, service_data_formset):
         """
