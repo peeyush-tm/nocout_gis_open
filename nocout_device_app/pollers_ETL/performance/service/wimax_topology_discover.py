@@ -70,7 +70,7 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
                 	service = entry[3]
 			perf_data_output = entry[5]
 			if perf_data_output:
-				plugin_output = (perf_data_output[0][1].split('- ')[1])
+				plugin_output = (perf_data_output.split('- ')[1])
 				plugin_output =	[mac for mac in plugin_output.split(' ')]
 				ss_mac  = map(lambda x: x.split('=')[0],plugin_output)
 				ss_ip  = map(lambda x: x.split('=')[1].split(',')[9],plugin_output)
@@ -78,7 +78,8 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 				ds="topology"
 			else:
 				continue
-		except:
+		except Exception,e:
+			print e
 			continue
 		current_time = int(time.time())
 		topology_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host),
