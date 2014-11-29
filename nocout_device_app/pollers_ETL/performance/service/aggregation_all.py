@@ -60,22 +60,6 @@ else:
 
 
 
-def main():
-	docs = []
-	end_time = datetime.now()
-	start_time = end_time - timedelta(hours=hours)
-	start_time, end_time = start_time - timedelta(minutes=1), end_time + timedelta(minutes=1)
-	start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
-	db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
-	if db:
-		# Read data from mysqldb, performance historical data
-		docs = mysql_migration_mod.read_data(source_perf_table, db, start_time, end_time)
-	print '## Docs len ##'
-	print len(docs)
-	for doc in docs:
-		quantify_perf_data(doc)
-
-
 def quantify_perf_data(aggregated_data_values=[]):
 	"""
 	Quantifies (int, float) perf data using `min`, `max` and `sum` funcs
@@ -102,10 +86,10 @@ def quantify_perf_data(aggregated_data_values=[]):
 				'mrotek_e1_interface_alarm', 'mrotek_device_type']
 		aggr_data = {}
 		find_query = {}
-		host, ip_address = doc.get('host'), doc.get('ip_address')
-		ds, service = doc.get('ds'), doc.get('service')
-		site = doc.get('site')
-		time = float(doc.get('time'))
+		host, ip_address = doc.get('device_name'), doc.get('ip_address')
+		ds, service = doc.get('data_source'), doc.get('service_name')
+		site = doc.get('site_name')
+		time = float(doc.get('sys_timestamp'))
 		original_time, time = time, datetime.fromtimestamp(time)
 		if time_frame == 'hourly':
 			# Pivot the time to H:00:00
@@ -143,8 +127,8 @@ def quantify_perf_data(aggregated_data_values=[]):
 				'time': time
 				}
 		existing_doc = find_existing_entry(find_query, aggregated_data_values)
-		print 'existing_doc'
-		print existing_doc
+		#print 'existing_doc'
+		#print existing_doc
 		if existing_doc:
 			existing_doc = existing_doc[0]
 			values_list = [existing_doc.get('max'), aggr_data.get('max'), 
@@ -192,7 +176,7 @@ def usage():
 
 
 if __name__ == '__main__':
-	final_data_values = main()
+	final_data_values = quantify_perf_data()
 	if final_data_values:
 		db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
 		mysql_migration_mod.mysql_export(destination_perf_table, db, final_data_values)
