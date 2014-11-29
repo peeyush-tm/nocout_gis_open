@@ -1569,9 +1569,18 @@ $("#apply_label").click(function(e) {
         // Update cookie value with the selected value.
         $.cookie("tooltipLabel", last_selected_label, {path: '/', secure: true});
 
-        // Remove tooltip info label
-        for (key in tooltipInfoLabel) {
-            tooltipInfoLabel[key].close();
+        if(window.location.pathname.indexOf("googleEarth") > -1) {
+            
+        } else if(window.location.pathname.indexOf("white_background") > -1) {
+            // Remove tooltip info label
+            for (key in tooltipInfoLabel) {
+                tooltipInfoLabel[key].destroy();
+            }
+        } else {
+            // Remove tooltip info label
+            for (key in tooltipInfoLabel) {
+                tooltipInfoLabel[key].close();
+            }
         }
         // Reset Variables
         tooltipInfoLabel = {};
@@ -1586,7 +1595,16 @@ $("#apply_label").click(function(e) {
             if(window.location.pathname.indexOf("googleEarth") > -1) {
             
             } else if(window.location.pathname.indexOf("white_background") > -1) {
-
+                if(ccpl_map && ccpl_map.getZoom() > 4) {
+                    networkMapInstance.updateTooltipLabel_gmap();
+                } else {
+                    $.gritter.add({
+                        title: "SS Parameter Label",
+                        text: $.trim($("#static_label option:selected").text())+" - Label Applied Successfully.",
+                        sticky: false,
+                        time : 1000
+                    });
+                }
             } else {
                 // If current zoom level is greater the 7
                 if(mapInstance && mapInstance.getZoom() > 7) {

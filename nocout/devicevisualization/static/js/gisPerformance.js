@@ -46,29 +46,21 @@ function GisPerformance() {
      And start the setInterval function to updateMap every 10 secs.
      */
     this.start = function (bs_list) {
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
-            current_zoom = getRangeInZoom();
-        } else if(window.location.pathname.indexOf("white_background") > -1) {
-            current_zoom = ccpl_map.getZoom();
-        }
-
-        //If isFrozen is false and Cookie value for freezeSelected is also false
-        var zoom_condition = current_zoom ? current_zoom > 7 : true;
-
-        if(zoom_condition > 7 && isPerfCallStopped == 0) {
+        if(isPerfCallStopped == 0) {
             var gisPerformance_this = this;
-
-            var uncommon_bs_list = perf_self.get_intersection_bs(current_bs_list,bs_list);
 
             //Reset Variable
             gisPerformance_this.resetVariable();
-            this.bsNamesList = uncommon_bs_list;
+
+            // var uncommon_bs_list = perf_self.get_intersection_bs(current_bs_list,bs_list);
+
+            this.bsNamesList = bs_list;
             //Store Length of Total BS
             this.bsLength = this.bsNamesList.length;
 
-            if(uncommon_bs_list.length === bs_list.length) {
-                current_bs_list = uncommon_bs_list;
-            }
+            // if(uncommon_bs_list.length === bs_list.length) {
+            //     current_bs_list = uncommon_bs_list;
+            // }
             //Start Request for First BS
             gisPerformance_this.sendRequest(0);
         } else {
@@ -110,19 +102,32 @@ function GisPerformance() {
      This function sends Request based on the counter value.
      */
     this.sendRequest = function (counter) {
-
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
-            current_zoom = getRangeInZoom();
-        } else if (window.location.pathname.indexOf("white_background") > -1) {
-            current_zoom = ccpl_map.getZoom();
-        }
-
-        //If isFrozen is false and Cookie value for freezeSelected is also false
-        var zoom_condition = current_zoom ? current_zoom > 7 : true;
-        if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0  && isPerfCallStopped == 0) {
+        // if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0  && isPerfCallStopped == 0) {
+        if (isPollingActive == 0  && isPerfCallStopped == 0) {
             var gisPerformance_this = this;
+            if(this.bsNamesList[counter]) {
+                //Call waitAndSend function with BS Json Data and counter value
+                gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
+            } else {
+                //1 Minutes Timeout
+                setTimeout(function () {
+                    //Start Performance Again
+                    var bs_list = getMarkerInCurrentBound();
+                    if(bs_list.length > 0 && isCallCompleted == 1) {
+                        if(recallPerf != "") {
+                            clearTimeout(recallPerf);
+                            recallPerf = "";
+                        }
+                        /*Reset global variable when all calls completed*/
+                        current_bs_list = [];
+
+                        /*Start calls*/
+                        gisPerformance_this.start(bs_list);
+                    }
+                }, 60000);
+            }
             //Call waitAndSend function with BS Json Data and counter value
-            gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
+            // gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
         } else {
             clearTimeout(recallPerf);
             recallPerf = "";
@@ -137,26 +142,7 @@ function GisPerformance() {
 
         var gisPerformance_this = this;
         counter++;
-        //If all calls has been done,
-        if (counter > this.bsLength) {
-            //1 Minutes Timeout
-            setTimeout(function () {
-                //Start Performance Again
-                var bs_list = getMarkerInCurrentBound();
-                if(bs_list.length > 0 && isCallCompleted == 1) {
-                    if(recallPerf != "") {
-                        clearTimeout(recallPerf);
-                        recallPerf = "";
-                    }
-                    /*Reset global variable when all calls completed*/
-                    current_bs_list = [];
-                    /*Start calls*/
-                    gisPerformance_this.start(bs_list);
-                }
-            }, 60000);
-            return;
-        }
-
+        
         var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
 
         //Ajax Request
@@ -559,7 +545,8 @@ function GisPerformance() {
 
                         // Remove Line from map & array
                         if(allMarkersObject_wmap['path']['line_'+ss_name_array[x]]) {
-                            allMarkersObject_wmap['path']['line_'+ss_name_array[x]].setMap(null);
+                            allMarkersObject_wmap['path']['line_'+ss_name_array[x]].style.display = "none";
+                            allMarkersObject_wmap['path']['line_'+ss_name_array[x]].layerReference.redraw();
                         }
 
                         delete allMarkersObject_wmap['path']['line_'+ss_name_array[x]];
@@ -618,11 +605,13 @@ function GisPerformance() {
                 }
 
                 if(window.location.pathname.indexOf("googleEarth") > -1) {
+                } else if (window.location.pathname.indexOf("white_background") > -1) {
                     // Update Marker cluster
                     var bs_markers_array = Object.keys(allMarkersObject_wmap['base_station']).map(function(k) { return allMarkersObject_wmap['base_station'][k] });
                     var ss_markers_array = Object.keys(allMarkersObject_wmap['sub_station']).map(function(k) { return allMarkersObject_wmap['sub_station'][k] });
                     //recluster the strategy
                     ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
+                    
                 } else {
                     // Update Marker cluster
                     var bs_markers_array = Object.keys(allMarkersObject_gmap['base_station']).map(function(k) { return allMarkersObject_gmap['base_station'][k] });

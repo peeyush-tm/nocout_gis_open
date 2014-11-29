@@ -1115,6 +1115,40 @@ function WhiteMapClass() {
 		}
 	};
 	
+	/**
+	 * This function show base-stations backhaul devices within the bounds
+	 * @method showBackhaulDevicesInBounds
+	 */
+	this.showBackhaulDevicesInBounds = function() {
+		if(isDebug) {
+			console.log("Show in bound Backhaul Devices");
+			console.log("Show in bound Backhaul Devices Start Time :- "+ new Date().toLocaleString());
+		}
+		/*Loop for polylines*/
+		for(var key in allMarkersObject_wmap['backhaul']) {
+			if(allMarkersObject_wmap['backhaul'].hasOwnProperty(key)) {
+		    	var bh_marker = allMarkersObject_wmap['backhaul'][key],
+		      		isMarkerExist = global_this.checkIfPointLiesInside({lat: bh_marker.ptLat, lon: bh_marker.ptLon});
+	      		if(isMarkerExist) {
+			    	if(bh_marker.isActive && +(bh_marker.isActive) === 1) {
+			    		// If Backhaul Marker not shown then show the Backhaul Marker
+			    		if(!allMarkersObject_wmap['backhaul'][key].map) {
+			    			showOpenLayerFeature(allMarkersObject_wmap['backhaul'][key]);
+			    		}
+			    	} else {
+			    		// If Backhaul Marker shown then hide the Backhaul Marker
+			    		if(allMarkersObject_wmap['backhaul'][key].map) {
+			    			hideOpenLayerFeature(allMarkersObject_wmap['backhaul'][key]);
+		    			}
+			        }
+	      		}
+		  }
+		}
+		if(isDebug) {
+			console.log("Show in bound Backhaul Devices End Time :- "+ new Date().toLocaleString());
+			console.log("******************************************");
+		}
+	};
 
 	/**
 	 * This function show sub-stations within the bounds
@@ -1540,7 +1574,8 @@ function WhiteMapClass() {
 				console.log("Plot Devices Function");
 				console.log("Plot Devices Start Time :- "+ new Date().toLocaleString());
 			}
-			var zoom_level = ccpl_map.getZoom();
+			var zoom_level = ccpl_map.getZoom(),
+				hide_flag = !$("#show_hide_label")[0].checked;
 
 			//Loop through the bs_ss_devices
 			for(var i=0; i< bs_ss_devices.length; i++) {
@@ -1584,15 +1619,56 @@ function WhiteMapClass() {
 				// ccpl_map.getLayersByName("Markers")[0].addFeatures([bs_marker]);
 
 				/*Sectors Array*/
-				var sector_array = bs_ss_devices[i].data.param.sector;
-				var deviceIDArray= [];
+				var sector_array = bs_ss_devices[i].data.param.sector ? bs_ss_devices[i].data.param.sector : [],
+					backhaul_array = bs_ss_devices[i].data.param.backhual ? bs_ss_devices[i].data.param.backhual : [],
+					lat = bs_ss_devices[i].data.lat,
+					lon = bs_ss_devices[i].data.lon,
+					deviceIDArray= [];
+
+
+				// Loop to create backhual markers
+				for(var x=0;x<backhaul_array.length;x++) {
+					
+					var backhaul = backhaul_array[x];
+
+					var backhaul_markers_Obj = {
+						position 		 	: {lat: lat, lon: lon},
+						map 				: 'current',
+						ptLat 			 	: lat,
+						ptLon 			 	: lon,
+						icon 			 	: base_url+'/static/img/icons/1x1.png',
+						oldIcon 		 	: base_url+"/"+backhaul.markerUrl,
+						clusterIcon 	 	: base_url+'/static/img/icons/1x1.png',
+						pointType 		 	: 'backhaul',
+						dataset 			: backhaul.info,
+						name 				: backhaul.name,
+						filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId, "bh_id" : backhaul.id},
+						zIndex 				: 200,
+						optimized 			: false,
+	                    isActive 			: 1
+	                };
+
+	                // create backhaul marker
+	                var backhaul_Marker = global_this.createOpenLayerVectorMarker(size, backhaul_markers_Obj.icon, lon, lat, backhaul_markers_Obj);
+
+	                // Push backhaul marker to all marker global array
+	                allMarkersArray_wmap.push(backhaul_Marker);
+
+	                // Push backhaul marker to all marker global object
+	                allMarkersObject_wmap['backhaul']['bh_'+backhaul.id] = backhaul_Marker;
+
+	                if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
+						sectorMarkersMasterObj[bs_ss_devices[i].name].push(backhaul_Marker)
+					} else {
+						sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
+						sectorMarkersMasterObj[bs_ss_devices[i].name].push(backhaul_Marker)
+					}
+				}
 				
 				/*Plot Sector*/
 				for (var j = 0; j < sector_array.length; j++) {
 
-					var lat = bs_ss_devices[i].data.lat,
-						lon = bs_ss_devices[i].data.lon,
-						azimuth = sector_array[j].azimuth_angle,
+					var azimuth = sector_array[j].azimuth_angle,
 						beam_width = sector_array[j].beam_width,
 						sector_color = sector_array[j].color,
 						sectorInfo = {
@@ -1683,8 +1759,6 @@ function WhiteMapClass() {
 
 						/*Create Sector Marker*/
 						var sector_Marker = global_this.createOpenLayerVectorMarker(size, sectors_Markers_Obj.icon, lon, lat, sectors_Markers_Obj);
-
-						bsDevicesObj
 
 						if(!bsDevicesObj[bs_ss_devices[i].name]) {
 							bsDevicesObj[bs_ss_devices[i].name]= [];
@@ -1940,21 +2014,6 @@ function WhiteMapClass() {
 				},
 				always : function() {
 					global_this.hideLoading();
-
-					setTimeout(function() {
-						var current_zoom_level = ccpl_map.getZoom();
-    					if(current_zoom_level > whiteMapSettings.zoomLevelAtWhichPerformanceStarts && isPerfCallStopped == 0) {
-							var bs_list = getMarkerInCurrentBound();
-			            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
-			            		if(recallPerf != "") {
-			            			clearTimeout(recallPerf);
-			            			recallPerf = "";
-			            		}
-			            		gisPerformanceClass.start(bs_list);
-			            	}
-		            	}
-						// gisPerformanceClass.start(getMarkerInCurrentBound());
-					}, 30000);
 
 					/*Recall the server after particular timeout if system is not freezed*/
 					setTimeout(function(e){

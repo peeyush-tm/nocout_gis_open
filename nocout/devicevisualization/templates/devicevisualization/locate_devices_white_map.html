@@ -250,6 +250,14 @@
                     <button type="button" id="freeze_remove" class="btn btn-sm btn-danger hide">Un-Freeze</button>
                 </li>
                 <li>
+                    <select name="static_label" id="static_label" class="form-control input-sm">
+                        <option value="">Select Label</option>
+                    </select>
+                </li>
+                <li>
+                    <button type="button" id="apply_label" class="btn btn-sm btn-success">Apply Label</button>
+                </li>
+                <li>
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked="checked" style="vertical-align: text-top;"> 
                     Show Labels
                 </li>
@@ -427,13 +435,16 @@
                                             <i class="fa fa-pause"> </i>
                                         </button>
                                         <button class="btn btn-danger play_pause_btns hide" data-complete-text="<i class='fa fa-stop'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Stop" id="stop_btn">
+
                                             <i class="fa fa-stop"> </i>
                                         </button>
                                     </div>
+                                    <div class="clearfix"></div>
                                 </div>
-                                <div class="clearfix"></div>
+                                <div class="divide-20 clearfix"></div>
                                 <div>
                                     <button type="button" class="btn btn-primary pull-right hide" data-complete-text="Tabular View" data-loading-text="Please Wait..." id="polling_tabular_view"><i class="fa fa-table"></i> Tabular View</button>
+                                    <div class="clearfix"></div>
                                 </div>
                                 <div class="divide-20 clearfix"></div>
                                 <div id="navigation_container" class="hide">

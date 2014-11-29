@@ -5007,8 +5007,8 @@ function devicePlottingClass_gmap() {
 		var selected_lp_template = $("#lp_template_select").val();
 
     	$.ajax({
-			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
-			// url : base_url+"/"+"static/services.json",
+			// url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
+			url : base_url+"/"+"static/services.json",
 			success : function(results) {
 				var result = "";
 
@@ -5861,7 +5861,6 @@ function devicePlottingClass_gmap() {
 	this.addPointTool_gmap = function() {
 
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
-			console.log(pointEventHandler);
 			if(pointEventHandler) {
 				google.earth.removeEventListener(ge.getGlobe(), 'click', pointEventHandler);
 				pointEventHandler = "";
@@ -6540,7 +6539,7 @@ function devicePlottingClass_gmap() {
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 1;
 	 	
-		if(current_zoom_level > 7 && isPerfCallStopped == 0) {
+		if(isPerfCallStopped == 0) {
 		 	var bs_list = getMarkerInCurrentBound();
 	    	if(bs_list.length > 0 && isCallCompleted == 1) {
 	    		if(recallPerf != "") {
@@ -6581,7 +6580,7 @@ function devicePlottingClass_gmap() {
 	 		current_zoom_level = mapInstance.getZoom();
 	 	}
 
-		if(current_zoom_level > 7 && isPerfCallStopped == 0) {
+		if(isPerfCallStopped == 0) {
 		 	var bs_list = getMarkerInCurrentBound();
 	    	if(bs_list.length > 0 && isCallCompleted == 1) {
 	    		if(recallPerf != "") {
@@ -7146,7 +7145,17 @@ function devicePlottingClass_gmap() {
 		var hide_flag = !$("#show_hide_label")[0].checked;
 		// If any tooltip label exist
 		if(Object.keys(tooltipInfoLabel).length === 0) {
-			var ss_list = allMarkersObject_gmap['sub_station'];
+			var allMarkersObject = {};
+
+			if(window.location.pathname.indexOf("googleEarth") > -1) {
+            	allMarkersObject = allMarkersObject_earth;
+            } else if(window.location.pathname.indexOf("white_background") > -1) {
+            	allMarkersObject = allMarkersObject_wmap;
+            } else {
+            	allMarkersObject = allMarkersObject_gmap;
+            }
+
+			var ss_list = allMarkersObject['sub_station'];
 			for(key in ss_list) {
 				var ss_marker = ss_list[key],
 					labelHtml = "";
@@ -7157,48 +7166,24 @@ function devicePlottingClass_gmap() {
                     }
                 }
 
-                var toolTip_infobox = new InfoBox({
-                    content: labelHtml,
-                    boxStyle: {
-                        border: "1px solid #B0AEAE",
-                        background: "white",
-                        textAlign: "center",
-                        fontSize: "10px",
-                        color: "black",
-                        padding: '2px',
-                        borderRadius: "5px",
-                        width : '110px'
-                    },
-                    pixelOffset : new google.maps.Size(-120,-10),
-                    disableAutoPan: true,
-                    position: ss_marker.getPosition(),
-                    closeBoxURL: "",
-                    isHidden: hide_flag,
-                    enableEventPropagation: true,
-                    zIndex: 80
-                });
+                var toolTip_infobox = "";
 
-                toolTip_infobox.open(mapInstance, ss_marker);
-                tooltipInfoLabel[key] = toolTip_infobox;
-			}
-		} else {
-
-			var ss_list = allMarkersObject_gmap['sub_station'];
-			for(key in ss_list) {
-				var ss_marker = ss_list[key],
-					labelHtml = "";
-
-				for(var z=ss_marker.dataset.length;z--;) {
-                    if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
-                        labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
-                    }
-                }
-
-                // If label exist for current ss
-                if(tooltipInfoLabel[key]) {
-                	tooltipInfoLabel[key].setContent(labelHtml);
-                } else {
-                	var toolTip_infobox = new InfoBox({
+                if(window.location.pathname.indexOf("googleEarth") > -1) {
+	            	
+	            } else if(window.location.pathname.indexOf("white_background") > -1) {
+            	    toolTip_infobox = new OpenLayers.Popup(key,
+            	    	new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
+            	    	null,
+            	    	labelHtml,
+            	    	false
+        	    	);
+        	    	// toolTip_infobox.displayClass = 'label_class';
+        	    	// toolTip_infobox.contentDisplayClass = 'label_class';
+        	    	
+					ccpl_map.addPopup(toolTip_infobox);
+        	    	toolTip_infobox.updateSize();
+	            } else {
+	                toolTip_infobox = new InfoBox({
 	                    content: labelHtml,
 	                    boxStyle: {
 	                        border: "1px solid #B0AEAE",
@@ -7220,7 +7205,72 @@ function devicePlottingClass_gmap() {
 	                });
 
 	                toolTip_infobox.open(mapInstance, ss_marker);
-	                tooltipInfoLabel[key] = toolTip_infobox;
+	            }
+
+                tooltipInfoLabel[key] = toolTip_infobox;
+			}
+		} else {
+
+			var ss_list = allMarkersObject_gmap['sub_station'];
+			for(key in ss_list) {
+				var ss_marker = ss_list[key],
+					labelHtml = "";
+
+				for(var z=ss_marker.dataset.length;z--;) {
+                    if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
+                        labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
+                    }
+                }
+
+                if(window.location.pathname.indexOf("googleEarth") > -1) {
+	            	
+	            } else if(window.location.pathname.indexOf("white_background") > -1) {
+	            	// If label exist for current ss
+	                if(tooltipInfoLabel[key]) {
+	                	tooltipInfoLabel[key].setContentHTML(labelHtml);
+	                } else {
+		            	var toolTip_infobox = new OpenLayers.Popup(key,
+	            	    	new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
+	            	    	null,
+	            	    	labelHtml,
+	            	    	false
+	        	    	);
+	        	    	// toolTip_infobox.displayClass = 'label_class';
+	        	    	// toolTip_infobox.contentDisplayClass = 'label_class';
+
+						ccpl_map.addPopup(toolTip_infobox);
+	        	    	toolTip_infobox.updateSize();
+						tooltipInfoLabel[key] = toolTip_infobox;
+					}
+	            } else {
+	                // If label exist for current ss
+	                if(tooltipInfoLabel[key]) {
+	                	tooltipInfoLabel[key].setContent(labelHtml);
+	                } else {
+	                	var toolTip_infobox = new InfoBox({
+		                    content: labelHtml,
+		                    boxStyle: {
+		                        border: "1px solid #B0AEAE",
+		                        background: "white",
+		                        textAlign: "center",
+		                        fontSize: "10px",
+		                        color: "black",
+		                        padding: '2px',
+		                        borderRadius: "5px",
+		                        width : '110px'
+		                    },
+		                    pixelOffset : new google.maps.Size(-120,-10),
+		                    disableAutoPan: true,
+		                    position: ss_marker.getPosition(),
+		                    closeBoxURL: "",
+		                    isHidden: hide_flag,
+		                    enableEventPropagation: true,
+		                    zIndex: 80
+		                });
+
+		                toolTip_infobox.open(mapInstance, ss_marker);
+		                tooltipInfoLabel[key] = toolTip_infobox;
+	                }
                 }
 			}
 		}

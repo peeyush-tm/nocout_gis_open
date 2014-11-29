@@ -577,7 +577,10 @@ function hideOpenLayerFeature(feature) {
     if(feature && feature.style) {
         var featureLayer = feature.layer ? feature.layer : feature.layerReference;
         feature.style.display = 'none';
-        featureLayer.redraw();
+        if(featureLayer) {
+            featureLayer.redraw();
+            
+        }
     }
 }
 
