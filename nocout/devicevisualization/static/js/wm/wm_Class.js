@@ -32,7 +32,7 @@ var bs_loki_db = [],
 	currentlyPlottedDevices = [],
 	plottedBsIds = [],
 	sector_MarkersArray= [],
-	markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}},
+	markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}, 'backhaul' : {}},
 	masterMarkersObj= [],
 	bsLatArray = [],
 	bsLonArray = [],
@@ -45,7 +45,10 @@ var bs_loki_db = [],
 	remainingPollCalls = 0,
 	pollingInterval = 10,
 	pollingMaxInterval = 1,
-	isPollingPaused = 0;
+	isPollingPaused = 0,
+	isPerfCallStopped = 1,
+	tooltipInfoLabel = {},
+	last_perf_called_items = [];
 
 var bsDevicesObj = {};
 var tempbsDeviceObj = {};
@@ -71,7 +74,7 @@ var polled_devices_names= [];
 var bs_ss_markers = [];
 var bs_obj= {};
 var isCallCompleted;
-// var gisPerformanceClass = "";
+var gisPerformanceClass = "";
 
 function WhiteMapClass() {
 
@@ -1224,7 +1227,7 @@ function WhiteMapClass() {
 		    			}
 			        }
 	      		}
-		  }
+	      	}
 		}
 		if(isDebug) {
 			console.log("Show in bound Sector Devices End Time :- "+ new Date().toLocaleString());
@@ -1527,7 +1530,7 @@ function WhiteMapClass() {
 
 		/*
 		 * This function is used to plot BS or SS devices & their respective elements on the White Background
-		 * @method plotDevices_gmap
+		 * @method plotDevices_wmaps
 		 * @param bs_ss_devices {Object} In case of BS, it is the devies object array & for SS it contains BS marker object with SS & sector info
 		 * @param stationType {String}, It contains that the points are for BS or SS.
 		 */
@@ -1938,22 +1941,19 @@ function WhiteMapClass() {
 				always : function() {
 					global_this.hideLoading();
 
-					/*Load tools(point,line) data*/
-					// gmap_self.get_tools_data_gmap();
-
 					setTimeout(function() {
 						var current_zoom_level = ccpl_map.getZoom();
-    					if(current_zoom_level > 7) {
+    					if(current_zoom_level > whiteMapSettings.zoomLevelAtWhichPerformanceStarts && isPerfCallStopped == 0) {
 							var bs_list = getMarkerInCurrentBound();
 			            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
 			            		if(recallPerf != "") {
 			            			clearTimeout(recallPerf);
 			            			recallPerf = "";
 			            		}
-			            		// gisPerformanceClass.start(bs_list);
+			            		gisPerformanceClass.start(bs_list);
 			            	}
 		            	}
-						gisPerformanceClass.start(getMarkerInCurrentBound());
+						// gisPerformanceClass.start(getMarkerInCurrentBound());
 					}, 30000);
 
 					/*Recall the server after particular timeout if system is not freezed*/
@@ -2144,8 +2144,11 @@ function WhiteMapClass() {
 		state_lat_lon_db.insert({"name" : "Lakshadweep","lat" : 10.5700,"lon" : 72.6300});
 		state_lat_lon_db.insert({"name" : "Pondicherry","lat" : 11.9300,"lon" : 79.8300});
 		state_lat_lon_db.insert({"name" : "Dadra And Nagar Haveli","lat" : 20.2700,"lon" : 73.0200});
+
+		gisPerformanceClass= new GisPerformance();
+
 		//Call prototype method createOpenLayerMap() to create White Map and in the callback. Start Ajax Request to get Data.
-		this.createOpenLayerMap(function() {			
+		this.createOpenLayerMap(function() {
 			//start ajax request
 			startAjaxRequest(1);
 		});

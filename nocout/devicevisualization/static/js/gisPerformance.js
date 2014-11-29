@@ -46,9 +46,10 @@ function GisPerformance() {
      And start the setInterval function to updateMap every 10 secs.
      */
     this.start = function (bs_list) {
-
         if(window.location.pathname.indexOf("googleEarth") > -1) {
             current_zoom = getRangeInZoom();
+        } else if(window.location.pathname.indexOf("white_background") > -1) {
+            current_zoom = ccpl_map.getZoom();
         }
 
         //If isFrozen is false and Cookie value for freezeSelected is also false
@@ -112,6 +113,8 @@ function GisPerformance() {
 
         if(window.location.pathname.indexOf("googleEarth") > -1) {
             current_zoom = getRangeInZoom();
+        } else if (window.location.pathname.indexOf("white_background") > -1) {
+            current_zoom = ccpl_map.getZoom();
         }
 
         //If isFrozen is false and Cookie value for freezeSelected is also false
@@ -369,7 +372,9 @@ function GisPerformance() {
                         sector_marker.attributes.icon = other_icons_obj;
                         sector_marker.attributes.clusterIcon = other_icons_obj;
                         sector_marker.attributes.oldIcon = old_icon_obj;
-                        sector_marker.layer.redraw();
+                        var sectorMarkerLayer = sector_marker.layer ? sector_marker.layer : sector_marker.layerReference;
+
+                        sectorMarkerLayer.redraw();
                     } else {
                         var largeur= 32,
                             hauteur= 37,

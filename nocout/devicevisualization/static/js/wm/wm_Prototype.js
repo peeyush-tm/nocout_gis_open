@@ -18,7 +18,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			new OpenLayers.Control.MousePosition({
 				prefix: whiteMapSettings.latLngPrefixLabel
 			}),
-			new OpenLayers.Control.LayerSwitcher()
+			// new OpenLayers.Control.LayerSwitcher()
 		],
 		//Bounds for our Open layer.
 		maxExtent: new OpenLayers.Bounds(whiteMapSettings.initial_bounds),

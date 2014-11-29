@@ -17,7 +17,8 @@ var whiteMapSettings = {
 	zoomLevelAtClusterUpdates: 10,
 	latLngPrefixLabel: 'Longitude, Latitude: ',
 	mapCenter: [82.9165, 21.713],
-	zoomLevelAtWhichStateClusterExpands: 4
+	zoomLevelAtWhichStateClusterExpands: 4,
+	zoomLevelAtWhichPerformanceStarts: 7
 }
 
 var clustererSettings = {

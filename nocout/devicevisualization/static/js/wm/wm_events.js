@@ -43,6 +43,9 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     	current_zoom = ccpl_map.getZoom();
     	/* When zoom level is greater than 8 show lines */
     	if(ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAtWhichStateClusterExpands) {
+
+    		isPerfCallStopped = 0;
+
     		if(ccpl_map.getZoom() < 8 || searchResultData.length > 0) {
 
     			var states_with_bounds = state_lat_lon_db.where(function(obj) {
@@ -139,7 +142,8 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 							'path': {},
 							'sub_station': {},
 							'sector_device': {},
-							'sector_polygon': {}
+							'sector_polygon': {},
+							'backhaul': {}
 						};
 						
 						inBoundData = gmap_self.getInBoundDevices(data_to_plot);
@@ -192,6 +196,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 							whiteMapClass.showSectorDevicesInBounds();
 							whiteMapClass.showLinesInBounds();
 							whiteMapClass.showSectorPolygonInBounds();
+							whiteMapClass.showBackhaulDevicesInBounds();
 						}
 					}
 
@@ -220,6 +225,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				whiteMapClass.showSectorDevicesInBounds();
 				whiteMapClass.showLinesInBounds();
 				whiteMapClass.showSectorPolygonInBounds();
+				whiteMapClass.showBackhaulDevicesInBounds();
 
 				//Update Clusters Threshold value and recluster it
 				if(ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold !== clustererSettings.thresholdAtHighZoomLevel) {
@@ -229,44 +235,36 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				}
     		}
 
-    		// Start performance calling after 1.5 Second
-			setTimeout(function() {
-				var bs_id_list = getMarkerInCurrentBound();
-            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
-            		if(recallPerf != "") {
-            			clearTimeout(recallPerf);
-            			recallPerf = "";
-            		}
-            		// gisPerformanceClass.start(bs_id_list);
-            	}
-        	},500);
-
+    		var bs_id_list = getMarkerInCurrentBound();
+    		if(bs_id_list.length > 0 && isCallCompleted == 1) {
+    			gisPerformanceClass.start(bs_id_list);
+    		}
         } else {
-        	
+        	// Set Flag
+			isPerfCallStopped = 1;
+
 			// Clear performance calling timeout
 			if(recallPerf != "") {
     			clearTimeout(recallPerf);
     			recallPerf = "";
     		}
 
-			/*Loop to hide Marker Labels*/
-			for (var x = 0; x < labelsArray.length; x++) {
-                var move_listener_obj = labelsArray[x].moveListener_;
-                if (move_listener_obj) {
-                    var keys_array = Object.keys(move_listener_obj);
-                    for(var z=0;z<keys_array.length;z++) {
-                    	var label_marker = move_listener_obj[keys_array[z]];
-                        if(typeof label_marker === 'object') {
-                           if((label_marker && label_marker["filter_data"]["bs_name"]) && (label_marker && label_marker["filter_data"]["sector_name"])) {
-                           		labelsArray[x].destroy();
-                           }
-                        }
-                    }
-                }
-            }
+    		// Reset Performance variables
+    		gisPerformanceClass.resetVariable();
+
+			// Hide perf info label
+		    for (var x = 0; x < labelsArray.length; x++) {
+		        labelsArray[x].destroy();
+		    }
+
+		    // Hide tooltip info label
+		    for (key in tooltipInfoLabel) {
+		        tooltipInfoLabel[key].destroy();
+		    }
 
             // Reset labels array 
             labelsArray = [];
+            tooltipInfoLabel = {};
 
 
             /*Clear master marker cluster objects*/
@@ -295,7 +293,8 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				'path': {},
 				'sub_station': {},
 				'sector_device': {},
-				'sector_polygon': {}
+				'sector_polygon': {},
+				'backhaul': {}
 			};
 
 			var states_with_bounds = state_lat_lon_db.where(function(obj) {

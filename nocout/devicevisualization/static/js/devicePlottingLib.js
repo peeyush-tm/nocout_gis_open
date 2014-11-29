@@ -6531,6 +6531,8 @@ function devicePlottingClass_gmap() {
 
 	 	if(window.location.pathname.indexOf("googleEarth") > -1) {
 	 		current_zoom_level = getRangeInZoom();
+	 	} else if (window.location.pathname.indexOf("white_background") > -1) {
+	 		current_zoom_level = ccpl_map.getZoom();
 	 	} else {
 	 		current_zoom_level = mapInstance.getZoom();
 	 	}
@@ -6573,7 +6575,9 @@ function devicePlottingClass_gmap() {
 	 	var current_zoom_level = "";
 	 	if(window.location.pathname.indexOf("googleEarth") > -1) {
 	 		current_zoom_level = getRangeInZoom();
-	 	} else {
+	 	} else if (window.location.pathname.indexOf("white_background") > -1) {
+	 		current_zoom_level = ccpl_map.getZoom();
+	 	}else {
 	 		current_zoom_level = mapInstance.getZoom();
 	 	}
 
