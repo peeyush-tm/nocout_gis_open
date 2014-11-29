@@ -46,34 +46,29 @@ function GisPerformance() {
      And start the setInterval function to updateMap every 10 secs.
      */
     this.start = function (bs_list) {
-
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
-            current_zoom = getRangeInZoom();
-        }
-
-        //If isFrozen is false and Cookie value for freezeSelected is also false
-        var zoom_condition = current_zoom ? current_zoom > 7 : true;
-
-        if(zoom_condition > 7 && isPerfCallStopped == 0) {
+        
+        if(isPerfCallStopped == 0) {
             var gisPerformance_this = this;
-
-            var uncommon_bs_list = perf_self.get_intersection_bs(current_bs_list,bs_list);
 
             //Reset Variable
             gisPerformance_this.resetVariable();
-            this.bsNamesList = uncommon_bs_list;
+
+            // var uncommon_bs_list = perf_self.get_intersection_bs(current_bs_list,bs_list);
+
+            // this.bsNamesList = uncommon_bs_list;
+            this.bsNamesList = bs_list;
             //Store Length of Total BS
             this.bsLength = this.bsNamesList.length;
 
-            if(uncommon_bs_list.length === bs_list.length) {
-                current_bs_list = uncommon_bs_list;
-            }
+            // if(uncommon_bs_list.length === bs_list.length) {
+            //     current_bs_list = uncommon_bs_list;
+            // }
+
             //Start Request for First BS
             gisPerformance_this.sendRequest(0);
         } else {
             clearTimeout(recallPerf);
             recallPerf = "";
-            current_bs_list = [];
         }
     }
 
@@ -109,17 +104,30 @@ function GisPerformance() {
      This function sends Request based on the counter value.
      */
     this.sendRequest = function (counter) {
-
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
-            current_zoom = getRangeInZoom();
-        }
-
-        //If isFrozen is false and Cookie value for freezeSelected is also false
-        var zoom_condition = current_zoom ? current_zoom > 7 : true;
-        if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0  && isPerfCallStopped == 0) {
+        // +($.cookie('isFreezeSelected')) == 0 || +($.cookie('freezedAt')) > 0
+        if (isPollingActive == 0  && isPerfCallStopped == 0) {
             var gisPerformance_this = this;
-            //Call waitAndSend function with BS Json Data and counter value
-            gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
+            if(this.bsNamesList[counter]) {
+                //Call waitAndSend function with BS Json Data and counter value
+                gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
+            } else {
+                //1 Minutes Timeout
+                setTimeout(function () {
+                    //Start Performance Again
+                    var bs_list = getMarkerInCurrentBound();
+                    if(bs_list.length > 0 && isCallCompleted == 1) {
+                        if(recallPerf != "") {
+                            clearTimeout(recallPerf);
+                            recallPerf = "";
+                        }
+                        /*Reset global variable when all calls completed*/
+                        current_bs_list = [];
+
+                        /*Start calls*/
+                        gisPerformance_this.start(bs_list);
+                    }
+                }, 60000);
+            }
         } else {
             clearTimeout(recallPerf);
             recallPerf = "";
@@ -134,25 +142,6 @@ function GisPerformance() {
 
         var gisPerformance_this = this;
         counter++;
-        //If all calls has been done,
-        if (counter > this.bsLength) {
-            //1 Minutes Timeout
-            setTimeout(function () {
-                //Start Performance Again
-                var bs_list = getMarkerInCurrentBound();
-                if(bs_list.length > 0 && isCallCompleted == 1) {
-                    if(recallPerf != "") {
-                        clearTimeout(recallPerf);
-                        recallPerf = "";
-                    }
-                    /*Reset global variable when all calls completed*/
-                    current_bs_list = [];
-                    /*Start calls*/
-                    gisPerformance_this.start(bs_list);
-                }
-            }, 60000);
-            return;
-        }
 
         var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
 
@@ -178,21 +167,20 @@ function GisPerformance() {
                     }
                 }
 
-                //After 1 seconds timeout
-                recallPerf = setTimeout(function () {
-                    //Send Request for the next counter
-                    gisPerformance_this.sendRequest(counter);
-                }, 1000);
-
             },
             //On Error, do nothing
             error: function (err) {
-                setTimeout(function () {
-                    //Start Performance Again
-                    if (this.bsNamesList && this.bsNamesList.length > 0) {
-                        gisPerformance_this.start(this.bsNamesList);
-                    }
-                }, 60000);
+
+                // setTimeout(function () {
+                //     //Start Performance Again
+                //     if (this.bsNamesList && this.bsNamesList.length > 0) {
+                //         gisPerformance_this.start(this.bsNamesList);
+                //     }
+                // }, 60000);
+            },
+            complete : function() {
+                //Send Request for the next counter
+                gisPerformance_this.sendRequest(counter);
             }
         });
     }
@@ -905,7 +893,7 @@ function GisPerformance() {
                     if(window.location.pathname.indexOf("googleEarth") > -1) {
                         ss_marker_obj.perf_val = perf_val;
                         //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
-                        // console.log(perf_val);
+
                     } else {
                         if(perf_val && $.trim(perf_val)) {
                             var perf_infobox = new InfoBox({
