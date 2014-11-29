@@ -2524,9 +2524,11 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
             sds_prefix = dict(self.request.POST)['sds_counter']
             # except:
                 # sds_prefix = [u'0']
-
-            for sds in list(set(sds_prefix)):
-                service_id = self.request.POST['dts-{}-service'.format(sds)]
+            counter_prefix = []
+            x = [counter_prefix.append(counter) for counter in sds_prefix if counter not in counter_prefix]
+            print('++++++++',counter_prefix)
+            for i,sds in enumerate(counter_prefix):
+                service_id = self.request.POST['dts-{}-service'.format(i)]
                 service = Service.objects.get(id=service_id)
                 formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='sds-{}'.format(sds))
                 service_data_formset.update({service_id: formset})
@@ -2546,7 +2548,7 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         #         self.get_context_data(form=form,
         #                               device_type_service_form=device_type_service_form,
         #                               service_data_formset=service_data_formset))
-        if (form.is_valid() and device_type_service_form.is_valid()
+        if (device_type_service_form.is_valid()
                             and all_forms_valid ):
             return self.form_valid(form, device_type_service_form , service_data_formset)
         else:
@@ -2558,7 +2560,8 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         associated Ingredients and Instructions and then redirects to a
         success page.
         """
-        self.object = form.save()
+        # self.object = form.save()
+        self.object = DeviceType.objects.get(name='as1')
         device_type_service_form.instance = self.object
         dts = device_type_service_form.save()
         for dts_obj in dts:
