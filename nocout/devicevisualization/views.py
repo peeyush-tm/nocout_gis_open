@@ -996,6 +996,7 @@ class GISPerfData(View):
                             {
                                 "bs_id": 3019,
                                 "bs_name": "dharma_height_jai_raj",
+                                "bs_alias": "Dharma Height",
                                 "message": "Successfully fetched performance data.",
                                 "param": {
                                     "sector": [
@@ -1245,6 +1246,7 @@ class GISPerfData(View):
                 try:
                     bs = BaseStation.objects.get(pk=bs_id)
                     bs_dict['bs_name'] = bs.name
+                    bs_dict['bs_alias'] = bs.alias
                     bs_dict['bs_id'] = bs_id
                     bs_dict['message'] = "Failed to fetch performance data."
                     bs_dict['param'] = dict()
@@ -1285,10 +1287,10 @@ class GISPerfData(View):
                         sector_dict['sub_station'] = list()
 
                         # get all substations associated with sector from 'Topology' model in performance
-                        ##replaceing topology code
-                        ##as the topology is auto-updated
-                        ##using celery beat
-                        subs = SubStation.objects.filter(id__in = sector.circuit_set.values_list('sub_station', flat=True))
+                        # replaceing topology code
+                        # as the topology is auto-updated
+                        # using celery beat
+                        subs = SubStation.objects.filter(id__in=sector.circuit_set.values_list('sub_station', flat=True))
                         # topolopies_for_ss = Topology.objects.filter(sector_id=sector.id)
 
                         # list of all associated substations ip's
@@ -1310,7 +1312,7 @@ class GISPerfData(View):
                             substation_device = None
                             try:
                                 substation_device = ss.device
-                                #Device.objects.get(ip_address=ss_ip)
+                                # Device.objects.get(ip_address=ss_ip)
                             except Exception as e:
                                 logger.info("Sub Station device not exist. Exception: ", e.message)
 
@@ -1330,7 +1332,7 @@ class GISPerfData(View):
                     bs_dict['message'] = "Successfully fetched performance data."
                     performance_data.append(bs_dict)
         except Exception as e:
-            print "********************************** Last Exception - ", e.message
+            logger.info("Last Exception - ", e.message)
             performance_data = {'message': "No Base Station to fetch performance data."}
 
         return HttpResponse(json.dumps(eval(str(performance_data))))
@@ -1380,12 +1382,8 @@ class GISPerfData(View):
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
 
-        # current user
-        try:
-            current_user = UserProfile.objects.get(id=self.request.user.id)
-        except Exception as e:
-            current_user = ""
-            logger.info("User Profile not exist. Exception: ", e.message)
+        # type of thematic settings needs to be fetched
+        ts_type = self.request.GET.get('ts', 'normal')
 
         # device technology
         try:
@@ -1394,29 +1392,18 @@ class GISPerfData(View):
             device_technology = ""
             logger.info("Device technology not exist. Exception: ", e.message)
 
-        # fetch thematic settings for current user
-        try:
-            uts = UserThematicSettings.objects.get(user_profile=current_user,
-                                                   thematic_technology=device_technology)
-        except Exception as e:
-            uts = ""
-            logger.info("User thematic settings not exist. Exception: ", e.message)
+        # thematic settings for current user
+        user_thematics = self.get_thematic_settings(device_technology)
 
-        # thematic settings
-        try:
-            thematic_settings = uts.thematic_template
-            # threshold template
-            threshold_template = thematic_settings.threshold_template
-            # live polling tmplate
-            live_polling_template = threshold_template.live_polling_template
-            # service name
-            device_service_name = live_polling_template.service.name
-            # data source
-            device_service_data_source = live_polling_template.data_source.name
-        except Exception as e:
-            device_service_name = ""
-            device_service_data_source = ""
-            logger.info("Thematic settings not exist. Exception: ", e.message)
+        # service & data source
+        service = ""
+        data_source = ""
+        if ts_type == "normal":
+            service = user_thematics.thematic_template.service.name
+            data_source = user_thematics.thematic_template.data_source.name
+        elif ts_type == "ping":
+            service = user_thematics.thematic_template.service
+            data_source = user_thematics.thematic_template.data_source
 
         # device frequency
         device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
@@ -1464,28 +1451,24 @@ class GISPerfData(View):
         performance_data['azimuth_angle'] = azimuth_angle
         performance_data['beam_width'] = beam_width
         performance_data['radius'] = radius
+        performance_value = ""
 
-        # performance value
+        # performance payload
         perf_payload = {
             'device_name': device_name,
             'machine_name': machine_name,
             'freeze_time': freeze_time,
-            'device_service_name': device_service_name,
-            'device_service_data_source': device_service_data_source
+            'device_service_name': service,
+            'device_service_data_source': data_source
         }
-        performance_value = self.get_performance_value(perf_payload)
-        
-        # type of thematic settings needs to be fetched
-        ts_type = self.request.GET.get('ts', 'normal')
 
-        # fetch thematic settings for current user
-        user_thematics = ""
         try:
             if ts_type == "ping":
-                user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                                      thematic_technology=device_technology)
+                # performance value
+                performance_value = self.get_performance_value(perf_payload, 'ping')
             elif ts_type == "normal":
-                user_thematics = uts
+                # performance value
+                performance_value = self.get_performance_value(perf_payload, 'normal')
             else:
                 pass
         except Exception as e:
@@ -2140,12 +2123,8 @@ class GISPerfData(View):
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
 
-        # current user
-        current_user = ""
-        try:
-            current_user = UserProfile.objects.get(id=self.request.user.id)
-        except Exception as e:
-            logger.info("User profile not exist. Exception: ", e.message)
+        # type of thematic settings needs to be fetched
+        ts_type = self.request.GET.get('ts', 'normal')
 
         # device technology
         device_technology = ""
@@ -2154,29 +2133,18 @@ class GISPerfData(View):
         except Exception as e:
             logger.info("Device technology not exist. Exception: ", e.message)
 
-        # fetch thematic settings for current user
-        try:
-            uts = UserThematicSettings.objects.get(user_profile=current_user,
-                                                   thematic_technology=device_technology)
+        # thematic settings for current user
+        user_thematics = self.get_thematic_settings(device_technology)
 
-            # thematic settings
-            thematic_settings = uts.thematic_template
-
-            # threshold template
-            threshold_template = thematic_settings.threshold_template
-
-            # live polling tmplate
-            live_polling_template = threshold_template.live_polling_template
-
-            # service name
-            device_service_name = live_polling_template.service.name
-
-            # data source
-            device_service_data_source = live_polling_template.data_source.name
-        except Exception as e:
-            device_service_name = ""
-            device_service_data_source = ""
-            logger.info("Thematic settings not exist. Exception: ", e.message)
+        # service & data source
+        service = ""
+        data_source = ""
+        if ts_type == "normal":
+            service = user_thematics.thematic_template.service.name
+            data_source = user_thematics.thematic_template.data_source.name
+        elif ts_type == "ping":
+            service = user_thematics.thematic_template.service
+            data_source = user_thematics.thematic_template.data_source
 
         # device frequency
         device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
@@ -2192,11 +2160,11 @@ class GISPerfData(View):
             'device_name': device_name,
             'machine_name': machine_name,
             'freeze_time': freeze_time,
-            'device_service_name': device_service_name,
-            'device_service_data_source': device_service_data_source
+            'device_service_name': service,
+            'device_service_data_source': data_source
 
         }
-        performance_value = self.get_performance_value(perf_payload)
+        performance_value = self.get_performance_value(perf_payload, ts_type)
 
         # sector info dict
         substation_info = dict()
@@ -2353,7 +2321,48 @@ class GISPerfData(View):
 
         return device_link_color, radius
 
-    def get_performance_value(self, perf_payload):
+    def get_thematic_settings(self, device_technology):
+        """ Get device pl
+
+            :Parameters:
+                - 'device_technology' (<class 'device.models.DeviceTechnology'>) - device technology object
+                - 'ts_type' (unicode) - thematic settings type i.e 'ping' or 'normal'
+
+            :Returns:
+               - 'user_thematics' (<class 'inventory.models.UserPingThematicSettings'>) - thematic settings object
+        """
+
+        # thematic settings type i.e. 'ping' or 'normal'
+        ts_type = self.request.GET.get('ts', 'normal')
+
+        # current user
+        try:
+            current_user = UserProfile.objects.get(id=self.request.user.id)
+        except Exception as e:
+            current_user = ""
+            logger.info("User Profile not exist. Exception: ", e.message)
+
+        # device technology
+        device_technology = device_technology
+
+        # fetch thematic settings for current user
+        user_thematics = ""
+        if ts_type == "normal":
+            try:
+                user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
+                                                                  thematic_technology=device_technology)
+            except Exception as e:
+                logger.info("User thematic settings not exist. Exception: ", e.message)
+        elif ts_type == "ping":
+            try:
+                user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
+                                                                      thematic_technology=device_technology)
+            except Exception as e:
+                logger.info("User thematic settings not exist. Exception: ", e.message)
+
+        return user_thematics
+
+    def get_performance_value(self, perf_payload, ts_type):
         """ Get device pl
 
             :Parameters:
@@ -2365,6 +2374,7 @@ class GISPerfData(View):
                                                 'device_service_data_source': u'uptime',
                                                 'device_name': u'1'
                                             }
+                - 'ts_type' (unicode) - thematic settings type i.e 'ping' or 'normal'
 
             :Returns:
                - 'performance_value' (unicode) - performance value, e.g. 6.0082333333
@@ -2385,29 +2395,52 @@ class GISPerfData(View):
         # service data source
         device_service_data_source = perf_payload['device_service_data_source']
 
+        # performance value
+        performance_value = ""
         try:
-            if int(freeze_time):
-                performance_value = PerformanceService.objects.filter(device_name=device_name,
-                                                                      service_name=device_service_name,
-                                                                      data_source=device_service_data_source,
-                                                                      sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                      .using(alias=machine_name)\
-                                                                      .order_by('-sys_timestamp')[:1]
-                if len(performance_value):
-                    performance_value = performance_value[0].current_value
+            if ts_type == "normal":
+                if int(freeze_time):
+                    performance_value = PerformanceService.objects.filter(device_name=device_name,
+                                                                          service_name=device_service_name,
+                                                                          data_source=device_service_data_source,
+                                                                          sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                          .using(alias=machine_name)\
+                                                                          .order_by('-sys_timestamp')[:1]
+                    if len(performance_value):
+                        performance_value = performance_value[0].current_value
+                    else:
+                        performance_value = ""
                 else:
-                    performance_value = ""
-            else:
-                performance_value = ServiceStatus.objects.filter(device_name=device_name,
-                                                                 service_name=device_service_name,
-                                                                 data_source=device_service_data_source)\
-                                                                 .using(alias=machine_name)\
-                                                                 .order_by('-sys_timestamp')[:1]
-                if len(performance_value):
-                    performance_value = performance_value[0].current_value
+                    performance_value = ServiceStatus.objects.filter(device_name=device_name,
+                                                                     service_name=device_service_name,
+                                                                     data_source=device_service_data_source)\
+                                                                     .using(alias=machine_name)\
+                                                                     .order_by('-sys_timestamp')[:1]
+                    if len(performance_value):
+                        performance_value = performance_value[0].current_value
+                    else:
+                        performance_value = ""
+            elif ts_type == "ping":
+                if int(freeze_time):
+                    performance_value = PerformanceNetwork.objects.filter(device_name=device_name,
+                                                                          service_name=device_service_name,
+                                                                  data_source=device_service_data_source,
+                                                                  sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                  .using(alias=machine_name)\
+                                                                  .order_by('-sys_timestamp')[:1]
+                    if len(performance_value):
+                        performance_value = performance_value[0].current_value
+                    else:
+                        performance_value = ""
                 else:
-                    performance_value = ""
-
+                    performance_value = NetworkStatus.objects.filter(device_name=device_name,
+                                                         service_name=device_service_name,
+                                                         data_source=device_service_data_source)\
+                                                         .using(alias=machine_name).order_by('-sys_timestamp')[:1]
+                    if len(performance_value):
+                        performance_value = performance_value[0].current_value
+                    else:
+                        performance_value = ""
         except Exception as e:
             performance_value = ""
             logger.info("Performance value not exist. Exception: ", e.message)
