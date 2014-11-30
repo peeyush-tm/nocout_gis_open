@@ -52,13 +52,16 @@ function GisPerformance() {
             var gisPerformance_this = this;
             //Reset Variable
             gisPerformance_this.resetVariable()
-            this.bsNamesList = bs_list;
+
+            var uncommon_bs_list = perf_self.get_intersection_bs(current_bs_list,bs_list);
+
+            this.bsNamesList = uncommon_bs_list;
             //Store Length of Total BS
             this.bsLength = this.bsNamesList.length;
 
-            // if(uncommon_bs_list.length === bs_list.length) {
-            //     current_bs_list = uncommon_bs_list;
-            // }
+            if(uncommon_bs_list.length === bs_list.length) {
+                current_bs_list = uncommon_bs_list;
+            }
             //Start Request for First BS
             gisPerformance_this.sendRequest(0);
         } else {
