@@ -1899,7 +1899,12 @@ class GISPerfData(View):
             'data_source', 'current_value', 'sys_timestamp'
         ).using(alias=machine_name)
 
+        processed = {}
+
         for perf in device_performance_info:
+            if perf['data_source'] in processed:
+                continue
+            processed[perf['data_source']] = []
             perf_info = {
                 "name": perf['data_source'],
                 "title": " ".join(perf['data_source'].split("_")).title(),
@@ -1909,6 +1914,9 @@ class GISPerfData(View):
             device_info.append(perf_info)
 
         for perf in device_inventory_info:
+            if perf['data_source'] in processed:
+                continue
+            processed[perf['data_source']] = []
             perf_info = {
                 "name": perf['data_source'],
                 "title": " ".join(perf['data_source'].split("_")).title(),
@@ -1918,6 +1926,9 @@ class GISPerfData(View):
             device_info.append(perf_info)
 
         for perf in device_status_info:
+            if perf['data_source'] in processed:
+                continue
+            processed[perf['data_source']] = []
             perf_info = {
                 "name": perf['data_source'],
                 "title": " ".join(perf['data_source'].split("_")).title(),
@@ -1927,6 +1938,9 @@ class GISPerfData(View):
             device_info.append(perf_info)
 
         for perf in device_network_info:
+            if perf['data_source'] in processed:
+                continue
+            processed[perf['data_source']] = []
             perf_info = {
                 "name": perf['data_source'],
                 "title": "Latency" if ("rta" in perf['data_source'].lower()) else "Packet Loss",
