@@ -2951,7 +2951,13 @@ class DownloadSelectedBSInventory(View):
                       'SS Latitude', 'SS Longitude', 'SS Antenna Height', 'SS Antenna Type', 'SS Antenna Gain',
                       'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
                       'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
-                      'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC']
+                      'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC',
+                      'BS Product Type', 'BS Frequency', 'BS UAS', 'BS RSSI', 'BS Estimated Throughput',
+                      'BS Utilisation DL', 'BS Utilisation UL', 'BS Uptime', 'BS Link Distance', 'BS CBW', 'BS Latency',
+                      'BS PD', 'BS Auto Negotiation', 'BS Duplex', 'BS Speed', 'BS Link',
+                      'SS Product Type', 'SS Frequency', 'SS UAS', 'SS RSSI', 'SS Estimated Throughput',
+                      'SS Utilisation DL', 'SS Utilisation UL', 'SS Uptime', 'SS Link Distance', 'SS CBW', 'SS Latency',
+                      'SS PD', 'SS Auto Negotiation', 'SS Duplex', 'SS Speed', 'SS Link']
 
         # ptp bh dictionary
         ptp_bh_fields = ['State', 'City', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
@@ -2967,7 +2973,13 @@ class DownloadSelectedBSInventory(View):
                          'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
                          'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
                          'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC', 'SS MIMO/Diversity',
-                         'SS Polarization']
+                         'SS Polarization',
+                         'BS Product Type', 'BS Frequency', 'BS UAS', 'BS RSSI', 'BS Estimated Throughput',
+                         'BS Utilisation DL', 'BS Utilisation UL', 'BS Uptime', 'BS Link Distance', 'BS CBW',
+                         'BS Latency', 'BS PD', 'BS Auto Negotiation', 'BS Duplex', 'BS Speed', 'BS Link',
+                         'SS Product Type', 'SS Frequency', 'SS UAS', 'SS RSSI', 'SS Estimated Throughput',
+                         'SS Utilisation DL', 'SS Utilisation UL', 'SS Uptime', 'SS Link Distance', 'SS CBW',
+                         'SS Latency', 'SS PD', 'SS Auto Negotiation', 'SS Duplex', 'SS Speed', 'SS Link']
 
         # pmp bs dictionary
         pmp_bs_fields = ['State', 'City', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
@@ -2977,14 +2989,18 @@ class DownloadSelectedBSInventory(View):
                          'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
                          'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity',
                          'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'DR Site',
-                         'Sector ID', 'BSO Circuit ID']
+                         'Sector ID', 'BSO Circuit ID', 'Frequency', 'Cell Radius', 'Utilization DL', 'Utilization UL',
+                         'Sector Uptime', 'TX Power', 'RX Power']
 
         # pmp ss dictionary
         pmp_sm_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
                          'Building Height', 'Tower/Pole Height', 'Antenna Height', 'Antenna Beamwidth',
                          'Polarization', 'Antenna Type', 'SS Mount Type', 'Ethernet Extender', 'Cable Length',
                          'RSSI During Acceptance', 'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance',
-                         'Lens/Reflector', 'AP IP']
+                         'Lens/Reflector', 'AP IP', 'Frequency', 'Sector ID', 'RSSI DL', 'RSSI UL', 'Jitter DL',
+                         'Jitter UL', 'Transmit Power', 'Polled SS IP', 'Polled SS MAC', 'Polled BS IP',
+                         'Polled BS MAC', 'Session Uptime', 'Latency', 'PD', 'Utilization DL', 'Utilization UL',
+                         'Auto Negotiation', 'Duplex', 'Speed', 'Link']
 
         # wimax bs dictionary
         wimax_bs_fields = ['State', 'City', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
@@ -2995,7 +3011,7 @@ class DownloadSelectedBSInventory(View):
                            'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port',
                            'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname',
                            'PE IP', 'DR Site', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Sector Utilization',
-                           'Frequency', 'MRC', 'IDU Type', 'System Uptime']
+                           'Frequency', 'MRC', 'IDU Type', 'System Uptime', 'Latency', 'PD']
 
         # wimax ss dictionary
         wimax_ss_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
@@ -3732,7 +3748,7 @@ class DownloadSelectedBSInventory(View):
                 # bs duplex
                 try:
                     ptp_row['BS Duplex'] = Status.objects.filter(device_name=bs_device_name,
-                                                                 service_name='radwin_port_mode_status ',
+                                                                 service_name='radwin_port_mode_status',
                                                                  data_source='1').using(
                                                                  alias=bs_machine_name)[0].current_value
                 except Exception as e:
@@ -4034,7 +4050,7 @@ class DownloadSelectedBSInventory(View):
                 # ss duplex
                 try:
                     ptp_row['SS Duplex'] = Status.objects.filter(device_name=ss_device_name,
-                                                                 service_name='radwin_port_mode_status ',
+                                                                 service_name='radwin_port_mode_status',
                                                                  data_source='1').using(
                                                                  alias=ss_machine_name)[0].current_value
                 except Exception as e:
@@ -4813,7 +4829,8 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_bs_row['Type Of BS (Technology)'] = base_station.bs_type
                 except Exception as e:
-                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, e.message))
+                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, 
+                                                                                                  e.message))
 
                 # site type
                 try:
@@ -5038,11 +5055,11 @@ class DownloadSelectedBSInventory(View):
                     # by splitting last string after underscore from sector name; we get pmp port number
                     if sector.name.split("_")[-1] == '1':
                         wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                        data_source='wimax_pmp1_utilization ').using(
+                                                                        data_source='wimax_pmp1_utilization').using(
                                                                         alias=bs_machine_name)[0].current_value
                     elif sector.name.split("_")[-1] == '2':
                         wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                        data_source='wimax_pmp2_utilization ').using(
+                                                                        data_source='wimax_pmp2_utilization').using(
                                                                         alias=bs_machine_name)[0].current_value
                     else:
                         pass
@@ -5063,11 +5080,11 @@ class DownloadSelectedBSInventory(View):
                     # by splitting last string after underscore from sector name; we get pmp port number
                     if sector.name.split("_")[-1] == '1':
                         wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                             data_source='pmp1_mrc ').using(
+                                                                             data_source='pmp1_mrc').using(
                                                                              alias=bs_machine_name)[0].current_value
                     elif sector.name.split("_")[-1] == '2':
                         wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                             data_source='pmp2_mrc ').using(
+                                                                             data_source='pmp2_mrc').using(
                                                                              alias=bs_machine_name)[0].current_value
                     else:
                         pass
@@ -5089,6 +5106,22 @@ class DownloadSelectedBSInventory(View):
                                                                                  alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("System Uptime not exist for base station ({}).".format(base_station.name, e.message))
+
+                # latency
+                try:
+                    wimax_bs_row['Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
+                                                                           data_source='rta').using(
+                                                                           alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Latency not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pl
+                try:
+                    wimax_bs_row['PD'] = NetworkStatus.objects.filter(device_name=bs_device_name,
+                                                                      data_source='pl').using(
+                                                                      alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("PD not exist for base station ({}).".format(base_station.name, e.message))
 
                 # ********************************** Far End (Wimax SS) ********************************
 
@@ -5243,7 +5276,7 @@ class DownloadSelectedBSInventory(View):
                 # polled ss ip
                 try:
                     wimax_ss_row['Polled SS IP'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source=' ss_ip').using(
+                                                                                data_source='ss_ip').using(
                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
