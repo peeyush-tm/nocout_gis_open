@@ -3619,7 +3619,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['BS Product Type'] = InventoryStatus.objects.filter(device_name=bs_device_name,
                                                                                 data_source='producttype').using(
-                                                                                alias=bs_machine_name)
+                                                                                alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Product Type not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3627,7 +3627,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['BS Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
                                                                              data_source='frequency').using(
-                                                                             alias=bs_machine_name)
+                                                                             alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Frequency not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3635,7 +3635,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['BS UAS'] = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                      data_source='uas').using(
-                                                                     alias=bs_machine_name)
+                                                                     alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS UAS not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3643,7 +3643,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['BS RSSI'] = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                       data_source='rssi').using(
-                                                                      alias=bs_machine_name)
+                                                                      alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS RSSI not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3652,7 +3652,7 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['BS Estimated Throughput'] = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                         service_name='radwin_service_throughput',
                                                                         data_source='service_throughput').using(
-                                                                        alias=bs_machine_name)
+                                                                        alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Estimated Throughput not exist for base station ({}).".format(base_station.name,
                                                                                                   e.message))
@@ -3662,7 +3662,7 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['BS Utilisation DL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                         service_name='radwin_dl_utilization',
                                                                         data_source='Management_Port_on_Odu').using(
-                                                                        alias=bs_machine_name)
+                                                                        alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Utilisation DL not exist for base station ({}).".format(base_station.name,
                                                                                             e.message))
@@ -3672,7 +3672,7 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['BS Utilisation UL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                         service_name='radwin_ul_utilization',
                                                                         data_source='Management_Port_on_Odu').using(
-                                                                        alias=bs_machine_name)
+                                                                        alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Utilisation UL not exist for base station ({}).".format(base_station.name,
                                                                                             e.message))
@@ -3682,7 +3682,7 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['BS Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                         service_name='radwin_uptime',
                                                                         data_source='uptime').using(
-                                                                        alias=bs_machine_name)
+                                                                        alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Uptime not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3690,7 +3690,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['BS Link Distance'] = InventoryStatus.objects.filter(device_name=bs_device_name,
                                                                                  data_source='link_distance').using(
-                                                                                 alias=bs_machine_name)
+                                                                                 alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Link Distance not exist for base station ({}).".format(base_station.name,
                                                                                            e.message))
@@ -3699,7 +3699,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['BS CBW'] = InventoryStatus.objects.filter(device_name=bs_device_name,
                                                                        data_source='cbw').using(
-                                                                       alias=bs_machine_name)
+                                                                       alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS CBW not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3707,7 +3707,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['BS Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
                                                                          data_source='rta').using(
-                                                                         alias=bs_machine_name)
+                                                                         alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Latency not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3715,7 +3715,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['BS PD'] = NetworkStatus.objects.filter(device_name=bs_device_name,
                                                                     data_source='pl').using(
-                                                                    alias=bs_machine_name)
+                                                                    alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS PD not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3724,7 +3724,7 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['BS Auto Negotiation'] = Status.objects.filter(device_name=bs_device_name,
                                                                            service_name='radwin_autonegotiation_status',
                                                                            data_source='1').using(
-                                                                           alias=bs_machine_name)
+                                                                           alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Auto Negotiation not exist for base station ({}).".format(base_station.name,
                                                                                               e.message))
@@ -3734,7 +3734,7 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['BS Duplex'] = Status.objects.filter(device_name=bs_device_name,
                                                                  service_name='radwin_port_mode_status ',
                                                                  data_source='1').using(
-                                                                 alias=bs_machine_name)
+                                                                 alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Duplex not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3743,7 +3743,7 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['BS Speed'] = Status.objects.filter(device_name=bs_device_name,
                                                                 service_name='radwin_port_speed_status',
                                                                 data_source='1').using(
-                                                                alias=bs_machine_name)
+                                                                alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Speed not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3752,7 +3752,7 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['BS Link'] = Status.objects.filter(device_name=bs_device_name,
                                                                service_name='radwin_link_ethernet_status',
                                                                data_source='Management_Port_on_Odu').using(
-                                                               alias=bs_machine_name)
+                                                               alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("BS Link not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -3921,7 +3921,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['SS Product Type'] = InventoryStatus.objects.filter(device_name=ss_device_name,
                                                                                 data_source='producttype').using(
-                                                                                alias=ss_machine_name)
+                                                                                alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Product Type not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -3929,7 +3929,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['SS Frequency'] = InventoryStatus.objects.filter(device_name=ss_device_name,
                                                                              data_source='frequency').using(
-                                                                             alias=ss_machine_name)
+                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -3937,7 +3937,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['SS UAS'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                      data_source='uas').using(
-                                                                     alias=ss_machine_name)
+                                                                     alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS UAS not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -3945,7 +3945,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['SS RSSI'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                       data_source='rssi').using(
-                                                                      alias=ss_machine_name)
+                                                                      alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS RSSI not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -3954,37 +3954,37 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['SS Estimated Throughput'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                         service_name='radwin_service_throughput',
                                                                         data_source='service_throughput').using(
-                                                                        alias=ss_machine_name)
+                                                                        alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Estimated Throughput not exist for sub station ({}).".format(sub_station.name,
-                                                                                                  e.message))
+                                                                                                 e.message))
 
                 # ss utilization dl
                 try:
                     ptp_row['SS Utilisation DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                         service_name='radwin_dl_utilization',
                                                                         data_source='Management_Port_on_Odu').using(
-                                                                        alias=ss_machine_name)
+                                                                        alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Utilisation DL not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
+                                                                                           e.message))
 
                 # ss utilization ul
                 try:
                     ptp_row['SS Utilisation UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                         service_name='radwin_ul_utilization',
                                                                         data_source='Management_Port_on_Odu').using(
-                                                                        alias=ss_machine_name)
+                                                                        alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Utilisation UL not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
+                                                                                           e.message))
 
                 # ss uptime
                 try:
                     ptp_row['SS Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                         service_name='radwin_uptime',
                                                                         data_source='uptime').using(
-                                                                        alias=ss_machine_name)
+                                                                        alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -3992,16 +3992,16 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['SS Link Distance'] = InventoryStatus.objects.filter(device_name=ss_device_name,
                                                                                  data_source='link_distance').using(
-                                                                                 alias=ss_machine_name)
+                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Link Distance not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
+                                                                                          e.message))
 
                 # ss cbw
                 try:
                     ptp_row['SS CBW'] = InventoryStatus.objects.filter(device_name=ss_device_name,
                                                                        data_source='cbw').using(
-                                                                       alias=ss_machine_name)
+                                                                       alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS CBW not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -4009,7 +4009,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['SS Latency'] = NetworkStatus.objects.filter(device_name=ss_device_name,
                                                                          data_source='rta').using(
-                                                                         alias=ss_machine_name)
+                                                                         alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Latency not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -4017,7 +4017,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     ptp_row['SS PD'] = NetworkStatus.objects.filter(device_name=ss_device_name,
                                                                     data_source='pl').using(
-                                                                    alias=ss_machine_name)
+                                                                    alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS PD not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -4026,17 +4026,17 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['SS Auto Negotiation'] = Status.objects.filter(device_name=ss_device_name,
                                                                            service_name='radwin_autonegotiation_status',
                                                                            data_source='1').using(
-                                                                           alias=ss_machine_name)
+                                                                           alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Auto Negotiation not exist for sub station ({}).".format(sub_station.name,
-                                                                                              e.message))
+                                                                                             e.message))
 
                 # ss duplex
                 try:
                     ptp_row['SS Duplex'] = Status.objects.filter(device_name=ss_device_name,
                                                                  service_name='radwin_port_mode_status ',
                                                                  data_source='1').using(
-                                                                 alias=ss_machine_name)
+                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -4045,7 +4045,7 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['SS Speed'] = Status.objects.filter(device_name=ss_device_name,
                                                                 service_name='radwin_port_speed_status',
                                                                 data_source='1').using(
-                                                                alias=ss_machine_name)
+                                                                alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Speed not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -4054,7 +4054,7 @@ class DownloadSelectedBSInventory(View):
                     ptp_row['SS Link'] = Status.objects.filter(device_name=ss_device_name,
                                                                service_name='radwin_link_ethernet_status',
                                                                data_source='Management_Port_on_Odu').using(
-                                                               alias=ss_machine_name)
+                                                               alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("SS Link not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -4079,6 +4079,20 @@ class DownloadSelectedBSInventory(View):
         # result dictionary (contains ptp and ptp bh inventory)
         result = dict()
 
+        # base station device name
+        bs_device_name = ""
+        try:
+            bs_device_name = sector.sector_configured_on.device_name
+        except Exception as e:
+            logger.info("PMP BS Device not exist. Exception: ", e.message)
+
+        # base station machine
+        bs_machine_name = ""
+        try:
+            bs_machine_name = sector.sector_configured_on.machine.name
+        except Exception as e:
+            logger.info("PMP BS Machine not found.  Exception: ", e.message)
+
         # pmp bs rows list
         pmp_bs_rows = list()
 
@@ -4093,6 +4107,20 @@ class DownloadSelectedBSInventory(View):
             for circuit in circuits:
                 # sub station
                 sub_station = circuit.sub_station
+
+                # sub station device name
+                ss_device_name = ""
+                try:
+                    ss_device_name = sub_station.device.device_name
+                except Exception as e:
+                    logger.info("PMP SS device not found. Exception: ", e.message)
+
+                # sub station machine
+                ss_machine_name = ""
+                try:
+                    ss_machine_name = sub_station.device.machine.name
+                except Exception as e:
+                    logger.info("PMP SS machine not found. Exception: ", e.message)
 
                 # backhaul
                 backhaul = base_station.backhaul
@@ -4136,7 +4164,8 @@ class DownloadSelectedBSInventory(View):
                 try:
                     pmp_bs_row['Type Of BS (Technology)'] = base_station.bs_type
                 except Exception as e:
-                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, e.message))
+                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, 
+                                                                                                  e.message))
 
                 # site type
                 try:
@@ -4215,7 +4244,8 @@ class DownloadSelectedBSInventory(View):
                 try:
                     pmp_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
                 except Exception as e:
-                    logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name, e.message))
+                    logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name, 
+                                                                                            e.message))
 
                 # azimuth
                 try:
@@ -4227,7 +4257,8 @@ class DownloadSelectedBSInventory(View):
                 try:
                     pmp_bs_row['Sync Splitter Used'] = sector.antenna.sync_splitter_used
                 except Exception as e:
-                    logger.info("Sync Splitter Used not exist for base station ({}).".format(base_station.name, e.message))
+                    logger.info("Sync Splitter Used not exist for base station ({}).".format(base_station.name, 
+                                                                                             e.message))
 
                 # type of gps
                 try:
@@ -4342,6 +4373,63 @@ class DownloadSelectedBSInventory(View):
                     pmp_bs_row['Sector ID'] = sector.sector_id
                 except Exception as e:
                     logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # ************************************* BS Perf Parameters **********************************
+                # frequency
+                try:
+                    pmp_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                             data_source='frequency').using(
+                                                                             alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
+
+                # cell radius
+                try:
+                    pmp_bs_row['Cell Radius'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                               data_source='cell_radius').using(
+                                                                               alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Cell Radius not exist for base station ({}).".format(base_station.name, e.message))
+
+                # dl utilization
+                try:
+                    pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                                data_source='dl_utilization').using(
+                                                                                alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Utilization DL not exist for base station ({}).".format(base_station.name, e.message))
+
+                # ul utilization
+                try:
+                    pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                                data_source='ul_utilization').using(
+                                                                                alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Utilization UL not exist for base station ({}).".format(base_station.name, e.message))
+
+                # uptime
+                try:
+                    pmp_bs_row['Sector Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                               data_source='uptime').using(
+                                                                               alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Sector Uptime not exist for base station ({}).".format(base_station.name, e.message))
+
+                # transmit power
+                try:
+                    pmp_bs_row['TX Power'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                            data_source='transmit_power').using(
+                                                                            alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("TX Power not exist for base station ({}).".format(base_station.name, e.message))
+
+                # frequency
+                try:
+                    pmp_bs_row['RX Power'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                            data_source='commanded_rx_power').using(
+                                                                            alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("RX Power not exist for base station ({}).".format(base_station.name, e.message))
 
                 # ********************************** Far End (PMP SM) ********************************
 
@@ -4467,6 +4555,159 @@ class DownloadSelectedBSInventory(View):
                 except Exception as e:
                     logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
                                                                                              e.message))
+
+                # ************************************* SS Perf Parameters **********************************
+                # frequency
+                try:
+                    pmp_sm_row['Frequency'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                             data_source='frequency').using(
+                                                                             alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # dl rssi
+                try:
+                    pmp_sm_row['RSSI DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                         data_source='dl_rssi').using(
+                                                                         alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ul rssi
+                try:
+                    pmp_sm_row['RSSI UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                         data_source='ul_rssi').using(
+                                                                         alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # dl jitter
+                try:
+                    pmp_sm_row['Jitter DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='dl_jitter').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Jitter DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ul jitter
+                try:
+                    pmp_sm_row['Jitter UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='ul_jitter').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Jitter UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # transmit power
+                try:
+                    pmp_sm_row['Transmit Power'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                  data_source='transmit_power').using(
+                                                                                  alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Transmit Power not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # polles ss ip
+                try:
+                    pmp_sm_row['Polled SS IP'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='ss_ip').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # polled ss mac
+                try:
+                    pmp_sm_row['Polled SS MAC'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                 data_source='ss_mac').using(
+                                                                                 alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # polled bs ip
+                try:
+                    pmp_sm_row['Polled BS IP'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='bs_ip').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Polled BS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # polles bs mac
+                try:
+                    pmp_sm_row['Polled BS MAC'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                             data_source='ss_connected_bs_mac').using(
+                                                                             alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Polled BS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # uptime
+                try:
+                    pmp_sm_row['Session Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='uptime').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # latency
+                try:
+                    pmp_sm_row['Latency'] = NetworkStatus.objects.filter(device_name=ss_device_name,
+                                                                         data_source='rta').using(
+                                                                         alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # pl
+                try:
+                    pmp_sm_row['PD'] = NetworkStatus.objects.filter(device_name=ss_device_name,
+                                                                    data_source='pl').using(
+                                                                    alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # dl utilization
+                try:
+                    pmp_sm_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='dl_utilization').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ul utilization
+                try:
+                    pmp_sm_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='ul_utilization').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # auto negotiation
+                try:
+                    pmp_sm_row['Auto Negotiation'] = Status.objects.filter(device_name=ss_device_name,
+                                                                           data_source='autonegotiation').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # duplex
+                try:
+                    pmp_sm_row['Duplex'] = Status.objects.filter(device_name=ss_device_name,
+                                                                 data_source='duplex').using(
+                                                                 alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # speed
+                try:
+                    pmp_sm_row['Speed'] = Status.objects.filter(device_name=ss_device_name,
+                                                                data_source='ss_speed').using(
+                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # link state
+                try:
+                    pmp_sm_row['Link'] = Status.objects.filter(device_name=ss_device_name,
+                                                               data_source='link_state').using(
+                                                               alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # append 'pmp_bs_row' dictionary in 'pmp_bs_rows'
                 pmp_bs_rows.append(pmp_bs_row)
@@ -4798,11 +5039,11 @@ class DownloadSelectedBSInventory(View):
                     if sector.name.split("_")[-1] == '1':
                         wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                         data_source='wimax_pmp1_utilization ').using(
-                                                                        alias=bs_machine_name)
+                                                                        alias=bs_machine_name)[0].current_value
                     elif sector.name.split("_")[-1] == '2':
                         wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                         data_source='wimax_pmp2_utilization ').using(
-                                                                        alias=bs_machine_name)
+                                                                        alias=bs_machine_name)[0].current_value
                     else:
                         pass
                 except Exception as e:
@@ -4813,7 +5054,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
                                                                                data_source='frequency').using(
-                                                                               alias=bs_machine_name)
+                                                                               alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -4823,11 +5064,11 @@ class DownloadSelectedBSInventory(View):
                     if sector.name.split("_")[-1] == '1':
                         wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
                                                                              data_source='pmp1_mrc ').using(
-                                                                             alias=bs_machine_name)
+                                                                             alias=bs_machine_name)[0].current_value
                     elif sector.name.split("_")[-1] == '2':
                         wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
                                                                              data_source='pmp2_mrc ').using(
-                                                                             alias=bs_machine_name)
+                                                                             alias=bs_machine_name)[0].current_value
                     else:
                         pass
                 except Exception as e:
@@ -4837,7 +5078,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_bs_row['IDU Type'] = InventoryStatus.objects.filter(device_name=bs_device_name,
                                                                               data_source='idu_type').using(
-                                                                              alias=bs_machine_name)
+                                                                              alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("IDU Type not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -4845,7 +5086,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_bs_row['System Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
                                                                                  data_source='bs_uptime').using(
-                                                                                 alias=bs_machine_name)
+                                                                                 alias=bs_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("System Uptime not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -4979,7 +5220,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Frequency'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                              data_source='frequency').using(
-                                                                             alias=ss_machine_name)
+                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
                     
@@ -4989,11 +5230,11 @@ class DownloadSelectedBSInventory(View):
                     if sector.name.split("_")[-1] == '1':
                         wimax_ss_row['Sector ID'] = InventoryStatus.objects.filter(device_name=ss_device_name,
                                                                         data_source='sector_id_pmp1').using(
-                                                                        alias=ss_machine_name)
+                                                                        alias=ss_machine_name)[0].current_value
                     elif sector.name.split("_")[-1] == '2':
                         wimax_ss_row['Sector ID'] = InventoryStatus.objects.filter(device_name=ss_device_name,
                                                                         data_source='sector_id_pmp2').using(
-                                                                        alias=ss_machine_name)
+                                                                        alias=ss_machine_name)[0].current_value
                     else:
                         pass
                 except Exception as e:
@@ -5003,7 +5244,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Polled SS IP'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                                 data_source=' ss_ip').using(
-                                                                                alias=ss_machine_name)
+                                                                                alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
                     
@@ -5011,7 +5252,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Polled SS MAC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                              data_source='ss_mac').using(
-                                                                             alias=ss_machine_name)
+                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5019,7 +5260,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['RSSI DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                            data_source='dl_rssi').using(
-                                                                           alias=ss_machine_name)
+                                                                           alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5027,7 +5268,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['RSSI UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                            data_source='ul_rssi').using(
-                                                                           alias=ss_machine_name)
+                                                                           alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5035,7 +5276,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['CINR DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                            data_source='dl_cinr').using(
-                                                                           alias=ss_machine_name)
+                                                                           alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("CINR DL not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5043,7 +5284,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['CINR UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                            data_source='ul_cinr').using(
-                                                                           alias=ss_machine_name)
+                                                                           alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("CINR UL not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5051,7 +5292,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['INTRF DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                             data_source='dl_intrf').using(
-                                                                            alias=ss_machine_name)
+                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("INTRF DL not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5059,7 +5300,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['INTRF UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                             data_source='ul_intrf').using(
-                                                                            alias=ss_machine_name)
+                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("INTRF UL not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5067,23 +5308,23 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['PTX'] = InventoryStatus.objects.filter(device_name=ss_device_name,
                                                                          data_source='ss_ptx').using(
-                                                                         alias=ss_machine_name)
+                                                                         alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("PTX not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # session uptime
                 try:
                     wimax_ss_row['Session Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                                  data_source='session_uptime').using(
-                                                                                  alias=ss_machine_name)
+                                                                              data_source='session_uptime').using(
+                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
 
                 # device uptime
                 try:
                     wimax_ss_row['Device Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                                  data_source='uptime').using(
-                                                                                  alias=ss_machine_name)
+                                                                              data_source='uptime').using(
+                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Device Uptime  not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5091,7 +5332,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Modulation DL FEC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                             data_source='modulation_dl_fec').using(
-                                                                            alias=ss_machine_name)
+                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Modulation DL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5099,7 +5340,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Modulation UL FEC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                             data_source='modulation_ul_fec').using(
-                                                                            alias=ss_machine_name)
+                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Modulation UL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5107,7 +5348,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Latency'] = NetworkStatus.objects.filter(device_name=ss_device_name,
                                                                            data_source='rta').using(
-                                                                           alias=ss_machine_name)
+                                                                           alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5115,7 +5356,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['PD'] = NetworkStatus.objects.filter(device_name=ss_device_name,
                                                                       data_source='pl').using(
-                                                                      alias=ss_machine_name)
+                                                                      alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5123,7 +5364,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                             data_source='dl_utilization').using(
-                                                                            alias=ss_machine_name)
+                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5131,7 +5372,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
                                                                             data_source='ul_utilization').using(
-                                                                            alias=ss_machine_name)
+                                                                            alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5139,7 +5380,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Auto Negotiation'] = Status.objects.filter(device_name=ss_device_name,
                                                                              data_source='autonegotiation').using(
-                                                                             alias=ss_machine_name)
+                                                                             alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5147,7 +5388,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Duplex'] = Status.objects.filter(device_name=ss_device_name,
                                                                    data_source='duplex').using(
-                                                                   alias=ss_machine_name)
+                                                                   alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5155,7 +5396,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Speed'] = Status.objects.filter(device_name=ss_device_name,
                                                                    data_source='ss_speed').using(
-                                                                   alias=ss_machine_name)
+                                                                   alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -5163,7 +5404,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_ss_row['Link'] = Status.objects.filter(device_name=ss_device_name,
                                                                  data_source='link_state').using(
-                                                                 alias=ss_machine_name)
+                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
 
