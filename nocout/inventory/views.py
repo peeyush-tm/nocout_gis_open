@@ -5163,7 +5163,7 @@ class DownloadSelectedBSInventory(View):
 
                 # mac address
                 try:
-                    wimax_ss_row['MAC'] = State.objects.get(pk=base_station.state).state_name
+                    wimax_ss_row['MAC'] = sub_station.device.mac_address
                 except Exception as e:
                     logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
 
