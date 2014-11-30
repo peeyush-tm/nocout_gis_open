@@ -609,10 +609,6 @@ function devicePlottingClass_gmap() {
 		            				currentlyPlottedDevices = [];
 	            				}
 
-	            				console.log(data_to_plot.length);
-
-	            				console.log(currentlyPlottedDevices.length);
-
 		            			main_devices_data_gmaps = data_to_plot;
 		            			if(currentlyPlottedDevices.length === 0) {
 				            		/*Clear all everything from map*/
@@ -645,8 +641,6 @@ function devicePlottingClass_gmap() {
 	            					// Update currently plotted devices global array.
 		            				currentlyPlottedDevices = currentlyPlottedDevices.concat(inBoundData);
 		            			}
-
-		            			console.log(inBoundData.length);
 
 		            			// Call function to plot devices on gmap
 								gmap_self.plotDevices_gmap(inBoundData,"base_station");
@@ -2728,7 +2722,7 @@ function devicePlottingClass_gmap() {
 			deviceInfo 		 : sectorInfo.device_info,
 			startLat 	     : startLat,
 			startLon 	     : startLon,
-			filter_data 	 : {"bs_name" : sectorInfo.bs_name, "sector_name" : sectorInfo.sector_name},
+			filter_data 	 : {"bs_name" : sectorInfo.bs_name, "sector_name" : sectorInfo.sector_name, "sector_id" : sectorInfo.sector_id},
 			bhInfo 			 : [],
 			child_ss 	     : sector_child,
 			polarisation 	 : polarisation,
@@ -4150,7 +4144,7 @@ function devicePlottingClass_gmap() {
         	query: function (query) {
         		var bs_name_array = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var searchPattern = new RegExp('^' + query.term, 'i');
+        			var searchPattern = new RegExp('^' + query.term, 'i')
         			if(searchPattern.test(obj.alias)) {
         				return true;
         			} else {
@@ -5033,17 +5027,19 @@ function devicePlottingClass_gmap() {
 								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
 								if(point) {
 									if(google.maps.geometry.poly.containsLocation(point, polygon)) {
-										if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-											if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
-												if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
-													allSSIds.push(allSS[k].device_name);
-													polygonSelectedDevices.push(allSS[k]);
-												}
-											} else {
-												if(allSS[k].pointType == 'sub_station') {
+										if(allSS[k].technology) {
+											if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
+												if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
 													if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
 														allSSIds.push(allSS[k].device_name);
 														polygonSelectedDevices.push(allSS[k]);
+													}
+												} else {
+													if(allSS[k].pointType == 'sub_station') {
+														if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+															allSSIds.push(allSS[k].device_name);
+															polygonSelectedDevices.push(allSS[k]);
+														}
 													}
 												}
 											}
