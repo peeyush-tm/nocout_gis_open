@@ -50,10 +50,7 @@ function GisPerformance() {
             var gisPerformance_this = this;
 
             //Reset Variable
-            gisPerformance_this.resetVariable();
-
-            // var uncommon_bs_list = perf_self.get_intersection_bs(current_bs_list,bs_list);
-
+            gisPerformance_this.resetVariable()
             this.bsNamesList = bs_list;
             //Store Length of Total BS
             this.bsLength = this.bsNamesList.length;
@@ -66,7 +63,6 @@ function GisPerformance() {
         } else {
             clearTimeout(recallPerf);
             recallPerf = "";
-            current_bs_list = [];
         }
     }
 
@@ -102,7 +98,7 @@ function GisPerformance() {
      This function sends Request based on the counter value.
      */
     this.sendRequest = function (counter) {
-        // if (($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0  && isPerfCallStopped == 0) {
+        // +($.cookie('isFreezeSelected')) == 0 || +($.cookie('freezedAt')) > 0
         if (isPollingActive == 0  && isPerfCallStopped == 0) {
             var gisPerformance_this = this;
             if(this.bsNamesList[counter]) {
@@ -126,8 +122,6 @@ function GisPerformance() {
                     }
                 }, 60000);
             }
-            //Call waitAndSend function with BS Json Data and counter value
-            // gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
         } else {
             clearTimeout(recallPerf);
             recallPerf = "";
@@ -167,21 +161,20 @@ function GisPerformance() {
                     }
                 }
 
-                //After 1 seconds timeout
-                recallPerf = setTimeout(function () {
-                    //Send Request for the next counter
-                    gisPerformance_this.sendRequest(counter);
-                }, 1000);
-
             },
             //On Error, do nothing
             error: function (err) {
-                setTimeout(function () {
-                    //Start Performance Again
-                    if (this.bsNamesList && this.bsNamesList.length > 0) {
-                        gisPerformance_this.start(this.bsNamesList);
-                    }
-                }, 60000);
+
+                // setTimeout(function () {
+                //     //Start Performance Again
+                //     if (this.bsNamesList && this.bsNamesList.length > 0) {
+                //         gisPerformance_this.start(this.bsNamesList);
+                //     }
+                // }, 60000);
+            },
+            complete : function() {
+                //Send Request for the next counter
+                gisPerformance_this.sendRequest(counter);
             }
         });
     }
@@ -1059,7 +1052,7 @@ function GisPerformance() {
                     if(window.location.pathname.indexOf("googleEarth") > -1) {
                         ss_marker_obj.perf_val = perf_val;
                         //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
-                        // console.log(perf_val);
+
                     } else {
                         if(perf_val && $.trim(perf_val)) {
                             var perf_infobox = new InfoBox({
