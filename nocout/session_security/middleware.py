@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from django import http
 from django.contrib.auth import logout
 from django.core.urlresolvers import reverse
+from django.utils import timezone
 
 from .utils import get_last_activity, set_last_activity
 from .settings import EXPIRE_AFTER, PASSIVE_URLS
@@ -37,6 +38,14 @@ class SessionSecurityMiddleware(object):
         if hasattr(request.user, 'visitor'):
             key_from_cookie = request.session.session_key
             session_key_in_visitor_db = request.user.visitor.session_key
+
+            already_logged = request.user.userprofile.password_changed_at
+            password_expire = True
+            if already_logged:
+                password_expire = already_logged + timedelta(days=30) < timezone.now()
+
+            if request.path != '/user/change_password/' and (not already_logged or password_expire):
+                logout(request)
 
             if session_key_in_visitor_db != key_from_cookie and request.path != '/sm/dialog_action/':
                 logout(request)
