@@ -100,11 +100,12 @@
         // if service is already selected
         if ($("#id_service").find("option:selected").val()){
             var service = $("form").find(".row").find("#id_service")
-            service.each(function() {
+            service.each(function(index) {
               var service_id = $(this).find("option:selected").val()
               var parameter = $(this).parent(".row .inline").find("#id_parameter")
               var row_inline = $(this).parent(".row .inline")
-              var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
+              // var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
+              var service_counter = index + 1
               get_attribute_of_service(service_id, parameter, row_inline, service_counter)
             });
         }
