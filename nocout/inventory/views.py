@@ -6240,7 +6240,7 @@ class GisWizardSectorMixin(object):
     customer_form_class = WizardCustomerForm
     circuit_form_class = WizardCircuitForm
     template_name = 'gis_wizard/sector.html'
-    success_url = reverse_lazy('gis-wizard-list')
+    success_url = reverse_lazy('gis-wizard-base-station-list')
 
     def get_success_url(self):
         technology_id = self.kwargs['selected_technology']
@@ -6296,7 +6296,7 @@ class GisWizardSectorMixin(object):
                         context['customer_form'] = self.customer_form_class(**form_kwargs)
 
         ## Create Skip URL and Delete & Show URL
-        skip_url = reverse('gis-wizard-list')
+        skip_url = reverse('gis-wizard-base-station-list')
         if self.object and self.object.base_station == base_station:
             context['base_station_has_sector'] = True
             context['delete_url'] = reverse('gis-wizard-sector-delete', kwargs={'bs_pk': base_station.id, 'pk': self.object.id})
@@ -6584,7 +6584,7 @@ class GisWizardSubStationMixin(object):
     customer_form_class = WizardCustomerForm
     circuit_form_class = WizardCircuitForm
     template_name = 'gis_wizard/sub_station.html'
-    success_url = reverse_lazy('gis-wizard-list')
+    success_url = reverse_lazy('gis-wizard-base-station-list')
 
     def get_success_url(self):
         if self.request.GET.get('show', None):
@@ -6740,3 +6740,100 @@ class GisWizardSubStationCreateView(GisWizardSubStationMixin, SubStationCreate):
 
 class GisWizardSubStationUpdateView(GisWizardSubStationMixin, SubStationUpdate):
     pass
+
+#************************************** Gis Wizard Start With PTP ****************************
+
+class GisWizardPTPListView(SectorList):
+    template_name = 'gis_wizard/wizard_list_ptp.html'
+
+
+class GisWizardPTPListingTable(SectorListingTable):
+
+    def get_initial_queryset(self):
+        qs=super(GisWizardPTPListingTable, self).get_initial_queryset()
+        qs = qs.filter(bs_technology__name='p2p')
+        return qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'sector_configured_on__id' in dct:
+                    sector_device_alias = Device.objects.get(id=dct['sector_configured_on__id']).device_alias
+                    sector_device_ip = Device.objects.get(id=dct['sector_configured_on__id']).ip_address
+                    dct['sector_configured_on__id'] = "{} ({})".format(sector_device_alias, sector_device_ip)
+            except Exception as e:
+                logger.info("Sector Configured On not present. Exception: ", e.message)
+
+            device_id = dct.pop('id')
+            sector = Sector.objects.get(id=device_id)
+            print sector.bs_technology.id
+            print sector.base_station.id
+            if self.request.user.has_perm('inventory.change_sector'):
+                edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sector.base_station.id, sector.bs_technology.id , device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_sector'):
+                delete_action = ''#'<a href="/sector/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
+        return json_data
+
+
+class GisWizardSubStationListView(SubStationList):
+
+    template_name = 'gis_wizard/wizard_list_sub-station.html'
+
+
+class GisWizardSubStationListingTable(SubStationListingTable):
+
+    def get_initial_queryset(self):
+
+        qs = super(GisWizardSubStationListingTable, self).get_initial_queryset()
+        qs = qs.filter(device__device_technology__in=[3,4])
+        return qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device__id' in dct:
+                    ss_device_alias = Device.objects.get(id=dct['device__id']).device_alias
+                    ss_device_ip = Device.objects.get(id=dct['device__id']).ip_address
+                    dct['device__id'] = "{} ({})".format(ss_device_alias, ss_device_ip)
+            except Exception as e:
+                logger.info("Sub Station Device not present. Exception: ", e.message)
+
+            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
+            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            device_id = dct.pop('id')
+            sub_station = SubStation.objects.get(id=device_id)
+            if self.request.user.has_perm('inventory.change_substation') and len(sub_station.circuit_set.all())==1:
+                edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sub_station.circuit_set.all()[0].sector.base_station.id, sub_station.circuit_set.all()[0].sector.bs_technology.id, sub_station.circuit_set.all()[0].sector.id, device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_substation'):
+                delete_action = '<a href="/sub_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
+        return json_data
+
