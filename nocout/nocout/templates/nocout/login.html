@@ -32,6 +32,20 @@
     <![endif]-->
 </head>
 
+<style type="text/css">
+iframe {
+    position:absolute;
+    top:10px;
+    right:10px;
+    overflow: auto;
+    padding:0px;
+    height:100%;
+    max-height: 550px;
+    overflow:auto;
+    z-index:100;
+    border: 0px none;
+}
+</style>
 
 <body class="login">
 <!-- session_security -->
@@ -123,6 +137,7 @@
         $.cookie("tools_ruler", 0, {path: '/', secure : true});
         $.cookie("tools_line", 0, {path: '/', secure : true});
         $.cookie("isLabelChecked", true, {path: '/', secure : true});
+        $.cookie("tooltipLabel", "", {path: '/', secure: true});
         /*Cookie for collapsed menu*/
         $.cookie("isMenuOpen", 1, {path: '/', secure : true});
       });

@@ -1,8 +1,9 @@
 """
-inventory_mongo_migration.py
+inventory_mongo_aggregation_daily.py
+====================================
 
-File contains the data migrations of mongodb to mysql db for inventory services. Inventory services run once a day.
-
+Script to import the data from live mongodb `nocout_inventory_service_perf` collection to 
+historical mysqldb `performance_performanceinventorydaily` table, direcly
 """
 
 from nocout_site_name import *

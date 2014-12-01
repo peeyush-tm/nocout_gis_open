@@ -217,7 +217,7 @@ class PerformanceDashboardMixin(object):
         return HttpResponse(json.dumps(response_dict))
 
 
-class WiMAX_Performance_Dashboard(View):
+class WiMAX_Performance_Dashboard(PerformanceDashboardMixin, View):
     """
     The Class based View to get performance dashboard page requested.
 

@@ -4,7 +4,6 @@ mongo_aggregation_freq_based_base.py
 
 Usage ::
 python mongo_aggregation_freq_based_base.py -t 24 -f daily -s status_perf -d interface_perf_daily
-python mongo_aggregation_freq_based_base.py -t 168 -f weekly -s nocout_inventory_service_perf_data -d inventory_perf_weekly
 Options ::
 t - Time frame to read data from source db [Hours]
 """
@@ -138,7 +137,7 @@ def quantify_data_based_on_freq(docs):
 		value_frequencies.append(existing_doc[0].get('max'))
 		value_frequencies.append(existing_doc[0].get('min'))
 		# First remove the existing entry from aggregated_data_values
-		aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.keys())), aggregated_data_values)
+		aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
 	# Count the highest and lowest frequency values
 	# Use defaultdict in place of Counter [for python < 2.7]
 	occur = defaultdict(int)
@@ -173,11 +172,8 @@ def insert_aggregated_data(docs):
 			db_name=mongo_configs.get('db_name')
 			)
 	if db:
-		#if hist_perf_table == 'interface_perf_daily':
-		#	db.interface_perf_daily.update(find_query, doc,upsert=True)
-		#elif hist_perf_table == 'inventory_perf_weekly':
-		#	db.inventory_perf_weekly.update(find_query, doc,upsert=True)
-		db[hist_perf_table].insert(docs)
+		if len(docs):
+			db[hist_perf_table].insert(docs)
 
 def find_existing_entry(find_query):
 	"""
@@ -185,21 +181,7 @@ def find_existing_entry(find_query):
 	"""
 
 	docs = []
-        # Mongodb connection object
-       	#db = mongo_module.mongo_conn(
-	#	host=mongo_configs.get('host'),
-	#		port=mongo_configs.get('port'),
-	#		db_name=mongo_configs.get('db_name')
-	#		)
-	#if db:
-	#	#if hist_perf_table == 'interface_perf_daily':
-	#	#	cur = db.interface_perf_daily.find(find_query)
-	#	#elif hist_perf_table == 'inventory_perf_weekly':
-	#	#	cur = db.inventory_perf_weekly.find(find_query)
-	#	cur = db[hist_perf_table].find(find_query)
-	#for doc in cur:
-	#	docs.append(doc)
-	docs = filter(lambda d: set(find_query.values()) <= set(d.keys()), aggregated_data_values)
+	docs = filter(lambda d: set(find_query.values()) <= set(d.values()), aggregated_data_values)
 
 	return docs
 

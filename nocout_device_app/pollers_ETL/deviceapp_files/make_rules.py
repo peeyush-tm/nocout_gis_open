@@ -1,5 +1,8 @@
 from mysql_connection import mysql_conn, dict_rows
-from pprint import pprint, pformat
+from pprint import pformat
+from nocout_logger import nocout_log
+
+logger = nocout_log()
 
 db = mysql_conn()
 
@@ -54,6 +57,8 @@ extra_service_conf['normal_check_interval'] = [
 wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
 
 def main():
+    global default_snmp_ports
+    global default_snmp_communities
     get_settings()
 
     #pprint(ping_levels_db)
@@ -90,60 +95,67 @@ def main():
 
 def prepare_query():
     query = """
-    select 
-	devicetype.name as devicetype,
-	service.name as service,
-	datasource.name as datasource,
-	datasource.warning as warning, 
-	datasource.critical as critical, 
-	params.normal_check_interval as check_interval, 
-	params.retry_check_interval as retry_check_interval, 
-	params.max_check_attempts as max_check_attempts,
-	devicetype.agent_tag as agent_tag,
-	devicetype.normal_check_interval as ping_interval,
-	devicetype.packets as ping_packets,
-	devicetype.pl_critical as ping_pl_critical,
-	devicetype.pl_warning as ping_pl_warning,
-	devicetype.rta_critical as ping_rta_critical,
-	devicetype.rta_warning as ping_rta_warning,
-	devicetype.timeout as ping_timeout,
+    select
+    devicetype.name as devicetype,
+    service.name as service,
+    datasource.name as datasource,
+    svcds.warning as service_warning,
+    svcds.critical as service_critical,
+    datasource.warning as warning,
+    datasource.critical as critical,
+    params.normal_check_interval as check_interval,
+    params.retry_check_interval as retry_check_interval,
+    params.max_check_attempts as max_check_attempts,
+    devicetype.agent_tag as agent_tag,
+    devicetype.normal_check_interval as ping_interval,
+    devicetype.packets as ping_packets,
+    devicetype.pl_critical as ping_pl_critical,
+    devicetype.pl_warning as ping_pl_warning,
+    devicetype.rta_critical as ping_rta_critical,
+    devicetype.rta_warning as ping_rta_warning,
+    devicetype.timeout as ping_timeout,
         protocol.port as port,
         protocol.version as version,
         protocol.read_community as community
-	from device_devicetype as devicetype
-	left join (
-		service_service as service,
-		service_service_service_data_sources as svcds,
-		service_servicedatasource as datasource,
-		service_serviceparameters as params,
-                service_protocol as protocol,
-		device_devicetype_service as devicetypesvc
-	)
-	on (
-		svcds.service_id = service.id
-                and
-                protocol.id = params.protocol_id
-		and
-		svcds.servicedatasource_id = datasource.id
-		and
-		params.id = service.parameters_id
-		and
-		devicetypesvc.service_id = service.id
-		and
-		devicetype.id = devicetypesvc.devicetype_id
-	)
-where devicetype.name <> 'Default'
+    from device_devicetype as devicetype
+    left join (
+        service_service as service,
+        service_servicespecificdatasource as svcds,
+        service_servicedatasource as datasource,
+        service_serviceparameters as params,
+        service_protocol as protocol,
+        device_devicetype_service as devicetypesvc
+    )
+    on (
+        svcds.service_id = service.id
+        and
+        protocol.id = params.protocol_id
+        and
+        svcds.service_data_sources_id = datasource.id
+        and
+        params.id = service.parameters_id
+        and
+        devicetypesvc.service_id = service.id
+        and
+        devicetype.id = devicetypesvc.devicetype_id
+    )
+    where devicetype.name <> 'Default'
     """
     return query
 
 def get_settings():
     global default_checks
+    data = []
     default_checks = prepare_priority_checks()
     query = prepare_query()
-    cur = db.cursor()
-    cur.execute(query)
-    data = dict_rows(cur)
-    cur.close()
+    try:
+	    cur = db.cursor()
+	    cur.execute(query)
+	    data = dict_rows(cur)
+	    #logger.debug('data in get_settings: ' + pformat(data))
+	    cur.close()
+    except Exception, exp:
+	    logger.error('Exception in get_settings: ' + pformat(exp))
     processed = []
     for service in data:
         """from pprint import pprint
@@ -172,7 +184,10 @@ def get_settings():
             ping_levels_db.append(ping_config)
             processed.append(service['devicetype'])
         if service['service']:        
-            threshold = get_threshold(service)
+	    try:
+		    threshold = get_threshold(service)
+	    except Exception, exp:
+		    logger.error('Exception in get_threshold: ' + pformat(exp))
             service_config = [service['devicetype']], ['@all'], service['service'], None, threshold
             default_checks.append(service_config)
             if service['port'] and service['community']:
@@ -187,28 +202,33 @@ def get_settings():
 
 def get_threshold(service):
     result = ()
-    if not len(service['warning']) or not len(service['critical']):
-        pass
-    else:
-        try:
-	    if service.get('service') in wimax_mod_services:
-		    result = (map(str, service['warning'].replace(' ', '').split(',')), map(str, service['critical'].replace(' ', '').split(',')))
-	    else:
-		    result = (int(service['warning']), int(service['critical']))
-        except:
-            result = (service['warning'], service['critical'])
+    try:
+	    if service.get('service_warning') or service.get('service_critical'):
+		result = (float(service['service_warning']), float('service_critical'))
+	    elif service.get('warning') or service.get('critical'):
+		    if service.get('service') in wimax_mod_services:
+			    result = (map(lambda x: x.strip(), service['warning'].split(',')), (map(lambda x: x.strip(), service['critical'].split(','))))
+		    else:
+			    result = (int(service['warning']), int(service['critical']))
+    except Exception:
+	    pass
+
     return result
 
 
 def prepare_priority_checks():
+        global db
+	data_values = []
 	query = """
 	SELECT DISTINCT service_name, device_name, warning, critical
 	FROM service_deviceserviceconfiguration
 	"""
-
-	cur = db.cursor()
-	cur.execute(query)
-	data_values = dict_rows(cur)
+        try:
+		cur = db.cursor()
+		cur.execute(query)
+	        data_values = dict_rows(cur)
+	except Exception, exp:
+		logger.error('Exception in priority_checks: ' + pformat(exp)) 
 	data_values = filter(lambda d: d['warning'] or d['critical'], data_values)
 	processed_values = []
 	for entry in data_values:

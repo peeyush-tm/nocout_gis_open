@@ -21,41 +21,58 @@
     <span class="date-range pull-right">
         <div class="btn-group">
             <ul class="list-unstyled list-inline gis_page_setting">
-                <li class="alert alert-block alert-info">
-                    <b>Status</b><br/> <ul id="gis_status_txt" class="list-unstyled "></ul>
-                </li>
-                <li><button type="button" id="advSearchBtn" class="btn btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
-                            data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
-                    <i class="fa fa-filter"></i>Advance Search
-                </button></li>
                 <li>
-                    <button type="button" id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();"
+                    <input type="radio" name="thematic_type" style="vertical-align:sub;" value="ping"> Ping Thematics
+                </li>
+                <li>
+                    <input type="radio" name="thematic_type" style="vertical-align:sub;" value="normal" checked=""> Service Thematics
+                </li>
+                <li>
+                    <button type="button" id="advSearchBtn" class="btn btn-sm btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
+                                data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
+                        <i class="fa fa-filter"></i>Advance Search
+                    </button>
+                    <button type="button" id="removeSearchBtn" class="btn btn-sm btn-danger hide" onclick="resetAdvanceSearch();"
+                            style="margin-left:10px;">
+                        <i class='fa fa-times'></i> Remove Search
+                    </button>
+                </li>
+                <li>
+                    <button type="button" id="advFilterBtn" class="btn btn-sm btn-info" onclick="showAdvFilters();"
                             data-complete-text="<i class='fa fa-filter'></i> Advance Filters"
                             data-loading-text="Please Wait...">
                         <i class='fa fa-filter'></i> Advance Filters
                     </button>
-                    <button type="button" id="removeFilterBtn" class="btn btn-danger hide" onclick="removeAdvFilters();"
-                            style="margin-left:10px;" title="Click to Advance Filter">
+                    <button type="button" id="removeFilterBtn" class="btn btn-sm btn-danger hide" onclick="removeAdvFilters();"
+                            style="margin-left:10px;" title="Click to Reset Advance Filter">
                         <i class='fa fa-times'></i> Remove Filters
                     </button>
                 </li>
                 <li>
-                    <button type="button" class="btn btn-info" id="createPolygonBtn"
-                            data-complete-text="<i class='fa fa-location-arrow'></i> Select Devices"
-                            data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Select Devices
+                    <button type="button" class="btn btn-sm btn-info" id="createPolygonBtn"
+                            data-complete-text="<i class='fa fa-location-arrow'></i> Live Poll"
+                            data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Live Poll
                     </button>
                     <button type="button" class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear
+                        Selection
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="btn btn-sm btn-info" id="export_data_gmap"
+                            data-complete-text="<i class='fa fa-download'></i> Export Devices"
+                            data-loading-text="Please Wait..."><i class='fa fa-download'></i> Export Devices</button>
+                    <button type="button" class="btn btn-xs btn-danger hide" id="clearExportDataBtn"><i class="fa fa-times"></i> Clear
                         Selection
                     </button>
                 </li>
                 {% for group in user.groups.all %}
                     {% if group.name == 'group_admin' or group.name == 'group_operator' %}
                         <li>
-                            <button type="button" id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
+                            <button type="button" id="showToolsBtn" class="btn btn-sm btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
                             data-loading-text="Please Wait...">
                                 <i class='fa fa-cog'></i> Show Tools
                             </button>
-                            <button type="button" id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();">
+                            <button type="button" id="removeToolsBtn" class="btn btn-sm btn-danger hide" onclick="removetoolsPanel();">
                                 <i class='fa fa-times'></i> Hide Tools
                             </button>
                         </li>
@@ -220,16 +237,17 @@
                         <li class="close_box"><i class="fa fa-times" id="close_points_icon"> </i> </li>
                     </ul>
                 </li>
-                <!-- <li>
-                    <button type="button" id="line_select" class="btn btn-sm btn-info">Select Line</button>
-                    <button type="button" id="line_remove" class="btn btn-sm btn-danger hide">Remove Line</button>
-                </li> -->
                 <li>
                     <button type="button" id="freeze_select" class="btn btn-sm btn-info">Freeze</button>
                     <button type="button" id="freeze_remove" class="btn btn-sm btn-danger hide">Un-Freeze</button>
                 </li>
                 <li>
-                    <button type="button" class="btn btn-sm btn-info" id="export_data_gmap">Export Data</button>
+                    <select name="static_label" id="static_label" class="form-control input-sm">
+                        <option value="">Select Label</option>
+                    </select>
+                </li>
+                <li>
+                    <button type="button" id="apply_label" class="btn btn-sm btn-success">Apply Label</button>
                 </li>
                 <li>
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked="checked" style="vertical-align: text-top;"> 
@@ -331,6 +349,31 @@
 
             <!--Info Window Content Container END-->
 
+            <!-- Export Data Content Start-->
+            <div id="exportDeviceContainerBlock" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:199;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#exportData_sideInfo">
+                                Selected Base-Stations
+                            </a>
+                        </h3>
+                        <a href="javascript:;" class="pull-right" id="download_inventory" title="Download Report" style="position: absolute;right: 10px;top: 10px;">
+                            <i class="fa fa-download"> </i> Download Report
+                        </a>
+                    </div>
+                    <div id="exportData_sideInfo" class="panel-collapse in">
+                        <div class="panel-body">
+                            <div class="bs_list">
+                            
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="divide-20"></div>
+            </div>
+            <!-- Export Data Content End-->
+
             <!--SideInfo Panel Start-->
             <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide" style="z-index:199;">
                 <div class="panel panel-default">
@@ -354,9 +397,45 @@
                                 <div class="divide-20 clearfix"></div>
                                 <div class="template_container"></div>
                                 <div class="divide-10"></div>
+                                <div id="timeInterval_container" class="hide">
+                                    <select name="poll_interval" id="poll_interval" class="form-control">
+                                        <option value="">Select Poll Interval</option>
+                                        <option value="10">10 Seconds</option>
+                                        <option value="20">20 Seconds</option>
+                                        <option value="30">30 Seconds</option>
+                                        <option value="60">60 Seconds</option>
+                                    </select>
+                                    <div class="divide-10"></div>
+                                    <select name="poll_maxInterval" id="poll_maxInterval" class="form-control">
+                                        <option value="">Select Maximum Interval</option>
+                                        <option value="1">1 Minute</option>
+                                        <option value="2">2 Minute</option>
+                                        <option value="3">3 Minute</option>
+                                        <option value="4">4 Minute</option>
+                                    </select>
+                                </div>
+                                <div class="divide-10"></div>
                                 <div class="">
-                                    <button type="button" class="btn btn-primary hide" data-complete-text="Poll Now" data-loading-text="Please Wait..." id="fetch_polling">Poll Now <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i></button>
+                                    <button type="button" class="btn btn-primary hide" data-complete-text="Fetch" data-loading-text="Please Wait... <i class='fa fa-spinner fa fa-spin'> </i>" id="fetch_polling" title="Fetch">
+                                        Fetch
+                                    </button>
+                                    <div class="pull-right">
+                                        <button class="btn btn-success play_pause_btns hide" data-complete-text="<i class='fa fa-play'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Play" id="play_btn">
+                                            <i class="fa fa-play"> </i>
+                                        </button>
+                                        <button class="btn btn-warning play_pause_btns hide" data-complete-text="<i class='fa fa-pause'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Pause" id="pause_btn">
+                                            <i class="fa fa-pause"> </i>
+                                        </button>
+                                        <button class="btn btn-danger play_pause_btns hide" data-complete-text="<i class='fa fa-stop'> </i>" data-loading-text="<i class='fa fa-spinner fa-spin'> </i>" title="Stop" id="stop_btn">
+                                            <i class="fa fa-stop"> </i>
+                                        </button>
+                                    </div>
+                                    <div class="clearfix"></div>
+                                </div>
+                                <div class="divide-20 clearfix"></div>
+                                <div>
                                     <button type="button" class="btn btn-primary pull-right hide" data-complete-text="Tabular View" data-loading-text="Please Wait..." id="polling_tabular_view"><i class="fa fa-table"></i> Tabular View</button>
+                                    <div class="clearfix"></div>
                                 </div>
                                 <div class="divide-20 clearfix"></div>
                                 <div id="navigation_container" class="hide">
@@ -369,7 +448,6 @@
                                 </div>
                                 <div class="clearfix"></div>
                                 <div class="devices_container"></div>
-
                             </div>
                         </div>
                     </div>

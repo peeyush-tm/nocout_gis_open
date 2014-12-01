@@ -853,25 +853,21 @@ function advanceSearchClass() {
 		}
 
         // Not to clear the html for gmap page
-        if(window.location.pathname.indexOf("white_background") > -1) {
-	        $("#advFilterFormContainer").html("");
-	    } else {
-	    	$("#filter_technology").select2("val","");
-	    	$("#filter_vendor").select2("val","");
-	    	$("#filter_state").select2("val","");
-	    	$("#filter_city").select2("val","");
-	    	$("#filter_frequency").select2("val","");
-	    	$("#filter_polarization").select2("val","");
-
-	    	// Reset Advance Filters Flag
-            isAdvanceFilter = 0;
-	    }
-
+    	$("#filter_technology").select2("val","");
+    	$("#filter_vendor").select2("val","");
+    	$("#filter_state").select2("val","");
+    	$("#filter_city").select2("val","");
+    	$("#filter_frequency").select2("val","");
+    	$("#filter_polarization").select2("val","");
+    	// Reset Advance Filters Flag
+        isAdvanceFilter = 0;
+        
 		/*Call the resetVariables function to reset all global variables*/
 		advSearch_self.resetVariables();
 
 		/*Click The Refresh Button*/
-		$("#resetFilters").click();
+		// $("#resetFilters").click();
+		networkMapInstance.updateStateCounter_gmaps();
 	};
 
 	/**

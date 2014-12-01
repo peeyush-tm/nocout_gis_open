@@ -1,11 +1,13 @@
 import json
-import os
+import os, datetime
 from django.http import HttpResponseRedirect, HttpResponse
 from operator import itemgetter
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 import logging
+from zipfile import ZipFile
+import glob
 from nocout.settings import MEDIA_ROOT, MEDIA_URL
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView, View
@@ -786,8 +788,19 @@ class KmzViewAction(View):
         page_type = self.kwargs['page_type']
         kmz_id = self.kwargs['kmz_id']
 
-        file_url = KMZReport.objects.filter(pk=kmz_id).values('filename')
-        context_data['file_url'] = file_url[0]['filename']
+        kmz_resultset = KMZReport.objects.filter(pk=kmz_id).values()
+        context_data['file_url'] = kmz_resultset[0]['filename']
+
+        # If page_type is other than google earth & file type is kmz then extract kmz file & pass kml file url
+        if page_type != 'google_earth':
+            if context_data['file_url'].find(".kmz") > -1 :
+                try:
+                    kmz_file = ZipFile(str(MEDIA_ROOT+"/"+context_data['file_url']))
+                    kml_file_instance = kmz_file.extractall(str(MEDIA_ROOT+"uploaded/kml/"+kmz_resultset[0]['name']+"/"))
+                    kml_file = glob.glob(str(MEDIA_ROOT+"uploaded/kml/"+kmz_resultset[0]['name']+"/*.kml"))[0]
+                    context_data['file_url'] = "uploaded/kml/"+kmz_resultset[0]['name']+"/"+kml_file[kml_file.rfind("/") + 1:len(kml_file)]
+                except Exception, e:
+                    logger.info(e.message)
 
         if page_type == 'white_background':
             template = 'devicevisualization/kmz_whitebg.html'
@@ -968,82 +981,6 @@ class PointListingTable(BaseDatatableView):
         return ret
 
 
-class DownloadSelectedBSInventory(View):
-    """ Download GIS Inventory excel sheet of selected Base Stations
-
-        :Parameters:
-            - 'base_stations' (str) - list of base stations in form of string i.e. [1, 2, 3, 4]
-
-        :Returns:
-           - 'file' (file) - inventory excel sheet
-    """
-    def get(self, request):
-        # get base stations id's list
-        bs_ids = eval(str(self.request.GET.get('base_stations', None)))
-
-        # list of ptp rows
-        ptp_rows_list = []
-
-        # list of ptp bh rows
-        ptp_bh_rows_list = []
-
-        # list of pmp bs
-        pmp_bs_rows_list = []
-
-        # list of pmp sm sheet
-        pmp_sm_rows_list = []
-
-        # list of wimax bs rows
-        wimax_bs_rows_list = []
-
-        # list of wimax ss rows
-        wimax_ss_rows_list = []
-
-        # headers for excel sheet
-        headers = ['City', ]
-
-        # ptp dictionary
-        ptp_fields = {'State', 'City', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
-                      'QOS (BW)', 'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height', 'Polarization',
-                      'Antenna Type', 'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
-                      'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance', 'Throughput During Acceptance',
-                      'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU Used', 'BS Switch IP', 'Aggregation Switch',
-                      'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP', 'Converter Type',
-                      'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet',
-                      'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'BSO CKT ID', 'SS City', 'SS State',
-                      'SS Circuit ID', 'SS Customer Name', 'SS Customer Address', 'SS BS Name', 'SS QOS (BW)',
-                      'SS Latitude', 'SS Longitude', 'SS Antenna Height', 'SS Antenna Type', 'SS Antenna Gain',
-                      'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
-                      'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
-                      'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC'}
-
-        # ptp bh dictionary
-        ptp_bh_fields = {'State', 'City', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
-                         'QOS (BW)', 'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height', 'Polarization',
-                         'Antenna Type', 'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
-                         'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance', 'Throughput During Acceptance',
-                         'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU Used', 'BS Switch IP', 'Aggregation Switch',
-                         'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP', 'Converter Type',
-                         'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet',
-                         'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'BSO CKT ID', 'SS City', 'SS State',
-                         'SS Circuit ID', 'SS Customer Name', 'SS Customer Address', 'SS BS Name', 'SS QOS (BW)',
-                         'SS Latitude', 'SS Longitude', 'SS Antenna Height', 'SS Antenna Type', 'SS Antenna Gain',
-                         'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
-                         'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
-                         'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC', 'SS MIMO/Diversity',
-                         'SS Polarization'}
-
-        # pmp bs dictionary
-        pmp_bs_fields = {'State', 'City', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
-                         'Infra Provider', 'Site ID', 'Building Height', 'Tower Height', 'Latitude', 'Longitude',
-                         'ODU IP', 'Sector Name', 'Make Of Antenna', 'Polarization', 'Antenna Tilt', 'Antenna Height',
-                         'Antenna Beamwidth', 'Azimuth', 'Sync Splitter Used', 'Type Of GPS', 'BS Switch IP',
-                         'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
-                         'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity',
-                         'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'DR Site',
-                         'Sector ID', 'BSO Circuit ID'}
-
-
 class GISPerfData(View):
     """ GIS Inventory performance data
 
@@ -1059,6 +996,7 @@ class GISPerfData(View):
                             {
                                 "bs_id": 3019,
                                 "bs_name": "dharma_height_jai_raj",
+                                "bs_alias": "Dharma Height",
                                 "message": "Successfully fetched performance data.",
                                 "param": {
                                     "sector": [
@@ -1308,6 +1246,7 @@ class GISPerfData(View):
                 try:
                     bs = BaseStation.objects.get(pk=bs_id)
                     bs_dict['bs_name'] = bs.name
+                    bs_dict['bs_alias'] = bs.alias
                     bs_dict['bs_id'] = bs_id
                     bs_dict['message'] = "Failed to fetch performance data."
                     bs_dict['param'] = dict()
@@ -1348,31 +1287,37 @@ class GISPerfData(View):
                         sector_dict['sub_station'] = list()
 
                         # get all substations associated with sector from 'Topology' model in performance
-                        topolopies_for_ss = Topology.objects.filter(sector_id=sector.id)
+                        # replaceing topology code
+                        # as the topology is auto-updated
+                        # using celery beat
+                        subs = SubStation.objects.filter(id__in=sector.circuit_set.values_list('sub_station', flat=True))
+                        # topolopies_for_ss = Topology.objects.filter(sector_id=sector.id)
 
                         # list of all associated substations ip's
-                        substations_ips_list = list()
-                        for topology in topolopies_for_ss:
-                            substations_ips_list.append(topology.connected_device_ip)
+                        # substations_ips_list = list()
+                        # for topology in topolopies_for_ss:
+                        #     substations_ips_list.append(topology.connected_device_ip)
 
                         # loop through all substations using ips in 'substations_ips_list'
-                        for ss_ip in substations_ips_list:
+                        for ss in subs:
                             # substation
-                            substation = ""
-                            try:
-                                substation = SubStation.objects.get(device__ip_address=ss_ip)
-                            except Exception as e:
-                                logger.info("Sub Station not exist. Exception: ", e.message)
+                            substation = None
+                            substation = ss
+                            # try:
+                            #     substation = SubStation.objects.get(device__ip_address=ss_ip)
+                            # except Exception as e:
+                            #     logger.info("Sub Station not exist. Exception: ", e.message)
 
                             # substation device
-                            substation_device = ""
+                            substation_device = None
                             try:
-                                substation_device = Device.objects.get(ip_address=ss_ip)
+                                substation_device = ss.device
+                                # Device.objects.get(ip_address=ss_ip)
                             except Exception as e:
                                 logger.info("Sub Station device not exist. Exception: ", e.message)
 
                             ss_dict = dict()
-                            if substation:
+                            if substation and substation_device:
                                 ss_dict['device_name'] = substation_device.device_name
                                 ss_dict['id'] = substation_device.id
                                 ss_dict['name'] = substation.name
@@ -1387,6 +1332,7 @@ class GISPerfData(View):
                     bs_dict['message'] = "Successfully fetched performance data."
                     performance_data.append(bs_dict)
         except Exception as e:
+            logger.info("Last Exception - ", e.message)
             performance_data = {'message': "No Base Station to fetch performance data."}
 
         return HttpResponse(json.dumps(eval(str(performance_data))))
@@ -1436,12 +1382,8 @@ class GISPerfData(View):
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
 
-        # current user
-        try:
-            current_user = UserProfile.objects.get(id=self.request.user.id)
-        except Exception as e:
-            current_user = ""
-            logger.info("User Profile not exist. Exception: ", e.message)
+        # type of thematic settings needs to be fetched
+        ts_type = self.request.GET.get('ts', 'normal')
 
         # device technology
         try:
@@ -1450,29 +1392,18 @@ class GISPerfData(View):
             device_technology = ""
             logger.info("Device technology not exist. Exception: ", e.message)
 
-        # fetch thematic settings for current user
-        try:
-            uts = UserThematicSettings.objects.get(user_profile=current_user,
-                                                   thematic_technology=device_technology)
-        except Exception as e:
-            uts = ""
-            logger.info("User thematic settings not exist. Exception: ", e.message)
+        # thematic settings for current user
+        user_thematics = self.get_thematic_settings(device_technology)
 
-        # thematic settings
-        try:
-            thematic_settings = uts.thematic_template
-            # threshold template
-            threshold_template = thematic_settings.threshold_template
-            # live polling tmplate
-            live_polling_template = threshold_template.live_polling_template
-            # service name
-            device_service_name = live_polling_template.service.name
-            # data source
-            device_service_data_source = live_polling_template.data_source.name
-        except Exception as e:
-            device_service_name = ""
-            device_service_data_source = ""
-            logger.info("Thematic settings not exist. Exception: ", e.message)
+        # service & data source
+        service = ""
+        data_source = ""
+        if ts_type == "normal":
+            service = user_thematics.thematic_template.service.name
+            data_source = user_thematics.thematic_template.data_source.name
+        elif ts_type == "ping":
+            service = user_thematics.thematic_template.service
+            data_source = user_thematics.thematic_template.data_source
 
         # device frequency
         device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
@@ -1520,139 +1451,147 @@ class GISPerfData(View):
         performance_data['azimuth_angle'] = azimuth_angle
         performance_data['beam_width'] = beam_width
         performance_data['radius'] = radius
+        performance_value = ""
 
-        # performance value
+        # performance payload
         perf_payload = {
             'device_name': device_name,
             'machine_name': machine_name,
             'freeze_time': freeze_time,
-            'device_service_name': device_service_name,
-            'device_service_data_source': device_service_data_source
-
+            'device_service_name': service,
+            'device_service_data_source': data_source
         }
-        performance_value = self.get_performance_value(perf_payload)
 
-        # fetch ping thematic settings for current user
-        ping_uts = UserPingThematicSettings.objects.get(user_profile=current_user,
-                                                        thematic_technology=device_technology)
-
-        # ping thematic settings
-        pts = ping_uts.thematic_template
-
-        # default image to be loaded
-        image_partial = "icons/mobilephonetower10.png"
-
-        # icon
-        icon = str(image_partial)
-
-        # comparing threshold values to get icon
         try:
-            if len(device_pl):
-                # live polled value of device service
-                value = ast.literal_eval(str(device_pl))
-                try:
-                    if (float(pts.range1_start)) <= (float(value)) <= (float(pts.range1_end)):
-                        icon_settings = eval(pts.icon_settings)
-                        for icon_setting in icon_settings:
-                            if 'icon_settings1' in icon_setting.keys():
-                                image_partial = str(icon_setting['icon_settings1'])
-                except Exception as e:
-                    logger.info(e.message)
-
-                try:
-                    if (float(pts.range2_start)) <= (float(value)) <= (float(pts.range2_end)):
-                        icon_settings = eval(pts.icon_settings)
-                        for icon_setting in icon_settings:
-                            if 'icon_settings2' in icon_setting.keys():
-                                image_partial = str(icon_setting['icon_settings2'])
-                except Exception as e:
-                    logger.info(e.message)
-
-                try:
-                    if (float(pts.range3_start)) <= (float(value)) <= (float(pts.range3_end)):
-                        icon_settings = eval(pts.icon_settings)
-                        for icon_setting in icon_settings:
-                            if 'icon_settings3' in icon_setting.keys():
-                                image_partial = str(icon_setting['icon_settings3'])
-                except Exception as e:
-                    logger.info(e.message)
-
-                try:
-                    if (float(pts.range4_start)) <= (float(value)) <= (float(pts.range4_end)):
-                        icon_settings = eval(pts.icon_settings)
-                        for icon_setting in icon_settings:
-                            if 'icon_settings4' in icon_setting.keys():
-                                image_partial = str(icon_setting['icon_settings4'])
-                except Exception as e:
-                    logger.info(e.message)
-
-                try:
-                    if (float(pts.range5_start)) <= (float(value)) <= (float(pts.range5_end)):
-                        icon_settings = eval(pts.icon_settings)
-                        for icon_setting in icon_settings:
-                            if 'icon_settings5' in icon_setting.keys():
-                                image_partial = str(icon_setting['icon_settings5'])
-                except Exception as e:
-                    logger.info(e.message)
-
-                try:
-                    if (float(pts.range6_start)) <= (float(value)) <= (float(pts.range6_end)):
-                        icon_settings = eval(pts.icon_settings)
-                        for icon_setting in icon_settings:
-                            if 'icon_settings6' in icon_setting.keys():
-                                image_partial = str(icon_setting['icon_settings6'])
-                except Exception as e:
-                    logger.info(e.message)
-
-                try:
-                    if (float(pts.range7_start)) <= (float(value)) <= (float(pts.range7_end)):
-                        icon_settings = eval(pts.icon_settings)
-                        for icon_setting in icon_settings:
-                            if 'icon_settings7' in icon_setting.keys():
-                                image_partial = str(icon_setting['icon_settings7'])
-                except Exception as e:
-                    logger.info(e.message)
-
-                try:
-                    if (float(pts.range8_start)) <= (float(value)) <= (float(pts.range8_end)):
-                        icon_settings = eval(pts.icon_settings)
-                        for icon_setting in icon_settings:
-                            if 'icon_settings8' in icon_setting.keys():
-                                image_partial = str(icon_setting['icon_settings8'])
-                except Exception as e:
-                    logger.info(e.message)
-
-                try:
-                    if (float(pts.range9_start)) <= (float(value)) <= (float(pts.range9_end)):
-                        icon_settings = eval(pts.icon_settings)
-                        for icon_setting in icon_settings:
-                            if 'icon_settings9' in icon_setting.keys():
-                                image_partial = str(icon_setting['icon_settings9'])
-                except Exception as e:
-                    logger.info(e.message)
-
-                try:
-                    if (float(pts.range10_start)) <= (float(value)) <= (float(pts.range10_end)):
-                        icon_settings = eval(pts.icon_settings)
-                        for icon_setting in icon_settings:
-                            if 'icon_settings10' in icon_setting.keys():
-                                image_partial = str(icon_setting['icon_settings10'])
-                except Exception as e:
-                    logger.info(e.message)
-            # image url
-            img_url = "media/" + str(image_partial) if "uploaded" in str(
-                image_partial) else "static/img/" + str(image_partial)
-
-            # icon to be send in response
-            icon = str(img_url)
+            if ts_type == "ping":
+                # performance value
+                performance_value = self.get_performance_value(perf_payload, 'ping')
+            elif ts_type == "normal":
+                # performance value
+                performance_value = self.get_performance_value(perf_payload, 'normal')
+            else:
+                pass
         except Exception as e:
-            logger.info("Icon not exist. Exception: ", e.message)
+            logger.info("UserPing Thematic Settings not found. Exception: ", e.message)
 
-        # update performance value
-        performance_data['perf_value'] = performance_value
+        if user_thematics:
+            # thematic settings
+            thematics = user_thematics.thematic_template
 
-        # update performance icon
-        performance_data['icon'] = icon
+            # default image to be loaded
+            image_partial = "icons/mobilephonetower10.png"
+
+            # icon
+            icon = str(image_partial)
+
+            # comparing threshold values to get icon
+            try:
+                if len(device_pl):
+                    # live polled value of device service
+                    value = ast.literal_eval(str(device_pl))
+                    try:
+                        if (float(thematics.range1_start)) <= (float(value)) <= (float(thematics.range1_end)):
+                            icon_settings = eval(thematics.icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings1' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings1'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(thematics.range2_start)) <= (float(value)) <= (float(thematics.range2_end)):
+                            icon_settings = eval(thematics.icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings2' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings2'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(thematics.range3_start)) <= (float(value)) <= (float(thematics.range3_end)):
+                            icon_settings = eval(thematics.icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings3' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings3'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(thematics.range4_start)) <= (float(value)) <= (float(thematics.range4_end)):
+                            icon_settings = eval(thematics.icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings4' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings4'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(thematics.range5_start)) <= (float(value)) <= (float(thematics.range5_end)):
+                            icon_settings = eval(thematics.icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings5' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings5'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(thematics.range6_start)) <= (float(value)) <= (float(thematics.range6_end)):
+                            icon_settings = eval(thematics.icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings6' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings6'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(thematics.range7_start)) <= (float(value)) <= (float(thematics.range7_end)):
+                            icon_settings = eval(thematics.icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings7' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings7'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(thematics.range8_start)) <= (float(value)) <= (float(thematics.range8_end)):
+                            icon_settings = eval(thematics.icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings8' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings8'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(thematics.range9_start)) <= (float(value)) <= (float(thematics.range9_end)):
+                            icon_settings = eval(thematics.icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings9' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings9'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(thematics.range10_start)) <= (float(value)) <= (float(thematics.range10_end)):
+                            icon_settings = eval(thematics.icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings10' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings10'])
+                    except Exception as e:
+                        logger.info(e.message)
+                # image url
+                img_url = "media/" + str(image_partial) if "uploaded" in str(
+                    image_partial) else "static/img/" + str(image_partial)
+
+                # icon to be send in response
+                icon = str(img_url)
+            except Exception as e:
+                logger.info("Icon not exist. Exception: ", e.message)
+
+            # update performance value
+            performance_data['perf_value'] = performance_value
+
+            # update performance icon
+            performance_data['icon'] = icon
 
         return performance_data
 
@@ -1738,7 +1677,7 @@ class GISPerfData(View):
             # date of acceptance
             date_of_acceptance = ""
             try:
-                date_of_acceptance = substation.circuit_set.all()[0].date_of_acceptance
+                date_of_acceptance = str(substation.circuit_set.all()[0].date_of_acceptance)
             except Exception as e:
                 logger.info("Date Of Acceptance not exist. Exception: ", e.message)
 
@@ -1943,7 +1882,12 @@ class GISPerfData(View):
             'data_source', 'current_value', 'sys_timestamp'
         ).using(alias=machine_name)
 
+        processed = {}
+
         for perf in device_performance_info:
+            if perf['data_source'] in processed:
+                continue
+            processed[perf['data_source']] = []
             perf_info = {
                 "name": perf['data_source'],
                 "title": " ".join(perf['data_source'].split("_")).title(),
@@ -1953,6 +1897,9 @@ class GISPerfData(View):
             device_info.append(perf_info)
 
         for perf in device_inventory_info:
+            if perf['data_source'] in processed:
+                continue
+            processed[perf['data_source']] = []
             perf_info = {
                 "name": perf['data_source'],
                 "title": " ".join(perf['data_source'].split("_")).title(),
@@ -1962,27 +1909,33 @@ class GISPerfData(View):
             device_info.append(perf_info)
 
         for perf in device_status_info:
+            if perf['data_source'] in processed:
+                continue
+            processed[perf['data_source']] = []
             perf_info = {
                 "name": perf['data_source'],
                 "title": " ".join(perf['data_source'].split("_")).title(),
                 "show": 1,
                 "value": perf['current_value'],
             }
-
             device_info.append(perf_info)
 
         for perf in device_network_info:
+            if perf['data_source'] in processed:
+                continue
+            processed[perf['data_source']] = []
             perf_info = {
                 "name": perf['data_source'],
                 "title": "Latency" if ("rta" in perf['data_source'].lower()) else "Packet Loss",
                 "show": 1,
                 "value": perf['current_value'],
             }
-
             device_info.append(perf_info)
 
-        return device_info
+        # remove duplicate dictionaries in list
+        device_info = remove_duplicate_dict_from_list(device_info)
 
+        return device_info
 
     def get_substation_info(self, substation, substation_device):
         """ Get Sub Station information
@@ -2173,12 +2126,8 @@ class GISPerfData(View):
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
 
-        # current user
-        current_user = ""
-        try:
-            current_user = UserProfile.objects.get(id=self.request.user.id)
-        except Exception as e:
-            logger.info("User profile not exist. Exception: ", e.message)
+        # type of thematic settings needs to be fetched
+        ts_type = self.request.GET.get('ts', 'normal')
 
         # device technology
         device_technology = ""
@@ -2187,29 +2136,18 @@ class GISPerfData(View):
         except Exception as e:
             logger.info("Device technology not exist. Exception: ", e.message)
 
-        # fetch thematic settings for current user
-        try:
-            uts = UserThematicSettings.objects.get(user_profile=current_user,
-                                                   thematic_technology=device_technology)
+        # thematic settings for current user
+        user_thematics = self.get_thematic_settings(device_technology)
 
-            # thematic settings
-            thematic_settings = uts.thematic_template
-
-            # threshold template
-            threshold_template = thematic_settings.threshold_template
-
-            # live polling tmplate
-            live_polling_template = threshold_template.live_polling_template
-
-            # service name
-            device_service_name = live_polling_template.service.name
-
-            # data source
-            device_service_data_source = live_polling_template.data_source.name
-        except Exception as e:
-            device_service_name = ""
-            device_service_data_source = ""
-            logger.info("Thematic settings not exist. Exception: ", e.message)
+        # service & data source
+        service = ""
+        data_source = ""
+        if ts_type == "normal":
+            service = user_thematics.thematic_template.service.name
+            data_source = user_thematics.thematic_template.data_source.name
+        elif ts_type == "ping":
+            service = user_thematics.thematic_template.service
+            data_source = user_thematics.thematic_template.data_source
 
         # device frequency
         device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
@@ -2225,11 +2163,11 @@ class GISPerfData(View):
             'device_name': device_name,
             'machine_name': machine_name,
             'freeze_time': freeze_time,
-            'device_service_name': device_service_name,
-            'device_service_data_source': device_service_data_source
+            'device_service_name': service,
+            'device_service_data_source': data_source
 
         }
-        performance_value = self.get_performance_value(perf_payload)
+        performance_value = self.get_performance_value(perf_payload, ts_type)
 
         # sector info dict
         substation_info = dict()
@@ -2246,12 +2184,14 @@ class GISPerfData(View):
         marker_url = ""
         try:
             gmap_icon = str(DeviceType.objects.get(id=substation_device.device_type).device_gmap_icon)
-            icon_path = "".join(gmap_icon.split("/media"))
-            marker_url = MEDIA_ROOT + icon_path
+            marker_url = str("media/" + str(gmap_icon)) \
+                if "uploaded" in str(gmap_icon) \
+                else "static/img/" + str(gmap_icon)
         except Exception as e:
             logger.info("No GMAP Icon for device type. Exception: ", e.message)
 
         substation_info['markerUrl'] = marker_url
+
         substation_info['substation_device_ip_address'] = substation_device.ip_address
 
         return substation_info
@@ -2384,7 +2324,48 @@ class GISPerfData(View):
 
         return device_link_color, radius
 
-    def get_performance_value(self, perf_payload):
+    def get_thematic_settings(self, device_technology):
+        """ Get device pl
+
+            :Parameters:
+                - 'device_technology' (<class 'device.models.DeviceTechnology'>) - device technology object
+                - 'ts_type' (unicode) - thematic settings type i.e 'ping' or 'normal'
+
+            :Returns:
+               - 'user_thematics' (<class 'inventory.models.UserPingThematicSettings'>) - thematic settings object
+        """
+
+        # thematic settings type i.e. 'ping' or 'normal'
+        ts_type = self.request.GET.get('ts', 'normal')
+
+        # current user
+        try:
+            current_user = UserProfile.objects.get(id=self.request.user.id)
+        except Exception as e:
+            current_user = ""
+            logger.info("User Profile not exist. Exception: ", e.message)
+
+        # device technology
+        device_technology = device_technology
+
+        # fetch thematic settings for current user
+        user_thematics = ""
+        if ts_type == "normal":
+            try:
+                user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
+                                                                  thematic_technology=device_technology)
+            except Exception as e:
+                logger.info("User thematic settings not exist. Exception: ", e.message)
+        elif ts_type == "ping":
+            try:
+                user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
+                                                                      thematic_technology=device_technology)
+            except Exception as e:
+                logger.info("User thematic settings not exist. Exception: ", e.message)
+
+        return user_thematics
+
+    def get_performance_value(self, perf_payload, ts_type):
         """ Get device pl
 
             :Parameters:
@@ -2396,6 +2377,7 @@ class GISPerfData(View):
                                                 'device_service_data_source': u'uptime',
                                                 'device_name': u'1'
                                             }
+                - 'ts_type' (unicode) - thematic settings type i.e 'ping' or 'normal'
 
             :Returns:
                - 'performance_value' (unicode) - performance value, e.g. 6.0082333333
@@ -2416,34 +2398,250 @@ class GISPerfData(View):
         # service data source
         device_service_data_source = perf_payload['device_service_data_source']
 
+        # performance value
+        performance_value = ""
         try:
-            if int(freeze_time):
-                performance_value = PerformanceService.objects.filter(device_name=device_name,
-                                                                      service_name=device_service_name,
-                                                                      data_source=device_service_data_source,
-                                                                      sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                      .using(alias=machine_name)\
-                                                                      .order_by('-sys_timestamp')[:1]
-                if len(performance_value):
-                    performance_value = performance_value[0].current_value
+            if ts_type == "normal":
+                if int(freeze_time):
+                    performance_value = PerformanceService.objects.filter(device_name=device_name,
+                                                                          service_name=device_service_name,
+                                                                          data_source=device_service_data_source,
+                                                                          sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                          .using(alias=machine_name)\
+                                                                          .order_by('-sys_timestamp')[:1]
+                    if len(performance_value):
+                        performance_value = performance_value[0].current_value
+                    else:
+                        performance_value = ""
                 else:
-                    performance_value = ""
-            else:
-                performance_value = ServiceStatus.objects.filter(device_name=device_name,
-                                                                 service_name=device_service_name,
-                                                                 data_source=device_service_data_source)\
-                                                                 .using(alias=machine_name)\
-                                                                 .order_by('-sys_timestamp')[:1]
-                if len(performance_value):
-                    performance_value = performance_value[0].current_value
+                    performance_value = ServiceStatus.objects.filter(device_name=device_name,
+                                                                     service_name=device_service_name,
+                                                                     data_source=device_service_data_source)\
+                                                                     .using(alias=machine_name)\
+                                                                     .order_by('-sys_timestamp')[:1]
+                    if len(performance_value):
+                        performance_value = performance_value[0].current_value
+                    else:
+                        performance_value = ""
+            elif ts_type == "ping":
+                if int(freeze_time):
+                    performance_value = PerformanceNetwork.objects.filter(device_name=device_name,
+                                                                          service_name=device_service_name,
+                                                                  data_source=device_service_data_source,
+                                                                  sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                  .using(alias=machine_name)\
+                                                                  .order_by('-sys_timestamp')[:1]
+                    if len(performance_value):
+                        performance_value = performance_value[0].current_value
+                    else:
+                        performance_value = ""
                 else:
-                    performance_value = ""
-
+                    performance_value = NetworkStatus.objects.filter(device_name=device_name,
+                                                         service_name=device_service_name,
+                                                         data_source=device_service_data_source)\
+                                                         .using(alias=machine_name).order_by('-sys_timestamp')[:1]
+                    if len(performance_value):
+                        performance_value = performance_value[0].current_value
+                    else:
+                        performance_value = ""
         except Exception as e:
             performance_value = ""
             logger.info("Performance value not exist. Exception: ", e.message)
 
         return performance_value
+
+
+def remove_duplicate_dict_from_list(input_list=None):
+    """ Remove duplicate dictionaries from list of dictionaries
+
+        :Parameters:
+            - 'input_list' (list) - list of dictionaries for e.g.
+                                        [
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            },
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            },
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            }
+                                        ]
+
+        :Returns:
+           - 'result_list' (list) - list of dictionaries containing unique dictionaries for e.g.
+                                        [
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            }
+                                        ]
+    """
+
+    # list of dictionaries to be returned as a result
+    result_list = []
+
+    # temporary set containing dictionaries values in tuples for e.g
+    # set([((key, value), (key, value), (key, value)), ((key, value), (key, value), (key, value))]
+
+    temp_set = set()
+
+    # loop through input list (list of dictionaries which needs to be filtered)
+    for d in input_list:
+        # t is set of dictionary values tuple for e.g
+        # ((key, value), (key, value), (key, value), (key, value))
+        # (('City', u'Kolkata'), ('Antenna Height', 29.0), ('BH Circuit ID', u'COPF-571'), ('PE IP', u'192.168.216.37'))
+        t = tuple(d.items())
+        if t not in temp_set:
+            # adding tuple 't' to 'temp_set'
+            temp_set.add(t)
+            # append dictionary 'd' to 'result_list'
+            result_list.append(d)
+
+    return result_list
 
 
 ## This function returns the latest l2 report url for given circuit id.

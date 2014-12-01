@@ -2,44 +2,41 @@
 ## Live Mongodb --> Historical Mongodb
 
 # Bihourly scripts
-*/30 * * * * /usr/bin/python nocout/performance/service/service_mongo_aggregation_half_hourly.py -t 30 -s network_perf -d network_perf_half_hourly
-*/30 * * * * /usr/bin/python nocout/performance/service/service_mongo_aggregation_half_hourly.py -t 30 -s service_perf -d service_perf_half_hourly
+*/30 * * * * /usr/bin/python nocout/performance/service/service_mongo_aggregation_half_hourly.py -t 30 -s network_perf -d performance_performancenetworkbihourly
+*/30 * * * * /usr/bin/python nocout/performance/service/service_mongo_aggregation_half_hourly.py -t 30 -s service_perf -d performance_performanceservicebihourly
 
 # Hourly scripts
-0 * * * * /usr/bin/python nocout/performance/service/mongo_aggregation_all.py -t 1 -f hourly -s network_perf_half_hourly -d network_perf_hourly
-0 * * * * /usr/bin/python nocout/performance/service/mongo_aggregation_all.py -t 1 -f hourly -s service_perf_half_hourly -d service_perf_hourly
+0 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 1 -f hourly -s performance_performancenetworkbihourly -d performance_performancenetworkhourly
+0 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 1 -f hourly -s performance_performanceservicebihourly -d performance_performanceservicehourly
 
 # Daily scripts
-0 23 * * * /usr/bin/python nocout/performance/service/mongo_aggregation_all.py -t 24 -f daily -s network_perf_hourly -d network_perf_daily
-0 23 * * * /usr/bin/python nocout/performance/service/mongo_aggregation_all.py -t 24 -f daily -s service_perf_hourly -d service_perf_daily
+0 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 24 -f daily -s performance_performancenetworkhourly -d performance_performancenetworkdaily
+0 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 24 -f daily -s performance_performanceservicehourly -d performance_performanceservicedaily
 0 23 * * * /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 24 -f daily -s status_perf -d interface_perf_daily
 0 23 * * * /usr/bin/python nocout/performance/inventory/inventory_mongo_aggregation_daily.py
 
 # Weekly scripts
-0 23 * * 0 /usr/bin/python nocout/performance/service/mongo_aggregation_all.py -t 168 -f weekly -s network_perf_daily -d network_perf_weekly
-0 23 * * 0 /usr/bin/python nocout/performance/service/mongo_aggregation_all.py -t 168 -f weekly -s service_perf_daily -d service_perf_weekly
-0 23 * * 0 /usr/bin/python nocout/performance/service/mongo_aggregation_all.py -t 168 -f weekly -s interface_perf_daily -d interface_perf_weekly
+0 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -t 168 -f weekly -s performance_performancenetworkdaily -d performance_performancenetworkweekly
+0 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -t 168 -f weekly -s performance_performanceservicedaily -d performance_performanceserviceweekly
+0 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -t 168 -f weekly -s performance_performancestatusdaily -d performance_performancestatusweekly
 0 23 * * 0 /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 168 -f weekly -s nocout_inventory_service_perf_data -d inventory_perf_weekly
 
 
 ## Historical Mongodb --> Historical Mysql
 
-# Bihourly Migration
-*/35 * * * * /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 0.5 -s network_perf_half_hourly -d performance_performancenetworkbihourly
-*/35 * * * * /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 0.5 -s service_perf_half_hourly -d performance_performanceservicebihourly
-
-# Hourly Migration
-5 * * * * /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 1 -s network_perf_hourly -d performance_performancenetworkhourly
-5 * * * * /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 1 -s service_perf_hourly -d performance_performanceservicehourly
-
 # Daily Migration
-5 23 * * * /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 24 -s network_perf_daily -d performance_performancenetworkdaily
-5 23 * * * /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 24 -s service_perf_daily -d performance_performanceservicedaily
-5 23 * * * /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 24 -s interface_perf_daily -d performance_performancestatusdaily
+5 23 * * * /usr/bin/python nocout/performance/service/historical_mongo_to_mysql.py -t 24 -s interface_perf_daily -d performance_performancestatusdaily
 
 # Weekly Migration
-5 23 * * 0 /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 168 -s network_perf_weekly -d performance_performancenetworkweekly
-5 23 * * 0 /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 168 -s service_perf_weekly -d performance_performanceserviceweekly
-5 23 * * 0 /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 168 -s interface_perf_weekly -d performance_performancestatusweekly
-5 23 * * 0 /usr/bin/python nocout/performance/service/mongo_aggregation_to_mysql.py -t 168 -s inventory_perf_weekly -d performance_performanceinventoryweekly
+5 23 * * 0 /usr/bin/python nocout/performance/service/historical_mongo_to_mysql.py -t 168 -s inventory_perf_weekly -d performance_performanceinventoryweekly
+
+## Events Migration
+
+# Daily Migration
+5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_host_event_log -d performance_eventnetworkdaily
+#5 23 * * * /usr/bin/python nocout/events/events_aggregation_base.py -t 24 -f daily -s nocout_service_event_log -d performance_eventservicedaily
+
+# Weekly Migrtation
+5 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventnetworkdaily -d performance_eventnetworkweekly
+#5 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventservicedaily -d performance_eventserviceweekly
 #-------------------------------------------------------------------------------------------------------

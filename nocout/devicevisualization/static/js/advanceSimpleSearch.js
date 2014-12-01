@@ -85,20 +85,18 @@ function advanceSearchMainClass() {
 
         if(window.location.pathname.indexOf("googleEarth") > -1) {
 
+            iconUrl = iconUrl ? iconUrl : base_url+'/static/img/icons/bs_bounce.png';
             // Create the placemark.
-            var searchMarker = ge.createPlacemark('search_'+search_marker_count);
+            searchMarker = ge.createPlacemark('search_'+search_marker_count);
 
             // Define a custom icon.
             var icon = ge.createIcon('');
-            if(iconUrl) {
-                icon.setHref(base_url+'/static/img/icons/ss_bounce.png');
-            } else {
-                icon.setHref(base_url+'/static/img/icons/bs_bounce.png');
-            }
-
+            icon.setHref(iconUrl);
+            
             var style = ge.createStyle(''); //create a new style
             style.getIconStyle().setIcon(icon); //apply the icon to the style
             searchMarker.setStyleSelector(style); //apply the style to the searchMarker
+            style.getIconStyle().setScale(4.0);
 
             // Set the searchMarker's location.  
             var point = ge.createPoint('');
@@ -106,39 +104,38 @@ function advanceSearchMainClass() {
             point.setLongitude(long);
             searchMarker.setGeometry(point);
 
-            // Add the searchMarker to Earth.
-            ge.getFeatures().appendChild(searchMarker);
 
-            gexInstance.fx.bounce(searchMarker, {
-                duration: 300,
-                repeat: 0,
-                dampen: 0.3
-            });
+            // gexInstance.fx.bounce(searchMarker, {
+            //     duration: 300,
+            //     repeat: 0,
+            //     dampen: 0.3
+            // });
+
 
         } else if (window.location.pathname.indexOf("white_background") > -1) {
+            
+            ccpl_map.getLayersByName("Search Layer")[0].setVisibility(true);
 
-            var icon;
-            //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
-            searchedInputs= this.getInputArray();
-
-            if(searchedInputs['BS Name'].length || searchedInputs['Circuit Id'].length || searchedInputs['IP'].length) {
-                isOnlyStateorCityIsApplied= false;
-            }
-
-            if(!isOnlyStateorCityIsApplied) {
-                    if(iconUrl) {
-                        //set icon from global object
-                        icon = iconUrl; 
-                    } else {
-                        icon = this.constants.search_bs_icon
-                    }
+            //create a new marker
+            searchMarker = whiteMapClass.createOpenLayerVectorMarker(undefined, undefined, long, lat, {icon: icon});
+            if(iconUrl) {
+                //set icon from global object
+                searchMarker.attributes.icon = iconUrl;
+            } else {
+                //set icon from global object
+                searchMarker.attributes.icon = this.constants.search_bs_icon;
             }
             
-            searchMarker = whiteMapClass.createOpenLayerVectorMarker(undefined, undefined, long, lat, {icon: icon});
-            searchMarker.icon = iconUrl;
-            ccpl_map.getLayersByName("Search Layer")[0].setVisibility(true);
             // whiteMapClass.searchMarkerLayer.display(true);
             ccpl_map.getLayersByName("Search Layer")[0].addFeatures([searchMarker]);
+
+            // google.maps.event.addListener(searchMarker, 'click', function() {
+            //     if(iconUrl) {
+            //         google.maps.event.trigger(markersMasterObj['SS'][String(lat)+long], 'click');
+            //     } else {
+            //         google.maps.event.trigger(markersMasterObj['BS'][String(lat)+long], 'click');
+            //     }
+            // });
         } else {
 
             //create a new marker

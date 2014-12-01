@@ -73,7 +73,7 @@ def main(**configs):
         	values_list = build_data(doc)
         	data_values.extend(values_list)
     if data_values:
-    	insert_data(configs.get('table_name'), data_values, configs=configs)
+    	utility_module.insert_data(configs.get('table_name'), data_values, configs=configs)
     	print "Data inserted into my mysql db"
     else:
 	print "No data in mongo db in this time frame"
@@ -155,34 +155,6 @@ def build_data(doc):
         values_list.append(t)
         t = ()
     return values_list
-
-def insert_data(table, data_values, **kwargs):
-    """
-    Function to insert data into mysql tables
-
-    Args:
-        table (str): Table name into which data to be inserted
-	data_values: Values in the form of list of tuples
-
-    Kwargs:
-        kwargs (dict): Python dict to store connection variables
-    """
-    db = utility_module.mysql_conn(configs=kwargs.get('configs'))
-    query = "INSERT INTO `%s` " % table
-    query += """
-            (device_name, service_name, machine_name, 
-            site_name, data_source, current_value, min_value, 
-            max_value, avg_value, warning_threshold, 
-            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity,age) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s,%s)
-            """
-    cursor = db.cursor()
-    try:
-        cursor.executemany(query, data_values)
-    except mysql.connector.Error as err:
-        raise mysql.connector.Error, err
-    db.commit()
-    cursor.close()
 
 
 def get_machineid():
