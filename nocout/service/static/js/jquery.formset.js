@@ -157,7 +157,13 @@
 
                 applyExtraClasses(row, formCount);
                 row.insertBefore($(buttonRow)).show();
-                row.find('input,select,textarea,label').each(function() {
+                row.find('input,select,textarea,label').each(function(index, ele) {
+                    if (ele.nodeName.toLowerCase() === 'input'){
+                        $(this).val(0)
+                    }
+                    if (ele.nodeName.toLowerCase() === 'select'){
+                        $(this).find("option:selected").removeAttr("selected");
+                    }
                     updateElementIndex($(this), options.prefix, formCount);
                 });
                 $(":checkbox").uniform();
