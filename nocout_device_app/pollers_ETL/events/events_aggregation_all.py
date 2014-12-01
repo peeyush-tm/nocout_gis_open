@@ -122,7 +122,7 @@ def quantify_events_data(aggregated_data_values=[]):
 				'severity': aggr_data.get('severity'),
 				'time': aggr_data.get('time')
 				}
-		existing_doc = find_existing_entry(find_query, aggregated_data_values)
+		existing_doc, existing_doc_index = find_existing_entry(find_query, aggregated_data_values)
 		#print 'existing_doc'
 		#print existing_doc
 		if existing_doc:
@@ -139,7 +139,9 @@ def quantify_events_data(aggregated_data_values=[]):
 				'current_value': current_value
 				})
 			# First remove the existing entry from aggregated_data_values
-			aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
+			#aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
+			# First remove the existing entry from aggregated_data_values
+			aggregated_data_values.pop(existing_doc_index)
 		# Add the new aggregated doc to final values
 		aggregated_data_values.append(aggr_data)
 	
@@ -147,21 +149,32 @@ def quantify_events_data(aggregated_data_values=[]):
 
 
 def find_next_state_change(aggr_data, data_values):
-	intermediate_result = filter(lambda e: set([aggr_data['host'], aggr_data['service'], \
-			aggr_data['ds']]) <= set(e.values()), data_values)
-	return filter(lambda e: aggr_data['severity'] != e['severity'] and \
-			aggr_data['original_time'] < e['sys_timestamp'], intermediate_result)[0:1]
+	intermediate_result = []
+	for i in xrange(len(data_values)):
+		if set([aggr_data['host'], aggr_data['service'], aggr_data['ds']]) <= set(data_values[i].values()):
+			intermediate_result = data_values[i:i+1]
+			break
+	#intermediate_result = filter(lambda e: set([aggr_data['host'], aggr_data['service'], \
+	#		aggr_data['ds']]) <= set(e.values()), data_values)
+	#return filter(lambda e: aggr_data['severity'] != e['severity'] and \
+	#		aggr_data['original_time'] < e['sys_timestamp'], intermediate_result)[0:1]
+	return intermediate_result
 	
 
-def find_existing_entry(find_query, aggregated_data_values, existing=[]):
+def find_existing_entry(find_query, aggregated_data_values):
 	"""
 	Find the doc to upadte
 	"""
-       
-        #print 'find_query'
-	#print find_query
-        existing = filter(lambda d: set(find_query.values()) <= set(d.values()), aggregated_data_values)
-	return existing
+        
+	existing_doc = []
+	existing_doc_index = None
+	for i in xrange(len(aggregated_data_values)):
+		if set([aggr_data['host'], aggr_data['service'], aggr_data['ds']]) <= set(data_values[i].values()):
+			existing_doc = aggregated_data_values[i:i+1]
+			existing_doc_index = i
+			break
+        #existing = filter(lambda d: set(find_query.values()) <= set(d.values()), aggregated_data_values)
+	return existing_doc, existing_doc_index
 
 
 def usage():
