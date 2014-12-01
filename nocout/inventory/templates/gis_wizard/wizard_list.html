@@ -30,7 +30,7 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url = '{% url "gis-wizard-list-table" %}';
+            var ajax_url = '{% url "gis-wizard-base-station-list-table" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy=false;
             dataTableInstance.createDataTable("BaseStationListingTable", gridHeadersObj, ajax_url, destroy);
