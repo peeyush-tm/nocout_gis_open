@@ -42,21 +42,7 @@
             {% if form %}
 
                                     <form id="id_base_station_form" action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
-                                        <div class="form-group">
-                                            {% for field in form %}
-                                                <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
-                                                    <div class="col-sm-9">
-                                                        <div class="col-md-8">
-                                                            {{ field }} {{ field.errors }}
-                                                        </div>
-                                                        <div class="col-md-4 help_text">
-                                                            {# field.help_text #}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
+                                        {% include "gis_wizard/form.html" with form=form only %}
                                         <div class="form-group">
                                             <div class="col-sm-offset-3 col-sm-9">
                                                 <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Next</button>
