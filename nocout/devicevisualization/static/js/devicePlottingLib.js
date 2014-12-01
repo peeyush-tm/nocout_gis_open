@@ -1373,7 +1373,7 @@ function devicePlottingClass_gmap() {
 			for(var z=0;z<deleted_sector_index.length;z++) {
 				bs_sectors.splice(deleted_sector_index[z],1);
 			}
-			
+
 			deleted_sector_index = [];
 
 			dataset_clone[x].data.param.sector = correct_sectors;
@@ -5045,6 +5045,7 @@ function devicePlottingClass_gmap() {
 													if(allSS[k].pointType == 'sub_station') {
 														if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
 															allSSIds.push(allSS[k].bs_sector_device);
+															polygonSelectedDevices.push(allMarkersObject_gmap['sector_device']['sector_'+allSS[k].sector_ip]);
 														}
 													}
 													allSSIds.push(allSS[k].device_name);
@@ -5358,7 +5359,6 @@ function devicePlottingClass_gmap() {
 					}
 					var hasPolledInfo = true;
 					for(var i=allSSIds.length;i--;) {
-
 						var new_device_name = "";
 						if(allSSIds[i] && allSSIds[i].indexOf(".") != -1) {
 							new_device_name = allSSIds[i].split('.');
@@ -5367,7 +5367,7 @@ function devicePlottingClass_gmap() {
 							new_device_name = allSSIds[i];
 						}
 
-						if(result.data.devices[allSSIds[i]] != undefined) {
+						if(result.data.devices[allSSIds[i]]) {
 
 							if(hasPolledInfo) {
 								if($("#polling_tabular_view").hasClass("hide")) {
@@ -5427,8 +5427,9 @@ function devicePlottingClass_gmap() {
 							for(var x=0;x<polygonSelectedDevices.length;x++) {
 								if(polygonSelectedDevices[x].device_name === allSSIds[i]) {
 									marker_name = polygonSelectedDevices[x].name
+									console.log(polygonSelectedDevices[x]);
 									if(polygonSelectedDevices[x].pointType === 'sub_station') {
-										sector_ip = polygonSelectedDevices[x].sector_ip ? polygonSelectedDevices[x].sector_ip : "";
+										sector_ip = "";
 									} else {
 										sector_ip = polygonSelectedDevices[x].sectorName ? polygonSelectedDevices[x].sectorName : "";
 									}
@@ -5437,8 +5438,8 @@ function devicePlottingClass_gmap() {
 
 							var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon;
 							// var num = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
-							// var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png",
-							// 
+							// var newIcon = base_url+"/static/img/marker/icon"+ num +"_small.png";
+
 							var allMarkerObject = {};
 							if(window.location.pathname.indexOf("white_background") > -1) {
 								allMarkerObject = allMarkersObject_wmap;
@@ -5462,6 +5463,7 @@ function devicePlottingClass_gmap() {
 							if(!complete_polled_devices_icon[allSSIds[i]]) {
 								complete_polled_devices_icon[allSSIds[i]] = [];
 							}
+
 							complete_polled_devices_icon[allSSIds[i]].push(newIcon);
 							
 							/*Update the marker icons*/
@@ -5476,14 +5478,18 @@ function devicePlottingClass_gmap() {
 									});
 								}
 								marker_polling_obj.ip = ss_marker.ss_ip;
-							} else if(sector_marker) {
+							}
+
+							if(sector_marker) {
 								if(window.location.pathname.indexOf("white_background") > -1) {
 									sector_marker.style.externalGraphic = newIcon
 									var layer = sector_marker.layer ? sector_marker.layer : sector_marker.layerReference;
 									layer.redraw();
 								} else {
 									sector_marker.setOptions({
-										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+										"icon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
+										"clusterIcon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
+										"oldIcon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
 									});
 								}
 								marker_polling_obj.ip = sector_marker.sectorName;
