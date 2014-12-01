@@ -257,6 +257,10 @@ class BackhaulForm(forms.ModelForm):
     bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
     bh_connectivity = forms.TypedChoiceField(choices=BH_CONNECTIVITY, required=False)
     dr_site = forms.TypedChoiceField(choices=DR_SITE, initial='No', required=False)
+    pe_hostname = forms.CharField(label='PE Hostname', required=False,
+            validators=[RegexValidator(regex=r'^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$',
+                message="Enter valid domain name.")]
+        )
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -1556,75 +1560,15 @@ class WizardBaseStationForm(BaseStationForm):
         )
 
 
-class WizardBackhaulForm(forms.ModelForm):
+class WizardBackhaulForm(BackhaulForm):
     """
     Class Based View Backhaul Model form to update and create.
     """
-    BH_TYPE = (
-        ('', 'Select'),
-        ('E1', 'E1'),
-        ('Ethernet', 'Ethernet'),
-        ('SDH', 'SDH'),
-        ('UBR', 'UBR')
-    )
-    BH_CONNECTIVITY = (
-        ('', 'Select'),
-        ('Onnet', 'Onnet'),
-        ('Offnet', 'Offnet')
-    )
-
-    bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
-    bh_connectivity = forms.TypedChoiceField(choices=BH_CONNECTIVITY, required=False)
-    pe_hostname = forms.CharField(label='PE Hostname', required=False,
-            validators=[RegexValidator(regex=r'^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$',
-                message="Enter valid domain name.")]
-        )
 
     def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request', None)
         super(WizardBackhaulForm, self).__init__(*args, **kwargs)
-        self.fields['bh_configured_on'].empty_label = 'Select'
-        self.fields['pop'].empty_label = 'Select'
-        self.fields['aggregator'].empty_label = 'Select'
-        self.fields['bh_configured_on'].required = True
 
-        self.fields['bh_configured_on'].widget = forms.HiddenInput()
-        self.fields['bh_switch'].widget = forms.HiddenInput()
-        self.fields['pop'].widget = forms.HiddenInput()
-        self.fields['aggregator'].widget = forms.HiddenInput()
-        try:
-            if 'instance' in kwargs:
-                self.id = kwargs['instance'].id
-
-        except Exception as e:
-            logger.info(e.message)
-
-        if self.request is not None:
-            request = self.request
-
-            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
-            else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
-
-        for name, field in self.fields.items():
-            if field.widget.attrs.has_key('class'):
-                if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs['class'] += ' col-md-12'
-                    field.widget.attrs['class'] += ' select2select'
-                else:
-                    field.widget.attrs['class'] += ' tip-focus form-control'
-                    field.widget.attrs['data-toggle'] = 'tooltip'
-                    field.widget.attrs['data-placement'] = 'right'
-                    field.widget.attrs['title'] = field.help_text
-            else:
-                if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
-                else:
-                    field.widget.attrs.update({'class': ' tip-focus form-control'})
-                    field.widget.attrs.update({'data-toggle': 'tooltip'})
-                    field.widget.attrs.update({'data-placement': 'right'})
-                    field.widget.attrs.update({'title': field.help_text})
+        self.fields.pop('dr_site')
 
     class Meta:
         """
@@ -1634,7 +1578,7 @@ class WizardBackhaulForm(forms.ModelForm):
         fields = ('organization', 'bh_configured_on', 'bh_port_name', 'bh_port', 'bh_type', 'bh_switch',
                 'switch_port_name', 'switch_port', 'pop', 'pop_port_name', 'pop_port', 'aggregator',
                 'aggregator_port_name', 'aggregator_port', 'pe_hostname', 'pe_ip', 'bh_connectivity', 'bh_circuit_id',
-                'bh_capacity', 'ttsl_circuit_id',
+                'bh_capacity', 'ttsl_circuit_id', 'dr_site',
         )
 
 
