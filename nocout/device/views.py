@@ -2520,14 +2520,7 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         all_forms_valid = True
         device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST, prefix='dts')
         if (device_type_service_form.is_valid()):
-            # try:
-            # sds_prefix = dict(self.request.POST)['sds_counter']
             total_forms = self.request.POST['dts-TOTAL_FORMS'][0]
-            # except:
-                # sds_prefix = [u'0']
-            # counter_prefix = []
-            # x = [counter_prefix.append(counter) for counter in sds_prefix if counter not in counter_prefix]
-            # for i,sds in enumerate(counter_prefix):
             for i in range(int(total_forms)):
                 if 'dts-{}-sds_counter'.format(i) in self.request.POST:
                     sds = self.request.POST['dts-{}-sds_counter'.format(i)]
@@ -2554,7 +2547,6 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         success page.
         """
         self.object = form.save()
-        # self.object = DeviceType.objects.get(name='as1')
         device_type_service_form.instance = self.object
         dts = device_type_service_form.save()
         for dts_obj in dts:
