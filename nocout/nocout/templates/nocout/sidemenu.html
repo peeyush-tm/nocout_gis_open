@@ -247,6 +247,23 @@
                         </ul>
                     </li>
                     {% endif %}
+                    <li class="has-sub-sub">
+                        <a class="" href="javascript:;">
+                        <span class="sub-menu-text">Inventory Stitching</span>
+                        <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                        {% if perms.inventory.add_basestation %}
+                        <li><a class="" href="/gis-wizard/base-station/"><span class="sub-menu-text">Base Station</span></a></li>
+                            {% endif %}
+                            {% if perms.inventory.change_sector %}
+                            <li><a class="" href="/gis-wizard/ptp/"><span class="sub-menu-text">PTP</span></a></li>
+                            {% endif %}
+                            {% if perms.inventory.change_substation %}
+                            <li><a class="" href="/gis-wizard/sub-station/"><span class="sub-menu-text">Sub Station</span></a></li>
+                            {% endif %}
+                        </ul>
+                        </li>
 
                             <li class="has-sub-sub">
                             <a class="" href="javascript:;">
@@ -254,9 +271,6 @@
                                 <span class="arrow"></span>
                             </a>
                             <ul class="sub-sub">
-                                {% if perms.inventory.view_basestation %}
-                                <li><a class="" href="/gis-wizard/"><span class="sub-menu-text">Inventory Stitching</span></a></li>
-                                {% endif %}
                                 {% if perms.inventory.view_antenna %}
                                 <li><a class="" href="/antenna/"><span class="sub-menu-text">Antenna</span></a></li>
                                 {% endif %}
