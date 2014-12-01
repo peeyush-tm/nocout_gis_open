@@ -5320,8 +5320,8 @@ function devicePlottingClass_gmap() {
 		var selected_lp_template = $("#lp_template_select").val();
 
     	$.ajax({
-			// url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
-			url : base_url+"/"+"static/services.json",
+			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
+			// url : base_url+"/"+"static/services.json",
 			success : function(results) {
 				var result = "";
 
