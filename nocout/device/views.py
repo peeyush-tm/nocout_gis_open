@@ -2529,12 +2529,15 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
             # x = [counter_prefix.append(counter) for counter in sds_prefix if counter not in counter_prefix]
             # for i,sds in enumerate(counter_prefix):
             for i in range(int(total_forms)):
-                sds = self.request.POST['dts-{}-sds_counter'.format(i)]
-                service_id = self.request.POST['dts-{}-service'.format(i)]
-                service = Service.objects.get(id=service_id)
-                formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='dts-{0}-sds-{1}'.format(i,int(sds[0])))
-                service_data_formset.update({service_id: formset})
-                if not formset.is_valid():
+                if 'dts-{}-sds_counter'.format(i) in self.request.POST:
+                    sds = self.request.POST['dts-{}-sds_counter'.format(i)]
+                    service_id = self.request.POST['dts-{}-service'.format(i)]
+                    service = Service.objects.get(id=service_id)
+                    formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='dts-{0}-sds-{1}'.format(i,int(sds[0])))
+                    service_data_formset.update({service_id: formset})
+                    if not formset.is_valid():
+                        all_forms_valid = False
+                else:
                     all_forms_valid = False
         else:
             all_forms_valid = False
@@ -2611,7 +2614,7 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         service_data_formset = {}
-        # dt_service_data_formset = {}
+        dt_service_data_formset = {}
         # all_forms_valid = True
         all_dtsds_forms_valid = True
         print (self.request.POST)
@@ -2639,10 +2642,21 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
                     formset2 = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='dts-{0}-sds-{1}'.format(i,int(sds[0])))
                     print(formset2.is_valid())
                     service_data_formset.update({service_id: formset2})
+
                     if not formset2.is_valid():
-                        all_dtsds_forms_valid = False
+                        print('+++++++++ formset2 invalid')
+                        dt_service_id = self.request.POST['dts-{}-id'.format(i)]
+                        dt_service = DeviceTypeService.objects.get(id=dt_service_id)
+                        formset = DeviceTypeServiceDataSourceUpdateFormset(self.request.POST, instance=dt_service, prefix='dts-{0}-sds-{1}'.format(i,int(sds[0])))
+                        dt_service_data_formset.update({dt_service_id: formset})
+                        if not formset.is_valid():
+                            all_dtsds_forms_valid = False
+
+                    # if not formset2.is_valid():
+                        # all_dtsds_forms_valid = False
 
                 else:
+                    print('+++++++ counter not found')
                     all_dtsds_forms_valid = False
                 # dt_service_id = self.request.POST['dts-{}-id'.format(i)]
                 # dt_service = DeviceTypeService.objects.get(id=dt_service_id)
@@ -2654,6 +2668,7 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
                 # if not formset.is_valid():
                 #     all_dtsds_forms_valid = False
         else:
+            print('++++++++ form invalid')
             all_dtsds_forms_valid = False
 
         print('----post----'*12)
