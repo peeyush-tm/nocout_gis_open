@@ -334,6 +334,16 @@
                     </li>
                     <li class="has-sub-sub">
                         <a class="" href="javascript:;">
+                            <span class="sub-menu-text">Service Thematic Settings</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            <li><a class="" href="/serv_thematic_settings/"><span class="sub-menu-text">Global Service Thematic Settings</span></a></li>
+                            <li><a class="" href="/serv_thematic_settings/admin/"><span class="sub-menu-text">Admin Service Thematic Settings</span></a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub-sub">
+                        <a class="" href="javascript:;">
                             <span class="sub-menu-text">Ping Thematic Settings</span>
                             <span class="arrow"></span>
                         </a>
@@ -344,6 +354,7 @@
                     </li>
                 {% else %}
                     <li><a class="" href="/thematic_settings/"><span class="sub-menu-text">Thematic Settings</span></a></li>
+                    <li><a class="" href="/serv_thematic_settings/"><span class="sub-menu-text">Service Thematic Settings</span></a></li>
                     <li><a class="" href="/ping_thematic_settings/"><span class="sub-menu-text">Ping Thematic Settings</span></a></li>
                 {% endif %}
                 <li><a class="" href="{% url 'dashboard-settings' %}"><span class="sub-menu-text">Dashboard Settings</span></a></li>
