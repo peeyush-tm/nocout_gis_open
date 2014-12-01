@@ -1,6 +1,6 @@
 {{ service_data_formset.management_form }}
 {% for form in service_data_formset %}
-    <input type="hidden" name='sds_counter' value="{{counter}}">
+    <input type="hidden" name='dts-{{service_counter}}-sds_counter' value="{{counter}}">
     {{form.id}}
     <div class="form-group">
         <label for="{{ form.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>

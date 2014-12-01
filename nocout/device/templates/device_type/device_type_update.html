@@ -106,7 +106,9 @@
               // var parameter = $(this).parent(".row .inline").find("#id_parameter")
               var row_inline = $(this).parent(".row .inline")
               var dts_id = dts_value[index].value
-              get_attribute_of_device_type_service(row_inline, dts_id)
+              // var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
+              var service_counter = index + 1
+              get_attribute_of_device_type_service(row_inline, dts_id, service_counter)
             });
         }
 
@@ -117,7 +119,8 @@
               var service_id = $(this).find("option:selected").val()
               var parameter = $(this).parent(".row .inline").find("#id_parameter")
               var row_inline = $(this).parent(".row .inline")
-              get_attribute_of_service(service_id, parameter, row_inline)
+              var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
+              get_attribute_of_service(service_id, parameter, row_inline, service_counter)
             });
         }
 
@@ -126,10 +129,12 @@
             var service_id = $(this).find("option:selected").val()
             var parameter = $(this).parent(".row .inline").find("#id_parameter")
             var row_inline = $(this).parent(".row .inline")
-            get_attribute_of_service(service_id, parameter, row_inline)
+            var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
+            get_attribute_of_service(service_id, parameter, row_inline, service_counter)
         });
 
-        function get_attribute_of_service(service_id, parameter, row_inline){
+        function get_attribute_of_service(service_id, parameter, row_inline, service_counter){
+            var service_counter = service_counter - 1
             counter = counter + 1
             if(service_id == '' ){
                 console.log('Select the service')
@@ -141,7 +146,8 @@
                     dataType: "json",
                     data: {
                         service_id : service_id,
-                        counter : counter
+                        service_counter : service_counter,
+                        counter : counter,
                     },
                     success : function(service) {
                         var parameter_option = parameter.find("select option:selected")
@@ -161,7 +167,8 @@
                 return false;
             }
         }
-        function get_attribute_of_device_type_service(row_inline, dts_id){
+        function get_attribute_of_device_type_service(row_inline, dts_id, service_counter){
+            var service_counter = service_counter - 1
             counter = counter + 1
             if(dts_id == '' ){
                 console.log('no instance is found')
@@ -174,7 +181,8 @@
                     dataType: "json",
                     data: {
                         dts_id : dts_id,
-                        counter : counter
+                        service_counter : service_counter,
+                        counter : counter,
                     },
                     success : function(service) {
                         row_inline.children().slice(2).remove()

@@ -2521,15 +2521,18 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
         device_type_service_form = DeviceTypeServiceCreateFormset(self.request.POST, prefix='dts')
         if (device_type_service_form.is_valid()):
             # try:
-            sds_prefix = dict(self.request.POST)['sds_counter']
+            # sds_prefix = dict(self.request.POST)['sds_counter']
+            total_forms = self.request.POST['dts-TOTAL_FORMS'][0]
             # except:
                 # sds_prefix = [u'0']
-            counter_prefix = []
-            x = [counter_prefix.append(counter) for counter in sds_prefix if counter not in counter_prefix]
-            for i,sds in enumerate(counter_prefix):
+            # counter_prefix = []
+            # x = [counter_prefix.append(counter) for counter in sds_prefix if counter not in counter_prefix]
+            # for i,sds in enumerate(counter_prefix):
+            for i in range(int(total_forms)):
+                sds = self.request.POST['dts-{}-sds_counter'.format(i)]
                 service_id = self.request.POST['dts-{}-service'.format(i)]
                 service = Service.objects.get(id=service_id)
-                formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='sds-{}'.format(sds))
+                formset = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='dts-{0}-sds-{1}'.format(i,int(sds[0])))
                 service_data_formset.update({service_id: formset})
                 if not formset.is_valid():
                     all_forms_valid = False
@@ -2608,23 +2611,31 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         service_data_formset = {}
-        dt_service_data_formset = {}
+        # dt_service_data_formset = {}
         # all_forms_valid = True
         all_dtsds_forms_valid = True
         print (self.request.POST)
         device_type_service_form = DeviceTypeServiceUpdateFormset(self.request.POST, instance=self.object, prefix='dts')
+        # device_type_service_form2 = DeviceTypeServiceCreateFormset(self.request.POST, prefix='dts')
         if (device_type_service_form.is_valid()):
             # try:
-            dtsds_prefix = dict(self.request.POST)['sds_counter']
+            #     dtsds_prefix = dict(self.request.POST)['sds_counter']
             # except KeyError:
-                # dtsds_prefix = dict(self.request.POST)['sds_counter']
-            dtsds_counter_prefix = []
-            x = [dtsds_counter_prefix.append(counter) for counter in dtsds_prefix if counter not in dtsds_counter_prefix]
-            for i,sds in enumerate(dtsds_counter_prefix):
+            #     dtsds_prefix = [u'0', u'1']
+            total_forms = self.request.POST['dts-TOTAL_FORMS'][0]
+            # dtsds_counter_prefix = []
+            # x = [dtsds_counter_prefix.append(counter) for counter in dtsds_prefix if counter not in dtsds_counter_prefix]
+            # for i,sds in enumerate(dtsds_counter_prefix):
+            for i in range(int(total_forms)):
+                print('--i--'*12)
+                sds = self.request.POST['dts-{}-sds_counter'.format(i)]
+                print(sds)
                 service_id = self.request.POST['dts-{}-service'.format(i)]
+                print(service_id)
                 service = Service.objects.get(id=service_id)
-                formset2 = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='sds-{}'.format(sds))
-                print(formset2.forms)
+                print(service)
+                formset2 = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='dts-{0}-sds-{1}'.format(i,int(sds[0])))
+                print(formset2.is_valid())
                 service_data_formset.update({service_id: formset2})
                 if not formset2.is_valid():
                     all_dtsds_forms_valid = False
@@ -2661,8 +2672,9 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
         print('--valid--'*12)
         self.object = form.save()
         # self.object = DeviceType.objects.get(name='as1')
-        DeviceTypeService.objects.filter(device_type=self.object).delete()
+        # DeviceTypeService.objects.filter(device_type=self.object).delete()
 
+        # device_type_service_form.instance = self.object
         device_type_service_form.instance = self.object
         dts_update = device_type_service_form.save()
         # # print(device_type_service_form)
@@ -2678,23 +2690,19 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
         # for sds_form in service_data_formset['4']:
         #     print(sds_form)
         #     print(sds_form.cleaned_data)
-
+        print(dts_update)
         for dts_obj in dts_update:
             print(dts_obj.service.id)
             for sds_form in service_data_formset['{0}'.format(dts_obj.service.id)]:
                 print(sds_form.cleaned_data)
-                # sds_id = sds_form.cleaned_data['service_data_sources']
-                # warning = sds_form.cleaned_data['warning']
-                # critical = sds_form.cleaned_data['critical']
-                # sds_obj = DeviceTypeServiceDataSource.objects.create(service_data_sources=sds_id,
-                            # device_type_service=dts_obj, warning=warning, critical=critical)
+                sds_id = sds_form.cleaned_data['service_data_sources']
+                warning = sds_form.cleaned_data['warning']
+                critical = sds_form.cleaned_data['critical']
+                sds_obj = DeviceTypeServiceDataSource.objects.create(service_data_sources=sds_id,
+                            device_type_service=dts_obj, warning=warning, critical=critical)
 
-        DeviceTypeService.objects.filter(device_type=self.object).delete()
-        # return HttpResponseRedirect(self.get_success_url())
-        return self.render_to_response(
-            self.get_context_data(form=form,
-                                  device_type_service_form=device_type_service_form,
-                                  service_data_formset=service_data_formset))
+        # DeviceTypeService.objects.filter(device_type=self.object).delete()
+        return HttpResponseRedirect(self.get_success_url())
 
 
     def form_invalid(self, form, device_type_service_form, service_data_formset):

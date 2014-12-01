@@ -263,17 +263,19 @@ def select_data_source(request):
     """
     dts_pk = request.GET['dts_id']
     counter = request.GET['counter']
+    service_counter = request.GET['service_counter']
     # service = Service.objects.get(id=pk)
     # parameters = service.parameters
     dts = DeviceTypeService.objects.get(id=dts_pk)
-    Service_data_formset = DeviceTypeServiceDataSourceUpdateFormset(instance=dts, prefix='sds-{}'.format(counter))
+    Service_data_formset = DeviceTypeServiceDataSourceUpdateFormset(instance=dts, prefix='dts-{0}-sds-{1}'.format(service_counter,counter))
     # if len(Service_data_formset):
     #     Service_data_formset = Service_data_formset
     # else:
     #     Service_data_formset = DTServiceDataSourceUpdateFormSet(instance=service, prefix='sds-{}'.format(counter))
     ctx_dict = {
                 'service_data_formset': Service_data_formset,
-                'counter': counter
+                'counter': counter,
+                'service_counter': service_counter,
             }
     service_attributes = render_to_string('service/service_attributes_dtsds.html', ctx_dict)
     service_attributes.content_subtype = "html"
