@@ -95,25 +95,29 @@
             $(".select2select").select2();
         })
         counter = -1
-        var dts_value = $('form input[type="hidden"][id|="id_dts"][name|="dts"][name$="id"]')
-        // var dts_fs = $("form .row")
-        // if (dts_value){
-        //     $.each(dts_value, function(index, value){
-        //         console.log( index +':'+ value.value)
-        //         var dts_id = value.value
-        //         var row_inline = value.nextElementSibling
-        //         get_attribute_of_device_type_service(dts_id, row_inline, index)
-        //     });
-        // }
-        // // if service is already selected
+        var dts_value = []
+        var dts_value = $('form input[type="hidden"][id|="id_dts_update"][name|="dts_update"][name$="id"]')
+
+        // if there is device_type_service formset of the device type
         if (dts_value){
-            var service = $("form").find(".row").find("#id_service")
+            var service = $("form").find(".row").find("#id_service").slice(0,dts_value.length)
             service.each(function(index) {
+              // var service_id = $(this).find("option:selected").val()
+              // var parameter = $(this).parent(".row .inline").find("#id_parameter")
+              var row_inline = $(this).parent(".row .inline")
+              var dts_id = dts_value[index].value
+              get_attribute_of_device_type_service(row_inline, dts_id)
+            });
+        }
+
+        // if service is already selected
+        if ($("#id_service").find("option:selected").val()){
+            var service = $("form").find(".row").find("#id_service").slice(dts_value.length)
+            service.each(function() {
               var service_id = $(this).find("option:selected").val()
               var parameter = $(this).parent(".row .inline").find("#id_parameter")
               var row_inline = $(this).parent(".row .inline")
-              var dts_id = dts_value[index].value
-              get_attribute_of_device_type_service(service_id, parameter, row_inline, dts_id)
+              get_attribute_of_service(service_id, parameter, row_inline)
             });
         }
 
@@ -146,8 +150,8 @@
                         row_inline.children().slice(2).remove()
 
                         row_inline.append(service.service_attributes)
-                        // row_inline.children().slice(2).find("select").attr('readonly', true);
-                        // row_inline.find('.form-group input').attr('required',true);
+                        row_inline.children().slice(2).find("select").attr('readonly', true);
+                        row_inline.find('.form-group input').attr('required',true);
                     },
                     error : function(xhr,errmsg,err) {
                         console.log(xhr.status + ": " + xhr.responseText);
@@ -157,7 +161,7 @@
                 return false;
             }
         }
-        function get_attribute_of_device_type_service(service_id, parameter, row_inline, dts_id){
+        function get_attribute_of_device_type_service(row_inline, dts_id){
             counter = counter + 1
             if(dts_id == '' ){
                 console.log('no instance is found')

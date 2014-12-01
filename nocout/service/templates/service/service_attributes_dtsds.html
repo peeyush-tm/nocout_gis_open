@@ -1,0 +1,30 @@
+{{ dt_service_data_formset.management_form }}
+{% for form in dt_service_data_formset %}
+    <input type="hidden" name='dtsds_counter' value="{{counter}}">
+    {{form.id}}
+    <div class="form-group">
+        <label for="{{ form.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>
+        <div class="col-sm-9">
+            <div class="col-md-7">
+                {{form.service_data_sources}}
+                {{ dt_service_data_formset.non_form_errors }}
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="{{ form.id_for_label }}" class="col-sm-3 control-label">Warning</label>
+        <div class="col-sm-9">
+            <div class="col-md-7">
+                {{form.warning}}
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="{{ form.id_for_label }}" class="col-sm-3 control-label">Critical</label>
+        <div class="col-sm-9">
+            <div class="col-md-7">
+                {{form.critical}}
+            </div>
+        </div>
+    </div>
+{% endfor %}

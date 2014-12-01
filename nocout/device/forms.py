@@ -560,9 +560,9 @@ class BaseDeviceTypeServiceFormset(BaseInlineFormSet):
     #         # form.fields['service'].empty_label = 'Select'
 
     def clean(self):
-        print('++++++++++++++++++++++++',self.forms)
+        # print('++++++++++++++++++++++++',self.forms)
         for form in self.forms:
-            print('++++++++++',form.cleaned_data)
+            # print('++++++++++',form.cleaned_data)
             if not len(form.cleaned_data.keys()):
                 raise forms.ValidationError('This field is required.')
 
