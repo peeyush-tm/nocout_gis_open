@@ -30,6 +30,7 @@ from models import Inventory, DeviceTechnology, IconSettings, LivePollingSetting
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm, PingThematicSettingsForm
 from organization.models import Organization
+from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, Status
 from site_instance.models import SiteInstance
 from user_group.models import UserGroup
 from user_profile.models import UserProfile
@@ -2950,7 +2951,13 @@ class DownloadSelectedBSInventory(View):
                       'SS Latitude', 'SS Longitude', 'SS Antenna Height', 'SS Antenna Type', 'SS Antenna Gain',
                       'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
                       'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
-                      'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC']
+                      'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC',
+                      'BS Product Type', 'BS Frequency', 'BS UAS', 'BS RSSI', 'BS Estimated Throughput',
+                      'BS Utilisation DL', 'BS Utilisation UL', 'BS Uptime', 'BS Link Distance', 'BS CBW', 'BS Latency',
+                      'BS PD', 'BS Auto Negotiation', 'BS Duplex', 'BS Speed', 'BS Link',
+                      'SS Product Type', 'SS Frequency', 'SS UAS', 'SS RSSI', 'SS Estimated Throughput',
+                      'SS Utilisation DL', 'SS Utilisation UL', 'SS Uptime', 'SS Link Distance', 'SS CBW', 'SS Latency',
+                      'SS PD', 'SS Auto Negotiation', 'SS Duplex', 'SS Speed', 'SS Link']
 
         # ptp bh dictionary
         ptp_bh_fields = ['State', 'City', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
@@ -2966,7 +2973,13 @@ class DownloadSelectedBSInventory(View):
                          'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
                          'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
                          'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC', 'SS MIMO/Diversity',
-                         'SS Polarization']
+                         'SS Polarization',
+                         'BS Product Type', 'BS Frequency', 'BS UAS', 'BS RSSI', 'BS Estimated Throughput',
+                         'BS Utilisation DL', 'BS Utilisation UL', 'BS Uptime', 'BS Link Distance', 'BS CBW',
+                         'BS Latency', 'BS PD', 'BS Auto Negotiation', 'BS Duplex', 'BS Speed', 'BS Link',
+                         'SS Product Type', 'SS Frequency', 'SS UAS', 'SS RSSI', 'SS Estimated Throughput',
+                         'SS Utilisation DL', 'SS Utilisation UL', 'SS Uptime', 'SS Link Distance', 'SS CBW',
+                         'SS Latency', 'SS PD', 'SS Auto Negotiation', 'SS Duplex', 'SS Speed', 'SS Link']
 
         # pmp bs dictionary
         pmp_bs_fields = ['State', 'City', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
@@ -2976,14 +2989,18 @@ class DownloadSelectedBSInventory(View):
                          'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
                          'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity',
                          'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'DR Site',
-                         'Sector ID', 'BSO Circuit ID']
+                         'Sector ID', 'BSO Circuit ID', 'Frequency', 'Cell Radius', 'Utilization DL', 'Utilization UL',
+                         'Sector Uptime', 'TX Power', 'RX Power']
 
         # pmp ss dictionary
         pmp_sm_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
                          'Building Height', 'Tower/Pole Height', 'Antenna Height', 'Antenna Beamwidth',
                          'Polarization', 'Antenna Type', 'SS Mount Type', 'Ethernet Extender', 'Cable Length',
                          'RSSI During Acceptance', 'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance',
-                         'Lens/Reflector', 'AP IP']
+                         'Lens/Reflector', 'AP IP', 'Frequency', 'Sector ID', 'RSSI DL', 'RSSI UL', 'Jitter DL',
+                         'Jitter UL', 'Transmit Power', 'Polled SS IP', 'Polled SS MAC', 'Polled BS IP',
+                         'Polled BS MAC', 'Session Uptime', 'Latency', 'PD', 'Utilization DL', 'Utilization UL',
+                         'Auto Negotiation', 'Duplex', 'Speed', 'Link']
 
         # wimax bs dictionary
         wimax_bs_fields = ['State', 'City', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
@@ -2993,14 +3010,18 @@ class DownloadSelectedBSInventory(View):
                            'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
                            'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port',
                            'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname',
-                           'PE IP', 'DR Site', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor']
+                           'PE IP', 'DR Site', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Sector Utilization',
+                           'Frequency', 'MRC', 'IDU Type', 'System Uptime', 'Latency', 'PD']
 
         # wimax ss dictionary
         wimax_ss_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
                            'Building Height', 'Tower/Pole Height', 'Antenna Height', 'Antenna Beamwidth',
                            'Polarization', 'Antenna Type', 'SS Mount Type', 'Ethernet Extender', 'Cable Length',
                            'RSSI During Acceptance', 'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance',
-                           'Vendor']
+                           'Vendor', 'Frequency', 'Sector ID', 'Polled SS IP', 'Polled SS MAC', 'RSSI DL', 'RSSI UL',
+                           'CINR DL', 'CINR UL', 'INTRF DL', 'INTRF UL', 'PTX', 'Session Uptime', 'Device Uptime',
+                           'Modulation UL FEC', 'Modulation DL FEC', 'Latency', 'PD', 'Utilization DL',
+                           'Utilization UL', 'Auto Negotiation', 'Duplex', 'Speed', 'Link']
 
         # loop on base stations by using bs_ids list conatining base stations id's
         try:
@@ -3201,6 +3222,9 @@ class DownloadSelectedBSInventory(View):
             logger.info("Problem in creating excel rows. Exception: ", e.message)
 
         # ***************************** Wimax BS *******************************
+        # remove duplicate dictionaries from wimax bs list
+        wimax_bs_rows = remove_duplicate_dict_from_list(wimax_bs_rows)
+
         # wimax bs excel rows
         wimax_bs_excel_rows = []
         for val in wimax_bs_rows:
@@ -3212,6 +3236,8 @@ class DownloadSelectedBSInventory(View):
                     temp_list.append("")
                     logger.info(e.message)
             wimax_bs_excel_rows.append(temp_list)
+
+        print "************************ WIMAX BS ROWS - ", wimax_bs_rows
 
         # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
         ws_wimax_bs = inventory_wb.add_sheet("Wimax BS")
@@ -3288,6 +3314,20 @@ class DownloadSelectedBSInventory(View):
         # result dictionary (contains ptp and ptp bh inventory)
         result = dict()
 
+        # base station device name
+        bs_device_name = ""
+        try:
+            bs_device_name = sector.sector_configured_on.device_name
+        except Exception as e:
+            logger.info("PTP BS Device not exist. Exception: ", e.message)
+
+        # base station machine
+        bs_machine_name = ""
+        try:
+            bs_machine_name = sector.sector_configured_on.machine.name
+        except Exception as e:
+            logger.info("PTP BS Machine not found.  Exception: ", e.message)
+
         # ptp rows list
         ptp_rows = list()
 
@@ -3302,6 +3342,20 @@ class DownloadSelectedBSInventory(View):
             for circuit in circuits:
                 # sub station
                 sub_station = circuit.sub_station
+
+                # sub station device name
+                ss_device_name = ""
+                try:
+                    ss_device_name = sub_station.device.device_name
+                except Exception as e:
+                    logger.info("PTP SS device not found. Exception: ", e.message)
+
+                # sub station machine
+                ss_machine_name = ""
+                try:
+                    ss_machine_name = sub_station.device.machine.name
+                except Exception as e:
+                    logger.info("PTP SS machine not found. Exception: ", e.message)
 
                 # backhaul
                 backhaul = base_station.backhaul
@@ -3576,6 +3630,148 @@ class DownloadSelectedBSInventory(View):
                 except Exception as e:
                     logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
 
+                # ********************************* PTP BS Perf Info *************************************
+                # bs product type
+                try:
+                    ptp_row['BS Product Type'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                                data_source='producttype').using(
+                                                                                alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Product Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs frequency
+                try:
+                    ptp_row['BS Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                             data_source='frequency').using(
+                                                                             alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Frequency not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs uas
+                try:
+                    ptp_row['BS UAS'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                     data_source='uas').using(
+                                                                     alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS UAS not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs rssi
+                try:
+                    ptp_row['BS RSSI'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                      data_source='rssi').using(
+                                                                      alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS RSSI not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs estimated throughput
+                try:
+                    ptp_row['BS Estimated Throughput'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                        service_name='radwin_service_throughput',
+                                                                        data_source='service_throughput').using(
+                                                                        alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Estimated Throughput not exist for base station ({}).".format(base_station.name,
+                                                                                                  e.message))
+
+                # bs utilization dl
+                try:
+                    ptp_row['BS Utilisation DL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                        service_name='radwin_dl_utilization',
+                                                                        data_source='Management_Port_on_Odu').using(
+                                                                        alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Utilisation DL not exist for base station ({}).".format(base_station.name,
+                                                                                            e.message))
+
+                # bs utilization ul
+                try:
+                    ptp_row['BS Utilisation UL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                        service_name='radwin_ul_utilization',
+                                                                        data_source='Management_Port_on_Odu').using(
+                                                                        alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Utilisation UL not exist for base station ({}).".format(base_station.name,
+                                                                                            e.message))
+
+                # bs uptime
+                try:
+                    ptp_row['BS Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                        service_name='radwin_uptime',
+                                                                        data_source='uptime').using(
+                                                                        alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Uptime not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs link distance
+                try:
+                    ptp_row['BS Link Distance'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                                 data_source='link_distance').using(
+                                                                                 alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Link Distance not exist for base station ({}).".format(base_station.name,
+                                                                                           e.message))
+
+                # bs cbw
+                try:
+                    ptp_row['BS CBW'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                       data_source='cbw').using(
+                                                                       alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS CBW not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs latency
+                try:
+                    ptp_row['BS Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
+                                                                         data_source='rta').using(
+                                                                         alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Latency not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs pl/pd (packet loss/drop)
+                try:
+                    ptp_row['BS PD'] = NetworkStatus.objects.filter(device_name=bs_device_name,
+                                                                    data_source='pl').using(
+                                                                    alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS PD not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs auto negotiation
+                try:
+                    ptp_row['BS Auto Negotiation'] = Status.objects.filter(device_name=bs_device_name,
+                                                                           service_name='radwin_autonegotiation_status',
+                                                                           data_source='1').using(
+                                                                           alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Auto Negotiation not exist for base station ({}).".format(base_station.name,
+                                                                                              e.message))
+
+                # bs duplex
+                try:
+                    ptp_row['BS Duplex'] = Status.objects.filter(device_name=bs_device_name,
+                                                                 service_name='radwin_port_mode_status',
+                                                                 data_source='1').using(
+                                                                 alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Duplex not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs speed
+                try:
+                    ptp_row['BS Speed'] = Status.objects.filter(device_name=bs_device_name,
+                                                                service_name='radwin_port_speed_status',
+                                                                data_source='1').using(
+                                                                alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Speed not exist for base station ({}).".format(base_station.name, e.message))
+
+                # bs link
+                try:
+                    ptp_row['BS Link'] = Status.objects.filter(device_name=bs_device_name,
+                                                               service_name='radwin_link_ethernet_status',
+                                                               data_source='Management_Port_on_Odu').using(
+                                                               alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("BS Link not exist for base station ({}).".format(base_station.name, e.message))
+
                 # ********************************** PTP Far End (SS) ************************************
 
                 # ss city
@@ -3736,6 +3932,148 @@ class DownloadSelectedBSInventory(View):
                 except Exception as e:
                     logger.info("SS Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
 
+                # ********************************* PTP SS Perf Info *************************************
+                # ss product type
+                try:
+                    ptp_row['SS Product Type'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='producttype').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Product Type not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss frequency
+                try:
+                    ptp_row['SS Frequency'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                             data_source='frequency').using(
+                                                                             alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss uas
+                try:
+                    ptp_row['SS UAS'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                     data_source='uas').using(
+                                                                     alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS UAS not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss rssi
+                try:
+                    ptp_row['SS RSSI'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                      data_source='rssi').using(
+                                                                      alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS RSSI not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss estimated throughput
+                try:
+                    ptp_row['SS Estimated Throughput'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                        service_name='radwin_service_throughput',
+                                                                        data_source='service_throughput').using(
+                                                                        alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Estimated Throughput not exist for sub station ({}).".format(sub_station.name,
+                                                                                                 e.message))
+
+                # ss utilization dl
+                try:
+                    ptp_row['SS Utilisation DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                        service_name='radwin_dl_utilization',
+                                                                        data_source='Management_Port_on_Odu').using(
+                                                                        alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Utilisation DL not exist for sub station ({}).".format(sub_station.name,
+                                                                                           e.message))
+
+                # ss utilization ul
+                try:
+                    ptp_row['SS Utilisation UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                        service_name='radwin_ul_utilization',
+                                                                        data_source='Management_Port_on_Odu').using(
+                                                                        alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Utilisation UL not exist for sub station ({}).".format(sub_station.name,
+                                                                                           e.message))
+
+                # ss uptime
+                try:
+                    ptp_row['SS Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                        service_name='radwin_uptime',
+                                                                        data_source='uptime').using(
+                                                                        alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss link distance
+                try:
+                    ptp_row['SS Link Distance'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                 data_source='link_distance').using(
+                                                                                 alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Link Distance not exist for sub station ({}).".format(sub_station.name,
+                                                                                          e.message))
+
+                # ss cbw
+                try:
+                    ptp_row['SS CBW'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                       data_source='cbw').using(
+                                                                       alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS CBW not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss latency
+                try:
+                    ptp_row['SS Latency'] = NetworkStatus.objects.filter(device_name=ss_device_name,
+                                                                         data_source='rta').using(
+                                                                         alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss pl/pd (packet loss/drop)
+                try:
+                    ptp_row['SS PD'] = NetworkStatus.objects.filter(device_name=ss_device_name,
+                                                                    data_source='pl').using(
+                                                                    alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS PD not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss auto negotiation
+                try:
+                    ptp_row['SS Auto Negotiation'] = Status.objects.filter(device_name=ss_device_name,
+                                                                           service_name='radwin_autonegotiation_status',
+                                                                           data_source='1').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Auto Negotiation not exist for sub station ({}).".format(sub_station.name,
+                                                                                             e.message))
+
+                # ss duplex
+                try:
+                    ptp_row['SS Duplex'] = Status.objects.filter(device_name=ss_device_name,
+                                                                 service_name='radwin_port_mode_status',
+                                                                 data_source='1').using(
+                                                                 alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss speed
+                try:
+                    ptp_row['SS Speed'] = Status.objects.filter(device_name=ss_device_name,
+                                                                service_name='radwin_port_speed_status',
+                                                                data_source='1').using(
+                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ss link
+                try:
+                    ptp_row['SS Link'] = Status.objects.filter(device_name=ss_device_name,
+                                                               service_name='radwin_link_ethernet_status',
+                                                               data_source='Management_Port_on_Odu').using(
+                                                               alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("SS Link not exist for sub station ({}).".format(sub_station.name, e.message))
+
                 # filter 'ptp' and 'ptp bh' rows
                 if circuit.circuit_type == "Customer":
                     ptp_rows.append(ptp_row)
@@ -3750,11 +4088,26 @@ class DownloadSelectedBSInventory(View):
         # insert 'ptp bh' rows in result dictionary
         result['ptp_bh'] = ptp_bh_rows if ptp_bh_rows else ""
 
+        print "****************************** ptp (result) - ", result
         return result
 
     def get_selected_pmp_inventory(self, base_station, sector):
         # result dictionary (contains ptp and ptp bh inventory)
         result = dict()
+
+        # base station device name
+        bs_device_name = ""
+        try:
+            bs_device_name = sector.sector_configured_on.device_name
+        except Exception as e:
+            logger.info("PMP BS Device not exist. Exception: ", e.message)
+
+        # base station machine
+        bs_machine_name = ""
+        try:
+            bs_machine_name = sector.sector_configured_on.machine.name
+        except Exception as e:
+            logger.info("PMP BS Machine not found.  Exception: ", e.message)
 
         # pmp bs rows list
         pmp_bs_rows = list()
@@ -3770,6 +4123,20 @@ class DownloadSelectedBSInventory(View):
             for circuit in circuits:
                 # sub station
                 sub_station = circuit.sub_station
+
+                # sub station device name
+                ss_device_name = ""
+                try:
+                    ss_device_name = sub_station.device.device_name
+                except Exception as e:
+                    logger.info("PMP SS device not found. Exception: ", e.message)
+
+                # sub station machine
+                ss_machine_name = ""
+                try:
+                    ss_machine_name = sub_station.device.machine.name
+                except Exception as e:
+                    logger.info("PMP SS machine not found. Exception: ", e.message)
 
                 # backhaul
                 backhaul = base_station.backhaul
@@ -3813,7 +4180,8 @@ class DownloadSelectedBSInventory(View):
                 try:
                     pmp_bs_row['Type Of BS (Technology)'] = base_station.bs_type
                 except Exception as e:
-                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, e.message))
+                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, 
+                                                                                                  e.message))
 
                 # site type
                 try:
@@ -3892,7 +4260,8 @@ class DownloadSelectedBSInventory(View):
                 try:
                     pmp_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
                 except Exception as e:
-                    logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name, e.message))
+                    logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name, 
+                                                                                            e.message))
 
                 # azimuth
                 try:
@@ -3904,7 +4273,8 @@ class DownloadSelectedBSInventory(View):
                 try:
                     pmp_bs_row['Sync Splitter Used'] = sector.antenna.sync_splitter_used
                 except Exception as e:
-                    logger.info("Sync Splitter Used not exist for base station ({}).".format(base_station.name, e.message))
+                    logger.info("Sync Splitter Used not exist for base station ({}).".format(base_station.name, 
+                                                                                             e.message))
 
                 # type of gps
                 try:
@@ -4019,6 +4389,63 @@ class DownloadSelectedBSInventory(View):
                     pmp_bs_row['Sector ID'] = sector.sector_id
                 except Exception as e:
                     logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
+
+                # ************************************* BS Perf Parameters **********************************
+                # frequency
+                try:
+                    pmp_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                             data_source='frequency').using(
+                                                                             alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
+
+                # cell radius
+                try:
+                    pmp_bs_row['Cell Radius'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                               data_source='cell_radius').using(
+                                                                               alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Cell Radius not exist for base station ({}).".format(base_station.name, e.message))
+
+                # dl utilization
+                try:
+                    pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                                data_source='dl_utilization').using(
+                                                                                alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Utilization DL not exist for base station ({}).".format(base_station.name, e.message))
+
+                # ul utilization
+                try:
+                    pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                                data_source='ul_utilization').using(
+                                                                                alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Utilization UL not exist for base station ({}).".format(base_station.name, e.message))
+
+                # uptime
+                try:
+                    pmp_bs_row['Sector Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                               data_source='uptime').using(
+                                                                               alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Sector Uptime not exist for base station ({}).".format(base_station.name, e.message))
+
+                # transmit power
+                try:
+                    pmp_bs_row['TX Power'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                            data_source='transmit_power').using(
+                                                                            alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("TX Power not exist for base station ({}).".format(base_station.name, e.message))
+
+                # frequency
+                try:
+                    pmp_bs_row['RX Power'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                            data_source='commanded_rx_power').using(
+                                                                            alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("RX Power not exist for base station ({}).".format(base_station.name, e.message))
 
                 # ********************************** Far End (PMP SM) ********************************
 
@@ -4145,6 +4572,159 @@ class DownloadSelectedBSInventory(View):
                     logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
                                                                                              e.message))
 
+                # ************************************* SS Perf Parameters **********************************
+                # frequency
+                try:
+                    pmp_sm_row['Frequency'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                             data_source='frequency').using(
+                                                                             alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # dl rssi
+                try:
+                    pmp_sm_row['RSSI DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                         data_source='dl_rssi').using(
+                                                                         alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ul rssi
+                try:
+                    pmp_sm_row['RSSI UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                         data_source='ul_rssi').using(
+                                                                         alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # dl jitter
+                try:
+                    pmp_sm_row['Jitter DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='dl_jitter').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Jitter DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ul jitter
+                try:
+                    pmp_sm_row['Jitter UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='ul_jitter').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Jitter UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # transmit power
+                try:
+                    pmp_sm_row['Transmit Power'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                  data_source='transmit_power').using(
+                                                                                  alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Transmit Power not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # polles ss ip
+                try:
+                    pmp_sm_row['Polled SS IP'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='ss_ip').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # polled ss mac
+                try:
+                    pmp_sm_row['Polled SS MAC'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                 data_source='ss_mac').using(
+                                                                                 alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # polled bs ip
+                try:
+                    pmp_sm_row['Polled BS IP'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='bs_ip').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Polled BS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # polles bs mac
+                try:
+                    pmp_sm_row['Polled BS MAC'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                             data_source='ss_connected_bs_mac').using(
+                                                                             alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Polled BS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # uptime
+                try:
+                    pmp_sm_row['Session Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='uptime').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # latency
+                try:
+                    pmp_sm_row['Latency'] = NetworkStatus.objects.filter(device_name=ss_device_name,
+                                                                         data_source='rta').using(
+                                                                         alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # pl
+                try:
+                    pmp_sm_row['PD'] = NetworkStatus.objects.filter(device_name=ss_device_name,
+                                                                    data_source='pl').using(
+                                                                    alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # dl utilization
+                try:
+                    pmp_sm_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='dl_utilization').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ul utilization
+                try:
+                    pmp_sm_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='ul_utilization').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # auto negotiation
+                try:
+                    pmp_sm_row['Auto Negotiation'] = Status.objects.filter(device_name=ss_device_name,
+                                                                           data_source='autonegotiation').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # duplex
+                try:
+                    pmp_sm_row['Duplex'] = Status.objects.filter(device_name=ss_device_name,
+                                                                 data_source='duplex').using(
+                                                                 alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # speed
+                try:
+                    pmp_sm_row['Speed'] = Status.objects.filter(device_name=ss_device_name,
+                                                                data_source='ss_speed').using(
+                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # link state
+                try:
+                    pmp_sm_row['Link'] = Status.objects.filter(device_name=ss_device_name,
+                                                               data_source='link_state').using(
+                                                               alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
+
                 # append 'pmp_bs_row' dictionary in 'pmp_bs_rows'
                 pmp_bs_rows.append(pmp_bs_row)
 
@@ -4157,11 +4737,27 @@ class DownloadSelectedBSInventory(View):
         # insert 'pmp sm' rows in result dictionary
         result['pmp_sm'] = pmp_sm_rows if pmp_sm_rows else ""
 
+        print "****************************** pmp (result) - ", result
+
         return result
 
     def get_selected_wimax_inventory(self, base_station, sector):
         # result dictionary (contains ptp and ptp bh inventory)
         result = dict()
+        
+        # base station device name
+        bs_device_name = ""
+        try:
+            bs_device_name = sector.sector_configured_on.device_name
+        except Exception as e:
+            logger.info("BS Device not exist. Exception: ", e.message)
+
+        # base station machine
+        bs_machine_name = ""
+        try:
+            bs_machine_name = sector.sector_configured_on.machine.name
+        except Exception as e:
+            logger.info("BS Machine not found.  Exception: ", e.message)
 
         # wimax bs rows list
         wimax_bs_rows = list()
@@ -4177,6 +4773,20 @@ class DownloadSelectedBSInventory(View):
             for circuit in circuits:
                 # sub station
                 sub_station = circuit.sub_station
+                
+                # sub station device name
+                ss_device_name = ""
+                try:
+                    ss_device_name = sub_station.device.device_name
+                except Exception as e:
+                    logger.info("WiMAX SS device not found. Exception: ", e.message)
+
+                # sub station machine
+                ss_machine_name = ""
+                try:
+                    ss_machine_name = sub_station.device.machine.name
+                except Exception as e:
+                    logger.info("WiMAX SS machine not found. Exception: ", e.message)
 
                 # backhaul
                 backhaul = base_station.backhaul
@@ -4219,7 +4829,8 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_bs_row['Type Of BS (Technology)'] = base_station.bs_type
                 except Exception as e:
-                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, e.message))
+                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, 
+                                                                                                  e.message))
 
                 # site type
                 try:
@@ -4438,7 +5049,81 @@ class DownloadSelectedBSInventory(View):
                 except Exception as e:
                     logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
 
-                # ********************************** Far End (wimax ss) ********************************
+                # ************************************* BS Perf Parameters **********************************
+                # sector utilization
+                try:
+                    # by splitting last string after underscore from sector name; we get pmp port number
+                    if sector.name.split("_")[-1] == '1':
+                        wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                        data_source='wimax_pmp1_utilization').using(
+                                                                        alias=bs_machine_name)[0].current_value
+                    elif sector.name.split("_")[-1] == '2':
+                        wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                        data_source='wimax_pmp2_utilization').using(
+                                                                        alias=bs_machine_name)[0].current_value
+                    else:
+                        pass
+                except Exception as e:
+                    logger.info("Sector Utilization not exist for base station ({}).".format(base_station.name, 
+                                                                                             e.message))
+
+                # frequency
+                try:
+                    wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                               data_source='frequency').using(
+                                                                               alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
+
+                # mrc
+                try:
+                    # by splitting last string after underscore from sector name; we get pmp port number
+                    if sector.name.split("_")[-1] == '1':
+                        wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                             data_source='pmp1_mrc').using(
+                                                                             alias=bs_machine_name)[0].current_value
+                    elif sector.name.split("_")[-1] == '2':
+                        wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                             data_source='pmp2_mrc').using(
+                                                                             alias=bs_machine_name)[0].current_value
+                    else:
+                        pass
+                except Exception as e:
+                    logger.info("MRC not exist for base station ({}).".format(base_station.name, e.message))
+
+                # idu type
+                try:
+                    wimax_bs_row['IDU Type'] = InventoryStatus.objects.filter(device_name=bs_device_name,
+                                                                              data_source='idu_type').using(
+                                                                              alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("IDU Type not exist for base station ({}).".format(base_station.name, e.message))
+
+                # system uptime
+                try:
+                    wimax_bs_row['System Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
+                                                                                 data_source='bs_uptime').using(
+                                                                                 alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("System Uptime not exist for base station ({}).".format(base_station.name, e.message))
+
+                # latency
+                try:
+                    wimax_bs_row['Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
+                                                                           data_source='rta').using(
+                                                                           alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Latency not exist for base station ({}).".format(base_station.name, e.message))
+
+                # pl
+                try:
+                    wimax_bs_row['PD'] = NetworkStatus.objects.filter(device_name=bs_device_name,
+                                                                      data_source='pl').using(
+                                                                      alias=bs_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("PD not exist for base station ({}).".format(base_station.name, e.message))
+
+                # ********************************** Far End (Wimax SS) ********************************
 
                 # customer name
                 try:
@@ -4478,7 +5163,7 @@ class DownloadSelectedBSInventory(View):
 
                 # mac address
                 try:
-                    wimax_ss_row['MAC'] = State.objects.get(pk=base_station.state).state_name
+                    wimax_ss_row['MAC'] = sub_station.device.mac_address
                 except Exception as e:
                     logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -4563,6 +5248,199 @@ class DownloadSelectedBSInventory(View):
                     logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
                                                                                              e.message))
 
+                # ************************************* SS Perf Parameters **********************************
+                # frequency
+                try:
+                    wimax_ss_row['Frequency'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                             data_source='frequency').using(
+                                                                             alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
+                    
+                # sector id
+                try:
+                    # by splitting last string after underscore from sector name; we get pmp port number
+                    if sector.name.split("_")[-1] == '1':
+                        wimax_ss_row['Sector ID'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                        data_source='sector_id_pmp1').using(
+                                                                        alias=ss_machine_name)[0].current_value
+                    elif sector.name.split("_")[-1] == '2':
+                        wimax_ss_row['Sector ID'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                        data_source='sector_id_pmp2').using(
+                                                                        alias=ss_machine_name)[0].current_value
+                    else:
+                        pass
+                except Exception as e:
+                    logger.info("Sector ID not exist for sub station ({}).".format(sub_station.name, e.message))
+                    
+                # polled ss ip
+                try:
+                    wimax_ss_row['Polled SS IP'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                                data_source='ss_ip').using(
+                                                                                alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
+                    
+                # polled ss mac
+                try:
+                    wimax_ss_row['Polled SS MAC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                             data_source='ss_mac').using(
+                                                                             alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # rssi dl
+                try:
+                    wimax_ss_row['RSSI DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='dl_rssi').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # rssi ul
+                try:
+                    wimax_ss_row['RSSI UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='ul_rssi').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # cinr dl
+                try:
+                    wimax_ss_row['CINR DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='dl_cinr').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("CINR DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # cinr ul
+                try:
+                    wimax_ss_row['CINR UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='ul_cinr').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("CINR UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # intrf dl
+                try:
+                    wimax_ss_row['INTRF DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='dl_intrf').using(
+                                                                            alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("INTRF DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # intrf ul
+                try:
+                    wimax_ss_row['INTRF UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='ul_intrf').using(
+                                                                            alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("INTRF UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # ptx
+                try:
+                    wimax_ss_row['PTX'] = InventoryStatus.objects.filter(device_name=ss_device_name,
+                                                                         data_source='ss_ptx').using(
+                                                                         alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("PTX not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # session uptime
+                try:
+                    wimax_ss_row['Session Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                              data_source='session_uptime').using(
+                                                                              alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # device uptime
+                try:
+                    wimax_ss_row['Device Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                              data_source='uptime').using(
+                                                                              alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Device Uptime  not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # modulation dl fec
+                try:
+                    wimax_ss_row['Modulation DL FEC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='modulation_dl_fec').using(
+                                                                            alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Modulation DL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # modulation ul fec
+                try:
+                    wimax_ss_row['Modulation UL FEC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='modulation_ul_fec').using(
+                                                                            alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Modulation UL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # latency
+                try:
+                    wimax_ss_row['Latency'] = NetworkStatus.objects.filter(device_name=ss_device_name,
+                                                                           data_source='rta').using(
+                                                                           alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # pl (packet loss)
+                try:
+                    wimax_ss_row['PD'] = NetworkStatus.objects.filter(device_name=ss_device_name,
+                                                                      data_source='pl').using(
+                                                                      alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # utilization dl
+                try:
+                    wimax_ss_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='dl_utilization').using(
+                                                                            alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # utilization ul
+                try:
+                    wimax_ss_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
+                                                                            data_source='ul_utilization').using(
+                                                                            alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # auto negotiation
+                try:
+                    wimax_ss_row['Auto Negotiation'] = Status.objects.filter(device_name=ss_device_name,
+                                                                             data_source='autonegotiation').using(
+                                                                             alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # duplex
+                try:
+                    wimax_ss_row['Duplex'] = Status.objects.filter(device_name=ss_device_name,
+                                                                   data_source='duplex').using(
+                                                                   alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # speed
+                try:
+                    wimax_ss_row['Speed'] = Status.objects.filter(device_name=ss_device_name,
+                                                                   data_source='ss_speed').using(
+                                                                   alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
+
+                # link
+                try:
+                    wimax_ss_row['Link'] = Status.objects.filter(device_name=ss_device_name,
+                                                                 data_source='link_state').using(
+                                                                 alias=ss_machine_name)[0].current_value
+                except Exception as e:
+                    logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
+
                 # append 'wimax_bs_row' dictionary in 'wimax_bs_rows'
                 wimax_bs_rows.append(wimax_bs_row)
 
@@ -4575,4 +5453,199 @@ class DownloadSelectedBSInventory(View):
         # insert 'wimax ss' rows in result dictionary
         result['wimax_ss'] = wimax_ss_rows if wimax_ss_rows else ""
 
+        print "****************************** wimax (result) - ", result
+
         return result
+
+
+def remove_duplicate_dict_from_list(input_list=None):
+    """ Remove duplicate dictionaries from list of dictionaries
+
+        :Parameters:
+            - 'input_list' (list) - list of dictionaries for e.g.
+                                        [
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            },
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            },
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            }
+                                        ]
+
+        :Returns:
+           - 'result_list' (list) - list of dictionaries containing unique dictionaries for e.g.
+                                        [
+                                            {
+                                                'City': u'Kolkata',
+                                                'AntennaHeight': 27.0,
+                                                'BHCircuitID': u'COPF-5712',
+                                                'PEIP': u'192.168.216.37',
+                                                'TypeOfBS(Technology)': u'WIMAX',
+                                                'Polarization': u'Vertical',
+                                                'State': u'WestBengal',
+                                                'InfraProvider': u'WTTIL',
+                                                'Latitude': 22.572833333333,
+                                                'SiteType': u'RTT',
+                                                'PMP': u'1',
+                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
+                                                'TypeOfGPS': u'AQtime',
+                                                'IDUIP': u'10.172.72.2',
+                                                'Address': u'35,
+                                                CollegeSt.Kolkata,
+                                                NearCalcuttaMedicalCollegeHospital',
+                                                'BHOffnet/Onnet': u'ONNET',
+                                                'MakeOfAntenna': u'Xhat',
+                                                'SectorName': u'1',
+                                                'BSName': u'BBGanguly',
+                                                'Longitude': 88.362472222222,
+                                                'TowerHeight': 13.0,
+                                                'Azimuth': 30.0,
+                                                'AntennaTilt': 2.0,
+                                                'BHCapacity': 1000L,
+                                                'AggregationSwitchPort': u'Ring',
+                                                'Switch/ConverterPort': u'Gi0/1',
+                                                'DRSite': u'No',
+                                                'BackhaulType': u'DarkFibre',
+                                                'BSOCircuitID': None,
+                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
+                                                'InstallationOfSplitter': None,
+                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
+                                                'BSSwitchIP': u'10.175.132.67',
+                                                'BuildingHeight': 18.0,
+                                                'AntennaBeamwidth': 60.0
+                                            }
+                                        ]
+    """
+
+    # list of dictionaries to be returned as a result
+    result_list = []
+
+    # temporary set containing dictionaries values in tuples for e.g
+    # set([((key, value), (key, value), (key, value)), ((key, value), (key, value), (key, value))]
+
+    temp_set = set()
+
+    # loop through input list (list of dictionaries which needs to be filtered)
+    for d in input_list:
+        # t is set of dictionary values tuple for e.g
+        # ((key, value), (key, value), (key, value), (key, value))
+        # (('City', u'Kolkata'), ('Antenna Height', 29.0), ('BH Circuit ID', u'COPF-571'), ('PE IP', u'192.168.216.37'))
+        t = tuple(d.items())
+        if t not in temp_set:
+            # adding tuple 't' to 'temp_set'
+            temp_set.add(t)
+            # append dictionary 'd' to 'result_list'
+            result_list.append(d)
+
+    return result_list
