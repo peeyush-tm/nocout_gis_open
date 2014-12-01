@@ -369,6 +369,10 @@ class BaseStationForm(forms.ModelForm):
 
     bs_type = forms.TypedChoiceField(choices=BS_TYPE, required=False)
     bs_site_type = forms.TypedChoiceField(choices=BS_SITE_TYPE, required=False)
+    building_height = forms.FloatField(label='Building Height', required=True, initial=0, help_text='(mtr) Enter a number.',
+            validators=[MaxValueValidator(99), MinValueValidator(-1)])
+    tower_height = forms.FloatField(label='Tower Height', required=True, initial=0, help_text='(mtr) Enter a number.',
+            validators=[MaxValueValidator(99), MinValueValidator(-1)])
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -378,15 +382,9 @@ class BaseStationForm(forms.ModelForm):
         self.fields['country'].empty_label = 'Select'
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
-        self.fields['building_height'].initial = 0
-        self.fields['tower_height'].initial = 0
         self.fields['latitude'].required = True
         self.fields['longitude'].required = True
         self.fields['country'].required = True
-        self.fields['city'].required = True
-        self.fields['state'].required = True
-        self.fields['building_height'].required = True
-        self.fields['tower_height'].required = True
         self.fields['state'].required = True
         self.fields['city'].required = True
 
@@ -1537,93 +1535,22 @@ class PingThematicSettingsForm(forms.ModelForm):
 
 #**************************************** GIS Wizard Forms ****************************************#
 
-class WizardBaseStationForm(forms.ModelForm):
+class WizardBaseStationForm(BaseStationForm):
     """
     Class Based View Base Station Model form to update and create.
     """
 
-    country = IntReturnModelChoiceField(queryset=Country.objects.all(),
-                                        required=False)
-    state = IntReturnModelChoiceField(queryset=State.objects.all(),
-                                      required=False)
-    city = IntReturnModelChoiceField(queryset=City.objects.all(),
-                                     required=False)
-
-    BS_TYPE = (
-        ('', 'Select'),
-        ('Master', 'Master'),
-        ('Slave', 'Slave')
-    )
-
-    BS_SITE_TYPE = (
-        ('', 'Select'),
-        ('RTT', 'RTT'),
-        ('GBT', 'GBT')
-    )
-
-    bs_type = forms.TypedChoiceField(choices=BS_TYPE, required=False)
-    bs_site_type = forms.TypedChoiceField(choices=BS_SITE_TYPE, required=False)
-    building_height = forms.FloatField(label='Building Height', required=True, initial=0, help_text='(mtr) Enter a number.',
-            validators=[MaxValueValidator(99), MinValueValidator(-1)])
-    tower_height = forms.FloatField(label='Tower Height', required=True, initial=0, help_text='(mtr) Enter a number.',
-            validators=[MaxValueValidator(99), MinValueValidator(-1)])
-
     def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request', None)
         super(WizardBaseStationForm, self).__init__(*args, **kwargs)
-        self.fields['bs_switch'].empty_label = 'Select'
-        self.fields['country'].empty_label = 'Select'
-        self.fields['state'].empty_label = 'Select'
-        self.fields['city'].empty_label = 'Select'
-        self.fields['latitude'].required = True
-        self.fields['longitude'].required = True
-        self.fields['country'].required = True
-        self.fields['city'].required = True
-        self.fields['state'].required = True
-        self.fields['state'].required = True
-        self.fields['city'].required = True
 
-        self.fields['bs_switch'].widget = forms.HiddenInput()
-        try:
-            if 'instance' in kwargs:
-                self.id = kwargs['instance'].id
-
-        except Exception as e:
-            logger.info(e.message)
-
-        if self.request is not None:
-            request = self.request
-
-            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
-            else:
-                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
-
-        for name, field in self.fields.items():
-            if field.widget.attrs.has_key('class'):
-                if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs['class'] += ' col-md-12'
-                    field.widget.attrs['class'] += ' select2select'
-                else:
-                    field.widget.attrs['class'] += ' tip-focus form-control'
-                    field.widget.attrs['data-toggle'] = 'tooltip'
-                    field.widget.attrs['data-placement'] = 'right'
-                    field.widget.attrs['title'] = field.help_text
-            else:
-                if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
-                else:
-                    field.widget.attrs.update({'class': ' tip-focus form-control'})
-                    field.widget.attrs.update({'data-toggle': 'tooltip'})
-                    field.widget.attrs.update({'data-placement': 'right'})
-                    field.widget.attrs.update({'title': field.help_text})
+        self.fields.pop('backhaul')
 
     class Meta:
         """
         Meta Information
         """
         model = BaseStation
-        fields = ('alias', 'organization', 'latitude', 'longitude', 'building_height', 'tower_height', 'country',
+        fields = ('alias', 'organization', 'backhaul', 'latitude', 'longitude', 'building_height', 'tower_height', 'country',
             'state', 'city', 'address', 'bs_site_id', 'bs_site_type', 'bs_switch', 'bs_type', 'bh_bso', 'hssu_used',
             'infra_provider', 'gps_type', 'tag1', 'tag2', 'description',
         )
