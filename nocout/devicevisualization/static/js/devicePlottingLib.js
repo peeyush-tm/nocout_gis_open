@@ -563,43 +563,38 @@ function devicePlottingClass_gmap() {
 								isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City',
 								advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
 								basic_filter_condition = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0,
-								data_to_plot = [];
+								data_to_plot = [],
+								filtered_devices = [],
+	            				current_bound_devices = [];
 
-		            		// if(searchResultData.length > 0) {
-		            		// 	data_to_plot = searchResultData;
-		            		// } else {
+	            			if(isAdvanceFilterApplied || isBasicFilterApplied) {
+	            				filtered_devices = JSON.parse(JSON.stringify(gmap_self.getFilteredData_gmap()));
+            				} else {
+            					filtered_devices = JSON.parse(JSON.stringify(all_devices_loki_db.data));
+            				}
 
-		            			var filtered_devices = [],
-		            				current_bound_devices = [];
-
-		            			if(isAdvanceFilterApplied || isBasicFilterApplied) {
-		            				filtered_devices = clone(gmap_self.getFilteredData_gmap());
-	            				} else {
-	            					filtered_devices = clone(all_devices_loki_db.data);
+            				// IF any states exists
+            				if(states_array.length > 0) {
+	            				for(var i=filtered_devices.length;i--;) {
+									var current_bs = filtered_devices[i];
+									if(states_array.indexOf(current_bs.data.state) > -1) {
+										current_bound_devices.push(current_bs);
+									}
 	            				}
+            				} else {
+            					current_bound_devices = filtered_devices;
+            				}
 
-	            				// IF any states exists
-	            				if(states_array.length > 0) {
-		            				for(var i=filtered_devices.length;i--;) {
-										var current_bs = filtered_devices[i];
-										if(states_array.indexOf(current_bs.data.state) > -1) {
-											current_bound_devices.push(current_bs);
-										}
-		            				}
-	            				} else {
-	            					current_bound_devices = filtered_devices;
-	            				}
+							if(advance_filter_condition || basic_filter_condition) {
+								data_to_plot = JSON.parse(JSON.stringify(gmap_self.getFilteredBySectors(current_bound_devices)));
+							} else {
+		            			data_to_plot = JSON.parse(JSON.stringify(current_bound_devices));
+							}
 
-								if(advance_filter_condition || basic_filter_condition) {
-									data_to_plot = gmap_self.getFilteredBySectors(current_bound_devices);
-								} else {
-			            			data_to_plot = current_bound_devices;
-								}
-		            		// }
 		            		var inBoundData = [];
 		            		// If any data exists
 		            		if(data_to_plot.length > 0) {
-
+		            			main_devices_data_gmaps = data_to_plot;
 		            			/**
 								 * If anything searched n user is on zoom level 8 then reset 
 								   currentlyPlottedDevices array for removing duplicacy.
@@ -609,7 +604,6 @@ function devicePlottingClass_gmap() {
 		            				currentlyPlottedDevices = [];
 	            				}
 
-		            			main_devices_data_gmaps = data_to_plot;
 		            			if(currentlyPlottedDevices.length === 0) {
 				            		/*Clear all everything from map*/
 									$.grep(allMarkersArray_gmap,function(marker) {
@@ -1236,12 +1230,9 @@ function devicePlottingClass_gmap() {
 				selected_state_devices = [];
 			if(clicked_state) {
 				//Zoom in to selected state
-				if(window.location.pathname.indexOf("white_background") > -1) {
-					// var bounds = new OpenLayers.Bounds();
-					// bounds.extend(new OpenLayers.LonLat(state_obj.lon, state_obj.lat));
-					// ccpl_map.zoomToExtent(bounds);
-					// ccpl_map.zoomTo(6);
-
+				if(window.location.pathname.indexOf("googleEarth") > -1) {
+			        
+			    } else if(window.location.pathname.indexOf("white_background") > -1) {
 					ccpl_map.setCenter(new OpenLayers.LonLat(state_obj.lon, state_obj.lat), whiteMapSettings.zoomLevelAtWhichStateClusterExpands);
 				} else {
 					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(state_obj.lat,state_obj.lon)));
@@ -1251,7 +1242,10 @@ function devicePlottingClass_gmap() {
 				// Hide Clicked state Label
 				if(!(state_wise_device_labels[clicked_state].isHidden_)) {
         			// Hide Label
-					if(window.location.pathname.indexOf("white_background") > -1) {
+
+					if(window.location.pathname.indexOf("googleEarth") > -1) {
+			        
+			    	} else if(window.location.pathname.indexOf("white_background") > -1) {
 						hideOpenLayerFeature(state_wise_device_labels[clicked_state]);
 					} else {
 						state_wise_device_labels[clicked_state].hide();	
@@ -1284,20 +1278,23 @@ function devicePlottingClass_gmap() {
 			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
 			dataset_clone = JSON.parse(JSON.stringify(dataset));
 		// Remove unmatched sectors
-		for(var x=dataset_clone.length;x--;) {
+		for(var x=0;x<dataset_clone.length;x++) {
 			var bs_sectors = dataset_clone[x].data.param.sector,
 				backhaul = dataset_clone[x].data.param.backhual,
 				deleted_sector_index = [],
-				deleted_backhaul_index = [];
+				correct_sectors = [],
+				deleted_backhaul_index = [],
+				correct_backhaul = [];
 
 			// For Basic Filters
 			if($.trim($("#technology").val()).length > 0) {
     			for(var i=0;i<backhaul.length;i++) {
     				var bh_techCondition = $.trim(backhaul[i].bh_tech) !=  $.trim($("#technology option:selected").text());
-    				if(bh_techCondition) {
-    					if(deleted_backhaul_index.indexOf(i) == -1) {
-							deleted_backhaul_index.push(i);
-						}
+    				if(!bh_techCondition) {
+    		// 			if(deleted_backhaul_index.indexOf(i) == -1) {
+						// 	deleted_backhaul_index.push(i);
+						// }
+						correct_backhaul.push(backhaul[i])
     				}
 				}
 			}
@@ -1305,10 +1302,11 @@ function devicePlottingClass_gmap() {
 			if(technology_filter.length > 0) {
 				for(var i=0;i<backhaul.length;i++) {
 					var advance_bh_techCondtion = technology_filter.indexOf(backhaul[i].bh_tech) ==-1;
-					if(advance_bh_techCondtion) {
-						if(deleted_backhaul_index.indexOf(i) == -1) {
-							deleted_backhaul_index.push(i);
-						}
+					if(!advance_bh_techCondtion) {
+						// if(deleted_backhaul_index.indexOf(i) == -1) {
+						// 	deleted_backhaul_index.push(i);
+						// }
+						correct_backhaul.push(backhaul[i])
 					}
 				}
 			}
@@ -1335,38 +1333,52 @@ function devicePlottingClass_gmap() {
 						if($.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0) {
 							var basic_filter_technology = $.trim($("#technology").val()).length > 0 ? $.trim($("#technology option:selected").text()) : false,
 								basic_filter_vendor = $.trim($("#vendor").val()).length > 0 ? $.trim($("#vendor option:selected").text()) : false,
-								basic_filter_condition1 = basic_filter_technology ? basic_filter_technology === sector_technology : true,
-								basic_filter_condition2 = basic_filter_vendor ? basic_filter_vendor === sector_vendor : true;
-
+								basic_filter_condition1 = basic_filter_technology ? $.trim(basic_filter_technology.toLowerCase()) == $.trim(sector_technology.toLowerCase()) : true,
+								basic_filter_condition2 = basic_filter_vendor ? $.trim(basic_filter_vendor.toLowerCase()) == $.trim(sector_vendor.toLowerCase()) : true;
+								
 							if(!basic_filter_condition1 || !basic_filter_condition2) {
-								deleted_sector_index.push(y);
+								if(deleted_sector_index.indexOf(y) < 0) {
+									deleted_sector_index.push(y);
+								}
+							} else {
+								correct_sectors.push(bs_sectors[y]);
 							}
 						}  else {
-							deleted_sector_index.push(y);
+							if(deleted_sector_index.indexOf(y) < 0) {
+								deleted_sector_index.push(y);
+							}
 						}
+					} else {
+						correct_sectors.push(bs_sectors[y]);
 					}
+
 				} else {
 					if($.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0) {
 						var basic_filter_technology = $.trim($("#technology").val()).length > 0 ? $.trim($("#technology option:selected").text()) : false,
 							basic_filter_vendor = $.trim($("#vendor").val()).length > 0 ? $.trim($("#vendor option:selected").text()) : false,
-							basic_filter_condition1 = basic_filter_technology ? basic_filter_technology === sector_technology : true,
-							basic_filter_condition2 = basic_filter_vendor ? basic_filter_vendor === sector_vendor : true;
-							
+							basic_filter_condition1 = basic_filter_technology ? $.trim(basic_filter_technology.toLowerCase()) == $.trim(sector_technology.toLowerCase()) : true,
+							basic_filter_condition2 = basic_filter_vendor ? $.trim(basic_filter_vendor.toLowerCase()) == $.trim(sector_vendor.toLowerCase()) : true;
 						if(!basic_filter_condition1 || !basic_filter_condition2) {
-							deleted_sector_index.push(y);
+							if(deleted_sector_index.indexOf(y) < 0) {
+								deleted_sector_index.push(y);
+							}
+						} else {
+							correct_sectors.push(bs_sectors[y]);
 						}
 					}
 				}
 			}
-			
+
 			// Delete Unmatched bs_Sectors Dict
 			for(var z=0;z<deleted_sector_index.length;z++) {
 				bs_sectors.splice(deleted_sector_index[z],1);
 			}
+			
+			deleted_sector_index = [];
 
-			dataset_clone[x].data.param.sector = bs_sectors;
+			dataset_clone[x].data.param.sector = correct_sectors;
 
-			dataset_clone[x].data.param.backhual = backhaul;
+			dataset_clone[x].data.param.backhual = correct_backhaul;
 		}
 
 		if(isDebug) {
@@ -1919,7 +1931,7 @@ function devicePlottingClass_gmap() {
 						position 		 : 	new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
 				    	ptLat 			 : 	ss_marker_obj.data.lat,
 				    	ptLon 			 : 	ss_marker_obj.data.lon,
-				    	technology 		 : 	ss_marker_obj.data.technology,
+				    	technology 		 : 	sector_array[j].technology,
 				    	// map 			 : 	mapInstance,
 				    	icon 			 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
 				    	oldIcon 		 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
@@ -5027,19 +5039,22 @@ function devicePlottingClass_gmap() {
 								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
 								if(point) {
 									if(google.maps.geometry.poly.containsLocation(point, polygon)) {
-										if(allSS[k].technology) {
-											if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-												if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
-													if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+										if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
+											if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
+												if(allSSIds.indexOf(allSS[k].device_name) < 0) {
+													if(allSS[k].pointType == 'sub_station') {
+														if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
+															allSSIds.push(allSS[k].bs_sector_device);
+														}
+													}
+													allSSIds.push(allSS[k].device_name);
+													polygonSelectedDevices.push(allSS[k]);
+												}
+											} else {
+												if(allSS[k].pointType == 'sub_station') {
+													if(allSSIds.indexOf(allSS[k].device_name) < 0) {
 														allSSIds.push(allSS[k].device_name);
 														polygonSelectedDevices.push(allSS[k]);
-													}
-												} else {
-													if(allSS[k].pointType == 'sub_station') {
-														if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
-															allSSIds.push(allSS[k].device_name);
-															polygonSelectedDevices.push(allSS[k]);
-														}
 													}
 												}
 											}
