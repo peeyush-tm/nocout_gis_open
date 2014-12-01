@@ -98,7 +98,7 @@ def main(**configs):
 	    doc.get('age')
         )
         data_values.append(t)
-
+	t = ()
     if data_values:
     	insert_data(configs.get('table_name'), data_values, db,configs=configs)
    	print "Data inserted into my mysql db"
