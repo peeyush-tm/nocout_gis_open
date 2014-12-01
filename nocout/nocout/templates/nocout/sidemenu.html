@@ -254,6 +254,9 @@
                                 <span class="arrow"></span>
                             </a>
                             <ul class="sub-sub">
+                                {% if perms.inventory.view_basestation %}
+                                <li><a class="" href="/gis-wizard/"><span class="sub-menu-text">Inventory Stitching</span></a></li>
+                                {% endif %}
                                 {% if perms.inventory.view_antenna %}
                                 <li><a class="" href="/antenna/"><span class="sub-menu-text">Antenna</span></a></li>
                                 {% endif %}
