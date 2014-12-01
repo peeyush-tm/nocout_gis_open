@@ -1919,7 +1919,7 @@ function devicePlottingClass_gmap() {
 						position 		 : 	new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
 				    	ptLat 			 : 	ss_marker_obj.data.lat,
 				    	ptLon 			 : 	ss_marker_obj.data.lon,
-				    	technology 		 : 	ss_marker_obj.data.technology,
+				    	technology 		 : 	sector_array[j].technology,
 				    	// map 			 : 	mapInstance,
 				    	icon 			 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
 				    	oldIcon 		 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
@@ -5027,19 +5027,23 @@ function devicePlottingClass_gmap() {
 								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
 								if(point) {
 									if(google.maps.geometry.poly.containsLocation(point, polygon)) {
-										if(allSS[k].technology) {
-											if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-												if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
-													if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+										if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
+											if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
+												if(allSSIds.indexOf(allSS[k].device_name) < 0) {
+													if(allSS[k].pointType == 'sub_station') {
+														if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
+															allSSIds.push(allSS[k].bs_sector_device);
+														}
+													}
+
+													allSSIds.push(allSS[k].device_name);
+													polygonSelectedDevices.push(allSS[k]);
+												}
+											} else {
+												if(allSS[k].pointType == 'sub_station') {
+													if(allSSIds.indexOf(allSS[k].device_name) < 0) {
 														allSSIds.push(allSS[k].device_name);
 														polygonSelectedDevices.push(allSS[k]);
-													}
-												} else {
-													if(allSS[k].pointType == 'sub_station') {
-														if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
-															allSSIds.push(allSS[k].device_name);
-															polygonSelectedDevices.push(allSS[k]);
-														}
 													}
 												}
 											}
