@@ -93,7 +93,8 @@ var allSSIds = [],
 	pollingInterval = 10,
 	pollingMaxInterval = 1,
 	isPollingPaused = 0,
-	isPerfCallStopped = 1;
+	isPerfCallStopped = 1,
+	isPerfCallStarted = 0;
 
 /*Tools Global Variables*/
 var is_line_active = 0,
@@ -513,7 +514,6 @@ function devicePlottingClass_gmap() {
             });
 
             google.maps.event.addListener(mapInstance, 'idle', function() {
-            	
             	setTimeout(function() {
 	            	if(isDebug) {
 						console.log("Google Map Idle Event");
@@ -688,7 +688,7 @@ function devicePlottingClass_gmap() {
 	            		}
 
 	            		// Start Performance API calling
-	            		if(isPerfCallStopped === 0) {
+	            		if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
 							var bs_id_list = getMarkerInCurrentBound();
 			            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
 			            		gisPerformanceClass.start(bs_id_list);
@@ -3707,7 +3707,7 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Restart Perf call as per new data*/
-		if(isPerfCallStopped == 0) {
+		if(isPerfCallStopped === 0 && isPerfCallStarted == 0) {
     		var bs_list = getMarkerInCurrentBound();
         	if(bs_list.length > 0 && isCallCompleted == 1) {
         		gisPerformanceClass.start(bs_list);
@@ -5770,7 +5770,7 @@ function devicePlottingClass_gmap() {
 		nav_click_counter = 0;
 		polled_device_count = {};
 
-		if(isPerfCallStopped == 0) {
+		if(isPerfCallStopped === 0 && isPerfCallStarted == 0) {
 			/*Restart performance calling*/
 	    	gisPerformanceClass.restart();
     	}
@@ -6861,7 +6861,7 @@ function devicePlottingClass_gmap() {
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 1;
 	 	
-		if(isPerfCallStopped == 0) {
+		if(isPerfCallStopped === 0 && isPerfCallStarted == 0) {
 		 	var bs_list = getMarkerInCurrentBound();
 	    	if(bs_list.length > 0 && isCallCompleted == 1) {
 	    		if(recallPerf != "") {
@@ -6892,7 +6892,7 @@ function devicePlottingClass_gmap() {
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 0;
-		if(isPerfCallStopped == 0) {
+		if(isPerfCallStopped === 0 && isPerfCallStarted == 0) {
 		 	var bs_list = getMarkerInCurrentBound();
 	    	if(bs_list.length > 0 && isCallCompleted == 1) {
 	    		if(recallPerf != "") {
