@@ -1582,41 +1582,19 @@ class WizardBackhaulForm(BackhaulForm):
         )
 
 
-class WizardSectorForm(forms.ModelForm):
+class WizardSectorForm(SectorForm):
     """
     Class Based View Sector Model form to update and create.
     """
-    MRC = (
-        ('', 'Select'),
-        ('Yes', 'Yes'),
-        ('No', 'No')
-    )
-
-    DR_SITE = (
-        ('', 'Select'),
-        ('Yes', 'Yes'),
-        ('No', 'No')
-    )
-
-    mrc = forms.TypedChoiceField(choices=MRC, initial='No', required=False)
-    dr_site = forms.TypedChoiceField(choices=DR_SITE, initial='No', required=False)
 
     def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request', None)
         self.technology = kwargs.pop('technology')
         super(WizardSectorForm, self).__init__(*args, **kwargs)
-        self.fields['sector_configured_on'].empty_label = 'Select'
-        self.fields['sector_configured_on_port'].empty_label = 'Select'
-        self.fields['frequency'].empty_label = 'Select'
-        self.fields['sector_id'].empty_label = True
 
-        self.fields['sector_configured_on'].widget = forms.HiddenInput()
-        try:
-            if 'instance' in kwargs:
-                self.id = kwargs['instance'].id
-
-        except Exception as e:
-            logger.info(e.message)
+        self.fields.pop('organization')
+        self.fields.pop('base_station')
+        self.fields.pop('bs_technology')
+        self.fields.pop('antenna')
 
         if self.technology == 'P2P':
             self.fields.pop('sector_id')
@@ -1628,31 +1606,12 @@ class WizardSectorForm(forms.ModelForm):
         if self.technology != 'PMP':
             self.fields.pop('rf_bandwidth')
 
-        for name, field in self.fields.items():
-            if field.widget.attrs.has_key('class'):
-                if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs['class'] += ' col-md-12'
-                    field.widget.attrs['class'] += ' select2select'
-                else:
-                    field.widget.attrs['class'] += ' tip-focus form-control'
-                    field.widget.attrs['data-toggle'] = 'tooltip'
-                    field.widget.attrs['data-placement'] = 'right'
-                    field.widget.attrs['title'] = field.help_text
-            else:
-                if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
-                else:
-                    field.widget.attrs.update({'class': ' tip-focus form-control'})
-                    field.widget.attrs.update({'data-toggle': 'tooltip'})
-                    field.widget.attrs.update({'data-placement': 'right'})
-                    field.widget.attrs.update({'title': field.help_text})
-
     class Meta:
         """
         Meta Information
         """
         model = Sector
-        fields = ('sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation')
+        fields = ('sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
 
     def clean_sector_id(self):
         """
