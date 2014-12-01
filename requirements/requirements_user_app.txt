@@ -40,3 +40,5 @@ uWSGI==2.0.4
 wsgiref==0.1.2
 xlrd==0.9.3
 xlwt==0.7.5
+pyenchant==1.6.6
+

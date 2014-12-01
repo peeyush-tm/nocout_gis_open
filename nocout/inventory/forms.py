@@ -14,6 +14,7 @@ from django.forms.util import ErrorList
 from device.models import Device
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, CircuitL2Report
 from django.utils.html import escape
+from django.forms.models import inlineformset_factory,  BaseInlineFormSet, modelformset_factory
 from nocout.utils import logged_in_user_organizations
 import logging
 logger = logging.getLogger(__name__)
@@ -978,6 +979,86 @@ class IconSettingsForm(forms.ModelForm):
             logger.info(e.message)
         return self.cleaned_data
 
+#*********************************** ServiceThresholdConfiguration *****************************
+class ServiceThresholdConfigurationForm(forms.ModelForm):
+
+    """
+    Class Based View  Service Threshold Configuration Model form to update and create.
+    """
+    def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(ServiceThresholdConfigurationForm, self).__init__(*args, **kwargs)
+        #self.fields['live_polling_template'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            field.widget.attrs.update({'style': 'width:30%'})
+            if name.endswith('start'):
+                field.widget.attrs.update({'placeholder': 'Start'})
+            else:
+                field.widget.attrs.update({'placeholder': 'End'})
+
+            field.widget.attrs.update({'class': 'form-control col-md-4'})
+            # if field.widget.attrs.has_key('class'):
+            #     if isinstance(field.widget, forms.widgets.Select):
+            #         field.widget.attrs['class'] += ' col-md-12'
+            #         field.widget.attrs['class'] += ' select2select'
+            #     else:
+            #         field.widget.attrs['class'] += ' form-control'
+            # else:
+            #     if isinstance(field.widget, forms.widgets.Select):
+            #         field.widget.attrs.update({'class': 'col-md-12 select2select'})
+            #     else:
+            #         field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = ThresholdConfiguration
+        exclude = ('name', 'alias', 'live_polling_template')
+
+#*********************************** ServiceLivePollingSettings ********************************
+class ServiceLivePollingSettingsForm(forms.ModelForm):
+    """
+    Class Based View ServiceLivePollingSettings Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(ServiceLivePollingSettingsForm, self).__init__(*args, **kwargs)
+        self.fields['technology'].empty_label = 'Select'
+        self.fields['service'].empty_label = 'Select'
+        self.fields['data_source'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = LivePollingSettings
+        exclude = ('name', 'alias')
 
 #*********************************** LivePollingSettings ***************************************
 class LivePollingSettingsForm(forms.ModelForm):
@@ -1114,7 +1195,6 @@ class ThresholdConfigurationForm(forms.ModelForm):
         return self.cleaned_data
 
 
-
 #*********************************** LivePollingSettings ***************************************
 class ThematicSettingsForm(forms.ModelForm):
     """
@@ -1179,7 +1259,70 @@ class ThematicSettingsForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+#*********************************** Service Thematic Settings *************************
+class ServiceThematicSettingsForm(forms.ModelForm):
+    """
+    Class Based View Service Thematic Settings Model form to update and create.
+    """
+    def __init__(self, *args, **kwargs):
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
 
+        super(ServiceThematicSettingsForm, self).__init__(*args, **kwargs)
+        #self.fields['threshold_template'].empty_label = 'Select'
+        # if self.instance.pk:
+        #     self.fields['threshold_template'].widget.attrs['disabled'] = 'disabled'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12 form-control'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 form-control'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = ThematicSettings
+        exclude =['icon_settings', 'user_profile', 'threshold_template']
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = ThematicSettings.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
+
+    def clean(self):
+        """
+        Validations for thematic settings form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 #*********************************** Bulk Import ***************************************
 class GISInventoryBulkImportForm(forms.Form):
