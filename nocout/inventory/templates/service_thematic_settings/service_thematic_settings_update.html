@@ -58,14 +58,10 @@
                                         </div>
                                         <div class="form-group">
                                                 <div class="form-group">
-                                                    <label  class="col-sm-3 control-label"><span class="mandatory">* </span>Service Type</label>
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>Service Type</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                        <select class=" select2select " id="id_service_type" name="service_type" style="width:345px">
-                                                            <option value="">Select</option>
-                                                            <option value="numeric">Numeric</option>
-                                                            <option value="string">String</option>
-                                                        </select>
+                                                        {{ threshold_configuration_form.service_type }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -82,7 +78,7 @@
                                                             {% endfor %}
                                                             </select>
                                                         </div>
-                                                        <div class="col-md-4 help_text">
+                                                        <div class="col-md-9 help_text">
                                                             {{ threshold_configuration_form.range1_end.help_text }}
                                                         </div>
                                                     </div>
@@ -312,6 +308,12 @@
             if (!$(id_data_source).val()){
                 $(id_data_source).empty();
             }
+
+            $("#id_icon_settings1").select2({
+                formatResult: format,
+                formatSelection: format,
+                escapeMarkup: function(m) { return m; }
+            });
         });
         // update 'device vendor' on selecting 'device technology'
         $(id_technology).change(function () {
@@ -335,19 +337,69 @@
             }
         });
 
-        if ($(id_service_type).val()=='string'){
+        if ($(id_service_type).val()=='STR'){
             service_type_string()
         }
 
+        $("#id_range1_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range1_end").val($("#id_range1_start").val())
+            }
+        });
+        $("#id_range2_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range2_end").val($("#id_range2_start").val())
+            }
+        });
+        $("#id_range3_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range3_end").val($("#id_range3_start").val())
+            }
+        });
+        $("#id_range4_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range4_end").val($("#id_range4_start").val())
+            }
+        });
+        $("#id_range5_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range5_end").val($("#id_range5_start").val())
+            }
+        });
+        $("#id_range6_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range6_end").val($("#id_range6_start").val())
+            }
+        });
+        $("#id_range7_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range7_end").val($("#id_range7_start").val())
+            }
+        });
+        $("#id_range8_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range8_end").val($("#id_range8_start").val())
+            }
+        });
+        $("#id_range9_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range9_end").val($("#id_range9_start").val())
+            }
+        });
+        $("#id_range10_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range10_end").val($("#id_range10_start").val())
+            }
+        });
+
         $(id_service_type).change(function () {
-            if ($(id_service_type).val()=='numeric') {
+            if ($(id_service_type).val()=='INT') {
                 for (var i=1;i<=10;i++){
-                    // $("#id_range"+i+"_end").val($("#id_range"+i+"_start").val());
                     $("#id_range"+i+"_end").attr('disabled', false);
                 }
 
             }
-            else if ($(id_service_type).val()=='string') {
+            else if ($(id_service_type).val()=='STR') {
                 service_type_string()
             }
             else {
@@ -355,6 +407,12 @@
             }
 
         });
+
+        function format(state) {
+            // if (!state.id) return state.text; // optgroup
+            return "<img class='flag' src='"+$("#id_icon_settings1 data-imagesrc")+"'";
+            console.log('state')
+        }
 
         function service_type_string(){
             for (var i=1;i<=10;i++){
