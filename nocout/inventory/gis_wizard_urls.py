@@ -38,4 +38,5 @@ urlpatterns = patterns('',
     url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[3|4])/sector/(?P<sector_pk>\d+)/sub-station/(?P<pk>\d+)/delete/$', views.gis_wizard_sub_station_delete, name='gis-wizard-sub-station-delete'),
     url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[3|4])/sector/(?P<sector_pk>\d+)/sub-station/new/$', views.GisWizardSubStationCreateView.as_view(), name='gis-wizard-sub-station-create'),
     url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[3|4])/sector/(?P<sector_pk>\d+)/sub-station/(?P<pk>\d+)/$', views.GisWizardSubStationUpdateView.as_view(), name='gis-wizard-sub-station-update'),
+    url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[3|4])/sector/(?P<sector_pk>\d+)/sub-station/(?P<pk>\d+)/details/$', views.GisWizardSubStationDetailView.as_view(), name='gis-wizard-sub-station-detail'),
 )

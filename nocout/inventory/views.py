@@ -6635,6 +6635,25 @@ def gis_wizard_sub_station_select(request, bs_pk, selected_technology, sector_pk
     )
 
 
+class GisWizardSubStationDetailView(SubStationDetail):
+    template_name = 'gis_wizard/sub_station_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardSubStationDetailView, self).get_context_data(**kwargs)
+        context['selected_technology'] = self.kwargs['selected_technology']
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        context['base_station'] = base_station
+        context['sector_pk'] = self.kwargs['sector_pk']
+        if self.object.antenna:
+            context['sub_station_antenna'] = self.object.antenna
+        if len(self.object.circuit_set.all()) == 1:
+            circuit = self.object.circuit_set.all()[0]
+            context['circuit'] = circuit
+            if circuit.customer:
+                context['customer'] = circuit.customer
+        return context
+
+
 def gis_wizard_sub_station_delete(request, bs_pk, selected_technology, sector_pk, pk):
     circuit = Circuit.objects.get(sub_station_id=pk)
     circuit.sector = None
