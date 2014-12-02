@@ -6004,6 +6004,25 @@ def remove_duplicate_dict_from_list(input_list=None):
 class GisWizardListView(BaseStationList):
     template_name = 'gis_wizard/wizard_list.html'
 
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(GisWizardListView, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
+            {'mData': 'bs_switch__id', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
+            {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
+        ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
 
 class GisWizardListingTable(BaseStationListingTable):
 
@@ -6023,18 +6042,25 @@ class GisWizardListingTable(BaseStationListingTable):
                 logger.info("BS Switch not present. Exception: ", e.message)
 
             device_id = dct.pop('id')
+            detail_action = '<a href="/gis-wizard/base-station/{0}/details/"><i class="fa fa-list-alt text-info"></i></a>&nbsp'.format(device_id)
             if self.request.user.has_perm('inventory.change_basestation'):
                 edit_action = '<a href="/gis-wizard/base-station/{0}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
             else:
                 edit_action = ''
-            # if self.request.user.has_perm('inventory.delete_basestation'):
-                # delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
-            # else:
-                # delete_action = ''
+            if self.request.user.has_perm('inventory.delete_basestation'):
+                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
             delete_action = ''
             if edit_action or delete_action:
-                dct.update(actions= edit_action+delete_action)
+                dct.update(actions=detail_action+edit_action+delete_action)
+            else:
+                dct.update(actions=detail_action)
         return json_data
+
+
+class GisWizardBaseStationDetailView(BaseStationDetail):
+    template_name = 'gis_wizard/base_station_detail.html'
 
 
 def gis_wizard_base_station_select(request):
