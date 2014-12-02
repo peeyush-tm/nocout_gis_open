@@ -1399,8 +1399,8 @@ class GISPerfData(View):
         service = ""
         data_source = ""
         if ts_type == "normal":
-            service = user_thematics.thematic_template.service.name
-            data_source = user_thematics.thematic_template.data_source.name
+            service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
+            data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
         elif ts_type == "ping":
             service = user_thematics.thematic_template.service
             data_source = user_thematics.thematic_template.data_source
@@ -1475,8 +1475,24 @@ class GISPerfData(View):
             logger.info("UserPing Thematic Settings not found. Exception: ", e.message)
 
         if user_thematics:
-            # thematic settings
-            thematics = user_thematics.thematic_template
+            # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
+            th_icon_settings = ""
+            try:
+                th_icon_settings = user_thematics.thematic_template.icon_settings
+            except Exception as e:
+                logger.info("No icon settings for thematic settings. Exception: ", e.message)
+
+            # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
+            th_ranges = ""
+            try:
+                if ts_type == "ping":
+                    th_ranges = user_thematics.thematic_template
+                elif ts_type == "normal":
+                    th_ranges = user_thematics.thematic_template.threshold_template
+                else:
+                    pass
+            except Exception as e:
+                logger.info("No ranges for thematic settings. Exception: ", e.message)
 
             # default image to be loaded
             image_partial = "icons/mobilephonetower10.png"
@@ -1490,8 +1506,8 @@ class GISPerfData(View):
                     # live polled value of device service
                     value = ast.literal_eval(str(device_pl))
                     try:
-                        if (float(thematics.range1_start)) <= (float(value)) <= (float(thematics.range1_end)):
-                            icon_settings = eval(thematics.icon_settings)
+                        if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
+                            icon_settings = eval(th_icon_settings)
                             for icon_setting in icon_settings:
                                 if 'icon_settings1' in icon_setting.keys():
                                     image_partial = str(icon_setting['icon_settings1'])
@@ -1499,8 +1515,8 @@ class GISPerfData(View):
                         logger.info(e.message)
 
                     try:
-                        if (float(thematics.range2_start)) <= (float(value)) <= (float(thematics.range2_end)):
-                            icon_settings = eval(thematics.icon_settings)
+                        if (float(th_ranges.range2_start)) <= (float(value)) <= (float(th_ranges.range2_end)):
+                            icon_settings = eval(th_icon_settings)
                             for icon_setting in icon_settings:
                                 if 'icon_settings2' in icon_setting.keys():
                                     image_partial = str(icon_setting['icon_settings2'])
@@ -1508,8 +1524,8 @@ class GISPerfData(View):
                         logger.info(e.message)
 
                     try:
-                        if (float(thematics.range3_start)) <= (float(value)) <= (float(thematics.range3_end)):
-                            icon_settings = eval(thematics.icon_settings)
+                        if (float(th_ranges.range3_start)) <= (float(value)) <= (float(th_ranges.range3_end)):
+                            icon_settings = eval(th_icon_settings)
                             for icon_setting in icon_settings:
                                 if 'icon_settings3' in icon_setting.keys():
                                     image_partial = str(icon_setting['icon_settings3'])
@@ -1517,8 +1533,8 @@ class GISPerfData(View):
                         logger.info(e.message)
 
                     try:
-                        if (float(thematics.range4_start)) <= (float(value)) <= (float(thematics.range4_end)):
-                            icon_settings = eval(thematics.icon_settings)
+                        if (float(th_ranges.range4_start)) <= (float(value)) <= (float(th_ranges.range4_end)):
+                            icon_settings = eval(th_icon_settings)
                             for icon_setting in icon_settings:
                                 if 'icon_settings4' in icon_setting.keys():
                                     image_partial = str(icon_setting['icon_settings4'])
@@ -1526,8 +1542,8 @@ class GISPerfData(View):
                         logger.info(e.message)
 
                     try:
-                        if (float(thematics.range5_start)) <= (float(value)) <= (float(thematics.range5_end)):
-                            icon_settings = eval(thematics.icon_settings)
+                        if (float(th_ranges.range5_start)) <= (float(value)) <= (float(th_ranges.range5_end)):
+                            icon_settings = eval(th_icon_settings)
                             for icon_setting in icon_settings:
                                 if 'icon_settings5' in icon_setting.keys():
                                     image_partial = str(icon_setting['icon_settings5'])
@@ -1535,8 +1551,8 @@ class GISPerfData(View):
                         logger.info(e.message)
 
                     try:
-                        if (float(thematics.range6_start)) <= (float(value)) <= (float(thematics.range6_end)):
-                            icon_settings = eval(thematics.icon_settings)
+                        if (float(th_ranges.range6_start)) <= (float(value)) <= (float(th_ranges.range6_end)):
+                            icon_settings = eval(th_icon_settings)
                             for icon_setting in icon_settings:
                                 if 'icon_settings6' in icon_setting.keys():
                                     image_partial = str(icon_setting['icon_settings6'])
@@ -1544,8 +1560,8 @@ class GISPerfData(View):
                         logger.info(e.message)
 
                     try:
-                        if (float(thematics.range7_start)) <= (float(value)) <= (float(thematics.range7_end)):
-                            icon_settings = eval(thematics.icon_settings)
+                        if (float(th_ranges.range7_start)) <= (float(value)) <= (float(th_ranges.range7_end)):
+                            icon_settings = eval(th_icon_settings)
                             for icon_setting in icon_settings:
                                 if 'icon_settings7' in icon_setting.keys():
                                     image_partial = str(icon_setting['icon_settings7'])
@@ -1553,8 +1569,8 @@ class GISPerfData(View):
                         logger.info(e.message)
 
                     try:
-                        if (float(thematics.range8_start)) <= (float(value)) <= (float(thematics.range8_end)):
-                            icon_settings = eval(thematics.icon_settings)
+                        if (float(th_ranges.range8_start)) <= (float(value)) <= (float(th_ranges.range8_end)):
+                            icon_settings = eval(th_icon_settings)
                             for icon_setting in icon_settings:
                                 if 'icon_settings8' in icon_setting.keys():
                                     image_partial = str(icon_setting['icon_settings8'])
@@ -1562,8 +1578,8 @@ class GISPerfData(View):
                         logger.info(e.message)
 
                     try:
-                        if (float(thematics.range9_start)) <= (float(value)) <= (float(thematics.range9_end)):
-                            icon_settings = eval(thematics.icon_settings)
+                        if (float(th_ranges.range9_start)) <= (float(value)) <= (float(th_ranges.range9_end)):
+                            icon_settings = eval(th_icon_settings)
                             for icon_setting in icon_settings:
                                 if 'icon_settings9' in icon_setting.keys():
                                     image_partial = str(icon_setting['icon_settings9'])
@@ -1571,8 +1587,8 @@ class GISPerfData(View):
                         logger.info(e.message)
 
                     try:
-                        if (float(thematics.range10_start)) <= (float(value)) <= (float(thematics.range10_end)):
-                            icon_settings = eval(thematics.icon_settings)
+                        if (float(th_ranges.range10_start)) <= (float(value)) <= (float(th_ranges.range10_end)):
+                            icon_settings = eval(th_icon_settings)
                             for icon_setting in icon_settings:
                                 if 'icon_settings10' in icon_setting.keys():
                                     image_partial = str(icon_setting['icon_settings10'])
@@ -2143,8 +2159,8 @@ class GISPerfData(View):
         service = ""
         data_source = ""
         if ts_type == "normal":
-            service = user_thematics.thematic_template.service.name
-            data_source = user_thematics.thematic_template.data_source.name
+            service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
+            data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
         elif ts_type == "ping":
             service = user_thematics.thematic_template.service
             data_source = user_thematics.thematic_template.data_source
