@@ -6576,6 +6576,23 @@ class GisWizardSectorSubStationListView(SubStationList):
         sector = Sector.objects.get(id=self.kwargs['sector_pk'])
         context['sector'] = sector
         context['selected_technology'] = self.kwargs['selected_technology']
+
+        datatable_headers = [
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
+            {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
+        ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
@@ -6611,13 +6628,15 @@ class GisWizardSubStationListing(SubStationListingTable):
             dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
 
             sub_station_id = dct.pop('id')
+            kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology', 'sector_pk']}
+            kwargs.update({'pk': sub_station_id})
+            detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
             if self.request.user.has_perm('inventory.change_substation'):
-                kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology', 'sector_pk']}
-                kwargs.update({'pk': sub_station_id})
                 edit_url = reverse('gis-wizard-sub-station-update', kwargs=kwargs)
-                dct.update(actions='<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp')
+                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp'
             else:
-                dct.update(actions='')
+                edit_action = ''
+            dct.update(actions=detail_action+edit_action)
         return json_data
 
 
