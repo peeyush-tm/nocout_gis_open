@@ -6207,6 +6207,22 @@ class GisWizardSectorListView(SectorList):
         context = super(GisWizardSectorListView, self).get_context_data(**kwargs)
         base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
         context['base_station'] = base_station
+
+        datatable_headers = [
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'sector_configured_on__id', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on_port__alias', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
+            {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
+        ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
@@ -6237,14 +6253,46 @@ class GisWizardSectorListing(SectorListingTable):
                 logger.info("Sector Configured On not present. Exception: ", e.message)
 
             sector_id = dct.pop('id')
+            kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology']}
+            kwargs.update({'pk': sector_id})
+            detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
             if self.request.user.has_perm('inventory.change_sector'):
-                kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology']}
-                kwargs.update({'pk': sector_id})
                 edit_url = reverse('gis-wizard-sector-update', kwargs=kwargs)
-                dct.update(actions='<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp')
+                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp'
             else:
-                dct.update(actions='')
+                edit_action = ''
+            dct.update(actions=detail_action+edit_action)
         return json_data
+
+
+class GisWizardSectorDetailView(SectorDetail):
+    template_name = 'gis_wizard/sector_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardSectorDetailView, self).get_context_data(**kwargs)
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        context['selected_technology'] = self.kwargs['selected_technology']
+        context['base_station'] = base_station
+        if self.object:
+            if self.object.antenna:
+                context['sector_antenna'] = self.object.antenna
+            if int(self.kwargs['selected_technology']) == 2: # Technology is P2P
+                if len(self.object.circuit_set.all()) == 1:
+                    circuit = self.object.circuit_set.all()[0]
+                    context['circuit'] = circuit
+                    if circuit.sub_station:
+                        context['sub_station'] = circuit.sub_station
+                        if circuit.sub_station.antenna:
+                            context['sub_station_antenna'] = circuit.sub_station.antenna
+                    if circuit.customer:
+                        context['customer'] = circuit.customer
+
+        if self.kwargs['selected_technology'] == '2':
+            context['sector_text'] = 'PTP'
+        else:
+            context['sector_text'] = 'Sector'
+
+        return context
 
 
 def gis_wizard_sector_select(request, bs_pk, selected_technology):
@@ -6534,18 +6582,35 @@ def get_ptp_sub_station_antenna_wizard_form(request):
     return render(request, 'gis_wizard/ptp_sub_station_antenna_form.html', {'formset': formset})
 
 
-class GisWizardSubStationListView(SubStationList):
+class GisWizardSectorSubStationListView(SubStationList):
     """
     """
     template_name = 'gis_wizard/sub_stations_list.html'
 
     def get_context_data(self, **kwargs):
-        context = super(GisWizardSubStationListView, self).get_context_data(**kwargs)
+        context = super(GisWizardSectorSubStationListView, self).get_context_data(**kwargs)
         base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
         context['base_station'] = base_station
         sector = Sector.objects.get(id=self.kwargs['sector_pk'])
         context['sector'] = sector
         context['selected_technology'] = self.kwargs['selected_technology']
+
+        datatable_headers = [
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
+            {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
+        ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
@@ -6581,13 +6646,15 @@ class GisWizardSubStationListing(SubStationListingTable):
             dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
 
             sub_station_id = dct.pop('id')
+            kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology', 'sector_pk']}
+            kwargs.update({'pk': sub_station_id})
+            detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
             if self.request.user.has_perm('inventory.change_substation'):
-                kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology', 'sector_pk']}
-                kwargs.update({'pk': sub_station_id})
                 edit_url = reverse('gis-wizard-sub-station-update', kwargs=kwargs)
-                dct.update(actions='<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp')
+                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp'
             else:
-                dct.update(actions='')
+                edit_action = ''
+            dct.update(actions=detail_action+edit_action)
         return json_data
 
 
@@ -6603,6 +6670,25 @@ def gis_wizard_sub_station_select(request, bs_pk, selected_technology, sector_pk
             'organization': BaseStation.objects.get(id=bs_pk).organization
         }
     )
+
+
+class GisWizardSubStationDetailView(SubStationDetail):
+    template_name = 'gis_wizard/sub_station_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardSubStationDetailView, self).get_context_data(**kwargs)
+        context['selected_technology'] = self.kwargs['selected_technology']
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        context['base_station'] = base_station
+        context['sector_pk'] = self.kwargs['sector_pk']
+        if self.object.antenna:
+            context['sub_station_antenna'] = self.object.antenna
+        if len(self.object.circuit_set.all()) == 1:
+            circuit = self.object.circuit_set.all()[0]
+            context['circuit'] = circuit
+            if circuit.customer:
+                context['customer'] = circuit.customer
+        return context
 
 
 def gis_wizard_sub_station_delete(request, bs_pk, selected_technology, sector_pk, pk):
