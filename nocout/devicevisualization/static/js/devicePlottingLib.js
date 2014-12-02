@@ -7423,6 +7423,13 @@ function devicePlottingClass_gmap() {
 
     	// Open API url in new tab to download inventory report
     	window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(inventory_bs_ids),"_blank");
+
+		$.gritter.add({
+            title: "Export Inventory Devices",
+            text: "Selected inventory successfully downloaded.",
+            sticky: false,
+            time : 1500
+        });    	
 	};
 
 	/**
