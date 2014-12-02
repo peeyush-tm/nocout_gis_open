@@ -529,7 +529,6 @@ function devicePlottingClass_gmap() {
             			isPerfCallStopped = 0;
 
 	            		if(mapInstance.getZoom() < 12 || searchResultData.length > 0) {
-
 	            			var states_with_bounds = state_lat_lon_db.where(function(obj) {
 		            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
 		            		});
@@ -639,7 +638,8 @@ function devicePlottingClass_gmap() {
 		            			// Call function to plot devices on gmap
 								gmap_self.plotDevices_gmap(inBoundData,"base_station");
 
-								if(searchResultData.length == 0 || mapInstance.getZoom() === 8) {
+								// if(searchResultData.length == 0 || mapInstance.getZoom() <= 10) {
+								if(mapInstance.getZoom() <= 10) {
 									var polylines = allMarkersObject_gmap['path'],
 										polygons = allMarkersObject_gmap['sector_polygon'];
 
@@ -661,7 +661,7 @@ function devicePlottingClass_gmap() {
 										}
 									}
 								} else {
-									if(mapInstance.getZoom() > 11) {
+									if(mapInstance.getZoom() > 10) {
 										gmap_self.showSubStaionsInBounds();
 										gmap_self.showBaseStaionsInBounds();
 										gmap_self.showSectorDevicesInBounds();
