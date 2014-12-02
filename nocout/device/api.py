@@ -946,7 +946,7 @@ class BulkFetchLPDataApi(View):
                         else:
                             tc = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id)
 
-                        #default image to be loaded
+                        # default image to be loaded
                         image_partial = "icons/mobilephonetower10.png"
 
                         # comparing threshold values to get icon

@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 import re
 import ast
 from django import forms
+from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
 from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, \
@@ -256,6 +257,10 @@ class BackhaulForm(forms.ModelForm):
     bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
     bh_connectivity = forms.TypedChoiceField(choices=BH_CONNECTIVITY, required=False)
     dr_site = forms.TypedChoiceField(choices=DR_SITE, initial='No', required=False)
+    pe_hostname = forms.CharField(label='PE Hostname', required=False,
+            validators=[RegexValidator(regex=r'^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$',
+                message="Enter valid domain name.")]
+        )
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -368,6 +373,10 @@ class BaseStationForm(forms.ModelForm):
 
     bs_type = forms.TypedChoiceField(choices=BS_TYPE, required=False)
     bs_site_type = forms.TypedChoiceField(choices=BS_SITE_TYPE, required=False)
+    building_height = forms.FloatField(label='Building Height', required=True, initial=0, help_text='(mtr) Enter a number.',
+            validators=[MaxValueValidator(99), MinValueValidator(-1)])
+    tower_height = forms.FloatField(label='Tower Height', required=True, initial=0, help_text='(mtr) Enter a number.',
+            validators=[MaxValueValidator(99), MinValueValidator(-1)])
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -377,15 +386,9 @@ class BaseStationForm(forms.ModelForm):
         self.fields['country'].empty_label = 'Select'
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
-        self.fields['building_height'].initial = 0
-        self.fields['tower_height'].initial = 0
         self.fields['latitude'].required = True
         self.fields['longitude'].required = True
         self.fields['country'].required = True
-        self.fields['city'].required = True
-        self.fields['state'].required = True
-        self.fields['building_height'].required = True
-        self.fields['tower_height'].required = True
         self.fields['state'].required = True
         self.fields['city'].required = True
 
@@ -1532,3 +1535,192 @@ class PingThematicSettingsForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+
+
+#**************************************** GIS Wizard Forms ****************************************#
+
+class WizardBaseStationForm(BaseStationForm):
+    """
+    Class Based View Base Station Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(WizardBaseStationForm, self).__init__(*args, **kwargs)
+
+        self.fields.pop('backhaul')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = BaseStation
+        fields = ('alias', 'organization', 'backhaul', 'latitude', 'longitude', 'building_height', 'tower_height', 'country',
+            'state', 'city', 'address', 'bs_site_id', 'bs_site_type', 'bs_switch', 'bs_type', 'bh_bso', 'hssu_used',
+            'infra_provider', 'gps_type', 'tag1', 'tag2', 'description',
+        )
+
+
+class WizardBackhaulForm(BackhaulForm):
+    """
+    Class Based View Backhaul Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(WizardBackhaulForm, self).__init__(*args, **kwargs)
+
+        self.fields.pop('dr_site')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = Backhaul
+        fields = ('organization', 'bh_configured_on', 'bh_port_name', 'bh_port', 'bh_type', 'bh_switch',
+                'switch_port_name', 'switch_port', 'pop', 'pop_port_name', 'pop_port', 'aggregator',
+                'aggregator_port_name', 'aggregator_port', 'pe_hostname', 'pe_ip', 'bh_connectivity', 'bh_circuit_id',
+                'bh_capacity', 'ttsl_circuit_id', 'dr_site',
+        )
+
+
+class WizardSectorForm(SectorForm):
+    """
+    Class Based View Sector Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.technology = kwargs.pop('technology')
+        super(WizardSectorForm, self).__init__(*args, **kwargs)
+
+        self.fields.pop('organization')
+        self.fields.pop('base_station')
+        self.fields.pop('bs_technology')
+        self.fields.pop('antenna')
+
+        if self.technology == 'P2P':
+            self.fields.pop('sector_id')
+
+        if self.technology != 'WiMAX':
+            self.fields.pop('dr_site')
+            self.fields.pop('mrc')
+
+        if self.technology != 'PMP':
+            self.fields.pop('rf_bandwidth')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = Sector
+        fields = ('sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
+
+    def clean_sector_id(self):
+        """
+        Sector ID: unique validation.
+        """
+        sector_id = self.cleaned_data['sector_id']
+        sector_ids = Sector.objects.filter(sector_id=sector_id)
+        try:
+            if self.id:
+                sector_ids = sector_ids.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if sector_ids.count() > 0:
+            raise ValidationError('This sector_id is already in use.')
+        return sector_id
+
+
+class WizardAntennaForm(AntennaForm):
+    """
+    Class Based View Antenna Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.technology = kwargs.pop('technology')
+
+        super(WizardAntennaForm, self).__init__(*args, **kwargs)
+
+        # Organization is used from base station.
+        self.fields.pop('organization')
+
+        if self.technology == 'P2P':
+            self.fields.pop('tilt')
+            self.fields.pop('gain')
+            self.fields.pop('beam_width')
+            self.fields.pop('azimuth_angle')
+            self.fields.pop('reflector')
+            self.fields.pop('splitter_installed')
+            self.fields.pop('sync_splitter_used')
+            self.fields.pop('make_of_antenna')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = Antenna
+        fields = ('organization', 'antenna_type', 'height', 'polarization', 'tilt', 'gain', 'mount_type', 'beam_width', 'azimuth_angle', 'reflector', 'splitter_installed', 'sync_splitter_used', 'make_of_antenna')
+
+
+class RequestFormSet(forms.models.BaseModelFormSet):
+    """
+    Formset that passes the HttpRequest on to every Form's __init__
+    Suitable to populate Fields dynamically depending on request
+    """
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        self.technology = kwargs.pop('technology', None)
+        super(RequestFormSet, self).__init__(*args, **kwargs)  #this calls _construct_forms()
+
+    def _construct_form(self, i, **kwargs): #this one is merely taken from django's BaseFormSet
+        # except the additional request parameter for the Form-constructor
+        return super(RequestFormSet, self)._construct_form(i, technology=self.technology, request=self.request, **kwargs)
+
+
+WizardPTPSubStationAntennaFormSet = forms.models.modelformset_factory(Antenna, form=WizardAntennaForm, formset=RequestFormSet, max_num=1, extra=1, validate_max=True)
+
+
+class WizardSubStationForm(SubStationForm):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('technology')
+        super(WizardSubStationForm, self).__init__(*args, **kwargs)
+
+        self.fields.pop('name')
+        self.fields.pop('alias')
+        self.fields.pop('organization')
+        self.fields.pop('antenna')
+        self.fields.pop('address')
+        self.fields.pop('description')
+
+
+class WizardCustomerForm(CustomerForm):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('technology')
+        super(WizardCustomerForm, self).__init__(*args, **kwargs)
+        self.fields.pop('name')
+        self.fields.pop('organization')
+        self.fields.pop('description')
+
+
+class WizardCircuitForm(CircuitForm):
+
+    def __init__(self, *args, **kwargs):
+        self.technology = kwargs.pop('technology')
+        super(WizardCircuitForm, self).__init__(*args, **kwargs)
+        self.fields['circuit_id'].required = True
+
+        self.fields.pop('name')
+        self.fields.pop('alias')
+        self.fields.pop('organization')
+        self.fields.pop('circuit_type')
+        self.fields.pop('sector')
+        self.fields.pop('customer')
+        self.fields.pop('sub_station')
+        self.fields.pop('date_of_acceptance')
+        self.fields.pop('description')
+
+        if self.technology == 'P2P':
+            self.fields.pop('dl_cinr_during_acceptance')
+            self.fields.pop('jitter_value_during_acceptance')
+        else: # WiMAX & PMP
+            self.fields.pop('throughput_during_acceptance')
