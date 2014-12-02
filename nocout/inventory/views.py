@@ -6775,8 +6775,6 @@ class GisWizardPTPListingTable(SectorListingTable):
 
             device_id = dct.pop('id')
             sector = Sector.objects.get(id=device_id)
-            print sector.bs_technology.id
-            print sector.base_station.id
             if self.request.user.has_perm('inventory.change_sector'):
                 edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sector.base_station.id, sector.bs_technology.id , device_id)
             else:
