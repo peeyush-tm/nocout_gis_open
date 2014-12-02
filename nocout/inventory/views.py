@@ -16,7 +16,7 @@ from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect, HttpResponse
 from django.views.generic import ListView, DetailView, TemplateView, View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse_lazy, reverse
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from device_group.models import DeviceGroup
@@ -29,7 +29,9 @@ from models import Inventory, DeviceTechnology, IconSettings, LivePollingSetting
     UserPingThematicSettings
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm, PingThematicSettingsForm, \
-    ServiceThematicSettingsForm, ServiceThresholdConfigurationForm, ServiceLivePollingSettingsForm
+    ServiceThematicSettingsForm, ServiceThresholdConfigurationForm, ServiceLivePollingSettingsForm, \
+    WizardBaseStationForm, WizardBackhaulForm, WizardSectorForm, WizardAntennaForm, WizardSubStationForm, \
+    WizardCustomerForm, WizardCircuitForm, WizardPTPSubStationAntennaFormSet
 from organization.models import Organization
 from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, Status
 from site_instance.models import SiteInstance
@@ -245,7 +247,15 @@ def list_device(request):
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
-    devices = Device.objects.filter(organization_id=org_id).\
+    if str(org_id) == "0":
+        class SelfObject: pass
+        self_object = SelfObject()
+        self_object.request = request
+        organizations = logged_in_user_organizations(self_object)
+        devices = Device.objects.filter(organization__id__in=organizations).\
+            filter(device_alias__icontains=sSearch).values('id', 'device_alias')[:50]
+    else:
+        devices = Device.objects.filter(organization_id=org_id).\
             filter(device_alias__icontains=sSearch).values('id', 'device_alias')[:50]
 
     return HttpResponse(json.dumps({
@@ -527,7 +537,15 @@ def list_base_station(request):
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
-    base_stations = BaseStation.objects.filter(organization__id=org_id).\
+    if str(org_id) == "0":
+        class SelfObject: pass
+        self_object = SelfObject()
+        self_object.request = request
+        organizations = logged_in_user_organizations(self_object)
+        base_stations = BaseStation.objects.filter(organization__id__in=organizations).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+    else:
+        base_stations = BaseStation.objects.filter(organization__id=org_id).\
             filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
     return HttpResponse(json.dumps({
@@ -684,7 +702,15 @@ def list_backhaul(request):
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
-    backhauls = Backhaul.objects.filter(organization__id=org_id).\
+    if str(org_id) == "0":
+        class SelfObject: pass
+        self_object = SelfObject()
+        self_object.request = request
+        organizations = logged_in_user_organizations(self_object)
+        backhauls = Backhaul.objects.filter(organization__id__in=organizations).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+    else:
+        backhauls = Backhaul.objects.filter(organization__id=org_id).\
             filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
     return HttpResponse(json.dumps({
@@ -835,7 +861,15 @@ def list_sector(request):
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
-    sectors = Sector.objects.filter(organization__id=org_id).\
+    if str(org_id) == "0":
+        class SelfObject: pass
+        self_object = SelfObject()
+        self_object.request = request
+        organizations = logged_in_user_organizations(self_object)
+        sectors = Sector.objects.filter(organization__id__in=organizations).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+    else:
+        sectors = Sector.objects.filter(organization__id=org_id).\
             filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
     return HttpResponse(json.dumps({
@@ -1117,7 +1151,15 @@ def list_sub_station(request):
     """
     org_id = request.GET['org']
     sSearch = request.GET['sSearch']
-    sub_stations = SubStation.objects.filter(organization__id=org_id).\
+    if str(org_id) == "0":
+        class SelfObject: pass
+        self_object = SelfObject()
+        self_object.request = request
+        organizations = logged_in_user_organizations(self_object)
+        sub_stations = SubStation.objects.filter(organization__id__in=organizations).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+    else:
+        sub_stations = SubStation.objects.filter(organization__id=org_id).\
             filter(alias__icontains=sSearch).values('id', 'alias')[:50]
 
     return HttpResponse(json.dumps({
@@ -1255,6 +1297,37 @@ class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_circuit',)
 
 
+def list_circuit(request):
+    """
+    Used to return the list to the select2 element using ajax call.
+    """
+    org_id = request.GET['org']
+    sSearch = request.GET['sSearch']
+    if str(org_id) == "0":
+        class SelfObject: pass
+        self_object = SelfObject()
+        self_object.request = request
+        organizations = logged_in_user_organizations(self_object)
+        circuits = Circuit.objects.filter(organization__id__in=organizations).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+    else:
+        circuits = Circuit.objects.filter(organization__id=org_id).\
+            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
+
+    return HttpResponse(json.dumps({
+        "total_count": circuits.count(),
+        "incomplete_results": False,
+        "items": list(circuits)
+    }))
+
+
+def select_circuit(request, pk):
+    """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
+    """
+    return HttpResponse(json.dumps([Circuit.objects.get(id=pk).alias]))
+
+
 #********************************* Circuit L2 Reports*******************************************
 
 class CircuitL2Report_Init(ListView):
@@ -1367,7 +1440,7 @@ class L2ReportListingTable(BaseDatatableView):
         """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        
+
         if len(qs) > 0:
             if('circuit_id' in qs[0]):
                 for dct in qs:
@@ -4455,7 +4528,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     pmp_bs_row['Type Of BS (Technology)'] = base_station.bs_type
                 except Exception as e:
-                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, 
+                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name,
                                                                                                   e.message))
 
                 # site type
@@ -4535,7 +4608,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     pmp_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
                 except Exception as e:
-                    logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name, 
+                    logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name,
                                                                                             e.message))
 
                 # azimuth
@@ -4548,7 +4621,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     pmp_bs_row['Sync Splitter Used'] = sector.antenna.sync_splitter_used
                 except Exception as e:
-                    logger.info("Sync Splitter Used not exist for base station ({}).".format(base_station.name, 
+                    logger.info("Sync Splitter Used not exist for base station ({}).".format(base_station.name,
                                                                                              e.message))
 
                 # type of gps
@@ -5019,7 +5092,7 @@ class DownloadSelectedBSInventory(View):
     def get_selected_wimax_inventory(self, base_station, sector):
         # result dictionary (contains ptp and ptp bh inventory)
         result = dict()
-        
+
         # base station device name
         bs_device_name = ""
         try:
@@ -5048,7 +5121,7 @@ class DownloadSelectedBSInventory(View):
             for circuit in circuits:
                 # sub station
                 sub_station = circuit.sub_station
-                
+
                 # sub station device name
                 ss_device_name = ""
                 try:
@@ -5104,7 +5177,7 @@ class DownloadSelectedBSInventory(View):
                 try:
                     wimax_bs_row['Type Of BS (Technology)'] = base_station.bs_type
                 except Exception as e:
-                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name, 
+                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name,
                                                                                                   e.message))
 
                 # site type
@@ -5339,7 +5412,7 @@ class DownloadSelectedBSInventory(View):
                     else:
                         pass
                 except Exception as e:
-                    logger.info("Sector Utilization not exist for base station ({}).".format(base_station.name, 
+                    logger.info("Sector Utilization not exist for base station ({}).".format(base_station.name,
                                                                                              e.message))
 
                 # frequency
@@ -5531,7 +5604,7 @@ class DownloadSelectedBSInventory(View):
                                                                              alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
-                    
+
                 # sector id
                 try:
                     # by splitting last string after underscore from sector name; we get pmp port number
@@ -5547,7 +5620,7 @@ class DownloadSelectedBSInventory(View):
                         pass
                 except Exception as e:
                     logger.info("Sector ID not exist for sub station ({}).".format(sub_station.name, e.message))
-                    
+
                 # polled ss ip
                 try:
                     wimax_ss_row['Polled SS IP'] = ServiceStatus.objects.filter(device_name=ss_device_name,
@@ -5555,7 +5628,7 @@ class DownloadSelectedBSInventory(View):
                                                                                 alias=ss_machine_name)[0].current_value
                 except Exception as e:
                     logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
-                    
+
                 # polled ss mac
                 try:
                     wimax_ss_row['Polled SS MAC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
@@ -5924,3 +5997,876 @@ def remove_duplicate_dict_from_list(input_list=None):
             result_list.append(d)
 
     return result_list
+
+
+#**************************************** GIS Wizard ****************************************#
+
+class GisWizardListView(BaseStationList):
+    template_name = 'gis_wizard/wizard_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(GisWizardListView, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
+            {'mData': 'bs_switch__id', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
+            {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
+        ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class GisWizardListingTable(BaseStationListingTable):
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'bs_switch__id' in dct:
+                    bs_device_alias = Device.objects.get(id=dct['bs_switch__id']).device_alias
+                    bs_device_ip = Device.objects.get(id=dct['bs_switch__id']).ip_address
+                    dct['bs_switch__id'] = "{} ({})".format(bs_device_alias, bs_device_ip)
+            except Exception as e:
+                logger.info("BS Switch not present. Exception: ", e.message)
+
+            device_id = dct.pop('id')
+            detail_action = '<a href="/gis-wizard/base-station/{0}/details/"><i class="fa fa-list-alt text-info"></i></a>&nbsp'.format(device_id)
+            if self.request.user.has_perm('inventory.change_basestation'):
+                edit_action = '<a href="/gis-wizard/base-station/{0}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_basestation'):
+                delete_action = '<a href="/base_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action)
+            else:
+                dct.update(actions=detail_action)
+        return json_data
+
+
+class GisWizardBaseStationDetailView(BaseStationDetail):
+    template_name = 'gis_wizard/base_station_detail.html'
+
+
+def gis_wizard_base_station_select(request):
+    return render(request, 'gis_wizard/base_station.html', {'select_view': True})
+
+
+class GisWizardBaseStationMixin(object):
+    form_class = WizardBaseStationForm
+    template_name = 'gis_wizard/base_station.html'
+
+    def get_success_url(self):
+        if self.request.GET.get('show', None):
+            return reverse('gis-wizard-base-station-update', kwargs={'pk': self.object.id})
+        if self.object.backhaul:
+            return reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': self.object.id, 'pk': self.object.backhaul.id})
+        else:
+            return reverse('gis-wizard-backhaul-select', kwargs={'bs_pk': self.object.id})
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardBaseStationMixin, self).get_context_data(**kwargs)
+        if 'pk' in self.kwargs: # Update View
+
+            base_station = BaseStation.objects.get(id=self.kwargs['pk'])
+            if base_station.backhaul:
+                skip_url = reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': base_station.id, 'pk': base_station.backhaul.id})
+            else:
+                skip_url = reverse('gis-wizard-backhaul-select', kwargs={'bs_pk': base_station.id})
+
+            save_text = 'Update'
+            context['skip_url'] = skip_url
+        else: # Create View
+            save_text = 'Save'
+
+        context['save_text'] = save_text
+        return context
+
+    def form_valid(self, form):
+        alias = re.compile(r'[^\w]').sub("_", form.cleaned_data['alias'])
+        city = City.objects.get(id=form.cleaned_data['city']).city_name[:3]
+        state = State.objects.get(id=form.cleaned_data['state']).state_name[:3]
+        form.instance.name = alias + "_" + city + "_" + state
+        return super(GisWizardBaseStationMixin, self).form_valid(form)
+
+
+class GisWizardBaseStationCreateView(GisWizardBaseStationMixin, BaseStationCreate):
+    pass
+
+
+class GisWizardBaseStationUpdateView(GisWizardBaseStationMixin, BaseStationUpdate):
+    pass
+
+
+class GisWizardBackhaulDetailView(BackhaulDetail):
+    template_name = 'gis_wizard/backhaul_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardBackhaulDetailView, self).get_context_data(**kwargs)
+        context['base_station'] = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        return context
+
+
+def gis_wizard_backhaul_select(request, bs_pk):
+    base_station = BaseStation.objects.get(id=bs_pk)
+    if base_station.backhaul:
+        return HttpResponseRedirect(reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': bs_pk, 'pk': base_station.backhaul.id}))
+
+    return render(request, 'gis_wizard/backhaul.html',
+        {
+            'select_view': True,
+            'bs_pk': bs_pk,
+            'organization': base_station.organization,
+            'base_station': base_station,
+        }
+    )
+
+
+def gis_wizard_backhaul_delete(request, bs_pk):
+    base_station = BaseStation.objects.get(id=bs_pk)
+    if base_station.backhaul:
+        base_station.backhaul = None
+        base_station.bh_port_name = None
+        base_station.bh_port = None
+        base_station.bh_capacity = None
+        base_station.save()
+    return HttpResponseRedirect(reverse('gis-wizard-backhaul-create', kwargs={'bs_pk': bs_pk}))
+
+
+class GisWizardBackhaulMixin(object):
+    form_class = WizardBackhaulForm
+    template_name = 'gis_wizard/backhaul.html'
+
+    def get_success_url(self):
+        if self.request.GET.get('show', None):
+            return reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': self.kwargs['bs_pk'], 'pk': self.object.id})
+        return reverse('gis-wizard-sector-list', kwargs = {
+            'bs_pk': self.kwargs['bs_pk']
+        })
+
+    def form_valid(self, form):
+        ip_address = form.cleaned_data['bh_configured_on'].ip_address
+        form.instance.name = ip_address
+        form.instance.alias = ip_address
+        form.instance.dr_site = 'No'
+        response = super(GisWizardBackhaulMixin, self).form_valid(form)
+
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        base_station.backhaul = self.object
+        base_station.bh_port_name = self.object.bh_port_name
+        base_station.bh_port = self.object.bh_port
+        base_station.bh_capacity = self.object.bh_capacity
+        base_station.save()
+
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardBackhaulMixin, self).get_context_data(**kwargs)
+        context['bs_pk'] = self.kwargs['bs_pk']
+        base_station = BaseStation.objects.get(id=context['bs_pk'])
+        context['base_station'] = base_station
+        if base_station.backhaul:
+            context['base_station_has_backhaul'] = True
+        else:
+            context['base_station_has_backhaul'] = False
+        if 'pk' in self.kwargs: # Update View
+            save_text = 'Update'
+        else: # Create View
+            save_text = 'Save'
+        context['save_text'] = save_text
+        return context
+
+
+class GisWizardBackhaulCreateView(GisWizardBackhaulMixin, BackhaulCreate):
+    pass
+
+
+class GisWizardBackhaulUpdateView(GisWizardBackhaulMixin, BackhaulUpdate):
+    pass
+
+
+class GisWizardSectorListView(SectorList):
+    template_name = 'gis_wizard/sectors_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardSectorListView, self).get_context_data(**kwargs)
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        context['base_station'] = base_station
+        return context
+
+
+class GisWizardSectorListing(SectorListingTable):
+
+    def get_initial_queryset(self):
+        qs = super(GisWizardSectorListing, self).get_initial_queryset()
+        qs = qs.filter(base_station_id=self.kwargs['bs_pk'], bs_technology_id=self.kwargs['selected_technology'])
+        return qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'sector_configured_on__id' in dct:
+                    sector_device_alias = Device.objects.get(id=dct['sector_configured_on__id']).device_alias
+                    sector_device_ip = Device.objects.get(id=dct['sector_configured_on__id']).ip_address
+                    dct['sector_configured_on__id'] = "{} ({})".format(sector_device_alias, sector_device_ip)
+            except Exception as e:
+                logger.info("Sector Configured On not present. Exception: ", e.message)
+
+            sector_id = dct.pop('id')
+            if self.request.user.has_perm('inventory.change_sector'):
+                kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology']}
+                kwargs.update({'pk': sector_id})
+                edit_url = reverse('gis-wizard-sector-update', kwargs=kwargs)
+                dct.update(actions='<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp')
+            else:
+                dct.update(actions='')
+        return json_data
+
+
+def gis_wizard_sector_select(request, bs_pk, selected_technology):
+     base_station = BaseStation.objects.get(id=bs_pk)
+     technologies = DeviceTechnology.objects.filter(name__in=['P2P', 'WiMAX', 'PMP'])
+     return render(request, 'gis_wizard/sector.html',
+         {
+             'select_view': True,
+             'bs_pk': bs_pk,
+             'selected_technology': selected_technology,
+             'technologies': technologies,
+             'base_station': base_station,
+         }
+     )
+
+
+def gis_wizard_sector_delete(request, bs_pk, pk):
+    sector = Sector.objects.get(id=pk)
+    sector.base_station = None
+    sector.save()
+    return HttpResponseRedirect(reverse('gis-wizard-sector-create', kwargs={'bs_pk': bs_pk, 'selected_technology': sector.bs_technology_id}))
+
+
+class GisWizardSectorMixin(object):
+    form_class = WizardSectorForm
+    antenna_form_class = WizardAntennaForm
+    sub_station_form_class = WizardSubStationForm
+    customer_form_class = WizardCustomerForm
+    circuit_form_class = WizardCircuitForm
+    template_name = 'gis_wizard/sector.html'
+    success_url = reverse_lazy('gis-wizard-base-station-list')
+
+    def get_success_url(self):
+        technology_id = self.kwargs['selected_technology']
+        if self.request.GET.get('show', None):
+            return reverse('gis-wizard-sector-update', kwargs={'bs_pk': self.kwargs['bs_pk'], 'pk': self.object.id,
+                'selected_technology': technology_id})
+        if int(technology_id) == 2:
+            return self.success_url
+
+        return reverse('gis-wizard-sub-station-list', kwargs = {
+            'bs_pk': self.kwargs['bs_pk'], 'selected_technology': technology_id, 'sector_pk': self.object.id
+        })
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        form_kwargs = super(GisWizardSectorMixin, self).get_form_kwargs()
+        technology = DeviceTechnology.objects.get(id=self.kwargs['selected_technology'])
+        form_kwargs.update({'technology': technology.name})
+        return form_kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardSectorMixin, self).get_context_data(**kwargs)
+        technologies = DeviceTechnology.objects.filter(name__in=['P2P', 'WiMAX', 'PMP'])
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        context['bs_pk'] = self.kwargs['bs_pk']
+        context['selected_technology'] = self.kwargs['selected_technology']
+        context['technologies'] = technologies
+        context['base_station'] = base_station
+        if self.object:
+            form_kwargs = self.get_form_kwargs()
+            if self.object.antenna:
+                form_kwargs.update({'instance': self.object.antenna})
+                context['sector_antenna_form'] = self.antenna_form_class(**form_kwargs)
+
+            ## If technology is P2P and method is GET; Then provide sub station, antenna, circuit and customer forms in context.
+            if int(self.kwargs['selected_technology']) == 2 and self.request.method == 'GET': # Technology is P2P
+                if len(self.object.circuit_set.all()) == 1:
+                    circuit = self.object.circuit_set.all()[0]
+                    form_kwargs.update({'instance': circuit})
+                    context['circuit_form'] = self.circuit_form_class(**form_kwargs)
+                    if circuit.sub_station:
+                        form_kwargs.update({'instance': circuit.sub_station})
+                        context['sub_station_form'] = self.sub_station_form_class(**form_kwargs)
+                        if circuit.sub_station.antenna: # Use formset as there are two antenna to avoid name conflicts
+                            form_kwargs.pop('instance')
+                            queryset = Antenna.objects.filter(id=circuit.sub_station.antenna.id)
+                            formset = WizardPTPSubStationAntennaFormSet(queryset=queryset, **form_kwargs)
+                            context['sub_station_antenna_form'] = formset
+                    if circuit.customer:
+                        form_kwargs.update({'instance': circuit.customer})
+                        context['customer_form'] = self.customer_form_class(**form_kwargs)
+
+        ## Create Skip URL and Delete & Show URL
+        skip_url = reverse('gis-wizard-base-station-list')
+        if self.object and self.object.base_station == base_station:
+            context['base_station_has_sector'] = True
+            context['delete_url'] = reverse('gis-wizard-sector-delete', kwargs={'bs_pk': base_station.id, 'pk': self.object.id})
+            if self.object.bs_technology_id != 2:
+                skip_url = reverse('gis-wizard-sub-station-list', kwargs={'bs_pk': base_station.id,
+                    'selected_technology': self.kwargs['selected_technology'], 'sector_pk': self.object.id})
+        else:
+            context['base_station_has_sector'] = False
+        context['skip_url'] = skip_url
+
+        if 'pk' in self.kwargs: # Update View
+            save_text = 'Update'
+        else: # Create View
+            save_text = 'Save'
+        context['save_text'] = save_text
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """
+        Save sector and antenna.
+        """
+
+        try: # if update view
+            self.object = self.get_object()
+        except AttributeError as e: # if create view
+            self.object = None
+
+        form_kwargs = self.get_form_kwargs()
+        if self.object and self.object.antenna:
+            antenna_instance = self.object.antenna
+        elif request.POST.get('sector_antenna_radio') == 'existing' and request.POST.get('sector_antenna'):
+            antenna_id = request.POST.get('sector_antenna')
+            antenna_instance = Antenna.objects.get(id=antenna_id)
+        else:
+            antenna_instance = None
+
+        sector_form = self.get_form(self.get_form_class())
+
+        form_kwargs.update({'instance': antenna_instance})
+        antenna_form = self.antenna_form_class(**form_kwargs)
+
+        technology = self.kwargs['selected_technology']
+        if int(technology) == 2:
+            if request.POST.get('sub_station_radio') == 'existing' and request.POST.get('sub_station'):
+                sub_station_id = request.POST.get('sub_station')
+                sub_station_instance = SubStation.objects.get(id=sub_station_id)
+            else:
+                sub_station_instance = None
+            if request.POST.get('sub_station_customer_radio') == 'existing' and request.POST.get('sub_station_customer'):
+                customer_id = request.POST.get('sub_station_customer')
+                customer_instance = Customer.objects.get(id=customer_id)
+            else:
+                customer_instance = None
+            if request.POST.get('sub_station_circuit_radio') == 'existing' and request.POST.get('sub_station_circuit'):
+                circuit_id = request.POST.get('sub_station_circuit')
+                circuit_instance = Circuit.objects.get(id=circuit_id)
+            else:
+                circuit_instance = None
+            if self.object and len(self.object.circuit_set.all()) == 1:
+                circuit = self.object.circuit_set.all()[0]
+                circuit_instance = circuit
+                if circuit.sub_station:
+                    sub_station_instance = circuit.sub_station
+                if circuit.customer:
+                    customer_instance = circuit.customer
+
+            form_kwargs.update({'instance': sub_station_instance})
+            sub_station_form = self.sub_station_form_class(**form_kwargs)
+
+            # form_kwargs.update({'instance': antenna_instance})
+            form_kwargs.pop('instance')
+            sub_station_antenna_formset = WizardPTPSubStationAntennaFormSet(**form_kwargs)
+
+            form_kwargs.update({'instance': customer_instance})
+            customer_form = self.customer_form_class(**form_kwargs)
+
+            form_kwargs.update({'instance': circuit_instance})
+            circuit_form = self.circuit_form_class(**form_kwargs)
+
+            if (sector_form.is_valid() and antenna_form.is_valid() and sub_station_form.is_valid()
+                and sub_station_antenna_formset.is_valid() and customer_form.is_valid() and circuit_form.is_valid()):
+                return self.form_valid(sector_form, antenna_form, sub_station_form, sub_station_antenna_formset, customer_form, circuit_form)
+            else:
+                return self.form_invalid(sector_form, antenna_form, sub_station_form, sub_station_antenna_formset, customer_form, circuit_form)
+        else:
+
+            if (sector_form.is_valid() and antenna_form.is_valid()):
+                return self.form_valid(sector_form, antenna_form)
+            else:
+                return self.form_invalid(sector_form, antenna_form)
+
+    def form_valid(self, sector_form, antenna_form, sub_station_form=None, sub_station_antenna_formset=None, customer_form=None, circuit_form=None):
+        form_kwargs = self.get_form_kwargs()
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        technology = self.kwargs['selected_technology']
+        sector_configured_on_id = form_kwargs['data']['sector_configured_on']
+        sector_configured_on = Device.objects.get(id=sector_configured_on_id)
+
+        antenna = antenna_form.save(commit=False)
+        antenna.name = sector_configured_on.ip_address
+        antenna.alias = sector_configured_on.ip_address
+        antenna.organization = base_station.organization
+        antenna.save()
+
+        self.object = sector_form.save(commit=False)
+        self.object.name = sector_configured_on.ip_address
+
+        # Alias: the IP address of the device for P2P; FOR PMP and WIMAX this would be Sector ID.
+        if int(technology) == 2:
+            self.object.alias = sector_configured_on.ip_address
+        else:
+            self.object.alias = form_kwargs['data']['sector_id']
+        self.object.bs_technology_id = technology
+        self.object.organization = base_station.organization
+        self.object.base_station = base_station
+        self.object.antenna = antenna
+        self.object.save()
+
+        if int(technology) == 2:
+            device_id = form_kwargs['data']['device']
+            device = Device.objects.get(id=device_id)
+
+            sub_station_antenna = sub_station_antenna_formset[0].save(commit=False)
+            sub_station_antenna.name = device.ip_address
+            sub_station_antenna.alias = device.ip_address
+            sub_station_antenna.organization = base_station.organization
+            sub_station_antenna.save()
+
+            sub_station = sub_station_form.save(commit=False)
+            sub_station.name = device.ip_address
+            sub_station.alias = device.ip_address
+            sub_station.organization = base_station.organization
+            sub_station.antenna = sub_station_antenna # Far End Antenna.
+            sub_station.save()
+
+            customer = customer_form.save(commit=False)
+            customer.name = form_kwargs['data']['alias']
+            customer.organization = base_station.organization
+            customer.save()
+
+            circuit = circuit_form.save(commit=False)
+            circuit.name = form_kwargs['data']['circuit_id']
+            circuit.alias = form_kwargs['data']['circuit_id']
+            circuit.organization = base_station.organization
+            circuit.sector = self.object
+            circuit.customer = customer
+            circuit.sub_station = sub_station
+            circuit.save()
+
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, sector_form, antenna_form, sub_station_form=None, sub_station_antenna_formset=None, customer_form=None, circuit_form=None):
+        return self.render_to_response(self.get_context_data(form=sector_form, antenna_form=antenna_form, sub_station_form=sub_station_form, sub_station_antenna_form=sub_station_antenna_formset, customer_form=customer_form, circuit_form=circuit_form))
+
+
+class GisWizardSectorCreateView(GisWizardSectorMixin, SectorCreate):
+    pass
+
+
+class GisWizardSectorUpdateView(GisWizardSectorMixin, SectorUpdate):
+    pass
+
+
+def get_wizard_form(request):
+    model_str = request.GET.get('model')
+    form_class = {
+                'antenna': WizardAntennaForm,
+                'sub_station': WizardSubStationForm,
+                'customer': WizardCustomerForm,
+                'circuit': WizardCircuitForm,
+        }[model_str]
+    model = {
+            'antenna': Antenna,
+            'sub_station': SubStation,
+            'customer': Customer,
+            'circuit': Circuit,
+        }[model_str]
+    technology = DeviceTechnology.objects.get(id=request.GET.get('technology')).name
+    form_kwargs = {'request': request, 'technology': technology}
+    if 'pk' in request.GET:
+        pk = request.GET.get('pk')
+        instance = model.objects.get(id=pk)
+        form = form_class(instance=instance, **form_kwargs)
+    else:
+        form = form_class(**form_kwargs)
+
+    return render(request, 'gis_wizard/form.html', {'form': form})
+
+
+def get_ptp_sub_station_antenna_wizard_form(request):
+    technology = DeviceTechnology.objects.get(id=2).name
+    form_kwargs = {'request': request, 'technology': technology}
+    if 'pk' in request.GET:
+        pk = request.GET.get('pk')
+        queryset = Antenna.objects.filter(id=pk)
+        formset = WizardPTPSubStationAntennaFormSet(queryset=queryset, **form_kwargs)
+    else:
+        formset = WizardPTPSubStationAntennaFormSet(queryset=Antenna.objects.none(), **form_kwargs)
+
+    return render(request, 'gis_wizard/ptp_sub_station_antenna_form.html', {'formset': formset})
+
+
+class GisWizardSubStationListView(SubStationList):
+    """
+    """
+    template_name = 'gis_wizard/sub_stations_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardSubStationListView, self).get_context_data(**kwargs)
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        context['base_station'] = base_station
+        sector = Sector.objects.get(id=self.kwargs['sector_pk'])
+        context['sector'] = sector
+        context['selected_technology'] = self.kwargs['selected_technology']
+        return context
+
+
+class GisWizardSubStationListing(SubStationListingTable):
+    """
+    Class based View to render Sub Station Data table.
+    """
+
+    def get_initial_queryset(self):
+        qs = super(GisWizardSubStationListing, self).get_initial_queryset()
+        qs = qs.filter(circuit__sector=self.kwargs['sector_pk'])
+        return qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device__id' in dct:
+                    ss_device_alias = Device.objects.get(id=dct['device__id']).device_alias
+                    ss_device_ip = Device.objects.get(id=dct['device__id']).ip_address
+                    dct['device__id'] = "{} ({})".format(ss_device_alias, ss_device_ip)
+            except Exception as e:
+                logger.info("Sub Station Device not present. Exception: ", e.message)
+
+            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
+            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+
+            sub_station_id = dct.pop('id')
+            if self.request.user.has_perm('inventory.change_substation'):
+                kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology', 'sector_pk']}
+                kwargs.update({'pk': sub_station_id})
+                edit_url = reverse('gis-wizard-sub-station-update', kwargs=kwargs)
+                dct.update(actions='<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp')
+            else:
+                dct.update(actions='')
+        return json_data
+
+
+def gis_wizard_sub_station_select(request, bs_pk, selected_technology, sector_pk):
+    technologies = DeviceTechnology.objects.order_by('-name').filter(name__in=['WiMAX', 'PMP'])
+    return render(request, 'gis_wizard/sub_station.html',
+        {
+            'select_view': True,
+            'bs_pk': bs_pk,
+            'selected_technology': selected_technology,
+            'sector_pk': sector_pk,
+            'technologies': technologies,
+            'organization': BaseStation.objects.get(id=bs_pk).organization
+        }
+    )
+
+
+def gis_wizard_sub_station_delete(request, bs_pk, selected_technology, sector_pk, pk):
+    circuit = Circuit.objects.get(sub_station_id=pk)
+    circuit.sector = None
+    circuit.save()
+    return HttpResponseRedirect(reverse('gis-wizard-sub-station-create', kwargs={'bs_pk': bs_pk,
+        'selected_technology': selected_technology, 'sector_pk': sector_pk}))
+
+
+class GisWizardSubStationMixin(object):
+    form_class = WizardSubStationForm
+    antenna_form_class = WizardAntennaForm
+    customer_form_class = WizardCustomerForm
+    circuit_form_class = WizardCircuitForm
+    template_name = 'gis_wizard/sub_station.html'
+    success_url = reverse_lazy('gis-wizard-base-station-list')
+
+    def get_success_url(self):
+        if self.request.GET.get('show', None):
+            return reverse('gis-wizard-sub-station-update', kwargs={'bs_pk': self.kwargs['bs_pk'], 'pk': self.object.id,
+                'selected_technology': self.kwargs['selected_technology'], 'sector_pk': self.kwargs['sector_pk']})
+
+        return self.success_url
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
+        form_kwargs = super(GisWizardSubStationMixin, self).get_form_kwargs()
+        technology = DeviceTechnology.objects.get(id=self.kwargs['selected_technology'])
+        form_kwargs.update({'technology': technology.name})
+        return form_kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardSubStationMixin, self).get_context_data(**kwargs)
+        technologies = DeviceTechnology.objects.order_by('-name').filter(name__in=['WiMAX', 'PMP'])
+        context['bs_pk'] = self.kwargs['bs_pk']
+        context['selected_technology'] = self.kwargs['selected_technology']
+        context['sector_pk'] = self.kwargs['sector_pk']
+        context['technologies'] = technologies
+        context['organization'] = BaseStation.objects.get(id=self.kwargs['bs_pk']).organization
+        if self.object:
+            form_kwargs = self.get_form_kwargs()
+            context['sub_station_antenna_id'] = self.object.antenna.id if self.object.antenna else 0
+            # context['sub_station_customer_id'] = self.object.customer.id if self.object.customer else 0
+            # context['sub_station_circuit_id'] = self.object.circuit.id if self.object.circuit else 0
+
+            ## If method is GET; Then provide antenna, circuit and customer forms in context.
+            if self.request.method == 'GET':
+                if self.object.antenna:
+                    form_kwargs.update({'instance': self.object.antenna})
+                    context['sub_station_antenna_form'] = self.antenna_form_class(**form_kwargs)
+                if len(self.object.circuit_set.all()) == 1:
+                    circuit = self.object.circuit_set.all()[0]
+                    form_kwargs.update({'instance': circuit})
+                    context['circuit_form'] = self.circuit_form_class(**form_kwargs)
+                    if circuit.customer:
+                        form_kwargs.update({'instance': circuit.customer})
+                        context['customer_form'] = self.customer_form_class(**form_kwargs)
+        if self.object and Circuit.objects.filter(sector_id=self.kwargs['sector_pk'], sub_station_id=self.object.id).exists():
+            context['sector_has_sub_station'] = True
+        else:
+            context['sector_has_sub_station'] = False
+
+        if 'pk' in self.kwargs: # Update View
+            save_text = 'Update'
+        else: # Create View
+            save_text = 'Save'
+        context['save_text'] = save_text
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """
+        Save sub_station, antenna, customer and circuit for WiMAX and PMP.
+        """
+
+        try: # if update view
+            self.object = self.get_object()
+        except AttributeError as e: # if create view
+            self.object = None
+
+        form_kwargs = self.get_form_kwargs()
+        if self.object and self.object.antenna:
+            antenna_instance = self.object.antenna
+        elif request.POST.get('sub_station_antenna_radio') == 'existing':
+            antenna_id = request.POST.get('sub_station_antenna')
+            antenna_instance = Antenna.objects.get(id=antenna_id)
+        else:
+            antenna_instance = None
+        if request.POST.get('sub_station_customer_radio') == 'existing' and request.POST.get('sub_station_customer'):
+            customer_id = request.POST.get('sub_station_customer')
+            customer_instance = Customer.objects.get(id=customer_id)
+        else:
+            customer_instance = None
+        if request.POST.get('sub_station_circuit_radio') == 'existing' and request.POST.get('sub_station_circuit'):
+            circuit_id = request.POST.get('sub_station_circuit')
+            circuit_instance = Circuit.objects.get(id=circuit_id)
+        else:
+            circuit_instance = None
+
+        if self.object and len(self.object.circuit_set.all()) == 1:
+            circuit = self.object.circuit_set.all()[0]
+            circuit_instance = circuit
+            if circuit.sub_station:
+                sub_station_instance = circuit.sub_station
+            if circuit.customer:
+                customer_instance = circuit.customer
+
+        sub_station_form = self.get_form(self.get_form_class())
+
+        form_kwargs.update({'instance': antenna_instance})
+        antenna_form = self.antenna_form_class(**form_kwargs)
+
+        form_kwargs.update({'instance': customer_instance})
+        customer_form = self.customer_form_class(**form_kwargs)
+
+        form_kwargs.update({'instance': circuit_instance})
+        circuit_form = self.circuit_form_class(**form_kwargs)
+
+        if (sub_station_form.is_valid() and antenna_form.is_valid() and customer_form.is_valid() and circuit_form.is_valid()):
+            return self.form_valid(sub_station_form, antenna_form, customer_form, circuit_form)
+        else:
+            return self.form_invalid(sub_station_form, antenna_form, customer_form, circuit_form)
+
+    def form_valid(self, sub_station_form, antenna_form, customer_form, circuit_form):
+        form_kwargs = self.get_form_kwargs()
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        sector = Sector.objects.get(id=self.kwargs['sector_pk'])
+        technology = self.kwargs['selected_technology']
+        device_id = form_kwargs['data']['device']
+        device = Device.objects.get(id=device_id)
+
+        antenna = antenna_form.save(commit=False)
+        antenna.name = device.ip_address
+        antenna.alias = device.ip_address
+        antenna.organization = base_station.organization
+        antenna.save()
+
+        self.object = sub_station_form.save(commit=False)
+        self.object.name = device.ip_address
+        self.object.alias = device.ip_address
+        self.object.organization = base_station.organization
+        self.object.antenna = antenna
+        self.object.save()
+
+        customer = customer_form.save(commit=False)
+        customer.name = form_kwargs['data']['alias']
+        customer.organization = base_station.organization
+        customer.save()
+
+        circuit = circuit_form.save(commit=False)
+        circuit.name = form_kwargs['data']['circuit_id']
+        circuit.alias = form_kwargs['data']['circuit_id']
+        circuit.organization = base_station.organization
+        circuit.sector = sector
+        circuit.customer = customer
+        circuit.sub_station = self.object
+        circuit.save()
+
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, sub_station_form, antenna_form, customer_form, circuit_form):
+        return self.render_to_response(self.get_context_data(form=sub_station_form, sub_station_antenna_form=antenna_form, customer_form=customer_form, circuit_form=circuit_form))
+
+
+class GisWizardSubStationCreateView(GisWizardSubStationMixin, SubStationCreate):
+    pass
+
+
+class GisWizardSubStationUpdateView(GisWizardSubStationMixin, SubStationUpdate):
+    pass
+
+#************************************** Gis Wizard Start With PTP ****************************
+
+class GisWizardPTPListView(SectorList):
+    template_name = 'gis_wizard/wizard_list_ptp.html'
+
+
+class GisWizardPTPListingTable(SectorListingTable):
+
+    def get_initial_queryset(self):
+        qs=super(GisWizardPTPListingTable, self).get_initial_queryset()
+        qs = qs.filter(bs_technology__name='p2p')
+        return qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'sector_configured_on__id' in dct:
+                    sector_device_alias = Device.objects.get(id=dct['sector_configured_on__id']).device_alias
+                    sector_device_ip = Device.objects.get(id=dct['sector_configured_on__id']).ip_address
+                    dct['sector_configured_on__id'] = "{} ({})".format(sector_device_alias, sector_device_ip)
+            except Exception as e:
+                logger.info("Sector Configured On not present. Exception: ", e.message)
+
+            device_id = dct.pop('id')
+            sector = Sector.objects.get(id=device_id)
+            if self.request.user.has_perm('inventory.change_sector'):
+                edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sector.base_station.id, sector.bs_technology.id , device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_sector'):
+                delete_action = ''#'<a href="/sector/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
+        return json_data
+
+
+class GisWizardSubStationListView(SubStationList):
+
+    template_name = 'gis_wizard/wizard_list_sub-station.html'
+
+
+class GisWizardSubStationListingTable(SubStationListingTable):
+
+    def get_initial_queryset(self):
+
+        qs = super(GisWizardSubStationListingTable, self).get_initial_queryset()
+        qs = qs.filter(device__device_technology__in=[3,4])
+        return qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device__id' in dct:
+                    ss_device_alias = Device.objects.get(id=dct['device__id']).device_alias
+                    ss_device_ip = Device.objects.get(id=dct['device__id']).ip_address
+                    dct['device__id'] = "{} ({})".format(ss_device_alias, ss_device_ip)
+            except Exception as e:
+                logger.info("Sub Station Device not present. Exception: ", e.message)
+
+            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
+            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            device_id = dct.pop('id')
+            sub_station = SubStation.objects.get(id=device_id)
+            if self.request.user.has_perm('inventory.change_substation') and len(sub_station.circuit_set.all())==1:
+                edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sub_station.circuit_set.all()[0].sector.base_station.id, sub_station.circuit_set.all()[0].sector.bs_technology.id, sub_station.circuit_set.all()[0].sector.id, device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_substation'):
+                delete_action = '<a href="/sub_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
+        return json_data
+

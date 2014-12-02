@@ -2,7 +2,7 @@ from django.db import models
 from machine.models import Machine
 from organization.models import Organization
 from site_instance.models import SiteInstance
-from service.models import Service
+from service.models import Service, ServiceParameters, ServiceDataSource
 from mptt.models import MPTTModel
 
 
@@ -64,7 +64,7 @@ class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
     alias = models.CharField('Alias', max_length=200)
     device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
-    service = models.ManyToManyField(Service, blank=True, null=True)
+    service = models.ManyToManyField(Service, through="DeviceTypeService", blank=True, null=True)
     packets = models.IntegerField('Packets', blank=True, null=True)
     timeout = models.IntegerField('Timeout', blank=True, null=True)
     normal_check_interval = models.IntegerField('Normal Check Interval', blank=True, null=True)
@@ -86,6 +86,22 @@ class DeviceType(models.Model):
         self.device_icon.delete()
         self.device_gmap_icon.delete()
         super(DeviceType, self).delete(*args, **kwargs)
+
+
+# device type with specific service info table
+class DeviceTypeService(models.Model):
+    device_type = models.ForeignKey(DeviceType)
+    service = models.ForeignKey(Service)
+    parameter = models.ForeignKey(ServiceParameters)
+    service_data_sources = models.ManyToManyField(ServiceDataSource, through="DeviceTypeServiceDataSource")
+
+
+# device type with specific service data source info table
+class DeviceTypeServiceDataSource(models.Model):
+    device_type_service = models.ForeignKey(DeviceTypeService)
+    service_data_sources = models.ForeignKey(ServiceDataSource)
+    warning = models.CharField('Warning', max_length=255, null=True, blank=True)
+    critical = models.CharField('Critical', max_length=255, null=True, blank=True)
 
 
 # device model info table

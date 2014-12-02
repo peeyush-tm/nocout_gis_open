@@ -129,6 +129,8 @@ class BaseStation(models.Model):
     state = models.IntegerField('State', null=True, blank=True)
     city = models.IntegerField('City', null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
+    tag1 = models.CharField('Tag 1', max_length=60, null=True, blank=True)
+    tag2 = models.CharField('Tag 2', max_length=60, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
