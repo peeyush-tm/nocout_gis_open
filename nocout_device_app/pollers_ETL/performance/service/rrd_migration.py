@@ -225,7 +225,7 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
 	except Exception ,e:
 		print e.message
 	index1 = 0
-	index2 = 1000
+	index2 = min(1000,len(net_values))
 	try:
 		while(index2 <= len(net_values)):
 			mongo_module.mongo_db_insert(db, net_values[index1:index2], 'network_perf_data')
@@ -243,7 +243,7 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
 
 	try:
 		index1 = 0
-		index2 = 1000
+		index2 = min(1000,len(serv_values))
 		while(index2 <= len(serv_values)):
 			mongo_module.mongo_db_insert(db, serv_values[index1:index2], 'serv_perf_data')
 			#mongo_module.mongo_db_update(db,service_update[index1:index2], serv_values[index1:index2], 'serv_perf_data')

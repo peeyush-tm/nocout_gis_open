@@ -143,7 +143,7 @@ def insert_data(table, data_values, **kwargs):
                 current_value,min_value,max_value,avg_value,warning_threshold,
                 critical_threshold,severity,site_name,data_source,
                 ip_address,refer,age,machine_name)
-                VALUES(%s,%s, %s, %s, %s, %s, %s,%s,%s,%s,%s,%s,%s,%s,%s)
+                VALUES(%s,%s, %s, %s, %s, %s, %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """
 	cursor = db.cursor()
     	try:

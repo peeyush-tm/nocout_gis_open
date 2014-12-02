@@ -1,0 +1,154 @@
+#!/usr/bin/python
+import time
+import sys
+import os
+import socket
+"""
+Poller script which runs on ss and calculates the ul utilization of the ss connected from BS.
+
+Poller script determines the uplink utilization of the ss.
+poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.4.1.21 from snmp agent of device at specific interval.
+uplink utilization information is sent to device application 
+
+"""
+# ##################################################################
+# Function : check_wimax_pmp1_dl_utilization_kpi
+#
+#  Parameters: info(SNMP output) ,params(parameters to check the service state) 
+#
+#  Output: service state,plugin output ,performance data
+##################################################################
+
+
+
+
+def extract_pmp1_bw_from_live(hostname,site):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+    
+        """
+        pmp_bw = None
+        query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                        "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_pmp_bw_invent",hostname)
+
+	print hostname
+	try:
+        	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		socket_path = "/omd/sites/%s/tmp/run/live" % site
+
+        	s.connect(("10.133.19.165",6562))
+		s.send(query_string)
+       		s.shutdown(socket.SHUT_WR)
+        	query_output = s.recv(100000000)
+        	query_output.strip("\n")
+		print query_output
+		query_output = eval(query_output)
+        	if query_output:
+			query_output = query_output[0][0] 
+			output = [entry for entry in query_output.split('- ')[1].split()]
+                	pmp_bw=output[0].split('=')[1]
+	except Exception,e:
+		pmp_bw=None
+
+        return pmp_bw
+
+def extract_pmp1_util_from_live(hostname,site):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+    
+        """
+        pmp1_ul = None
+	pmp1_dl = None
+	query = "GET services\nColumns: service_perf_data\n" + \
+		"Filter: service_description = wimax_pmp1_ul_util\n" + \
+		"Filter: service_description = wimax_pmp1_dl_util\n" + \
+		"Or: 2\n" + \
+		"Filter: host_name = %s\nOutputFormat: python\n" % (hostname)
+	try:
+        	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		socket_path = "/omd/sites/%s/tmp/run/live" % site
+        	s.connect(("10.133.19.165",6562))
+		s.send(query)
+       		s.shutdown(socket.SHUT_WR)
+        	query_output = s.recv(100000000)
+        	query_output.strip("\n")
+		query_output = eval(query_output)
+        	if query_output[0][0] or query_output[1][0]:
+			try:
+				pmp1_ul = query_output[0][0].split('=')[1].split(';',1)[0]
+			except:
+				pmp1_ul = None
+			try:
+				pmp1_dl = query_output[1][0].split('=')[1].split(';',1)[0]
+			except:
+				pmp1_dl = None
+	except Exception ,e:
+		pmp1_dl=None
+		pmp1_ul = None
+
+	print pmp1_dl,pmp1_ul
+        return pmp1_dl,pmp1_ul
+
+
+def live_query_pmp1_util_kpi(hostname):
+    state = 3
+    status_list = [] 
+    pmp1_dl_kpi = ''
+    pmp1_ul_kpi= ''
+    perf = ''
+    plugin_message = ''
+    state_string = "UNKNOWN"
+    try:
+	#p = os.path.dirname(os.path.abspath(__file__))
+	#print p
+	#paths = [path for path in p.split('/')]
+	#site = paths[paths.index('sites') + 1]
+	site = "ospf2_slave_1"
+	pmp1_bw = extract_pmp1_bw_from_live(hostname,site)
+	pmp1_dl,pmp1_ul = extract_pmp1_util_from_live(hostname,site)
+	pmp1_dl = eval(pmp1_dl)
+	pmp1_ul = eval(pmp1_ul)
+
+	print pmp1_bw
+	pmp1_bw = eval(pmp1_bw)
+	if pmp1_bw and pmp1_dl:
+		if pmp1_bw <= 3:
+			pmp1_dl_kpi = (pmp1_dl/4) *100
+			state = 0
+			state_string = "OK"
+		elif pmp1_bw  > 3:
+			pmp1_dl_kpi = (pmp1_dl/8) *100
+			state = 0
+			state_string = "OK"
+		else:
+			pmp1_dl_kpi = ''
+	if pmp1_bw and pmp1_ul:
+                if pmp1_bw <= 3:
+                	pmp1_ul_kpi = (pmp1_ul/2) *100
+			state = 0
+			state_string = "OK"
+                elif pmp1_bw > 3:
+                        pmp1_ul_kpi = (pmp1_ul/4) *100
+			state = 0
+			state_string = "OK"
+		else:
+			pmp1_ul_kpi = ''
+	perf += 'pmp1_ul_util_kpi' + "=%s " % (pmp1_ul_kpi)
+	perf += 'pmp1_dl_util_kpi' + "=%s " % (pmp1_dl_kpi)
+    except Exception ,e:
+	perf = '' 
+    plugin_message += "wimax_pmp1_util_kpi %s - %s %s|%s" % (state_string,pmp1_ul_kpi,pmp1_dl_kpi,perf)
+    sys.stdout.write(plugin_message)
+    sys.exit((state))
+		
+def  main():
+    host_name = sys.argv[1]
+    live_query_pmp1_util_kpi(host_name)
+	
+
+if __name__ == '__main__':
+	main() 
