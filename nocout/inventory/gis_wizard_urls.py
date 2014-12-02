@@ -5,14 +5,15 @@ from inventory import views
 
 urlpatterns = patterns('',
     url(r'^base-station/$', views.GisWizardListView.as_view(), name='gis-wizard-base-station-list'),
+    url(r'^base-station/table/$', views.GisWizardListingTable.as_view(), name='gis-wizard-base-station-list-table'),
     url(r'^ptp/$', views.GisWizardPTPListView.as_view(), name='gis-wizard-list-ptp'),
     url(r'^ptp/table/$', views.GisWizardPTPListingTable.as_view(), name='gis-wizard-ptp-list-table'),
     url(r'^sub-station/$', views.GisWizardSubStationListView.as_view(), name='gis-wizard-list-sub-station'),
     url(r'^sub-station/table/$', views.GisWizardSubStationListingTable.as_view(), name='gis-wizard-sub-station-list-table'),
-    url(r'^base-station/table/$', views.GisWizardListingTable.as_view(), name='gis-wizard-base-station-list-table'),
     url(r'^base-station/select/$', views.gis_wizard_base_station_select, name='gis-wizard-base-station-select'),
     url(r'^base-station/new/$', views.GisWizardBaseStationCreateView.as_view(), name='gis-wizard-base-station-create'),
     url(r'^base-station/(?P<pk>\d+)/$', views.GisWizardBaseStationUpdateView.as_view(), name='gis-wizard-base-station-update'),
+    url(r'^base-station/(?P<pk>\d+)/details/$', views.GisWizardBaseStationDetailView.as_view(), name='gis-wizard-base-station-detail'),
 
     url(r'^base-station/(?P<bs_pk>\d+)/backhaul/select/$', views.gis_wizard_backhaul_select, name='gis-wizard-backhaul-select'),
     url(r'^base-station/(?P<bs_pk>\d+)/backhaul/delete/$', views.gis_wizard_backhaul_delete, name='gis-wizard-backhaul-delete'),
