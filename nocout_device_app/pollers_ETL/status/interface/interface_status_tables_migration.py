@@ -63,13 +63,13 @@ def main(**configs):
 
     print start_time,end_time
     
-    for i in range(len(configs.get('mongo_conf'))):
-    	docs = read_data(start_epoch, end_epoch, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
-    	for doc in docs:
-        	values_list = build_data(doc)
-        	data_values.extend(values_list)
-    if data_values:
-    	insert_data(configs.get('table_name'), data_values, configs=configs)
+    #for i in range(len(configs.get('mongo_conf'))):
+    docs = read_data(start_epoch, end_epoch, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    #for doc in docs:
+    #   	values_list = build_data(doc)
+    #   	data_values.extend(values_list)
+    if docs:
+    	insert_data(configs.get('table_name'), docs, configs=configs)
    	print "Data inserted into my mysql db"
     else:
     	print "No data in mongodb in this time frame for table %s" % (configs.get('table_name'))
@@ -101,8 +101,30 @@ def read_data(start_time, end_time, **kwargs):
         cur = db.device_status_services_status.find({
             "check_timestamp": {"$gt": start_time, "$lt": end_time}
         })
+        configs = config_module.parse_config_obj()
+        for config, options in configs.items():
+                machine_name = options.get('machine')
         for doc in cur:
-            docs.append(doc)
+	    time = doc.get('time')
+            t = (
+            	doc.get('device_name'),
+        	doc.get('service_name'),
+        	machine_name,
+        	doc.get('site_name'),
+        	doc.get('data_source'),
+        	doc.get('current_value'),
+        	doc.get('min_value'),
+        	doc.get('max_value'),
+        	doc.get('avg_value'),
+        	doc.get('warning_threshold'),
+        	doc.get('critical_threshold'),
+        	doc.get('sys_timestamp'),
+        	doc.get('check_timestamp'),
+        	doc.get('ip_address'),
+        	doc.get('severity'),
+           )
+	   docs.append(t)
+           t = ()
      
     return docs
 

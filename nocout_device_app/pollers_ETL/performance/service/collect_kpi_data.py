@@ -34,7 +34,7 @@ class MKGeneralException(Exception):
     def __str__(self):
         return self.reason
 
-def format_kpi_data(site,output,mongo_host,mongo_port,mongo_db_name):
+def format_kpi_data(site,output,output1,mongo_host,mongo_port,mongo_db_name):
 	"""
 	inventory_perf_data : Function for collecting the data for inventory serviecs.Service state is also retunred for those services
 	Args: site (site on poller on which devices are monitored)
@@ -129,18 +129,21 @@ def kpi_data_data_main():
                 mongo_port = desired_config.get('port')
                 mongo_db_name = desired_config.get('nosql_db')
 		query = "GET services\nColumns: host_name host_address host_state service_description service_state last_check"+\
-			" service_last_state_change service_perf_data\n"+\
-                        "Filter: service_description ~ wimax_pmp1_dl_utilization_kpi\n"+\
-			"Filter: service_description ~ wimax_pmp1_ul_utilization_kpi\n"+\
-			"Filter: service_description ~ wimax_pmp2_dl_utilization_kpi\n"+\
-			"Filter: service_description ~ wimax_pmp2_ul_utilization_kpi\n"+\
+			"service_last_state_change service_perf_data\n"+\
+                        "Filter: service_description ~ wimax_pmp1_util_kpi\n"+\
+			"Filter: service_description ~ wimax_pmp2_util_kpi\n"+\
 			"Filter: service_description ~ cambium_dl_utilization_kpi\n"+\
 			"Filter: service_description ~ cambium_ul_utilization_kpi\n"+\
-			"Or: 6\n"+\
-                        "OutputFormat: json\n"
-		output = json.loads(utility_module.get_from_socket(site,query))
-		print output
-		format_kpi_data(site,output,mongo_host,int(mongo_port),mongo_db_name)
+			"Or: 4\nOutputFormat: python"
+		query1= "GET services\nColumns: host_name plugin_output\n" +\
+			"Filter: service_description ~ wimax_pmp1_sector_id_invent\n"+\
+			"Filter: service_description ~ wimax_pmp2_sector_id_invent\n"+ \
+			"Or: 2\n" +\
+			"OutputFormat: python\n"
+		output = utility_module.get_from_socket(site,query)
+		output1 = utility_module.get_from_socket(site,query1)
+		print output,output1
+		format_kpi_data(site,output,output1 ,mongo_host,int(mongo_port),mongo_db_name)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))
 	except socket.error, msg:

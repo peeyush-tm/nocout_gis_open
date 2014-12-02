@@ -34,14 +34,14 @@
 
 <style type="text/css">
 iframe {
-    position:absolute; 
-    top:10px; 
-    right:10px; 
-    overflow: auto; 
-    padding:0px; 
-    height:100%; 
-    max-height: 550px; 
-    overflow:auto; 
+    position:absolute;
+    top:10px;
+    right:10px;
+    overflow: auto;
+    padding:0px;
+    height:100%;
+    max-height: 550px;
+    overflow:auto;
     z-index:100;
     border: 0px none;
 }
@@ -100,7 +100,7 @@ iframe {
         </div>
         <div id="page_content_div">
         	<div class="hide" id="ajax_spinner" align="center"></div>
-        </div>        
+        </div>
     </section>
     <!--/LOGIN -->
   </section>
@@ -131,15 +131,15 @@ iframe {
       $(document).ready(function(e) {
 
         /*Set cookies for devicevisualization app*/
-        $.cookie("isFreezeSelected", 0, {path: '/', secure: true});
-        $.cookie("freezedAt", 0, {path: '/', secure: true});
-        $.cookie("isMaintained", 0, {path: '/', secure: true});
-        $.cookie("tools_ruler", 0, {path: '/', secure: true});
-        $.cookie("tools_line", 0, {path: '/', secure: true});
-        $.cookie("isLabelChecked", true, {path: '/', secure: true});
+        $.cookie("isFreezeSelected", 0, {path: '/', secure : true});
+        $.cookie("freezedAt", 0, {path: '/', secure : true});
+        $.cookie("isMaintained", 0, {path: '/', secure : true});
+        $.cookie("tools_ruler", 0, {path: '/', secure : true});
+        $.cookie("tools_line", 0, {path: '/', secure : true});
+        $.cookie("isLabelChecked", true, {path: '/', secure : true});
         $.cookie("tooltipLabel", "", {path: '/', secure: true});
         /*Cookie for collapsed menu*/
-        $.cookie("isMenuOpen", 1, {path: '/', secure: true});
+        $.cookie("isMenuOpen", 1, {path: '/', secure : true});
       });
 
       /*Triggers when login form is submitted*/
@@ -167,14 +167,121 @@ iframe {
           showSpinner();
 
           /*Make ajax call to the server*/
-          $.ajax({   
+          $.ajax({
             url: "/auth/",
             type: "POST",
             data: $("#login_form").serialize(true) + location.search.replace('?','&'),
             dataType: "json",
             success: function (data) {
+              if (data.success == 3) {
+                if (data.data.objects.dialog) {
+                  bootbox.dialog({
+                    message:
+                    '<div class="row" style="z-index:9999;position:relative;">  ' +
+                    '<div class="col-md-12"> ' +
+                    '<form id="id_password_from" class="form-horizontal"> ' +
+                    '<div class="form-group"> ' +
+                    '<label class="col-md-5 control-label" for="new_pwd">* New Password</label> ' +
+                    '<div class="col-md-5"> ' +
+                    '<input id="id_new_password" name="id_new_password" type="password" ' +
+                    'placeholder="New Password" class="form-control input-md"> ' +
+                    '<span class="help-block">Should be of minimum 6 length.</span> </div> ' +
+                    '</div> ' +
+                    '<div class="form-group"> ' +
+                    '<label class="col-md-5 control-label" for="confirm_prs">' +
+                    '* Confirm Password</label> ' +
+                    '<div class="col-md-5"> ' +
+                    '<input id="id_confirm_password" name="id_confirm_password" type="password" '+
+                    'placeholder="Confirm Password" class="form-control input-md"> ' +
+                    '<span class="help-block">Same as above password.</span> </div> ' +
+                    '</div> ' +
+                    '<div class="form-group"> <div class="col-md-12"> ' +
+                    '<span id="id_error_message" name="id_error_message" style="color:Red;">' +
+                    '</span> </div> </div> ' +
+                    '</form> </div> </div>',
+                    title: "Set New Password",
+                    onEscape: function() {
+                      $.ajax({
+                           url: "/user/change_password/",
+                           type: "POST",
+                           data: { action: 'logout'},
+                           dataType: "json",
+                           success: function (data) {
+                               window.location.replace(data.data.objects.url)
+                           }//success
+                       });//ajax
+                    },
+                    show: true,
+                    buttons: {
+                        success: {
+                          label: "Change Password",
+                          className: "btn-success",
+                          callback: function () {
+                            var pwd1 = $('#id_new_password');
+                            var pwd2 = $('#id_confirm_password');
+                            var result = check_new_password()
+                              {% include 'nocout/set_new_password_validation.html' %}
+                            if (result.output){
+                              $.ajax({
+                                   url: "/user/change_password/",
+                                   type: "POST",
+                                   data: {
+                                    action: 'continue', url: data.data.objects.url,
+                                    user_id: data.data.objects.user_id,
+                                    new_pwd: $("#id_new_password").val(),
+                                    confirm_pwd: $("#id_confirm_password").val(),
+                                   },
+                                   dataType: "json",
+                                   success: function (data) {
+                                       if (data.success == 0){
+                                            $("#password").val('');
+                                            var unique_gritter = $.gritter.add({
+                                                title: data.message,
+                                                text: data.reason,
+                                                sticky: false,
+                                                time : 2000,
+                                                after_close: function () {
+                                                    $.gritter.removeAll();
+                                                    window.location.replace(data.data.objects.url)
+                                                }
+                                            });
+                                        }
+                                        else{
+                                            window.location.replace(data.data.objects.url)
+                                        }
+                                   }//success
+                               });//ajax
+                            }//if
+                            else{
+                                $("#id_error_message").html(result.error_message)
+                                return false;
+                            }//else
+                          }//callback function
+                        },//buttonsuccess
 
-              if (data.success == 1) {
+                        danger: {
+                            label: "Cancel & Logout",
+                            className: "btn-danger",
+                            callback: function () {
+                                $.ajax({
+                                   url: "/user/change_password/",
+                                   type: "POST",
+                                   data: { action: 'logout'},
+                                   dataType: "json",
+                                   success: function (data) {
+                                       window.location.replace(data.data.objects.url)
+                                   }//success
+                               });//ajax
+                            }//callback function
+                        }//buttondanger
+                      } //button
+                  });//bootbox end
+                }// if end for data dialogue
+                else {
+                  window.location.replace(data.data.objects.url);
+                }
+              }//if end
+              else if (data.success == 1) {
                 if (data.data.objects.dialog) {
                   bootbox.dialog({
                     message: "This account is active on a different computer, " +
@@ -186,14 +293,25 @@ iframe {
                             className: "btn-success",
                             callback: function () {
                                 $.ajax({
-                                           url: "/sm/dialog_action/",
-                                           type: "POST",
-                                           data: { action: 'continue', url:data.data.objects.url },
-                                           dataType: "json",
-                                           success: function (data) {
-                                               window.location.replace(data.data.objects.url)
-                                           }//success
-                                       });//ajax
+                                   url: "/sm/dialog_action/",
+                                   type: "POST",
+                                   data: { action: 'continue', url:data.data.objects.url,
+                                    'password_alert':data.data.objects.password_expire_alert,
+                                    'password_expires_on': data.data.objects.password_expires_on },
+                                   dataType: "json",
+                                   success: function (data) {
+                                        if (data.data.objects.password_expires_on == null){
+                                            window.location.replace(data.data.objects.url);
+                                        }
+                                        else{
+                                            bootbox.alert("Change your password, password will " +
+                                            "expire on " +
+                                            data.data.objects.password_expires_on, function() {
+                                            window.location.replace(data.data.objects.url);
+                                            });
+                                        }
+                                   }//success
+                               });//ajax
                             }//callback function
                         },//buttonsuccess
 
@@ -216,6 +334,12 @@ iframe {
                       } //button
                   });//bootbox end
                 }// if end for data dialogue
+                else if(data.data.objects.password_expire_alert){
+                    bootbox.alert("Change your password, password will expire on " +
+                        data.data.objects.password_expires_on, function() {
+                        window.location.replace(data.data.objects.url);
+                    });
+                }
                 else {
                   window.location.replace(data.data.objects.url);
                 }
@@ -237,14 +361,14 @@ iframe {
 
               /*Hide spinner*/
               hideSpinner();
-              
+
             }//success
           });//Ajax
         }
         return false;
       });//onclick
 
-      
+
 
   </script>
 <!-- /JAVASCRIPTS -->

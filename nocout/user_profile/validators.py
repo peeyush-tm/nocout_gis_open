@@ -13,7 +13,7 @@ from django.conf import settings
 
 # Settings
 PASSWORD_MIN_LENGTH = getattr(settings, "PASSWORD_MIN_LENGTH", 6)
-PASSWORD_COMPLEXITY = getattr(settings, "PASSWORD_COMPLEXITY", None)
+PASSWORD_COMPLEXITY = getattr(settings, "PASSWORD_COMPLEXITY", {'UPPER': 1, 'LOWER': 1, 'DIGIT': 1})
 
 
 class LengthValidator(object):
