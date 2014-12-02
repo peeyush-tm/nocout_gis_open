@@ -1213,7 +1213,7 @@ $("#show_hide_label").click(function(e) {
         labelsArray_filtered[x].setVisible(e.currentTarget.checked);
     }
 
-    // Hide perf info label
+    // Show/Hide perf info label
     for (var x = 0; x < labelsArray.length; x++) {
         var move_listener_obj = labelsArray[x].moveListener_;
         if(move_listener_obj) {
@@ -1230,7 +1230,7 @@ $("#show_hide_label").click(function(e) {
         }
     }
 
-    // Hide tooltip info label
+    // Show/Hide tooltip info label
     for (key in tooltipInfoLabel) {
         var move_listener_obj = tooltipInfoLabel[key].moveListener_;
         if(move_listener_obj) {
