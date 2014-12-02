@@ -997,26 +997,17 @@ class ServiceThresholdConfigurationForm(forms.ModelForm):
             logger.info(e.message)
 
         super(ServiceThresholdConfigurationForm, self).__init__(*args, **kwargs)
-        #self.fields['live_polling_template'].empty_label = 'Select'
         for name, field in self.fields.items():
-            field.widget.attrs.update({'style': 'width:30%'})
+            field.widget.attrs.update({'style': 'width:20%'})
             if name.endswith('start'):
                 field.widget.attrs.update({'placeholder': 'Start'})
             else:
                 field.widget.attrs.update({'placeholder': 'End'})
 
             field.widget.attrs.update({'class': 'form-control col-md-4'})
-            # if field.widget.attrs.has_key('class'):
-            #     if isinstance(field.widget, forms.widgets.Select):
-            #         field.widget.attrs['class'] += ' col-md-12'
-            #         field.widget.attrs['class'] += ' select2select'
-            #     else:
-            #         field.widget.attrs['class'] += ' form-control'
-            # else:
-            #     if isinstance(field.widget, forms.widgets.Select):
-            #         field.widget.attrs.update({'class': 'col-md-12 select2select'})
-            #     else:
-            #         field.widget.attrs.update({'class': 'form-control'})
+        self.fields['service_type'].widget.attrs.update({'style': 'width:340px'})
+        #self.fields['service_type'].empty_label = 'Select'
+
 
     class Meta:
         """

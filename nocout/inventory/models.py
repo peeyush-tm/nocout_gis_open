@@ -296,6 +296,7 @@ class ThresholdConfiguration(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
+    service_type = models.CharField('Service Type', max_length=3, default='INT', choices=(('INT', 'Numeric'), ('STR', 'String')))
     live_polling_template = models.ForeignKey(LivePollingSettings)
 
     range1_start = models.CharField('Range1 Start', max_length=20, null=True, blank=True)

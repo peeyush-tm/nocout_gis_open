@@ -1,0 +1,269 @@
+{% extends "inventory/inventory.html" %}
+{% block content %}
+    <style type="text/css">
+        #user_profile table tr td:first-child {
+            font-weight: bold;
+        }
+        #user_profile table tr td {
+            font-weight: normal;
+        }
+    </style>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i> {{ sector_text }} Details (Base Station - {{ base_station.name }})</h4>
+        </div>
+        <div class="box-body">
+            <div id="user_profile" class="col-md-6 col-md-offset-3">
+                <table class="table table-hover table-bordered">
+
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Alias </td>
+                        <td>{{ object.alias }}</td>
+                    </tr>
+                    {% if selected_technology != '2' %}
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sector ID </td>
+                        <td>{{ object.sector_id }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Configured On </td>
+                        <td>{{ object.sector_configured_on }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Configured On Port </td>
+                        <td>{{ object.sector_configured_on_port }}</td>
+                    </tr>
+                    {% if selected_technology == '3' %}
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} DR Site </td>
+                        <td>{{ object.dr_site }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} MRC </td>
+                        <td>{{ object.mrc }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} TX Power </td>
+                        <td>{{ object.tx_power }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} RX Power </td>
+                        <td>{{ object.rx_power }}</td>
+                    </tr>
+                    {% if selected_technology == '4' %}
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} RF Bandwidth </td>
+                        <td>{{ object.rf_bandwidth }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Frame Length </td>
+                        <td>{{ object.frame_length }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Cell Radius </td>
+                        <td>{{ object.cell_radius }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Frequency </td>
+                        <td>{{ object.frequency }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Modulation </td>
+                        <td>{{ object.modulation }}</td>
+                    </tr>
+
+                    {% if sector_antenna %}
+                    <tr><td> </td><td> </td></tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Alias </td>
+                        <td>{{ sector_antenna.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Type </td>
+                        <td>{{ sector_antenna.antenna_type }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Height </td>
+                        <td>{{ sector_antenna.height }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Polarization </td>
+                        <td>{{ sector_antenna.polarization }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Mount Type </td>
+                        <td>{{ sector_antenna.mount_type }}</td>
+                    </tr>
+                    {% if selected_technology != '2' %}
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Tilt </td>
+                        <td>{{ sector_antenna.tilt }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Gain </td>
+                        <td>{{ sector_antenna.gain }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Beam Width </td>
+                        <td>{{ sector_antenna.beam_width }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Azimuth Angle </td>
+                        <td>{{ sector_antenna.azimuth_angle }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Reflector </td>
+                        <td>{{ sector_antenna.reflector }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Splitter installed </td>
+                        <td>{{ sector_antenna.splitter_installed }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Sync Splitter Used </td>
+                        <td>{{ sector_antenna.sync_splitter_used }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Make Of Antenna </td>
+                        <td>{{ sector_antenna.make_of_antenna }}</td>
+                    </tr>
+                    {% endif %} {# if selected_technology != '2' #}
+                    {% endif %} {# if sector_antenna #}
+
+                    {% if sub_station %}
+                    <tr><td> </td><td> </td></tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Alias </td>
+                        <td>{{ sub_station.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Device </td>
+                        <td>{{ sub_station.device }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Version </td>
+                        <td>{{ sub_station.version }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Serial NO. </td>
+                        <td>{{ sub_station.serial_no }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Building Height </td>
+                        <td>{{ sub_station.building_height }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Tower Height </td>
+                        <td>{{ sub_station.tower_height }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Ethernet Extender </td>
+                        <td>{{ sub_station.ethernet_extender }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Cable Length </td>
+                        <td>{{ sub_station.cable_length }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Latitude </td>
+                        <td>{{ sub_station.latitude }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Longitude </td>
+                        <td>{{ sub_station.longitude }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Mac Address </td>
+                        <td>{{ sub_station.mac_address }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Country </td>
+                        <td>{{ sub_station.country }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station State </td>
+                        <td>{{ sub_station.state }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station City </td>
+                        <td>{{ sub_station.city }}</td>
+                    </tr>
+                    {% endif %}
+
+                    {% if sub_station_antenna %}
+                    <tr><td> </td><td> </td></tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Alias </td>
+                        <td>{{ sub_station_antenna.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Type </td>
+                        <td>{{ sub_station_antenna.antenna_type }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Height </td>
+                        <td>{{ sub_station_antenna.height }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Polarization </td>
+                        <td>{{ sub_station_antenna.polarization }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Mount Type </td>
+                        <td>{{ sub_station_antenna.mount_type }}</td>
+                    </tr>
+                    {% endif %} {# if sub_station_antenna #}
+
+                    {% if circuit %}
+                    <tr><td> </td><td> </td></tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit Alias </td>
+                        <td>{{ circuit.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit ID </td>
+                        <td>{{ circuit.circuit_id }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit QOS Bandwidth </td>
+                        <td>{{ circuit.qos_bandwidth }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit DL RSSI during Acceptance </td>
+                        <td>{{ circuit.dl_rssi_during_acceptance }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit Throughput during Acceptance </td>
+                        <td>{{ circuit.throughput_during_acceptance }}</td>
+                    </tr>
+                    {% endif %}
+
+                    {% if customer %}
+                    <tr><td> </td><td> </td></tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Customer Alias </td>
+                        <td>{{ customer.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Customer Address </td>
+                        <td>{{ customer.address }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+                {% url 'gis-wizard-sector-list' bs_pk=base_station.id as prev_url %}
+                {% if selected_technology == '2' %}
+                <br><button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ prev_url }}')"><i class="fa fa-times"></i>Previous ({{ sector_text }} List)</button>
+                {% else %}
+                {% url 'gis-wizard-sub-station-list' bs_pk=base_station.id selected_technology=selected_technology sector_pk=object.id as next_url %}
+                <br><button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ prev_url }}')"><i class="fa fa-times"></i>Previous ({{ sector_text }} List)</button>
+                &nbsp;
+                <button type="reset" class="btn btn-success" onclick="window.location.replace('{{ next_url }}')"><i class="fa fa-pencil"></i>Next (Sub Station List)</button>
+                {% endif %}
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}
