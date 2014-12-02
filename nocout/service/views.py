@@ -465,6 +465,17 @@ class ServiceDataSourceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, Dele
     required_permissions = ('service.delete_servicedatasource',)
 
 
+def select_value_data_source(request):
+    """
+    Call when the service data source is selected while creating the service.
+    """
+    sds_id = request.GET['sds_id']
+    sds_values_list = ServiceDataSource.objects.filter(id=sds_id).values('warning', 'critical')
+    return HttpResponse( json.dumps({
+        'sds_values_list': list(sds_values_list)
+        }) )
+
+
 #********************************** Protocol ***************************************
 class ProtocolList(PermissionsRequiredMixin, ListView):
     """
