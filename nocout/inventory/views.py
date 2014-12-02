@@ -6207,6 +6207,22 @@ class GisWizardSectorListView(SectorList):
         context = super(GisWizardSectorListView, self).get_context_data(**kwargs)
         base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
         context['base_station'] = base_station
+
+        datatable_headers = [
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'sector_configured_on__id', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on_port__alias', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
+            {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
+        ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
@@ -6237,13 +6253,15 @@ class GisWizardSectorListing(SectorListingTable):
                 logger.info("Sector Configured On not present. Exception: ", e.message)
 
             sector_id = dct.pop('id')
+            kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology']}
+            kwargs.update({'pk': sector_id})
+            detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
             if self.request.user.has_perm('inventory.change_sector'):
-                kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology']}
-                kwargs.update({'pk': sector_id})
                 edit_url = reverse('gis-wizard-sector-update', kwargs=kwargs)
-                dct.update(actions='<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp')
+                edit_action = '<a href="' + edit_url + '"><i class="fa fa-pencil text-dark"></i></a>&nbsp'
             else:
-                dct.update(actions='')
+                edit_action = ''
+            dct.update(actions=detail_action+edit_action)
         return json_data
 
 
