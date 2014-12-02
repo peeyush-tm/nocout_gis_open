@@ -207,7 +207,7 @@ def make_half_hourly_data(docs):
 				else:
 					min_val = min([existing_doc.get('min'), aggr_data.get('min')]) 
 					max_val = max([existing_doc.get('max'), aggr_data.get('max')]) 
-					if aggr_data.get('avg'):
+					if aggr_data.get('avg') and existing_doc.get('avg'):
 						avg_val = (existing_doc.get('avg') + aggr_data.get('avg')) / 2
 					else:
 						avg_val = existing_doc.get('avg')
@@ -237,9 +237,9 @@ def make_half_hourly_data(docs):
 				s_h_min_val, s_h_max_val, s_h_avg_val = None, None, None
 			else:
 				if service in wimax_mrotek_services:
-					f_h_min_val = second_half_data_values[0]
-					f_h_max_val = second_half_data_values[0]
-					f_h_avg_val = None
+					s_h_min_val = second_half_data_values[0]
+					s_h_max_val = second_half_data_values[0]
+					s_h_avg_val = None
 				else:
 					s_h_min_val = min(second_half_data_values)
 					s_h_max_val = max(second_half_data_values)
@@ -284,7 +284,7 @@ def make_half_hourly_data(docs):
 				else:
 					min_val = min([existing_doc.get('min'), aggr_data.get('min')]) 
 					max_val = max([existing_doc.get('max'), aggr_data.get('max')]) 
-					if aggr_data.get('avg'):
+					if aggr_data.get('avg') and existing_doc.get('avg'):
 						avg_val = (existing_doc.get('avg') + aggr_data.get('avg')) / 2
 					else:
 						avg_val = existing_doc.get('avg')
