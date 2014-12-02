@@ -6113,6 +6113,15 @@ class GisWizardBaseStationUpdateView(GisWizardBaseStationMixin, BaseStationUpdat
     pass
 
 
+class GisWizardBackhaulDetailView(BackhaulDetail):
+    template_name = 'gis_wizard/backhaul_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardBackhaulDetailView, self).get_context_data(**kwargs)
+        context['base_station'] = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        return context
+
+
 def gis_wizard_backhaul_select(request, bs_pk):
     base_station = BaseStation.objects.get(id=bs_pk)
     if base_station.backhaul:
