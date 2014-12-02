@@ -304,7 +304,7 @@ def prepare_raw_sector(basestations):
                                  "name": "device_name",
                                  "title": "Device Name",
                                  "show": 1,
-                                 "value": format_value(format_this=sector['SECTOR_CONF_ON'])
+                                 "value": format_value(format_this=sector['SECTOR_CONF_ON_IP'])
                              },
                              {
                                  "name": "device_id",
