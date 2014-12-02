@@ -1453,26 +1453,16 @@ class GISPerfData(View):
         performance_data['radius'] = radius
         performance_value = ""
 
-        # performance payload
+        # performance value
         perf_payload = {
             'device_name': device_name,
             'machine_name': machine_name,
             'freeze_time': freeze_time,
             'device_service_name': service,
             'device_service_data_source': data_source
-        }
 
-        try:
-            if ts_type == "ping":
-                # performance value
-                performance_value = self.get_performance_value(perf_payload, 'ping')
-            elif ts_type == "normal":
-                # performance value
-                performance_value = self.get_performance_value(perf_payload, 'normal')
-            else:
-                pass
-        except Exception as e:
-            logger.info("UserPing Thematic Settings not found. Exception: ", e.message)
+        }
+        performance_value = self.get_performance_value(perf_payload, ts_type)
 
         if user_thematics:
             # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
@@ -1502,9 +1492,9 @@ class GISPerfData(View):
 
             # comparing threshold values to get icon
             try:
-                if len(device_pl):
+                if len(performance_value):
                     # live polled value of device service
-                    value = ast.literal_eval(str(device_pl))
+                    value = ast.literal_eval(str(performance_value))
                     try:
                         if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
                             icon_settings = eval(th_icon_settings)
@@ -2196,17 +2186,136 @@ class GISPerfData(View):
         substation_info['param'] = dict()
         substation_info['param']['sub_station'] = self.get_device_info(device_name, machine_name, substation)
 
-        # marker url
-        marker_url = ""
-        try:
-            gmap_icon = str(DeviceType.objects.get(id=substation_device.device_type).device_gmap_icon)
-            marker_url = str("media/" + str(gmap_icon)) \
-                if "uploaded" in str(gmap_icon) \
-                else "static/img/" + str(gmap_icon)
-        except Exception as e:
-            logger.info("No GMAP Icon for device type. Exception: ", e.message)
+        if user_thematics:
+            # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
+            th_icon_settings = ""
+            try:
+                th_icon_settings = user_thematics.thematic_template.icon_settings
+            except Exception as e:
+                logger.info("No icon settings for thematic settings. Exception: ", e.message)
 
-        substation_info['markerUrl'] = marker_url
+            # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
+            th_ranges = ""
+            try:
+                if ts_type == "ping":
+                    th_ranges = user_thematics.thematic_template
+                elif ts_type == "normal":
+                    th_ranges = user_thematics.thematic_template.threshold_template
+                else:
+                    pass
+            except Exception as e:
+                logger.info("No ranges for thematic settings. Exception: ", e.message)
+
+            # default image to be loaded
+            image_partial = "icons/mobilephonetower10.png"
+
+            # icon
+            icon = str(image_partial)
+
+            # comparing threshold values to get icon
+            try:
+                if len(performance_value):
+                    # live polled value of device service
+                    value = ast.literal_eval(str(performance_value))
+                    try:
+                        if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
+                            icon_settings = eval(th_icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings1' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings1'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(th_ranges.range2_start)) <= (float(value)) <= (float(th_ranges.range2_end)):
+                            icon_settings = eval(th_icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings2' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings2'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(th_ranges.range3_start)) <= (float(value)) <= (float(th_ranges.range3_end)):
+                            icon_settings = eval(th_icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings3' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings3'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(th_ranges.range4_start)) <= (float(value)) <= (float(th_ranges.range4_end)):
+                            icon_settings = eval(th_icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings4' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings4'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(th_ranges.range5_start)) <= (float(value)) <= (float(th_ranges.range5_end)):
+                            icon_settings = eval(th_icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings5' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings5'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(th_ranges.range6_start)) <= (float(value)) <= (float(th_ranges.range6_end)):
+                            icon_settings = eval(th_icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings6' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings6'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(th_ranges.range7_start)) <= (float(value)) <= (float(th_ranges.range7_end)):
+                            icon_settings = eval(th_icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings7' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings7'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(th_ranges.range8_start)) <= (float(value)) <= (float(th_ranges.range8_end)):
+                            icon_settings = eval(th_icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings8' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings8'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(th_ranges.range9_start)) <= (float(value)) <= (float(th_ranges.range9_end)):
+                            icon_settings = eval(th_icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings9' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings9'])
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    try:
+                        if (float(th_ranges.range10_start)) <= (float(value)) <= (float(th_ranges.range10_end)):
+                            icon_settings = eval(th_icon_settings)
+                            for icon_setting in icon_settings:
+                                if 'icon_settings10' in icon_setting.keys():
+                                    image_partial = str(icon_setting['icon_settings10'])
+                    except Exception as e:
+                        logger.info(e.message)
+                # image url
+                img_url = "media/" + str(image_partial) if "uploaded" in str(
+                    image_partial) else "static/img/" + str(image_partial)
+
+                # icon to be send in response
+                icon = str(img_url)
+            except Exception as e:
+                logger.info("Icon not exist. Exception: ", e.message)
+
+            substation_info['markerUrl'] = icon
 
         substation_info['substation_device_ip_address'] = substation_device.ip_address
 
