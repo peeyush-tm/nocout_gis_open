@@ -248,7 +248,7 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/inventory/select/device/" + id, {
+                        $.ajax("/inventory/select/device/" + id+"/", {
                             dataType: "json"
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
@@ -394,7 +394,7 @@
                                 // using its formatResult renderer - that way the repository name is shown preselected
                                 var id = $(element).val();
                                 if (id !== "") {
-                                    $.ajax("/sub_station/select/sub_station/" + id, {
+                                    $.ajax("/sub_station/select/sub_station/" + id+"/", {
                                         dataType: "json"
                                     }).done(function(data) {
                                         callback({id: id, alias: data[0]});
@@ -456,7 +456,7 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/antenna/select/antenna/" + id, {
+                        $.ajax("/antenna/select/antenna/" + id+"/", {
                             dataType: "json"
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
@@ -508,7 +508,7 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/circuit/select/circuit/" + id, {
+                        $.ajax("/circuit/select/circuit/" + id+"/", {
                             dataType: "json"
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
@@ -560,7 +560,7 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/customer/select/customer/" + id, {
+                        $.ajax("/customer/select/customer/"+id+"/", {
                             dataType: "json"
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
