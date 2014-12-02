@@ -6247,6 +6247,36 @@ class GisWizardSectorListing(SectorListingTable):
         return json_data
 
 
+class GisWizardSectorDetailView(SectorDetail):
+    template_name = 'gis_wizard/sector_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardSectorDetailView, self).get_context_data(**kwargs)
+        base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
+        context['selected_technology'] = self.kwargs['selected_technology']
+        context['base_station'] = base_station
+        if self.object:
+            if self.object.antenna:
+                context['sector_antenna'] = self.object.antenna
+            if int(self.kwargs['selected_technology']) == 2: # Technology is P2P
+                if len(self.object.circuit_set.all()) == 1:
+                    circuit = self.object.circuit_set.all()[0]
+                    context['circuit'] = circuit
+                    if circuit.sub_station:
+                        context['sub_station'] = circuit.sub_station
+                        if circuit.sub_station.antenna:
+                            context['sub_station_antenna'] = circuit.sub_station.antenna
+                    if circuit.customer:
+                        context['customer'] = circuit.customer
+
+        if self.kwargs['selected_technology'] == '2':
+            context['sector_text'] = 'PTP'
+        else:
+            context['sector_text'] = 'Sector'
+
+        return context
+
+
 def gis_wizard_sector_select(request, bs_pk, selected_technology):
      base_station = BaseStation.objects.get(id=bs_pk)
      technologies = DeviceTechnology.objects.filter(name__in=['P2P', 'WiMAX', 'PMP'])
@@ -6534,13 +6564,13 @@ def get_ptp_sub_station_antenna_wizard_form(request):
     return render(request, 'gis_wizard/ptp_sub_station_antenna_form.html', {'formset': formset})
 
 
-class GisWizardSubStationListView(SubStationList):
+class GisWizardSectorSubStationListView(SubStationList):
     """
     """
     template_name = 'gis_wizard/sub_stations_list.html'
 
     def get_context_data(self, **kwargs):
-        context = super(GisWizardSubStationListView, self).get_context_data(**kwargs)
+        context = super(GisWizardSectorSubStationListView, self).get_context_data(**kwargs)
         base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
         context['base_station'] = base_station
         sector = Sector.objects.get(id=self.kwargs['sector_pk'])

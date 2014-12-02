@@ -27,11 +27,12 @@ urlpatterns = patterns('',
     url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[2|3|4])/sector/select/$', views.gis_wizard_sector_select, name='gis-wizard-sector-select'),
     url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[2|3|4])/sector/new/$', views.GisWizardSectorCreateView.as_view(), name='gis-wizard-sector-create'),
     url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[2|3|4])/sector/(?P<pk>\d+)/$', views.GisWizardSectorUpdateView.as_view(), name='gis-wizard-sector-update'),
+    url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[2|3|4])/sector/(?P<pk>\d+)/details/$', views.GisWizardSectorDetailView.as_view(), name='gis-wizard-sector-detail'),
 
     url(r'get-form/$', views.get_wizard_form, name='gis-wizard-form'),
     url(r'get-sub-station-antenna-formset/$', views.get_ptp_sub_station_antenna_wizard_form, name='gis-wizard-ptp-sub-station-antenna-form'),
 
-    url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[3|4])/sector/(?P<sector_pk>\d+)/sub-stations/$', views.GisWizardSubStationListView.as_view(), name='gis-wizard-sub-station-list'),
+    url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[3|4])/sector/(?P<sector_pk>\d+)/sub-stations/$', views.GisWizardSectorSubStationListView.as_view(), name='gis-wizard-sub-station-list'),
     url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[3|4])/sector/(?P<sector_pk>\d+)/sub-stations-table/$', views.GisWizardSubStationListing.as_view(), name='gis-wizard-sub-station-list-table'),
     url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[3|4])/sector/(?P<sector_pk>\d+)/sub-station/select/$', views.gis_wizard_sub_station_select, name='gis-wizard-sub-station-select'),
     url(r'^base-station/(?P<bs_pk>\d+)/technology/(?P<selected_technology>[3|4])/sector/(?P<sector_pk>\d+)/sub-station/(?P<pk>\d+)/delete/$', views.gis_wizard_sub_station_delete, name='gis-wizard-sub-station-delete'),
