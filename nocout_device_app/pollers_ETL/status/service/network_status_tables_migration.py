@@ -59,22 +59,46 @@ def main(**configs):
     would be imported to mysql, only, and this way mysql would not store
     duplicate data.
     """
-    for i in range(len(configs.get('mongo_conf'))):
-    	start_time = mongo_module.get_latest_entry(
-		    	db_type='mysql', 
+    #for i in range(len(configs.get('mongo_conf'))):
+    start_time = mongo_module.get_latest_entry(
+	    	db_type='mysql', 
 		    	db=db,
-		    	site=configs.get('mongo_conf')[i][0],
+		    	site=configs.get('mongo_conf')[0][0],
 		    	table_name=configs.get('table_name')
-    	)	
+    )	
 
-    	end_time = datetime.now()
-    	# Get all the entries from mongodb having timestam0p greater than start_time
-    	docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
-    	for doc in docs:
-        	values_list = build_data(doc)
-        	data_values.extend(values_list)
+    end_time = datetime.now()
+    # Get all the entries from mongodb having timestam0p greater than start_time
+    docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    configs1 = config_module.parse_config_obj()
+    for conf, options in configs1.items():
+            machine_name = options.get('machine')
+    for doc in docs:
+        local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
+        check_time_epoch = utility_module.get_epoch_time(doc.get('check_time'))
+        t = (
+            #uuid,
+            doc.get('host'),
+            doc.get('service'),
+            machine_name,
+            doc.get('site'),
+            doc.get('ds'),
+            doc.get('data')[0].get('value'),
+            doc.get('data')[0].get('value'),
+            doc.get('data')[0].get('value'),
+            doc.get('data')[0].get('value'),
+            doc.get('meta').get('war'),
+            doc.get('meta').get('cric'),
+            local_time_epoch,
+            check_time_epoch,
+            doc.get('ip_address'),
+            doc.get('severity'),
+            doc.get('age')
+        )
+        data_values.append(t)
+	t =()
     if data_values:
-    	insert_data(configs.get('table_name'), data_values, configs=configs)
+    	insert_data(configs.get('table_name'), data_values, db,configs=configs)
     	print "Data inserted into my mysql db"
     else:
     	print "No data in mongo db in this time frame for table %s" % (configs.get('table_name'))
@@ -154,14 +178,13 @@ def build_data(doc):
                 local_time_epoch,
                 check_time_epoch,
 		doc.get('ip_address'),
-		doc.get('severity'),
-		doc.get('age')
+		doc.get('severity')
 	)
        	values_list.append(t)
         t = ()
     return values_list
 
-def insert_data(table, data_values, **kwargs):
+def insert_data(table, data_values, db,**kwargs):
 	"""
         Function to bulk insert data into mysqldb
 
@@ -172,7 +195,7 @@ def insert_data(table, data_values, **kwargs):
 	Kwargs (dict): Dictionary to hold connection variables
 	"""
 	insert_dict = {'0':[],'1':[]}
-	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
+	#db = utility_module.mysql_conn(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
 		query = "SELECT * FROM %s " % table +\
                 	"WHERE `device_name`='%s' AND `service_name`='%s' AND `data_source`='%s'" %(str(data_values[i][0]),data_values[i][1],data_values[i][4])
@@ -193,7 +216,7 @@ def insert_data(table, data_values, **kwargs):
 		`machine_name`=%s, `site_name`=%s, `data_source`=%s, `current_value`=%s,
 		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
-		`ip_address`=%s, `severity`=%s, `age`=%s
+		`ip_address`=%s,`severity`=%s,`age`=%s
 		WHERE `device_name`=%s AND `service_name`=%s AND `data_source`=%s
 		"""
 		try:

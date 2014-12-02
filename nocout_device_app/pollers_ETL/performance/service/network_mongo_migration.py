@@ -57,22 +57,24 @@ def main(**configs):
     would be imported to mysql, only, and this way mysql would not store
     duplicate data.
     """
-    for i in range(len(configs.get('mongo_conf'))):
-    	start_time = mongo_module.get_latest_entry(
+    #for i in range(len(configs.get('mongo_conf'))):
+    start_time = mongo_module.get_latest_entry(
 		    	db_type='mysql', 
 		    	db=db,
-		    	site=configs.get('mongo_conf')[i][0],
+		    	site=configs.get('mongo_conf')[0][0],
 		    	table_name=configs.get('table_name')
-    	)	
+    )	
 
-    	end_time = datetime.now()
-    	# Get all the entries from mongodb having timestam0p greater than start_time
-    	docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
-    	for doc in docs:
-        	values_list = build_data(doc)
-        	data_values.extend(values_list)
-    if data_values:
-    	utility_module.insert_data(configs.get('table_name'), data_values, configs=configs)
+    end_time = datetime.now()
+    print start_time,end_time
+    # Get all the entries from mongodb having timestam0p greater than start_time
+    docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    #for doc in docs:
+    #	values_list = build_data(doc)
+    #	data_values.append(values_list)
+    if docs:
+    	#insert_data(configs.get('table_name'), data_values, configs=configs)
+    	insert_data(configs.get('table_name'), docs, configs=configs)
     	print "Data inserted into mysql db"
     else:
 	print "No data in the mongo db in this time frame"
@@ -103,11 +105,44 @@ def read_data(start_time, end_time, **kwargs):
 	# `start_time` none means mysql table doesn't contain any entry, yet
     	if start_time is None:
 	    start_time = end_time - timedelta(minutes=15)
-	    cur = db.network_perf.find({"data":{ "$elemMatch": { "time" : { "$gt": start_time, "$lt": end_time}}}})
+	    cur = db.network_perf.find({"check_time" : { "$gt": start_time, "$lt": end_time}})
 	else:
-	    cur = db.network_perf.find({"data":{ "$elemMatch": { "time" : { "$gt": start_time, "$lt": end_time}}}})
+	    cur = db.network_perf.find({"check_time" : { "$gt": start_time, "$lt": end_time}})
+    	configs = config_module.parse_config_obj()
+    	for config, options in configs.items():
+	    machine_name = options.get('machine')
         for doc in cur:
-            docs.append(doc)
+	    if doc.get('ds') == 'rtmin' or doc.get('ds') == 'rtmax':
+                continue
+	    check_time_epoch = utility_module.get_epoch_time(doc.get('data')[0].get('time'))
+            # Advancing local_timestamp/sys_timestamp to next 5 mins time frame
+       	    #local_time_epoch = check_time_epoch + 300
+            local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
+            if doc.get('ds') == 'rta':
+                rtmin = doc.get('data')[0].get('min_value')
+                rtmax = doc.get('data')[0].get('max_value')
+            else:
+                rtmin=rtmax=doc.get('data')[0].get('value')
+            t = (
+            #uuid,
+            doc.get('host'),
+            doc.get('service'),
+            machine_name,
+            doc.get('site'),
+            doc.get('ds'),
+            doc.get('data')[0].get('value'),
+            rtmin,
+            rtmax,
+            doc.get('data')[0].get('value'),
+            doc.get('meta').get('war'),
+            doc.get('meta').get('cric'),
+            local_time_epoch,
+            check_time_epoch,
+            doc.get('ip_address'),
+            doc.get('severity')
+            )
+            docs.append(t)
+	    t =()
      
     return docs
 
@@ -157,14 +192,39 @@ def build_data(doc):
             local_time_epoch,
             check_time_epoch,
             doc.get('ip_address'),
-	    doc.get('severity'),
-	    doc.get('age')
+	    doc.get('severity')
         )
-        values_list.append(t)
-        t = ()
+        #values_list.append(t)
 
-    return values_list
+    return t
 
+def insert_data(table, data_values, **kwargs):
+    """
+    Function to insert data into mysql tables
+
+    Args:
+        table (str): Table name into which data to be inserted
+	data_values: Values in the form of list of tuples
+
+    Kwargs:
+        kwargs (dict): Python dict to store connection variables
+    """
+    db = utility_module.mysql_conn(configs=kwargs.get('configs'))
+    query = "INSERT INTO `%s` " % table
+    query += """
+            (device_name, service_name, machine_name, 
+            site_name, data_source, current_value, min_value, 
+            max_value, avg_value, warning_threshold, 
+            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,%s)
+            """
+    cursor = db.cursor()
+    try:
+        cursor.executemany(query, data_values)
+    except mysql.connector.Error as err:
+        raise mysql.connector.Error, err
+    db.commit()
+    cursor.close()
 
 
 def get_machineid():

@@ -47,11 +47,12 @@ function GisPerformance() {
      And start the setInterval function to updateMap every 10 secs.
      */
     this.start = function (bs_list) {
-        if(isPerfCallStopped == 0) {
 
-            var gisPerformance_this = this;
+        if (isPollingActive == 0  && isPerfCallStopped == 0) {
             //Reset Variable
-            gisPerformance_this.resetVariable()
+            perf_self.resetVariable()
+
+            isPerfCallStarted = 1;
 
             var uncommon_bs_list = perf_self.get_intersection_bs(current_bs_list,bs_list);
 
@@ -63,12 +64,9 @@ function GisPerformance() {
                 current_bs_list = uncommon_bs_list;
             }
             //Start Request for First BS
-            gisPerformance_this.sendRequest(0);
-        } else {
-            clearTimeout(recallPerf);
-            recallPerf = "";
+            perf_self.sendRequest(0);
         }
-    }
+    };
 
     /*
      This will stop Sending Request by Setting isFrozen variable to 1
@@ -96,6 +94,7 @@ function GisPerformance() {
         this.bsNamesList = [];
         this.bsLength = 0;
         this._isFrozen = isFreeze;
+        isPerfCallStarted = 0;
     }
 
     /*
@@ -104,32 +103,23 @@ function GisPerformance() {
     this.sendRequest = function (counter) {
         // +($.cookie('isFreezeSelected')) == 0 || +($.cookie('freezedAt')) > 0
         if (isPollingActive == 0  && isPerfCallStopped == 0) {
-            var gisPerformance_this = this;
             if(this.bsNamesList.length > 0 && this.bsNamesList[counter]) {
                 //Call waitAndSend function with BS Json Data and counter value
-                gisPerformance_this.waitAndSend(this.bsNamesList[counter], counter);
+                perf_self.waitAndSend(this.bsNamesList[counter], counter);
             } else {
                 //1 Minutes Timeout
                 setTimeout(function () {
                     //Start Performance Again
                     var bs_list = getMarkerInCurrentBound();
+                    // Clear previous bs list
                     if(bs_list.length > 0 && isCallCompleted == 1) {
-                        if(recallPerf != "") {
-                            clearTimeout(recallPerf);
-                            recallPerf = "";
-                        }
                         /*Reset global variable when all calls completed*/
                         current_bs_list = [];
-
                         /*Start calls*/
-                        gisPerformance_this.start(bs_list);
+                        perf_self.start(bs_list);
                     }
                 }, 60000);
             }
-        } else {
-            clearTimeout(recallPerf);
-            recallPerf = "";
-            current_bs_list = [];
         }
     }
 
@@ -138,7 +128,6 @@ function GisPerformance() {
      */
     this.waitAndSend = function (bs_id, counter) {
 
-        var gisPerformance_this = this;
         counter++;
 
         var selected_thematics = $("input:radio[name=thematic_type]").length > 0 ? $("input:radio[name=thematic_type]:checked").val() : "normal";
@@ -152,17 +141,17 @@ function GisPerformance() {
             //In success
             success: function (result) {
                 var data = result.length ? result[0] : result;
-                perf_fetched_devices.push(gisPerformance_this.bsNamesList[counter-1]);
-                gisPerformance_this.bsNamesList.splice(counter-1,0);
+                // perf_fetched_devices.push(perf_self.bsNamesList[counter-1]);
+                // perf_self.bsNamesList.splice(counter-1,0);
                 //If data is there
                 if(data){
                     //Store data in gisData
-                    gisPerformance_this.gisData = data.length ? data[0] : data;
+                    perf_self.gisData = data.length ? data[0] : data;
                     var current_bs_in_bound = getMarkerInCurrentBound();
                     /*Check that the bsname is present in current bounds or not*/
                     if (current_bs_in_bound.indexOf(data.bs_id) > -1) {
                         //Update Map with the data
-                        gisPerformance_this.updateMap();
+                        perf_self.updateMap();
                     }
                 }
 
@@ -173,13 +162,13 @@ function GisPerformance() {
                 // setTimeout(function () {
                 //     //Start Performance Again
                 //     if (this.bsNamesList && this.bsNamesList.length > 0) {
-                //         gisPerformance_this.start(this.bsNamesList);
+                //         perf_self.start(this.bsNamesList);
                 //     }
                 // }, 60000);
             },
             complete : function() {
                 //Send Request for the next counter
-                gisPerformance_this.sendRequest(counter);
+                perf_self.sendRequest(counter);
             }
         });
     }
