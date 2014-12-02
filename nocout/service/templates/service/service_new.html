@@ -30,34 +30,34 @@
                                                 </div>
                                             {% endfor %}
                                             {{ service_data_form.management_form }}
-{% for field in service_data_form %}
-<div class="row inline {{ service_data_form.prefix }}">
-    <div class="form-group">
-        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>
-        <div class="col-sm-9">
-            <div class="col-md-8">
-                {{field.service_data_sources}}{{ service_data_form.non_form_errors }}
-            </div>
-        </div>
-    </div>
-    <div class="form-group">
-        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Warning</label>
-        <div class="col-sm-9">
-            <div class="col-md-7">
-                {{field.warning}}
-            </div>
-        </div>
-    </div>
-    <div class="form-group">
-        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Critical</label>
-        <div class="col-sm-9">
-            <div class="col-md-7">
-                {{field.critical}}
-            </div>
-        </div>
-    </div>
-</div>
-{% endfor %}
+                                            {% for field in service_data_form %}
+                                            <div class="row inline {{ service_data_form.prefix }}">
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.service_data_sources}}{{ service_data_form.non_form_errors }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Warning</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-7">
+                                                            {{field.warning}}<label id="id_value">( {{ field.warning.value|default_if_none:"None" }} )</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Critical</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-7">
+                                                            {{field.critical}}<label id="id_value">( {{ field.critical.value|default_if_none:"None" }} )</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
                                         </div>
 
                                         <div class="form-group">
