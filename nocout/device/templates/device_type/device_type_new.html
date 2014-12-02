@@ -29,6 +29,27 @@
                                                     </div>
                                                 </div>
                                             {% endfor %}
+                                            {{ device_type_service_form.management_form }}
+                                            {% for field in device_type_service_form %}
+                                            <div class="row inline {{ device_type_service_form.prefix }}">
+                                                <div id="id_service" class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.service}}{{ device_type_service_form.non_form_errors }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="id_parameter" class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Parameter </label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.parameter}}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
                                         </div>
                                     <div class="form-group">
                                         <div class="col-sm-offset-3 col-sm-9">
@@ -51,6 +72,7 @@
     {% block content_js %}
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
+        <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
     {% endblock %}
     <script>
         $(document).ready(function(){
@@ -72,6 +94,83 @@
             $("label[for=id_pl_critical]").text('PD % Critical');
             $("label[for=id_packets]").text('Packet Count');
             $("label[for=id_timeout]").text('Timeout (ms)');
+
         })
+        counter = -1
+        // if service is already selected
+        if ($("#id_service").find("option:selected").val()){
+            var service = $("form").find(".row").find("#id_service")
+            service.each(function(index) {
+              var service_id = $(this).find("option:selected").val()
+              var parameter = $(this).parent(".row .inline").find("#id_parameter")
+              var row_inline = $(this).parent(".row .inline")
+              // var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
+              var service_counter = index + 1
+              get_attribute_of_service(service_id, parameter, row_inline, service_counter)
+            });
+        }
+
+        // if service is changed by the user
+        $("form").find(".row").find("#id_service").change(function(){
+            var service_id = $(this).find("option:selected").val()
+            var parameter = $(this).parent(".row .inline").find("#id_parameter")
+            var row_inline = $(this).parent(".row .inline")
+            var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
+            get_attribute_of_service(service_id, parameter, row_inline, service_counter)
+        });
+
+        function get_attribute_of_service(service_id, parameter, row_inline, service_counter){
+            var service_counter = service_counter - 1
+            counter = counter + 1
+            if(service_id == '' ){
+                console.log('Select the service')
+            }
+            else{
+                $.ajax({
+                    url : "/service/select/service/data_source/"+ service_id,
+                    type : "GET",
+                    dataType: "json",
+                    data: {
+                        service_id : service_id,
+                        service_counter : service_counter,
+                        counter : counter,
+                    },
+                    success : function(service) {
+                        var parameter_option = parameter.find("select option:selected")
+                        parameter_option.val(service.parameters_id)
+                        parameter_option.html(service.parameters_name)
+                        row_inline.children().slice(2).remove()
+
+                        row_inline.append(service.service_attributes)
+                        row_inline.children().slice(2).find("select").attr('readonly', true);
+                        input_fields = row_inline.find('.form-group input')
+                        input_fields.attr('required',true);
+                        input_fields.each(function(index){
+                            var location = $(this).parent().parent()
+                            var value = $(this).val()
+                            if (value.length){
+                                location.append( '( '+value+' )')
+                            }
+                            else{
+                                $(this).val(0)
+                                location.append( '( null )')
+                            }
+                        });
+                    },
+                    error : function(xhr,errmsg,err) {
+                        console.log(xhr.status + ": " + xhr.responseText);
+                    }
+                });
+
+                return false;
+            }
+        }
+    </script>
+    <script type="text/javascript">
+       $(function() {
+           $(".inline.{{ device_type_service_form.prefix }}").formset({
+               prefix: "{{ device_type_service_form.prefix }}",
+           })
+       })
     </script>
 {% endblock %}
