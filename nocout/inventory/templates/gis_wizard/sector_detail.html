@@ -253,11 +253,10 @@
                     </tr>
                     {% endif %}
                 </table>
+                {% url 'gis-wizard-sector-list' bs_pk=base_station.id as prev_url %}
                 {% if selected_technology == '2' %}
-                {% url 'gis-wizard-list-ptp' as prev_url %}
                 <br><button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ prev_url }}')"><i class="fa fa-times"></i>Previous ({{ sector_text }} List)</button>
                 {% else %}
-                {% url 'gis-wizard-sector-list' bs_pk=base_station.id as prev_url %}
                 {% url 'gis-wizard-sub-station-list' bs_pk=base_station.id selected_technology=selected_technology sector_pk=object.id as next_url %}
                 <br><button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ prev_url }}')"><i class="fa fa-times"></i>Previous ({{ sector_text }} List)</button>
                 &nbsp;
