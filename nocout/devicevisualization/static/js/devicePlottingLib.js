@@ -5320,8 +5320,8 @@ function devicePlottingClass_gmap() {
 		var selected_lp_template = $("#lp_template_select").val();
 
     	$.ajax({
-			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
-			// url : base_url+"/"+"static/services.json",
+			// url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
+			url : base_url+"/"+"static/services.json",
 			success : function(results) {
 				var result = "";
 
@@ -5410,8 +5410,7 @@ function devicePlottingClass_gmap() {
 
 							for(var x=0;x<polygonSelectedDevices.length;x++) {
 								if(polygonSelectedDevices[x].device_name === allSSIds[i]) {
-									marker_name = polygonSelectedDevices[x].name
-									console.log(polygonSelectedDevices[x]);
+									marker_name = polygonSelectedDevices[x].name;
 									if(polygonSelectedDevices[x].pointType === 'sub_station') {
 										sector_ip = "";
 									} else {
@@ -5471,9 +5470,9 @@ function devicePlottingClass_gmap() {
 									layer.redraw();
 								} else {
 									sector_marker.setOptions({
-										"icon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
-										"clusterIcon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
-										"oldIcon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,null),
+										// "clusterIcon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
+										// "oldIcon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
 									});
 								}
 								marker_polling_obj.ip = sector_marker.sectorName;
@@ -5686,7 +5685,8 @@ function devicePlottingClass_gmap() {
             	sector_ip = "";
             
             if(polygonSelectedDevices[i].pointType && ($.trim(polygonSelectedDevices[i].pointType) == 'sub_station')) {
-            	sector_ip = polygonSelectedDevices[i].sector_ip;
+            	// sector_ip = polygonSelectedDevices[i].sector_ip;
+            	sector_ip = "";
             } else {
             	sector_ip = polygonSelectedDevices[i].sectorName;
             }
