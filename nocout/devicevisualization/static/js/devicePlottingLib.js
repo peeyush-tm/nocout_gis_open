@@ -679,7 +679,7 @@ function devicePlottingClass_gmap() {
 	            		}
             			// Set Flag
             			isPerfCallStopped = 1;
-            			isPerfCallStarted = 1;
+            			isPerfCallStarted = 0;
 
             			// Reset Performance variables
             			gisPerformanceClass.resetVariable();
