@@ -309,12 +309,8 @@
                 $(id_data_source).empty();
             }
 
-            $("#id_icon_settings1").select2({
-                formatResult: format,
-                formatSelection: format,
-                escapeMarkup: function(m) { return m; }
-            });
         });
+
         // update 'device vendor' on selecting 'device technology'
         $(id_technology).change(function () {
             if ($(id_technology).val()) {
@@ -402,17 +398,10 @@
             else if ($(id_service_type).val()=='STR') {
                 service_type_string()
             }
-            else {
-                   alert('Please select service type.')
-            }
 
         });
 
-        function format(state) {
-            // if (!state.id) return state.text; // optgroup
-            return "<img class='flag' src='"+$("#id_icon_settings1 data-imagesrc")+"'";
-            console.log('state')
-        }
+
 
         function service_type_string(){
             for (var i=1;i<=10;i++){
