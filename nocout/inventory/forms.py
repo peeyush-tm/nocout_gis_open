@@ -996,7 +996,7 @@ class ServiceThresholdConfigurationForm(forms.ModelForm):
         super(ServiceThresholdConfigurationForm, self).__init__(*args, **kwargs)
         #self.fields['live_polling_template'].empty_label = 'Select'
         for name, field in self.fields.items():
-            field.widget.attrs.update({'style': 'width:30%'})
+            field.widget.attrs.update({'style': 'width:20%'})
             if name.endswith('start'):
                 field.widget.attrs.update({'placeholder': 'Start'})
             else:
