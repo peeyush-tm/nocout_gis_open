@@ -30,34 +30,34 @@
                                                 </div>
                                             {% endfor %}
                                             {{ service_data_form.management_form }}
-                                            {% for field in service_data_form %}
-                                            <div class="row inline {{ service_data_form.prefix }}">
-                                                <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>
-                                                    <div class="col-sm-9">
-                                                        <div class="col-md-8">
-                                                            {{field.service_data_sources}}{{ service_data_form.non_form_errors }}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Critical</label>
-                                                    <div class="col-sm-9">
-                                                        <div class="col-md-8">
-                                                            {{field.critical}}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Warning</label>
-                                                    <div class="col-sm-9">
-                                                        <div class="col-md-8">
-                                                            {{field.warning}}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
+{% for field in service_data_form %}
+<div class="row inline {{ service_data_form.prefix }}">
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>
+        <div class="col-sm-9">
+            <div class="col-md-8">
+                {{field.service_data_sources}}{{ service_data_form.non_form_errors }}
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Warning</label>
+        <div class="col-sm-9">
+            <div class="col-md-7">
+                {{field.warning}}
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Critical</label>
+        <div class="col-sm-9">
+            <div class="col-md-7">
+                {{field.critical}}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
                                         </div>
 
                                         <div class="form-group">
@@ -88,6 +88,50 @@
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            // if the data source is changed by the user
+            $('form select[name|="servicespecificdatasource_set"]').change(function() {
+                var sds_id = $(this).find("option:selected").val()
+                var sds_location = $(this).parents(".row .inline")
+                get_sds_value(sds_id, sds_location)
+            })
+
+            //  Get the value of the data source selected by the user.
+            function get_sds_value(sds_id, sds_location){
+                var sds_id = sds_id
+                if (!sds_id.length){
+                    console.log("No service data source is selected")
+                }
+                else{
+                    $.ajax({
+                        url : "/service/select/value/data_source/",
+                        type : "GET",
+                        dataType: "json",
+                        data: {
+                            sds_id : sds_id,
+                        },
+                        success : function(sds) {
+                            var p = sds_location.children().slice(1)
+                            var w = sds.sds_values_list[0]['warning']
+                            var c = sds.sds_values_list[0]['critical']
+                            // if the data source is empty
+                            if (!w.length){ w = 0 }
+                            if (!c.length){ c = 0 }
+                            p.find('[id="id_value"]').remove()
+                            p.first().find('input').val(w)
+                            p.first().find('input').parent().append('<label id="id_value">( '+w+' )</label>')
+
+                            p.last().find('input').val(c)
+                            p.last().find('input').parent().append('<label id="id_value">( '+c+' )</label>')
+                        },
+                        error : function(xhr,errmsg,err) {
+                            alert(xhr.status + ": " + xhr.responseText);
+                        }
+                    });
+
+                    return false;
+                }
+            }
         })
     </script>
     <script type="text/javascript">
