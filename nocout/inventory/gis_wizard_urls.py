@@ -19,6 +19,7 @@ urlpatterns = patterns('',
     url(r'^base-station/(?P<bs_pk>\d+)/backhaul/delete/$', views.gis_wizard_backhaul_delete, name='gis-wizard-backhaul-delete'),
     url(r'^base-station/(?P<bs_pk>\d+)/backhaul/new/$', views.GisWizardBackhaulCreateView.as_view(), name='gis-wizard-backhaul-create'),
     url(r'^base-station/(?P<bs_pk>\d+)/backhaul/(?P<pk>\d+)/$', views.GisWizardBackhaulUpdateView.as_view(), name='gis-wizard-backhaul-update'),
+    url(r'^base-station/(?P<bs_pk>\d+)/backhaul/(?P<pk>\d+)/details/$', views.GisWizardBackhaulDetailView.as_view(), name='gis-wizard-backhaul-detail'),
 
     url(r'^base-station/(?P<bs_pk>\d+)/sectors/$', views.GisWizardSectorListView.as_view(), name='gis-wizard-sector-list'),
     url(r'^base-station/(?P<bs_pk>\d+)/sectors/(?P<pk>\d+)/delete/$', views.gis_wizard_sector_delete, name='gis-wizard-sector-delete'),
