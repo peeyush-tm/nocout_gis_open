@@ -58,19 +58,27 @@
                                         </div>
                                         <div class="form-group">
                                                 <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range1</label>
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>Service Type</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
+                                                        {{ threshold_configuration_form.service_type }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range1</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-9">
                                                             {{ threshold_configuration_form.range1_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
                                                             {{ threshold_configuration_form.range1_end }}
-                                                            <select class=" select2select col-md-4" id="id_icon_settings1" name="icon_settings1" style="margin-left:20px"><option value="" selected="selected">Select</option>
+                                                            <select class=" select2select " id="id_icon_settings1" name="icon_settings1" style="margin-left:20px; width:37%"><option value="">Select</option>
                                                             {% for icon in icon_settings %}
                                                             <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
-                                                        <div class="col-md-4 help_text">
+                                                        <div class="col-md-9 help_text">
                                                             {{ threshold_configuration_form.range1_end.help_text }}
                                                         </div>
                                                     </div>
@@ -78,11 +86,11 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range2</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
+                                                        <div class="col-md-9">
                                                             {{ threshold_configuration_form.range2_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
                                                             {{ threshold_configuration_form.range2_end }}
-                                                            <select class=" select2select col-md-4" id="id_icon_settings2" name="icon_settings2" style="margin-left:22px"><option value=''>Select</option>
+                                                            <select class=" select2select" id="id_icon_settings2" name="icon_settings2" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
                                                             <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
                                                             {% endfor %}
@@ -96,11 +104,11 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range3</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
+                                                        <div class="col-md-9">
                                                             {{ threshold_configuration_form.range3_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
                                                             {{ threshold_configuration_form.range3_end }}
-                                                            <select class=" select2select col-md-4" id="id_icon_settings3" name="icon_settings3" style="margin-left:22px"><option value=''>Select</option>
+                                                            <select class=" select2select " id="id_icon_settings3" name="icon_settings3" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
                                                             <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
                                                             {% endfor %}
@@ -114,11 +122,11 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range4</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
+                                                        <div class="col-md-9">
                                                             {{ threshold_configuration_form.range4_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
                                                             {{ threshold_configuration_form.range4_end }}
-                                                            <select class=" select2select col-md-4" id="id_icon_settings4" name="icon_settings4" style="margin-left:22px"><option value=''>Select</option>
+                                                            <select class=" select2select " id="id_icon_settings4" name="icon_settings4" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
                                                             <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
                                                             {% endfor %}
@@ -132,11 +140,11 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range5</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
+                                                        <div class="col-md-9">
                                                             {{ threshold_configuration_form.range5_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
                                                             {{ threshold_configuration_form.range5_end }}
-                                                            <select class=" select2select col-md-4" id="id_icon_settings5" name="icon_settings5" style="margin-left:22px"><option value=''>Select</option>
+                                                            <select class=" select2select " id="id_icon_settings5" name="icon_settings5" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
                                                             <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
                                                             {% endfor %}
@@ -150,11 +158,11 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range6</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
+                                                        <div class="col-md-9">
                                                             {{ threshold_configuration_form.range6_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
                                                             {{ threshold_configuration_form.range6_end }}
-                                                            <select class=" select2select col-md-4" id="id_icon_settings6" name="icon_settings6" style="margin-left:22px"><option value=''>Select</option>
+                                                            <select class=" select2select " id="id_icon_settings6" name="icon_settings6" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
                                                             <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
                                                             {% endfor %}
@@ -168,11 +176,11 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range7</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
+                                                        <div class="col-md-9">
                                                             {{ threshold_configuration_form.range7_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
                                                             {{ threshold_configuration_form.range7_end }}
-                                                            <select class=" select2select col-md-4" id="id_icon_settings7" name="icon_settings7" style="margin-left:22px"><option value=''>Select</option>
+                                                            <select class=" select2select " id="id_icon_settings7" name="icon_settings7" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
                                                             <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
                                                             {% endfor %}
@@ -186,11 +194,11 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range8</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
+                                                        <div class="col-md-9">
                                                             {{ threshold_configuration_form.range8_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
                                                             {{ threshold_configuration_form.range8_end }}
-                                                            <select class=" select2select col-md-4" id="id_icon_settings8" name="icon_settings8" style="margin-left:22px"><option value=''>Select</option>
+                                                            <select class=" select2select " id="id_icon_settings8" name="icon_settings8" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
                                                             <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
                                                             {% endfor %}
@@ -204,11 +212,11 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range9</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
+                                                        <div class="col-md-9">
                                                             {{ threshold_configuration_form.range9_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
                                                             {{ threshold_configuration_form.range9_end }}
-                                                            <select class=" select2select col-md-4" id="id_icon_settings9" name="icon_settings9" style="margin-left:22px"><option value=''>Select</option>
+                                                            <select class=" select2select " id="id_icon_settings9" name="icon_settings9" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
                                                             <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
                                                             {% endfor %}
@@ -222,11 +230,11 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Range10</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
+                                                        <div class="col-md-9">
                                                             {{ threshold_configuration_form.range10_start }}
                                                             <span class="col-sm-1" style="padding: 0px;padding-top: 5px;text-align: center;">To</span>
                                                             {{ threshold_configuration_form.range10_end }}
-                                                            <select class=" select2select col-md-4" id="id_icon_settings10" name="icon_settings10" style="margin-left:22px"><option value="" selected="selected">Select</option>
+                                                            <select class=" select2select " id="id_icon_settings10" name="icon_settings10" style="margin-left:22px; width:37%"><option value="" selected="selected">Select</option>
                                                             {% for icon in icon_settings %}
                                                             <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
                                                             {% endfor %}
@@ -238,6 +246,7 @@
                                                     </div>
                                                 </div>
                                         </div>
+
                                         <div class="form-group">
                                             <div class="form-group">
                                                 <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Global Settings</label>
@@ -327,6 +336,85 @@
                 $(id_data_source).empty();
             }
         });
+
+        if ($(id_service_type).val()=='STR'){
+            service_type_string()
+        }
+
+        $("#id_range1_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range1_end").val($("#id_range1_start").val())
+            }
+        });
+        $("#id_range2_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range2_end").val($("#id_range2_start").val())
+            }
+        });
+        $("#id_range3_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range3_end").val($("#id_range3_start").val())
+            }
+        });
+        $("#id_range4_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range4_end").val($("#id_range4_start").val())
+            }
+        });
+        $("#id_range5_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range5_end").val($("#id_range5_start").val())
+            }
+        });
+        $("#id_range6_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range6_end").val($("#id_range6_start").val())
+            }
+        });
+        $("#id_range7_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range7_end").val($("#id_range7_start").val())
+            }
+        });
+        $("#id_range8_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range8_end").val($("#id_range8_start").val())
+            }
+        });
+        $("#id_range9_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range9_end").val($("#id_range9_start").val())
+            }
+        });
+        $("#id_range10_start").change( function() {
+            if ($(id_service_type).val()=='STR'){
+                $("#id_range10_end").val($("#id_range10_start").val())
+            }
+        });
+
+        $(id_service_type).change(function () {
+            if ($(id_service_type).val()=='INT') {
+                for (var i=1;i<=10;i++){
+                    $("#id_range"+i+"_end").attr('disabled', false);
+                }
+
+            }
+            else if ($(id_service_type).val()=='STR') {
+                service_type_string()
+            }
+            else {
+                   alert('Please select service type.')
+            }
+
+        });
+
+        function service_type_string(){
+            for (var i=1;i<=10;i++){
+                $("#id_range"+i+"_end").val($("#id_range"+i+"_start").val());
+                $("#id_range"+i+"_end").attr('disabled', true);
+            }
+        }
+
 
         /*Number of range inputs*/
         var total_label = $("label").length,
