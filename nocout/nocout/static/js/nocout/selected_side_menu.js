@@ -524,12 +524,11 @@ if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
             select_boxes = $("select");
 
         setTimeout(function() {
-
             for(var i=0;i<select_boxes.length;i++) {
                 var select_id = select_boxes[i].attributes["id"].value,
                     values_array = $("#"+select_id).select2("data"),
                     selected_values = "";
-                if(values_array.length) {
+                if(values_array && values_array.length) {
                     $.grep(values_array,function(data){
                         if(selected_values.length > 0) {
                             selected_values +=  data.text ? ","+data.text : "";
@@ -547,7 +546,7 @@ if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
                 };
                 oldFieldsArray.push(data_obj);
             }
-        },500);
+        },600);
     } 
 }
 
