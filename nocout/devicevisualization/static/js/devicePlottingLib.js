@@ -679,6 +679,7 @@ function devicePlottingClass_gmap() {
 	            		}
             			// Set Flag
             			isPerfCallStopped = 1;
+            			isPerfCallStarted = 1;
 
             			// Reset Performance variables
             			gisPerformanceClass.resetVariable();
@@ -5020,23 +5021,25 @@ function devicePlottingClass_gmap() {
 								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
 								if(point) {
 									if(google.maps.geometry.poly.containsLocation(point, polygon)) {
-										if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-											if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
-												if(allSSIds.indexOf(allSS[k].device_name) < 0) {
-													if(allSS[k].pointType == 'sub_station') {
-														if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
-															allSSIds.push(allSS[k].bs_sector_device);
-															polygonSelectedDevices.push(allMarkersObject_gmap['sector_device']['sector_'+allSS[k].sector_ip]);
-														}
-													}
-													allSSIds.push(allSS[k].device_name);
-													polygonSelectedDevices.push(allSS[k]);
-												}
-											} else {
-												if(allSS[k].pointType == 'sub_station') {
+										if(allSS[k].technology) {
+											if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
+												if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
 													if(allSSIds.indexOf(allSS[k].device_name) < 0) {
+														if(allSS[k].pointType == 'sub_station') {
+															if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
+																allSSIds.push(allSS[k].bs_sector_device);
+																polygonSelectedDevices.push(allMarkersObject_gmap['sector_device']['sector_'+allSS[k].sector_ip]);
+															}
+														}
 														allSSIds.push(allSS[k].device_name);
 														polygonSelectedDevices.push(allSS[k]);
+													}
+												} else {
+													if(allSS[k].pointType == 'sub_station') {
+														if(allSSIds.indexOf(allSS[k].device_name) < 0) {
+															allSSIds.push(allSS[k].device_name);
+															polygonSelectedDevices.push(allSS[k]);
+														}
 													}
 												}
 											}
