@@ -115,7 +115,7 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/inventory/select/device/" + id, {
+                        $.ajax("/inventory/select/device/" + id+"/", {
                             dataType: "json"
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
@@ -153,7 +153,7 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/backhaul/select/backhaul/" + id, {
+                        $.ajax("/backhaul/select/backhaul/" + id+"/", {
                             dataType: "json"
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
