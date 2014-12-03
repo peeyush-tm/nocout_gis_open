@@ -1582,6 +1582,9 @@ class WizardSectorForm(SectorForm):
         self.technology = kwargs.pop('technology')
         super(WizardSectorForm, self).__init__(*args, **kwargs)
 
+        if self.technology == 'P2P':
+            self.fields['sector_configured_on'].label = 'Near End IP'
+
         self.fields.pop('organization')
         self.fields.pop('base_station')
         self.fields.pop('bs_technology')
@@ -1591,6 +1594,7 @@ class WizardSectorForm(SectorForm):
             self.fields.pop('sector_id')
 
         if self.technology != 'WiMAX':
+            self.fields.pop('sector_configured_on_port')
             self.fields.pop('dr_site')
             self.fields.pop('mrc')
 
