@@ -1776,14 +1776,14 @@ class ThematicSettingsList(PermissionsRequiredMixin, ListView):
         datatable_headers = [
             {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
             {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
-            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
-            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto'},]
+            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto',     'bSortable': False},
+            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto',     'bSortable': False},]
 
         # user_id = self.request.user.id
 
         #if user is superadmin or gisadmin
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -2048,14 +2048,14 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
         datatable_headers = [
             {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
             {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
-            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
-            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto'},]
+            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto',   'bSortable': False},
+            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto',   'bSortable': False},]
 
         # user_id = self.request.user.id
 
         #if user is superadmin or gisadmin
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
