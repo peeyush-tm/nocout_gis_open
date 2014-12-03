@@ -98,6 +98,8 @@
 
         })
         counter = -1
+        x = []  // global variable to contain all warning and critical field
+                // x get updated on success of ajax call
         // if service is already selected
         if ($("#id_service").find("option:selected").val()){
             var service = $("form").find(".row").find("#id_service")
@@ -156,6 +158,30 @@
                                 location.append( '( null )')
                             }
                         });
+                        x = $("form input[class='form-control'][name|='dts'][type='text']")
+                        x.change(function(){
+                            console.log('asd')
+                            var ele = $(this).attr('name')  // input field warning/critical
+                            var ele_val = $(this).val()     // get the value of input field
+                            if (ele.indexOf('warning')>0){
+                                var c = $(this).parent().parent().parent().next()
+                                if (ele_val.length){
+                                    c.find('input[name$="critical"]').prop('required', true);
+                                }
+                                else{
+                                    c.find('input[name$="critical"]').prop('required', false);
+                                }
+                            }
+                            else{
+                                var w = $(this).parent().parent().parent().prev()
+                                if (ele_val.length){
+                                    w.find('input[name$="warning"]').prop('required', true);
+                                }
+                                else{
+                                    w.find('input[name$="warning"]').prop('required', false);
+                                }
+                            }
+                        });
                     },
                     error : function(xhr,errmsg,err) {
                         console.log(xhr.status + ": " + xhr.responseText);
@@ -165,6 +191,7 @@
                 return false;
             }
         }
+
     </script>
     <script type="text/javascript">
        $(function() {
