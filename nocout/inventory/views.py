@@ -2371,8 +2371,8 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
                 threshold_template=threshold_config.name,
                 icon_settings= full_string,
                 user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
-                actions='<a href="/serv_thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/serv_thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                actions='<a href="/serv_thematic_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return json_data
 
 
@@ -2489,7 +2489,8 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         threshold_configuration_form = ServiceThresholdConfigurationForm(instance=self.object.threshold_template)
         icon_details = list()
         icon_details_selected = dict()
-        if form.instance.icon_settings:
+        if form.instance.icon_settings!='NULL':
+            form.instance.icon_settings
             form.instance.icon_settings = eval(form.instance.icon_settings)
             for icon_setting in form.instance.icon_settings:
                 icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
@@ -2535,11 +2536,18 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         data-filled forms and errors.
         """
         icon_settings = IconSettings.objects.all()
+        icon_details = list()
+        icon_details_selected = dict()
+        if form.instance.icon_settings!='NULL':
+            form.instance.icon_settings = eval(form.instance.icon_settings)
+            for icon_setting in form.instance.icon_settings:
+                icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
-                                  icon_settings=icon_settings))
+                                  icon_settings=icon_settings,
+                                  icon_details_selected=icon_details_selected))
 
 
 class ServiceThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
