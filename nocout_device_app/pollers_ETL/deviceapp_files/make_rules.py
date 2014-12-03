@@ -200,6 +200,7 @@ def get_settings():
             ping_levels_db.append(ping_config)
             processed.append(service['devicetype'])
         if service['service']:
+            threshold = ()
             try:
                 threshold = get_threshold(service)
             except Exception, exp:
