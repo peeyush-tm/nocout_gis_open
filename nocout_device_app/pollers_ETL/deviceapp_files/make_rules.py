@@ -1,10 +1,8 @@
 from mysql_connection import mysql_conn
-from pprint import pformat
+from pprint import pformat, pprint
 from nocout_logger import nocout_log
 
 logger = nocout_log()
-
-db = mysql_conn()
 
 pmp_ss_bs_checks = ['cambium_ul_jitter','cambium_reg_count','cambium_rereg_count','cambium_ul_rssi']
 
@@ -152,19 +150,21 @@ def prepare_query():
 
 def get_settings():
     global default_checks
-    global db
+    db = mysql_conn()
     data = []
     default_checks = prepare_priority_checks()
     query = prepare_query()
-    logger.debug('mysql db: ' + pformat(db))
     try:
 	    cur = db.cursor()
 	    cur.execute(query)
 	    data = dict_rows(cur)
 	    #logger.debug('data in get_settings: ' + pformat(data))
-	    cur.close()
     except Exception, exp:
 	    logger.error('Exception in get_settings: ' + pformat(exp))
+    finally:
+	    cur.close()
+	    db.close()
+
     processed = []
     for service in data:
         """from pprint import pprint
@@ -213,22 +213,22 @@ def get_threshold(service):
     result = ()
     try:
 	    if service.get('dtype_ds_warning') or service.get('dtype_ds_critical'):
-		    result = (float(service['dtype_ds_warning']), float(service['dtype_ds_critical']))
+		    result = (service['dtype_ds_warning'], service['dtype_ds_critical'])
 	    elif service.get('service_warning') or service.get('service_critical'):
-		result = (float(service['service_warning']), float('service_critical'))
+		result = (service['service_warning'], service['service_critical'])
 	    elif service.get('warning') or service.get('critical'):
 		    if service.get('service') in wimax_mod_services:
 			    result = (map(lambda x: x.strip(), service['warning'].split(',')), (map(lambda x: x.strip(), service['critical'].split(','))))
 		    else:
-			    result = (int(service['warning']), int(service['critical']))
-    except Exception:
-	    pass
+			    result = (service['warning'], service['critical'])
+    except Exception, exp:
+	    pprint(exp)
 
     return result
 
 
 def prepare_priority_checks():
-        global db
+	db = mysql_conn()
 	data_values = []
 	query = """
 	SELECT DISTINCT service_name, device_name, warning, critical
@@ -239,9 +239,12 @@ def prepare_priority_checks():
 		cur = db.cursor()
 		cur.execute(query)
 	        data_values = dict_rows(cur)
-		cur.close()
 	except Exception, exp:
 		logger.error('Exception in priority_checks: ' + pformat(exp)) 
+        finally:
+		cur.close()
+		db.close()
+
 	data_values = filter(lambda d: d['warning'] or d['critical'], data_values)
 	processed_values = []
 	for entry in data_values:
@@ -250,6 +253,7 @@ def prepare_priority_checks():
 		else:
 			processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (entry.get('warning'), entry.get('critical'))))
 	#print processed_values
+	db.close()
 
 	return processed_values
 
