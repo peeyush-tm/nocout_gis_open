@@ -33,6 +33,7 @@
                                             {% for field in device_type_service_form %}
                                                 {{ field.id }}
                                             <div class="row inline {{ device_type_service_form.prefix }}">
+                                                <hr>
                                                 <div id="id_service" class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service</label>
                                                     <div class="col-sm-9">
@@ -153,17 +154,17 @@
                         var parameter_option = parameter.find("select option:selected")
                         parameter_option.val(service.parameters_id)
                         parameter_option.html(service.parameters_name)
-                        row_inline.children().slice(2).remove()
+                        row_inline.children().slice(3).remove()
 
                         row_inline.append(service.service_attributes)
-                        row_inline.children().slice(2).find("select").attr('readonly', true);
+                        row_inline.children().slice(3).find("select").attr('readonly', true);
                         input_fields = row_inline.find('.form-group input')
-                        input_fields.attr('required',true);
                         input_fields.each(function(index){
                             var location = $(this).parent().parent()
                             var value = $(this).val()
                             if (value.length){
                                 location.append( '( '+value+' )')
+                                $(this).val('')
                             }
                             else{
                                 location.append( '( null )')
@@ -196,16 +197,15 @@
                         counter : counter,
                     },
                     success : function(service) {
-                        row_inline.children().slice(2).remove()
+                        row_inline.children().slice(3).remove()
                         row_inline.append(service.service_attributes)
-                        row_inline.children().slice(2).find("select").attr('readonly', true);
+                        row_inline.children().slice(3).find("select").attr('readonly', true);
                         input_fields = row_inline.find('.form-group input')
                         input_fields.each(function(index){
                             var location = $(this).parent().parent()
                             var value = $(this).val()
                             if (value.length){
                                 location.append( '( '+value+' )')
-                                $(this).val('')
                             }
                             else{
                                 location.append( '( null )')
