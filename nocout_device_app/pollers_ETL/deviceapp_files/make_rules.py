@@ -218,20 +218,46 @@ def get_settings():
 
 def get_threshold(service):
     result = ()
+    serv = service.get('service')
+    warn = None
+    crit = None
     try:
-	    if service.get('dtype_ds_warning') or service.get('dtype_ds_critical'):
-		    result = (service['dtype_ds_warning'], service['dtype_ds_critical'])
-	    elif service.get('service_warning') or service.get('service_critical'):
-		result = (service['service_warning'], service['service_critical'])
-	    elif service.get('warning') or service.get('critical'):
-		    if service.get('service') in wimax_mod_services:
-			    result = (map(lambda x: x.strip(), service['warning'].split(',')), (map(lambda x: x.strip(), service['critical'].split(','))))
-		    else:
-			    result = (service['warning'], service['critical'])
-    except Exception, exp:
-	    pprint(exp)
+        if service.get('dtype_ds_warning') or service.get('dtype_ds_critical'):
+            warn = service.get('dtype_ds_warning')
+            crit = service.get('dtype_ds_critical')
+
+        elif service.get('service_warning') or service.get('service_critical'):
+            warn = service.get('service_warning')
+            crit = service.get('service_critical')
+
+        elif service.get('warning') or service.get('critical'):
+            warn = service.get('warning')
+            crit = service.get('critical')
+    except Exception:
+        return result
+
+    result = format_threshold(warn, crit, serv)
 
     return result
+
+
+def format_threshold(warn, crit, service):
+    """
+
+    :param warn:
+    :param crit:
+    :return:
+    """
+    if warn and crit:
+        try:
+            return float(warn), float(crit)
+        except:
+            if service in wimax_mod_services:
+                return map(lambda x: x.strip(), warn.split(',')), \
+                       (map(lambda x: x.strip(), crit.split(',')))
+            return str(warn), str(crit)
+    else:
+        return ()
 
 
 def prepare_priority_checks():
