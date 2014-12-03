@@ -107,8 +107,9 @@
               var service_id = $(this).find("option:selected").val()
               var parameter = $(this).parent(".row .inline").find("#id_parameter")
               var row_inline = $(this).parent(".row .inline")
-              // var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
-              var service_counter = index + 1
+              var p_div = row_inline.parent().children('div .row .inline')
+              var service_counter = p_div.index(row_inline) + 1
+
               get_attribute_of_service(service_id, parameter, row_inline, service_counter)
             });
         }
@@ -118,7 +119,9 @@
             var service_id = $(this).find("option:selected").val()
             var parameter = $(this).parent(".row .inline").find("#id_parameter")
             var row_inline = $(this).parent(".row .inline")
-            var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
+            var p_div = row_inline.parent().children('div .row .inline')
+            var service_counter = p_div.index(row_inline) + 1
+
             get_attribute_of_service(service_id, parameter, row_inline, service_counter)
         });
 
