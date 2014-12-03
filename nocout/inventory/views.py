@@ -2535,11 +2535,18 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         data-filled forms and errors.
         """
         icon_settings = IconSettings.objects.all()
+        icon_details = list()
+        icon_details_selected = dict()
+        if form.instance.icon_settings:
+            form.instance.icon_settings = eval(form.instance.icon_settings)
+            for icon_setting in form.instance.icon_settings:
+                icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
-                                  icon_settings=icon_settings))
+                                  icon_settings=icon_settings,
+                                  icon_details_selected=icon_details_selected))
 
 
 class ServiceThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
