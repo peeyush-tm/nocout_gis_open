@@ -1627,43 +1627,43 @@ function WhiteMapClass() {
 
 
 				// Loop to create backhual markers
-				for(var x=0;x<backhaul_array.length;x++) {
+				// for(var x=0;x<backhaul_array.length;x++) {
 					
-					var backhaul = backhaul_array[x];
+				// 	var backhaul = backhaul_array[x];
 
-					var backhaul_markers_Obj = {
-						position 		 	: {lat: lat, lon: lon},
-						map 				: 'current',
-						ptLat 			 	: lat,
-						ptLon 			 	: lon,
-						icon 			 	: base_url+'/static/img/icons/1x1.png',
-						oldIcon 		 	: base_url+"/"+backhaul.markerUrl,
-						clusterIcon 	 	: base_url+'/static/img/icons/1x1.png',
-						pointType 		 	: 'backhaul',
-						dataset 			: backhaul.info,
-						name 				: backhaul.name,
-						filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId, "bh_id" : backhaul.id},
-						zIndex 				: 200,
-						optimized 			: false,
-	                    isActive 			: 1
-	                };
+				// 	var backhaul_markers_Obj = {
+				// 		position 		 	: {lat: lat, lon: lon},
+				// 		map 				: 'current',
+				// 		ptLat 			 	: lat,
+				// 		ptLon 			 	: lon,
+				// 		icon 			 	: base_url+'/static/img/icons/1x1.png',
+				// 		oldIcon 		 	: base_url+"/"+backhaul.markerUrl,
+				// 		clusterIcon 	 	: base_url+'/static/img/icons/1x1.png',
+				// 		pointType 		 	: 'backhaul',
+				// 		dataset 			: backhaul.info,
+				// 		name 				: backhaul.name,
+				// 		filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "bs_id" : bs_ss_devices[i].originalId, "bh_id" : backhaul.id},
+				// 		zIndex 				: 200,
+				// 		optimized 			: false,
+	   //                  isActive 			: 1
+	   //              };
 
-	                // create backhaul marker
-	                var backhaul_Marker = global_this.createOpenLayerVectorMarker(size, backhaul_markers_Obj.icon, lon, lat, backhaul_markers_Obj);
+	   //              // create backhaul marker
+	   //              var backhaul_Marker = global_this.createOpenLayerVectorMarker(size, backhaul_markers_Obj.icon, lon, lat, backhaul_markers_Obj);
 
-	                // Push backhaul marker to all marker global array
-	                allMarkersArray_wmap.push(backhaul_Marker);
+	   //              // Push backhaul marker to all marker global array
+	   //              allMarkersArray_wmap.push(backhaul_Marker);
 
-	                // Push backhaul marker to all marker global object
-	                allMarkersObject_wmap['backhaul']['bh_'+backhaul.id] = backhaul_Marker;
+	   //              // Push backhaul marker to all marker global object
+	   //              allMarkersObject_wmap['backhaul']['bh_'+backhaul.id] = backhaul_Marker;
 
-	                if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
-						sectorMarkersMasterObj[bs_ss_devices[i].name].push(backhaul_Marker)
-					} else {
-						sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
-						sectorMarkersMasterObj[bs_ss_devices[i].name].push(backhaul_Marker)
-					}
-				}
+	   //              if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
+				// 		sectorMarkersMasterObj[bs_ss_devices[i].name].push(backhaul_Marker)
+				// 	} else {
+				// 		sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
+				// 		sectorMarkersMasterObj[bs_ss_devices[i].name].push(backhaul_Marker)
+				// 	}
+				// }
 				
 				/*Plot Sector*/
 				for (var j = 0; j < sector_array.length; j++) {

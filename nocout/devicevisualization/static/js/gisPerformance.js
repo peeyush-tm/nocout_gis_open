@@ -186,6 +186,7 @@ function GisPerformance() {
             sectorArray = gisData.param.sector,
             bs_name = gisData.bs_name,
             perf_bh_info = gisData.bh_info ? gisData.bh_info : [],
+            perf_bh_severity = gisData.bhSeverity ? gisData.bhSeverity : "",
             other_icons_obj = "",
             bs_marker = "";
 
@@ -207,11 +208,11 @@ function GisPerformance() {
         }
 
         // Update BH polled info to bs marker tooltip.
-        if(perf_bh_info.length > 0) {
-            if(bs_marker) {
-                bs_marker.bh_info = bs_marker.bh_info.concat(perf_bh_info);
-            }
+        if(bs_marker) {
+            bs_marker.bh_info = bs_marker.bh_info.concat(perf_bh_info);
+            bs_marker.bhSeverity = perf_bh_severity;
         }
+
         // BH info addition ended.
 
         var bs_object = JSON.parse(JSON.stringify(all_devices_loki_db.where(function(obj){return obj.originalId === gisData.bs_id})[0])),
