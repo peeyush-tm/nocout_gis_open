@@ -1234,7 +1234,7 @@ class Get_Service_Type_Performance_Data(View):
                                                                  data_source=service_data_source_type,
                                                                  sys_timestamp__gte=start_date,
                                                                  sys_timestamp__lte=end_date).using(
-                                                                 alias=inventory_device_machine_name)
+                                                                 alias=inventory_device_machine_name).order_by('sys_timestamp')
 
             result = self.get_performance_data_result(performance_data)
 
@@ -1247,7 +1247,7 @@ class Get_Service_Type_Performance_Data(View):
                                                                  data_source=service_data_source_type,
                                                                  sys_timestamp__gte=start_date,
                                                                  sys_timestamp__lte=end_date).using(
-                                                                 alias=inventory_device_machine_name)
+                                                                 alias=inventory_device_machine_name).order_by('sys_timestamp')
 
             result = self.get_performance_data_result(performance_data, data_source="availability")
 
@@ -1299,7 +1299,7 @@ class Get_Service_Type_Performance_Data(View):
                                                                  data_source=service_data_source_type,
                                                                  sys_timestamp__gte= start_date,
                                                                  sys_timestamp__lte= end_date).using(
-                                                                 alias=inventory_device_machine_name)
+                                                                 alias=inventory_device_machine_name).order_by('sys_timestamp')
             #to check of string based dashboards
             #need to return a table
             if service_data_source_type.lower() in SERVICE_DATA_SOURCE\
