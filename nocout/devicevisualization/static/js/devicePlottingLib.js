@@ -679,7 +679,7 @@ function devicePlottingClass_gmap() {
 	            		}
             			// Set Flag
             			isPerfCallStopped = 1;
-            			isPerfCallStarted = 1;
+            			isPerfCallStarted = 0;
 
             			// Reset Performance variables
             			gisPerformanceClass.resetVariable();
@@ -838,34 +838,7 @@ function devicePlottingClass_gmap() {
 
 	            	google.maps.event.removeListener(listener);
 
-	            	var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
-						vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
-						city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
-						state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
-						frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
-						polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
-						isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-						isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()) || $.trim($("#city").val()),
-						basic_filter_condition = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0,
-						advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-						selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').split(',') : [],
-						selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').split(',') : [],
-						selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').split(',') : [],
-						selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').split(',') : [],
-						isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0,
-						filtered_data = [];
-
-					if(isAdvanceFilterApplied || isBasicFilterApplied) {
-						filtered_data = clone(gmap_self.getFilteredData_gmap());
-					} else {
-						filtered_data = clone(all_devices_loki_db.data);
-					}
-						
-					if(advance_filter_condition || basic_filter_condition) {
-			        	searchResultData = clone(gmap_self.getFilteredBySectors(filtered_data));
-			    	} else {
-			    		searchResultData = filtered_data;
-			    	}
+			    	searchResultData = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true)))
 	            	// google.maps.event.removeListener(listener);
 	            });
 	        });
@@ -2627,8 +2600,7 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Condition for the orientation of sector antina*/
-		if(orientation == "horizontal") {
-
+		if(orientation && $.trim(orientation.toLowerCase()) == "horizontal") {
 			var len = Math.floor(PGpoints.length / 3);
 
 			triangle.push(PGpoints[0]);
@@ -5410,8 +5382,7 @@ function devicePlottingClass_gmap() {
 
 							for(var x=0;x<polygonSelectedDevices.length;x++) {
 								if(polygonSelectedDevices[x].device_name === allSSIds[i]) {
-									marker_name = polygonSelectedDevices[x].name
-									console.log(polygonSelectedDevices[x]);
+									marker_name = polygonSelectedDevices[x].name;
 									if(polygonSelectedDevices[x].pointType === 'sub_station') {
 										sector_ip = "";
 									} else {
@@ -5471,9 +5442,9 @@ function devicePlottingClass_gmap() {
 									layer.redraw();
 								} else {
 									sector_marker.setOptions({
-										"icon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
-										"clusterIcon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
-										"oldIcon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,null),
+										// "clusterIcon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
+										// "oldIcon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
 									});
 								}
 								marker_polling_obj.ip = sector_marker.sectorName;
@@ -5686,7 +5657,8 @@ function devicePlottingClass_gmap() {
             	sector_ip = "";
             
             if(polygonSelectedDevices[i].pointType && ($.trim(polygonSelectedDevices[i].pointType) == 'sub_station')) {
-            	sector_ip = polygonSelectedDevices[i].sector_ip;
+            	// sector_ip = polygonSelectedDevices[i].sector_ip;
+            	sector_ip = "";
             } else {
             	sector_ip = polygonSelectedDevices[i].sectorName;
             }
@@ -6922,34 +6894,7 @@ function devicePlottingClass_gmap() {
             
             google.maps.event.removeListener(listener);
 
-            var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
-				vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
-				city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
-				state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
-				frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
-				polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
-				isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-				isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()) || $.trim($("#city").val()),
-				basic_filter_condition = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0,
-				advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-				selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').split(',') : [],
-				selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').split(',') : [],
-				selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').split(',') : [],
-				selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').split(',') : [],
-				isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0,
-				filtered_data = [];
-
-			if(isAdvanceFilterApplied || isBasicFilterApplied) {
-				filtered_data = clone(gmap_self.getFilteredData_gmap());
-			} else {
-				filtered_data = clone(all_devices_loki_db.data);
-			}
-				
-			if(advance_filter_condition || basic_filter_condition) {
-	        	searchResultData = clone(gmap_self.getFilteredBySectors(filtered_data));
-	    	} else {
-	    		searchResultData = filtered_data;
-	    	}
+            searchResultData = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true)))
 
         });
 
@@ -7423,6 +7368,13 @@ function devicePlottingClass_gmap() {
 
     	// Open API url in new tab to download inventory report
     	window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(inventory_bs_ids),"_blank");
+
+		$.gritter.add({
+            title: "Export Inventory Devices",
+            text: "Selected inventory successfully downloaded.",
+            sticky: false,
+            time : 1500
+        });    	
 	};
 
 	/**

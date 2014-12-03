@@ -29,28 +29,28 @@
                                                     </div>
                                                 </div>
                                             {% endfor %}
-{{ device_type_service_form.management_form }}
-{% for field in device_type_service_form %}
-    {{ field.id }}
-<div class="row inline {{ device_type_service_form.prefix }}">
-    <div id="id_service" class="form-group">
-        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service</label>
-        <div class="col-sm-9">
-            <div class="col-md-8">
-                {{field.service}}{{ device_type_service_form.non_form_errors }}
-            </div>
-        </div>
-    </div>
-    <div id="id_parameter" class="form-group">
-        <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Parameter </label>
-        <div class="col-sm-9">
-            <div class="col-md-8">
-                {{field.parameter}}
-            </div>
-        </div>
-    </div>
-</div>
-{% endfor %}
+                                            {{ device_type_service_form.management_form }}
+                                            {% for field in device_type_service_form %}
+                                                {{ field.id }}
+                                            <div class="row inline {{ device_type_service_form.prefix }}">
+                                                <div id="id_service" class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.service}}{{ device_type_service_form.non_form_errors }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="id_parameter" class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Parameter </label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{field.parameter}}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
                                         </div>
                                         <div class="form-group">
                                             <div class="col-sm-offset-3 col-sm-9">
@@ -141,7 +141,7 @@
             }
             else{
                 $.ajax({
-                    url : "/service/select/service/data_source/"+ service_id,
+                    url : "/service/select/service/data_source/"+service_id+'/',
                     type : "GET",
                     dataType: "json",
                     data: {
@@ -166,7 +166,6 @@
                                 location.append( '( '+value+' )')
                             }
                             else{
-                                $(this).val(0)
                                 location.append( '( null )')
                             }
                         });
@@ -201,15 +200,14 @@
                         row_inline.append(service.service_attributes)
                         row_inline.children().slice(2).find("select").attr('readonly', true);
                         input_fields = row_inline.find('.form-group input')
-                        input_fields.attr('required',true);
                         input_fields.each(function(index){
                             var location = $(this).parent().parent()
                             var value = $(this).val()
                             if (value.length){
                                 location.append( '( '+value+' )')
+                                $(this).val('')
                             }
                             else{
-                                $(this).val(0)
                                 location.append( '( null )')
                             }
                         });

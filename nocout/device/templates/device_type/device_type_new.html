@@ -127,7 +127,7 @@
             }
             else{
                 $.ajax({
-                    url : "/service/select/service/data_source/"+ service_id,
+                    url : "/service/select/service/data_source/"+ service_id+"/",
                     type : "GET",
                     dataType: "json",
                     data: {
@@ -144,15 +144,14 @@
                         row_inline.append(service.service_attributes)
                         row_inline.children().slice(2).find("select").attr('readonly', true);
                         input_fields = row_inline.find('.form-group input')
-                        input_fields.attr('required',true);
                         input_fields.each(function(index){
                             var location = $(this).parent().parent()
                             var value = $(this).val()
                             if (value.length){
                                 location.append( '( '+value+' )')
+                                $(this).val('')
                             }
                             else{
-                                $(this).val(0)
                                 location.append( '( null )')
                             }
                         });

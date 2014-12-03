@@ -260,6 +260,7 @@ def change_user_status(request):
         status = False
     else:
         status = True
+        user.update(user_invalid_attempt=0, user_invalid_attempt_at=None)
 
     user.update(is_active=status)
 
