@@ -209,7 +209,7 @@ function GisPerformance() {
 
         // Update BH polled info to bs marker tooltip.
         if(bs_marker) {
-            bs_marker.bh_info = bs_marker.bh_info.concat(perf_bh_info);
+            bs_marker.bhInfo = bs_marker.bhInfo.concat(perf_bh_info);
             bs_marker.bhSeverity = perf_bh_severity;
         }
 
