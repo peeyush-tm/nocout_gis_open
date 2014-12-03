@@ -6809,9 +6809,7 @@ function devicePlottingClass_gmap() {
 	 	freezedAt = 0;
 	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
-	 	/*Set Live Polling flag*/
-	 	// isPollingActive = 0;
-		if(isPerfCallStopped === 0 && isPerfCallStarted == 0) {
+		if(isPerfCallStopped === 0) {
 		 	var bs_list = getMarkerInCurrentBound();
 	    	if(bs_list.length > 0 && isCallCompleted == 1) {
 	    		if(recallPerf != "") {
