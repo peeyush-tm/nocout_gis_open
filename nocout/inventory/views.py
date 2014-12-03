@@ -2538,7 +2538,7 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         icon_settings = IconSettings.objects.all()
         icon_details = list()
         icon_details_selected = dict()
-        if form.instance.icon_settings:
+        if form.instance.icon_settings!='NULL':
             form.instance.icon_settings = eval(form.instance.icon_settings)
             for icon_setting in form.instance.icon_settings:
                 icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
