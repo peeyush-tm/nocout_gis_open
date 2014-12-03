@@ -27,7 +27,7 @@
                     </tr>
                     {% endif %}
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Configured On </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} {% if selected_technology == '2' %}IP{% else %}Configured On{% endif %} </td>
                         <td>{{ object.sector_configured_on }}</td>
                     </tr>
                     {% if selected_technology == '3' %}
@@ -78,52 +78,52 @@
                     {% if sector_antenna %}
                     <tr><td> </td><td> </td></tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Alias </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Alias </td>
                         <td>{{ sector_antenna.alias }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Type </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Type </td>
                         <td>{{ sector_antenna.antenna_type }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Height </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Height </td>
                         <td>{{ sector_antenna.height }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Polarization </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Polarization </td>
                         <td>{{ sector_antenna.polarization }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Mount Type </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Mount Type </td>
                         <td>{{ sector_antenna.mount_type }}</td>
                     </tr>
                     {% if selected_technology != '2' %}
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Tilt </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Tilt </td>
                         <td>{{ sector_antenna.tilt }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Gain </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Gain </td>
                         <td>{{ sector_antenna.gain }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Beam Width </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Beam Width </td>
                         <td>{{ sector_antenna.beam_width }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Azimuth Angle </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Azimuth Angle </td>
                         <td>{{ sector_antenna.azimuth_angle }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Reflector </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Reflector </td>
                         <td>{{ sector_antenna.reflector }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Splitter installed </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Splitter installed </td>
                         <td>{{ sector_antenna.splitter_installed }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Antenna Sync Splitter Used </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Antenna Sync Splitter Used </td>
                         <td>{{ sector_antenna.sync_splitter_used }}</td>
                     </tr>
                     <tr>
@@ -136,59 +136,59 @@
                     {% if sub_station %}
                     <tr><td> </td><td> </td></tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Alias </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Alias </td>
                         <td>{{ sub_station.alias }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Device </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Device </td>
                         <td>{{ sub_station.device }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Version </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Version </td>
                         <td>{{ sub_station.version }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Serial NO. </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Serial NO. </td>
                         <td>{{ sub_station.serial_no }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Building Height </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Building Height </td>
                         <td>{{ sub_station.building_height }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Tower Height </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Tower Height </td>
                         <td>{{ sub_station.tower_height }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Ethernet Extender </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Ethernet Extender </td>
                         <td>{{ sub_station.ethernet_extender }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Cable Length </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Cable Length </td>
                         <td>{{ sub_station.cable_length }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Latitude </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Latitude </td>
                         <td>{{ sub_station.latitude }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Longitude </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Longitude </td>
                         <td>{{ sub_station.longitude }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Mac Address </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Mac Address </td>
                         <td>{{ sub_station.mac_address }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Country </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Country </td>
                         <td>{{ sub_station.country }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station State </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End State </td>
                         <td>{{ sub_station.state }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station City </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End City </td>
                         <td>{{ sub_station.city }}</td>
                     </tr>
                     {% endif %}
@@ -196,23 +196,23 @@
                     {% if sub_station_antenna %}
                     <tr><td> </td><td> </td></tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Alias </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Antenna Alias </td>
                         <td>{{ sub_station_antenna.alias }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Type </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Antenna Type </td>
                         <td>{{ sub_station_antenna.antenna_type }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Height </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Antenna Height </td>
                         <td>{{ sub_station_antenna.height }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Polarization </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Antenna Polarization </td>
                         <td>{{ sub_station_antenna.polarization }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Mount Type </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Far End Antenna Mount Type </td>
                         <td>{{ sub_station_antenna.mount_type }}</td>
                     </tr>
                     {% endif %} {# if sub_station_antenna #}

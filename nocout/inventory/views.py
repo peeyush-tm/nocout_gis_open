@@ -6288,7 +6288,7 @@ class GisWizardSectorDetailView(SectorDetail):
                         context['customer'] = circuit.customer
 
         if self.kwargs['selected_technology'] == '2':
-            context['sector_text'] = 'PTP'
+            context['sector_text'] = 'Near End'
         else:
             context['sector_text'] = 'Sector'
 
