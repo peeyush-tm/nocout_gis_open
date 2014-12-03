@@ -28,7 +28,7 @@
                 </div><br/>
             {% if not base_station_has_sector %}
                 <div class="form-group">
-                    <label class="control-label pull-left">Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                    <label class="control-label pull-left">{% if selected_technology == '2' %}Near End {% else %}Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
                     <div class="pull-left">
 
                         <label class="radio-inline">
@@ -53,7 +53,7 @@
                 <!-- :END: Radio Buttons to choose technology and to choose existing or create new -->
             {% else %}
                 <div class="form-group">
-                    <label class="control-label pull-left">Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                    <label class="control-label pull-left">{% if selected_technology == '2' %}Near End {% else %}Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
                 </div></br>
             {% endif %} {# if not base_station_has_sector #}
 
@@ -96,7 +96,7 @@
                 <!-- :START: SubStation Form -->
                 <hr style="border-width:4px;">
                 <div class="form-group">
-                    <label class="control-label pull-left">SubStation &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
+                    <label class="control-label pull-left">Far End &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
                     {% if sub_station_form %}
                 </div>
                 {% include "gis_wizard/form.html" with form=sub_station_form only %}
