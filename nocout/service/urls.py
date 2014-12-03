@@ -10,4 +10,5 @@ urlpatterns = patterns('',
   url(r'^servicelistingtable/', views.ServiceListingTable.as_view(), name='ServiceListingTable'),
   url(r'^select/service/data_source/(?P<pk>\d+)/$', views.select_service_data_source, name='select-service-data_source'),
   url(r'^select/data_source/$', views.select_data_source, name='select-data-source'),
+  url(r'^select/value/data_source/$', views.select_value_data_source, name='select-value-data-source'),
 )

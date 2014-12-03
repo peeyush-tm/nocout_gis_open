@@ -1,4 +1,4 @@
-from mysql_connection import mysql_conn, dict_rows
+from mysql_connection import mysql_conn
 from pprint import pformat
 from nocout_logger import nocout_log
 
@@ -95,10 +95,12 @@ def main():
 
 def prepare_query():
     query = """
-    select
+     select
     devicetype.name as devicetype,
     service.name as service,
     datasource.name as datasource,
+    devicetype_svc_ds.warning as dtype_ds_warning,
+    devicetype_svc_ds.critical as dtype_ds_critical,
     svcds.warning as service_warning,
     svcds.critical as service_critical,
     datasource.warning as warning,
@@ -114,17 +116,18 @@ def prepare_query():
     devicetype.rta_critical as ping_rta_critical,
     devicetype.rta_warning as ping_rta_warning,
     devicetype.timeout as ping_timeout,
-        protocol.port as port,
-        protocol.version as version,
-        protocol.read_community as community
+    protocol.port as port,
+    protocol.version as version,
+    protocol.read_community as community
     from device_devicetype as devicetype
     left join (
         service_service as service,
+        device_devicetypeservice as devicetype_svc,
+        device_devicetypeservicedatasource as devicetype_svc_ds,
         service_servicespecificdatasource as svcds,
         service_servicedatasource as datasource,
         service_serviceparameters as params,
-        service_protocol as protocol,
-        device_devicetype_service as devicetypesvc
+        service_protocol as protocol
     )
     on (
         svcds.service_id = service.id
@@ -135,9 +138,13 @@ def prepare_query():
         and
         params.id = service.parameters_id
         and
-        devicetypesvc.service_id = service.id
+        devicetype_svc.service_id = service.id
         and
-        devicetype.id = devicetypesvc.devicetype_id
+        devicetype.id = devicetype_svc.device_type_id
+        and
+        devicetype_svc_ds.device_type_service_id = devicetype_svc.id
+        and
+        devicetype_svc_ds.service_data_sources_id = datasource.id
     )
     where devicetype.name <> 'Default'
     """
@@ -145,9 +152,11 @@ def prepare_query():
 
 def get_settings():
     global default_checks
+    global db
     data = []
     default_checks = prepare_priority_checks()
     query = prepare_query()
+    logger.debug('mysql db: ' + pformat(db))
     try:
 	    cur = db.cursor()
 	    cur.execute(query)
@@ -203,7 +212,9 @@ def get_settings():
 def get_threshold(service):
     result = ()
     try:
-	    if service.get('service_warning') or service.get('service_critical'):
+	    if service.get('dtype_ds_warning') or service.get('dtype_ds_critical'):
+		    result = (float(service['dtype_ds_warning']), float(service['dtype_ds_critical']))
+	    elif service.get('service_warning') or service.get('service_critical'):
 		result = (float(service['service_warning']), float('service_critical'))
 	    elif service.get('warning') or service.get('critical'):
 		    if service.get('service') in wimax_mod_services:
@@ -223,10 +234,12 @@ def prepare_priority_checks():
 	SELECT DISTINCT service_name, device_name, warning, critical
 	FROM service_deviceserviceconfiguration
 	"""
+	logger.debug('mysql db: ' + pformat(db))
         try:
 		cur = db.cursor()
 		cur.execute(query)
 	        data_values = dict_rows(cur)
+		cur.close()
 	except Exception, exp:
 		logger.error('Exception in priority_checks: ' + pformat(exp)) 
 	data_values = filter(lambda d: d['warning'] or d['critical'], data_values)
@@ -239,6 +252,13 @@ def prepare_priority_checks():
 	#print processed_values
 
 	return processed_values
+
+def dict_rows(cur):
+   desc = cur.description
+   return [
+        dict(zip([col[0] for col in desc], row))
+        for row in cur.fetchall()
+   ]
 
 
 def ping_settings():

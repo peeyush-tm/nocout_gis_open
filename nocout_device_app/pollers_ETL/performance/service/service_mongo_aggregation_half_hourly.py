@@ -186,7 +186,7 @@ def make_half_hourly_data(docs):
 					'ds': aggr_data.get('ds'),
 					'time': aggr_data.get('time')
 					}
-			existing_doc = find_existing_entry(find_query)
+			existing_doc, existing_doc_index = find_existing_entry(find_query)
 			#print '========================='
 			#print 'existing_doc'
 			#print existing_doc
@@ -217,7 +217,9 @@ def make_half_hourly_data(docs):
 					'avg': avg_val
 					})
 				# First remove the existing entry from aggregated_data_values
-				aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
+				#aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
+				# First remove the existing entry from aggregated_data_values
+				aggregated_data_values.pop(existing_doc_index)
 			#print 'Updated aggr_data'
 			#print aggr_data
 			#upsert_aggregated_data(find_query, aggr_data)
@@ -263,7 +265,7 @@ def make_half_hourly_data(docs):
 					'ds': aggr_data.get('ds'),
 					'time': aggr_data.get('time')
 					}
-			existing_doc = find_existing_entry(find_query)
+			existing_doc, existing_doc_index = find_existing_entry(find_query)
 			#print '========================='
 			#print 'existing_doc'
 			#print existing_doc
@@ -294,7 +296,9 @@ def make_half_hourly_data(docs):
 					'avg': avg_val
 					})
 				# First remove the existing entry from aggregated_data_values
-				aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
+				#aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
+				# First remove the existing entry from aggregated_data_values
+				aggregated_data_values.pop(existing_doc_index)
 			#print 'Updated aggr_data'
 			#print aggr_data
 			#upsert_aggregated_data(find_query, aggr_data)
@@ -321,10 +325,15 @@ def find_existing_entry(find_query):
 	Find the doc for update query
 	"""
 
-	docs = []
-	docs = filter(lambda d: set(find_query.values()) <= set(d.values()), aggregated_data_values)
+	existing_doc = []
+	existing_doc_index = None
+	for i in xrange(len(aggregated_data_values)):
+		if set(find_query.values()) <= set(aggregated_data_values[i].values()):
+			existing_doc = aggregated_data_values[i:i+1]
+			existing_doc_index = i
+			break
 
-	return docs
+	return existing_doc, existing_doc_index
 
 
 def usage():

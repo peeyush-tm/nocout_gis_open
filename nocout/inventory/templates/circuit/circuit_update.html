@@ -100,7 +100,7 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/sector/select/sector/" + id, {
+                        $.ajax("/sector/select/sector/" + id+"/", {
                             dataType: "json"
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
@@ -138,7 +138,7 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/customer/select/customer/" + id, {
+                        $.ajax("/customer/select/customer/"+id+"/", {
                             dataType: "json"
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
@@ -176,7 +176,7 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/customer/select/customer/" + id, {
+                        $.ajax("/customer/select/customer/"+id+"/", {
                             dataType: "json"
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});

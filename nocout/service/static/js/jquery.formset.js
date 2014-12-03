@@ -159,7 +159,7 @@
                 row.insertBefore($(buttonRow)).show();
                 row.find('input,select,textarea,label').each(function(index, ele) {
                     if (ele.nodeName.toLowerCase() === 'input'){
-                        $(this).val(0)
+                        $(this).val('')
                     }
                     if (ele.nodeName.toLowerCase() === 'select'){
                         $(this).find("option:selected").removeAttr("selected");

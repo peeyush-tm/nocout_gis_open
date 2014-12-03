@@ -41,18 +41,18 @@
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Critical</label>
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Warning</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
-                                                            {{field.critical}}
+                                                        <div class="col-md-7">
+                                                            {{field.warning}}<label id="id_value">( {{ field.warning.value|default_if_none:"None" }} )</label>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Warning</label>
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">Critical</label>
                                                     <div class="col-sm-9">
-                                                        <div class="col-md-8">
-                                                            {{field.warning}}
+                                                        <div class="col-md-7">
+                                                            {{field.critical}}<label id="id_value">( {{ field.critical.value|default_if_none:"None" }} )</label>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -88,6 +88,58 @@
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            // if srvice data source is already selected
+            var sds = $('form select[name|="servicespecificdatasource_set"]')
+            if (sds.length){
+                sds.each(function() {
+                var sds_id = $(this).find("option:selected").val()
+                var sds_location = $(this).parents(".row .inline")
+                get_sds_value(sds_id, sds_location)
+                })
+            }
+
+            // if the data source is changed by the user
+            $('form select[name|="servicespecificdatasource_set"]').change(function() {
+                var sds_id = $(this).find("option:selected").val()
+                var sds_location = $(this).parents(".row .inline")
+                get_sds_value(sds_id, sds_location)
+            })
+
+            //  Get the value of the data source selected by the user.
+            function get_sds_value(sds_id, sds_location){
+                var sds_id = sds_id
+                if (!sds_id.length){
+                    console.log("No service data source is selected")
+                }
+                else{
+                    $.ajax({
+                        url : "/service/select/value/data_source/",
+                        type : "GET",
+                        dataType: "json",
+                        data: {
+                            sds_id : sds_id,
+                        },
+                        success : function(sds) {
+                            var p = sds_location.children().slice(1)
+                            var w = sds.sds_values_list[0]['warning']
+                            var c = sds.sds_values_list[0]['critical']
+                            // if the data source is empty
+                            if (!w.length){ w = null }
+                            if (!c.length){ c = null }
+                            p.find('[id="id_value"]').remove()
+                            p.first().find('input').parent().append('<label id="id_value">( '+w+' )</label>')
+
+                            p.last().find('input').parent().append('<label id="id_value">( '+c+' )</label>')
+                        },
+                        error : function(xhr,errmsg,err) {
+                            alert(xhr.status + ": " + xhr.responseText);
+                        }
+                    });
+
+                    return false;
+                }
+            }
         })
     </script>
     <script type="text/javascript">
