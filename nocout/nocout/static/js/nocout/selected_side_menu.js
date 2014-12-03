@@ -513,7 +513,6 @@ if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
     
     page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" add ");
     module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
-
 } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1) {
 
     page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ");
@@ -552,6 +551,11 @@ if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
 
 /*Form Submit Event*/
 $("form").submit(function(e) {
+
+    // Disabel submit button
+    if($("form button[type='submit']").length > 0) {
+        $("form button[type='submit']").addClass("disabled");
+    }
     /*Create case*/
     if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
         /*When first time form submitted*/
@@ -569,8 +573,11 @@ $("form").submit(function(e) {
                 } else {
                     action_response = result;
                 }
-
                 isFormSubmit = 1;
+                // Enable submit button
+                if($("form button[type='submit']").length > 0) {
+                    $("form button[type='submit']").removeClass("disabled");
+                }
                 /*Trigger Form Submit*/
                 $("form").trigger('submit');
             });
@@ -640,6 +647,10 @@ $("form").submit(function(e) {
                     }
 
                     isFormSubmit = 1;
+                    // Enable submit button
+                    if($("form button[type='submit']").length > 0) {
+                        $("form button[type='submit']").removeClass("disabled");
+                    }
                     /*Trigger Form Submit*/
                     $("form").trigger('submit');
                 });
