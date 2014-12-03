@@ -285,7 +285,7 @@ def prepare_priority_checks():
 		if entry.get('service_name') in wimax_mod_services:
 			processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (map(str, entry['warning'].replace(' ', '').split(',')), map(str, entry['critical'].replace(' ', '').split(',')))))
 		else:
-			processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (entry.get('warning'), entry.get('critical'))))
+			processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (float(entry.get('warning')), float(entry.get('critical')))))
 	#print processed_values
 	db.close()
 
