@@ -74,7 +74,7 @@
                                                             {{ threshold_configuration_form.range1_end }}
                                                             <select class=" select2select " id="id_icon_settings1" name="icon_settings1" style="margin-left:20px; width:37%"><option value="">Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            <option value="{{ icon.upload_image.name }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
@@ -92,7 +92,7 @@
                                                             {{ threshold_configuration_form.range2_end }}
                                                             <select class=" select2select" id="id_icon_settings2" name="icon_settings2" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            <option value="{{ icon.upload_image.name }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
@@ -110,7 +110,7 @@
                                                             {{ threshold_configuration_form.range3_end }}
                                                             <select class=" select2select " id="id_icon_settings3" name="icon_settings3" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            <option value="{{ icon.upload_image.name }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
@@ -128,7 +128,7 @@
                                                             {{ threshold_configuration_form.range4_end }}
                                                             <select class=" select2select " id="id_icon_settings4" name="icon_settings4" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            <option value="{{ icon.upload_image.name }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
@@ -146,7 +146,7 @@
                                                             {{ threshold_configuration_form.range5_end }}
                                                             <select class=" select2select " id="id_icon_settings5" name="icon_settings5" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            <option value="{{ icon.upload_image.name }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
@@ -164,7 +164,7 @@
                                                             {{ threshold_configuration_form.range6_end }}
                                                             <select class=" select2select " id="id_icon_settings6" name="icon_settings6" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            <option value="{{ icon.upload_image.name }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
@@ -182,7 +182,7 @@
                                                             {{ threshold_configuration_form.range7_end }}
                                                             <select class=" select2select " id="id_icon_settings7" name="icon_settings7" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            <option value="{{ icon.upload_image.name }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
@@ -200,7 +200,7 @@
                                                             {{ threshold_configuration_form.range8_end }}
                                                             <select class=" select2select " id="id_icon_settings8" name="icon_settings8" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            <option value="{{ icon.upload_image.name }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
@@ -218,7 +218,7 @@
                                                             {{ threshold_configuration_form.range9_end }}
                                                             <select class=" select2select " id="id_icon_settings9" name="icon_settings9" style="margin-left:22px; width:37%"><option value=''>Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            <option value="{{ icon.upload_image.name }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
@@ -236,7 +236,7 @@
                                                             {{ threshold_configuration_form.range10_end }}
                                                             <select class=" select2select " id="id_icon_settings10" name="icon_settings10" style="margin-left:22px; width:37%"><option value="" selected="selected">Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.url }}" data-imagesrc="{{ icon.upload_image.url }}">{{ icon.name }}</option>
+                                                            <option value="{{ icon.upload_image.name }}">{{ icon.name }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
@@ -308,6 +308,45 @@
             if (!$(id_data_source).val()){
                 $(id_data_source).empty();
             }
+            var divForm= $("#id_service_type").parent().parent().parent();
+            $(divForm.nextAll()).each(function(i, el) {
+                var selectEl= $(el).find('select');
+
+                function formatResult(item) {
+                        if(item.id) {
+                            var id_is = item.id;
+                            if (id_is.indexOf('uploaded') !=-1){
+                                id_is="/media/"+ id_is;
+                            }else{
+                                id_is="/static/img/"+ id_is;
+                            }
+
+                            return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
+                        } else {
+                            return item.text;
+                        }
+                    }
+
+                    function formatSelection(item) {
+                        if(item.id) {
+                            var id_is = item.id;
+                            if (id_is.indexOf('uploaded') !=-1){
+                                id_is="/media/"+ id_is
+                            }else{
+                                id_is="/static/img/"+ id_is;
+                            }
+
+                            return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
+                        } else {
+                            return item.text;
+                        }
+                    }
+
+                    $(selectEl).select2({
+                        formatResult: formatResult,
+                        formatSelection: formatSelection
+                    });
+                });
 
         });
 
