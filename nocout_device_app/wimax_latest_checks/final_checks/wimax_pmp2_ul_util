@@ -10,7 +10,7 @@ uplink utilization information is sent to device application
 
 """
 # ##################################################################
-# Function : check_wimax_pmp2_dl_utilization
+# Function : check_wimax_pmp2_ul_util
 #
 #  Parameters: info(SNMP output) ,params(parameters to check the service state) 
 #
@@ -18,9 +18,9 @@ uplink utilization information is sent to device application
 ##################################################################
 
 
-def check_wimax_pmp2_dl_utilization(item, _no_params, info):
+def check_wimax_pmp2_ul_util(item, _no_params, info):
     """
-        Check_wimax_pmp2_dl_utilization function calcaulates the upliknk utilization
+        Check_wimax_pmp2_ul_util function calcaulates the upliknk utilization
 
         Args:
             item (str) Specific item on SNMP output on which we want to filter results
@@ -40,7 +40,7 @@ def check_wimax_pmp2_dl_utilization(item, _no_params, info):
 
             performance_data  (list):
                     performance data
-                    Example: wimax_pmp2_dl_utilization=-76;-50;-80;;;
+                    Example: wimax_pmp2_ul_util=-76;-50;-80;;;
             Raises:
                 ValueError ,Exception
     """
@@ -53,15 +53,15 @@ def check_wimax_pmp2_dl_utilization(item, _no_params, info):
         if info:
 		status_list = []
 		if info[0][0]:
-			dl_utilization = info[0][0]
+			ul_utilization = info[0][0]
 			this_time = int(time.time())
 			try:
-                        	timedif, rate = get_counter("wimax_pmp2_dl_utilization", this_time, saveint(dl_utilization))
+                        	timedif, rate = get_counter("wimax_pmp2_ul_util", this_time, saveint(ul_utilization))
 				rate = (rate*8)/(1024*1024)
                 	except MKCounterWrapped:
                         	wrapped=True
-                	status_list.append(("pmp2_dl_utilization", "%f" % (rate)))
-			infotext = "pmp2 dl utilization %s " % (rate)
+                	status_list.append(("pmp2_ul_util", "%f" % (rate)))
+			infotext = "pmp2 ul utilization %s " % (rate)
 			state= 0
 	else:
 	    infotext = "No interface present"
@@ -76,13 +76,13 @@ def check_wimax_pmp2_dl_utilization(item, _no_params, info):
     return (state, infotext, status_list)
 
 
-check_info["wimax_pmp2_dl_utilization"] = {
-    'check_function': check_wimax_pmp2_dl_utilization,
-    'service_description': 'wimax_pmp2_dl_utilization',
+check_info["wimax_pmp2_ul_util"] = {
+    'check_function': check_wimax_pmp2_ul_util,
+    'service_description': 'wimax_pmp2_ul_util',
     'has_perfdata': True,
 }
 
 #######################################################################
 #	SNMP OID
 #######################################################################
-snmp_info["wimax_pmp2_dl_utilization"] = ( ".1.3.6.1.2.1.2.2.1", ["16.250"] )
+snmp_info["wimax_pmp2_ul_util"] = ( ".1.3.6.1.2.1.2.2.1", ["10.250"] )

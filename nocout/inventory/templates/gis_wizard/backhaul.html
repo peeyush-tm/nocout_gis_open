@@ -1,0 +1,368 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block content_title %}GIS Wizard: Backhaul{% endblock %}
+{% block content_description %}gis wizard: backhaul{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> GIS WIZARD: BACKHAUL ({{ base_station.name }})</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br/>
+
+                <!-- :START: Radio Buttons to choose existing or create new -->
+                <div class="form-group">
+                    <label class="control-label pull-left">Backhaul &nbsp;&nbsp;&nbsp;</label>
+                    <div class="pull-left">
+
+                        <label class="radio-inline">
+                            <input type="radio" id="id_backhaul_radio" class="radioField" value="existing" name="backhaul_radio"> Choose Existing
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="id_backhaul_radio" class="radioField" value="new" name="backhaul_radio"> Create New
+                        </label>
+                    </div>
+                </div><br/><br/>
+                <div class="form-group">
+                    <div class="col-sm-9">
+                        <div class="col-md-8">
+                            <input class=" tip-focus form-control" data-placement="right" data-toggle="tooltip" id="id_backhaul" name="backhaul" title="" type="hidden" value="{% if object %}{{ object.id }}{% endif %}"/>
+                        </div>
+                    </div>
+                </div>
+                {% if object or select_view %}
+                </br>
+                </br>
+                {% endif %}
+                <!-- :END: Radio Buttons to choose existing or create new -->
+
+            {% if form %}
+
+                                    <form id="id_backhaul_form" action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                        {% include "gis_wizard/form.html" with form=form only %}
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Next</button>
+                                                &nbsp;
+                                                <button type="submit" id="id_update_and_show" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Show</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-warning" onclick="window.location.replace('/gis-wizard/base-station/{{ bs_pk }}/sectors/')"><i class="fa fa-times"></i>Skip</button>
+                                                {% if base_station_has_backhaul %}
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="delete_and_show()"><i class="fa fa-times"></i>Delete &amp; Show</button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </form>
+            {% else %}
+                <br>
+                <div class="form-group">
+                    <div class="col-sm-offset-0 col-sm-9">
+                        <button type="reset" class="btn btn-warning" onclick="window.location.replace('/gis-wizard/base-station/{{ bs_pk }}/sectors/')"><i class="fa fa-times"></i>Skip</button>
+                    </div>
+                </div>
+            {% endif %}
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
+
+    {% if form %}
+    {% url 'gis-wizard-backhaul-delete' bs_pk=bs_pk as delete_url %}
+    <script>
+        function delete_and_show(){
+            if (confirm('Remove relationship of Backhaul and Base Station?')) {
+                window.location.replace('{{ delete_url }}');
+            }
+        }
+        $(document).ready(function() {
+        $("#id_update_and_show").on("click", function(e) {
+            e.preventDefault();
+            $('#id_backhaul_form').attr('action', "?show=True").submit();
+        });
+
+            // Changing labels of form fields
+            $("label[for=id_bh_configured_on]").html('<span class="mandatory">* </span>BH Configured On');
+            $("label[for=id_bh_port_name]").text('BH Port Name');
+            $("label[for=id_bh_port]").text('BH Port');
+            $("label[for=id_bh_type]").text('BH Type');
+            $("label[for=id_bh_switch]").text('BS Switch/Converter');
+            $("label[for=id_switch_port_name]").text('BS Device Port Name');
+            $("label[for=id_switch_port]").text('BS Device Port');
+            $("label[for=id_pop]").text('POP Switch/Converter');
+            $("label[for=id_pop_port_name]").text('POP Device Port Name');
+            $("label[for=id_pop_port]").text('POP Device Port');
+            $("label[for=id_aggregator]").text('Aggregations Switch/Converter');
+            $("label[for=id_aggregator_port_name]").text('Aggregations Device Port Name');
+            $("label[for=id_aggregator_port]").text('Aggregations Device Port');
+            $("label[for=id_pe_hostname]").text('PE Hostname');
+            $("label[for=id_pe_ip]").text('PE IP Address');
+            $("label[for=id_bh_connectivity]").text('BH Connectivity');
+            $("label[for=id_bh_circuit_id]").text('BH Circuit ID');
+            $("label[for=id_bh_capacity]").text('BH Capacity');
+            $("label[for=id_ttsl_circuit_id]").text('TTSL Circuit ID');
+            $("label[for=id_dr_site]").text('DR Site');
+
+            // Initialize the select2 selectbox.
+            $(".select2select").select2();
+            $('.tip-focus').tooltip({
+                placement: 'right',
+                trigger: 'focus'
+            });
+            // getting values of select menu's on load
+
+            $("#id_bh_configured_on").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id+"/", {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_bh_switch").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id+"/", {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_pop").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id+"/", {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_aggregator").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id+"/", {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+        });
+
+        function repoFormatResult(device) {
+          return device.device_alias;
+        }
+
+        function repoFormatSelection(device) {
+          return device.device_alias;
+        }
+
+    </script>
+    {% endif %}
+
+    <script>
+        // Radio specific functions only, nothing to do with form fields.
+        $(function() {
+            /* :START: Technology radio select selected and bind reload onchange event
+                $('input:radio[name=technology_radio]').filter('[value={{ selected_technology }}]').prop('checked', true);
+
+                $("input:radio[name=technology_radio]").change(function (){
+                    var technology = $("input:radio[name=technology_radio]:checked").val();
+                    location.href="/gis-wizard/base-station/{{ bs_pk }}/technology/" + technology + "/backhaul/select/";
+                });
+            :END: Technology radio select selected and bind reload onchange event */
+                var $radios = $('input:radio[name=backhaul_radio]');
+                {% if select_view or object %}
+                    $radios.filter('[value=existing]').prop('checked', true);
+
+                    {% if not base_station_has_backhaul %}
+                        $("#id_backhaul").select2({
+                            placeholder: "Search for a backhaul.",
+                            minimumInputLength: 2,
+                            width: "resolve",
+                            ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                                url: "/backhaul/list/backhaul/",
+                                dataType: 'json',
+                                quietMillis: 250,
+                                data: function (term, page) {
+                                    return {
+                                        sSearch: term, // search term
+                                        org: 0,
+                                    };
+                                },
+                                results: function (data, page) { // parse the results into the format expected by Select2.
+                                    // since we are using custom formatting functions we do not need to alter the remote JSON data
+                                    return { results: data.items };
+                                },
+                                cache: false
+                            },
+                            initSelection: function(element, callback) {
+                                // the input tag has a value attribute preloaded that points to a preselected repository's id
+                                // this function resolves that id attribute to an object that select2 can render
+                                // using its formatResult renderer - that way the repository name is shown preselected
+                                var id = $(element).val();
+                                if (id !== "") {
+                                    $.ajax("/backhaul/select/backhaul/" + id+"/", {
+                                        dataType: "json"
+                                    }).done(function(data) {
+                                        callback({id: id, alias: data[0]});
+                                        });
+                                }
+                            },
+                            formatResult: repoBackhaulFormatResult, // omitted for brevity, see the source of this page
+                            formatSelection: repoBackhaulFormatSelection,  // omitted for brevity, see the source of this page
+                        }).on("select2-selecting", function(el) {
+                            location.href="/gis-wizard/base-station/{{ bs_pk }}/backhaul/" + el.val + "/";
+                        });
+                    {% else %}
+                        $radios.attr('disabled',true);
+                    {% endif %}
+                {% else %}
+                    $radios.filter('[value=new]').prop('checked', true);
+                {% endif %}
+            $("input:radio[name=backhaul_radio]").change(function (){
+                {% if select_view or object %}
+                location.href="{% url 'gis-wizard-backhaul-create' bs_pk=bs_pk %}";
+                {% else %}
+                location.href="{% url 'gis-wizard-backhaul-select' bs_pk=bs_pk %}";
+                {% endif %}
+            });
+
+        });
+
+        function repoBackhaulFormatResult(backhaul) {
+            return backhaul.alias;
+        }
+
+        function repoBackhaulFormatSelection(backhaul) {
+            return backhaul.alias;
+        }
+
+    </script>
+{% endblock %}

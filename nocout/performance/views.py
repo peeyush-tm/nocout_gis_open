@@ -516,6 +516,13 @@ class LivePerformanceListing(BaseDatatableView):
         if qs:
             for dct in qs:
                 # device = Device.objects.get(id=dct['id'])
+                try:
+                    if int(dct['packet_loss']) == 100:
+                        dct['latency'] = "DOWN"
+                except Exception as e:
+                    if str((dct['packet_loss'])) in ["100", "100.0", "100.00"]:
+                        dct['latency'] = "DOWN"
+
                 if page_type in ["customer", "network"]:
                     dct.update(
                         actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\

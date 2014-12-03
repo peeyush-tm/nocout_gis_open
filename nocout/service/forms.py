@@ -5,6 +5,7 @@ import re
 from django.forms.util import ErrorList
 from django.forms.models import inlineformset_factory,  BaseInlineFormSet
 import logging
+from device.forms import BaseDeviceTypeServiceFormset
 logger = logging.getLogger(__name__)
 
 
@@ -99,7 +100,8 @@ ServiceDataSourceCreateFormSet = inlineformset_factory(Service, ServiceSpecificD
     extra=1, widgets=widgets, can_delete=True)
 ServiceDataSourceUpdateFormSet = inlineformset_factory(Service, ServiceSpecificDataSource, formset=BaseServiceDataSourceFormset,
     extra=0, widgets=widgets, can_delete=True)
-
+DTServiceDataSourceUpdateFormSet = inlineformset_factory(Service, ServiceSpecificDataSource, formset=BaseDeviceTypeServiceFormset,
+    extra=0, widgets=widgets, can_delete=False)
 
 #************************************** Service Data Source ****************************************
 class ServiceDataSourceForm(forms.ModelForm):

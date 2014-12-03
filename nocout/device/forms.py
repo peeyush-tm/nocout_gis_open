@@ -1,7 +1,8 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency
+    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency, DeviceTypeService, DeviceTypeServiceDataSource
 from django.core.exceptions import ValidationError
+from django.forms.models import inlineformset_factory,  BaseInlineFormSet
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
 import pyproj
@@ -547,6 +548,24 @@ class DeviceModelForm(forms.ModelForm):
 
 
 # ******************************************* Device Type *******************************************
+class BaseDeviceTypeServiceFormset(BaseInlineFormSet):
+    """
+    Custome Inline formest.
+    """
+    # def __init__(self, *args, **kwargs):
+
+    #     super(BaseDeviceTypeServiceFormset, self).__init__(*args, **kwargs)
+    #     for form in self.forms:
+    #         pass
+    #         # form.fields['service'].empty_label = 'Select'
+
+    def clean(self):
+        # print('++++++++++++++++++++++++',self.forms)
+        for form in self.forms:
+            # print('++++++++++',form.cleaned_data)
+            if not len(form.cleaned_data.keys()):
+                raise forms.ValidationError('This field is required.')
+
 class DeviceTypeForm(forms.ModelForm):
     """
     Rendering form for device type
@@ -563,7 +582,7 @@ class DeviceTypeForm(forms.ModelForm):
         # removing help text for device_port 'select' field
         self.base_fields['device_port'].help_text = ''
         # removing help text for service 'select' field
-        self.base_fields['service'].help_text = ''
+        # self.base_fields['service'].help_text = ''
 
         try:
             if 'instance' in kwargs:
@@ -590,6 +609,7 @@ class DeviceTypeForm(forms.ModelForm):
         Meta Information
         """
         model = DeviceType
+        exclude = ('service',)
 
     def clean_name(self):
         """
@@ -620,6 +640,21 @@ class DeviceTypeForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+
+
+widgets = {
+           'service': forms.Select(attrs= {'class' : 'form-control'}),
+           'parameter': forms.Select(attrs= {'class' : 'form-control'}),
+           'critical': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'warning': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'service_data_sources': forms.Select(attrs= {'class' : 'form-control'}),
+    }
+DeviceTypeServiceCreateFormset = inlineformset_factory(DeviceType, DeviceTypeService, formset=BaseDeviceTypeServiceFormset,
+    fields=('service', 'parameter'), extra=1, widgets=widgets, can_delete=True)
+DeviceTypeServiceUpdateFormset = inlineformset_factory(DeviceType, DeviceTypeService, formset=BaseDeviceTypeServiceFormset,
+    fields=('service', 'parameter'), extra=0, widgets=widgets, can_delete=True)
+DeviceTypeServiceDataSourceUpdateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource, formset=BaseDeviceTypeServiceFormset,
+    extra=0, widgets=widgets,)
 
 
 # ******************************************* Device Type *******************************************

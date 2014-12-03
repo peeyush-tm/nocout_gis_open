@@ -1,18 +1,22 @@
 import json
 from django.db.models.query import ValuesQuerySet
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from models import Service, ServiceParameters, ServiceDataSource, Protocol, DeviceServiceConfiguration
-from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm
+from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm, ServiceSpecificDataSource
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
+from django.template.loader import render_to_string
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
-from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet
+from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet,\
+                DTServiceDataSourceUpdateFormSet
+from device.forms import DeviceTypeServiceDataSourceUpdateFormset
+from device.models import DeviceTypeService
 
 # ########################################################
 from django.conf import settings
@@ -230,6 +234,49 @@ class ServiceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('service.delete_service',)
 
 
+def select_service_data_source(request, pk):
+    """
+    return value list of data_source when the servie is selected in device type.
+    """
+    service = Service.objects.get(id=pk)
+    parameters = service.parameters
+    service_counter = request.GET['service_counter']
+    counter = request.GET['counter']
+    Service_data_formset = DTServiceDataSourceUpdateFormSet(instance=service, prefix='dts-{0}-sds-{1}'.format(service_counter,counter))
+    ctx_dict = {
+                'service_data_formset': Service_data_formset,
+                'counter': counter,
+                'service_counter': service_counter
+            }
+    service_attributes = render_to_string('service/service_attributes1.html', ctx_dict)
+    service_attributes.content_subtype = "html"
+    return HttpResponse( json.dumps({
+        "parameters_id": parameters.id,
+        "parameters_name": parameters.parameter_description,
+        "service_attributes": service_attributes,
+        }) )
+
+def select_data_source(request):
+    """
+    return value list of data_source when the servie is selected in device type.
+    """
+    dts_pk = request.GET['dts_id']
+    counter = request.GET['counter']
+    service_counter = request.GET['service_counter']
+    dts = DeviceTypeService.objects.get(id=dts_pk)
+    Service_data_formset = DeviceTypeServiceDataSourceUpdateFormset(instance=dts, prefix='dts-{0}-sds-{1}'.format(service_counter,counter))
+    ctx_dict = {
+                'service_data_formset': Service_data_formset,
+                'counter': counter,
+                'service_counter': service_counter,
+            }
+    service_attributes = render_to_string('service/service_attributes_dtsds.html', ctx_dict)
+    service_attributes.content_subtype = "html"
+    return HttpResponse( json.dumps({
+        "service_attributes": service_attributes,
+        }) )
+
+
 #************************************* Service Parameters *****************************************
 class ServiceParametersList(PermissionsRequiredMixin, ListView):
     """
@@ -416,6 +463,17 @@ class ServiceDataSourceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, Dele
     template_name = 'service_data_source/service_data_source_delete.html'
     success_url = reverse_lazy('service_data_sources_list')
     required_permissions = ('service.delete_servicedatasource',)
+
+
+def select_value_data_source(request):
+    """
+    Call when the service data source is selected while creating the service.
+    """
+    sds_id = request.GET['sds_id']
+    sds_values_list = ServiceDataSource.objects.filter(id=sds_id).values('warning', 'critical')
+    return HttpResponse( json.dumps({
+        'sds_values_list': list(sds_values_list)
+        }) )
 
 
 #********************************** Protocol ***************************************

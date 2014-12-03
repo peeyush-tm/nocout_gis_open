@@ -14,4 +14,6 @@ urlpatterns = patterns('',
   url(r'^L2listingtable/(?P<circuit_id>\d+)/$', views.L2ReportListingTable.as_view(), name='L2ReportListingTable'),
   url(r'^(?P<circuit_id>\d+)/l2_reports/create/$', views.CircuitL2ReportCreate.as_view(), name='circuit_l2_report_create'),
   url(r'^(?P<circuit_id>\d+)/l2_reports/(?P<l2_id>\d+)/delete/$', views.CircuitL2ReportDelete.as_view(), name='circuit_l2_report_delete'),
+  url(r'^list/circuit/$', views.list_circuit, name='list-circuit'),
+  url(r'^select/circuit/(?P<pk>\d+)/$', views.select_circuit, name='select-circuit'),
 )

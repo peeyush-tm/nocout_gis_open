@@ -129,6 +129,8 @@ class BaseStation(models.Model):
     state = models.IntegerField('State', null=True, blank=True)
     city = models.IntegerField('City', null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
+    tag1 = models.CharField('Tag 1', max_length=60, null=True, blank=True)
+    tag2 = models.CharField('Tag 2', max_length=60, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -294,6 +296,7 @@ class ThresholdConfiguration(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
+    service_type = models.CharField('Service Type', max_length=3, default='INT', choices=(('INT', 'Numeric'), ('STR', 'String')))
     live_polling_template = models.ForeignKey(LivePollingSettings)
 
     range1_start = models.CharField('Range1 Start', max_length=20, null=True, blank=True)
