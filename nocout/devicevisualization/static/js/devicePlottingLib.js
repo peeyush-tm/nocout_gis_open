@@ -2600,8 +2600,7 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Condition for the orientation of sector antina*/
-		if(orientation == "horizontal") {
-
+		if(orientation && $.trim(orientation.toLowerCase()) == "horizontal") {
 			var len = Math.floor(PGpoints.length / 3);
 
 			triangle.push(PGpoints[0]);
