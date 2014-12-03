@@ -33,6 +33,7 @@
                                             {% for field in device_type_service_form %}
                                                 {{ field.id }}
                                             <div class="row inline {{ device_type_service_form.prefix }}">
+                                                <hr>
                                                 <div id="id_service" class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service</label>
                                                     <div class="col-sm-9">
@@ -105,7 +106,9 @@
               var service_id = $(this).find("option:selected").val()
               var parameter = $(this).parent(".row .inline").find("#id_parameter")
               var row_inline = $(this).parent(".row .inline")
-              var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
+              var p_div = row_inline.parent().children('div .row .inline')
+              var service_counter = p_div.index(row_inline) + 1
+
               get_attribute_of_service(service_id, parameter, row_inline, service_counter)
             });
         }
@@ -114,12 +117,11 @@
         if (dts_value){
             var service = $("form").find(".row").find("#id_service").slice(0,dts_value.length)
             service.each(function(index) {
-              // var service_id = $(this).find("option:selected").val()
-              // var parameter = $(this).parent(".row .inline").find("#id_parameter")
               var row_inline = $(this).parent(".row .inline")
               var dts_id = dts_value[index].value
-              // var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
-              var service_counter = index + 1
+              var p_div = row_inline.parent().children('div .row .inline')
+              var service_counter = p_div.index(row_inline) + 1
+
               get_attribute_of_device_type_service(row_inline, dts_id, service_counter)
             });
         }
@@ -129,7 +131,9 @@
             var service_id = $(this).find("option:selected").val()
             var parameter = $(this).parent(".row .inline").find("#id_parameter")
             var row_inline = $(this).parent(".row .inline")
-            var service_counter = row_inline.parent().find('input[type="hidden"][name$="TOTAL_FORMS"]').val()
+            var p_div = row_inline.parent().children('div .row .inline')
+            var service_counter = p_div.index(row_inline) + 1
+
             get_attribute_of_service(service_id, parameter, row_inline, service_counter)
         });
 
@@ -153,20 +157,44 @@
                         var parameter_option = parameter.find("select option:selected")
                         parameter_option.val(service.parameters_id)
                         parameter_option.html(service.parameters_name)
-                        row_inline.children().slice(2).remove()
+                        row_inline.children().slice(3).remove()
 
                         row_inline.append(service.service_attributes)
-                        row_inline.children().slice(2).find("select").attr('readonly', true);
+                        row_inline.children().slice(3).find("select").attr('readonly', true);
                         input_fields = row_inline.find('.form-group input')
-                        input_fields.attr('required',true);
                         input_fields.each(function(index){
                             var location = $(this).parent().parent()
                             var value = $(this).val()
                             if (value.length){
                                 location.append( '( '+value+' )')
+                                $(this).val('')
                             }
                             else{
                                 location.append( '( null )')
+                            }
+                        });
+                        x = $("form input[class='form-control'][name|='dts'][type='text']")
+                        x.change(function(){
+                            console.log('asd')
+                            var ele = $(this).attr('name')  // input field warning/critical
+                            var ele_val = $(this).val()     // get the value of input field
+                            if (ele.indexOf('warning')>0){
+                                var c = $(this).parent().parent().parent().next()
+                                if (ele_val.length){
+                                    c.find('input[name$="critical"]').prop('required', true);
+                                }
+                                else{
+                                    c.find('input[name$="critical"]').prop('required', false);
+                                }
+                            }
+                            else{
+                                var w = $(this).parent().parent().parent().prev()
+                                if (ele_val.length){
+                                    w.find('input[name$="warning"]').prop('required', true);
+                                }
+                                else{
+                                    w.find('input[name$="warning"]').prop('required', false);
+                                }
                             }
                         });
                     },
@@ -196,19 +224,42 @@
                         counter : counter,
                     },
                     success : function(service) {
-                        row_inline.children().slice(2).remove()
+                        row_inline.children().slice(3).remove()
                         row_inline.append(service.service_attributes)
-                        row_inline.children().slice(2).find("select").attr('readonly', true);
+                        row_inline.children().slice(3).find("select").attr('readonly', true);
                         input_fields = row_inline.find('.form-group input')
                         input_fields.each(function(index){
                             var location = $(this).parent().parent()
                             var value = $(this).val()
                             if (value.length){
                                 location.append( '( '+value+' )')
-                                $(this).val('')
                             }
                             else{
                                 location.append( '( null )')
+                            }
+                        });
+                        x = $("form input[class='form-control'][name|='dts'][type='text']")
+                        x.change(function(){
+                            console.log('asd')
+                            var ele = $(this).attr('name')  // input field warning/critical
+                            var ele_val = $(this).val()     // get the value of input field
+                            if (ele.indexOf('warning')>0){
+                                var c = $(this).parent().parent().parent().next()
+                                if (ele_val.length){
+                                    c.find('input[name$="critical"]').prop('required', true);
+                                }
+                                else{
+                                    c.find('input[name$="critical"]').prop('required', false);
+                                }
+                            }
+                            else{
+                                var w = $(this).parent().parent().parent().prev()
+                                if (ele_val.length){
+                                    w.find('input[name$="warning"]').prop('required', true);
+                                }
+                                else{
+                                    w.find('input[name$="warning"]').prop('required', false);
+                                }
                             }
                         });
                     },
