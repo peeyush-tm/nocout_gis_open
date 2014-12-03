@@ -1623,3 +1623,9 @@ $("#apply_label").click(function(e) {
         }
     }
 });
+
+// This event triggers when service type radio button is changed
+$('input[type=radio][name=thematic_type]').change(function(e) {
+    // Call function to restart perf calling
+    networkMapInstance.restartPerfCalling();
+});

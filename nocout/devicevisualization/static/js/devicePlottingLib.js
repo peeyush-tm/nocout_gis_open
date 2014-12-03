@@ -6797,7 +6797,7 @@ function devicePlottingClass_gmap() {
 	 };
 
 	 /**
-	 * This function unfreeze the system & recall the server
+	 * This function unfreeze the system & call other function to recall the server
 	 * @method unfreezeDevices_gmap
 	 */
 	 this.unfreezeDevices_gmap = function() {
@@ -6809,20 +6809,35 @@ function devicePlottingClass_gmap() {
 	 	freezedAt = 0;
 	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
-		if(isPerfCallStopped === 0) {
-		 	var bs_list = getMarkerInCurrentBound();
-	    	if(bs_list.length > 0 && isCallCompleted == 1) {
-	    		if(recallPerf != "") {
+	 	// Call function to restart perf calling
+	 	gmap_self.restartPerfCalling();
+	 };
+
+	/**
+	 * This function restarts perf calling after 10 seconds interval.
+	 * @method restartPerfCalling
+	 */
+
+	this.restartPerfCalling = function() {
+		// After 10 Seconds restart perf call
+	 	setTimeout(function() {
+			if(isPerfCallStopped === 0) {
+		 		var bs_list = getMarkerInCurrentBound();
+		    	if(bs_list.length > 0 && isCallCompleted == 1) {
+		    		if(recallPerf) {
+		    			clearTimeout(recallPerf);
+		    			recallPerf = "";
+		    		}
+		    		current_bs_list = [];
+		    		gisPerformanceClass.start(bs_list);
+		    	}
+	    	} else {
+	    		if(recallPerf) {
 	    			clearTimeout(recallPerf);
 	    			recallPerf = "";
 	    		}
-	    		gisPerformanceClass.start(bs_list);
 	    	}
-    	} else {
-    		clearTimeout(recallPerf);
-            recallPerf = "";
-            current_bs_list = [];
-    	}
+	 	},10000);
 	 };
 
 	/**
