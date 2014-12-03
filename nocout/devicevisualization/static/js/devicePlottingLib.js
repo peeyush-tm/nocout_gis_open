@@ -5387,8 +5387,19 @@ function devicePlottingClass_gmap() {
 									var layer = ss_marker.layer ? ss_marker.layer : ss_marker.layerReference;
 									layer.redraw();
 								} else {
+									var largeur= 32,
+			                            hauteur= 37,
+			                            divideBy= 1,
+			                            anchorX= 0,
+			                            live_polled_icon = new google.maps.MarkerImage(
+			                                newIcon,
+			                                new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+			                                new google.maps.Point(0, 0),
+			                                new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+			                                new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
+			                            );
 									ss_marker.setOptions({
-										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+										"icon" : live_polled_icon
 									});
 								}
 								marker_polling_obj.ip = ss_marker.ss_ip;
@@ -5400,8 +5411,21 @@ function devicePlottingClass_gmap() {
 									var layer = sector_marker.layer ? sector_marker.layer : sector_marker.layerReference;
 									layer.redraw();
 								} else {
+									var largeur= 32,
+			                            hauteur= 37,
+			                            divideBy= 1,
+			                            anchorX= 0,
+			                            live_polled_icon = new google.maps.MarkerImage(
+			                                newIcon,
+			                                new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+			                                new google.maps.Point(0, 0),
+			                                new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+			                                new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
+			                            );
+
+			                        // Update sector marker icon
 									sector_marker.setOptions({
-										"icon" : new google.maps.MarkerImage(newIcon,null,null,null,null),
+										"icon" : live_polled_icon,
 										// "clusterIcon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
 										// "oldIcon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
 									});
