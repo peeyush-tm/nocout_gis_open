@@ -6,26 +6,26 @@ logger = nocout_log()
 
 db = mysql_conn()
 
-pmp_ss_bs_checks = ['cambium_ul_jitter','cambium_reg_count','cambium_rereg_count','cambium_ul_rssi']
+pmp_ss_bs_checks = ['cambium_ul_jitter', 'cambium_reg_count', 'cambium_rereg_count', 'cambium_ul_rssi']
 
-bulkwalk_hosts = [(['snmp-v2'],['@all'])]
+bulkwalk_hosts = [(['snmp-v2'], ['@all'])]
 
-#ping_levels = [({'loss': (80, 100), 'packets': 10, 'rta': (1500, 3000), 'timeout': 20}, [u'Radwin2KSS'], ['@all'], {})] 
+# ping_levels = [({'loss': (80, 100), 'packets': 10, 'rta': (1500, 3000), 'timeout': 20}, [u'Radwin2KSS'], ['@all'], {})]
 
 ping_levels_db = list()
 
 default_checks = [
-#(['Radwin2KBS'], ['@all'], 'radwin_rssi', None, (-50, -60)),
+    #(['Radwin2KBS'], ['@all'], 'radwin_rssi', None, (-50, -60)),
 ]
 
 default_snmp_ports = [
-                (161, ['Radwin2KBS'], ['@all']),
-                (161, ['Radwin2KSS'], ['@all']),
-                (161, ['CanopyPM100AP'], ['@all']),
-                (161, ['CanopyPM100SS'], ['@all']),
-                (161, ['CanopySM100AP'], ['@all']),
-                (161, ['CanopySM100SS'], ['@all']),
-                ]
+    (161, ['Radwin2KBS'], ['@all']),
+    (161, ['Radwin2KSS'], ['@all']),
+    (161, ['CanopyPM100AP'], ['@all']),
+    (161, ['CanopyPM100SS'], ['@all']),
+    (161, ['CanopySM100AP'], ['@all']),
+    (161, ['CanopySM100SS'], ['@all']),
+]
 
 snmp_ports_db = list()
 
@@ -56,6 +56,7 @@ extra_service_conf['normal_check_interval'] = [
 
 wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
 
+
 def main():
     global default_snmp_ports
     global default_snmp_communities
@@ -65,7 +66,7 @@ def main():
     #pprint(default_checks)
     #pprint(snmp_communities_db)
     #pprint(snmp_ports_db)
-     
+
     if len(snmp_communities_db):
         default_snmp_communities = snmp_communities_db
     if len(snmp_ports_db):
@@ -85,12 +86,12 @@ def main():
         f.write("\n\n\n")
         f.write("snmp_communities += %s" % pformat(default_snmp_communities))
         f.write("\n\n\n")
-        f.write("extra_service_conf['normal_check_interval'] = %s" % pformat(extra_service_conf['normal_check_interval']))
+        f.write(
+            "extra_service_conf['normal_check_interval'] = %s" % pformat(extra_service_conf['normal_check_interval']))
         f.write("\n\n\n")
         f.write("extra_service_conf['max_check_attempts'] = %s" % pformat(extra_service_conf['max_check_attempts']))
         f.write("\n\n\n")
         f.write("extra_service_conf['retry_check_interval'] = %s" % pformat(extra_service_conf['retry_check_interval']))
-       	 
 
 
 def prepare_query():
@@ -150,6 +151,7 @@ def prepare_query():
     """
     return query
 
+
 def get_settings():
     global default_checks
     global db
@@ -158,52 +160,56 @@ def get_settings():
     query = prepare_query()
     logger.debug('mysql db: ' + pformat(db))
     try:
-	    cur = db.cursor()
-	    cur.execute(query)
-	    data = dict_rows(cur)
-	    #logger.debug('data in get_settings: ' + pformat(data))
-	    cur.close()
+        cur = db.cursor()
+        cur.execute(query)
+        data = dict_rows(cur)
+        #logger.debug('data in get_settings: ' + pformat(data))
+        cur.close()
     except Exception, exp:
-	    logger.error('Exception in get_settings: ' + pformat(exp))
+        logger.error('Exception in get_settings: ' + pformat(exp))
     processed = []
     for service in data:
-        """from pprint import pprint
-          pprint(service)
-          {u'agent_tag': u'snmp-v2|snmp',
- u'check_interval': 5,
- u'critical': u'150',
- u'datasource': u'rereg_count',
- u'devicetype': u'CanopySM100SS',
- u'max_check_attempts': 2,
- u'ping_interval': 5,
- u'ping_packets': 6,
- u'ping_pl_critical': 100,
- u'ping_pl_warning': 80,
- u'ping_rta_critical': 3000,
- u'ping_rta_warning': 1500,
- u'ping_timeout': 20,
- u'retry_check_interval': 1,
- u'service': u'cambium_rereg_count',
- u'warning': u'20'}
+        """
+        from pprint import pprint
+        pprint(service)
+        {
+            u'agent_tag': u'snmp-v2|snmp',
+            u'check_interval': 5,
+            u'critical': u'150',
+            u'datasource': u'rereg_count',
+            u'devicetype': u'CanopySM100SS',
+            u'max_check_attempts': 2,
+            u'ping_interval': 5,
+            u'ping_packets': 6,
+            u'ping_pl_critical': 100,
+            u'ping_pl_warning': 80,
+            u'ping_rta_critical': 3000,
+            u'ping_rta_warning': 1500,
+            u'ping_timeout': 20,
+            u'retry_check_interval': 1,
+            u'service': u'cambium_rereg_count',
+            u'warning': u'20'
+        }
         """
         if service['devicetype'] not in processed:
-            ping_config = {'loss': (service['ping_pl_warning'], service['ping_pl_critical']), 
-                        'packets': service['ping_packets'], 
-                        'rta': (service['ping_rta_warning'], service['ping_rta_critical']), 'timeout': service['ping_timeout']}, [service['devicetype']], ['@all'], {}
+            ping_config = {'loss': (service['ping_pl_warning'], service['ping_pl_critical']),
+                           'packets': service['ping_packets'],
+                           'rta': (service['ping_rta_warning'], service['ping_rta_critical']),
+                           'timeout': service['ping_timeout']}, [service['devicetype']], ['@all'], {}
             ping_levels_db.append(ping_config)
             processed.append(service['devicetype'])
-        if service['service']:        
-	    try:
-		    threshold = get_threshold(service)
-	    except Exception, exp:
-		    logger.error('Exception in get_threshold: ' + pformat(exp))
+        if service['service']:
+            try:
+                threshold = get_threshold(service)
+            except Exception, exp:
+                logger.error('Exception in get_threshold: ' + pformat(exp))
             service_config = [service['devicetype']], ['@all'], service['service'], None, threshold
             default_checks.append(service_config)
             if service['port'] and service['community']:
                 d_ports = service['port'], [service['devicetype']], ['@all']
                 if d_ports not in snmp_ports_db:
-                    snmp_ports_db.append(d_ports) 
-                
+                    snmp_ports_db.append(d_ports)
+
                 d_community = str(service['community']), [str(service['devicetype'])], ['@all']
                 if d_community not in snmp_communities_db:
                     snmp_communities_db.append(d_community)
@@ -212,63 +218,71 @@ def get_settings():
 def get_threshold(service):
     result = ()
     try:
-	    if service.get('dtype_ds_warning') or service.get('dtype_ds_critical'):
-		    result = (float(service['dtype_ds_warning']), float(service['dtype_ds_critical']))
-	    elif service.get('service_warning') or service.get('service_critical'):
-		result = (float(service['service_warning']), float('service_critical'))
-	    elif service.get('warning') or service.get('critical'):
-		    if service.get('service') in wimax_mod_services:
-			    result = (map(lambda x: x.strip(), service['warning'].split(',')), (map(lambda x: x.strip(), service['critical'].split(','))))
-		    else:
-			    result = (int(service['warning']), int(service['critical']))
+        if service.get('dtype_ds_warning') or service.get('dtype_ds_critical'):
+            result = (float(service['dtype_ds_warning']), float(service['dtype_ds_critical']))
+        elif service.get('service_warning') or service.get('service_critical'):
+            result = (float(service['service_warning']), float('service_critical'))
+        elif service.get('warning') or service.get('critical'):
+            if service.get('service') in wimax_mod_services:
+                result = (map(lambda x: x.strip(), service['warning'].split(',')),
+                          (map(lambda x: x.strip(), service['critical'].split(','))))
+            else:
+                result = (int(service['warning']), int(service['critical']))
     except Exception:
-	    pass
+        pass
 
     return result
 
 
 def prepare_priority_checks():
-        global db
-	data_values = []
-	query = """
+    global db
+    data_values = []
+    query = """
 	SELECT DISTINCT service_name, device_name, warning, critical
 	FROM service_deviceserviceconfiguration
 	"""
-	logger.debug('mysql db: ' + pformat(db))
-        try:
-		cur = db.cursor()
-		cur.execute(query)
-	        data_values = dict_rows(cur)
-		cur.close()
-	except Exception, exp:
-		logger.error('Exception in priority_checks: ' + pformat(exp)) 
-	data_values = filter(lambda d: d['warning'] or d['critical'], data_values)
-	processed_values = []
-	for entry in data_values:
-		if entry.get('service_name') in wimax_mod_services:
-			processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (map(str, entry['warning'].replace(' ', '').split(',')), map(str, entry['critical'].replace(' ', '').split(',')))))
-		else:
-			processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (entry.get('warning'), entry.get('critical'))))
-	#print processed_values
+    logger.debug('mysql db: ' + pformat(db))
+    try:
+        cur = db.cursor()
+        cur.execute(query)
+        data_values = dict_rows(cur)
+        cur.close()
+    except Exception, exp:
+        logger.error('Exception in priority_checks: ' + pformat(exp))
+    data_values = filter(lambda d: d['warning'] or d['critical'], data_values)
+    processed_values = []
+    for entry in data_values:
+        if entry.get('service_name') in wimax_mod_services:
+            processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (
+            map(str, entry['warning'].replace(' ', '').split(',')),
+            map(str, entry['critical'].replace(' ', '').split(',')))))
+        else:
+            processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None,
+                                     (entry.get('warning'), entry.get('critical'))))
+    #print processed_values
 
-	return processed_values
+    return processed_values
+
 
 def dict_rows(cur):
-   desc = cur.description
-   return [
+    desc = cur.description
+    return [
         dict(zip([col[0] for col in desc], row))
         for row in cur.fetchall()
-   ]
+    ]
 
 
 def ping_settings():
     pass
 
+
 def check_settings():
     pass
 
+
 def pmp_ss_settings():
     pass
+
 
 if __name__ == '__main__':
     main()
