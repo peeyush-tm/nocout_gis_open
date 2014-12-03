@@ -236,7 +236,7 @@
                                                             {{ threshold_configuration_form.range10_end }}
                                                             <select class=" select2select " id="id_icon_settings10" name="icon_settings10" style="margin-left:22px; width:37%"><option value="" selected="selected">Select</option>
                                                             {% for icon in icon_settings %}
-                                                            <option value="{{ icon.upload_image.name }}" {% if icon.upload_image.name == icon_details_selected.range_10 %}selected=selected{% endif %}>{{ icon.alias }}</option>
+                                                            <option value="{{ icon.upload_image.name }}" {% if icon.upload_image.name == icon_details_selected.range_0 %}selected=selected{% endif %}>{{ icon.alias }}</option>
                                                             {% endfor %}
                                                             </select>
                                                         </div>
