@@ -2016,14 +2016,14 @@ class ThematicSettingsList(PermissionsRequiredMixin, ListView):
         datatable_headers = [
             {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
             {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
-            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
-            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto'},]
+            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto',     'bSortable': False},
+            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto',     'bSortable': False},]
 
         # user_id = self.request.user.id
 
         #if user is superadmin or gisadmin
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -2265,7 +2265,7 @@ class Update_User_Thematic_Setting(View):
             )
             uts.save()
             self.result['success']=1
-            self.result['message']='Thematic Setting Bind to User Successfully'
+            self.result['message']='Service Thematic Setting Bind to User Successfully'
             self.result['data']['objects']['username']=self.request.user.userprofile.username
             self.result['data']['objects']['thematic_setting_name']= ThematicSettings.objects.get(id=int(thematic_setting_id)).name
 
@@ -2288,14 +2288,14 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
         datatable_headers = [
             {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
             {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
-            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
-            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto'},]
+            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto',   'bSortable': False},
+            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto',   'bSortable': False},]
 
         # user_id = self.request.user.id
 
         #if user is superadmin or gisadmin
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
 
@@ -2487,12 +2487,19 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         form = ServiceThematicSettingsForm(instance=self.object)
         icon_settings = IconSettings.objects.all()
         threshold_configuration_form = ServiceThresholdConfigurationForm(instance=self.object.threshold_template)
+        icon_details = list()
+        icon_details_selected = dict()
+        if form.instance.icon_settings:
+            form.instance.icon_settings = eval(form.instance.icon_settings)
+            for icon_setting in form.instance.icon_settings:
+                icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
         live_polling_settings_form = ServiceLivePollingSettingsForm(instance=self.object.threshold_template.live_polling_template)
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
-                                  icon_settings=icon_settings))
+                                  icon_settings=icon_settings,
+                                  icon_details_selected=icon_details_selected,))
 
     def post(self, request, *args, **kwargs):
         """

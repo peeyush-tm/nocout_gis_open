@@ -107,7 +107,7 @@
                     dataType:"json",
                     success:function(result){
                         if(result.success){
-                            dialog_box_message= "Thematic Setting (0) is assigned to User: (1)".replace('(0)', result.data.objects.thematic_setting_name)
+                            dialog_box_message= "Service Thematic Setting (0) is assigned to User: (1)".replace('(0)', result.data.objects.thematic_setting_name)
                             dialog_box_message= dialog_box_message.replace('(1)', result.data.objects.username);
                             bootbox.dialog({
                                 message:dialog_box_message,
