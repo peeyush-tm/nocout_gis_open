@@ -142,7 +142,7 @@ def auth_view(request):
                 user_profile.update(user_invalid_attempt=0, is_active=True)
                 user.is_active = True
 
-    if user is not None and user.is_active and (not already_logged or password_expire):
+    if user is not None and user.is_active and (not already_logged or password_expire) and not user.userprofile.is_deleted:
         auth.login(request, user)
         next_url = '/' + request.POST.get('next', 'home/')
         key_from_cookie = request.session.session_key
@@ -165,7 +165,7 @@ def auth_view(request):
             }
         }
 
-    elif user is not None and user.is_active:
+    elif user is not None and user.is_active and not user.userprofile.is_deleted:
 
         auth.login(request, user)
         next_url = '/' + request.POST.get('next', 'home/')
@@ -207,6 +207,27 @@ def auth_view(request):
             "data": {
                 "meta": {},
                 "objects": objects_values
+            }
+        }
+
+    elif user is not None and user.userprofile.is_deleted:
+        # values to store in user audit logs
+        user_audit = {
+            "userid": User.objects.get(pk=1).id,
+            "module": "auth",
+            "action": "a deleted user is loggedin from IP address %s, "
+                    % (get_client_ip(request))
+        }
+
+        result = {
+            "success": 0,  # 0 - fail, 1 - success, 2 - exception
+            "message": "Account Deleted By Administrator",
+            "data": {
+                "meta": {},
+                "objects": {
+                    "reason": "The account has been deleted by the application administrator. \
+                                            Please contact application administrator to continue.",
+                }
             }
         }
 
