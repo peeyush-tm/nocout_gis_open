@@ -2505,7 +2505,7 @@ class GISPerfData(View):
                 - 'ts_type' (unicode) - thematic settings type i.e 'ping' or 'normal'
 
             :Returns:
-               - 'performance_value' (unicode) - performance value, e.g. 6.0082333333
+                - 'performance_value' (unicode) - performance value, e.g. 6.0082333333
         """
 
         # device name
