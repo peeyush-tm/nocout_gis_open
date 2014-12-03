@@ -2371,8 +2371,8 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
                 threshold_template=threshold_config.name,
                 icon_settings= full_string,
                 user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
-                actions='<a href="/serv_thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/serv_thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                actions='<a href="/serv_thematic_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return json_data
 
 
