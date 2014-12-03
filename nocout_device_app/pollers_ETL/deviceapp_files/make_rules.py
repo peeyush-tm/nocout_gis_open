@@ -1,5 +1,5 @@
 from mysql_connection import mysql_conn
-from pprint import pformat, pprint
+from pprint import pformat
 from nocout_logger import nocout_log
 
 logger = nocout_log()
@@ -61,17 +61,11 @@ def main():
     global default_snmp_communities
     get_settings()
 
-    #pprint(ping_levels_db)
-    #pprint(default_checks)
-    #pprint(snmp_communities_db)
-    #pprint(snmp_ports_db)
 
     if len(snmp_communities_db):
         default_snmp_communities = snmp_communities_db
     if len(snmp_ports_db):
         default_snmp_ports = snmp_ports_db
-    #pprint(default_snmp_ports)
-    #pprint(default_snmp_communities)
     with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
         f.write("# encoding: utf-8")
         f.write("\n\n\n")

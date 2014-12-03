@@ -5,20 +5,17 @@ from nocout_logger import nocout_log
 logger = nocout_log()
 
 
-db = None
 all_hosts = []
 ipaddresses = {}
 host_attributes = {}
 
 
 def main():
-	global db
 	global all_hosts
 	global ipaddresses
 	global host_attributes
 	# This file contains device names, to be updated in configuration db
 	open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
-	db = mysql_conn()
 	try:
 		make_BS_data()
 	except Exception, exp:
@@ -32,7 +29,7 @@ def main():
 
 def make_BS_data():
 	global all_hosts
-	global db
+	db = mysql_conn()
 	query = """
 	select 
         DISTINCT(device_device.ip_address),
@@ -60,6 +57,7 @@ def make_BS_data():
 	cur.execute(query) 
 	data = cur.fetchall() 
 	cur.close() 
+	db.close()
         processed = []
 	hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 	for device in data:
@@ -91,8 +89,8 @@ def write_data():
 
 
 def make_SS_data():
-	global db
 	global all_hosts
+	db = mysql_conn()
         query = """
         select 
 	distinct(SSIP),
@@ -145,6 +143,7 @@ def make_SS_data():
 	cur.execute(query)
 	data = cur.fetchall()
 	cur.close()
+	db.close()
         processed = []
 	hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 	for device in data:
