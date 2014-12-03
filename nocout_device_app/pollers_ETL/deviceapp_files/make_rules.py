@@ -156,17 +156,16 @@ def get_settings():
     default_checks = prepare_priority_checks()
     query = prepare_query()
     db = mysql_conn()
-    cur = db.cursor()
     try:
+        cur = db.cursor()
         cur.execute(query)
         data = dict_rows(cur)
+        cur.close()
         #logger.debug('data in get_settings: ' + pformat(data))
     except Exception, exp:
         logger.error('Exception in get_settings: ' + pformat(exp))
-        cur.close()
         db.close()
     finally:
-        cur.close()
         db.close()
 
     processed = []
