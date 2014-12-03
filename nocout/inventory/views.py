@@ -6295,7 +6295,7 @@ class GisWizardSectorDetailView(SectorDetail):
                         context['customer'] = circuit.customer
 
         if self.kwargs['selected_technology'] == '2':
-            context['sector_text'] = 'PTP'
+            context['sector_text'] = 'Near End'
         else:
             context['sector_text'] = 'Sector'
 
@@ -6874,8 +6874,31 @@ class GisWizardSubStationUpdateView(GisWizardSubStationMixin, SubStationUpdate):
 class GisWizardPTPListView(SectorList):
     template_name = 'gis_wizard/wizard_list_ptp.html'
 
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardPTPListView, self).get_context_data(**kwargs)
+
+        datatable_headers = [
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Near End IP', 'sWidth': 'auto', },
+            {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on__country', 'sTitle': 'Country', 'sWidth': 'auto', 'bSortable': False, },
+            {'mData': 'sector_configured_on__state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': False, },
+            {'mData': 'sector_configured_on__city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False, },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
+        ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
 
 class GisWizardPTPListingTable(SectorListingTable):
+    columns = ['alias', 'sector_configured_on__ip_address', 'base_station__alias', 'antenna__alias', 'mrc',
+            'sector_configured_on__country', 'sector_configured_on__state',
+            'sector_configured_on__city', 'description']
+    order_columns = ['alias', 'sector_configured_on__ip_address', 'base_station__alias', 'antenna__alias', 'mrc', 'description']
 
     def get_initial_queryset(self):
         qs=super(GisWizardPTPListingTable, self).get_initial_queryset()
@@ -6892,33 +6915,45 @@ class GisWizardPTPListingTable(SectorListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            # modify device name format in datatable i.e. <device alias> (<device ip>)
-            try:
-                if 'sector_configured_on__id' in dct:
-                    sector_device_alias = Device.objects.get(id=dct['sector_configured_on__id']).device_alias
-                    sector_device_ip = Device.objects.get(id=dct['sector_configured_on__id']).ip_address
-                    dct['sector_configured_on__id'] = "{} ({})".format(sector_device_alias, sector_device_ip)
-            except Exception as e:
-                logger.info("Sector Configured On not present. Exception: ", e.message)
+            dct['sector_configured_on__country'] = Country.objects.get(id=dct['sector_configured_on__country']).country_name
+            dct['sector_configured_on__state'] = State.objects.get(id=dct['sector_configured_on__state']).state_name
+            dct['sector_configured_on__city'] = City.objects.get(id=dct['sector_configured_on__city']).city_name
 
             device_id = dct.pop('id')
             sector = Sector.objects.get(id=device_id)
+            kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sector.bs_technology.id , 'pk': sector.id}
+            detail_action = '<a href="' + reverse('gis-wizard-sector-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
             if self.request.user.has_perm('inventory.change_sector'):
                 edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sector.base_station.id, sector.bs_technology.id , device_id)
             else:
                 edit_action = ''
-            if self.request.user.has_perm('inventory.delete_sector'):
-                delete_action = ''#'<a href="/sector/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
-            else:
-                delete_action = ''
-            if edit_action or delete_action:
-                dct.update(actions= edit_action+delete_action)
+            dct.update(actions=detail_action+edit_action)
         return json_data
 
 
 class GisWizardSubStationListView(SubStationList):
-
     template_name = 'gis_wizard/wizard_list_sub-station.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardSubStationListView, self).get_context_data(**kwargs)
+
+        datatable_headers = [
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
+            {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
+        ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
 
 
 class GisWizardSubStationListingTable(SubStationListingTable):
@@ -6951,15 +6986,14 @@ class GisWizardSubStationListingTable(SubStationListingTable):
             dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             device_id = dct.pop('id')
             sub_station = SubStation.objects.get(id=device_id)
-            if self.request.user.has_perm('inventory.change_substation') and len(sub_station.circuit_set.all())==1:
-                edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sub_station.circuit_set.all()[0].sector.base_station.id, sub_station.circuit_set.all()[0].sector.bs_technology.id, sub_station.circuit_set.all()[0].sector.id, device_id)
-            else:
-                edit_action = ''
-            if self.request.user.has_perm('inventory.delete_substation'):
-                delete_action = '<a href="/sub_station/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
-            else:
-                delete_action = ''
-            if edit_action or delete_action:
-                dct.update(actions= edit_action+delete_action)
+            detail_action = ''
+            edit_action = ''
+            if len(sub_station.circuit_set.all()) == 1 and sub_station.circuit_set.all()[0].sector:
+                sector = sub_station.circuit_set.all()[0].sector
+                kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sector.bs_technology.id, 'sector_pk': sector.id, 'pk': device_id}
+                detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
+                if self.request.user.has_perm('inventory.change_substation'):
+                    edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sub_station.circuit_set.all()[0].sector.base_station.id, sub_station.circuit_set.all()[0].sector.bs_technology.id, sub_station.circuit_set.all()[0].sector.id, device_id)
+            dct.update(actions=detail_action+edit_action)
         return json_data
 
