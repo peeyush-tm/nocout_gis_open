@@ -30,17 +30,17 @@
                         <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Configured On </td>
                         <td>{{ object.sector_configured_on }}</td>
                     </tr>
-                    <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} Configured On Port </td>
-                        <td>{{ object.sector_configured_on_port }}</td>
-                    </tr>
                     {% if selected_technology == '3' %}
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} DR Site </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sector Configured On Port </td>
+                        <td>{{ object.sector_configured_on_port }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sector DR Site </td>
                         <td>{{ object.dr_site }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> {{ sector_text }} MRC </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sector MRC </td>
                         <td>{{ object.mrc }}</td>
                     </tr>
                     {% endif %}

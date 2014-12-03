@@ -1591,6 +1591,7 @@ class WizardSectorForm(SectorForm):
             self.fields.pop('sector_id')
 
         if self.technology != 'WiMAX':
+            self.fields.pop('sector_configured_on_port')
             self.fields.pop('dr_site')
             self.fields.pop('mrc')
 
