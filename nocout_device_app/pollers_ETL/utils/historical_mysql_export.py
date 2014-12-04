@@ -10,9 +10,24 @@ from nocout_site_name import *
 import mysql.connector
 from mysql.connector import connect
 
+mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+
+
+def read_data_from_mongo(start_time, end_time, configs, t_format=None):
+	db = None
+	docs = []
+	db = mongo_module.mongo_conn(
+			host=configs.get('host'),
+			port=int(configs.get('port')),
+			db_name='nocout') 
+	if db:
+		cur = db[source_perf_table].find({'sys_timestamp': {'$gt': start_time, '$lt': end_time}})
+		docs = list(cur)
+	return docs
+
 
 def mysql_export(table, db, data_values):
-	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], e.get('severity'), e.get('current_value'), e['min'], e['max'], e['avg'], None, None, e['time'].strftime('%s'), e['time'].strftime('%s')), data_values)
+	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], e.get('severity'), e.get('current_value'), e['min'], e['max'], e['avg'], e['war'], e['cric'], e['time'].strftime('%s'), e['check_time']), data_values)
 
 	insert_query = "INSERT INTO %s" % table
 	insert_query += """
@@ -27,6 +42,7 @@ def mysql_export(table, db, data_values):
 		raise mysql.connector.Error, err
 	db.commit()
 	cursor.close()
+	db.close()
 
 
 def mysql_conn(mysql_configs=None, db=None):
@@ -49,8 +65,11 @@ def read_data(table, db, start_time, end_time):
 			cursor = db.cursor()
 			cursor.execute(query)
 			docs = dict_rows(cursor)
+			cursor.close()
 		except mysql.connector.Error as err:
 			raise mysql.connector.Error, err
+		finally:
+			db.close
 	
 	return docs
 

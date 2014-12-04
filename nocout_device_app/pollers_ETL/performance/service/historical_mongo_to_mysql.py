@@ -61,6 +61,7 @@ def mysql_main():
 	# Range to read data from mongo historical
 	end_time = datetime.now()
 	start_time = end_time - timedelta(hours=hours)
+	start_time, end_time = start_time - timedelta(minutes=1), end_time + timedelta(minutes=1)
 	# First read data from historical mongo database
 	docs = read_historical_mongo_data(start_time, end_time, configs=mongo_configs)
 	print '-- Doc Length --'
@@ -71,7 +72,7 @@ def mysql_main():
 
 
 def mysql_export(table, db, data_values):
-	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], None, None, e['min'], e['max'], e['avg'], None, None, e['time'].strftime('%s'), e['time'].strftime('%s')), data_values)
+	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], e['severity'], e['current_value'], e['min'], e['max'], e['avg'], e['war'], e['cric'], e['time'].strftime('%s'), e['time'].strftime('%s')), data_values)
 
 	insert_query = "INSERT INTO %s" % table
 	insert_query += """
