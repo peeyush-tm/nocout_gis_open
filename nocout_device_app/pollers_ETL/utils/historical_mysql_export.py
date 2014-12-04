@@ -8,12 +8,13 @@ historical mysql, using bulk insert.
 
 from nocout_site_name import *
 import mysql.connector
+import imp
 from mysql.connector import connect
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 
 
-def read_data_from_mongo(start_time, end_time, configs, t_format=None):
+def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_format=None):
 	db = None
 	docs = []
 	db = mongo_module.mongo_conn(

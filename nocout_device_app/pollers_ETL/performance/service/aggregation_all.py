@@ -23,6 +23,7 @@ import sys
 from datetime import datetime, timedelta
 from pprint import pprint
 import collections
+from operator import itemgetter
 import optparse
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -83,7 +84,7 @@ def quantify_perf_data(aggregated_data_values=[]):
 					key=itemgetter('sys_timestamp'))
 	elif read_from == 'mongodb':
 		# Read data from mongodb, performance live data
-		data_values = sorted(read_data_from_mongo(start_time, end_time, mongo_configs), 
+		data_values = sorted(mysql_migration_mod.read_data_from_mongo(source_perf_table, start_time, end_time, mongo_configs), 
 				key=itemgetter('sys_timestamp'))
 	print '## Docs len ##'
 	print len(data_values)
