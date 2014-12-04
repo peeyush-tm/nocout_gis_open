@@ -76,21 +76,32 @@ def get_dashboard_status_range_counter(dashboard_setting, service_status_results
     range_counter = dict()
     for i in range(1, 11):
         range_counter.update({'range%d' %i: 0})
+    range_counter.update({'unknown': 0})
 
     for result in service_status_results:
+        is_unknown_range = True
         for i in range(1, 11):
             start_range = getattr(dashboard_setting, 'range%d_start' %i)
             end_range = getattr(dashboard_setting, 'range%d_end' %i)
 
             # dashboard type is numeric and start_range and end_range exists to compare result.
             if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
-                if float(start_range) <= float(result['current_value']) <= float(end_range):
-                    range_counter['range%d' %i] += 1
+                try:
+                    if float(start_range) <= float(result['current_value']) <= float(end_range):
+                        range_counter['range%d' %i] += 1
+                        is_unknown_range = False
+                except ValueError as value_error:
+                    range_counter['unknown'] += 1
+                    is_unknown_range = False
+                    break
 
             # dashboard type is string and start_range exists to compare result.
             elif dashboard_setting.dashboard_type == 'STR' and start_range:
                 if result['current_value'].lower() in start_range.lower():
                     range_counter['range%d' %i] += 1
+                    is_unknown_range = False
+        if is_unknown_range:
+            range_counter['unknown'] += 1
 
     return range_counter
 
@@ -111,6 +122,8 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
             colors.append(color)
         else:
             colors.append("#000000")
+    chart_data.append(['Unknown', range_counter['unknown']])
+    colors.append("#d3d3d3")
 
     response_dict = {
         "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
