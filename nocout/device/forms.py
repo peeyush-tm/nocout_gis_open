@@ -893,3 +893,25 @@ class CityForm(forms.ModelForm):
         """
         model = City
         fields = ('state', 'city_name',)
+
+
+#**************************************** GIS Wizard Forms ****************************************#
+
+class WizardDeviceTypeForm(DeviceTypeForm):
+    """
+    Class Based View Base Station Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(WizardDeviceTypeForm, self).__init__(*args, **kwargs)
+
+        self.fields.pop('service')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = DeviceType
+        fields = ('name', 'alias', 'device_port', 'service', 'packets', 'timeout', 'normal_check_interval',
+            'rta_warning', 'rta_critical', 'pl_warning', 'agent_tag', 'device_icon', 'device_gmap_icon',
+        )

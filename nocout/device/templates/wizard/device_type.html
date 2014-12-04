@@ -1,0 +1,99 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+
+{% block content_title %}Edit Device Type{% endblock %}
+{% block content_description %}Edit device type{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> GIS WIZARD: DEVICE TYPE</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+
+                <!-- :START: Radio Buttons to choose existing or create new -->
+                <div class="form-group">
+                    <label class="control-label pull-left">Device Type &nbsp;&nbsp;&nbsp;</label>
+                    <div class="pull-left">
+
+                        <label class="radio-inline">
+                            <input type="radio" id="id_base_station_radio" class="radioField" value="existing" name="base_station_radio"> Choose Existing
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="id_base_station_radio" class="radioField" value="new" name="base_station_radio"> Create New
+                        </label>
+                    </div>
+                </div><br/><br/>
+                <div class="form-group">
+                    <div class="col-sm-9">
+                        <div class="col-md-8">
+                            <input class=" tip-focus form-control" data-placement="right" data-toggle="tooltip" id="id_base_station" name="base_station" title="" type="hidden" value="{% if object %}{{ object.id }}{% endif %}"/>
+                        </div>
+                    </div>
+                </div>
+                {% if object or select_view %}
+                </br>
+                </br>
+                {% endif %}
+                <!-- :END: Radio Buttons to choose existing or create new -->
+
+                {% if form %}
+                    <form id="id_base_station_form" action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                        {% include "wizard/form.html" with form=form only %}
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Next</button>
+                                &nbsp;
+                                <button type="submit" id="id_update_and_show" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Show</button>
+                                {% if skip_url %}
+                                &nbsp;
+                                <button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ skip_url }}')"><i class="fa fa-times"></i>Skip</button>
+                                {% endif %}
+                                &nbsp;
+                                {% url 'device_type_list' as cancel_url %}
+                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('{{ cancel_url }}')"><i class="fa fa-times"></i>Cancel</button>
+                            </div>
+                        </div>
+                    </form>
+                {% endif %}
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
+        <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function(){
+            // Changing labels of form fields
+            $("label[for=id_rta_warning]").text('Latency Warning');
+            $("label[for=id_rta_critical]").text('Latency Critical');
+            $("label[for=id_pl_warning]").text('PD % Warning');
+            $("label[for=id_pl_critical]").text('PD % Critical');
+            $("label[for=id_packets]").text('Packet Count');
+            $("label[for=id_timeout]").text('Timeout (ms)');
+
+            // modify image upload field
+            var device_icon = "#id_device_icon";
+            var device_gmap_icon = "#id_device_gmap_icon";
+            $(device_icon).bootstrapFileInput();
+            $(device_icon).prev().text("Search for a file to add");
+            $(device_gmap_icon).bootstrapFileInput();
+            $(device_gmap_icon).prev().text("Search for a file to add");
+
+            // Initialize the select2 selectbox.
+            $(".select2select").select2();
+        })
+
+    </script>
+{% endblock %}
