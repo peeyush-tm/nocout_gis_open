@@ -525,8 +525,15 @@ function devicePlottingClass_gmap() {
 	            	/* When zoom level is greater than 8 show lines */
 	            	if(mapInstance.getZoom() > 7) {
 
-	            		// Reset Flag
-            			isPerfCallStopped = 0;
+	            		// If zoom level is greate than 10 then start perf calling
+	            		if(mapInstance.getZoom() > 10) {
+		            		// Reset Perf calling Flag
+	            			isPerfCallStopped = 0;
+            			} else {
+            				// Set Perf calling Flag
+	            			isPerfCallStopped = 1;
+	            			isPerfCallStarted = 0;
+            			}
 
 	            		if(mapInstance.getZoom() < 12 || searchResultData.length > 0) {
 	            			var states_with_bounds = state_lat_lon_db.where(function(obj) {
@@ -661,7 +668,7 @@ function devicePlottingClass_gmap() {
 	    					gmap_self.showLinesInBounds();
 							gmap_self.showSectorPolygonInBounds();
 	            		}
-
+	            		
 	            		// Start Performance API calling
 	            		if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
 							var bs_id_list = getMarkerInCurrentBound();
@@ -4851,7 +4858,7 @@ function devicePlottingClass_gmap() {
     	var selected_technology = $("#polling_tech").val(),
     		pathArray = [],
 			polygon = "",
-			service_type = $("#isPing")[0].checked ? "ping" : "other";
+			service_type = $("#isPing")[0].checked ? "ping" : "normal";
 
     	/*Re-Initialize the polling*/
     	networkMapInstance.initLivePolling();
