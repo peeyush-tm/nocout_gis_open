@@ -2,23 +2,23 @@
 ## Live Mongodb --> Historical Mongodb
 
 # Bihourly scripts
-*/30 * * * * /usr/bin/python nocout/performance/service/service_mongo_aggregation_half_hourly.py -t 30 -s network_perf -d performance_performancenetworkbihourly
-*/30 * * * * /usr/bin/python nocout/performance/service/service_mongo_aggregation_half_hourly.py -t 30 -s service_perf -d performance_performanceservicebihourly
+*/30 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s network_perf -d performance_performancenetworkbihourly
+*/30 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s service_perf -d performance_performanceservicebihourly
 
 # Hourly scripts
-0 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 1 -f hourly -s performance_performancenetworkbihourly -d performance_performancenetworkhourly
-0 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 1 -f hourly -s performance_performanceservicebihourly -d performance_performanceservicehourly
+0 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 1 -f hourly -s performance_performancenetworkbihourly -d performance_performancenetworkhourly
+0 * * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 1 -f hourly -s performance_performanceservicebihourly -d performance_performanceservicehourly
 
 # Daily scripts
-0 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 24 -f daily -s performance_performancenetworkhourly -d performance_performancenetworkdaily
-0 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -t 24 -f daily -s performance_performanceservicehourly -d performance_performanceservicedaily
+0 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 24 -f daily -s performance_performancenetworkhourly -d performance_performancenetworkdaily
+0 23 * * * /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 24 -f daily -s performance_performanceservicehourly -d performance_performanceservicedaily
 0 23 * * * /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 24 -f daily -s status_perf -d interface_perf_daily
 0 23 * * * /usr/bin/python nocout/performance/inventory/inventory_mongo_aggregation_daily.py
 
 # Weekly scripts
-0 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -t 168 -f weekly -s performance_performancenetworkdaily -d performance_performancenetworkweekly
-0 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -t 168 -f weekly -s performance_performanceservicedaily -d performance_performanceserviceweekly
-0 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -t 168 -f weekly -s performance_performancestatusdaily -d performance_performancestatusweekly
+0 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 168 -f weekly -s performance_performancenetworkdaily -d performance_performancenetworkweekly
+0 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 168 -f weekly -s performance_performanceservicedaily -d performance_performanceserviceweekly
+0 23 * * 0 /usr/bin/python nocout/performance/service/aggregation_all.py -r mysql -t 168 -f weekly -s performance_performancestatusdaily -d performance_performancestatusweekly
 0 23 * * 0 /usr/bin/python nocout/performance/interface/mongo_aggregation_freq_based_base.py -t 168 -f weekly -s nocout_inventory_service_perf_data -d inventory_perf_weekly
 
 

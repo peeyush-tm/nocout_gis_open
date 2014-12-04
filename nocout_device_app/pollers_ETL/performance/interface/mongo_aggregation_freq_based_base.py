@@ -118,6 +118,8 @@ def quantify_data_based_on_freq(docs):
 	host, ip_address = docs[0].get('device_name'), docs[0].get('ip_address')
 	ds, service = docs[0].get('data_source'), docs[0].get('service_name')
 	site = docs[0].get('site_name')
+	war, cric = docs[0].get('warning_threshold'), docs[0].get('critical_threshold')
+	check_time = docs[0].get('check_timestamp')
 	# Convert the time into datetime object
 	time = datetime.fromtimestamp(docs[0].get('sys_timestamp')) 
 	# Pivot the time to 00:00:00
@@ -155,7 +157,10 @@ def quantify_data_based_on_freq(docs):
 		'time': time,
 		'min': highest_freq_val,
 		'max': lowest_fre_val,
-		'avg': None
+		'avg': None,
+		'war': war,
+		'cric': cric,
+		'check_time': check_time
 		})
 	#upsert_aggregated_data(find_query, aggr_data)
 	aggregated_data_values.append(aggr_data)

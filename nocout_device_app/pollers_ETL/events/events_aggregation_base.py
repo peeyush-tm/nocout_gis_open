@@ -67,9 +67,8 @@ def read_data_from_mongo(start_time, end_time, configs):
 			host=configs.get('host'),
 			port=int(configs.get('port')),
 			db_name='nocout')
-	end_time = int(datetime.now().strftime('%s'))
 	if db:
-		cur = db[source_perf_table].find({'sys_timestamp': {'$lt': end_time}})
+		cur = db[source_perf_table].find({'sys_timestamp': {'$gt': start_time, '$lt': end_time}})
 		docs = list(cur)
 	return docs
 
@@ -191,8 +190,9 @@ def find_existing_entry(find_query, aggregated_data_values):
        
         existing_doc = []
 	existing_doc_index = None
+	find_values = set(find_query.values())
 	for i in xrange(len(aggregated_data_values)):
-		if set(find_query.values()) <= set(aggregated_data_values[i].values()):
+		if find_values <= set(aggregated_data_values[i].values()):
 			existing_doc = aggregated_data_values[i:i+1]
 			existing_doc_index = i
 			break
