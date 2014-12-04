@@ -974,6 +974,15 @@ class BulkFetchLPDataApi(View):
                         # comparing threshold values to get icon
                         try:
                             if len(device_value):
+                                print "*************************** device_value - ", type(device_value), device_value
+                                print "*************************** service_type - ", type(service_type), service_type
+                                print "*************************** th_ranges - ", type(th_ranges), th_ranges
+                                print "*************************** th_icon_settings - ", type(th_icon_settings), th_icon_settings
+                                print "*************************** svc_type - ", type(svc_type), svc_type
+
+                                # fetching number from string for e.g. 4 from 'icon_settings4'
+                                device_value = ''.join(x for x in device_value if x.isdigit())
+
                                 # live polled value of device service
                                 value = ast.literal_eval(str(device_value))
 
@@ -990,6 +999,8 @@ class BulkFetchLPDataApi(View):
                                     icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
                                 else:
                                     pass
+                                print "*************************** icon - ", type(icon), icon
+
                         except Exception as e:
                             logger.info("Icon not exist. Exception: ", e.message)
 
