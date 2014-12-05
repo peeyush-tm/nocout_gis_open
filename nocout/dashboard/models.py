@@ -3,6 +3,7 @@ from django.db import models
 from device.models import DeviceTechnology
 from dashboard.config import dashboards
 
+import datetime, time
 
 PAGE_NAME_CHOICES = (
     ('rf_dashboard', 'RF Performance Dashboard'),
@@ -75,3 +76,62 @@ class DashboardSetting(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+REPORT_CHOICES = (
+    ('MFR', 'Monthly Fault Report'),
+    ('DFR', 'Daily Fault Report'),
+)
+
+
+class MFRDFRReports(models.Model):
+    """
+    Upload model for MFR DFR
+    """
+        # function to modify name and path of uploaded file
+    def uploaded_file_name(instance, filename):
+        timestamp = time.time()
+        year_month_date = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+        fname = "{}_{}".format(filename, year_month_date)
+        # modified path where file is uploaded
+        path = "uploaded/FaultReports"
+
+        return '{}/{}/{}'.format(path, year_month_date, fname)
+
+    name = models.CharField('Report Name', max_length=128)
+    type = models.CharField('Report Type', max_length=8, choices=REPORT_CHOICES)
+    is_processed = models.IntegerField('Report Processing Details', default=0)
+    process_for = models.DateField('User Tagged Report Date or Month', blank=True, default=datetime.datetime.now)
+    upload_to = models.FileField('Uploaded File', upload_to=uploaded_file_name, max_length=512)
+    absolute_path = models.TextField('Absolute File Path on OS')
+
+    def __unicode__(self):
+        return self.name
+
+
+class MFRProcessed(models.Model):
+    """
+    Processed Report Details
+    """
+    processed_for = models.ForeignKey(MFRDFRReports)  # for which report this is processed for
+    processed_on = models.DateField('Processed Date and Time', blank=True, default=datetime.datetime.now)
+    processed_key = models.CharField('Key for Processing', max_length=128)
+    processed_value = models.CharField('Value of Processing', max_length=64)
+
+    def __unicode__(self):
+        return self.processed_for.name
+
+
+class DFRProcessed(models.Model):
+    """
+    Processed Report Details
+    """
+    processed_for = models.ForeignKey(MFRDFRReports)  # for which report this is processed for
+    processed_on = models.DateField('Processed Date and Time', blank=True, default=datetime.datetime.now)
+    processed_key = models.CharField('Key for Processing', max_length=128)
+    processed_value = models.CharField('Value of Processing', max_length=64)
+    processed_report_path = models.TextField('Absolute File Path on OS')
+
+    def __unicode__(self):
+        return self.processed_for.name
