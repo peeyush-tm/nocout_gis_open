@@ -16,7 +16,8 @@ from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFields
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm, DevicePortForm, DeviceFrequencyForm, \
     CountryForm, StateForm, CityForm, DeviceTypeServiceCreateFormset, DeviceTypeServiceUpdateFormset, \
-    WizardDeviceTypeForm
+    WizardDeviceTypeForm, WizardDeviceTypeServiceForm, DeviceTypeServiceDataSourceCreateFormset, \
+    DeviceTypeServiceDataSourceUpdateFormset
 from nocout.utils.util import DictDiffer
 from django.http.response import HttpResponseRedirect
 from organization.models import Organization
@@ -3456,8 +3457,104 @@ class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, Ba
             dct.update(service__alias=obj.service.alias)
             dct.update(parameter__parameter_description=obj.parameter.parameter_description)
             dct.update(service_data_sources__alias=', '.join(list(obj.service_data_sources.values_list('alias', flat=True))))
-            dct.update(actions='<a href="/wizard/service/{0}/detail"><i class="fa fa-list-alt text-info"></i></a>\
-                <a href="/wizard/service/{0}/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/wizard/service/{0}/delete"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj.id))
+            dct.update(actions='<a href="/wizard/device-type/{0}/service/{1}/detail"><i class="fa fa-list-alt text-info"></i></a>\
+                <a href="/wizard/device-type/{0}/service/{1}/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/wizard/device-type/{0}/service/{1}/delete"><i class="fa fa-trash-o text-danger"></i></a>'.format(self.kwargs['dt_pk'],obj.id))
             json_data.append(dct)
         return json_data
+
+
+class DeviceTypeServiceUpdateView(PermissionsRequiredMixin, UpdateView):
+    """
+    Render device type update view
+    """
+    model = DeviceTypeService
+    template_name = 'wizard/device_type_service_update.html'
+    form_class = WizardDeviceTypeServiceForm
+    required_permissions = ('device.change_devicetypeservice',)
+
+    def get(self, request, *args, **kwargs):
+        """
+        Handles GET requests and instantiates blank versions of the form
+        and its inline formsets.
+        """
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = WizardDeviceTypeServiceForm(instance=self.object)
+        dts_data_source_form = DeviceTypeServiceDataSourceUpdateFormset(instance=self.object, prefix='dtsds')
+        if len(dts_data_source_form):
+            dts_data_source_form = dts_data_source_form
+        else:
+            dts_data_source_form = DeviceTypeServiceDataSourceCreateFormset(prefix='dtsds')
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  dts_data_source_form=dts_data_source_form))
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests, instantiating a form instance and its inline
+        formsets with the passed POST variables and then checking them for
+        validity.
+        """
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        dts_data_source_form = DeviceTypeServiceDataSourceUpdateFormset(self.request.POST, instance=self.object, prefix='dtsds')
+        if (form.is_valid() and dts_data_source_form.is_valid()):
+            return self.form_valid(form, dts_data_source_form )
+        else:
+            return self.form_invalid(form, dts_data_source_form )
+
+
+class GisWizardDeviceTypeServiceMixin(object):
+    """
+    Render device type update view
+    """
+    def get_success_url(self):
+        if self.request.GET.get('show', None):
+            return reverse('wizard-service-update', kwargs={'pk': self.object.id,
+                    'dt_pk': self.kwargs['dt_pk']})
+        else:
+            return reverse('wizard-service-data-source-list', kwargs={'dts_pk': self.object.id,
+                    'dt_pk': self.kwargs['dt_pk']})
+
+    def get_context_data(self, **kwargs):
+        context = super(GisWizardDeviceTypeServiceMixin, self).get_context_data(**kwargs)
+        if 'pk' in self.kwargs: # Update View
+
+            device_type_service = DeviceTypeService.objects.get(id=self.kwargs['pk'])
+            # skip_url = reverse('wizard-service-data-source-list', kwargs={'dts_pk': self.object.id,
+            #         'dt_pk': self.kwargs['dt_pk']})
+
+            save_text = 'Update'
+            # context['skip_url'] = skip_url
+        else: # Create View
+            save_text = 'Save'
+
+        context['save_text'] = save_text
+        return context
+
+    def form_valid(self, form, dts_data_source_form):
+
+        """
+        Called if all forms are valid. Update the Device Type instance along with
+        associated Device Type Services and then redirects to a
+        success page.
+        """
+        self.object = form.save()
+        dts_data_source_form.instance = self.object
+        dts_data_source_form.save()
+        return super(GisWizardDeviceTypeServiceMixin, self).form_valid(form)
+
+    def form_invalid(self, form, dts_data_source_form):
+        """
+        Called if a form is invalid. Re-renders the context data with the
+        data-filled forms and errors.
+        """
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  dts_data_source_form=dts_data_source_form))
+
+
+class GisWizardServiceUpdateView(GisWizardDeviceTypeServiceMixin, DeviceTypeServiceUpdateView):
+    pass

@@ -1,0 +1,197 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+
+{% block content_title %}Edit Device Type Service{% endblock %}
+{% block content_description %}Edit device type service{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> GIS WIZARD: DEVICE TYPE SERVICE</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+
+                {% if form %}
+                    <form id="id_device_type_service_form" action="" method="post" class="form-horizontal" role="form"  enctype="multipart/form-data">{% csrf_token %}
+                        {% include "wizard/form.html" with form=form only %}
+
+                        {{ dts_data_source_form.management_form }}
+                        {% for form in dts_data_source_form %}
+                        <div class="row inline {{ dts_data_source_form.prefix }}">
+                            {{form.id}}
+                            <div class="form-group">
+                                <label for="{{ form.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>
+                                <div id="id_service_data_source" class="col-sm-9">
+                                    <div class="col-md-7">
+                                        {{form.service_data_sources}}
+                                        {{ dts_data_source_form.non_form_errors }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ form.id_for_label }}" class="col-sm-3 control-label">Warning</label>
+                                <div class="col-sm-9">
+                                    <div class="col-md-7">
+                                        {{form.warning}}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ form.id_for_label }}" class="col-sm-3 control-label">Critical</label>
+                                <div class="col-sm-9">
+                                    <div class="col-md-7">
+                                        {{form.critical}}
+                                    </div>
+                                </div>
+                            </div>
+                            {{ form.DELETE }}
+                        </div>
+                        {% endfor %}
+
+
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Next</button>
+                                &nbsp;
+                                <button type="submit" id="id_update_and_show" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Show</button>
+                                {% if skip_url %}
+                                &nbsp;
+                                <button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ skip_url }}')"><i class="fa fa-times"></i>Skip</button>
+                                {% endif %}
+                                &nbsp;
+                                {% url 'device_type_list' as cancel_url %}
+                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('{{ cancel_url }}')"><i class="fa fa-times"></i>Cancel</button>
+                            </div>
+                        </div>
+                    </form>
+                {% endif %}
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
+        <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function(){
+            $("#id_update_and_show").on("click", function(e) {
+                e.preventDefault();
+                $('#id_device_type_service_form').attr('action', "?show=True").submit();
+            });
+
+            // // Changing labels of form fields
+            // $("label[for=id_rta_warning]").text('Latency Warning');
+            // $("label[for=id_rta_critical]").text('Latency Critical');
+            // $("label[for=id_pl_warning]").text('PD % Warning');
+            // $("label[for=id_pl_critical]").text('PD % Critical');
+            // $("label[for=id_packets]").text('Packet Count');
+            // $("label[for=id_timeout]").text('Timeout (ms)');
+
+            // // modify image upload field
+            // var device_icon = "#id_device_icon";
+            // var device_gmap_icon = "#id_device_gmap_icon";
+            // $(device_icon).bootstrapFileInput();
+            // $(device_icon).prev().text("Search for a file to add");
+            // $(device_gmap_icon).bootstrapFileInput();
+            // $(device_gmap_icon).prev().text("Search for a file to add");
+
+            // Initialize the select2 selectbox.
+            $(".select2select").select2();
+        })
+
+        // var dts_value = []
+        // var dts_value = $('form input[type="hidden"][id|="id_dts"][name|="dts"][name$="id"][value]')
+
+        // // if service is already selected
+        // if ($("#id_service_data_source").find("option:selected").val()){
+        //     var service = $("form").find(".row").find("#id_service_data_source").slice(dts_value.length)
+        //     service.each(function() {
+        //       var service_id = $(this).find("option:selected").val()
+        //       var parameter = $(this).parent(".row .inline").find("#id_parameter")
+
+        //       get_attribute_of_service(service_id, parameter)
+        //     });
+        // }
+
+        // // if service is changed by the user
+        // $("form").find(".row").find("#id_service_data_source").change(function(){
+        //     var service_id = $(this).find("option:selected").val()
+        //     var parameter = $(this).parent(".row .inline").find("#id_parameter")
+
+        //     get_attribute_of_service(service_id, parameter)
+        // });
+
+        // if service is changed by the user
+        $("#id_service").change(function(){
+            if($(this).val() == '' ){
+                console.log('Select the service')
+            }
+            else{
+                $.ajax({
+                    url : "/service/select/",
+                    type : "GET",
+                    dataType: "json",
+                    data: {
+                        service_id : $(this).val(),
+                    },
+                    success : function(service) {
+                        $("#id_parameter option:selected").val(service.parameters_id)
+                        $("#id_parameter option:selected").html(service.parameters_name).change()
+                    },
+                    error : function(xhr,errmsg,err) {
+                        console.log(xhr.status + ": " + xhr.responseText);
+                    }
+                });
+
+                return false;
+            }
+        });
+
+
+        // function get_attribute_of_service(service_id, parameter){
+        //     var service_counter = service_counter - 1
+        //     if(service_id == '' ){
+        //         console.log('Select the service')
+        //     }
+        //     else{
+        //         $.ajax({
+        //             url : "/service/select/",
+        //             type : "GET",
+        //             dataType: "json",
+        //             data: {
+        //                 service_id : service_id,
+        //             },
+        //             success : function(service) {
+        //                 var parameter_option = parameter.find("select option:selected")
+        //                 parameter_option.val(service.parameters_id)
+        //                 parameter_option.html(service.parameters_name)
+        //             },
+        //             error : function(xhr,errmsg,err) {
+        //                 console.log(xhr.status + ": " + xhr.responseText);
+        //             }
+        //         });
+
+        //         return false;
+        //     }
+        // }
+
+    </script>
+    <script type="text/javascript">
+       $(function() {
+           $(".inline.{{ dts_data_source_form.prefix }}").formset({
+               prefix: "{{ dts_data_source_form.prefix }}",
+           })
+       })
+    </script>
+{% endblock %}
+
