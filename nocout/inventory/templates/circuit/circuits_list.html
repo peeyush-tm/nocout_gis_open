@@ -18,7 +18,6 @@
                 <ul class="nav nav-tabs">
                     <li><a href="#AllCircuits" id="allCircuitListingTab" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
                     <li><a href="#UnusedCircuits" id="unusedCircuitListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Unused</span></a></li>
-                    <li><a href="#CorruptedCircuits" id="corruptedCircuitListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Corrupted</span></a></li>
                 </ul>
                 <div class="tab-content Tbl_FixHeight" style="overflow:auto;">
                     <div class="tab-pane" id="AllCircuits">
@@ -29,12 +28,6 @@
                     </div>
                     <div class="tab-pane" id="UnusedCircuits">
                         <table id="UnusedCircuitsListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <div class="tab-pane" id="CorruptedCircuits">
-                        <table id="corruptedCircuitListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
@@ -55,7 +48,6 @@
             /*Grid headers object*/
             var ajax_url_all_circuits = '{% url "CircuitListingTable" %}' + '?tab=all';
             var ajax_url_unused_circuits = '{% url "CircuitListingTable" %}' + '?tab=unused';
-            var ajax_url_corrupted_circuits = '{% url "CircuitListingTable" %}' + '?tab=corrupted';
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy=false;
 
@@ -63,9 +55,6 @@
             $("#allCircuitListingTab").attr("data_header", '{{ datatable_headers|safe }}');
             $("#unusedCircuitListingTab").attr("data_url", ajax_url_unused_circuits);
             $("#unusedCircuitListingTab").attr("data_header", '{{ datatable_headers|safe }}');
-            $("#corruptedCircuitListingTab").attr("data_url", ajax_url_corrupted_circuits);
-            $("#corruptedCircuitListingTab").attr("data_header", '{{ datatable_headers|safe }}');
-
             var location_array = window.location.href.split("#");
 
             if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
