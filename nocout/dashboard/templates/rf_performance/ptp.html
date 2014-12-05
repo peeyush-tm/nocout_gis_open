@@ -22,6 +22,7 @@
         margin: 0 auto;
     }
 </style>
+
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
         <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: PTP</h4>
@@ -29,18 +30,22 @@
     <div id="tableContainer" class="box-body">
         <div class="tabbable header-tabs">
             <ul class="nav nav-tabs">
-                <li><a href="#uas_block" id="uas_tab" data-toggle="tab"><span class="hidden-inline-mobile">UAS</span></a></li>
-                <li class="active"><a href="#rssi_block" id="rssi_tab" data-toggle="tab"><span class="hidden-inline-mobile">RSSI</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-ptp-bh' %}" id="ptp_bh_tab"><span class="hidden-inline-mobile">PTP BH</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-wimax' %}" id="wimax_tab"><span class="hidden-inline-mobile">Wimax</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-pmp' %}" id="pmp_tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                <li class="active"><a href="#ptp_block" id="ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
             </ul>
             <div class="tab-content" style="overflow-y:auto;">
-                <div class="tab-pane" id="uas_block" align="center">
+                <div class="tab-pane active" id="ptp_block">
                     <div class="col-md-12">
-                        <div id="uas" class="rf_chart_style"></div>
-                    </div>
-                </div>
-                <div class="tab-pane active" id="rssi_block" align="center">
-                    <div class="col-md-12">
-                        <div id="rssi" class="rf_chart_style"></div>
+                        <div class="col-md-6">
+                            <h3>RSSI</h3>
+                            <div id="rssi" class="rf_chart_style"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <h3>UAS</h3>
+                            <div id="uas" class="rf_chart_style"></div>
+                        </div>
                     </div>
                 </div>
             </div>
