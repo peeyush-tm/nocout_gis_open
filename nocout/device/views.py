@@ -3457,8 +3457,7 @@ class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, Ba
             dct.update(service__alias=obj.service.alias)
             dct.update(parameter__parameter_description=obj.parameter.parameter_description)
             dct.update(service_data_sources__alias=', '.join(list(obj.service_data_sources.values_list('alias', flat=True))))
-            dct.update(actions='<a href="/wizard/device-type/{0}/service/{1}/detail"><i class="fa fa-list-alt text-info"></i></a>\
-                <a href="/wizard/device-type/{0}/service/{1}/"><i class="fa fa-pencil text-dark"></i></a>\
+            dct.update(actions='<a href="/wizard/device-type/{0}/service/{1}/"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/wizard/device-type/{0}/service/{1}/delete"><i class="fa fa-trash-o text-danger"></i></a>'.format(self.kwargs['dt_pk'],obj.id))
             json_data.append(dct)
         return json_data
@@ -3558,6 +3557,13 @@ class GisWizardDeviceTypeServiceMixin(object):
 
 class GisWizardServiceUpdateView(GisWizardDeviceTypeServiceMixin, DeviceTypeServiceUpdateView):
     pass
+
+
+def wizard_service_delete(request, dt_pk, pk):
+    dt_service = DeviceTypeService.objects.get(id=pk)
+    dt_service.delete()
+    return HttpResponseRedirect(reverse('wizard-service-list', kwargs={'dt_pk': dt_pk}))
+
 
 
 #**************************************** Device Type Service Wizard ****************************************#
