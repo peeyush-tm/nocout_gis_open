@@ -23,6 +23,7 @@
         margin: 0 auto;
     }
 </style>
+
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
         <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: WIMAX</h4>
@@ -30,30 +31,30 @@
     <div id="tableContainer" class="box-body">
         <div class="tabbable header-tabs">
             <ul class="nav nav-tabs">
-                <li><a href="#ul_cinr_block" id="ul_cinr_tab" data-toggle="tab"><span class="hidden-inline-mobile">UL CINR</span></a></li>
-                <li><a href="#dl_cinr_block" id="dl_cinr_tab" data-toggle="tab"><span class="hidden-inline-mobile">DL CINR</span></a></li>
-                <li><a href="#ul_rssi_block" id="ul_rssi_tab" data-toggle="tab"><span class="hidden-inline-mobile">UL RSSI</span></a></li>
-                <li class="active"><a href="#dl_rssi_block" id="dl_rssi_tab" data-toggle="tab"><span class="hidden-inline-mobile">DL RSSI</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-ptp-bh' %}" id="ptp_bh_tab"><span class="hidden-inline-mobile">PTP BH</span></a></li>
+                <li class="active"><a href="#wimax_block" id="wimax_tab" data-toggle="tab"><span class="hidden-inline-mobile">Wimax</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-pmp' %}" id="pmp_tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-ptp' %}" id="ptp_tab"><span class="hidden-inline-mobile">PTP</span></a></li>
             </ul>
             <div class="tab-content" style="overflow-y:auto;">
-                <div class="tab-pane active" id="dl_rssi_block" align="center">
+                <div class="tab-pane active" id="wimax_block">
                     <div class="col-md-12">
-                        <div id="dl_rssi" class="rf_chart_style"></div>
-                    </div>
-                </div>
-                <div class="tab-pane" id="ul_rssi_block" align="center">
-                    <div class="col-md-12">
-                        <div id="ul_rssi" class="rf_chart_style"></div>
-                    </div>
-                </div>
-                <div class="tab-pane" id="dl_cinr_block" align="center">
-                    <div class="col-md-12">
-                        <div id="dl_cinr" class="rf_chart_style"></div>
-                    </div>
-                </div>
-                <div class="tab-pane" id="ul_cinr_block" align="center">
-                    <div class="col-md-12">
-                        <div id="ul_cinr" class="rf_chart_style"></div>
+                        <div class="col-md-6">
+                            <h3>DL RSSI</h3>
+                            <div id="dl_rssi" class="rf_chart_style"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <h3>UL RSSI</h3>
+                            <div id="ul_rssi" class="rf_chart_style"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <h3>DL CINR</h3>
+                            <div id="dl_cinr" class="rf_chart_style"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <h3>UL CINR</h3>
+                            <div id="ul_cinr" class="rf_chart_style"></div>
+                        </div>
                     </div>
                 </div>
             </div>
