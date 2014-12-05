@@ -176,7 +176,7 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/customer/select/customer/"+id+"/", {
+                        $.ajax("/sub_station/select/sub_station/"+id+"/", {
                             dataType: "json"
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
