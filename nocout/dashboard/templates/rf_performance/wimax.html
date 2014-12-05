@@ -41,25 +41,25 @@
                     <div class="col-md-12">
                         <div class="col-md-6">
                             <h3>DL RSSI</h3>
-                            <div class="col-md-8 col-md-offset-2">
+                            <div class="col-md-10 col-md-offset-1">
                                 <div id="dl_rssi" class="rf_chart_style"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <h3>UL RSSI</h3>
-                            <div class="col-md-8 col-md-offset-2">
+                            <div class="col-md-10 col-md-offset-1">
                                 <div id="ul_rssi" class="rf_chart_style"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <h3>DL CINR</h3>
-                            <div class="col-md-8 col-md-offset-2">
+                            <div class="col-md-10 col-md-offset-1">
                                 <div id="dl_cinr" class="rf_chart_style"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <h3>UL CINR</h3>
-                            <div class="col-md-8 col-md-offset-2">
+                            <div class="col-md-10 col-md-offset-1">
                                 <div id="ul_cinr" class="rf_chart_style"></div>
                             </div>
                         </div>
@@ -195,17 +195,15 @@ function rf_getChartData(counter) {
                             }
                         },
                         legend:{
-                            enabled: true,
-                            y : '-10',
-                            x : '-10',
-                            floating: true,
-                            align : "right",
-                            layout : "vertical",
+                            itemDistance : 15,
+                            itemMarginBottom : 5,
+                            itemWidth : 125,
+                            borderColor : "#CCCCCC",
+                            borderWidth : "1",
+                            borderRadius : "8",
                             itemStyle: {
                                 color: '#555555',
-                                fontWeight: 'normal',
-                                fontSize : '12px',
-                                fontWeight : '400'
+                                fontSize : '10px'
                             }
                         },
                         colors: response.data.objects.colors,
