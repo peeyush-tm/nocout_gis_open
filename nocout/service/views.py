@@ -234,26 +234,16 @@ class ServiceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('service.delete_service',)
 
 
-def select_service_data_source(request, pk):
+def select_service(request):
     """
     return value list of data_source when the servie is selected in device type.
     """
+    pk = request.GET['service_id']
     service = Service.objects.get(id=pk)
     parameters = service.parameters
-    service_counter = request.GET['service_counter']
-    counter = request.GET['counter']
-    Service_data_formset = DTServiceDataSourceUpdateFormSet(instance=service, prefix='dts-{0}-sds-{1}'.format(service_counter,counter))
-    ctx_dict = {
-                'service_data_formset': Service_data_formset,
-                'counter': counter,
-                'service_counter': service_counter
-            }
-    service_attributes = render_to_string('service/service_attributes1.html', ctx_dict)
-    service_attributes.content_subtype = "html"
     return HttpResponse( json.dumps({
         "parameters_id": parameters.id,
         "parameters_name": parameters.parameter_description,
-        "service_attributes": service_attributes,
         }) )
 
 def select_data_source(request):
