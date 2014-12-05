@@ -105,9 +105,8 @@
         
         var data_sources = {{ data_sources|safe }};
         ds_list = {{ data_sources|safe }};
-        
+
         /*Show spinner*/
-        showSpinner();
 
         if(ds_list.length > 0) {
             // start API calling
@@ -119,48 +118,12 @@
     });
 
 
-
-// $(function () {
-//     data_sources.forEach(function (data_source) {
-//         var jqXHR = $.ajax( "{% url 'dashboard-rf-performance-pmp' %}" + "?data_source=" + data_source )
-//         .done(function(json_response) {
-//             var response = JSON.parse(json_response);
-//             console.log(response);
-//             console.log(response.success);
-//             if (response.success == 1) {
-//                 var pie_chart = $('#' + data_source).highcharts({
-//                     chart: {
-//                         plotBackgroundColor: null,
-//                         plotBorderWidth: 1,//null,
-//                         plotShadow: false
-//                     },
-//                     title: {
-//                         text: response.data.objects.chart_data[0].name
-//                     },
-//                     colors: response.data.objects.colors,
-//                     series: [{
-//                         type: 'pie',
-//                         name: response.data.objects.display_name,
-//                         data: response.data.objects.chart_data[0].data
-//                     }]
-//                 });
-//             } else {
-//                 //alert(data_source + " : " + response.message);
-//                 console.log(data_source + " : " + response.message);
-//             }
-//         })
-//         .fail(function() {
-//             alert( data_source + " : server error" );
-//         });
-//     })
-// });
-
 /**
  * This function fetch chart data by making an ajax call 
  * @method rf_getChartData
  */
 function rf_getChartData(counter) {
-
+    showSpinner();
     if(ds_list[counter]) {
         var data_source_title = ds_list[counter] ? ds_list[counter].toUpperCase() : "";
 
@@ -232,6 +195,7 @@ function rf_getChartData(counter) {
                         }
                     });
                 } else {
+                    hideSpinner();
                     $('#' + ds_list[counter]).html("<b>"+response.message+"</b>");
                     // console.log(data_source_title + " : " + response.message);
                     $.gritter.add({
@@ -247,6 +211,7 @@ function rf_getChartData(counter) {
                 }
             },
             error : function(err) {
+                hideSpinner();
                 $.gritter.add({
                     // (string | mandatory) the heading of the notification
                     title: 'RF Performance Dashboard - PMP',
@@ -260,11 +225,12 @@ function rf_getChartData(counter) {
             },
             complete : function() {
                 // recursive function calling
-                if(ds_list[counter++]) {
-                    rf_getChartData(counter++);
-                } else {
-                    /*hide spinner*/
-                    hideSpinner();
+                var count = counter;
+                if(ds_list[count++]) {
+                    rf_getChartData(count);
+                    if (ds_list.length == count){
+                        hideSpinner();
+                    }
                 }
             }
         });
