@@ -12,7 +12,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from nocout.utils import logged_in_user_organizations
 from device.models import DeviceTechnology
-from performance.models import ServiceStatus, NetworkAvailabilityDaily
+from performance.models import ServiceStatus, NetworkAvailabilityDaily, NetworkAvailability
 from performance.views import organization_customer_devices, organization_network_devices
 from dashboard.models import DashboardSetting
 from dashboard.forms import DashboardSettingForm
@@ -308,8 +308,8 @@ class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
 
         data_source_config = {
             'rssi': {'service_name': 'radwin_rssi', 'model': ServiceStatus},
-            'availability': {'service_name': 'availability', 'model': NetworkAvailabilityDaily},
-            'uas': {'service_name': 'radwin_uas', 'model': NetworkAvailabilityDaily},
+            'availability': {'service_name': 'availability', 'model': NetworkAvailability},
+            'uas': {'service_name': 'radwin_uas', 'model': ServiceStatus},
         }
         technology = DeviceTechnology.objects.get(name='P2P').id
         devices_method_to_call = organization_network_devices
