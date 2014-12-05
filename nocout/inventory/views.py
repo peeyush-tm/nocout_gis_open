@@ -1234,6 +1234,14 @@ class CircuitListingTable(PermissionsRequiredMixin,
     search_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
                'sub_station__alias']
 
+    def get_initial_queryset(self):
+        qs = super(CircuitListingTable, self).get_initial_queryset()
+
+        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'unused':
+            qs = qs.filter( Q(sub_station__isnull=True) | Q(sector__isnull=True) | Q(customer__isnull=True))
+
+        return qs
+
     def prepare_results(self, qs):
         """
         Preparing  Initial Queryset for the for rendering the data table.
