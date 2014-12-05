@@ -13,28 +13,68 @@
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>SECTOR LISTING</h4>
         </div>
-        <div id="tableContainer" class="box-body" style="overflow:auto;">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="SectorListingTable">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
-        </div>
+        <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                    <li><a href="#AllSectors" id="allSectorListingTab" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
+                    <li><a href="#UnusedSectors" id="unusedSectorListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Unused</span></a></li>
+                    <li><a href="#CorruptedSectors" id="corruptedSectorListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Corrupted</span></a></li>
+                </ul>
+                <div class="tab-content Tbl_FixHeight" style="overflow:auto;">
+                    <div class="tab-pane" id="AllSectors">
+                        <table id="AllSectorListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="UnusedSectors">
+                        <table id="UnusedSectorListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="CorruptedSectors">
+                        <table id="CorruptedSectorListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
     </div>
 {% endblock %}
 
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <script type="text/javascript">
+
+        var dataTableInstance = "";
+
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            //var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url = '{% url "SectorListingTable" %}';
+            var ajax_url_all_sectors = '{% url "SectorListingTable" %}' + '?tab=all';
+            var ajax_url_unused_sectors = '{% url "SectorListingTable" %}' + '?tab=unused';
+            var ajax_url_corrupted_sectors = '{% url "SectorListingTable" %}' + '?tab=corrupted';
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy=false;
-            dataTableInstance.createDataTable("SectorListingTable", gridHeadersObj, ajax_url, destroy);
+            $("#allSectorListingTab").attr("data_url", ajax_url_all_sectors);
+            $("#allSectorListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#unusedSectorListingTab").attr("data_url", ajax_url_unused_sectors);
+            $("#unusedSectorListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#corruptedSectorListingTab").attr("data_url", ajax_url_corrupted_sectors);
+            $("#corruptedSectorListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+
+            var location_array = window.location.href.split("#");
+
+            if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+
+                /*Trigger click event on active tab to load its data*/
+                $("#allSectorListingTab").trigger('click',true);
+            }
         });
     </script>
 {% endblock %}
