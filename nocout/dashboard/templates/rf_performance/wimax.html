@@ -40,26 +40,26 @@
                 <div class="tab-pane active" id="wimax_block">
                     <div class="col-md-12">
                         <div class="col-md-6">
-                            <div class="col-md-8" style="margin:0px auto;">
-                                <h3>DL RSSI</h3>
+                            <h3>DL RSSI</h3>
+                            <div class="col-md-8 col-md-offset-2">
                                 <div id="dl_rssi" class="rf_chart_style"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="col-md-8" style="margin:0px auto;">
-                                <h3>UL RSSI</h3>
+                            <h3>UL RSSI</h3>
+                            <div class="col-md-8 col-md-offset-2">
                                 <div id="ul_rssi" class="rf_chart_style"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="col-md-8" style="margin:0px auto;">
-                                <h3>DL CINR</h3>
+                            <h3>DL CINR</h3>
+                            <div class="col-md-8 col-md-offset-2">
                                 <div id="dl_cinr" class="rf_chart_style"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="col-md-8" style="margin:0px auto;">
-                                <h3>UL CINR</h3>
+                            <h3>UL CINR</h3>
+                            <div class="col-md-8 col-md-offset-2">
                                 <div id="ul_cinr" class="rf_chart_style"></div>
                             </div>
                         </div>
@@ -165,6 +165,17 @@ function rf_getChartData(counter) {
                 if(response.success == 1) {
                     var pie_chart = $('#' + ds_list[counter]).highcharts({
                         chart: {
+                            events: {
+                                load : function() {
+                                    // Hide highcharts.com link from chart when chart is loaded
+                                    var highcharts_link = $("#"+ds_list[counter]+" svg text:last-child");
+                                    $.grep(highcharts_link,function(val) {
+                                        if($.trim(val.innerHTML) == 'Highcharts.com') {
+                                            val.innerHTML = "";
+                                        }
+                                    });
+                                }
+                            },
                             plotBackgroundColor: null,
                             plotBorderWidth: null,
                             plotShadow: false

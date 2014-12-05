@@ -55,12 +55,12 @@ $(document).ready(function(e) {
     createPieChart("other_pie_chart4",chartData);
 
     /*Hide Highcharts.com Name*/
-    var highcharts_link = $("#dashboard_pie_chart svg text:last-child");
-    $.grep(highcharts_link,function(val) {
-        if($.trim(val.innerHTML) == 'Highcharts.com') {
-            val.innerHTML = "";
-        }
-    });
+    // var highcharts_link = $("#dashboard_pie_chart svg text:last-child");
+    // $.grep(highcharts_link,function(val) {
+    //     if($.trim(val.innerHTML) == 'Highcharts.com') {
+    //         val.innerHTML = "";
+    //     }
+    // });
     // $(".dashboard_pie_chart svg text:last-child").hide();
     
 
@@ -174,6 +174,17 @@ function createAreaChart(domElement,chartData) {
 
     $('#'+domElement).highcharts({
         chart: {
+            events: {
+                load : function() {
+                    // Hide highcharts.com link from chart when chart is loaded
+                    var highcharts_link = $("#"+domElement+" svg text:last-child");
+                    $.grep(highcharts_link,function(val) {
+                        if($.trim(val.innerHTML) == 'Highcharts.com') {
+                            val.innerHTML = "";
+                        }
+                    });
+                }
+            },
             type: 'areaspline'
         },
         title: {
@@ -218,6 +229,17 @@ function createPieChart(domElement,chartData) {
 
     $('#'+domElement).highcharts({
         chart: {
+            events: {
+                load : function() {
+                    // Hide highcharts.com link from chart when chart is loaded
+                    var highcharts_link = $("#"+domElement+" svg text:last-child");
+                    $.grep(highcharts_link,function(val) {
+                        if($.trim(val.innerHTML) == 'Highcharts.com') {
+                            val.innerHTML = "";
+                        }
+                    });
+                }
+            },
             plotBackgroundColor: null,
             plotBorderWidth: null,
             plotShadow: true
