@@ -20,17 +20,7 @@ class Migration(SchemaMigration):
 
         # Changing field 'Sector.base_station'
         db.alter_column(u'inventory_sector', 'base_station_id', self.gf('django.db.models.fields.related.ForeignKey')(null=True, on_delete=models.SET_NULL, to=orm['inventory.BaseStation']))
-        # Adding field 'BaseStation.tag1'
-        db.add_column(u'inventory_basestation', 'tag1',
-                      self.gf('django.db.models.fields.CharField')(max_length=60, null=True, blank=True),
-                      keep_default=False)
-
-        # Adding field 'BaseStation.tag2'
-        db.add_column(u'inventory_basestation', 'tag2',
-                      self.gf('django.db.models.fields.CharField')(max_length=60, null=True, blank=True),
-                      keep_default=False)
-
-
+        
         # Changing field 'SubStation.antenna'
         db.alter_column(u'inventory_substation', 'antenna_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Antenna'], null=True, on_delete=models.SET_NULL))
 
@@ -60,10 +50,10 @@ class Migration(SchemaMigration):
         # Changing field 'Sector.base_station'
         db.alter_column(u'inventory_sector', 'base_station_id', self.gf('django.db.models.fields.related.ForeignKey')(null=True, to=orm['inventory.BaseStation']))
         # Deleting field 'BaseStation.tag1'
-        db.delete_column(u'inventory_basestation', 'tag1')
+        #db.delete_column(u'inventory_basestation', 'tag1')
 
         # Deleting field 'BaseStation.tag2'
-        db.delete_column(u'inventory_basestation', 'tag2')
+        #db.delete_column(u'inventory_basestation', 'tag2')
 
 
         # Changing field 'SubStation.antenna'
