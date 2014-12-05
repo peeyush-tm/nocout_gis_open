@@ -81,9 +81,15 @@
         var data_sources = {{ data_sources|safe }};
         ds_list = {{ data_sources|safe }};
         
+        /*Show spinner*/
+        showSpinner();
+
         if(ds_list.length > 0) {
             // start API calling
             rf_getChartData(0);
+        } else {
+            /*hide spinner*/
+            hideSpinner();
         }
     });
 
@@ -223,6 +229,9 @@ function rf_getChartData(counter) {
                 // recursive function calling
                 if(ds_list[counter++]) {
                     rf_getChartData(counter++);
+                } else {
+                    /*hide spinner*/
+                    hideSpinner();
                 }
             }
         });
