@@ -1076,6 +1076,18 @@ class SubStationListingTable(PermissionsRequiredMixin,
     order_columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
+    def get_initial_queryset(self):
+        qs = super(SubStationListingTable, self).get_initial_queryset()
+
+        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'corrupted':
+            qs = qs.annotate(num_circuit=Count('circuit')).filter(Q(device__isnull=True) | Q(num_circuit__gt=1))
+
+        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'unused':
+            qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
+
+        return qs
+
+
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
