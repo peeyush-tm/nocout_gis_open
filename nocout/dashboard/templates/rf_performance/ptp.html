@@ -39,12 +39,16 @@
                 <div class="tab-pane active" id="ptp_block">
                     <div class="col-md-12">
                         <div class="col-md-6">
-                            <h3>RSSI</h3>
-                            <div id="rssi" class="rf_chart_style"></div>
+                            <div class="col-md-8" style="margin:0px auto;">
+                                <h3>RSSI</h3>
+                                <div id="rssi" class="rf_chart_style"></div>
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <h3>UAS</h3>
-                            <div id="uas" class="rf_chart_style"></div>
+                            <div class="col-md-8" style="margin:0px auto;">
+                                <h3>UAS</h3>
+                                <div id="uas" class="rf_chart_style"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -140,11 +144,12 @@ function rf_getChartData(counter) {
                     var pie_chart = $('#' + ds_list[counter]).highcharts({
                         chart: {
                             plotBackgroundColor: null,
-                            plotBorderWidth: 1,//null,
+                            plotBorderWidth: null,
                             plotShadow: false
                         },
                         title: {
-                            text: response.data.objects.chart_data[0].name
+                            // text: response.data.objects.chart_data[0].name
+                            text: ''
                         },
                         plotOptions: {
                             pie: {
@@ -158,8 +163,8 @@ function rf_getChartData(counter) {
                         },
                         legend:{
                             enabled: true,
-                            x : '-10',
                             y : '-10',
+                            x : '-10',
                             floating: true,
                             align : "right",
                             layout : "vertical",
@@ -178,6 +183,7 @@ function rf_getChartData(counter) {
                         }]
                     });
                 } else {
+                    $('#' + ds_list[counter]).html("<b>"+response.message+"</b>");
                     // console.log(data_source_title + " : " + response.message);
                     $.gritter.add({
                         // (string | mandatory) the heading of the notification
