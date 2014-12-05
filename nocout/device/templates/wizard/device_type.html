@@ -15,35 +15,35 @@
                             <div class="box-body">
                                 <div class="col-md-8"><br />
 
-                <!-- :START: Radio Buttons to choose existing or create new -->
-                <div class="form-group">
-                    <label class="control-label pull-left">Device Type &nbsp;&nbsp;&nbsp;</label>
-                    <div class="pull-left">
-
-                        <label class="radio-inline">
-                            <input type="radio" id="id_base_station_radio" class="radioField" value="existing" name="base_station_radio"> Choose Existing
-                        </label>
-                        <label class="radio-inline">
-                            <input type="radio" id="id_base_station_radio" class="radioField" value="new" name="base_station_radio"> Create New
-                        </label>
-                    </div>
-                </div><br/><br/>
-                <div class="form-group">
-                    <div class="col-sm-9">
-                        <div class="col-md-8">
-                            <input class=" tip-focus form-control" data-placement="right" data-toggle="tooltip" id="id_base_station" name="base_station" title="" type="hidden" value="{% if object %}{{ object.id }}{% endif %}"/>
-                        </div>
-                    </div>
-                </div>
-                {% if object or select_view %}
-                </br>
-                </br>
-                {% endif %}
-                <!-- :END: Radio Buttons to choose existing or create new -->
-
                 {% if form %}
-                    <form id="id_base_station_form" action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                    <form id="id_device_type_form" action="" method="post" class="form-horizontal" role="form"  enctype="multipart/form-data">{% csrf_token %}
                         {% include "wizard/form.html" with form=form only %}
+
+                        {{ device_type_service_form.management_form }}
+                        {% for field in device_type_service_form %}
+                            {{ field.id }}
+                        <div class="row inline {{ device_type_service_form.prefix }}">
+                            <hr>
+                            <div id="id_service" class="form-group">
+                                <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service</label>
+                                <div class="col-sm-9">
+                                    <div class="col-md-8">
+                                        {{field.service}}{{ device_type_service_form.non_form_errors }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="id_parameter" class="form-group">
+                                <label for="{{ field.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Parameter </label>
+                                <div class="col-sm-9">
+                                    <div class="col-md-8">
+                                        {{field.parameter}}
+                                    </div>
+                                </div>
+                            </div>
+                            {{ field.DELETE }}
+                        </div>
+                        {% endfor %}
+
                         <div class="form-group">
                             <div class="col-sm-offset-3 col-sm-9">
                                 <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Next</button>
@@ -75,6 +75,11 @@
     {% endblock %}
     <script>
         $(document).ready(function(){
+            $("#id_update_and_show").on("click", function(e) {
+                e.preventDefault();
+                $('#id_device_type_form').attr('action', "?show=True").submit();
+            });
+
             // Changing labels of form fields
             $("label[for=id_rta_warning]").text('Latency Warning');
             $("label[for=id_rta_critical]").text('Latency Critical');
@@ -95,5 +100,61 @@
             $(".select2select").select2();
         })
 
+        var dts_value = []
+        var dts_value = $('form input[type="hidden"][id|="id_dts"][name|="dts"][name$="id"][value]')
+
+        // if service is already selected
+        if ($("#id_service").find("option:selected").val()){
+            var service = $("form").find(".row").find("#id_service").slice(dts_value.length)
+            service.each(function() {
+              var service_id = $(this).find("option:selected").val()
+              var parameter = $(this).parent(".row .inline").find("#id_parameter")
+
+              get_attribute_of_service(service_id, parameter)
+            });
+        }
+
+        // if service is changed by the user
+        $("form").find(".row").find("#id_service").change(function(){
+            var service_id = $(this).find("option:selected").val()
+            var parameter = $(this).parent(".row .inline").find("#id_parameter")
+
+            get_attribute_of_service(service_id, parameter)
+        });
+
+        function get_attribute_of_service(service_id, parameter){
+            var service_counter = service_counter - 1
+            if(service_id == '' ){
+                console.log('Select the service')
+            }
+            else{
+                $.ajax({
+                    url : "/service/select/",
+                    type : "GET",
+                    dataType: "json",
+                    data: {
+                        service_id : service_id,
+                    },
+                    success : function(service) {
+                        var parameter_option = parameter.find("select option:selected")
+                        parameter_option.val(service.parameters_id)
+                        parameter_option.html(service.parameters_name)
+                    },
+                    error : function(xhr,errmsg,err) {
+                        console.log(xhr.status + ": " + xhr.responseText);
+                    }
+                });
+
+                return false;
+            }
+        }
+
+    </script>
+    <script type="text/javascript">
+       $(function() {
+           $(".inline.{{ device_type_service_form.prefix }}").formset({
+               prefix: "{{ device_type_service_form.prefix }}",
+           })
+       })
     </script>
 {% endblock %}

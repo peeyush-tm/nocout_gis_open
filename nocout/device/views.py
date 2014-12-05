@@ -9,13 +9,14 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
+from django.core.urlresolvers import reverse_lazy, reverse
 from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType, DevicePort, Country, State, City, \
     DeviceFrequency, DeviceTypeServiceDataSource, DeviceTypeService
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm, DevicePortForm, DeviceFrequencyForm, \
     CountryForm, StateForm, CityForm, DeviceTypeServiceCreateFormset, DeviceTypeServiceUpdateFormset, \
-    DeviceTypeServiceDataSourceUpdateFormset, WizardDeviceTypeForm
+    WizardDeviceTypeForm
 from nocout.utils.util import DictDiffer
 from django.http.response import HttpResponseRedirect
 from organization.models import Organization
@@ -2403,7 +2404,7 @@ class DeviceTypeListingTable(PermissionsRequiredMixin, BaseDatatableView):
             except Exception as e:
                 logger.exception(e)
 
-            dct.update(actions='<a href="/type/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+            dct.update(actions='<a href="/wizard/device-type/{0}/"><i class="fa fa-pencil text-dark"></i></a>\
                         <a href="/type/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
@@ -2579,102 +2580,37 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
     success_url = reverse_lazy('device_type_list')
     required_permissions = ('device.change_devicetype',)
 
-    # def get(self, request, *args, **kwargs):
-    #     """
-    #     Handles GET requests and instantiates blank versions of the form
-    #     and its inline formsets.
-    #     """
-    #     self.object = self.get_object()
-    #     form_class = self.get_form_class()
-    #     form = DeviceTypeForm(instance=self.object)
-    #     device_type_service_form = DeviceTypeServiceUpdateFormset(instance=self.object, prefix='dts')
-    #     if len(device_type_service_form):
-    #         device_type_service_form = device_type_service_form
-    #     else:
-    #         device_type_service_form = DeviceTypeServiceCreateFormset(prefix='dts')
-    #     return self.render_to_response(
-    #         self.get_context_data(form=form,
-    #                               device_type_service_form=device_type_service_form))
+    def get(self, request, *args, **kwargs):
+        """
+        Handles GET requests and instantiates blank versions of the form
+        and its inline formsets.
+        """
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = DeviceTypeForm(instance=self.object)
+        device_type_service_form = DeviceTypeServiceUpdateFormset(instance=self.object, prefix='dts')
+        if len(device_type_service_form):
+            device_type_service_form = device_type_service_form
+        else:
+            device_type_service_form = DeviceTypeServiceCreateFormset(prefix='dts')
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  device_type_service_form=device_type_service_form))
 
-    # def post(self, request, *args, **kwargs):
-    #     """
-    #     Handles POST requests, instantiating a form instance and its inline
-    #     formsets with the passed POST variables and then checking them for
-    #     validity.
-    #     """
-    #     self.object = self.get_object()
-    #     form_class = self.get_form_class()
-    #     form = self.get_form(form_class)
-    #     service_data_formset = {}
-    #     dt_service_data_formset = {}
-    #     all_dtsds_forms_valid = True
-    #     device_type_service_form = DeviceTypeServiceUpdateFormset(self.request.POST, instance=self.object, prefix='dts')
-    #     if (device_type_service_form.is_valid()):
-    #         total_forms = self.request.POST['dts-TOTAL_FORMS'][0]
-    #         for i in range(int(total_forms)):
-    #             if 'dts-{}-sds_counter'.format(i) in self.request.POST:
-    #                 sds = self.request.POST['dts-{}-sds_counter'.format(i)]
-
-    #                 service_id = self.request.POST['dts-{}-service'.format(i)]
-    #                 service = Service.objects.get(id=service_id)
-    #                 formset2 = DTServiceDataSourceUpdateFormSet(self.request.POST, instance=service, prefix='dts-{0}-sds-{1}'.format(i,int(sds[0])))
-    #                 service_data_formset.update({service_id: formset2})
-
-    #                 if not formset2.is_valid():
-    #                     dt_service_id = self.request.POST['dts-{}-id'.format(i)]
-    #                     dt_service = DeviceTypeService.objects.get(id=dt_service_id)
-    #                     formset = DeviceTypeServiceDataSourceUpdateFormset(self.request.POST, instance=dt_service, prefix='dts-{0}-sds-{1}'.format(i,int(sds[0])))
-    #                     dt_service_data_formset.update({dt_service_id: formset})
-    #                     if not formset.is_valid():
-    #                         all_dtsds_forms_valid = False
-    #             else:
-    #                 all_dtsds_forms_valid = False
-    #     else:
-    #         all_dtsds_forms_valid = False
-
-
-    #     if (form.is_valid() and device_type_service_form.is_valid()
-    #                         and all_dtsds_forms_valid ):
-    #         return self.form_valid(form, device_type_service_form , service_data_formset )
-    #     else:
-    #         return self.form_invalid(form, device_type_service_form , service_data_formset)
-
-    # def form_valid(self, form, device_type_service_form, service_data_formset):
-    #     """
-    #     Called if all forms are valid. Creates a Recipe instance along with
-    #     associated Ingredients and Instructions and then redirects to a
-    #     success page.
-    #     """
-    #     self.object = form.save()
-    #     DeviceTypeService.objects.filter(device_type=self.object).delete()
-    #     dts_update = []
-    #     for form in device_type_service_form:
-    #         device_type = form.cleaned_data['device_type']
-    #         service = form.cleaned_data['service']
-    #         parameter = form.cleaned_data['parameter']
-    #         obj = DeviceTypeService.objects.create(device_type=device_type, service=service,
-    #             parameter=parameter)
-    #         dts_update.append(obj)
-    #     for dts_obj in dts_update:
-    #         for sds_form in service_data_formset['{0}'.format(dts_obj.service.id)]:
-    #             sds_id = sds_form.cleaned_data['service_data_sources']
-    #             warning = sds_form.cleaned_data['warning']
-    #             critical = sds_form.cleaned_data['critical']
-    #             sds_obj = DeviceTypeServiceDataSource.objects.create(service_data_sources=sds_id,
-    #                         device_type_service=dts_obj, warning=warning, critical=critical)
-
-    #     return HttpResponseRedirect(self.get_success_url())
-
-
-    # def form_invalid(self, form, device_type_service_form, service_data_formset):
-    #     """
-    #     Called if a form is invalid. Re-renders the context data with the
-    #     data-filled forms and errors.
-    #     """
-    #     return self.render_to_response(
-    #         self.get_context_data(form=form,
-    #                               device_type_service_form=device_type_service_form,
-    #                               service_data_formset=service_data_formset))
+    def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests, instantiating a form instance and its inline
+        formsets with the passed POST variables and then checking them for
+        validity.
+        """
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        device_type_service_form = DeviceTypeServiceUpdateFormset(self.request.POST, instance=self.object, prefix='dts')
+        if (form.is_valid() and device_type_service_form.is_valid()):
+            return self.form_valid(form, device_type_service_form )
+        else:
+            return self.form_invalid(form, device_type_service_form )
 
 
 class DeviceTypeDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -3417,20 +3353,15 @@ class GisWizardDeviceTypeMixin(object):
     def get_success_url(self):
         if self.request.GET.get('show', None):
             return reverse('wizard-device-type-update', kwargs={'pk': self.object.id})
-        # if self.object.backhaul:
-        #     return reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': self.object.id, 'pk': self.object.backhaul.id})
         # else:
-        #     return reverse('gis-wizard-backhaul-select', kwargs={'bs_pk': self.object.id})
+        #     return reverse('wizard-service-list', kwargs={'dt_pk': self.object.id})
 
     def get_context_data(self, **kwargs):
         context = super(GisWizardDeviceTypeMixin, self).get_context_data(**kwargs)
         if 'pk' in self.kwargs: # Update View
 
             device_type = DeviceType.objects.get(id=self.kwargs['pk'])
-            # if device_type.backhaul:
-            #     skip_url = reverse('gis-wizard-backhaul-update', kwargs={'bs_pk': device_type.id, 'pk': device_type.backhaul.id})
-            # else:
-            #     skip_url = reverse('gis-wizard-backhaul-select', kwargs={'bs_pk': device_type.id})
+            # skip_url = reverse('wizard-service-list', kwargs={'dt_pk': self.object.id})
 
             save_text = 'Update'
             # context['skip_url'] = skip_url
@@ -3440,12 +3371,26 @@ class GisWizardDeviceTypeMixin(object):
         context['save_text'] = save_text
         return context
 
-    def form_valid(self, form):
-        # alias = re.compile(r'[^\w]').sub("_", form.cleaned_data['alias'])
-        # city = City.objects.get(id=form.cleaned_data['city']).city_name[:3]
-        # state = State.objects.get(id=form.cleaned_data['state']).state_name[:3]
-        # form.instance.name = alias + "_" + city + "_" + state
+    def form_valid(self, form, device_type_service_form):
+
+        """
+        Called if all forms are valid. Update the Device Type instance along with
+        associated Device Type Services and then redirects to a
+        success page.
+        """
+        self.object = form.save()
+        device_type_service_form.instance = self.object
+        device_type_service_form.save()
         return super(GisWizardDeviceTypeMixin, self).form_valid(form)
+
+    def form_invalid(self, form, device_type_service_form):
+        """
+        Called if a form is invalid. Re-renders the context data with the
+        data-filled forms and errors.
+        """
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  device_type_service_form=device_type_service_form))
 
 
 class GisWizardDeviceTypeUpdateView(GisWizardDeviceTypeMixin, DeviceTypeUpdate):

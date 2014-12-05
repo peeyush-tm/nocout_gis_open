@@ -552,18 +552,16 @@ class BaseDeviceTypeServiceFormset(BaseInlineFormSet):
     """
     Custome Inline formest.
     """
-    # def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
 
-    #     super(BaseDeviceTypeServiceFormset, self).__init__(*args, **kwargs)
-    #     for form in self.forms:
-    #         pass
-    #         # form.fields['service'].empty_label = 'Select'
+        super(BaseDeviceTypeServiceFormset, self).__init__(*args, **kwargs)
+        for form in self.forms:
+            form.fields['service'].empty_label = 'Select'
+            form.fields['parameter'].empty_label = 'Select'
 
     def clean(self):
-        # print('++++++++++++++++++++++++',self.forms)
         for form in self.forms:
-            # print('++++++++++',form.cleaned_data)
-            if not len(form.cleaned_data.keys()):
+            if not 'service' in form.cleaned_data.keys():
                 raise forms.ValidationError('This field is required.')
 
 class DeviceTypeForm(forms.ModelForm):
