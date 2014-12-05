@@ -3353,18 +3353,18 @@ class GisWizardDeviceTypeMixin(object):
     def get_success_url(self):
         if self.request.GET.get('show', None):
             return reverse('wizard-device-type-update', kwargs={'pk': self.object.id})
-        # else:
-        #     return reverse('wizard-service-list', kwargs={'dt_pk': self.object.id})
+        else:
+            return reverse('wizard-service-list', kwargs={'dt_pk': self.object.id})
 
     def get_context_data(self, **kwargs):
         context = super(GisWizardDeviceTypeMixin, self).get_context_data(**kwargs)
         if 'pk' in self.kwargs: # Update View
 
             device_type = DeviceType.objects.get(id=self.kwargs['pk'])
-            # skip_url = reverse('wizard-service-list', kwargs={'dt_pk': self.object.id})
+            skip_url = reverse('wizard-service-list', kwargs={'dt_pk': self.object.id})
 
             save_text = 'Update'
-            # context['skip_url'] = skip_url
+            context['skip_url'] = skip_url
         else: # Create View
             save_text = 'Save'
 
@@ -3395,3 +3395,69 @@ class GisWizardDeviceTypeMixin(object):
 
 class GisWizardDeviceTypeUpdateView(GisWizardDeviceTypeMixin, DeviceTypeUpdate):
     pass
+
+
+#**************************************** Device Type Service Wizard ****************************************#
+class GisWizardServiceListView(PermissionsRequiredMixin, ListView):
+    model = DeviceTypeService
+    template_name = 'wizard/service_list.html'
+    required_permissions = ('device.view_devicetypeservice',)
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(GisWizardServiceListView, self).get_context_data(**kwargs)
+        device_type = DeviceType.objects.get(id=self.kwargs['dt_pk'])
+        context['device_type'] = device_type
+        datatable_headers = [
+            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', },
+            {'mData': 'service__name', 'sTitle': 'Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'service__alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'parameter__parameter_description', 'sTitle': 'Parameter', 'sWidth': 'auto', },
+            {'mData': 'service_data_sources__alias', 'sTitle': 'Service Data Sources', 'sWidth': 'auto', },
+        ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+
+class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+    """
+    Class based View to render Service Listing Table.
+    """
+    model = DeviceTypeService
+    required_permissions = ('device.view_devicetypeservice',)
+    columns = ['device_type', 'service__name', 'service__alias', 'parameter__parameter_description']
+    order_columns = ['device_type', 'service__name', 'service__alias']
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        qs = self.model.objects.filter(device_type__id=self.kwargs['dt_pk'])
+        return qs.prefetch_related('service_data_sources')
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
+        json_data = []
+        for obj in qs:
+            dct = {}
+            dct.update(device_type=obj.device_type.alias)
+            dct.update(service__name=obj.service.name)
+            dct.update(service__alias=obj.service.alias)
+            dct.update(parameter__parameter_description=obj.parameter.parameter_description)
+            dct.update(service_data_sources__alias=', '.join(list(obj.service_data_sources.values_list('alias', flat=True))))
+            dct.update(actions='<a href="/wizard/service/{0}/detail"><i class="fa fa-list-alt text-info"></i></a>\
+                <a href="/wizard/service/{0}/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/wizard/service/{0}/delete"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj.id))
+            json_data.append(dct)
+        return json_data
