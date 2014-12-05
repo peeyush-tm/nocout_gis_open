@@ -46,6 +46,7 @@ import xlrd
 import xlwt
 import logging
 from django.template import RequestContext
+from django.db.models import Count
 from nocout.utils import logged_in_user_organizations
 from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
@@ -1239,6 +1240,9 @@ class CircuitListingTable(PermissionsRequiredMixin,
 
         if 'tab' in self.request.GET and self.request.GET.get('tab') == 'unused':
             qs = qs.filter( Q(sub_station__isnull=True) | Q(sector__isnull=True) | Q(customer__isnull=True))
+
+        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'corrupted':
+            qs = qs.annotate(num_sectors=Count('sector'), num_sub_stations=Count('sub_station')).filter(Q(num_sectors__gt=1) | Q(num_sub_stations__gt=1))
 
         return qs
 
