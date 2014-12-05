@@ -924,6 +924,14 @@ class CustomerListingTable(PermissionsRequiredMixin,
     columns = ['alias', 'address', 'description']
     order_columns = ['alias']
 
+    def get_initial_queryset(self):
+        qs = super(CustomerListingTable, self).get_initial_queryset()
+
+        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'unused':
+            qs = qs.filter(circuit__isnull=True)
+
+        return qs
+
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
