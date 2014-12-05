@@ -517,14 +517,12 @@ function GisPerformance() {
                     ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
                     
                 } else {
-                    if(mapInstance.getZoom() < 12) {
-                        // Update Marker cluster
-                        var bs_markers_array = Object.keys(allMarkersObject_gmap['base_station']).map(function(k) { return allMarkersObject_gmap['base_station'][k] });
-                        var ss_markers_array = Object.keys(allMarkersObject_gmap['sub_station']).map(function(k) { return allMarkersObject_gmap['sub_station'][k] });
-                        masterClusterInstance.clearMarkers();
-                        masterClusterInstance.addMarkers(bs_markers_array);
-                        masterClusterInstance.addMarkers(ss_markers_array);
-                    }
+                    // Update Marker cluster
+                    var bs_markers_array = Object.keys(allMarkersObject_gmap['base_station']).map(function(k) { return allMarkersObject_gmap['base_station'][k] });
+                    var ss_markers_array = Object.keys(allMarkersObject_gmap['sub_station']).map(function(k) { return allMarkersObject_gmap['sub_station'][k] });
+                    masterClusterInstance.clearMarkers();
+                    masterClusterInstance.addMarkers(bs_markers_array);
+                    masterClusterInstance.addMarkers(ss_markers_array);
                 }
 
             // Remove sub-station from google maps - start
@@ -993,9 +991,12 @@ function GisPerformance() {
         // Update loki db object end
 
         // Show New Plotted SS Markers
-        for (var i = 0; i < new_plotted_ss.length; i++) {
-            new_plotted_ss[i].setMap(mapInstance);
-        };
+        setTimeout(function() {
+            for (var i = 0; i < new_plotted_ss.length; i++) {
+                new_plotted_ss[i].setMap(mapInstance);
+            }
+        },200);
+        console.log(new_plotted_ss);
     };
 
     /*

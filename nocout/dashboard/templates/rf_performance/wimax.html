@@ -11,14 +11,64 @@
 {% block content_description %} RF Performance Dashboard: WiMAX {% endblock %}
 
 {% block content %}
-<h2>DL RSSI</h2>
+
+<style type="text/css">
+    .box .header-tabs .nav-tabs {
+        top: -45px !important;
+    }
+    .rf_chart_style {
+        height: 400px;
+        /*width: 100%;
+        max-width: 100%;*/
+        margin: 0 auto;
+    }
+</style>
+<div class="box border lite">
+    <div id="tableContainer_div" class="box-title">
+        <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: WIMAX</h4>
+    </div>
+    <div id="tableContainer" class="box-body">
+        <div class="tabbable header-tabs">
+            <ul class="nav nav-tabs">
+                <li><a href="#ul_cinr_block" id="ul_cinr_tab" data-toggle="tab"><span class="hidden-inline-mobile">UL CINR</span></a></li>
+                <li><a href="#dl_cinr_block" id="dl_cinr_tab" data-toggle="tab"><span class="hidden-inline-mobile">DL CINR</span></a></li>
+                <li><a href="#ul_rssi_block" id="ul_rssi_tab" data-toggle="tab"><span class="hidden-inline-mobile">UL RSSI</span></a></li>
+                <li class="active"><a href="#dl_rssi_block" id="dl_rssi_tab" data-toggle="tab"><span class="hidden-inline-mobile">DL RSSI</span></a></li>
+            </ul>
+            <div class="tab-content" style="overflow-y:auto;">
+                <div class="tab-pane active" id="dl_rssi_block" align="center">
+                    <div class="col-md-12">
+                        <div id="dl_rssi" class="rf_chart_style"></div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="ul_rssi_block" align="center">
+                    <div class="col-md-12">
+                        <div id="ul_rssi" class="rf_chart_style"></div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="dl_cinr_block" align="center">
+                    <div class="col-md-12">
+                        <div id="dl_cinr" class="rf_chart_style"></div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="ul_cinr_block" align="center">
+                    <div class="col-md-12">
+                        <div id="ul_cinr" class="rf_chart_style"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- <h2>DL RSSI</h2>
 <div id="dl_rssi" style="min-width: 310px; height: 400px; max-width: 600px; margin: 0 auto"></div>
 <h2>UL RSSI</h2>
 <div id="ul_rssi" style="min-width: 310px; height: 400px; max-width: 600px; margin: 0 auto"></div>
 <h2>DL CINR</h2>
 <div id="dl_cinr" style="min-width: 310px; height: 400px; max-width: 600px; margin: 0 auto"></div>
 <h2>UL CINR</h2>
-<div id="ul_cinr" style="min-width: 310px; height: 400px; max-width: 600px; margin: 0 auto"></div>
+<div id="ul_cinr" style="min-width: 310px; height: 400px; max-width: 600px; margin: 0 auto"></div> -->
 
 {% endblock %}
 
@@ -32,47 +82,153 @@
 <script src={% static "js/nocout_dashboard.js" %}></script>
 
 <script>
+    var ds_list = [];
     jQuery(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
+        
+        var data_sources = {{ data_sources|safe }};
+        ds_list = {{ data_sources|safe }};
+        
+        if(ds_list.length > 0) {
+            // start API calling
+            rf_getChartData(0);
+        }
     });
 
-    var data_sources = {{ data_sources|safe }};
 
 
-$(function () {
-    data_sources.forEach(function (data_source) {
-        var jqXHR = $.ajax( "{% url 'dashboard-rf-performance-wimax' %}" + "?data_source=" + data_source )
-        .done(function(json_response) {
-            var response = JSON.parse(json_response);
-            console.log(response);
-            console.log(response.success);
-            if (response.success == 1) {
-                var pie_chart = $('#' + data_source).highcharts({
-                    chart: {
-                        plotBackgroundColor: null,
-                        plotBorderWidth: 1,//null,
-                        plotShadow: false
-                    },
-                    title: {
-                        text: response.data.objects.chart_data[0].name
-                    },
-                    colors: response.data.objects.colors,
-                    series: [{
-                        type: 'pie',
-                        name: response.data.objects.display_name,
-                        data: response.data.objects.chart_data[0].data
-                    }]
+// $(function () {
+//     data_sources.forEach(function (data_source) {
+//         var jqXHR = $.ajax( "{% url 'dashboard-rf-performance-wimax' %}" + "?data_source=" + data_source )
+//         .done(function(json_response) {
+//             var response = JSON.parse(json_response);
+//             console.log(response);
+//             console.log(response.success);
+//             if (response.success == 1) {
+//                 var pie_chart = $('#' + data_source).highcharts({
+//                     chart: {
+//                         plotBackgroundColor: null,
+//                         plotBorderWidth: 1,//null,
+//                         plotShadow: false
+//                     },
+//                     title: {
+//                         text: response.data.objects.chart_data[0].name
+//                     },
+//                     colors: response.data.objects.colors,
+//                     series: [{
+//                         type: 'pie',
+//                         name: response.data.objects.display_name,
+//                         data: response.data.objects.chart_data[0].data
+//                     }]
+//                 });
+//             } else {
+//                 //alert(data_source + " : " + response.message);
+//                 console.log(data_source + " : " + response.message);
+//             }
+//         })
+//         .fail(function() {
+//             alert( data_source + " : server error" );
+//         });
+//     })
+// });
+
+/**
+ * This function fetch chart data by making an ajax call 
+ * @method rf_getChartData
+ */
+function rf_getChartData(counter) {
+
+    if(ds_list[counter]) {
+        var data_source_title = ds_list[counter] ? ds_list[counter].toUpperCase() : "";
+
+        $.ajax({
+            url : "{% url 'dashboard-rf-performance-wimax' %}" + "?data_source=" + ds_list[counter],
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+
+                if(response.success == 1) {
+                    var pie_chart = $('#' + ds_list[counter]).highcharts({
+                        chart: {
+                            plotBackgroundColor: null,
+                            plotBorderWidth: 1,//null,
+                            plotShadow: false
+                        },
+                        title: {
+                            text: response.data.objects.chart_data[0].name
+                        },
+                        plotOptions: {
+                            pie: {
+                                allowPointSelect: true,
+                                cursor: 'pointer',
+                                dataLabels: {
+                                    enabled: false
+                                },
+                                showInLegend: true
+                            }
+                        },
+                        legend:{
+                            enabled: true,
+                            x : '-10',
+                            y : '-10',
+                            floating: true,
+                            align : "right",
+                            layout : "vertical",
+                            itemStyle: {
+                                color: '#555555',
+                                fontWeight: 'normal',
+                                fontSize : '12px',
+                                fontWeight : '400'
+                            }
+                        },
+                        colors: response.data.objects.colors,
+                        series: [{
+                            type: 'pie',
+                            name: response.data.objects.display_name,
+                            data: response.data.objects.chart_data[0].data
+                        }]
+                    });
+                } else {
+                    // console.log(data_source_title + " : " + response.message);
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'RF Performance Dashboard - WIMAX',
+                        // (string | mandatory) the text inside the notification
+                        text: data_source_title + " : " + response.message,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false,
+                        // Time in ms after which the gritter will dissappear.
+                        time : 1500
+                    });
+                }
+            },
+            error : function(err) {
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'RF Performance Dashboard - WIMAX',
+                    // (string | mandatory) the text inside the notification
+                    text: data_source_title + " : " + err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
                 });
-            } else {
-                //alert(data_source + " : " + response.message);
-                console.log(data_source + " : " + response.message);
+            },
+            complete : function() {
+                // recursive function calling
+                if(ds_list[counter++]) {
+                    rf_getChartData(counter++);
+                }
             }
-        })
-        .fail(function() {
-            alert( data_source + " : server error" );
         });
-    })
-});
+    }
+}
+
 </script>
 {% endblock %}
