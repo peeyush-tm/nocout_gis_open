@@ -3515,7 +3515,7 @@ class GisWizardDeviceTypeServiceMixin(object):
             return reverse('wizard-service-update', kwargs={'pk': self.object.id,
                     'dt_pk': self.kwargs['dt_pk']})
         else:
-            return reverse('wizard-service-data-source-list', kwargs={'dts_pk': self.object.id,
+            return reverse('wizard-data-source-list', kwargs={'dts_pk': self.object.id,
                     'dt_pk': self.kwargs['dt_pk']})
 
     def get_context_data(self, **kwargs):
@@ -3523,11 +3523,11 @@ class GisWizardDeviceTypeServiceMixin(object):
         if 'pk' in self.kwargs: # Update View
 
             device_type_service = DeviceTypeService.objects.get(id=self.kwargs['pk'])
-            # skip_url = reverse('wizard-service-data-source-list', kwargs={'dts_pk': self.object.id,
-            #         'dt_pk': self.kwargs['dt_pk']})
+            skip_url = reverse('wizard-data-source-list', kwargs={'dts_pk': self.object.id,
+                    'dt_pk': self.kwargs['dt_pk']})
 
             save_text = 'Update'
-            # context['skip_url'] = skip_url
+            context['skip_url'] = skip_url
         else: # Create View
             save_text = 'Save'
 
@@ -3558,3 +3558,79 @@ class GisWizardDeviceTypeServiceMixin(object):
 
 class GisWizardServiceUpdateView(GisWizardDeviceTypeServiceMixin, DeviceTypeServiceUpdateView):
     pass
+
+
+#**************************************** Device Type Service Wizard ****************************************#
+class GisWizardDataSourceListView(PermissionsRequiredMixin, ListView):
+    """
+    View to render the device type service data source.
+    """
+    model = DeviceTypeServiceDataSource
+    template_name = 'wizard/data_source_list.html'
+    required_permissions = ('device.view_devicetypeservicedatasource',)
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(GisWizardDataSourceListView, self).get_context_data(**kwargs)
+        device_type = DeviceType.objects.get(id=self.kwargs['dt_pk'])
+        device_type_service = DeviceTypeService.objects.get(id=self.kwargs['dts_pk'])
+        context['device_type'] = device_type
+        context['device_type_service'] = device_type_service
+        datatable_headers = [
+            {'mData': 'service_data_sources__name', 'sTitle': 'Name', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'service_data_sources__alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'bSortable': True},
+            {'mData': 'warning', 'sTitle': 'Warning', 'sWidth': 'auto', },
+            {'mData': 'critical', 'sTitle': 'Critical', 'sWidth': 'auto', },
+        ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+
+class GisWizardDataSourceListing(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
+    """
+    Class based View to render Device Type Service Data Source Listing Table.
+    """
+    model = DeviceTypeServiceDataSource
+    required_permissions = ('device.view_devicetypeservicedatasource',)
+    columns = ['service_data_sources__name', 'service_data_sources__alias',
+             'warning', 'critical']
+    order_columns = ['service_data_sources__name', 'service_data_sources__alias']
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        qs = self.model.objects.filter(device_type_service__id=self.kwargs['dts_pk'])
+        return qs.prefetch_related('service_data_sources')
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
+        json_data = []
+        for obj in qs:
+            dct = {}
+            dct.update(service_data_sources__name=obj.service_data_sources.name)
+            dct.update(service_data_sources__alias=obj.service_data_sources.alias)
+            dct.update(warning=obj.warning)
+            dct.update(critical=obj.critical)
+            dct.update(actions='<a href="/wizard/device-type/{0}/service/{1}/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/wizard/device-type/{0}/service/{1}/data-source-table/{2}/delete"><i class="fa fa-trash-o text-danger"></i></a>'.\
+                format(self.kwargs['dt_pk'],self.kwargs['dts_pk'], obj.id))
+            json_data.append(dct)
+        return json_data
+
+
+def wizard_data_source_delete(request, dt_pk, dts_pk, pk):
+    dts_data_source = DeviceTypeServiceDataSource.objects.get(id=pk)
+    dts_data_source.delete()
+    return HttpResponseRedirect(reverse('wizard-data-source-list', kwargs={'dt_pk': dt_pk, 'dts_pk': dts_pk}))
