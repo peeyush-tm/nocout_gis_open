@@ -40,20 +40,20 @@
                 <div class="tab-pane active" id="ptp_bh_block">
                     <div class="col-md-12">
                         <div class="col-md-6">
-                            <div class="col-md-8" style="margin:0px auto;">
-                                <h3>RSSI</h3>
+                            <h3>RSSI</h3>
+                            <div class="col-md-10 col-md-offset-1">
                                 <div id="rssi" class="rf_chart_style"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="col-md-8" style="margin:0px auto;">
-                                <h3>Availability</h3>
+                            <h3>Availability</h3>
+                            <div class="col-md-10 col-md-offset-1">
                                 <div id="availability" class="rf_chart_style"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="col-md-8" style="margin:0px auto;">
-                                <h3>UAS</h3>
+                            <h3>UAS</h3>
+                            <div class="col-md-10 col-md-offset-1">
                                 <div id="uas" class="rf_chart_style"></div>
                             </div>
                         </div>
@@ -90,9 +90,15 @@
         var data_sources = {{ data_sources|safe }};
         ds_list = {{ data_sources|safe }};
         
+        /*Show spinner*/
+        showSpinner();
+
         if(ds_list.length > 0) {
             // start API calling
             rf_getChartData(0);
+        } else {
+            /*hide spinner*/
+            hideSpinner();
         }
     });
 
@@ -155,6 +161,17 @@ function rf_getChartData(counter) {
                 if(response.success == 1) {
                     var pie_chart = $('#' + ds_list[counter]).highcharts({
                         chart: {
+                            events: {
+                                load : function() {
+                                    // Hide highcharts.com link from chart when chart is loaded
+                                    var highcharts_link = $("#"+ds_list[counter]+" svg text:last-child");
+                                    $.grep(highcharts_link,function(val) {
+                                        if($.trim(val.innerHTML) == 'Highcharts.com') {
+                                            val.innerHTML = "";
+                                        }
+                                    });
+                                }
+                            },
                             plotBackgroundColor: null,
                             plotBorderWidth: null,
                             plotShadow: false
@@ -174,17 +191,15 @@ function rf_getChartData(counter) {
                             }
                         },
                         legend:{
-                            enabled: true,
-                            y : '-10',
-                            x : '-10',
-                            floating: true,
-                            align : "right",
-                            layout : "vertical",
+                            itemDistance : 15,
+                            itemMarginBottom : 5,
+                            itemWidth : 125,
+                            borderColor : "#CCCCCC",
+                            borderWidth : "1",
+                            borderRadius : "8",
                             itemStyle: {
                                 color: '#555555',
-                                fontWeight: 'normal',
-                                fontSize : '12px',
-                                fontWeight : '400'
+                                fontSize : '10px'
                             }
                         },
                         colors: response.data.objects.colors,
@@ -225,6 +240,9 @@ function rf_getChartData(counter) {
                 // recursive function calling
                 if(ds_list[counter++]) {
                     rf_getChartData(counter++);
+                } else {
+                    /*hide spinner*/
+                    hideSpinner();
                 }
             }
         });
