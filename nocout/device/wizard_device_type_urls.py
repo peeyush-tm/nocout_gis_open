@@ -9,6 +9,5 @@ urlpatterns = patterns('',
     url(r'^device-type/(?P<dt_pk>\d+)/service/$', views.GisWizardServiceListView.as_view(), name='wizard-service-list'),
     url(r'^device-type/(?P<dt_pk>\d+)/service-table/$', views.GisWizardServiceListing.as_view(), name='wizard-service-list-table'),
     url(r'^device-type/(?P<dt_pk>\d+)/service/(?P<pk>\d+)/$', views.GisWizardServiceUpdateView.as_view(), name='wizard-service-update'),
-    url(r'^device-type/(?P<dt_pk>\d+)/service/(?P<pk>\d+)/delete/$', views.wizard_service_delete, name='wizard-service-delete'),
 
 )
