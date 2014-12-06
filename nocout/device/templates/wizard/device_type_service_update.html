@@ -179,21 +179,25 @@
             var ele = $(this).attr('name')  // input field warning/critical
             var ele_val = $(this).val()     // get the value of input field
             if (ele.indexOf('warning')>0){
-                var c = $(this).parent().parent().parent().next()
-                if (ele_val.length){
-                    c.find('input[name$="critical"]').prop('required', true);
+                var c = $(this).parent().parent().parent().next().find('input[name$="critical"]')
+                if (ele_val.length || c.val() ){
+                    $(this).prop('required', true)
+                    c.prop('required', true);
                 }
                 else{
-                    c.find('input[name$="critical"]').prop('required', false);
+                    $(this).prop('required', false)
+                    c.prop('required', false);
                 }
             }
             else{
-                var w = $(this).parent().parent().parent().prev()
-                if (ele_val.length){
-                    w.find('input[name$="warning"]').prop('required', true);
+                var w = $(this).parent().parent().parent().prev().find('input[name$="warning"]')
+                if (ele_val.length || w.val() ){
+                    $(this).prop('required', true)
+                    w.prop('required', true);
                 }
                 else{
-                    w.find('input[name$="warning"]').prop('required', false);
+                    $(this).prop('required', false)
+                    w.prop('required', false);
                 }
             }
         });
