@@ -246,26 +246,6 @@ def select_service(request):
         "parameters_name": parameters.parameter_description,
         }) )
 
-def select_data_source(request):
-    """
-    return value list of data_source when the servie is selected in device type.
-    """
-    dts_pk = request.GET['dts_id']
-    counter = request.GET['counter']
-    service_counter = request.GET['service_counter']
-    dts = DeviceTypeService.objects.get(id=dts_pk)
-    Service_data_formset = DeviceTypeServiceDataSourceUpdateFormset(instance=dts, prefix='dts-{0}-sds-{1}'.format(service_counter,counter))
-    ctx_dict = {
-                'service_data_formset': Service_data_formset,
-                'counter': counter,
-                'service_counter': service_counter,
-            }
-    service_attributes = render_to_string('service/service_attributes_dtsds.html', ctx_dict)
-    service_attributes.content_subtype = "html"
-    return HttpResponse( json.dumps({
-        "service_attributes": service_attributes,
-        }) )
-
 
 #************************************* Service Parameters *****************************************
 class ServiceParametersList(PermissionsRequiredMixin, ListView):
@@ -458,6 +438,7 @@ class ServiceDataSourceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, Dele
 def select_value_data_source(request):
     """
     Call when the service data source is selected while creating the service.
+    And while creating the service of the device type.
     """
     sds_id = request.GET['sds_id']
     sds_values_list = ServiceDataSource.objects.filter(id=sds_id).values('warning', 'critical')

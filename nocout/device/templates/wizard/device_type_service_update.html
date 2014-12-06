@@ -27,8 +27,7 @@
                                 <label for="{{ form.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">*</span> Service Data Sources</label>
                                 <div id="id_service_data_source" class="col-sm-9">
                                     <div class="col-md-7">
-                                        {{form.service_data_sources}}
-                                        {{ dts_data_source_form.non_form_errors }}
+                                        {{form.service_data_sources}} {{ dts_data_source_form.non_form_errors }}
                                     </div>
                                 </div>
                             </div>
@@ -89,47 +88,9 @@
                 $('#id_device_type_service_form').attr('action', "?show=True").submit();
             });
 
-            // // Changing labels of form fields
-            // $("label[for=id_rta_warning]").text('Latency Warning');
-            // $("label[for=id_rta_critical]").text('Latency Critical');
-            // $("label[for=id_pl_warning]").text('PD % Warning');
-            // $("label[for=id_pl_critical]").text('PD % Critical');
-            // $("label[for=id_packets]").text('Packet Count');
-            // $("label[for=id_timeout]").text('Timeout (ms)');
-
-            // // modify image upload field
-            // var device_icon = "#id_device_icon";
-            // var device_gmap_icon = "#id_device_gmap_icon";
-            // $(device_icon).bootstrapFileInput();
-            // $(device_icon).prev().text("Search for a file to add");
-            // $(device_gmap_icon).bootstrapFileInput();
-            // $(device_gmap_icon).prev().text("Search for a file to add");
-
             // Initialize the select2 selectbox.
             $(".select2select").select2();
         })
-
-        // var dts_value = []
-        // var dts_value = $('form input[type="hidden"][id|="id_dts"][name|="dts"][name$="id"][value]')
-
-        // // if service is already selected
-        // if ($("#id_service_data_source").find("option:selected").val()){
-        //     var service = $("form").find(".row").find("#id_service_data_source").slice(dts_value.length)
-        //     service.each(function() {
-        //       var service_id = $(this).find("option:selected").val()
-        //       var parameter = $(this).parent(".row .inline").find("#id_parameter")
-
-        //       get_attribute_of_service(service_id, parameter)
-        //     });
-        // }
-
-        // // if service is changed by the user
-        // $("form").find(".row").find("#id_service_data_source").change(function(){
-        //     var service_id = $(this).find("option:selected").val()
-        //     var parameter = $(this).parent(".row .inline").find("#id_parameter")
-
-        //     get_attribute_of_service(service_id, parameter)
-        // });
 
         // if service is changed by the user
         $("#id_service").change(function(){
@@ -157,33 +118,85 @@
             }
         });
 
+        // if service data source is already selected.
+        var sds = $("form").find(".row").find("#id_service_data_source")
+        if (sds.length){
+            sds.each(function() {
+            var sds_id = $(this).find("option:selected").val()
+            var sds_location = $(this).parents(".row .inline")
+            get_sds_value(sds_id, sds_location)
+            })
+        }
 
-        // function get_attribute_of_service(service_id, parameter){
-        //     var service_counter = service_counter - 1
-        //     if(service_id == '' ){
-        //         console.log('Select the service')
-        //     }
-        //     else{
-        //         $.ajax({
-        //             url : "/service/select/",
-        //             type : "GET",
-        //             dataType: "json",
-        //             data: {
-        //                 service_id : service_id,
-        //             },
-        //             success : function(service) {
-        //                 var parameter_option = parameter.find("select option:selected")
-        //                 parameter_option.val(service.parameters_id)
-        //                 parameter_option.html(service.parameters_name)
-        //             },
-        //             error : function(xhr,errmsg,err) {
-        //                 console.log(xhr.status + ": " + xhr.responseText);
-        //             }
-        //         });
+        // if the service data source is changed by the user.
+        sds.change(function(){
+            var sds_id = $(this).find("option:selected").val()
+            var sds_location = $(this).parents(".row .inline")
+            get_sds_value(sds_id, sds_location)
+        })
 
-        //         return false;
-        //     }
-        // }
+        //  Get the value of the data source selected by the user.
+        //  An display the warning & critical values selected of service data source in brackets.
+        function get_sds_value(sds_id, sds_location){
+            var sds_id = sds_id
+            if (!sds_id.length){
+                console.log("No service data source is selected")
+            }
+            else{
+                $.ajax({
+                    url : "/service/select/value/data_source/",
+                    type : "GET",
+                    dataType: "json",
+                    data: {
+                        sds_id : sds_id,
+                    },
+                    success : function(sds) {
+                        var p = sds_location.children().slice(2)
+                        var w = sds.sds_values_list[0]['warning']
+                        var c = sds.sds_values_list[0]['critical']
+                        // if the data source is empty
+                        if (!w.length){ w = null }
+                        if (!c.length){ c = null }
+                        p.find('[id|="id_dtsds"][id$="value"]').remove()
+                        p.first().find('input').parent().append('<label id="id_dtsds-value">( '+w+' )</label>')
+
+                        p.first().next().find('input').parent().append('<label id="id_dtsds-value">( '+c+' )</label>')
+                    },
+                    error : function(xhr,errmsg,err) {
+                        console.log(xhr.status + ": " + xhr.responseText);
+                    }
+                });
+
+                return false;
+            }
+        }
+
+
+        // get all the input field of the service data source to implement the validation
+        // warning and critical: both should contain value or both should be null.
+        sds_fields = $("form input[class='form-control'][id|='id_dtsds'][name|='dtsds'][type='text']")
+        sds_fields.change(function(){
+            var ele = $(this).attr('name')  // input field warning/critical
+            var ele_val = $(this).val()     // get the value of input field
+            if (ele.indexOf('warning')>0){
+                var c = $(this).parent().parent().parent().next()
+                if (ele_val.length){
+                    c.find('input[name$="critical"]').prop('required', true);
+                }
+                else{
+                    c.find('input[name$="critical"]').prop('required', false);
+                }
+            }
+            else{
+                var w = $(this).parent().parent().parent().prev()
+                if (ele_val.length){
+                    w.find('input[name$="warning"]').prop('required', true);
+                }
+                else{
+                    w.find('input[name$="warning"]').prop('required', false);
+                }
+            }
+        });
 
     </script>
     <script type="text/javascript">
