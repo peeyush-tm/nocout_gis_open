@@ -14,8 +14,8 @@ from django.utils.translation import ugettext_lazy
 from user_profile.models import UserProfile
 from organization.models import Organization
 from inventory.signals import auto_assign_thematic
-from django.db.models.signals import post_save, pre_save
-from inventory.signals import resize_icon_size
+from django.db.models.signals import post_save, pre_save, pre_delete
+from inventory.signals import resize_icon_size, delete_antenna_of_sector, delete_antenna_of_substation, delete_customer_of_circuit
 
 
 def get_default_org():
@@ -471,3 +471,6 @@ class UserPingThematicSettings(models.Model):
 
 post_save.connect(auto_assign_thematic, sender=UserProfile)
 pre_save.connect(resize_icon_size, sender=IconSettings)
+pre_delete.connect(delete_antenna_of_sector, sender=Sector)
+pre_delete.connect(delete_antenna_of_substation, sender=SubStation)
+pre_delete.connect(delete_customer_of_circuit, sender=Circuit)
