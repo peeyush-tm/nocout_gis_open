@@ -552,18 +552,16 @@ class BaseDeviceTypeServiceFormset(BaseInlineFormSet):
     """
     Custome Inline formest.
     """
-    # def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
 
-    #     super(BaseDeviceTypeServiceFormset, self).__init__(*args, **kwargs)
-    #     for form in self.forms:
-    #         pass
-    #         # form.fields['service'].empty_label = 'Select'
+        super(BaseDeviceTypeServiceFormset, self).__init__(*args, **kwargs)
+        for form in self.forms:
+            form.fields['service'].empty_label = 'Select'
+            form.fields['parameter'].empty_label = 'Select'
 
     def clean(self):
-        # print('++++++++++++++++++++++++',self.forms)
         for form in self.forms:
-            # print('++++++++++',form.cleaned_data)
-            if not len(form.cleaned_data.keys()):
+            if not 'service' in form.cleaned_data.keys():
                 raise forms.ValidationError('This field is required.')
 
 class DeviceTypeForm(forms.ModelForm):
@@ -653,9 +651,6 @@ DeviceTypeServiceCreateFormset = inlineformset_factory(DeviceType, DeviceTypeSer
     fields=('service', 'parameter'), extra=1, widgets=widgets, can_delete=True)
 DeviceTypeServiceUpdateFormset = inlineformset_factory(DeviceType, DeviceTypeService, formset=BaseDeviceTypeServiceFormset,
     fields=('service', 'parameter'), extra=0, widgets=widgets, can_delete=True)
-DeviceTypeServiceDataSourceUpdateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource, formset=BaseDeviceTypeServiceFormset,
-    extra=0, widgets=widgets,)
-
 
 # ******************************************* Device Type *******************************************
 class DevicePortForm(forms.ModelForm):
@@ -893,3 +888,94 @@ class CityForm(forms.ModelForm):
         """
         model = City
         fields = ('state', 'city_name',)
+
+
+#**************************************** GIS Wizard Forms ****************************************#
+
+class WizardDeviceTypeForm(DeviceTypeForm):
+    """
+    Class Based View Base Station Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(WizardDeviceTypeForm, self).__init__(*args, **kwargs)
+
+        self.fields.pop('service')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = DeviceType
+        fields = ('name', 'alias', 'device_port', 'service', 'packets', 'timeout', 'normal_check_interval',
+            'rta_warning', 'rta_critical', 'pl_warning', 'agent_tag', 'device_icon', 'device_gmap_icon',
+        )
+
+
+#**************************************** GIS Device Type Service Wizard Forms ****************************************#
+class BaseDTSDataSourceFormset(BaseInlineFormSet):
+    """
+    Custome Inline formest.
+    """
+    def __init__(self, *args, **kwargs):
+
+        super(BaseDTSDataSourceFormset, self).__init__(*args, **kwargs)
+        for form in self.forms:
+            form.fields['service_data_sources'].empty_label = 'Select'
+
+    def clean(self):
+        for form in self.forms:
+            if not 'service_data_sources' in form.cleaned_data.keys():
+                raise forms.ValidationError('This field is required.')
+
+class WizardDeviceTypeServiceForm(forms.ModelForm):
+    """
+    Rendering form for device type service
+    """
+
+    def __init__(self, *args, **kwargs):
+        # removing help text for service 'select' field
+        self.base_fields['service'].help_text = ''
+        self.base_fields['service'].empty_label = 'Select'
+        # removing help text for service 'select' field
+        self.base_fields['parameter'].help_text = ''
+        self.base_fields['parameter'].help_text = 'Select'
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(WizardDeviceTypeServiceForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = DeviceTypeService
+        exclude = ('device_type', 'service_data_sources',)
+
+widgets = {
+           'critical': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'warning': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'service_data_sources': forms.Select(attrs= {'class' : 'form-control'}),
+    }
+
+DeviceTypeServiceDataSourceCreateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource,
+    formset=BaseDTSDataSourceFormset, extra=1, widgets=widgets, can_delete=True)
+DeviceTypeServiceDataSourceUpdateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource,
+    formset=BaseDTSDataSourceFormset, extra=0, widgets=widgets, can_delete=True)
+
