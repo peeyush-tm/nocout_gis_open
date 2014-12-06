@@ -135,3 +135,16 @@ class DFRProcessed(models.Model):
 
     def __unicode__(self):
         return self.processed_for.name
+
+
+class MFRCauseCode(models.Model):
+    """
+    Cause Code wise Data
+    """
+    processed_for = models.ForeignKey(MFRDFRReports)  # for which report this is processed for
+    processed_on = models.DateField('Processed Date and Time', blank=True, default=datetime.datetime.now)
+    processed_key = models.CharField('Key for Processing', max_length=128)
+    processed_value = models.CharField('Value of Processing', max_length=64)
+
+    def __unicode__(self):
+        return self.processed_for.name

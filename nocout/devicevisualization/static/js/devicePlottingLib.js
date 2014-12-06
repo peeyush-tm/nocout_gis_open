@@ -5250,7 +5250,7 @@ function devicePlottingClass_gmap() {
 	 */
     this.getPollingData_gmap = function(callback) {
 
-    	var service_type = $("#isPing")[0].checked ? "ping" : "other";
+    	var service_type = $("#isPing")[0].checked ? "ping" : "normal";
 
 		/*Disable service templates dropdown*/
 		$("#lp_template_select").attr("disabled","disabled");
