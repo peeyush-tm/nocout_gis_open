@@ -18,7 +18,7 @@ from django.views.generic import ListView, DetailView, TemplateView, View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.core.urlresolvers import reverse_lazy, reverse
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from django.db.models import Q
+from django.db.models import Count, Q
 from device_group.models import DeviceGroup
 from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
 
@@ -46,7 +46,6 @@ import xlrd
 import xlwt
 import logging
 from django.template import RequestContext
-from django.db.models import Count
 from nocout.utils import logged_in_user_organizations
 from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
@@ -783,12 +782,13 @@ class SectorListingTable(PermissionsRequiredMixin,
     def get_initial_queryset(self):
         qs = super(SectorListingTable, self).get_initial_queryset()
 
-        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'corrupted':
-            qs = qs.annotate(num_circuit=Count('circuit')).filter(
-                   Q(sector_configured_on__isnull=True) | Q(base_station__isnull=True) | Q(bs_technology__in=[3,4], sector_id__isnull=True) | Q(bs_technology__id=3 , sector_configured_on_port__isnull=True) | Q(num_circuit__gt=1))
-
-        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'unused':
-            qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
+        if 'tab' in self.request.GET:
+            if self.request.GET.get('tab') == 'corrupted':
+                qs = qs.annotate(num_circuit=Count('circuit')).filter(
+                        Q(sector_configured_on__isnull=True) | Q(base_station__isnull=True) | Q(bs_technology__in=[3,4], sector_id__isnull=True)
+                        | Q(bs_technology__id=3 , sector_configured_on_port__isnull=True) | Q(num_circuit__gt=1))
+            elif self.request.GET.get('tab') == 'unused':
+                qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
 
         return qs
 
@@ -1091,11 +1091,11 @@ class SubStationListingTable(PermissionsRequiredMixin,
     def get_initial_queryset(self):
         qs = super(SubStationListingTable, self).get_initial_queryset()
 
-        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'corrupted':
-            qs = qs.annotate(num_circuit=Count('circuit')).filter(Q(device__isnull=True) | Q(num_circuit__gt=1))
-
-        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'unused':
-            qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
+        if 'tab' in self.request.GET:
+            if self.request.GET.get('tab') == 'corrupted':
+                qs = qs.annotate(num_circuit=Count('circuit')).filter(Q(device__isnull=True) | Q(num_circuit__gt=1))
+            elif self.request.GET.get('tab') == 'unused':
+                qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
 
         return qs
 
