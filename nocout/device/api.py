@@ -966,7 +966,7 @@ class BulkFetchLPDataApi(View):
                         # fetch service type if 'ts_type' is "normal"
                         svc_type = ""
                         try:
-                            if service_type != "normal":
+                            if service_type != "ping":
                                 svc_type = ts.threshold_template.service_type
                         except Exception as e:
                             logger.info("Service Type not exist. Exception: ", e.message)
@@ -980,22 +980,26 @@ class BulkFetchLPDataApi(View):
                                 print "*************************** th_icon_settings - ", type(th_icon_settings), th_icon_settings
                                 print "*************************** svc_type - ", type(svc_type), svc_type
 
-                                # fetching number from string for e.g. 4 from 'icon_settings4'
-                                device_value = ''.join(x for x in device_value if x.isdigit())
-
                                 # live polled value of device service
-                                value = ast.literal_eval(str(device_value))
+                                try:
+                                    value = ast.literal_eval(str(device_value))
+                                except Exception as e:
+                                    value = device_value
+                                    logger.info("Value can't be converted. Exception: ", e.message)
+                                print "*************************** value 2 - ", type(value), value
 
                                 # get appropriate icon
                                 if service_type == "normal":
+                                    print "*************************** Enter in normal - ", type(value), value
                                     if svc_type == "INT":
+                                        print "*************************** svc_type 2 - ", type(svc_type), svc_type
                                         icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
                                     elif svc_type == "STR":
                                         icon = self.get_icon_for_string_service(th_ranges, th_icon_settings, value)
                                     else:
                                         pass
                                 elif service_type == "ping":
-                                    print "*************************** Enter in ping - "
+                                    print "*************************** Enter in ping - ", type(value), value
                                     icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
                                 else:
                                     pass
@@ -1030,10 +1034,15 @@ class BulkFetchLPDataApi(View):
         print "***************************** th_icon_settings - ", th_icon_settings
         print "***************************** value - ", type(value), value
 
+        # fetching number from string for e.g. 45 from 'ab4cd5e'
+        if not isinstance(value, float):
+            value = ''.join(x for x in str(value) if x.isdigit())
+
         if th_ranges and th_icon_settings and len(str(value)):
             print "************************ Enter here - "
             try:
                 if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
+                    print "***************************** range 1 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings1' in icon_setting.keys():
