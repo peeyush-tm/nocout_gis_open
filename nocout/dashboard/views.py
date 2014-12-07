@@ -309,7 +309,7 @@ class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
         data_source_config = {
             'rssi': {'service_name': 'radwin_rssi', 'model': ServiceStatus},
             'availability': {'service_name': 'availability', 'model': NetworkAvailabilityDaily},
-            'uas': {'service_name': 'radwin_uas', 'model': NetworkAvailabilityDaily},
+            'uas': {'service_name': 'radwin_uas', 'model': ServiceStatus},
         }
         technology = DeviceTechnology.objects.get(name='P2P').id
         devices_method_to_call = organization_network_devices

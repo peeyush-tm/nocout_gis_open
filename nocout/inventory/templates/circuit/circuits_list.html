@@ -13,28 +13,55 @@
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>CIRCUIT LISTING</h4>
         </div>
-        <div id="tableContainer" class="box-body" style="overflow:auto;">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="CircuitListingTable">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
+        <div class="box-body">
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                    <li><a href="#AllCircuits" id="allCircuitListingTab" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
+                    <li><a href="#UnusedCircuits" id="unusedCircuitListingTab" data-toggle="tab"><span class="hidden-inline-mobile">Unused</span></a></li>
+                </ul>
+                <div class="tab-content Tbl_FixHeight" style="overflow:auto;">
+                    <div class="tab-pane" id="AllCircuits">
+                        <table id="AllCircuitsListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="UnusedCircuits">
+                        <table id="UnusedCircuitsListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
 
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <script type="text/javascript">
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-            /*Ajax url to get grid data*/
-            var ajax_url = '{% url "CircuitListingTable" %}';
+            var ajax_url_all_circuits = '{% url "CircuitListingTable" %}' + '?tab=all';
+            var ajax_url_unused_circuits = '{% url "CircuitListingTable" %}' + '?tab=unused';
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy=false;
-            dataTableInstance.createDataTable("CircuitListingTable", gridHeadersObj, ajax_url, destroy);
+
+            $("#allCircuitListingTab").attr("data_url", ajax_url_all_circuits);
+            $("#allCircuitListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#unusedCircuitListingTab").attr("data_url", ajax_url_unused_circuits);
+            $("#unusedCircuitListingTab").attr("data_header", '{{ datatable_headers|safe }}');
+            var location_array = window.location.href.split("#");
+
+            if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+
+                /*Trigger click event on active tab to load its data*/
+                $("#allCircuitListingTab").trigger('click',true);
+            }
         });
     </script>
 {% endblock %}

@@ -3,11 +3,13 @@ aggregation_all.py
 ==================================
 
 Usage ::
-python aggregation_all.py -t 1 -f hourly -s performance_performancenetworkbihourly -d performance_performancenetworkhourly
-python aggregation_all.py -t 1 -f hourly -d performance_performanceservicebihourly -d performance_performanceservicehourly
-python aggregation_all.py -t 24 -f daily -d performance_performanceservicehourly -d performance_performanceservicedaily
-python aggregation_all.py -t (7*24) -f weekly -d performance_performancestatusdaily -d performance_performancestatusweekly
-python aggregation_all.py -t (7*24) -f weekly -d performance_performanceinventorydaily -d performance_performanceinventoryweekly
+python aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s network_perf -d performance_performancenetworkbihourly
+python aggregation_all.py -r mongodb -t 0.5 -f half_hourly -s service_perf -d performance_performanceservicebihourly
+python aggregation_all.py -r mysql -t 1 -f hourly -s performance_performancenetworkbihourly -d performance_performancenetworkhourly
+python aggregation_all.py -r mysql -t 1 -f hourly -d performance_performanceservicebihourly -d performance_performanceservicehourly
+python aggregation_all.py -r mysql -t 24 -f daily -d performance_performanceservicehourly -d performance_performanceservicedaily
+python aggregation_all.py -r mysql -t 168 -f weekly -d performance_performancestatusdaily -d performance_performancestatusweekly
+python aggregation_all.py -r mysql -t 168 -f weekly -d performance_performanceinventorydaily -d performance_performanceinventoryweekly
 Options ::
 t - Time frame for read operation [Hours]
 s - Source Mongodb collection
@@ -21,6 +23,7 @@ import sys
 from datetime import datetime, timedelta
 from pprint import pprint
 import collections
+from operator import itemgetter
 import optparse
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -44,15 +47,17 @@ mysql_configs = {
 		'database': desired_config.get('sql_db')
 		}
 parser = optparse.OptionParser()
+parser.add_option('-r', '--read_from', dest='read_from', type='str')
 parser.add_option('-s', '--source', dest='source_db', type='str')
 parser.add_option('-d', '--destination', dest='destination_db', type='str')
-parser.add_option('-t', '--hours', dest='hours', type='choice', choices=['1', '24', '168'])
-parser.add_option('-f', '--timeframe', dest='timeframe', type='choice', choices=['hourly', 'daily', 'weekly'])
+parser.add_option('-t', '--hours', dest='hours', type='choice', choices=['0.5', '1', '24', '168'])
+parser.add_option('-f', '--timeframe', dest='timeframe', type='choice', choices=['half_hourly', 'hourly', 'daily', 'weekly'])
 options, remainder = parser.parse_args(sys.argv[1:])
-if options.source_db and options.destination_db and options.hours and options.timeframe:
+if options.source_db and options.destination_db and options.hours and options.timeframe and options.read_from:
+	read_from = options.read_from
 	source_perf_table=options.source_db
 	destination_perf_table=options.destination_db
-	hours = int(options.hours)
+	hours = float(options.hours)
 	time_frame = options.timeframe
 else:
 	print "Usage: service_mongo_aggregation_hourly.py [options]"
@@ -71,10 +76,16 @@ def quantify_perf_data(aggregated_data_values=[]):
 	start_time = end_time - timedelta(hours=hours)
 	start_time, end_time = start_time - timedelta(minutes=1), end_time + timedelta(minutes=1)
 	start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
-	db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
-	if db:
-		# Read data from mysqldb, performance historical data
-		data_values = mysql_migration_mod.read_data(source_perf_table, db, start_time, end_time)
+	if read_from == 'mysql':
+		db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
+		if db:
+			# Read data from mysqldb, performance historical data
+			data_values = sorted(mysql_migration_mod.read_data(source_perf_table, db, start_time, end_time), 
+					key=itemgetter('sys_timestamp'))
+	elif read_from == 'mongodb':
+		# Read data from mongodb, performance live data
+		data_values = sorted(mysql_migration_mod.read_data_from_mongo(source_perf_table, start_time, end_time, mongo_configs), 
+				key=itemgetter('sys_timestamp'))
 	print '## Docs len ##'
 	print len(data_values)
 	for doc in data_values:
@@ -86,12 +97,33 @@ def quantify_perf_data(aggregated_data_values=[]):
 				'mrotek_e1_interface_alarm', 'mrotek_device_type']
 		aggr_data = {}
 		find_query = {}
-		host, ip_address = doc.get('device_name'), doc.get('ip_address')
-		ds, service = doc.get('data_source'), doc.get('service_name')
-		site = doc.get('site_name')
-		time = float(doc.get('sys_timestamp'))
-		original_time, time = time, datetime.fromtimestamp(time)
-		if time_frame == 'hourly':
+
+		host = doc.get('device_name') if doc.get('device_name') else doc.get('host')
+		ip_address = doc.get('ip_address')
+		ds = doc.get('data_source') if doc.get('data_source') else doc.get('ds')
+		severity = doc.get('severity')
+		service = doc.get('service_name') if doc.get('service_name') else doc.get('service')
+		site = doc.get('site_name') if doc.get('site_name') else doc.get('site')
+		if read_from == 'mysql':
+			time = float(doc.get('sys_timestamp'))
+			original_time, time = time, datetime.fromtimestamp(time)
+		elif read_from == 'mongodb':
+			time = doc.get('sys_timestamp')
+		current_value = doc.get('current_value')
+		check_time = doc.get('check_timestamp')
+		if read_from == 'mysql':
+			war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
+		elif read_from == 'mongodb':
+			war, cric = doc.get('meta').get('war'), doc.get('meta').get('cric')
+
+                if time_frame == 'half_hourly':
+			if time.minute < 30:
+				# Pivot the time to second half of the hour
+				time = time.replace(minute=30, second=0, microsecond=0)
+			else:
+				# Pivot the time to next hour
+				time = time.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+		elif time_frame == 'hourly':
 			# Pivot the time to H:00:00
 			time = time.replace(minute=0, second=0, microsecond=0)
 			# Pivoting the time to next hour time frame [as explained in doc string]
@@ -107,6 +139,7 @@ def quantify_perf_data(aggregated_data_values=[]):
 			pivot_to_weekday = 7 - time.weekday()
 			# Pivoting the time to Sunday 23:55:00 [end of present week]
 			time += timedelta(days=pivot_to_weekday-1)
+
 		aggr_data = {
 				'host': host,
 				'service': service,
@@ -114,9 +147,14 @@ def quantify_perf_data(aggregated_data_values=[]):
 				'site': site,
 				'time':time,
 				'ip_address': ip_address,
+				'current_value': current_value,
+				'severity': severity,
 				'min': doc.get('min'),
 				'max': doc.get('max'),
-				'avg': doc.get('avg')
+				'avg': doc.get('avg'),
+				'war': war,
+				'cric': cric,
+				'check_time': check_time
 				}
 
 		# Find the existing doc to update
@@ -126,7 +164,7 @@ def quantify_perf_data(aggregated_data_values=[]):
 				'ds': aggr_data.get('ds'),
 				'time': time
 				}
-		existing_doc = find_existing_entry(find_query, aggregated_data_values)
+		existing_doc, existing_doc_index = find_existing_entry(find_query, aggregated_data_values)
 		#print 'existing_doc'
 		#print existing_doc
 		if existing_doc:
@@ -154,7 +192,9 @@ def quantify_perf_data(aggregated_data_values=[]):
 				'avg': avg_val
 				})
 			# First remove the existing entry from aggregated_data_values
-			aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
+			#aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
+			# First remove the existing entry from aggregated_data_values
+			aggregated_data_values.pop(existing_doc_index)
 		#upsert_aggregated_data(find_query, aggr_data)
 		aggregated_data_values.append(aggr_data)
 	
@@ -166,10 +206,17 @@ def find_existing_entry(find_query, aggregated_data_values):
 	Find the doc for update query
 	"""
        
-	docs = []
-	docs = filter(lambda d: set(find_query.values()) <= set(d.values()), aggregated_data_values)
+	existing_doc = []
+	existing_doc_index = None
+	find_values = set(find_query.values())
+	for i in xrange(len(aggregated_data_values)):
+		if find_values <= set(aggregated_data_values[i].values()):
+			existing_doc = aggregated_data_values[i:i+1]
+			existing_doc_index = i
+			break
+	#docs = filter(lambda d: set(find_query.values()) <= set(d.values()), aggregated_data_values)
 
-	return docs
+	return existing_doc, existing_doc_index
 
 def usage():
 	print "Usage: service_mongo_aggregation_hourly.py [options]"

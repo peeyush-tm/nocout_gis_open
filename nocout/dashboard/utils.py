@@ -5,6 +5,8 @@ from multiprocessing import Process, Queue
 
 from django.conf import settings
 
+import logging
+log = logging.getLogger(__name__)
 
 def get_service_status_data(queue, machine_device_list, machine, model, service_name, data_source):
     """
@@ -116,12 +118,13 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
         start_range = getattr(dashboard_setting, 'range%d_start' %count)
         end_range = getattr(dashboard_setting, 'range%d_end' %count)
         color = getattr(dashboard_setting, 'range%d_color_hex_value' %count)
-
-        chart_data.append(['range%d (%s - %s)' % (count, start_range, end_range), range_counter['range%d' %count]])
-        if color:
-            colors.append(color)
-        else:
-            colors.append("#000000")
+        if start_range or end_range:
+            if len(str(start_range).strip()) or len(str(end_range).strip()):
+                chart_data.append(['(%s, %s)' % (start_range, end_range), range_counter['range%d' %count]])
+                if color:
+                    colors.append(color)
+                else:
+                    colors.append("#000000")
     chart_data.append(['Unknown', range_counter['unknown']])
     colors.append("#d3d3d3")
 

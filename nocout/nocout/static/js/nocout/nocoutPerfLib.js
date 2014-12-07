@@ -375,6 +375,17 @@ function nocoutPerfLib() {
         function createHighChart(config) {
             chart_instance = $('#' + service_id + '_chart').highcharts({
                 chart: {
+                    events: {
+                        load : function() {
+                            // Hide highcharts.com link from chart when chart is loaded
+                            var highcharts_link = $("#"+service_id+"_chart svg text:last-child");
+                            $.grep(highcharts_link,function(val) {
+                                if($.trim(val.innerHTML) == 'Highcharts.com') {
+                                    val.innerHTML = "";
+                                }
+                            });
+                        }
+                    },
                     zoomType: 'x',
                     type: config.type
                 },
