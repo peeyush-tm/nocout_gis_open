@@ -4358,6 +4358,24 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
             except Exception as e:
                 base_station = ""
 
+            # check for dr site (disaster recovery site); if it's yes than do not create any entry beyond this point
+            # just get base station/idu device and make it 'dr configured on' attribute of current sector
+            # get dr site status
+            dr_site_status = row['DR Site'] if 'DR Site' in row.keys() else ""
+
+            # get current sector
+            sector_id = row['Sector ID'] if 'Sector ID' in row.keys() else ""
+
+            if (dr_site_status.lower() == "yes") and sector_id:
+                # get sector with current sector id
+                dr_sector = Sector.objects.filter(sector_id=sector_id)
+                if dr_sector:
+                    # if sector already exist than make base station/idu device it's 'dr configured on' device
+                    # and than skip the current loop by using 'continue' so that no entry beyond this point created
+                    dr_sector[0].dr_configured_on = base_station
+                    dr_sector[0].save()
+                    continue
+
             try:
                 # ------------------------------ BS Switch -----------------------------
                 if ip_sanitizer(row['BS Switch IP']):
