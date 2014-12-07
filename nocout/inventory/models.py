@@ -155,6 +155,7 @@ class Sector(models.Model):
     sector_configured_on_port = models.ForeignKey(DevicePort, null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, on_delete=models.SET_NULL, related_name='antenna')
     dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
+    dr_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=True, related_name='dr_configured_on')
     mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.FloatField('TX Power', null=True, blank=True, help_text='(dB) Enter a number.')
     rx_power = models.FloatField('RX Power', null=True, blank=True, help_text='(dB) Enter a number.')

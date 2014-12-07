@@ -492,6 +492,7 @@ class SectorForm(forms.ModelForm):
         self.fields['bs_technology'].empty_label = 'Select'
         self.fields['bs_technology'].required = True
         self.fields['sector_configured_on'].empty_label = 'Select'
+        self.fields['dr_configured_on'].empty_label = 'Select'
         self.fields['sector_configured_on_port'].empty_label = 'Select'
         self.fields['antenna'].empty_label = 'Select'
         self.fields['frequency'].empty_label = 'Select'
