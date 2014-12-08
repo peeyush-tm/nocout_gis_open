@@ -4566,7 +4566,7 @@ function devicePlottingClass_gmap() {
 		    } else if($.trim(mapPageType) == "white_background") {
 		    	whiteMapClass.clearStateCounters_wmaps();
 		    	isCallCompleted = 1;
-		    	if(ccpl_map.getZoom() > 1) {
+		    	if(ccpl_map.getZoom() != 1) {
 		    		ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
 	    		}
 		    	data_for_filter_wmap = JSON.parse(JSON.stringify(all_devices_loki_db.data));
@@ -4694,7 +4694,7 @@ function devicePlottingClass_gmap() {
 				} else if (window.location.pathname.indexOf("white_background") > -1) {
 					data_for_filter_wmap = data_to_plot_1;
 					isCallCompleted = 1;
-					if(ccpl_map.getZoom() > 1) {
+					if(ccpl_map.getZoom() != 1) {
 						ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
 					}
 					isApiResponse = 0;
