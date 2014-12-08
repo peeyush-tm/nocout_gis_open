@@ -78,6 +78,8 @@ def quantify_events_data(aggregated_data_values=[]):
 		severity = doc.get('severity')
 		current_value = int(doc.get('current_value'))
 		site = doc.get('site_name')
+		war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
+		check_time = doc.get('check_timestamp')
 		original_time = doc.get('sys_timestamp') if doc.get('sys_timestamp') else doc.get('time')
 		time = datetime.fromtimestamp(original_time)
 		if time_frame == 'daily':
@@ -101,11 +103,14 @@ def quantify_events_data(aggregated_data_values=[]):
 				'original_time': original_time,
 				'site': site,
 				'ip_address': ip_address,
+				'war': war,
+				'cric': cric,
+				'check_time': check_time,
 				'current_value': current_value
 				}
 		# Find the entry for next state change of the host service
 		state_change_entry = find_next_state_change(aggr_data, data_values[index+1:]) 
-		if not state_change_entry:
+		if not state_change_entry or str(state_change_entry[0]['severity']) == str(severity):
 			continue
 		age_of_state = state_change_entry[0].get('sys_timestamp') - original_time 
 		aggr_data.update({
@@ -154,10 +159,6 @@ def find_next_state_change(aggr_data, data_values):
 		if set([aggr_data['host'], aggr_data['service'], aggr_data['ds']]) <= set(data_values[i].values()):
 			intermediate_result = data_values[i:i+1]
 			break
-	#intermediate_result = filter(lambda e: set([aggr_data['host'], aggr_data['service'], \
-	#		aggr_data['ds']]) <= set(e.values()), data_values)
-	#return filter(lambda e: aggr_data['severity'] != e['severity'] and \
-	#		aggr_data['original_time'] < e['sys_timestamp'], intermediate_result)[0:1]
 	return intermediate_result
 	
 
@@ -184,6 +185,8 @@ def usage():
 
 if __name__ == '__main__':
 	final_data_values = quantify_events_data()
+	print '--final_data_values--'
+	print len(final_data_values)
 	if final_data_values:
 		db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)  
 		mysql_migration_mod.mysql_export(destination_perf_table, db, final_data_values)

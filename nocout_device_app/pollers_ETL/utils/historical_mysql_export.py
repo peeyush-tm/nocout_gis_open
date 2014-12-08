@@ -22,7 +22,7 @@ def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_for
 			port=int(configs.get('port')),
 			db_name='nocout') 
 	if db:
-		cur = db[source_perf_table].find({'sys_timestamp': {'$gt': start_time, '$lt': end_time}})
+		cur = db[source_perf_table].find({'local_timestamp': {'$gt': start_time, '$lt': end_time}})
 		docs = list(cur)
 	return docs
 
