@@ -15,4 +15,9 @@ urlpatterns = patterns('',
     url(r'^rf-performance/pmp/$', views.PMP_Performance_Dashboard.as_view(), name='dashboard-rf-performance-pmp'),
     url(r'^rf-performance/ptp/$', views.PTP_Performance_Dashboard.as_view(), name='dashboard-rf-performance-ptp'),
     url(r'^rf-performance/ptp-bh/$', views.PTPBH_Performance_Dashboard.as_view(), name='dashboard-rf-performance-ptp-bh'),
+
+    url(r'^mfr-dfr-reports/$', views.MFRDFRReportsListView.as_view(), name='mfr-dfr-reports-list'),
+    url(r'^mfr-dfr-reports/table/$', views.MFRDFRReportsListingTable.as_view(), name='mfr-dfr-reports-table'),
+    url(r'^mfr-dfr-reports/upload/$', views.MFRDFRReportsCreateView.as_view(), name='mfr-dfr-reports-upload'),
+    url(r'^mfr-dfr-reports/(?P<pk>\d+)/delete/$', views.MFRDFRReportsDeleteView.as_view(), name='mfr-dfr-reports-delete'),
 )
