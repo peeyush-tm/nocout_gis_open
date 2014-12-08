@@ -3802,7 +3802,6 @@ function devicePlottingClass_gmap() {
 	        earth_instance.clearEarthElements();
 	        earth_instance.clearStateCounters();
 
-
 	        var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 			lookAt.setLatitude(21.0000);
 			lookAt.setLongitude(78.0000);
@@ -3813,8 +3812,6 @@ function devicePlottingClass_gmap() {
 			data_for_filters_earth = data_to_plot;
 
 			isApiResponse = 0;
-			// Load all counters
-			gmap_self.updateStateCounter_gmaps(false);
 
     	} else if (window.location.pathname.indexOf('white_background') > -1) {
 			ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);    		
@@ -3825,8 +3822,8 @@ function devicePlottingClass_gmap() {
             mapInstance.setZoom(5);
             // data_for_filters = data_to_plot;
             isApiResponse = 0;
-            gmap_self.updateStateCounter_gmaps(false);
     	}
+    	gmap_self.updateStateCounter_gmaps(false);
 	};
 
 	
