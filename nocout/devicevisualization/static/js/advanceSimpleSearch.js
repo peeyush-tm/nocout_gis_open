@@ -118,12 +118,14 @@ function advanceSearchMainClass() {
 
             //create a new marker
             searchMarker = whiteMapClass.createOpenLayerVectorMarker(undefined, undefined, long, lat, {icon: icon});
-            if(iconUrl) {
-                //set icon from global object
-                searchMarker.attributes.icon = iconUrl;
-            } else {
-                //set icon from global object
-                searchMarker.attributes.icon = this.constants.search_bs_icon;
+            if(searchMarker) {
+                if(iconUrl) {
+                    //set icon from global object
+                    searchMarker.attributes.icon = iconUrl;
+                } else {
+                    //set icon from global object
+                    searchMarker.attributes.icon = this.constants.search_bs_icon;
+                }
             }
             
             // whiteMapClass.searchMarkerLayer.display(true);
