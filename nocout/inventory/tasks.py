@@ -3,10 +3,11 @@ from dateutil.parser import *
 from models import GISInventoryBulkImport
 from machine.models import Machine
 from site_instance.models import SiteInstance
-from device.models import Device, DeviceTechnology, DevicePort
+from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency
 from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
+from performance.models import InventoryStatus
 from IPy import IP
 from decimal import *
 import os
@@ -21,6 +22,43 @@ logger = logging.getLogger(__name__)
 
 # from celery.utils.log import get_task_logger
 # logger = get_task_logger(__name__)
+
+
+@task()
+def update_sector_frequency_per_day():
+    # fetch all sectors
+    sectors = Sector.objects.all()
+
+    # loop through all sectors for updating their frequencies
+    for sector in sectors:
+        # sector configured on device
+        sector_configured_on = sector.sector_configured_on
+
+        # sector configured on device machine name
+        machine_name = ""
+        try:
+            machine_name = sector_configured_on.machine.name
+        except Exception as e:
+            logger.info("Sector configured on machine not found. Exception: ", e.message)
+
+        # polled frequency
+        polled_frequency = ""
+        try:
+            polled_frequency = InventoryStatus.objects.filter(device_name=sector_configured_on,
+                                                              data_source='frequency').using(
+                                                              alias=machine_name)[0].current_value
+        except Exception as e:
+            logger.info("Frequency not exist for sector configured on device ({}).".format(sector_configured_on.name,
+                                                                                           e.message))
+
+        # get frequency object
+        frequency_obj = DeviceFrequency.objects.filter(value=str(polled_frequency))[0]
+
+        # update sector frequency
+        if frequency_obj:
+            sector.frequency = frequency_obj
+            sector.save()
+
 
 
 @task()
