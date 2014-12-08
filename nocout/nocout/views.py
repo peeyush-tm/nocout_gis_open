@@ -146,7 +146,6 @@ def auth_view(request):
         auth.login(request, user)
         next_url = '/' + request.POST.get('next', 'home/')
         key_from_cookie = request.session.session_key
-        Visitor.objects.create(user=request.user, session_key=key_from_cookie)
         objects_values = dict(dialog=True, url=next_url, user_id=user.id, username=user.username)
 
         # values to store in user audit logs
