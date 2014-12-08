@@ -44,7 +44,14 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     	/* When zoom level is greater than 8 show lines */
     	if(ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAtWhichStateClusterExpands) {
 
-    		isPerfCallStopped = 0;
+    		if(ccpl_map.getZoom() > 6) {
+        		// Reset Perf calling Flag
+    			isPerfCallStopped = 0;
+			} else {
+				// Set Perf calling Flag
+    			isPerfCallStopped = 1;
+    			isPerfCallStarted = 0;
+			}
 
     		if(ccpl_map.getZoom() < 8 || searchResultData.length > 0) {
 
@@ -235,22 +242,25 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				}
     		}
 
-    		var bs_id_list = getMarkerInCurrentBound();
-    		if(bs_id_list.length > 0 && isCallCompleted == 1) {
-    			gisPerformanceClass.start(bs_id_list);
+    		// Start Performance API calling
+    		if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
+    			var bs_id_list = getMarkerInCurrentBound();
+    			if(bs_id_list.length > 0 && isCallCompleted == 1) {
+	    			gisPerformanceClass.start(bs_id_list);
+    			}
     		}
         } else {
-        	// Set Flag
-			isPerfCallStopped = 1;
-
-			// Clear performance calling timeout
+        	// Clear performance calling timeout
 			if(recallPerf != "") {
     			clearTimeout(recallPerf);
     			recallPerf = "";
     		}
+			// Set Flag
+			isPerfCallStopped = 1;
+			isPerfCallStarted = 0;
 
-    		// Reset Performance variables
-    		gisPerformanceClass.resetVariable();
+			// Reset Performance variables
+			gisPerformanceClass.resetVariable();
 
 			// Hide perf info label
 		    for (var x = 0; x < labelsArray.length; x++) {
