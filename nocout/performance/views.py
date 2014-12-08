@@ -1697,7 +1697,7 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
     return query
 
 #common function to get the devices
-@cache_for(300)
+# @cache_for(300)
 def ptp_device_circuit_backhaul(specify_type='all'):
     """
     Special case fot PTP technology devices. Wherein Circuit type backhaul is required
@@ -1731,7 +1731,7 @@ def ptp_device_circuit_backhaul(specify_type='all'):
     return device_list_with_circuit_type_backhaul
 
 
-@cache_for(300)
+# @cache_for(300)
 def organization_customer_devices(organizations, technology = None, specify_ptp_type='all'):
     """
     To result back the all the customer devices from the respective organization..
@@ -1785,7 +1785,7 @@ def organization_customer_devices(organizations, technology = None, specify_ptp_
     return organization_customer_devices
 
 
-@cache_for(300)
+# @cache_for(300)
 def organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all'):
     """
     To result back the all the network devices from the respective organization..
@@ -1836,7 +1836,7 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
     return organization_network_devices
 
 
-@cache_for(300)
+# @cache_for(300)
 def organization_backhaul_devices(organizations, technology = None):
     """
     To result back the all the network devices from the respective organization..

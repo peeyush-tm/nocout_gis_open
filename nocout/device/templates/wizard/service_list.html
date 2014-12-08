@@ -1,15 +1,13 @@
-{% extends "inventory/inventory.html" %}
+{% extends "nocout/base.html" %}
 {% load staticfiles %}
 
-{% block content_title %}Device Type Management{% endblock %}
-{% block content_description %}List of device types{% endblock %}
+{% block content_title %}Service Listing{% endblock %}
+{% block content_description %}List of service{% endblock %}
 {% block content %}
-    <p><a href="/wizard/device-type/"><i class="fa fa-plus">&nbsp;</i> Create Device Type</a></p>
 
-    <div class="box border lite">
+        <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i> DEVICE TYPE LISTING</h4>
-
+            <h4><i class="fa fa-table"></i> SERVICE LISTING <a href="{% url 'wizard-device-type-update' pk=device_type.id %}">( {{device_type|upper}} )</a></h4>
 {#            <div class="tools hidden-xs">#}
 {#                <a href="#box-config" data-toggle="modal" class="config">#}
 {#                    <i class="fa fa-cog"></i>#}
@@ -19,8 +17,9 @@
 {#                </a>#}
 {#            </div>#}
         </div>
-        <div id="tableContainer" class="box-body" style="overflow:auto;">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="DeviceTypeListingTable">
+
+        <div id="tableContainer" class="box-body">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="wizard-service-list-table">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -37,10 +36,10 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url = '{% url "DeviceTypeListingTable" %}';
+            var ajax_url = '{% url "wizard-service-list-table" dt_pk=device_type.id %}';
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy=false;
-            dataTableInstance.createDataTable("DeviceTypeListingTable", gridHeadersObj, ajax_url, destroy);
+            dataTableInstance.createDataTable("wizard-service-list-table", gridHeadersObj, ajax_url, destroy);
         });
     </script>
 {% endblock %}

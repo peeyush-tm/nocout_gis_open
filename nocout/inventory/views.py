@@ -18,7 +18,7 @@ from django.views.generic import ListView, DetailView, TemplateView, View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.core.urlresolvers import reverse_lazy, reverse
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from django.db.models import Q
+from django.db.models import Count, Q
 from device_group.models import DeviceGroup
 from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
 
@@ -779,6 +779,19 @@ class SectorListingTable(PermissionsRequiredMixin,
     order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
                      'base_station__alias', 'sector_configured_on_port__alias', 'antenna__alias', 'mrc', 'description']
 
+    def get_initial_queryset(self):
+        qs = super(SectorListingTable, self).get_initial_queryset()
+
+        if 'tab' in self.request.GET:
+            if self.request.GET.get('tab') == 'corrupted':
+                qs = qs.annotate(num_circuit=Count('circuit')).filter(
+                        Q(sector_configured_on__isnull=True) | Q(base_station__isnull=True) | Q(bs_technology__in=[3,4], sector_id__isnull=True)
+                        | Q(bs_technology__id=3 , sector_configured_on_port__isnull=True) | Q(num_circuit__gt=1))
+            elif self.request.GET.get('tab') == 'unused':
+                qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
+
+        return qs
+
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -924,6 +937,14 @@ class CustomerListingTable(PermissionsRequiredMixin,
     columns = ['alias', 'address', 'description']
     order_columns = ['alias']
 
+    def get_initial_queryset(self):
+        qs = super(CustomerListingTable, self).get_initial_queryset()
+
+        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'unused':
+            qs = qs.filter(circuit__isnull=True)
+
+        return qs
+
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -1066,6 +1087,18 @@ class SubStationListingTable(PermissionsRequiredMixin,
                'tower_height', 'city', 'state', 'address', 'description']
     order_columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
+
+    def get_initial_queryset(self):
+        qs = super(SubStationListingTable, self).get_initial_queryset()
+
+        if 'tab' in self.request.GET:
+            if self.request.GET.get('tab') == 'corrupted':
+                qs = qs.annotate(num_circuit=Count('circuit')).filter(Q(device__isnull=True) | Q(num_circuit__gt=1))
+            elif self.request.GET.get('tab') == 'unused':
+                qs = qs.annotate(num_circuit=Count('circuit')).filter(num_circuit=0)
+
+        return qs
+
 
     def prepare_results(self, qs):
         """
@@ -1225,6 +1258,14 @@ class CircuitListingTable(PermissionsRequiredMixin,
                      'sub_station__alias', 'date_of_acceptance', 'description']
     search_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
                'sub_station__alias']
+
+    def get_initial_queryset(self):
+        qs = super(CircuitListingTable, self).get_initial_queryset()
+
+        if 'tab' in self.request.GET and self.request.GET.get('tab') == 'unused':
+            qs = qs.filter( Q(sub_station__isnull=True) | Q(sector__isnull=True) | Q(customer__isnull=True))
+
+        return qs
 
     def prepare_results(self, qs):
         """

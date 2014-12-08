@@ -14,8 +14,8 @@ from django.utils.translation import ugettext_lazy
 from user_profile.models import UserProfile
 from organization.models import Organization
 from inventory.signals import auto_assign_thematic
-from django.db.models.signals import post_save, pre_save
-from inventory.signals import resize_icon_size
+from django.db.models.signals import post_save, pre_save, pre_delete
+from inventory.signals import resize_icon_size, delete_antenna_of_sector, delete_antenna_of_substation, delete_customer_of_circuit
 
 
 def get_default_org():
@@ -75,17 +75,17 @@ class Backhaul(models.Model):
     name = models.CharField('Backhaul Name', max_length=250, unique=True)
     alias = models.CharField('Backhaul Alias', max_length=250)
     organization = models.ForeignKey(Organization, default=get_default_org)
-    bh_configured_on = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul')
+    bh_configured_on = models.ForeignKey(Device, null=True, blank=True, on_delete=models.SET_NULL, related_name='backhaul')
     bh_port_name = models.CharField(max_length=40, verbose_name=" BH Port Name", null=True, blank=True)
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
     bh_type = models.CharField('BH Type', max_length=250, null=True, blank=True)
-    bh_switch = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_switch')
+    bh_switch = models.ForeignKey(Device, null=True, blank=True, on_delete=models.SET_NULL, related_name='backhaul_switch')
     switch_port_name = models.CharField('Switch Port Name', max_length=40, null=True, blank=True)
     switch_port = models.IntegerField('Switch Port', null=True, blank=True)
-    pop = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_pop')
+    pop = models.ForeignKey(Device, null=True, blank=True, on_delete=models.SET_NULL, related_name='backhaul_pop')
     pop_port_name = models.CharField('POP Port Name', max_length=40, null=True, blank=True)
     pop_port = models.IntegerField('POP Port', null=True, blank=True)
-    aggregator = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_aggregator')
+    aggregator = models.ForeignKey(Device, null=True, blank=True, on_delete=models.SET_NULL, related_name='backhaul_aggregator')
     aggregator_port_name = models.CharField('Aggregator Port Name', max_length=40, null=True, blank=True)
     aggregator_port = models.IntegerField('Aggregator Port', null=True, blank=True)
     pe_hostname = models.CharField('PE Hostname', max_length=250, null=True, blank=True)
@@ -149,12 +149,13 @@ class Sector(models.Model):
     alias = models.CharField('Alias', max_length=250)
     organization = models.ForeignKey(Organization, default=get_default_org)
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=True)
-    base_station = models.ForeignKey(BaseStation, null=True, blank=True, related_name='sector')
+    base_station = models.ForeignKey(BaseStation, null=True, blank=True, on_delete=models.SET_NULL, related_name='sector')
     bs_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
-    sector_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_configured_on')
+    sector_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=False, on_delete=models.SET_NULL, related_name='sector_configured_on')
     sector_configured_on_port = models.ForeignKey(DevicePort, null=True, blank=True)
-    antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='antenna')
+    antenna = models.ForeignKey(Antenna, null=True, blank=True, on_delete=models.SET_NULL, related_name='antenna')
     dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
+    dr_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=True, related_name='dr_configured_on')
     mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.FloatField('TX Power', null=True, blank=True, help_text='(dB) Enter a number.')
     rx_power = models.FloatField('RX Power', null=True, blank=True, help_text='(dB) Enter a number.')
@@ -192,8 +193,8 @@ class SubStation(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     organization = models.ForeignKey(Organization, default=get_default_org)
-    device = models.ForeignKey(Device)
-    antenna = models.ForeignKey(Antenna, null=True, blank=True)
+    device = models.ForeignKey(Device, null=True, on_delete=models.SET_NULL)
+    antenna = models.ForeignKey(Antenna, null=True, blank=True, on_delete=models.SET_NULL)
     version = models.CharField('Version', max_length=40, null=True, blank=True)
     serial_no = models.CharField('Serial No.', max_length=250, null=True, blank=True)
     building_height = models.FloatField('Building Height', null=True, blank=True, help_text='(mtr) Enter a number.')
@@ -223,9 +224,9 @@ class Circuit(models.Model):
     organization = models.ForeignKey(Organization, default=get_default_org)
     circuit_type = models.CharField('Type', max_length=250, null=True, blank=True)
     circuit_id = models.CharField('Circuit ID', max_length=250, null=True, blank=True)
-    sector = models.ForeignKey(Sector, null=True, blank=True)
-    customer = models.ForeignKey(Customer, null=True, blank=True)
-    sub_station = models.ForeignKey(SubStation, null=True, blank=True)
+    sector = models.ForeignKey(Sector, null=True, blank=True, on_delete=models.SET_NULL)
+    customer = models.ForeignKey(Customer, null=True, blank=True, on_delete=models.SET_NULL)
+    sub_station = models.ForeignKey(SubStation, null=True, blank=True, on_delete=models.SET_NULL)
     qos_bandwidth = models.FloatField('QOS(BW)', null=True, blank=True, help_text='(kbps) Enter a number.')
     dl_rssi_during_acceptance = models.CharField('RSSI During Acceptance', max_length=100, null=True, blank=True)
     dl_cinr_during_acceptance = models.CharField('CINR During Acceptance', max_length=100, null=True, blank=True)
@@ -471,3 +472,6 @@ class UserPingThematicSettings(models.Model):
 
 post_save.connect(auto_assign_thematic, sender=UserProfile)
 pre_save.connect(resize_icon_size, sender=IconSettings)
+pre_delete.connect(delete_antenna_of_sector, sender=Sector)
+pre_delete.connect(delete_antenna_of_substation, sender=SubStation)
+pre_delete.connect(delete_customer_of_circuit, sender=Circuit)

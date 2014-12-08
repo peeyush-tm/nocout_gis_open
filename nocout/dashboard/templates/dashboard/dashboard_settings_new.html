@@ -52,42 +52,86 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
+
             // Initialize the select2 selectbox.
             $(".select2select").select2();
             $('.tip-focus').tooltip({
                 placement: 'right',
                 trigger: 'focus'
             });
-        })
-    $(document).ready(function(){
-        $(".colorpicker").spectrum({
-            preferredFormat: "rgb",
-            flat: false,
-            showInitial: true,
-            showPalette: true,
-            showPaletteOnly: false,
-            togglePaletteOnly: true,
-            togglePaletteMoreText: 'more',
-            togglePaletteLessText: 'less',
-            showSelectionPalette: true,
-            showAlpha: true,
-            color: $(".colorpicker").text(),
-            palette: [
-                ["rgba(0, 0, 0, 1)","rgba(68, 68, 68, 1)","rgba(102, 102, 102, 1)","rgba(153, 153, 153, 1)","rgba(204, 204, 204, 1)","rgba(238, 238, 238, 1)","rgba(243, 243, 243, 1)","rgba(255, 255, 255, 1)"],
-                ["#f00","#f90","#ff0","#0f0","#0ff","#00f","#90f","#f0f"],
-                ["#f4cccc","#fce5cd","#fff2cc","#d9ead3","#d0e0e3","#cfe2f3","#d9d2e9","#ead1dc"],
-                ["#ea9999","#f9cb9c","#ffe599","#b6d7a8","#a2c4c9","#9fc5e8","#b4a7d6","#d5a6bd"],
-                ["#e06666","#f6b26b","#ffd966","#93c47d","#76a5af","#6fa8dc","#8e7cc3","#c27ba0"],
-                ["#c00","#e69138","#f1c232","#6aa84f","#45818e","#3d85c6","#674ea7","#a64d79"],
-                ["#900","#b45f06","#bf9000","#38761d","#134f5c","#0b5394","#351c75","#741b47"],
-                ["#600","#783f04","#7f6000","#274e13","#0c343d","#073763","#20124d","#4c1130"]
-            ]
-        });
-    });
-    </script>
 
-    <script>
+            /***********Update Range HTML Code Start***********/
+
+            /*Number of range inputs*/
+            var total_label = $("label").length,
+                range_count = 0;
+
+            for (var i = 0; i < total_label; i++) {
+                if ($("label")[i].innerHTML.indexOf("Start") > -1 || $("label")[i].innerHTML.indexOf("End") > -1) {
+                    range_count++;
+                }
+            }
+
+            /*Update Range html*/
+            for (var j = 1; j <= range_count / 2; j++) {
+                var icon_box = $("#id_range"+j+"_color_hex_value").parent().html();
+                if ($("#id_range"+j+"_color_hex_value").length > 0) {
+                    $("#id_range"+j+"_color_hex_value").parent().parent().parent().remove();
+                }
+
+                $("#id_range" + j + "_start").parent().html($("#id_range" + j + "_start").parent().html() + "" + $("#id_range" + j + "_end").parent().html() + "" + icon_box);
+
+
+                $("#id_range" + j + "_start").attr("style", "width:30%;margin-right:4.5%;");
+                $("#id_range" + j + "_start").addClass("col-md-4");
+                $("#id_range" + j + "_start").attr("placeholder", "Start");
+
+                $("#id_range" + j + "_end").attr("style", "width:30%;margin-right:4.5%;");
+                $("#id_range" + j + "_end").addClass("col-md-4");
+                $("#id_range" + j + "_end").attr("placeholder", "End");
+
+                $("#id_range"+j+"_color_hex_value").attr("style", "float:right;");
+
+                // $("#id_range"+j+"_start").parent().parent().parent().next().children().parent().remove();
+                $("#id_range" + j + "_start").closest(".form-group").next().remove();
+
+                $("#id_range" + j + "_end").parent().parent().parent().children()[0].innerHTML = "Range " + j;
+            }
+
+            /***********Update Range HTML Code End***********/
+
+
+
+            $(".colorpicker").spectrum({
+                preferredFormat: "rgb",
+                flat: false,
+                showInitial: true,
+                showPalette: true,
+                showPaletteOnly: false,
+                togglePaletteOnly: true,
+                togglePaletteMoreText: 'more',
+                togglePaletteLessText: 'less',
+                showSelectionPalette: true,
+                showAlpha: true,
+                color: $(".colorpicker").text(),
+                palette: [
+                    ["rgba(0, 0, 0, 1)","rgba(68, 68, 68, 1)","rgba(102, 102, 102, 1)","rgba(153, 153, 153, 1)","rgba(204, 204, 204, 1)","rgba(238, 238, 238, 1)","rgba(243, 243, 243, 1)","rgba(255, 255, 255, 1)"],
+                    ["#f00","#f90","#ff0","#0f0","#0ff","#00f","#90f","#f0f"],
+                    ["#f4cccc","#fce5cd","#fff2cc","#d9ead3","#d0e0e3","#cfe2f3","#d9d2e9","#ead1dc"],
+                    ["#ea9999","#f9cb9c","#ffe599","#b6d7a8","#a2c4c9","#9fc5e8","#b4a7d6","#d5a6bd"],
+                    ["#e06666","#f6b26b","#ffd966","#93c47d","#76a5af","#6fa8dc","#8e7cc3","#c27ba0"],
+                    ["#c00","#e69138","#f1c232","#6aa84f","#45818e","#3d85c6","#674ea7","#a64d79"],
+                    ["#900","#b45f06","#bf9000","#38761d","#134f5c","#0b5394","#351c75","#741b47"],
+                    ["#600","#783f04","#7f6000","#274e13","#0c343d","#073763","#20124d","#4c1130"]
+                ]
+            });
+
+            reset_technology("<option value=\"\" selected=\"selected\">---------</option>", false);
+        });
+            
+        
+
 
         function reset_dashboard_type(options) {
             $("#id_dashboard_type").html(options);
@@ -197,8 +241,10 @@
             reset_dashboard_type(options);
         });
 
-        $(document).ready(function(){
-            reset_technology("<option value=\"\" selected=\"selected\">---------</option>", false);
-        });
+        // $(document).ready(function(){
+        //     reset_technology("<option value=\"\" selected=\"selected\">---------</option>", false);
+        // });
+
+
     </script>
 {% endblock %}

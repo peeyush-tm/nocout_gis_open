@@ -22,6 +22,7 @@
         margin: 0 auto;
     }
 </style>
+
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
         <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: PTP</h4>
@@ -29,18 +30,34 @@
     <div id="tableContainer" class="box-body">
         <div class="tabbable header-tabs">
             <ul class="nav nav-tabs">
-                <li><a href="#uas_block" id="uas_tab" data-toggle="tab"><span class="hidden-inline-mobile">UAS</span></a></li>
-                <li class="active"><a href="#rssi_block" id="rssi_tab" data-toggle="tab"><span class="hidden-inline-mobile">RSSI</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-ptp-bh' %}" id="ptp_bh_tab"><span class="hidden-inline-mobile">PTP BH</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-wimax' %}" id="wimax_tab"><span class="hidden-inline-mobile">Wimax</span></a></li>
+                <li><a href="{% url 'dashboard-rf-performance-pmp' %}" id="pmp_tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                <li class="active"><a href="#ptp_block" id="ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
             </ul>
             <div class="tab-content" style="overflow-y:auto;">
-                <div class="tab-pane" id="uas_block" align="center">
+                <div class="tab-pane active" id="ptp_block">
                     <div class="col-md-12">
-                        <div id="uas" class="rf_chart_style"></div>
-                    </div>
-                </div>
-                <div class="tab-pane active" id="rssi_block" align="center">
-                    <div class="col-md-12">
-                        <div id="rssi" class="rf_chart_style"></div>
+                        <div class="col-md-6 box-container ui-sortable">
+                            <div class="box">
+                                <div class="box-title" style="background-color: transparent;">
+                                    <h3>RSSI</h3>
+                                </div>
+                                <div class="box-body">
+                                    <div id="rssi" class="rf_chart_style"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 box-container ui-sortable">
+                            <div class="box">
+                                <div class="box-title" style="background-color: transparent;">
+                                    <h3>UAS</h3>
+                                </div>
+                                <div class="box-body">
+                                    <div id="uas" class="rf_chart_style"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -72,51 +89,24 @@
         var data_sources = {{ data_sources|safe }};
         ds_list = {{ data_sources|safe }};
         
+        /*Show spinner*/
+
         if(ds_list.length > 0) {
             // start API calling
             rf_getChartData(0);
+        } else {
+            /*hide spinner*/
+            hideSpinner();
         }
     });
 
-// $(function () {
-//     data_sources.forEach(function (data_source) {
-//         var jqXHR = $.ajax( "{% url 'dashboard-rf-performance-ptp' %}" + "?data_source=" + data_source )
-//         .done(function(json_response) {
-//             var response = JSON.parse(json_response);
-//             if (response.success == 1) {
-//                 var pie_chart = $('#' + data_source).highcharts({
-//                     chart: {
-//                         plotBackgroundColor: null,
-//                         plotBorderWidth: 1,//null,
-//                         plotShadow: false
-//                     },
-//                     title: {
-//                         text: response.data.objects.chart_data[0].name
-//                     },
-//                     colors: response.data.objects.colors,
-//                     series: [{
-//                         type: 'pie',
-//                         name: response.data.objects.display_name,
-//                         data: response.data.objects.chart_data[0].data
-//                     }]
-//                 });
-//             } else {
-//                 //alert(data_source + " : " + response.message);
-//                 console.log(data_source + " : " + response.message);
-//             }
-//         })
-//         .fail(function() {
-//             // alert( data_source + " : server error" );
-//         });
-//     })
-// });
-    
+
 /**
  * This function fetch chart data by making an ajax call 
  * @method rf_getChartData
  */
 function rf_getChartData(counter) {
-
+    showSpinner();
     if(ds_list[counter]) {
         var data_source_title = ds_list[counter] ? ds_list[counter].toUpperCase() : "";
 
@@ -131,15 +121,28 @@ function rf_getChartData(counter) {
                     response = result;
                 }
 
+
                 if(response.success == 1) {
                     var pie_chart = $('#' + ds_list[counter]).highcharts({
                         chart: {
+                            events: {
+                                load : function() {
+                                    // Hide highcharts.com link from chart when chart is loaded
+                                    var highcharts_link = $("#"+ds_list[counter]+" svg text:last-child");
+                                    $.grep(highcharts_link,function(val) {
+                                        if($.trim(val.innerHTML) == 'Highcharts.com') {
+                                            val.innerHTML = "";
+                                        }
+                                    });
+                                }
+                            },
                             plotBackgroundColor: null,
-                            plotBorderWidth: 1,//null,
+                            plotBorderWidth: null,
                             plotShadow: false
                         },
                         title: {
-                            text: response.data.objects.chart_data[0].name
+                            // text: response.data.objects.chart_data[0].name
+                            text: ''
                         },
                         plotOptions: {
                             pie: {
@@ -152,17 +155,15 @@ function rf_getChartData(counter) {
                             }
                         },
                         legend:{
-                            enabled: true,
-                            x : '-10',
-                            y : '-10',
-                            floating: true,
-                            align : "right",
-                            layout : "vertical",
+                            itemDistance : 15,
+                            itemMarginBottom : 5,
+                            itemWidth : 125,
+                            borderColor : "#CCCCCC",
+                            borderWidth : "1",
+                            borderRadius : "8",
                             itemStyle: {
                                 color: '#555555',
-                                fontWeight: 'normal',
-                                fontSize : '12px',
-                                fontWeight : '400'
+                                fontSize : '10px'
                             }
                         },
                         colors: response.data.objects.colors,
@@ -173,6 +174,7 @@ function rf_getChartData(counter) {
                         }]
                     });
                 } else {
+                    $('#' + ds_list[counter]).html("<b>"+response.message+"</b>");
                     // console.log(data_source_title + " : " + response.message);
                     $.gritter.add({
                         // (string | mandatory) the heading of the notification
@@ -187,6 +189,7 @@ function rf_getChartData(counter) {
                 }
             },
             error : function(err) {
+                hideSpinner();
                 $.gritter.add({
                     // (string | mandatory) the heading of the notification
                     title: 'RF Performance Dashboard - PTP',
@@ -195,13 +198,17 @@ function rf_getChartData(counter) {
                     // (bool | optional) if you want it to fade out on its own or just sit there
                     sticky: false,
                     // Time in ms after which the gritter will dissappear.
-                    time : 1500
+                    time : 1500,
                 });
             },
             complete : function() {
                 // recursive function calling
-                if(ds_list[counter++]) {
-                    rf_getChartData(counter++);
+                var count = counter;
+                if(ds_list[count++]) {
+                    rf_getChartData(count);
+                    if (ds_list.length == count){
+                        hideSpinner();
+                    }
                 }
             }
         });
