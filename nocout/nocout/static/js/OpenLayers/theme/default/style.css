@@ -135,9 +135,17 @@ div.olControlMousePosition {
     float:left;font-size:1.2em;
 }
 
+.olPopup {
+    height: 24px !important;
+    border-radius: 5px;
+    text-align: center;
+    border: 1px solid rgb(85,85,85) !important;
+}
+
 .olPopupContent {
-    padding:5px;
+    padding:3px;
     overflow: auto;
+    font-size: 10px;
 }
 
 .olControlNavigationHistory {
