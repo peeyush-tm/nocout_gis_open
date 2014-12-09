@@ -9,8 +9,12 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         # Adding field 'Sector.dr_configured_on'
+        # db.add_column(u'inventory_sector', 'dr_configured_on',
+        #               self.gf('django.db.models.fields.related.ForeignKey')(max_length=250, related_name='dr_configured_on', null=True, to=orm['device.Device']),
+        #               keep_default=False)
+
         db.add_column(u'inventory_sector', 'dr_configured_on',
-                      self.gf('django.db.models.fields.related.ForeignKey')(max_length=250, related_name='dr_configured_on', null=True, to=orm['device.Device']),
+                      self.gf('django.db.models.fields.related.ForeignKey')(max_length=250, related_name='dr_configured_on', null=True, blank=True, to=orm['device.Device']),
                       keep_default=False)
 
         # # Adding field 'BaseStation.tag1'
