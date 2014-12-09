@@ -39,4 +39,12 @@
 # Weekly Migrtation
 5 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventnetworkdaily -d performance_eventnetworkweekly
 #5 23 * * 0 /usr/bin/python nocout/events/events_aggregation_all.py -t 168 -f weekly -s performance_eventservicedaily -d performance_eventserviceweekly
+
+## Utilization
+
+# Daily
+5 23 * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mongodb -t 24 -f daily -s kpi_data -d performance_utilizationdaily
+
+# Weekly
+5 23 * * 0 /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 168 -f weekly -s performance_utilizationdaily -d performance_utilizationweekly
 #-------------------------------------------------------------------------------------------------------
