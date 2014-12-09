@@ -1986,7 +1986,7 @@ function WhiteMapClass() {
 								hasPerf  			: 0,
 		                        antenna_height 		: sector_array[j].antenna_height,
 		                        isActive 			: 1,
-		                        layerReference: ccpl_map.getLayersByName("Devices")[0]
+		                        layerReference 		: ccpl_map.getLayersByName("Devices")[0]
 		                    }
 		                }
 
