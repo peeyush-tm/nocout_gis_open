@@ -15,7 +15,7 @@ from device.models import DeviceTechnology
 from performance.models import ServiceStatus, NetworkAvailabilityDaily
 from performance.views import organization_customer_devices, organization_network_devices
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed
-from dashboard.forms import DashboardSettingForm
+from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
 from dashboard.config import dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
@@ -375,7 +375,7 @@ class MFRDFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseD
 
 class MFRDFRReportsCreateView(CreateView):
     model = MFRDFRReports
-    fields = ('name', 'type', 'process_for', 'upload_to')
+    form_class = MFRDFRReportsForm
     template_name = "mfrdfr/mfr_dfr_reports_upload.html"
     success_url = reverse_lazy('mfr-dfr-reports-list')
 

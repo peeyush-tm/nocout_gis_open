@@ -1,6 +1,8 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
-from dashboard.models import DashboardSetting
+from dashboard.models import DashboardSetting, MFRDFRReports
 
 import logging
 logger = logging.getLogger(__name__)
@@ -33,3 +35,34 @@ class DashboardSettingForm(forms.ModelForm):
         Meta Information
         """
         model = DashboardSetting
+
+
+class MFRDFRReportsForm(forms.ModelForm):
+    """
+    Render and validate form for MFRDFRReports.
+    """
+
+    class Meta:
+        model = MFRDFRReports
+        fields = ('name', 'type', 'process_for', 'upload_to')
+
+    def clean_process_for(self):
+        """
+        DFR: Unique for a day.
+        MFR: Unique for a month.
+        """
+        process_for = self.cleaned_data['process_for']
+        if 'type' in self.cleaned_data:
+            report_type = self.cleaned_data['type']
+        else:
+            return process_for
+        if process_for is None:
+            process_for = timezone.now()
+
+        if report_type == 'DFR' and MFRDFRReports.objects.filter(process_for=process_for, type='DFR').exists():
+            raise ValidationError('Report for this date already exists.')
+        elif report_type == 'MFR' and MFRDFRReports.objects.filter(process_for__year=process_for.year,
+                process_for__month=process_for.month, type='MFR').exists():
+            raise ValidationError('Report for this month already exists.')
+
+        return process_for
