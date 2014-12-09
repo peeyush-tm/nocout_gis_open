@@ -14,7 +14,7 @@ from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFields
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType, DevicePort, Country, State, City, \
     DeviceFrequency, DeviceTypeServiceDataSource, DeviceTypeService
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
-    DeviceVendorForm, DeviceModelForm, DeviceTypeForm, DevicePortForm, DeviceFrequencyForm, \
+    DeviceVendorForm, DeviceModelForm, DevicePortForm, DeviceFrequencyForm, \
     CountryForm, StateForm, CityForm, DeviceTypeServiceCreateFormset, DeviceTypeServiceUpdateFormset, \
     WizardDeviceTypeForm, WizardDeviceTypeServiceForm, DeviceTypeServiceDataSourceCreateFormset, \
     DeviceTypeServiceDataSourceUpdateFormset
@@ -2492,7 +2492,6 @@ class DeviceTypeCreate(PermissionsRequiredMixin, CreateView):
     """
     template_name = 'device_type/device_type_new.html'
     model = DeviceType
-    form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
     required_permissions = ('device.add_devicetype',)
 
@@ -2531,7 +2530,6 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
     """
     template_name = 'device_type/device_type_update.html'
     model = DeviceType
-    form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
     required_permissions = ('device.change_devicetype',)
 
@@ -2542,7 +2540,7 @@ class DeviceTypeUpdate(PermissionsRequiredMixin, UpdateView):
         """
         self.object = self.get_object()
         form_class = self.get_form_class()
-        form = DeviceTypeForm(instance=self.object)
+        form = self.get_form(form_class)
         device_type_service_form = DeviceTypeServiceUpdateFormset(instance=self.object, prefix='dts')
         if len(device_type_service_form):
             device_type_service_form = device_type_service_form

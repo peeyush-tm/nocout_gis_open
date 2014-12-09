@@ -908,7 +908,7 @@ class WizardDeviceTypeForm(DeviceTypeForm):
         """
         model = DeviceType
         fields = ('name', 'alias', 'device_port', 'service', 'packets', 'timeout', 'normal_check_interval',
-            'rta_warning', 'rta_critical', 'pl_warning', 'agent_tag', 'device_icon', 'device_gmap_icon',
+            'rta_warning', 'rta_critical', 'pl_warning', 'pl_critical', 'agent_tag', 'device_icon', 'device_gmap_icon',
         )
 
 
