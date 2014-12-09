@@ -132,7 +132,7 @@
                             p.first().next().find('input').parent().append('<label id="id_value">( '+c+' )</label>')
                         },
                         error : function(xhr,errmsg,err) {
-                            alert(xhr.status + ": " + xhr.responseText);
+                            console.log(xhr.status + ": " + xhr.responseText);
                         }
                     });
 
