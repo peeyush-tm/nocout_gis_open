@@ -70,54 +70,30 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         			}
         		}
 
-        		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').split(',') : [],
-					vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').split(',') : [],
-					city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').split(',') : [],
-					state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').split(',') : [],
-					frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').split(',') : [],
-					polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').split(',') : [],
-					filterObj = {
-						"technology" : $.trim($("#technology option:selected").text()),
-						"vendor" : $.trim($("#vendor option:selected").text()),
-						"state" : $.trim($("#state option:selected").text()),
-						"city" : $.trim($("#city option:selected").text())
-					},
-					isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-					isBasicFilterApplied = filterObj['technology'] != 'Select Technology' || filterObj['vendor'] != 'Select Vendor' || filterObj['state'] != 'Select State' || filterObj['city'] != 'Select City',
-					advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-					basic_filter_condition = $.trim($("#technology").val()) || $.trim($("#vendor").val()),
+        		var plottable_data = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true))),
+					current_bound_devices = [],
 					data_to_plot = [];
 
-    			var filtered_devices = [],
-    				current_bound_devices = [];
-
-    			if(isAdvanceFilterApplied || isBasicFilterApplied) {
-    				filtered_devices = gmap_self.getFilteredData_gmap();
-				} else {
-					filtered_devices = all_devices_loki_db.data;
-				}
 				// IF any states exists
 				if(states_array.length > 0) {
-    				for(var i=filtered_devices.length;i--;) {
-						var current_bs = filtered_devices[i];
+    				for(var i=plottable_data.length;i--;) {
+						var current_bs = plottable_data[i];
 						if(states_array.indexOf(current_bs.data.state) > -1) {
 							current_bound_devices.push(current_bs);
 						}
     				}
 				} else {
-					current_bound_devices = filtered_devices;
+					current_bound_devices = plottable_data;
 				}
 
-				if(advance_filter_condition || basic_filter_condition) {
-					data_to_plot = gmap_self.getFilteredBySectors(current_bound_devices);
-				} else {
-        			data_to_plot = current_bound_devices;
-				}
+				data_to_plot = current_bound_devices;
 
         		var inBoundData = [];
         		
         		// If any data exists
         		if(data_to_plot.length > 0) {
+
+    				main_devices_data_wmap = data_to_plot;
 
         			/**
 					 * If anything searched n user is on zoom level 8 then reset 
@@ -128,7 +104,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         				currentlyPlottedDevices = [];
     				}
 
-    				main_devices_data_wmap = data_to_plot;
 
         			if(currentlyPlottedDevices.length === 0) {
         				ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
@@ -142,7 +117,14 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 						ccpl_map.getLayersByName('Markers')[0].strategies[0].activate();
 						// Reset Variables
 						allMarkersArray_wmap = [];
+						bs_ss_markers= [];
 						main_devices_data_wmap = [];
+						plottedBsIds = [];
+						deviceIDArray = [];
+						sectorMarkerConfiguredOn = [];
+						sectorMarkersMasterObj = {};
+						sector_MarkersArray = [];
+						pollableDevices = [];
 						currentlyPlottedDevices = [];
 						allMarkersObject_wmap= {
 							'base_station': {},
@@ -167,7 +149,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 					// ccpl_map.getLayersByName('Markers')[0].refresh({forces:true});
 					// ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 
-					if(searchResultData.length == 0 || ccpl_map.getZoom() === 8) {
+					if(searchResultData.length == 0 || ccpl_map.getZoom() <= 8) {
 						var polylines = allMarkersObject_wmap['path'],
 							polygons = allMarkersObject_wmap['sector_polygon'];
 
@@ -177,10 +159,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 							// If shown
 							if(current_line.map) {
 								hideOpenLayerFeature(current_line);
-								// var markerLayer = current_line.layerReference;
-								// current_line.style.display = 'none';
-								// current_line.map = '';
-								// markerLayer.redraw();
 							}
 						}
 						// alert();
@@ -190,20 +168,16 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 							// If shown
 							if(current_polygons.map) {
 								hideOpenLayerFeature(current_polygons);
-								// var markerLayer = current_polygons.layerReference;
-								// current_polygons.style.display = 'none';
-								// current_polygons.map = '';
-								// markerLayer.redraw();
 							}
 						}
 					} else {
-						if(ccpl_map.getZoom() > 11) {
+						if(ccpl_map.getZoom() > 8) {
 							whiteMapClass.showSubStaionsInBounds();
 							whiteMapClass.showBaseStaionsInBounds();
 							whiteMapClass.showSectorDevicesInBounds();
 							whiteMapClass.showLinesInBounds();
 							whiteMapClass.showSectorPolygonInBounds();
-							whiteMapClass.showBackhaulDevicesInBounds();
+							// whiteMapClass.showBackhaulDevicesInBounds();
 						}
 					}
 
@@ -212,10 +186,6 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
         		for(key in line_data_obj) {
         			if(!line_data_obj[key].map) {
         				showOpenLayerFeature(line_data_obj[key]);
-        				// var markerLayer = line_data_obj[key].layerReference;
-        				// line_data_obj[key].style.display = '';
-        				// line_data_obj[key].map = 'current';
-        				// markerLayer.redraw();
         			}
         		}
 
@@ -232,7 +202,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 				whiteMapClass.showSectorDevicesInBounds();
 				whiteMapClass.showLinesInBounds();
 				whiteMapClass.showSectorPolygonInBounds();
-				whiteMapClass.showBackhaulDevicesInBounds();
+				// whiteMapClass.showBackhaulDevicesInBounds();
 
 				//Update Clusters Threshold value and recluster it
 				if(ccpl_map.getLayersByName('Markers')[0].strategies[0].threshold !== clustererSettings.thresholdAtHighZoomLevel) {
@@ -297,6 +267,11 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 			bs_ss_markers= [];
 			main_devices_data_wmap = [];
 			plottedBsIds = [];
+			pollableDevices = [];
+			deviceIDArray = [];
+			sectorMarkerConfiguredOn = [];
+			sectorMarkersMasterObj = {};
+			sector_MarkersArray = [];
 			currentlyPlottedDevices = [];
 			allMarkersObject_wmap= {
 				'base_station': {},

@@ -564,7 +564,9 @@ function showOpenLayerFeature(feature) {
     if(feature && feature.style) {
         var featureLayer = feature.layer ? feature.layer : feature.layerReference;
         feature.style.display = '';
-        featureLayer.redraw();
+        if(featureLayer) {
+            featureLayer.redraw();
+        }
     }
 }
 
