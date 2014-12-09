@@ -15,4 +15,13 @@ urlpatterns = patterns('',
     url(r'^rf-performance/pmp/$', views.PMP_Performance_Dashboard.as_view(), name='dashboard-rf-performance-pmp'),
     url(r'^rf-performance/ptp/$', views.PTP_Performance_Dashboard.as_view(), name='dashboard-rf-performance-ptp'),
     url(r'^rf-performance/ptp-bh/$', views.PTPBH_Performance_Dashboard.as_view(), name='dashboard-rf-performance-ptp-bh'),
+
+    url(r'^mfr-dfr-reports/$', views.MFRDFRReportsListView.as_view(), name='mfr-dfr-reports-list'),
+    url(r'^mfr-dfr-reports/table/$', views.MFRDFRReportsListingTable.as_view(), name='mfr-dfr-reports-table'),
+    url(r'^mfr-dfr-reports/upload/$', views.MFRDFRReportsCreateView.as_view(), name='mfr-dfr-reports-upload'),
+    url(r'^mfr-dfr-reports/(?P<pk>\d+)/delete/$', views.MFRDFRReportsDeleteView.as_view(), name='mfr-dfr-reports-delete'),
+
+    url(r'^dfr-processed-reports/$', views.DFRProcessedListView.as_view(), name='dfr-processed-reports-list'),
+    url(r'^dfr-processed-reports/table/$', views.DFRProcessedListingTable.as_view(), name='dfr-processed-reports-table'),
+    url(r'^dfr-processed-reports/(?P<pk>\d+)/download/$', views.dfr_processed_report_download, name='dfr-processed-reports-download'),
 )
