@@ -8,68 +8,10 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-
-        # Changing field 'Backhaul.bh_configured_on'
-        db.alter_column(u'inventory_backhaul', 'bh_configured_on_id', self.gf('django.db.models.fields.related.ForeignKey')(null=True, on_delete=models.SET_NULL, to=orm['device.Device']))
-
-        # Changing field 'Sector.sector_configured_on'
-        db.alter_column(u'inventory_sector', 'sector_configured_on_id', self.gf('django.db.models.fields.related.ForeignKey')(max_length=250, null=True, on_delete=models.SET_NULL, to=orm['device.Device']))
-
-        # Changing field 'Sector.antenna'
-        db.alter_column(u'inventory_sector', 'antenna_id', self.gf('django.db.models.fields.related.ForeignKey')(null=True, on_delete=models.SET_NULL, to=orm['inventory.Antenna']))
-
-        # Changing field 'Sector.base_station'
-        db.alter_column(u'inventory_sector', 'base_station_id', self.gf('django.db.models.fields.related.ForeignKey')(null=True, on_delete=models.SET_NULL, to=orm['inventory.BaseStation']))
-        
-        # Changing field 'SubStation.antenna'
-        db.alter_column(u'inventory_substation', 'antenna_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Antenna'], null=True, on_delete=models.SET_NULL))
-
-        # Changing field 'SubStation.device'
-        db.alter_column(u'inventory_substation', 'device_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.Device'], null=True, on_delete=models.SET_NULL))
-
-        # Changing field 'Circuit.sector'
-        db.alter_column(u'inventory_circuit', 'sector_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Sector'], null=True, on_delete=models.SET_NULL))
-
-        # Changing field 'Circuit.customer'
-        db.alter_column(u'inventory_circuit', 'customer_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Customer'], null=True, on_delete=models.SET_NULL))
-
-        # Changing field 'Circuit.sub_station'
-        db.alter_column(u'inventory_circuit', 'sub_station_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.SubStation'], null=True, on_delete=models.SET_NULL))
+        pass
 
     def backwards(self, orm):
-
-        # Changing field 'Backhaul.bh_configured_on'
-        db.alter_column(u'inventory_backhaul', 'bh_configured_on_id', self.gf('django.db.models.fields.related.ForeignKey')(null=True, to=orm['device.Device']))
-
-        # Changing field 'Sector.sector_configured_on'
-        db.alter_column(u'inventory_sector', 'sector_configured_on_id', self.gf('django.db.models.fields.related.ForeignKey')(max_length=250, null=True, to=orm['device.Device']))
-
-        # Changing field 'Sector.antenna'
-        db.alter_column(u'inventory_sector', 'antenna_id', self.gf('django.db.models.fields.related.ForeignKey')(null=True, to=orm['inventory.Antenna']))
-
-        # Changing field 'Sector.base_station'
-        db.alter_column(u'inventory_sector', 'base_station_id', self.gf('django.db.models.fields.related.ForeignKey')(null=True, to=orm['inventory.BaseStation']))
-        # Deleting field 'BaseStation.tag1'
-        #db.delete_column(u'inventory_basestation', 'tag1')
-
-        # Deleting field 'BaseStation.tag2'
-        #db.delete_column(u'inventory_basestation', 'tag2')
-
-
-        # Changing field 'SubStation.antenna'
-        db.alter_column(u'inventory_substation', 'antenna_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Antenna'], null=True))
-
-        # Changing field 'SubStation.device'
-        db.alter_column(u'inventory_substation', 'device_id', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['device.Device']))
-
-        # Changing field 'Circuit.sector'
-        db.alter_column(u'inventory_circuit', 'sector_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Sector'], null=True))
-
-        # Changing field 'Circuit.customer'
-        db.alter_column(u'inventory_circuit', 'customer_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Customer'], null=True))
-
-        # Changing field 'Circuit.sub_station'
-        db.alter_column(u'inventory_circuit', 'sub_station_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.SubStation'], null=True))
+        pass
 
     models = {
         u'auth.group': {
