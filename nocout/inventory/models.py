@@ -163,6 +163,7 @@ class Sector(models.Model):
     frame_length = models.FloatField('Frame Length', null=True, blank=True, help_text='(mtr) Enter a number.')
     cell_radius = models.FloatField('Cell Radius', null=True, blank=True, help_text='(mtr) Enter a number.')
     frequency = models.ForeignKey(DeviceFrequency, null=True, blank=True)
+    planned_frequency = models.CharField('Planned Frequency', max_length=250, null=True, blank=True)
     modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 

@@ -677,7 +677,9 @@ function GisPerformance() {
                             ge.setBalloon(null);
                         });
                     }(ss_marker));
-
+                    
+                    allMarkersObject_earth['sub_station']['ss_'+ss_marker.name] = ss_marker;
+                    allMarkersArray_earth.push(ss_marker);
 
                 } else if (window.location.pathname.indexOf("white_background") > -1) {
 
@@ -719,6 +721,9 @@ function GisPerformance() {
                     /*Create SS Marker*/
                     var ss_marker = whiteMapClass.createOpenLayerVectorMarker(size, ss_marker_icon, ss_marker_data.data.lon, ss_marker_data.data.lat, ss_marker_object);
 
+                    allMarkersObject_wmap['sub_station']['ss_'+ss_marker.name] = ss_marker;
+                    allMarkersArray_wmap.push(ss_marker);
+
                     ccpl_map.getLayersByName('Markers')[0].addFeatures([ss_marker]);
 
                     var hide_flag = !$("#show_hide_label")[0].checked;
@@ -732,7 +737,17 @@ function GisPerformance() {
                         }
                         // If any html created then show label on ss
                         if(labelHtml) {
+                            var toolTip_infobox = new OpenLayers.Popup(key,
+                                new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
+                                null,
+                                labelHtml,
+                                false
+                            );
                             
+                            ccpl_map.addPopup(toolTip_infobox);
+                            toolTip_infobox.updateSize();
+
+                            tooltipInfoLabel['ss_'+ss_marker.name] = toolTip_infobox;    
                         }
                     }
                 } else {
@@ -782,20 +797,18 @@ function GisPerformance() {
                     /*Add the master marker to the global master markers array*/
                     masterMarkersObj.push(ss_marker);
 
-                    if(window.location.pathname.indexOf("googleEarth") > -1) {
-                        allMarkersObject_earth['sub_station']['ss_'+ss_marker.name] = ss_marker;
+                    // if(window.location.pathname.indexOf("googleEarth") > -1) {
+                        
+                    // } else if (window.location.pathname.indexOf("white_background") > -1) {
+                        
+                    // } else {
 
-                        allMarkersArray_earth.push(ss_marker);
-                    } else if (window.location.pathname.indexOf("white_background") > -1) {
-                        allMarkersObject_wmap['sub_station']['ss_'+ss_marker.name] = ss_marker;
+                    // }
 
-                        allMarkersArray_wmap.push(ss_marker);
-                    } else {
-                        allMarkersObject_gmap['sub_station']['ss_'+ss_marker.name] = ss_marker;
-                        allMarkersArray_gmap.push(ss_marker);
-                        /*Add parent markers to the OverlappingMarkerSpiderfier*/
-                        oms_ss.addMarker(ss_marker);
-                    }
+                    allMarkersObject_gmap['sub_station']['ss_'+ss_marker.name] = ss_marker;
+                    allMarkersArray_gmap.push(ss_marker);
+                    /*Add parent markers to the OverlappingMarkerSpiderfier*/
+                    oms_ss.addMarker(ss_marker);
 
                     /*Push SS marker to pollableDevices array*/
                     pollableDevices.push(ss_marker)
@@ -890,7 +903,7 @@ function GisPerformance() {
                     allMarkersArray_gmap.push(ss_link_line);
                 }
 
-                if(ss_marker_data.data.perf_value) {
+                if(ss_marker_data.data.perf_value || sector_perf_val) {
 
                     // Create Label for Perf Value
                     var existing_index = -1;
@@ -939,12 +952,22 @@ function GisPerformance() {
                         perf_val = "("+ss_val+")";
                     }
 
-                    if(window.location.pathname.indexOf("googleEarth") > -1) {
-                        ss_marker_data.perf_val = perf_val;
-                        //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
+                    if(perf_val && $.trim(perf_val)) {
 
-                    } else {
-                        if(perf_val && $.trim(perf_val)) {
+                        if(window.location.pathname.indexOf("googleEarth") > -1) {
+                            ss_marker_data.perf_val = perf_val;
+                            //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
+                        } else if (window.location.pathname.indexOf("white_background") > -1) {
+                           var toolTip_infobox = new OpenLayers.Popup("perfLabel_"+ss_marker.name,
+                                new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
+                                null,
+                                perf_val,
+                                false
+                            );
+                            ccpl_map.addPopup(toolTip_infobox);
+                            toolTip_infobox.updateSize(); 
+                            labelsArray.push(toolTip_infobox);
+                        } else {
                             var perf_infobox = new InfoBox({
                                 content: perf_val,
                                 boxStyle: {
@@ -996,7 +1019,6 @@ function GisPerformance() {
                 new_plotted_ss[i].setMap(mapInstance);
             }
         },200);
-        console.log(new_plotted_ss);
     };
 
     /*

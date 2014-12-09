@@ -8,10 +8,16 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        pass
+        # Adding field 'Sector.planned_frequency'
+        db.add_column(u'inventory_sector', 'planned_frequency',
+                      self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True),
+                      keep_default=False)
+
 
     def backwards(self, orm):
-        pass
+        # Deleting field 'Sector.planned_frequency'
+        db.delete_column(u'inventory_sector', 'planned_frequency')
+
 
     models = {
         u'auth.group': {
@@ -217,7 +223,7 @@ class Migration(SchemaMigration):
         },
         u'inventory.backhaul': {
             'Meta': {'object_name': 'Backhaul'},
-            'aggregator': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'backhaul_aggregator'", 'null': 'True', 'to': u"orm['device.Device']"}),
+            'aggregator': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'backhaul_aggregator'", 'null': 'True', 'on_delete': 'models.SET_NULL', 'to': u"orm['device.Device']"}),
             'aggregator_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'aggregator_port_name': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'blank': 'True'}),
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
@@ -227,7 +233,7 @@ class Migration(SchemaMigration):
             'bh_connectivity': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'blank': 'True'}),
             'bh_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'bh_port_name': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'blank': 'True'}),
-            'bh_switch': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'backhaul_switch'", 'null': 'True', 'to': u"orm['device.Device']"}),
+            'bh_switch': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'backhaul_switch'", 'null': 'True', 'on_delete': 'models.SET_NULL', 'to': u"orm['device.Device']"}),
             'bh_type': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'dr_site': ('django.db.models.fields.CharField', [], {'max_length': '150', 'null': 'True', 'blank': 'True'}),
@@ -236,7 +242,7 @@ class Migration(SchemaMigration):
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'pe_hostname': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'pe_ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
-            'pop': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'backhaul_pop'", 'null': 'True', 'to': u"orm['device.Device']"}),
+            'pop': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'backhaul_pop'", 'null': 'True', 'on_delete': 'models.SET_NULL', 'to': u"orm['device.Device']"}),
             'pop_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'pop_port_name': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'blank': 'True'}),
             'switch_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -392,6 +398,7 @@ class Migration(SchemaMigration):
             'bs_technology': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceTechnology']", 'null': 'True', 'blank': 'True'}),
             'cell_radius': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'dr_configured_on': ('django.db.models.fields.related.ForeignKey', [], {'max_length': '250', 'related_name': "'dr_configured_on'", 'null': 'True', 'blank': 'True', 'to': u"orm['device.Device']"}),
             'dr_site': ('django.db.models.fields.CharField', [], {'max_length': '150', 'null': 'True', 'blank': 'True'}),
             'frame_length': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'frequency': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceFrequency']", 'null': 'True', 'blank': 'True'}),
@@ -400,6 +407,7 @@ class Migration(SchemaMigration):
             'mrc': ('django.db.models.fields.CharField', [], {'max_length': '4', 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
+            'planned_frequency': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'rf_bandwidth': ('django.db.models.fields.FloatField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'rx_power': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'sector_configured_on': ('django.db.models.fields.related.ForeignKey', [], {'max_length': '250', 'related_name': "'sector_configured_on'", 'null': 'True', 'on_delete': 'models.SET_NULL', 'to': u"orm['device.Device']"}),

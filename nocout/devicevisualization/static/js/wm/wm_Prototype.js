@@ -8,7 +8,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	var format, domEl, layers= {}, that= this;
 
 	format = whiteMapSettings.format; 
-	domEl= whiteMapSettings.domElement;		
+	domEl= whiteMapSettings.domElement;
 
 	//Options for our White Map. Add navigation, panZoombar bar and mouse position
 	var wmap_options = { 
@@ -17,9 +17,13 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			new OpenLayers.Control.PanZoomBar(),
 			new OpenLayers.Control.MousePosition({
 				prefix: whiteMapSettings.latLngPrefixLabel
-			}),
+			})
 			// new OpenLayers.Control.LayerSwitcher()
 		],
+		// Center for openLayer map
+		center : new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]),
+		// Zoom level for openLayers map
+		zoom : 1,
 		//Bounds for our Open layer.
 		maxExtent: new OpenLayers.Bounds(whiteMapSettings.initial_bounds),
 		//Resolution of Open Layer
@@ -42,6 +46,12 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 	//Map moveend event
 	ccpl_map.events.register("moveend", ccpl_map, function(e){
+		that.mapIdleCondition();
+		return;
+	});
+
+	//Map zoomend event
+	ccpl_map.events.register("zoomend", ccpl_map, function(e){
 		that.mapIdleCondition();
 		return;
 	});
@@ -398,6 +408,44 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map.addControl(polygonControl);
 	/*
 	End of OpenLayer Vector Layer For Creating Polygon[for Live Polling or Export Data]
+	 */
+
+
+	/**
+	 * START - EXPORT DATA POLYGON LAYER BLOCK
+	 */
+
+	layers.livePollFeatureLayer= new OpenLayers.Layer.Vector("export_Polling", {
+		eventListeners: {
+			//Before adding new feature
+			"beforefeatureadded": function() {
+				//If already a feature is present on the layer
+				if(this.features.length) {
+					//remove previous all features.
+					this.destroyFeatures();						
+				}
+			}
+		}
+	});
+
+	//Add layer to the map
+	ccpl_map.addLayer(layers.livePollFeatureLayer);
+
+	//Polygon Control which will be used to Draw Polygon on the map. Call livePollingPolygonAdded() when polygon is created.
+	var exportData_polygonControl = new OpenLayers.Control.DrawFeature(layers.livePollFeatureLayer, OpenLayers.Handler.Polygon, {
+		eventListeners: {
+			"featureadded": this.exportDataPolygonAdded
+		}
+	});
+
+	//set this control to a public variable
+	this.exportDataPolygonControl = exportData_polygonControl;
+
+	//add control to the map
+	ccpl_map.addControl(exportData_polygonControl);
+
+	/**
+	 * END - EXPORT DATA POLYGON LAYER BLOCK
 	 */
 
 	//Get Control Panels
