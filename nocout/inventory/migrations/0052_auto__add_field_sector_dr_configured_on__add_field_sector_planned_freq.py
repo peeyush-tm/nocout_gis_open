@@ -9,9 +9,9 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         # Adding field 'Sector.dr_configured_on'
-        db.add_column(u'inventory_sector', 'dr_configured_on',
-                      self.gf('django.db.models.fields.related.ForeignKey')(max_length=250, related_name='dr_configured_on', null=True, blank=True, to=orm['device.Device']),
-                      keep_default=False)
+        # db.add_column(u'inventory_sector', 'dr_configured_on',
+        #               self.gf('django.db.models.fields.related.ForeignKey')(max_length=250, related_name='dr_configured_on', null=True, blank=True, to=orm['device.Device']),
+        #               keep_default=False)
 
         # Adding field 'Sector.planned_frequency'
         db.add_column(u'inventory_sector', 'planned_frequency',
@@ -21,7 +21,7 @@ class Migration(SchemaMigration):
 
     def backwards(self, orm):
         # Deleting field 'Sector.dr_configured_on'
-        db.delete_column(u'inventory_sector', 'dr_configured_on_id')
+        # db.delete_column(u'inventory_sector', 'dr_configured_on_id')
 
         # Deleting field 'Sector.planned_frequency'
         db.delete_column(u'inventory_sector', 'planned_frequency')
