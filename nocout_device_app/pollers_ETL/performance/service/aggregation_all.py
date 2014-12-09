@@ -50,10 +50,13 @@ parser = optparse.OptionParser()
 parser.add_option('-r', '--read_from', dest='read_from', type='str')
 parser.add_option('-s', '--source', dest='source_db', type='str')
 parser.add_option('-d', '--destination', dest='destination_db', type='str')
-parser.add_option('-t', '--hours', dest='hours', type='choice', choices=['0.5', '1', '24', '168'])
-parser.add_option('-f', '--timeframe', dest='timeframe', type='choice', choices=['half_hourly', 'hourly', 'daily', 'weekly'])
+parser.add_option('-t', '--hours', dest='hours', type='choice', choices=['0.5', 
+'1', '24', '168'])
+parser.add_option('-f', '--timeframe', dest='timeframe', type='choice', choices=[
+'half_hourly', 'hourly', 'daily', 'weekly'])
 options, remainder = parser.parse_args(sys.argv[1:])
-if options.source_db and options.destination_db and options.hours and options.timeframe and options.read_from:
+if options.source_db and options.destination_db and options.hours and \
+		options.timeframe and options.read_from:
 	read_from = options.read_from
 	source_perf_table=options.source_db
 	destination_perf_table=options.destination_db
@@ -83,9 +86,12 @@ def quantify_perf_data(aggregated_data_values=[]):
 			data_values = sorted(mysql_migration_mod.read_data(source_perf_table, db, start_time, end_time), 
 					key=itemgetter('sys_timestamp'))
 	elif read_from == 'mongodb':
+		end_time = datetime.now()
+		start_time = end_time - timedelta(hours=hours)
+		start_time, end_time = start_time - timedelta(minutes=1), end_time + timedelta(minutes=1)
 		# Read data from mongodb, performance live data
 		data_values = sorted(mysql_migration_mod.read_data_from_mongo(source_perf_table, start_time, end_time, mongo_configs), 
-				key=itemgetter('sys_timestamp'))
+				key=itemgetter('local_timestamp'))
 	print '## Docs len ##'
 	print len(data_values)
 	for doc in data_values:
@@ -108,9 +114,9 @@ def quantify_perf_data(aggregated_data_values=[]):
 			time = float(doc.get('sys_timestamp'))
 			original_time, time = time, datetime.fromtimestamp(time)
 		elif read_from == 'mongodb':
-			time = doc.get('sys_timestamp')
+			time = doc.get('local_timestamp') if doc.get('local_timestamp') else doc.get('sys_timestamp')
 		current_value = doc.get('current_value')
-		check_time = doc.get('check_timestamp')
+		check_time = doc.get('check_timestamp') if doc.get('check_timestamp') else doc.get('check_time')
 		if read_from == 'mysql':
 			war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
 		elif read_from == 'mongodb':

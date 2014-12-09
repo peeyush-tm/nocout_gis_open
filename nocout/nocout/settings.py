@@ -12,6 +12,7 @@ import os
 from django.conf import global_settings
 from collections import namedtuple
 from datetime import timedelta
+from celery.schedules import crontab
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
@@ -245,6 +246,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'inventory.tasks.get_topology',
         'schedule': timedelta(seconds=300),
         'args': ['PMP']
+    },
+    'update-sector-frequency': {
+        'task': 'inventory.tasks.update_sector_frequency_per_day',
+        'schedule': crontab(minute=0, hour=0)
     },
 }
 
