@@ -1233,6 +1233,8 @@ function WhiteMapClass() {
 		This function is triggered when Lat Lng Search is done.Validate the point, if LatLng is valid, zoom to the given lat lng.
 		 */
 		this.zoomToLonLat = function(lat_long_string) {
+			// Update "searchResultData" with map data as per applied filters for plotting.
+			searchResultData = JSON.parse(JSON.stringify(networkMapInstance.updateStateCounter_gmaps(true)));
 			var lat = +lat_long_string.split(",")[0], lng = +lat_long_string.split(",")[1];
 			var bounds = new OpenLayers.Bounds;
 			var lonLat = new OpenLayers.LonLat(lng, lat);
@@ -1843,7 +1845,7 @@ function WhiteMapClass() {
 					markerType 		   : 	'BS',
 					isMarkerSpiderfied : 	false,
 					isActive 		   : 	1,
-					layerReference: ccpl_map.getLayersByName("Markers")[0]
+					layerReference     : 	ccpl_map.getLayersByName("Markers")[0]
 				};
 
 				var bs_marker = global_this.createOpenLayerVectorMarker(bs_size, icon, lon, lat, bs_marker_object);
@@ -1955,7 +1957,7 @@ function WhiteMapClass() {
 
 					if($.trim(sector_array[j].technology.toLowerCase()) == "ptp" || $.trim(sector_array[j].technology.toLowerCase()) == "p2p") {
 
-						if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
+						if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) == -1) {
 
 							var sectors_Markers_Obj = {
 								position 		 	: {lat: lat, lon: lon},
@@ -2055,8 +2057,8 @@ function WhiteMapClass() {
 					    	zIndex 			 : 	200,
 					    	hasPerf 		 :  0,
 					    	optimized 		 : 	false,
-					    	isActive 		 : 1,
-					    	layerReference: ccpl_map.getLayersByName("Markers")[0]
+					    	isActive 		 :  1,
+					    	layerReference   :  ccpl_map.getLayersByName("Markers")[0]
 					    };
 
 					    /*Create SS Marker*/
@@ -2127,7 +2129,7 @@ function WhiteMapClass() {
 		    			// base_info["info"] = bs_ss_devices[i].data.param.base_station;
 		    			// base_info["antenna_height"] = bs_ss_devices[i].data.antenna_height;
 		    			// if(zoom_level > 9) {
-			    			if(ss_marker_obj.data.show_link == 1) {
+			    			// if(ss_marker_obj.data.show_link == 1) {
 			    				/*Create the link between BS & SS or Sector & SS*/
 						    	var ss_link_line = global_this.plotLines_wmap(startEndObj,linkColor,base_info,ss_info,sect_height,sector_array[j].sector_configured_on,ss_marker_obj.name,bs_ss_devices[i].name,bs_ss_devices[i].id,sector_array[j].sector_id);
 
@@ -2142,7 +2144,7 @@ function WhiteMapClass() {
 								markersMasterObj['LinesName'][String(bs_ss_devices[i].name)+ ss_marker_obj.name]= ss_link_line;
 
 						    	allMarkersArray_wmap.push(ss_link_line);
-			    			}
+			    			// }
 		    			// }
 					}
 				}

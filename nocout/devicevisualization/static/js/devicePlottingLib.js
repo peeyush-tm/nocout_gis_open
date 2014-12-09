@@ -593,6 +593,10 @@ function devicePlottingClass_gmap() {
 									// Reset Variables
 									allMarkersArray_gmap = [];
 									main_devices_data_gmaps = [];
+									plottedBsIds = [];
+									pollableDevices = [];
+									sectorMarkersMasterObj = {};
+									sectorMarkerConfiguredOn = [];
 									currentlyPlottedDevices = [];
 									allMarkersObject_gmap= {
 										'base_station': {},
@@ -716,6 +720,7 @@ function devicePlottingClass_gmap() {
 						allMarkersArray_gmap = [];
 						main_devices_data_gmaps = [];
 						plottedBsIds = [];
+						pollableDevices = [];
 						sectorMarkersMasterObj = {};
 						sectorMarkerConfiguredOn = [];
 						currentlyPlottedDevices = [];
@@ -2009,7 +2014,7 @@ function devicePlottingClass_gmap() {
 	    			// base_info["info"] = bs_ss_devices[i].data.param.base_station;
 	    			// base_info["antenna_height"] = bs_ss_devices[i].data.antenna_height;
 	    			// if(zoom_level > 9) {
-		    			if(ss_marker_obj.data.show_link == 1) {
+		    			// if(ss_marker_obj.data.show_link == 1) {
 		    				/*Create the link between BS & SS or Sector & SS*/
 					    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info,sect_height,sector_array[j].sector_configured_on,ss_marker_obj.name,bs_ss_devices[i].name,bs_ss_devices[i].id,sector_array[j].sector_id);
 					    	ssLinkArray.push(ss_link_line);
@@ -2018,7 +2023,7 @@ function devicePlottingClass_gmap() {
 					    	allMarkersObject_gmap['path']['line_'+ss_marker_obj.name] = ss_link_line;
 
 					    	allMarkersArray_gmap.push(ss_link_line);
-		    			}
+		    			// }
 	    			// }
 				}
     		}
@@ -4168,37 +4173,6 @@ function devicePlottingClass_gmap() {
      */
 	this.advanceSearchFunc = function() {
 
-
-		// var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').toLowerCase().split(',') : [],
-		// 	vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').toLowerCase().split(',') : [],
-		// 	city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').toLowerCase().split(',') : [],
-		// 	state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').toLowerCase().split(',') : [],
-		// 	frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').toLowerCase().split(',') : [],
-		// 	polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').toLowerCase().split(',') : [],
-		// 	isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-		// 	isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()) || $.trim($("#city").val()),
-		// 	basic_filter_condition = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0,
-		// 	advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-			// selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').toLowerCase().split(',') : [],
-			// selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').toLowerCase().split(',') : [],
-			// selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').toLowerCase().split(',') : [],
-			// selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').toLowerCase().split(',') : [],
-		// 	isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0,
-		// 	filtered_data = [],
-		// 	data_to_plot = [];
-
-		// if(isAdvanceFilterApplied || isBasicFilterApplied) {
-		// 	filtered_data = JSON.parse(JSON.stringify(gmap_self.getFilteredData_gmap()));
-		// } else {
-		// 	filtered_data = JSON.parse(JSON.stringify(all_devices_loki_db.data));
-		// }
-			
-		// if(advance_filter_condition || basic_filter_condition) {
-  //       	data_to_plot = JSON.parse(JSON.stringify(gmap_self.getFilteredBySectors(filtered_data)));
-  //   	} else {
-  //   		data_to_plot = filtered_data;
-  //   	}
-
   		var selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').toLowerCase().split(',') : [],
 			selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').toLowerCase().split(',') : [],
 			selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').toLowerCase().split(',') : [],
@@ -4252,7 +4226,7 @@ function devicePlottingClass_gmap() {
 			
 			advJustSearch.removeSearchMarkers();
 	    	advJustSearch.resetVariables();
-
+	    	
 		    for(var i=data_to_plot.length;i--;) {
 		    	var exceptCityCondition = selected_bs_alias.length === 0 && selected_ip_address.length === 0 && selected_circuit_id.length === 0;
 		    	if(exceptCityCondition) {

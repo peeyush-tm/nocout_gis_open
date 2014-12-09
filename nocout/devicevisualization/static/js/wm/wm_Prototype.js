@@ -222,7 +222,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 				},
 				//Return Cluster Image or Original graphic of Feature
 				externalGraphic: function(feature){
-
 					/*
 					 * This function returns cluster Image according to cluster Length
 					*/
@@ -277,7 +276,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		});
 
 		//Create a OpenLayer Strategy Cluster
-		strategy= new OpenLayers.Strategy.Cluster({
+		strategy = new OpenLayers.Strategy.Cluster({
 			"distance": clustererSettings.clustererDistance, 
 			"threshold": clustererSettings.threshold,
 			"autoActivate": false,
