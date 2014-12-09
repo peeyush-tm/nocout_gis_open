@@ -2438,8 +2438,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     ws_bulk_upload_errors.write(0, i, col.decode('utf-8', 'ignore').strip(), style_errors)
         except Exception as e:
             pass
-        print "************************* Headers: ", headers
-        print "************************* Error Rows: ", error_rows_list
+        # print "************************* Headers: ", headers
+        # print "************************* Error Rows: ", error_rows_list
         try:
             for i, l in enumerate(error_rows_list):
                 i += 1
@@ -4388,7 +4388,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     }
                     # base station object
                     base_station = create_device(base_station_data)
-                    print "****************************** bs-result - ", base_station
 
                     # increment device latest id by 1
                     device_latest_id += 1
@@ -4397,8 +4396,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
             except Exception as e:
                 logger.exception("Base Station not created. Exception: ", e.message)
                 base_station = ""
-
-            print "****************************** base_station 1 , row['IDU IP']- ", base_station, row['IDU IP']
 
             # ******************************************************************************************
             # *********************************** DR Site Check (Start) ********************************
@@ -4826,7 +4823,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     basestation = create_basestation(basestation_data)
             except Exception as e:
                 basestation = ""
-            print "********************************* base_station 2 - ", base_station
+
             try:
                 # ---------------------------------- Sector ---------------------------------
                 # initialize name
