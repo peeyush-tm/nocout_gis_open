@@ -4388,13 +4388,20 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     }
                     # base station object
                     base_station = create_device(base_station_data)
+                    print "****************************** bs-result - ", base_station
 
                     # increment device latest id by 1
                     device_latest_id += 1
                 else:
                     base_station = ""
             except Exception as e:
+                logger.exception("Base Station not created. Exception: ", e.message)
                 base_station = ""
+
+            print "****************************** base_station 1 , row['IDU IP']- ", base_station, row['IDU IP']
+
+            # ******************************************************************************************
+            # *********************************** DR Site Check (Start) ********************************
 
             # check for dr site (disaster recovery site); if it's yes than do not create any entry beyond this point
             # just get base station/idu device and make it 'dr configured on' attribute of current sector
@@ -4404,15 +4411,34 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
             # get current sector
             sector_id = row['Sector ID'] if 'Sector ID' in row.keys() else ""
 
-            if (dr_site_status.lower() == "yes") and sector_id:
-                # get sector with current sector id
-                dr_sector = Sector.objects.filter(sector_id=sector_id)
+            # pmp name
+            pmp = ""
+            try:
+                if 'PMP' in row.keys():
+                    pmp = row['PMP']
+                    if isinstance(pmp, basestring) or isinstance(pmp, float):
+                        pmp = int(pmp)
+            except Exception as e:
+                logger.info("PMP not in sheet or something wrong. Exception: ", e.message)
+
+            # sector name
+            sector_name = '{}_{}_{}'.format(
+                special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
+                row['Sector Name'] if 'Sector Name' in row.keys() else "", pmp)
+
+            # get sector with current sector id
+            dr_sector = Sector.objects.filter(name=sector_name)
+
+            if (dr_site_status.lower() == "yes") and dr_sector:
                 if dr_sector:
                     # if sector already exist than make base station/idu device it's 'dr configured on' device
                     # and than skip the current loop by using 'continue' so that no entry beyond this point created
                     dr_sector[0].dr_configured_on = base_station
                     dr_sector[0].save()
                     continue
+
+            # *********************************** DR Site Check (End) **********************************
+            # ******************************************************************************************
 
             try:
                 # ------------------------------ BS Switch -----------------------------
@@ -4800,7 +4826,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     basestation = create_basestation(basestation_data)
             except Exception as e:
                 basestation = ""
-
+            print "********************************* base_station 2 - ", base_station
             try:
                 # ---------------------------------- Sector ---------------------------------
                 # initialize name
@@ -5325,11 +5351,6 @@ def create_device(device_payload):
                         device.device_type = device_type
                     except Exception as e:
                         logger.info("Device Type: ({} - {})".format(device_type, e.message))
-                # parent
-                try:
-                    device.parent = Device.objects.all()[0]
-                except Exception as e:
-                    logger.info("Parent: ({})".format(e.message))
                 # mac address
                 if mac_address:
                     try:
