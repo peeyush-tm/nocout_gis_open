@@ -26,7 +26,7 @@ class EventForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         # # removing help text for device 'select' field
-        # self.base_fields['device'].help_text = ''
+        self.base_fields['device'].help_text = ''
         self.base_fields['end_never'].widget = forms.HiddenInput()
 
         try:
@@ -58,4 +58,4 @@ class EventForm(forms.ModelForm):
         Meta Information
         """
         model = Event
-        exclude = ('created_by', 'organization', 'device', 'repeat_every', 'repeat_by', 'repeat_on',)
+        exclude = ('created_by', 'organization', 'repeat_every', 'repeat_by', 'repeat_on',)
