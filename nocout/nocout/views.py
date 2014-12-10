@@ -1,5 +1,4 @@
 import json
-from actstream import action
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib import auth
@@ -7,12 +6,15 @@ from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.models import User
 from nocout import settings
 from session_management.models import Visitor
+from datetime import timedelta
+from django.utils import timezone
 
 ##error pages
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 ##error pages
-
+from activity_stream.models import UserAction
+from user_profile.models import UserProfile
 import logging
 
 logger = logging.getLogger(__name__)
@@ -94,8 +96,9 @@ def auth_view(request):
     }
 
     user_audit = {
-        "user": User.objects.get(pk=1),
-        "verb": "User Login Attempt"
+        "userid": User.objects.get(pk=1).id,
+        "module":"auth",
+        "action": "Login Attempt",
     }
 
     objects_values = dict(url='/login/')
@@ -121,7 +124,47 @@ def auth_view(request):
     password = request.POST.get('password', '')
     user = auth.authenticate(username=username, password=password)
 
-    if user is not None and user.is_active:
+    if user is not None:
+        already_logged = user.userprofile.password_changed_at
+        password_expire = True
+        password_expire_alert = False
+        lock_time = user.userprofile.user_invalid_attempt_at
+        if already_logged:
+            password_expires_on = already_logged + timedelta(days=30)
+            password_expire = password_expires_on < timezone.now()
+            password_expire_alert = already_logged + timedelta(days=20) < timezone.now()
+
+        # unlock the user after 30 minutes if user locked due to invalid password attempt.
+        if lock_time and (user.userprofile.user_invalid_attempt >= 5 ):
+            unlock_time = lock_time + timedelta(minutes=30)
+            if timezone.now().time() > unlock_time.time():
+                user_profile = UserProfile.objects.filter(id=user.id)
+                user_profile.update(user_invalid_attempt=0, is_active=True)
+                user.is_active = True
+
+    if user is not None and user.is_active and (not already_logged or password_expire) and not user.userprofile.is_deleted:
+        auth.login(request, user)
+        next_url = '/' + request.POST.get('next', 'home/')
+        key_from_cookie = request.session.session_key
+        objects_values = dict(dialog=True, url=next_url, user_id=user.id, username=user.username)
+
+        # values to store in user audit logs
+        user_audit = {
+            "userid": request.user.id,
+            "module": "auth",
+            "action": "loggedin from IP address : %s"
+                    % (get_client_ip(request)),
+        }
+        result = {
+            "success": 3,  # 0 - fail, 1 - success, 2 - exception, 3 - first time login
+            "message": "Logged in successfully.",
+            "data": {
+                "meta": {},
+                "objects": objects_values
+            }
+        }
+
+    elif user is not None and user.is_active and not user.userprofile.is_deleted:
 
         auth.login(request, user)
         next_url = '/' + request.POST.get('next', 'home/')
@@ -130,20 +173,31 @@ def auth_view(request):
             session_key_in_visitor_db = request.user.visitor.session_key
 
             if session_key_in_visitor_db != key_from_cookie:
-                objects_values = dict(dialog=True, url=next_url)
+                if password_expire_alert:
+                    objects_values = dict(password_expire_alert=True, dialog=True, url=next_url,
+                            password_expires_on=unicode(password_expires_on.date()))
+                else:
+                    objects_values = dict(password_expire_alert=False, dialog=True, url=next_url)
 
             else:
                 objects_values = dict(url=next_url)
 
         else:
             Visitor.objects.create(user=request.user, session_key=key_from_cookie)
-            objects_values = dict(url=next_url)
+
+            UserProfile.objects.filter(id=user.id).update(user_invalid_attempt=0)   # empty the user invalid attempts on successful login
+            if password_expire_alert:
+                objects_values = dict(password_expire_alert=True , url=next_url,
+                        password_expires_on=unicode(password_expires_on.date()))
+            else:
+                objects_values = dict(url=next_url)
 
         # values to store in user audit logs
         user_audit = {
-            "user": request.user,
-            "verb": u'username : %s loggedin from IP address : %s'
-                    % (username, get_client_ip(request))
+            "userid": request.user.id,
+            "module": "auth",
+            "action": "loggedin from IP address : %s"
+                    % (get_client_ip(request)),
         }
 
         result = {
@@ -155,12 +209,34 @@ def auth_view(request):
             }
         }
 
+    elif user is not None and user.userprofile.is_deleted:
+        # values to store in user audit logs
+        user_audit = {
+            "userid": User.objects.get(pk=1).id,
+            "module": "auth",
+            "action": "a deleted user is loggedin from IP address %s, "
+                    % (get_client_ip(request))
+        }
+
+        result = {
+            "success": 0,  # 0 - fail, 1 - success, 2 - exception
+            "message": "Account Deleted By Administrator",
+            "data": {
+                "meta": {},
+                "objects": {
+                    "reason": "The account has been deleted by the application administrator. \
+                                            Please contact application administrator to continue.",
+                }
+            }
+        }
+
     elif user is not None and not user.is_active:
         # values to store in user audit logs
         user_audit = {
-            "user": User.objects.get(pk=1),
-            "verb": u'a locked user is loggedin using username : %s from IP address %s, '
-                    % (username, get_client_ip(request))
+            "userid": User.objects.get(pk=1).id,
+            "module": "auth",
+            "action": "a locked user is loggedin from IP address %s, "
+                    % (get_client_ip(request))
         }
 
         result = {
@@ -180,9 +256,10 @@ def auth_view(request):
 
         # values to store in user audit logs
         user_audit = {
-            "user": User.objects.get(pk=1),
-            "verb": u'login attempt failed for the username : %s from IP address %s, '
-                    % (username, get_client_ip(request))
+            "userid": User.objects.get(pk=1).id,
+            "module": "auth",
+            "action": "login attempt failed from IP address %s "
+                    % (get_client_ip(request))
         }
 
         result = {
@@ -197,8 +274,41 @@ def auth_view(request):
             }
         }
 
+        # Count the invalid attempts of the user and not of the superuser.
+        # And lock the user after 5 invalid attempt.
+        user_profile = UserProfile.objects.filter(username=username)
+        if user_profile.exists() and not user_profile[0].is_superuser:
+            user_profile.update(user_invalid_attempt=user_profile[0].user_invalid_attempt+1)
+
+            if user_profile[0].user_invalid_attempt == 3:
+                result = {
+                    "success": 0,  # 0 - fail, 1 - success, 2 - exception
+                    "message": "Two attempts remaining",
+                    "data": {
+                        "meta": {},
+                        "objects": {
+                            "reason": "The user will be locked if next two password are wrong."
+                        }
+                    }
+                }
+            elif user_profile[0].user_invalid_attempt >= 5:
+                user_profile.update(is_active=False, user_invalid_attempt_at=timezone.now())
+                result = {
+                    "success": 0,  # 0 - fail, 1 - success, 2 - exception
+                    "message": "Account Locked By Administrator",
+                    "data": {
+                        "meta": {},
+                        "objects": {
+                            "reason": "The account has been locked by the application administrator. \
+                                        Please contact application administrator to continue.",
+                        }
+                    }
+                }
+
+
     try:
-        action.send(user_audit["user"], verb=user_audit["verb"])
+        UserAction.objects.create(user_id=user_audit["userid"], module=user_audit["module"],
+                                    action=user_audit["action"])
     except Exception as general_exception:
         if settings.DEBUG:
             logger.error(general_exception)
@@ -213,10 +323,12 @@ def logout(request):
     """
     try:
         user_audit = {
-            "user": request.user,
-            "verb": u'username : %s : Logoff '% (request.user.username)
+            "userid": request.user.id,
+            "module": "auth",
+            "action":"Logout",
         }
-        action.send(user_audit["user"], verb=user_audit["verb"])
+        UserAction.objects.create(user_id=user_audit['userid'], module=user_audit['module'],
+                                    action=user_audit['action'])
     except:
         #dont log in case of exception
         pass

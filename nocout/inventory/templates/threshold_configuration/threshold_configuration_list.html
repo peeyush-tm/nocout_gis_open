@@ -1,9 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Settings</li>
-    <li>Threshold Configuration</li>
-{% endblock %}
+
 {% block content_title %}Threshold Configuration Management{% endblock %}
 {% block content_description %}List of threshold configuration{% endblock %}
 {% block content %}
@@ -53,10 +50,10 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
         $(document).ready(function (e) {
-            
+
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
-            
+
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 

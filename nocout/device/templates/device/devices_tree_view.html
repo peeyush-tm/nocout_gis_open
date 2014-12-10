@@ -1,16 +1,14 @@
 {% extends "inventory/inventory.html" %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Device</li>
-    <li>Tree View</li>
-{% endblock %}
+
 {% block content_title %}Device Tree View{% endblock %}
 {% block content_description %}Tree view of devices.{% endblock %}
 {% load staticfiles %}
 
 {% block content %}
+       {% if perms.inventory.add_antenna %}
 
     <p><a href="/device/new"><i class="fa fa-plus"></i> Create Device</a></p>
+       {% endif %}
     <p><a href="/device"><i class="fa fa-table"></i> Devices List View</a></p>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
@@ -31,7 +29,7 @@
                 <i class="fa fa-spinner fa-2x fa-spin"></i> Please Wait...
             </div>
             <div id="devicesTree" class="tree">
-                
+
             </div>
             <div class="clearfix"></div>
         </div>
@@ -52,7 +50,7 @@
             /*Make a instance of deviceTreeInstance */
             var deviceTreeInstance = new loadDeviceTreeLib();
             deviceTreeInstance.getDevices(infoObject);
-                       
+
         });
 
     </script>

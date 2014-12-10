@@ -1,0 +1,301 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block content_title %}GIS Wizard: Base Station{% endblock %}
+{% block content_description %}gis wizard: base station{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> GIS WIZARD: BASE STATION</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br/>
+
+                <!-- :START: Radio Buttons to choose existing or create new -->
+                <div class="form-group">
+                    <label class="control-label pull-left">Base Station &nbsp;&nbsp;&nbsp;</label>
+                    <div class="pull-left">
+
+                        <label class="radio-inline">
+                            <input type="radio" id="id_base_station_radio" class="radioField" value="existing" name="base_station_radio"> Choose Existing
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="id_base_station_radio" class="radioField" value="new" name="base_station_radio"> Create New
+                        </label>
+                    </div>
+                </div><br/><br/>
+                <div class="form-group">
+                    <div class="col-sm-9">
+                        <div class="col-md-8">
+                            <input class=" tip-focus form-control" data-placement="right" data-toggle="tooltip" id="id_base_station" name="base_station" title="" type="hidden" value="{% if object %}{{ object.id }}{% endif %}"/>
+                        </div>
+                    </div>
+                </div>
+                {% if object or select_view %}
+                </br>
+                </br>
+                {% endif %}
+                <!-- :END: Radio Buttons to choose existing or create new -->
+            {% if form %}
+
+                                    <form id="id_base_station_form" action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                        {% include "gis_wizard/form.html" with form=form only %}
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Next</button>
+                                                &nbsp;
+                                                <button type="submit" id="id_update_and_show" class="btn btn-success"><i class="fa fa-pencil"></i>{{ save_text }} &amp; Show</button>
+                                                {% if skip_url %}
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ skip_url }}')"><i class="fa fa-times"></i>Skip</button>
+                                                {% endif %}
+                                                &nbsp;
+                                                {% url 'gis-wizard-list' as cancel_url %}
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('{{ cancel_url }}')"><i class="fa fa-times"></i>Cancel</button>
+                                            </div>
+                                        </div>
+                                    </form>
+            {% endif %}
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
+
+    {% if form %}
+    <script>
+    $(document).ready(function () {
+        $("#id_update_and_show").on("click", function(e) {
+            e.preventDefault();
+            $('#id_base_station_form').attr('action', "?show=True").submit();
+        });
+
+            // Changing labels of form fields
+            $("label[for=id_bs_technology]").html('<span class="mandatory">* </span>BS Technology');
+            $("label[for=id_bs_site_id]").text('BS Site ID');
+            $("label[for=id_bs_site_type]").text('BS Site Type');
+            $("label[for=id_bs_switch]").text('BS Switch');
+            $("label[for=id_bs_type]").text('BS Type');
+            $("label[for=id_bh_bso]").text('BH BSO');
+            $("label[for=id_hssu_used]").text('HSSU Used');
+            $("label[for=id_gps_type]").text('GPS Type');
+
+            // Initialize the select2 selectbox.
+            $(".select2select").select2();
+            $('.tip-focus').tooltip({
+                placement: 'right',
+                trigger: 'focus'
+            });
+
+            // if none of the value from 'country' is selected than empty 'state' & 'city' selection too.
+            // or update value of 'state' corresponding to the selected 'country'
+
+            if ($("#id_country").val() == "") {
+                $("#id_state").empty();
+                $("#id_city").empty();
+            }
+            else {
+                Dajaxice.inventory.update_states_after_invalid_form(Dajax.process, {'option': $("#id_country").val(), 'state_id': $("#id_state").val()});
+            }
+
+            // if 'state' has no value than empty 'city' selection menu
+            // or update 'city' corresponding to selected 'state'
+            if (!$("#id_state").val()) {
+                $("#id_city").empty();
+            }
+            else {
+                Dajaxice.inventory.update_cities_after_invalid_form(Dajax.process, {'option': $("#id_state").val(), 'city_id': $("#id_city").val()});
+            }
+
+            $("#id_bs_switch").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id+"/", {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_backhaul").select2({
+                placeholder: "Search for a backhaul.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/backhaul/list/backhaul/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/backhaul/select/backhaul/" + id+"/", {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoBackhaulFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoBackhaulFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+    });//end ready
+    // update 'states' on selecting 'country'
+        $("#id_country").change(function () {
+            if ($("#id_country").val() != "") {
+                Dajaxice.inventory.update_states(Dajax.process, {'option': $("#id_country").val()});
+                $("#id_city").empty();
+            }
+            else {
+                $("#id_state").select2("val","");
+                $("#id_state").empty();
+                $("#id_city").select2("val","");
+                $("#id_city").empty();
+            }
+        });
+
+        function repoFormatResult(device) {
+          return device.device_alias;
+        }
+
+        function repoFormatSelection(device) {
+          return device.device_alias;
+        }
+
+        function repoBackhaulFormatResult(backhaul) {
+          return backhaul.alias;
+        }
+
+        function repoBackhaulFormatSelection(backhaul) {
+          return backhaul.alias;
+        }
+
+        // update 'cities' on selecting 'state'
+        $("#id_state").change(function () {
+            $("#id_city").select2("val","");
+            Dajaxice.inventory.update_cities(Dajax.process, {'option': $("#id_state").val()});
+        });
+
+    </script>
+    {% endif %}
+
+    <script>
+        $(function() {
+                var $radios = $('input:radio[name=base_station_radio]');
+                {% if select_view or object %}
+                    $radios.filter('[value=existing]').prop('checked', true);
+
+                        $("#id_base_station").select2({
+                            placeholder: "Search for a base station.",
+                            minimumInputLength: 2,
+                            width: "resolve",
+                            ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                                url: "/base_station/list/base_station/",
+                                dataType: 'json',
+                                quietMillis: 250,
+                                data: function (term, page) {
+                                    return {
+                                        sSearch: term, // search term
+                                        org: 0,
+                                    };
+                                },
+                                results: function (data, page) { // parse the results into the format expected by Select2.
+                                    // since we are using custom formatting functions we do not need to alter the remote JSON data
+                                    return { results: data.items };
+                                },
+                                cache: false
+                            },
+                            initSelection: function(element, callback) {
+                                // the input tag has a value attribute preloaded that points to a preselected repository's id
+                                // this function resolves that id attribute to an object that select2 can render
+                                // using its formatResult renderer - that way the repository name is shown preselected
+                                var id = $(element).val();
+                                if (id !== "") {
+                                    $.ajax("/base_station/select/base_station/" + id+"/", {
+                                        dataType: "json"
+                                    }).done(function(data) {
+                                        callback({id: id, alias: data[0]});
+                                        });
+                                }
+                            },
+                            formatResult: repoBSFormatResult, // omitted for brevity, see the source of this page
+                            formatSelection: repoBSFormatSelection,  // omitted for brevity, see the source of this page
+                        }).on("select2-selecting", function(el) {
+                            location.href="/gis-wizard/base-station/" + el.val + "/";
+                        });
+                {% else %}
+                    $radios.filter('[value=new]').prop('checked', true);
+                {% endif %}
+            $("input:radio[name=base_station_radio]").change(function (){
+                {% if select_view or object %}
+                location.href="{% url 'gis-wizard-base-station-create' %}";
+                {% else %}
+                location.href="{% url 'gis-wizard-base-station-select' %}";
+                {% endif %}
+            });
+        });
+
+        function repoBSFormatResult(basestation) {
+          return basestation.alias;
+        }
+
+        function repoBSFormatSelection(basestation) {
+          return basestation.alias;
+        }
+
+    </script>
+{% endblock %}
+

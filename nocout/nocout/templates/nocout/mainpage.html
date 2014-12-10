@@ -61,6 +61,8 @@
     <!-- session_security script files -->
     <!-- SPECTRUM COLOR PICKER -->
     <script type="text/javascript" src={% static "js/spectrum/spectrum.js" %}></script>
+    <!-- User Logs -->
+    <script src={% static "js/actions_create.js" %}></script>
 
     <!-- CUSTOM SCRIPT -->
     {% block jquery %}{% endblock %}
@@ -74,7 +76,7 @@
         </script>
     {% endblock %}
     <script>
-        
+
         $(document).ready(function() {
 
             var isMenuOpen = +($.cookie("isMenuOpen"));
@@ -83,7 +85,7 @@
                 $("#sidebar-collapse").trigger("click");
             }
 
-            var checkInterval = 5000,
+            var checkInterval = 500000,
             do_session_check = true;
 
             function session_check(do_session_check){

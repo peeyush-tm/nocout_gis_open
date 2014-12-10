@@ -2,7 +2,7 @@ import socket
 import re
 import mysql.connector
 import os
-from datetime import datetime
+from datetime import datetime,timedelta
 import time
 def get_from_socket(site_name, query):
     """
@@ -22,9 +22,34 @@ def get_from_socket(site_name, query):
     s.connect(socket_path)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
-    output = s.recv(100000000)
-    output.strip("\n")
+    output = ''
+    while True:
+        out = s.recv(100000000)
+        out.strip()
+        if not len(out):
+	    break
+        output += out
     return output
+
+
+def pivot_timestamp_fwd(timestamp):
+    """
+    Function_name : pivot_timestamp (function for pivoting the time to 5 minutes interval)
+
+    Args: timestamp
+
+    Kwargs: None
+    return:
+           t_stmp (pivoted time stamp)
+    Exception:
+           None
+    """
+    t_stmp = timestamp + timedelta(minutes=-(timestamp.minute % 5))
+    if (timestamp.minute %5) != 0:
+        t_stmp = t_stmp + timedelta(minutes=5)
+
+
+    return t_stmp
 
 
 def get_threshold(perf_data):
@@ -49,15 +74,15 @@ def get_threshold(perf_data):
     	if param.partition('=')[2]:
             	if ';' in param.split("=")[1]:
                     	threshold_values[param.split("=")[0]] = {
-                    	"war": re.sub('[ms]', '', param.split("=")[1].split(";")[1]),
-                    	"cric": re.sub('[ms]', '', param.split("=")[1].split(";")[2]),
-                    	"cur": re.sub('[ms]', '', param.split("=")[1].split(";")[0])
+                    	"war": re.sub('ms', '', param.split("=")[1].split(";")[1]),
+                    	"cric": re.sub('ms', '', param.split("=")[1].split(";")[2]),
+                    	"cur": re.sub('ms', '', param.split("=")[1].split(";")[0])
                     	}
             	else:
                     	threshold_values[param.split("=")[0]] = {
                     	"war": None,
                     	"cric": None,
-                    	"cur": re.sub('[ms]', '', param.split("=")[1].strip("\n"))
+                    	"cur": re.sub('ms', '', param.split("=")[1].strip("\n"))
                     	}
     	else:
         	threshold_values[param.split("=")[0]] = {
@@ -174,4 +199,31 @@ def get_epoch_time(datetime_obj):
     else:
         return datetime_obj
 
+def insert_data(table, data_values, **kwargs):
+    """
+    Function to insert data into mysql tables
+
+    Args:
+        table (str): Table name into which data to be inserted
+        data_values: Values in the form of list of tuples
+
+    Kwargs:
+        kwargs (dict): Python dict to store connection variables
+    """
+    db = mysql_conn(configs=kwargs.get('configs')
+    query = "INSERT INTO `%s` " % table
+    query += """
+            (device_name, service_name, machine_name, 
+            site_name, data_source, current_value, min_value, 
+            max_value, avg_value, warning_threshold, 
+            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity,age) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s,%s)
+            """
+    cursor = db.cursor()
+    try:
+        cursor.executemany(query, data_values)
+    except mysql.connector.Error as err:
+        raise mysql.connector.Error, err
+    db.commit()
+    cursor.close()
 

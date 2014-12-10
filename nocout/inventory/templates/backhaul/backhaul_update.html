@@ -1,10 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Backhaul</li>
-    <li>Edit</li>
-{% endblock %}
+
 {% block content_title %}Edit Backhaul{% endblock %}
 {% block content_description %}Edit backhaul{% endblock %}
 {% block content %}
@@ -83,6 +79,167 @@
                 placement: 'right',
                 trigger: 'focus'
             });
-        })
+
+            $("#id_bh_configured_on").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id+"/", {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_bh_switch").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id+"/", {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_pop").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id+"/", {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+
+            $("#id_aggregator").select2({
+                placeholder: "Search for a device.",
+                minimumInputLength: 2,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/inventory/list/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        var org_id = $("#id_organization").val();
+                        return {
+                            sSearch: term, // search term
+                            org: org_id,
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/inventory/select/device/" + id+"/", {
+                            dataType: "json"
+                        }).done(function(data) {
+                            callback({id: id, device_alias: data[0]});
+                            });
+                    }
+                },
+                formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+            });
+        });
+
+        function repoFormatResult(device) {
+          return device.device_alias;
+        }
+
+        function repoFormatSelection(device) {
+          return device.device_alias;
+        }
+
     </script>
 {% endblock %}

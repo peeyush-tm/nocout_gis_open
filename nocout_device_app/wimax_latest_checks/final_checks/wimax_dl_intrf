@@ -1,0 +1,133 @@
+#!/usr/bin/python
+
+import sys
+from telnetlib import Telnet
+import socket
+import json
+import os
+import binascii
+import mysql.connector
+"""
+operating Frequency of ss device  Poller script.
+
+This is part of device application. 
+Poller script determines the operating ptx of device. 
+poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.1.2.0 from snmp agent of device at specific interval.
+Device on which Frequency operating is sent to device application 
+
+"""
+# ######################################################################
+# Function: check_wimax_dl_intrf
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+
+
+
+def extract_host_from_wimax_topology(ss_host_mac):
+        query = """
+        select device_name,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+        db = mysql_conn()
+        cur = db.cursor()
+        cur.execute(query)
+        data = cur.fetchall()
+        cur.close()
+
+        return data
+
+
+
+def live_query_dl_intrf(mac):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+    
+        """
+        exit_value = 3
+        dl_intrf = None
+        host_name = extract_host_from_wimax_topology(mac)
+        try:
+                if host_name[0][0]:
+                        query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("wimax_topology",host_name[0][0])
+			site = host_name[0][1]
+                        machine_name = host_name[0][1].split('_')[0]
+                        socket_ip = _LIVESTATUS[machine_name]['host']
+                        socket_port = _LIVESTATUS[machine_name][site]['port']
+
+                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
+                        if query_output[0][0]:
+                                plugin_output = str(query_output[0][0].split('OK -')[1])
+                                plugin_output = [entry for entry in plugin_output.split(' ')]
+                                entry=filter(lambda x: mac in x.lower(), plugin_output)
+                                dl_intrf = entry[0].split('=')[1].split(',')[4]
+
+	except:
+                dl_intrf= None
+        return dl_intrf
+
+
+
+def check_wimax_dl_intrf(item, _no_params, info):
+    """
+            check_wimax_dl_intrf function calcdlates the operating ptx
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter resdlts
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - 5835
+
+                    Raises:
+                            ValueError ,Exception
+"""
+    state = 3
+    infotext = "unknown_value"
+    dl_intrf = None
+    try:
+	if info[1]:
+                ss_mac = info[1][0]
+		a=binascii.b2a_hex(ss_mac)
+		n = 2
+		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
+                if ss_mac:
+                        dl_intrf = live_query_dl_intrf(ss_mac )
+			if dl_intrf:
+                                if dl_intrf  == "crit":
+                                        state  = 2
+                                elif dl_intrf  == "Warn":
+                                        state = 1
+                                elif dl_intrf == "Norm":
+                                        state = 0
+        			infotext = "Device dl intrf is %s " % dl_intrf
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext, [("dl_intrf", dl_intrf)])
+
+
+check_info["wimax_dl_intrf"] = {
+    'check_function': check_wimax_dl_intrf,
+    'service_description': 'wimax_dl_intrf',
+    'has_perfdata': True,
+}
+
+#########################################################################
+#	SNMP OID for the operating ptx
+#########################################################################
+snmp_info["wimax_dl_intrf"] = ( ".1.3.6.1.2.1.10.184.1.3.1.1.1", ["17.1"] )

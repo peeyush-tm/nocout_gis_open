@@ -1,8 +1,10 @@
 {% extends "nocout/base.html" %}
 {% block breadcrumb_title %}
-    <li>Alert Center</li>
-    <li>Customer Alerts</li>
-    <li>{{ data_source }}</li>
+    <a href="/home">Home</a> >
+    <li><a href="#">Alert Center</a></li>
+    <li><a href="#">Customer Alerts</a></li>
+    <li><a href="#">{{ data_source }}</a></li>
+    <li><b><span id="nav_tab_name"></span></b></li>
 {% endblock %}
 {% block content_title %}Customer Alerts{% endblock %}
 {% block content_description %}Customer Alerts List{% endblock %}
@@ -54,11 +56,34 @@
 {% endblock %}
 {% block jquery %}
 <script type="text/javascript">
-    var dataTableInstance = "";
+    var dataTableInstance = "",
+        base_url = "",
+        excel_columns = [];
     /*This is a temporary code which is replace when data for data table is provided*/
     $(document).ready(function (e) {
-          function ourDataTableWidget()
-            {
+
+        /*Set the base url of application for ajax calls*/
+        if(window.location.origin) {
+            base_url = window.location.origin;
+        } else {
+            base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+        }
+
+        var sort_index = 9;
+        /*Grid headers object*/
+        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+        /*Ajax url to get grid data*/
+        ajax_url_get_parameter = "";
+
+        if(/latency/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='latency';
+            sort_index = 10;
+        } else if(/packet_drop/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='packet_drop'
+        } else if(/down/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='down'
+        }
+          function ourDataTableWidget() {
                 /**
                  * This function creates the jquery data table on given domElement
                  * @class ourDataTableWidget
@@ -67,10 +92,16 @@
                  * @param tableheaders {JSON Object} It contains the grid headers object
                  * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
                  */
-                this.createDataTable = function(tableId, tableheaders, ajax_url, destroy)
-                {
+                this.createDataTable = function(tableId, tableheaders, ajax_url, destroy) {
                     /*Show the spinner*/
                     showSpinner();
+
+                    for(var i=0;i<tableheaders.length;i++) {
+                        var current_column = tableheaders[i];
+                        if(current_column && current_column['sClass'] != 'hide' && current_column['mData'] != 'action') {
+                            excel_columns.push(i);
+                        }
+                    }
 
                     destroy = typeof destroy !== 'undefined' ? destroy : true;
                     $('.datatable').each(function () {
@@ -86,7 +117,20 @@
                     if (destroy){
                         $("#"+tableId).dataTable().fnDestroy();
                     }
+
                     var dtable = $("#"+tableId).DataTable({
+                        sDom: 'T<"clear">lfrtip',
+                        oTableTools: {
+                            sSwfPath : base_url+"/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                            aButtons : [
+                                {
+                                    sExtends : "xls",
+                                    sButtonText : "Download Excel",
+                                    sFileName : "*.xls",
+                                    mColumns : excel_columns
+                                }
+                            ]
+                        },
                         bAutoWidth: false,
                         bDestroy : true,
                         bPaginate: true,
@@ -100,30 +144,17 @@
                         },
                         aoColumns:tableheaders,
                         sPaginationType: "full_numbers",
-                        aaSorting: [[9, 'desc'],[0, 'asc']]
+                        aaSorting: [[sort_index, 'desc'],[0, 'asc']]
                     });
                 };
             }
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-            /*Ajax url to get grid data*/
-            ajax_url_get_parameter = "";
-            
-            if(/latency/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='latency' 
-            } else if(/packet_drop/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='packet_drop'
-            } else if(/down/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='down'
-            }
-
 
             var ajax_url_wifi= '{% url "CustomerAlertListingTable" %}'+'?data_source='+ ajax_url_get_parameter+'&data_tab=' + 'WiMAX';
             var ajax_url_pmp=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'PMP';
             var ajax_url_p2p=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'P2P';
-                
+
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
             $("#customer_wifi_tab").attr("data_url",ajax_url_wifi);
@@ -149,6 +180,20 @@
             // dataTableInstance.createDataTable("customer_wifi_alertlistingtable", gridHeadersObj, ajax_url_wifi, destroy);
             // dataTableInstance.createDataTable("customer_pmp_alertlistingtable",  gridHeadersObj, ajax_url_pmp,  destroy);
             // dataTableInstance.createDataTable("customer_p2p_alertlistingtable",  gridHeadersObj, ajax_url_p2p,  destroy);
+
+            // if tabination is there in page add its text in breadcrumb
+            var tab = $('.nav li').filter('.active').find('.hidden-inline-mobile')
+            if (tab.length){
+                $('#nav_tab_name').text(tab.text());
+            }
+            else{
+                $(".breadcrumb").children().last().hide()
+            }
+            // change name of the tab on click of the tab
+            $(".nav-tabs li").click( function() {
+                $('#nav_tab_name').text($(this).text());
+            });
+
         });
 </script>
 <!-- Library to load tab content on tab click-->

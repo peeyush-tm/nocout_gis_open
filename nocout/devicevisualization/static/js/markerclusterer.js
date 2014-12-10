@@ -59,6 +59,16 @@
  * @constructor
  * @extends google.maps.OverlayView
  */
+
+var base_url = "";
+/*Set the base url of application for ajax calls*/
+if(window.location.origin) {
+    base_url = window.location.origin;
+} else {
+    base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+}
+
+
 function MarkerClusterer(map, opt_markers, opt_options) {
   // MarkerClusterer implements google.maps.OverlayView interface. We use the
   // extend function to extend MarkerClusterer with google.maps.OverlayView
@@ -110,7 +120,8 @@ function MarkerClusterer(map, opt_markers, opt_options) {
    * @type {?number}
    * @private
    */
-  this.maxZoom_ = options['maxZoom'] || null;
+  // this.maxZoom_ = options['maxZoom'] || null;
+  this.maxZoom_ = 11;
 
   this.styles_ = options['styles'] || [];
 
@@ -191,8 +202,7 @@ function MarkerClusterer(map, opt_markers, opt_options) {
  * @private
  */
 MarkerClusterer.prototype.MARKER_CLUSTER_IMAGE_PATH_ =
-    'http://google-maps-utility-library-v3.googlecode.com/svn/trunk/markerclusterer/' +
-    'images/m';
+    base_url+'/static/js/OpenLayers/img/m';
 
 
 /**
@@ -987,10 +997,25 @@ Cluster.prototype.updateIcon = function() {
   var mz = this.markerClusterer_.getMaxZoom();
 
   if (zoom > mz) {
+
+    // var all_clusters = this.markerClusterer_.clusters_,
+    //   inBoundMarkers = [];
+    
+    // for(var i=all_clusters.length;i--;) {
+    //   var current_cluster = all_clusters[i],
+    //     cluster_center = new google.maps.LatLng(current_cluster.center_.lat(),current_cluster.center_.lng());
+    //   if(this.map_.getBounds().contains(cluster_center)) {
+    //     inBoundMarkers = inBoundMarkers.concat(current_cluster.markers_);
+    //   }
+    // }
+    
+    // for(var i=inBoundMarkers.length;i--;) {
+    //   inBoundMarkers[i].setMap(this.map_);
+    // }
     // The zoom is greater than our max zoom so show all the markers in cluster.
-    for (var i = 0, marker; marker = this.markers_[i]; i++) {
-      marker.setMap(this.map_);
-    }
+    // for (var i = 0, marker; marker = this.markers_[i]; i++) {
+    //   marker.setMap(this.map_);
+    // }
     return;
   }
 

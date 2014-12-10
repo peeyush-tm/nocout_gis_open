@@ -1,16 +1,18 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency
+    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency, DeviceTypeService, DeviceTypeServiceDataSource
 from django.core.exceptions import ValidationError
+from django.forms.models import inlineformset_factory,  BaseInlineFormSet
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
-# import pyproj
+import pyproj
 # commented because of goes package is not supported for python 2.7 on centos 6.5
-# from shapely.geometry import Polygon, Point
-# from shapely.ops import transform
+from shapely.geometry import Polygon, Point
+from shapely.ops import transform
 # commented because of goes package is not supported for python 2.7 on centos 6.5
 from functools import partial
 from django.forms.util import ErrorList
+from nocout.utils import logged_in_user_organizations
 import re
 import logging
 logger = logging.getLogger(__name__)
@@ -40,6 +42,8 @@ class DeviceForm(forms.ModelForm):
     #longitude = forms.CharField( widget=forms.TextInput(attrs={'type':'text'}))
 
     def __init__(self, *args, **kwargs):
+
+        self.request=kwargs.pop('request', None)
         # setting foreign keys field label
         self.base_fields['site_instance'].label = 'Site Instance'
         self.base_fields['machine'].label = 'Machine'
@@ -55,9 +59,15 @@ class DeviceForm(forms.ModelForm):
             logger.info(e.message)
         initial = kwargs.setdefault('initial', {})
 
+
         super(DeviceForm, self).__init__(*args, **kwargs)
 
+
         # setting select menus default values which is by default '---------'
+        if not self.request is None:
+            self.fields['organization'].queryset = logged_in_user_organizations(self)
+        else:
+            self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].widget.choices = self.fields['organization'].choices
         self.fields['organization'].empty_label = "Select"
         self.fields['parent'].empty_label = "Select"
@@ -199,30 +209,30 @@ class DeviceForm(forms.ModelForm):
 
         #commented because of goes package is not supported for python 2.7 on centos 6.5
         # check whether lat log lies in state co-ordinates or not
-        # if latitude and longitude and state:
-        #     project = partial(
-        #         pyproj.transform,
-        #         pyproj.Proj(init='epsg:4326'),
-        #         pyproj.Proj(
-        #             '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
-        #
-        #     state_geo_info = StateGeoInfo.objects.filter(state_id=state)
-        #     state_lat_longs = list()
-        #     for geo_info in state_geo_info:
-        #         temp_lat_longs = list()
-        #         temp_lat_longs.append(geo_info.longitude)
-        #         temp_lat_longs.append(geo_info.latitude)
-        #         state_lat_longs.append(temp_lat_longs)
-        #
-        #     poly = Polygon(tuple(state_lat_longs))
-        #     point = Point(longitude, latitude)
-        #
-        #     # Translate to spherical Mercator or Google projection
-        #     poly_g = transform(project, poly)
-        #     p1_g = transform(project, point)
-        #     if not poly_g.contains(p1_g):
-        #         self._errors["latitude"] = ErrorList(
-        #             [u"Latitude, longitude specified doesn't exist within selected state."])
+        if latitude and longitude and state:
+            project = partial(
+                pyproj.transform,
+                pyproj.Proj(init='epsg:4326'),
+                pyproj.Proj(
+                    '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
+
+            state_geo_info = StateGeoInfo.objects.filter(state_id=state)
+            state_lat_longs = list()
+            for geo_info in state_geo_info:
+                temp_lat_longs = list()
+                temp_lat_longs.append(geo_info.longitude)
+                temp_lat_longs.append(geo_info.latitude)
+                state_lat_longs.append(temp_lat_longs)
+
+            poly = Polygon(tuple(state_lat_longs))
+            point = Point(longitude, latitude)
+
+            # Translate to spherical Mercator or Google projection
+            poly_g = transform(project, poly)
+            p1_g = transform(project, point)
+            if not poly_g.contains(p1_g):
+                self._errors["latitude"] = ErrorList(
+                    [u"Latitude, longitude specified doesn't exist within selected state."])
         #commented because of goes package is not supported for python 2.7 on centos 6.5 @TODO: check another package
         # print self.cleaned_data
         return self.cleaned_data
@@ -538,6 +548,22 @@ class DeviceModelForm(forms.ModelForm):
 
 
 # ******************************************* Device Type *******************************************
+class BaseDeviceTypeServiceFormset(BaseInlineFormSet):
+    """
+    Custome Inline formest.
+    """
+    def __init__(self, *args, **kwargs):
+
+        super(BaseDeviceTypeServiceFormset, self).__init__(*args, **kwargs)
+        for form in self.forms:
+            form.fields['service'].empty_label = 'Select'
+            form.fields['parameter'].empty_label = 'Select'
+
+    def clean(self):
+        for form in self.forms:
+            if not 'service' in form.cleaned_data.keys():
+                raise forms.ValidationError('This field is required.')
+
 class DeviceTypeForm(forms.ModelForm):
     """
     Rendering form for device type
@@ -554,7 +580,7 @@ class DeviceTypeForm(forms.ModelForm):
         # removing help text for device_port 'select' field
         self.base_fields['device_port'].help_text = ''
         # removing help text for service 'select' field
-        self.base_fields['service'].help_text = ''
+        # self.base_fields['service'].help_text = ''
 
         try:
             if 'instance' in kwargs:
@@ -581,6 +607,7 @@ class DeviceTypeForm(forms.ModelForm):
         Meta Information
         """
         model = DeviceType
+        exclude = ('service',)
 
     def clean_name(self):
         """
@@ -612,6 +639,18 @@ class DeviceTypeForm(forms.ModelForm):
             logger.info(e.message)
         return self.cleaned_data
 
+
+widgets = {
+           'service': forms.Select(attrs= {'class' : 'form-control'}),
+           'parameter': forms.Select(attrs= {'class' : 'form-control'}),
+           'critical': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'warning': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'service_data_sources': forms.Select(attrs= {'class' : 'form-control'}),
+    }
+DeviceTypeServiceCreateFormset = inlineformset_factory(DeviceType, DeviceTypeService, formset=BaseDeviceTypeServiceFormset,
+    fields=('service', 'parameter'), extra=1, widgets=widgets, can_delete=True)
+DeviceTypeServiceUpdateFormset = inlineformset_factory(DeviceType, DeviceTypeService, formset=BaseDeviceTypeServiceFormset,
+    fields=('service', 'parameter'), extra=0, widgets=widgets, can_delete=True)
 
 # ******************************************* Device Type *******************************************
 class DevicePortForm(forms.ModelForm):
@@ -733,3 +772,210 @@ class DeviceFrequencyForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+
+
+# ******************************************* Country *******************************************
+class CountryForm(forms.ModelForm):
+    """
+    Rendering form for country
+    """
+    def __init__(self, *args, **kwargs):
+        # removing help text for device_models 'select' field
+        self.base_fields['country_name'].help_text = ''
+        super(CountryForm, self).__init__(*args, **kwargs)
+
+        self.fields['country_name'].required = True
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = Country
+        fields = ('country_name',)
+
+
+# ******************************************* Country *******************************************
+class StateForm(forms.ModelForm):
+    """
+    Rendering form for country
+    """
+    def __init__(self, *args, **kwargs):
+        # removing help text for device_models 'select' field
+        self.base_fields['state_name'].help_text = ''
+        super(StateForm, self).__init__(*args, **kwargs)
+
+        self.fields['state_name'].required = True
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = State
+        fields = ('country', 'state_name',)
+
+
+# ******************************************* Country *******************************************
+class CityForm(forms.ModelForm):
+    """
+    Rendering form for city
+    """
+    def __init__(self, *args, **kwargs):
+        self.base_fields['city_name'].help_text = ''
+        super(CityForm, self).__init__(*args, **kwargs)
+
+        self.fields['city_name'].required = True
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = City
+        fields = ('state', 'city_name',)
+
+
+#**************************************** GIS Wizard Forms ****************************************#
+
+class WizardDeviceTypeForm(DeviceTypeForm):
+    """
+    Class Based View Base Station Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(WizardDeviceTypeForm, self).__init__(*args, **kwargs)
+
+        self.fields.pop('service')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = DeviceType
+        fields = ('name', 'alias', 'device_port', 'service', 'packets', 'timeout', 'normal_check_interval',
+            'rta_warning', 'rta_critical', 'pl_warning', 'pl_critical', 'agent_tag', 'device_icon', 'device_gmap_icon',
+        )
+
+
+#**************************************** GIS Device Type Service Wizard Forms ****************************************#
+class BaseDTSDataSourceFormset(BaseInlineFormSet):
+    """
+    Custome Inline formest.
+    """
+    def __init__(self, *args, **kwargs):
+
+        super(BaseDTSDataSourceFormset, self).__init__(*args, **kwargs)
+        for form in self.forms:
+            form.fields['service_data_sources'].empty_label = 'Select'
+
+    def clean(self):
+        for form in self.forms:
+            if not 'service_data_sources' in form.cleaned_data.keys():
+                raise forms.ValidationError('This field is required.')
+
+class WizardDeviceTypeServiceForm(forms.ModelForm):
+    """
+    Rendering form for device type service
+    """
+
+    def __init__(self, *args, **kwargs):
+        # removing help text for service 'select' field
+        self.base_fields['service'].help_text = ''
+        self.base_fields['service'].empty_label = 'Select'
+        # removing help text for service 'select' field
+        self.base_fields['parameter'].help_text = ''
+        self.base_fields['parameter'].help_text = 'Select'
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(WizardDeviceTypeServiceForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = DeviceTypeService
+        exclude = ('device_type', 'service_data_sources',)
+
+widgets = {
+           'critical': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'warning': forms.TextInput(attrs= {'class' : 'form-control'}),
+           'service_data_sources': forms.Select(attrs= {'class' : 'form-control'}),
+    }
+
+DeviceTypeServiceDataSourceCreateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource,
+    formset=BaseDTSDataSourceFormset, extra=1, widgets=widgets, can_delete=True)
+DeviceTypeServiceDataSourceUpdateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource,
+    formset=BaseDTSDataSourceFormset, extra=0, widgets=widgets, can_delete=True)
+

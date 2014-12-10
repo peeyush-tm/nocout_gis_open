@@ -1,0 +1,18 @@
+<div class="form-group">
+  {{ formset.management_form }}
+  {% for form in formset %}
+    {% for field in form %}
+        <div class="form-group">
+            {% if field.label != 'Id' %} <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>{% endif %}
+            <div class="col-sm-9">
+                <div class="col-md-8">
+                    {{ field }} {{ field.errors }}
+                </div>
+                <div class="col-md-4 help_text">
+                    {# field.help_text #}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+  {% endfor %}
+</div>

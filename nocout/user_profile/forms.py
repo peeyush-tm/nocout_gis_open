@@ -1,7 +1,11 @@
 from django import forms
-from user_profile.models import UserProfile
+import enchant
+from enchant.tokenize import get_tokenizer
+from django.contrib.auth.hashers import check_password
+from user_profile.models import UserProfile, UserPasswordRecord
 from nocout.widgets import MultipleToSingleSelectionWidget
 from user_profile.fields import PasswordField
+from organization.models import Organization
 
 
 class UserForm(forms.ModelForm):
@@ -16,7 +20,7 @@ class UserForm(forms.ModelForm):
 
 
     def __init__(self, *args, **kwargs):
-        self.request=kwargs.pop('request', None)
+        self.request = kwargs.pop('request', None)
         initial = kwargs.setdefault('initial',{})
 
         # removing help text for username 'select' field
@@ -33,11 +37,16 @@ class UserForm(forms.ModelForm):
         super(UserForm, self).__init__(*args, **kwargs)
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
+        if not self.request.user.is_superuser:
+            logged_in_user_organization_list = self.request.user.userprofile.organization.get_descendants( include_self=True )
+            self.fields['organization'].queryset = logged_in_user_organization_list
+        else:
+            self.fields['organization'].queryset = Organization.objects.all()
 
         if self.instance.pk:
             self.fields['password1'].required = False
             self.fields['password2'].required = False
-            if self.instance.pk == self.request.pk:
+            if self.instance.pk == self.request.user.pk:
                 self.fields['username'].widget.attrs['readonly'] = True
                 self.fields['parent'].widget.attrs['disabled'] = 'disabled'
                 self.fields['role'].widget.attrs['disabled'] = 'disabled'
@@ -67,8 +76,8 @@ class UserForm(forms.ModelForm):
         """
         model = UserProfile
         fields = (
-            'username', 'first_name', 'last_name', 'email', 'role', 'parent', 'designation', 'company',
-            'address', 'phone_number', 'comment','organization'
+            'username', 'first_name', 'last_name', 'email', 'role', 'organization', 'parent', 'designation', 'company',
+            'address', 'phone_number', 'comment',
         )
         widgets = {
             'role': MultipleToSingleSelectionWidget,
@@ -86,3 +95,83 @@ class UserForm(forms.ModelForm):
         if (password1 or password2) and password1 != password2:
             raise forms.ValidationError("Passwords don't match")
         return password2
+
+
+    def clean_parent(self):
+        """
+
+        """
+        print ('cleaned_data..........',self.cleaned_data)
+        if 'username' in [key for key,values in self.cleaned_data.items()]:
+            parent = self.cleaned_data['parent']
+            if parent is None:
+                gisadmin = UserProfile.objects.get(username='gisadmin')
+                parent = gisadmin
+                return parent
+            else:
+                username = self.cleaned_data['username']
+                if parent.username == username:
+                    raise forms.ValidationError("User cannot be parent of itself")
+                return parent
+
+
+    def clean_role(self):
+        """
+        Restrict the user other than super user to create the admin.
+        """
+        role = self.cleaned_data['role']
+        if not self.request.user.is_superuser and len(role) == 1:
+            if role[0].role_name == 'admin':
+                raise forms.ValidationError("Not permitted to create admin")
+            else:
+                return role
+        else:
+            return role
+
+
+    def clean_password1(self):
+        """
+        Username and password must not be identical.
+        Password muxt not contain the dictionary common.
+        """
+        if 'username' in self.cleaned_data:
+            password1 = self.cleaned_data['password1']
+            username = self.cleaned_data['username']
+            tknzr, enchant_obj = get_tokenizer("en_US"), enchant.Dict("en_US")
+            # filter the words from the password1 field of length greater than 2.
+            words = list(filter(lambda x: len(x)>2, [word[0] for word in tknzr(password1.lower())] ))
+            check_word = [enchant_obj.check(w) for w in words]  # check if the words are dictionary common word or not.
+            if password1 == username:
+                raise forms.ValidationError("User ID and password should not be identical")
+            elif check_word.count(True) > 0:    # if contain any dictionay common word.
+                raise forms.ValidationError("Ignore dictionay common words")
+            if password1:
+                user = UserProfile.objects.filter(username=username)
+                if user.exists():
+                    user_password_used = UserPasswordRecord.objects.filter(user_id=user[0].id).\
+                        order_by('-password_used_on').values_list('password_used', flat=True)[:5]
+                    for pwd in user_password_used:
+                        if check_password(password1, pwd):
+                            raise forms.ValidationError("This password is recently used")
+
+            return password1
+
+
+
+class UserPasswordForm(forms.Form):
+    """
+    check new password are same or not during first time login.
+    """
+    new_pwd = forms.CharField(max_length=128, required=True)
+    confirm_pwd = forms.CharField(max_length=128, required=True)
+
+    def clean_confirm_pwd(self):
+        # Check that the two password entries match
+        confirm_pwd = self.cleaned_data.get("confirm_pwd")
+        tknzr, enchant_obj = get_tokenizer("en_US"), enchant.Dict("en_US")
+        words = list(filter(lambda x: len(x)>2, [word[0] for word in tknzr(confirm_pwd.lower())] ))
+        check_word = [enchant_obj.check(w) for w in words]  # check if the words are dictionary common word or not.
+        if check_word.count(True) > 0:
+            raise forms.ValidationError("Ignore dictionay common words")
+        else:
+            return confirm_pwd

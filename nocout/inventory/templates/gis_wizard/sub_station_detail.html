@@ -1,0 +1,177 @@
+{% extends "inventory/inventory.html" %}
+{% block content %}
+    <style type="text/css">
+        #user_profile table tr td:first-child {
+            font-weight: bold;
+        }
+        #user_profile table tr td {
+            font-weight: normal;
+        }
+    </style>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i> SubStation Details (Base Station - {{ base_station.name }})</h4>
+        </div>
+        <div class="box-body">
+            <div id="user_profile" class="col-md-6 col-md-offset-3">
+                <table class="table table-hover table-bordered">
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Alias </td>
+                        <td>{{ object.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Device </td>
+                        <td>{{ object.device }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Version </td>
+                        <td>{{ object.version }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Serial NO. </td>
+                        <td>{{ object.serial_no }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Building Height </td>
+                        <td>{{ object.building_height }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Tower Height </td>
+                        <td>{{ object.tower_height }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Ethernet Extender </td>
+                        <td>{{ object.ethernet_extender }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Cable Length </td>
+                        <td>{{ object.cable_length }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Latitude </td>
+                        <td>{{ object.latitude }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Longitude </td>
+                        <td>{{ object.longitude }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Mac Address </td>
+                        <td>{{ object.mac_address }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station Country </td>
+                        <td>{{ object.country }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station State </td>
+                        <td>{{ object.state }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Sub Station City </td>
+                        <td>{{ object.city }}</td>
+                    </tr>
+
+                    {% if sub_station_antenna %}
+                    <tr><td> </td><td> </td></tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Alias </td>
+                        <td>{{ sub_station_antenna.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Type </td>
+                        <td>{{ sub_station_antenna.antenna_type }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Height </td>
+                        <td>{{ sub_station_antenna.height }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Polarization </td>
+                        <td>{{ sub_station_antenna.polarization }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Mount Type </td>
+                        <td>{{ sub_station_antenna.mount_type }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Tilt </td>
+                        <td>{{ sub_station_antenna.tilt }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Gain </td>
+                        <td>{{ sub_station_antenna.gain }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Beam Width </td>
+                        <td>{{ sub_station_antenna.beam_width }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Azimuth Angle </td>
+                        <td>{{ sub_station_antenna.azimuth_angle }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Reflector </td>
+                        <td>{{ sub_station_antenna.reflector }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Splitter installed </td>
+                        <td>{{ sub_station_antenna.splitter_installed }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> SS Antenna Sync Splitter Used </td>
+                        <td>{{ sub_station_antenna.sync_splitter_used }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Make Of Antenna </td>
+                        <td>{{ sub_station_antenna.make_of_antenna }}</td>
+                    </tr>
+                    {% endif %}
+
+                    {% if circuit %}
+                    <tr><td> </td><td> </td></tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit Alias </td>
+                        <td>{{ circuit.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit ID </td>
+                        <td>{{ circuit.circuit_id }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit QOS Bandwidth </td>
+                        <td>{{ circuit.qos_bandwidth }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit DL RSSI during Acceptance </td>
+                        <td>{{ circuit.dl_rssi_during_acceptance }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit DL CINR during Acceptance </td>
+                        <td>{{ circuit.dl_cinr_during_acceptance }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Circuit Jitter Value during Acceptance </td>
+                        <td>{{ circuit.jitter_value_during_acceptance }}</td>
+                    </tr>
+                    {% endif %}
+
+                    {% if customer %}
+                    <tr><td> </td><td> </td></tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Customer Alias </td>
+                        <td>{{ customer.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Customer Address </td>
+                        <td>{{ customer.address }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+                {% url 'gis-wizard-sub-station-list' bs_pk=base_station.id selected_technology=selected_technology sector_pk=sector_pk as prev_url %}
+                <br><button type="reset" class="btn btn-warning" onclick="window.location.replace('{{ prev_url }}')"><i class="fa fa-times"></i>Previous (SubStation List)</button>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}

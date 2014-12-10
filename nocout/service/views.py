@@ -1,17 +1,22 @@
 import json
-from actstream import action
-from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
-from django.http import HttpResponseRedirect
-from django.utils.decorators import method_decorator
+from django.http import HttpResponseRedirect, HttpResponse
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from models import Service, ServiceParameters, ServiceDataSource, Protocol, DeviceServiceConfiguration
-from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm
+from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm, ServiceSpecificDataSource
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
+from django.template.loader import render_to_string
+from nocout.mixins.user_action import UserLogDeleteMixin
+from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
+from service.forms import ServiceDataSourceCreateFormSet, ServiceDataSourceUpdateFormSet,\
+                DTServiceDataSourceUpdateFormSet
+from device.forms import DeviceTypeServiceDataSourceUpdateFormset
+from device.models import DeviceTypeService
 
 # ########################################################
 from django.conf import settings
@@ -24,12 +29,13 @@ if settings.DEBUG:
 
 
 # **************************************** Service *********************************************
-class ServiceList(ListView):
+class ServiceList(PermissionsRequiredMixin, ListView):
     """
     Class Based to render the Service Listing page.
     """
     model = Service
     template_name = 'service/services_list.html'
+    required_permissions = ('service.view_service',)
 
     def get_context_data(self, **kwargs):
         """
@@ -49,41 +55,20 @@ class ServiceList(ListView):
         return context
 
 
-class ServiceListingTable(BaseDatatableView):
+class ServiceListingTable(PermissionsRequiredMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Service Listing Table.
     """
     model = Service
+    required_permissions = ('service.view_service',)
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
     order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
 
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
     def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Service.objects.values(*self.columns + ['id'])
+        qs = self.model.objects.filter()
+        return qs.prefetch_related('service_data_sources')
 
     def prepare_results(self, qs):
         """
@@ -93,79 +78,31 @@ class ServiceListingTable(BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-
-        #in correct behaviour on GUI. need to be redone. @TODO
-        # ##joining the multiple data sources in one
-        # new_qs = []
-        # temp_dict = {}
-        # delete_list = []
-        # for ds in qs:
-        #     if ds["id"] not in temp_dict:
-        #         temp_dict[ds["id"]] = []
-        #     temp_dict[ds["id"]].append(ds["service_data_sources__alias"])
-        #
-        # for q in qs:
-        #     if q["id"] not in delete_list:
-        #         delete_list.append(q["id"])
-        #         for sid in temp_dict:
-        #             if sid == q["id"]:
-        #                 q["service_data_sources__alias"] = ", ".join(temp_dict[sid])
-        #                 new_qs.append(q)
-        # ##joining the multiple data sources in one.
-        # ## replacing old one
-        # qs = new_qs
-        # ## replacing old one
-
-        for dct in qs:
-            dct.update(actions='<a href="/service/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/service/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        json_data = []
+        for obj in qs:
+            dct = {}
+            dct.update(name=obj.name)
+            dct.update(alias=obj.alias)
+            dct.update(parameters__parameter_description=obj.parameters.parameter_description)
+            dct.update(description=obj.description)
+            dct.update(service_data_sources__alias=', '.join(list(obj.service_data_sources.values_list('alias', flat=True))))
+            dct.update(actions='<a href="/service/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/service/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj.id))
+            json_data.append(dct)
+        return json_data
 
 
-class ServiceDetail(DetailView):
+class ServiceDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the Service Details
 
     """
     model = Service
+    required_permissions = ('service.view_service',)
     template_name = 'service/service_detail.html'
 
 
-class ServiceCreate(CreateView):
+class ServiceCreate(PermissionsRequiredMixin, CreateView):
     """
     Class Based View to Create the Service
     """
@@ -173,25 +110,58 @@ class ServiceCreate(CreateView):
     model = Service
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
+    required_permissions = ('service.add_service',)
 
-    @method_decorator(permission_required('service.add_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         """
-        The request dispatch function restricted with the permissions.
+        Handles GET requests and instantiates blank versions of the form
+        and its inline formsets.
         """
-        return super(ServiceCreate, self).dispatch(*args, **kwargs)
+        self.object = None
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        Service_data_form = ServiceDataSourceCreateFormSet()
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  service_data_form=Service_data_form))
 
-
-    def form_valid(self, form):
+    def post(self, request, *args, **kwargs):
         """
-        Submit the form and log the user activity.
+        Handles POST requests, instantiating a form instance and its inline
+        formsets with the passed POST variables and then checking them for
+        validity.
+        """
+        self.object = None
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        service_data_form = ServiceDataSourceCreateFormSet(self.request.POST)
+        if (form.is_valid() and service_data_form.is_valid()):
+            return self.form_valid(form, service_data_form)
+        else:
+            return self.form_invalid(form, service_data_form)
+
+    def form_valid(self, form, service_data_form):
+        """
+        Called if all forms are valid. Creates a Recipe instance along with
+        associated Ingredients and Instructions and then redirects to a
+        success page.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
-        return HttpResponseRedirect(ServiceCreate.success_url)
+        service_data_form.instance = self.object
+        service_data_form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, service_data_form):
+        """
+        Called if a form is invalid. Re-renders the context data with the
+        data-filled forms and errors.
+        """
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  service_data_form=service_data_form))
 
 
-class ServiceUpdate(UpdateView):
+class ServiceUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to update the Service.
     """
@@ -199,65 +169,92 @@ class ServiceUpdate(UpdateView):
     model = Service
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
+    required_permissions = ('service.change_service',)
 
-    @method_decorator(permission_required('service.change_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         """
-        The request dispatch function restricted with the permissions.
+        Handles GET requests and instantiates blank versions of the form
+        and its inline formsets.
         """
-        return super(ServiceUpdate, self).dispatch(*args, **kwargs)
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = ServiceForm(instance=self.object)
+        Service_data_form = ServiceDataSourceUpdateFormSet(instance=self.object)
+        if len(Service_data_form):
+            Service_data_form = ServiceDataSourceUpdateFormSet(instance=self.object)
+        else:
+            Service_data_form = ServiceDataSourceCreateFormSet()
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  service_data_form=Service_data_form))
 
-
-    def form_valid(self, form):
+    def post(self, request, *args, **kwargs):
         """
-        Submit the form and log the user activity.
+        Handles POST requests, instantiating a form instance and its inline
+        formsets with the passed POST variables and then checking them for
+        validity.
         """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of Service : %s from initial values ' % (self.object.name) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
-        return HttpResponseRedirect(ServiceUpdate.success_url)
+        self.object = self.get_object()
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        service_data_form = ServiceDataSourceUpdateFormSet(self.request.POST, instance=self.object)
+        if (form.is_valid() and service_data_form.is_valid()):
+            return self.form_valid(form, service_data_form)
+        else:
+            return self.form_invalid(form, service_data_form)
+
+    def form_valid(self, form, service_data_form):
+        """
+        Called if all forms are valid. Creates a Recipe instance along with
+        associated Ingredients and Instructions and then redirects to a
+        success page.
+        """
+        self.object = form.save()
+        service_data_form.instance = self.object
+        service_data_form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, service_data_form):
+        """
+        Called if a form is invalid. Re-renders the context data with the
+        data-filled forms and errors.
+        """
+        return self.render_to_response(
+            self.get_context_data(form=form,
+                                  service_data_form=service_data_form))
 
 
-class ServiceDelete(DeleteView):
+class ServiceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the Service.
     """
     model = Service
     template_name = 'service/service_delete.html'
     success_url = reverse_lazy('services_list')
+    required_permissions = ('service.delete_service',)
 
-    @method_decorator(permission_required('service.delete_service', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDelete, self).dispatch(*args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        action.send(request.user, verb='deleting services: %s' % (self.get_object().name))
-        return super(ServiceDelete, self).delete(request, *args, **kwargs)
+def select_service(request):
+    """
+    return value list of data_source when the servie is selected in device type.
+    """
+    pk = request.GET['service_id']
+    service = Service.objects.get(id=pk)
+    parameters = service.parameters
+    return HttpResponse( json.dumps({
+        "parameters_id": parameters.id,
+        "parameters_name": parameters.parameter_description,
+        }) )
 
 
 #************************************* Service Parameters *****************************************
-class ServiceParametersList(ListView):
+class ServiceParametersList(PermissionsRequiredMixin, ListView):
     """
     Class Based View for the Service parameter Listing.
     """
     model = ServiceParameters
     template_name = 'service_parameter/services_parameter_list.html'
+    required_permissions = ('service.view_serviceparameters',)
 
     def get_context_data(self, **kwargs):
         """
@@ -278,44 +275,16 @@ class ServiceParametersList(ListView):
         return context
 
 
-class ServiceParametersListingTable(BaseDatatableView):
+class ServiceParametersListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View to render ServiceParameters Data table.
     """
     model = ServiceParameters
+    required_permissions = ('service.view_serviceparameters',)
     columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval',
                'max_check_attempts']
     order_columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval',
                      'max_check_attempts']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ServiceParameters.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -325,56 +294,24 @@ class ServiceParametersListingTable(BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
-            dct.update(actions='<a href="/service_parameter/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/service_parameter/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            dct.update(actions='<a href="/service_parameter/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/service_parameter/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
-class ServiceParametersDetail(DetailView):
+class ServiceParametersDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the details of the service parameters
     """
     model = ServiceParameters
+    required_permissions = ('service.view_serviceparameters',)
     template_name = 'service_parameter/service_parameter_detail.html'
 
 
-class ServiceParametersCreate(CreateView):
+class ServiceParametersCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based View to create the service parameters
     """
@@ -382,25 +319,10 @@ class ServiceParametersCreate(CreateView):
     model = ServiceParameters
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
-
-    @method_decorator(permission_required('service.add_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersCreate, self).dispatch(*args, **kwargs)
-
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-
-        """
-        self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
-        return HttpResponseRedirect(ServiceParametersCreate.success_url)
+    required_permissions = ('service.add_serviceparameters',)
 
 
-class ServiceParametersUpdate(UpdateView):
+class ServiceParametersUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to Update the Service Parameters.
     """
@@ -408,65 +330,28 @@ class ServiceParametersUpdate(UpdateView):
     model = ServiceParameters
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
-
-    @method_decorator(permission_required('service.change_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersUpdate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.change_serviceparameters',)
 
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of Service Paramters: %s from initial values ' % (
-                self.object.parameter_description) \
-                          + ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) \
-                          + ' to ' \
-                          + ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
-        return HttpResponseRedirect(ServiceParametersUpdate.success_url)
-
-
-class ServiceParametersDelete(DeleteView):
+class ServiceParametersDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the ServiceParameters.
     """
     model = ServiceParameters
     template_name = 'service_parameter/service_parameter_delete.html'
     success_url = reverse_lazy('services_parameter_list')
-
-    @method_decorator(permission_required('service.delete_serviceparameters', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceParametersDelete, self).dispatch(*args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Log the user activity before deleting the Service Parameters.
-        """
-        action.send(request.user, verb='deleting services parameters: %s' % (self.get_object().parameter_description))
-        return super(ServiceParametersDelete, self).delete(request, *args, **kwargs)
+    required_permissions = ('service.delete_serviceparameters',)
+    obj_alias = 'parameter_description'
 
 
 #********************************** Service Data Source ***************************************
-class ServiceDataSourceList(ListView):
+class ServiceDataSourceList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render the Service Data Source.
     """
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_sources_list.html'
+    required_permissions = ('service.view_servicedatasource',)
 
     def get_context_data(self, **kwargs):
         """
@@ -486,38 +371,11 @@ class ServiceDataSourceList(ListView):
         return context
 
 
-class ServiceDataSourceListingTable(BaseDatatableView):
+class ServiceDataSourceListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     model = ServiceDataSource
+    required_permissions = ('service.view_servicedatasource',)
     columns = ['name', 'alias', 'warning', 'critical']
     order_columns = ['name', 'alias', 'warning', 'critical']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ServiceDataSource.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -527,56 +385,25 @@ class ServiceDataSourceListingTable(BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
-            dct.update(actions='<a href="/service_data_source/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/service_data_source/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            dct.update(actions='<a href="/service_data_source/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/service_data_source/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(
                 dct.pop('id')))
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        return json_data
 
 
-class ServiceDataSourceDetail(DetailView):
+class ServiceDataSourceDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the Service Data Source Detail information.
     """
     model = ServiceDataSource
+    required_permissions = ('service.view_servicedatasource',)
     template_name = 'service_data_source/service_data_source_detail.html'
 
 
-class ServiceDataSourceCreate(CreateView):
+class ServiceDataSourceCreate(PermissionsRequiredMixin, CreateView):
     """
     Class Based View to Creater the Service Data Source Detail.
     """
@@ -584,25 +411,10 @@ class ServiceDataSourceCreate(CreateView):
     model = ServiceDataSource
     form_class = ServiceDataSourceForm
     success_url = reverse_lazy('service_data_sources_list')
-
-    @method_decorator(permission_required('service.add_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.add_servicedatasource',)
 
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
-        return HttpResponseRedirect(ServiceDataSourceCreate.success_url)
-
-
-class ServiceDataSourceUpdate(UpdateView):
+class ServiceDataSourceUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class based View to update the Service Data Source.
     """
@@ -610,62 +422,39 @@ class ServiceDataSourceUpdate(UpdateView):
     model = ServiceDataSource
     form_class = ServiceDataSourceForm
     success_url = reverse_lazy('service_data_sources_list')
-
-    @method_decorator(permission_required('service.change_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceUpdate, self).dispatch(*args, **kwargs)
-
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of ServiceDataSource : %s from initial values ' % (
-                self.object.name) + ', '.join(['%s: %s' % (k, initial_field_dict[k]) \
-                                               for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
-        return HttpResponseRedirect(ServiceDataSourceUpdate.success_url)
+    required_permissions = ('service.change_servicedatasource',)
 
 
-class ServiceDataSourceDelete(DeleteView):
+class ServiceDataSourceDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to Delete the Service Data Source.
     """
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_source_delete.html'
     success_url = reverse_lazy('service_data_sources_list')
+    required_permissions = ('service.delete_servicedatasource',)
 
-    @method_decorator(permission_required('service.delete_servicedatasource', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ServiceDataSourceDelete, self).dispatch(*args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding delete method to log the user activity.
-        """
-        action.send(request.user, verb='deleting services data source: %s' % (self.get_object().name))
-        return super(ServiceDataSourceDelete, self).delete(request, *args, **kwargs)
+def select_value_data_source(request):
+    """
+    Call when the service data source is selected while creating the service.
+    And while creating the service of the device type.
+    """
+    sds_id = request.GET['sds_id']
+    sds_values_list = ServiceDataSource.objects.filter(id=sds_id).values('warning', 'critical')
+    return HttpResponse( json.dumps({
+        'sds_values_list': list(sds_values_list)
+        }) )
 
 
 #********************************** Protocol ***************************************
-class ProtocolList(ListView):
+class ProtocolList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render the List page.
     """
     model = Protocol
     template_name = 'protocol/protocols_list.html'
+    required_permissions = ('service.view_protocol',)
 
     def get_context_data(self, **kwargs):
         """
@@ -692,44 +481,16 @@ class ProtocolList(ListView):
         return context
 
 
-class ProtocolListingTable(BaseDatatableView):
+class ProtocolListingTable(PermissionsRequiredMixin, ValuesQuerySetMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class Based View to render the protocol Data table.
     """
     model = Protocol
+    required_permissions = ('service.view_protocol',)
     columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
                'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
     order_columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
                      'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns:
-                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Protocol.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -738,55 +499,24 @@ class ProtocolListingTable(BaseDatatableView):
         :param qs:
         :return qs
         """
-        if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        for dct in qs:
-            dct.update(actions='<a href="/protocol/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/protocol/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-        }
-        return ret
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            dct.update(actions='<a href="/protocol/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/protocol/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return json_data
 
 
-class ProtocolDetail(DetailView):
+class ProtocolDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the detail Protocol information
     """
     model = Protocol
+    required_permissions = ('service.view_protocol',)
     template_name = 'protocol/protocol_detail.html'
 
 
-class ProtocolCreate(CreateView):
+class ProtocolCreate(PermissionsRequiredMixin, CreateView):
     """
     Class based View to Create the Protocol.
     """
@@ -794,25 +524,10 @@ class ProtocolCreate(CreateView):
     model = Protocol
     form_class = ProtocolForm
     success_url = reverse_lazy('protocols_list')
-
-    @method_decorator(permission_required('service.add_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('service.add_protocol',)
 
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
-        return HttpResponseRedirect(ProtocolCreate.success_url)
-
-
-class ProtocolUpdate(UpdateView):
+class ProtocolUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to update the protocol.
     """
@@ -820,61 +535,28 @@ class ProtocolUpdate(UpdateView):
     model = Protocol
     form_class = ProtocolForm
     success_url = reverse_lazy('protocols_list')
+    required_permissions = ('service.change_protocol',)
 
-    @method_decorator(permission_required('service.change_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolUpdate, self).dispatch(*args, **kwargs)
 
-    def form_valid(self, form):
-        """
-        Submit the form and log the user activity.
-        """
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
-        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of Protocol : %s from initial values ' % (self.object.name) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
-        return HttpResponseRedirect(ProtocolUpdate.success_url)
-
-class ProtocolDelete(DeleteView):
+class ProtocolDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class Based View to delete the protocol.
     """
     model = Protocol
     template_name = 'protocol/protocol_delete.html'
     success_url = reverse_lazy('protocols_list')
+    required_permissions = ('service.delete_protocol',)
+    obj_alias = 'protocol_name'
 
-    @method_decorator(permission_required('service.delete_protocol', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(ProtocolDelete, self).dispatch(*args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
-        """
-        Overriding the delete method to log the user activity.
-        """
-        action.send(request.user, verb='deleting services data source: %s'%(self.get_object().name))
-        return super(ProtocolDelete, self).delete( request, *args, **kwargs)
-
-    
 #**************************************** DeviceServiceConfiguration *********************************************
-class DeviceServiceConfigurationList(ListView):
+class DeviceServiceConfigurationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to list the Device Service Configuration page.
     """
     model = DeviceServiceConfiguration
     template_name = 'device_service_configuration/device_service_configuration_list.html'
+    required_permissions = ('service.view_deviceserviceconfiguration',)
 
     def get_context_data(self, **kwargs):
         """
@@ -905,46 +587,21 @@ class DeviceServiceConfigurationList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class DeviceServiceConfigurationListingTable(BaseDatatableView):
+class DeviceServiceConfigurationListingTable(PermissionsRequiredMixin, DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
     """
     Class based View render the Device Service Configuration Table.
     """
     model = DeviceServiceConfiguration
+    required_permissions = ('service.view_deviceserviceconfiguration',)
     columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
                'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
                'critical', 'added_on', 'modified_on']
     order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
                      'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
                      'critical', 'added_on', 'modified_on']
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-2]:
-                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
-            exec exec_query
-
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceServiceConfiguration.objects.values(*self.columns+['id'])
+    search_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
+               'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
+               'critical']
 
     def prepare_results(self, qs):
         """
@@ -954,9 +611,9 @@ class DeviceServiceConfigurationListingTable(BaseDatatableView):
         :return qs
         """
 
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-        for dct in qs:
+
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in json_data:
             dct.update(actions='<a href="#" onclick="Dajaxice.device.edit_single_service_form(get_single_service_edit_form,\
                                {{\'dsc_id\': {0}}})"><i class="fa fa-pencil text-dark"></i></a>\
                                 <a href="#" onclick="Dajaxice.device.delete_single_service_form(get_single_service_delete_form,\
@@ -964,36 +621,4 @@ class DeviceServiceConfigurationListingTable(BaseDatatableView):
                        added_on=dct['added_on'].strftime("%Y-%m-%d %H:%M:%S"),
                        modified_on=dct['modified_on'].strftime("%Y-%m-%d %H:%M:%S"))
 
-        return qs
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
-
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
+        return json_data

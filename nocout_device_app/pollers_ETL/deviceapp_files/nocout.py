@@ -11,18 +11,15 @@ import pymongo
 from pymongo import Connection
 import pprint
 import os
-import sys
+import tarfile
+import shutil
 import ast
 from itertools import ifilterfalse
 from nocout_logger import nocout_log
 import mysql.connector
+import make_hosts, make_rules
 
 logger = nocout_log()
-sys.path.insert(0, '/apps/omd/sites/master_UA/nocout')
-try:
-	from device_interface import *
-except Exception, e:
-	logger.debug('Syntax error in device_interface: ' + pprint.pformat(e))
 
 
 hosts_file = root_dir + "hosts.mk"
@@ -186,7 +183,7 @@ def addhost():
 
     give_permissions(hosts_file)
     load_file(hosts_file)
-    add_default_checks(default_checks_file)
+    #add_default_checks(default_checks_file)
 
     #if len(g_host_vars['all_hosts']) > 1000:
     #    response.update({
@@ -331,7 +328,7 @@ def addservice():
         snmp_port_tuple = None
         if payload.get('snmp_port'):
 		snmp_port_tuple = (int(payload.get('snmp_port')), [], [device_name])
-		g_service_vars['snmp_ports'].insert(0, snmp_port_tuple)
+		g_service_vars['snmp_ports'].append(snmp_port_tuple)
         
         snmp_community = None
         if payload.get('snmp_community'):
@@ -345,7 +342,7 @@ def addservice():
                     snmp_community_list.get('security_name'),snmp_community_list.get('auth_password'),
                     snmp_community_list.get('private_phase'),snmp_community_list.get('private_passphase')),
                     [device_name])
-            g_service_vars['snmp_communities'].insert(0, snmp_community)
+            g_service_vars['snmp_communities'].append(snmp_community)
 
         flag = write_new_host_rules()
         if not flag:
@@ -769,9 +766,10 @@ def add_host_to_mongo_conf(**values):
 		logger.error('Could not save the device conf into mongodb' + pprint.pformat(e))
 
 
-def get_parent(host=None, db=True):
+def get_parent(host=None, db=True, get_ip=False):
 	bs = None
 	device_mac = None
+	host_ip = None
 	if db:
 		if host:
 			try:
@@ -787,6 +785,9 @@ def get_parent(host=None, db=True):
 	else:
 		if host:
 			load_file(hosts_file)
+			if get_ip:
+				host_ip = g_host_vars['ipaddresses'][host]
+				return host_ip
 			# Filter the required row
 			host_row = filter(lambda e: re.match(host, e), g_host_vars['all_hosts'])
 			try:
@@ -880,11 +881,7 @@ def set_bulk_ping_levels(ping_levels_list=[]):
                 del g_service_vars['__builtins__']
 	except OSError, e:
 		logger.error('Could not open rules file: ' + pprint.pformat(e))
-    
-	v2_hosts = g_service_vars['bulkwalk_hosts']
-       	if not filter(lambda x: 'snmp-v2' in x[0], v2_hosts):
-               v2_hosts.append((["snmp-v2"], ALL_HOSTS))
-               g_service_vars['bulkwalk_hosts'] = v2_hosts    
+        
 	if ping_levels_list:
 		device_types = set(map(lambda x: x.get('device_type'), ping_levels_list))
 		old_ping_levels = g_service_vars['ping_levels']
@@ -977,11 +974,13 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
 		logger.debug('Removing existing checks')
                 iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1], g_service_vars['checks'])
                 g_service_vars['checks'] = map(lambda x: x, iter_func)
+		logger.debug('g_service_vars["checks"]' + pprint.pformat(g_service_vars['checks']))
 	    
 
 	for serv_param, param_vals in g_service_vars['extra_service_conf'].items():
                 iter_func = ifilterfalse(lambda t: hostname in t[2] and servicename in t[3], param_vals)
                 g_service_vars['extra_service_conf'][serv_param] = map(lambda x: x, iter_func)
+		logger.debug('extra service conf: ' + pprint.pformat(g_service_vars['extra_service_conf']))
 	if not flag:
                 g_service_vars['snmp_ports'] = filter(lambda t: hostname not in t[2], g_service_vars['snmp_ports'])
                 g_service_vars['snmp_communities'] = filter(lambda t: hostname not in t[-1], g_service_vars['snmp_communities'])
@@ -1025,63 +1024,99 @@ def write_new_host_rules():
 
 def sync():
     logger.debug('[-- sync --]')
-    load_file(hosts_file)
-    add_default_checks(default_checks_file)
-    flag = save_host(hosts_file)
-    # Set flag for sync in mysql db
-    #toggle_sync_flag()
-    # First read all the new configs from db and write to rules.mk and hosts.mk
-    sync_device_conf_db = entry()
     sites_affected = []
     response = {
         "success": 1,
         "message": "Config pushed to "
     }
-    # Snapshot for the local-site; to be used only by master site
-    #nocout_create_snapshot()
+    # Create an archive of current folder state, to be used for rollback
+    os.chdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
+    out = tarfile.open('/omd/sites/master_UA/etc/check_mk/conf.d/wato_backup.tar', mode='w')
+    try:
+	    for entry in os.listdir('.'):
+		    if entry not in ['..', '.']:
+			    out.add(entry)
+    except Exception, err:
+	    logger.error('Error in tarfile generation: ' + pprint.pformat(err))
+	    # Doing the operation without creating backup in this case
+    finally:
+	    out.close()
 
-    # Create backup for the hosts and rules file
-    if os.path.exists(hosts_file):
-        os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
-    if os.path.exists(rules_file):
-        os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
+    nocout_sites = nocout_distributed_sites()
+    # Remove master_UA from nocout_sites
+    nocout_sites = dict(filter(lambda d: d[1].get('replication') == 'slave', nocout_sites.items()))
+    logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_sites))
+
+    try:
+	    # Make hosts.mk and rules.mk which takes configurations from db
+	    make_hosts.main()
+	    make_rules.main()
+    except Exception, e:
+	    logger.error('Error in make_hosts or make_rules: ' + pprint.pformat(e))
+	    # Perform rollback
+	    nocout_rollback_action(nocout_sites, response)
+	    return response
 
     nocout_create_sync_snapshot()
-    nocout_sites = nocout_distributed_sites()
     try:
         f = os.system('~/bin/cmk -R')
 	logger.debug('f : '  + pprint.pformat(f))
     except Exception, e:
         logger.error('[sync]' + pprint.pformat(e))
-    if f == 0:
-        sites_affected.append(defaults.omd_site)
+    # Some syntax error with hosts.mk or rules.mk
+    if f != 0:
+	    logger.info("Could not cmk -R master_UA")
+	    # Perform rollback if problem with master_UA
+	    nocout_rollback_action(nocout_sites, response)
+	    return response
     for site, attrs in nocout_sites.items():
 	logger.debug('site :' + pprint.pformat(site))
         response_text = nocout_synchronize_site(site, attrs, True)
         if response_text is True:
             sites_affected.append(site)
+    logger.info('sites_affected: ' + pprint.pformat(sites_affected))
     if len(sites_affected) == len(nocout_sites):
+	# Update the configuration database
+	make_hosts.update_configuration_db()
         response.update({
             "message": "Config pushed to " + ','.join(sites_affected)
         })
     else:
-        if os.path.exists('/apps/omd/sites/%s/nocout/rules.mk' % defaults.omd_site):
-            os.system('cp /apps/omd/sites/%s/nocout/rules.mk %s' % (defaults.omd_site, rules_file))
+	    logger.info("Length of sites_affected and nocout_sites doesn't match")
+	    nocout_rollback_action(nocout_sites, response)
+    logger.debug('[-- sync finish --]')
+    return response
+
+
+def nocout_rollback_action(nocout_sites, response):
+	    # Untar the backup archive
+	    nocout_untar_backup_folder()
+	    # Generate a fresh snapshot
+            nocout_create_sync_snapshot()
+            os.system('~/bin/cmk -R')
             for site, attrs in nocout_sites.items():
-                response_text = nocout_synchronize_site(site, attrs, True)
+                nocout_synchronize_site(site, attrs, True)
             response.update({
                 "message": "Problem with the new config, old config retained",
                 "success": 1
             })
-        else:
-            response.update({
-                "message": "Config not pushed",
-                "success": 0
-            })
-    logger.debug('[-- sync finish --]')
-    # Reset the sync flag in mysql db
-    #toggle_sync_flag(mode=False)
-    return response
+
+
+def nocout_untar_backup_folder():
+	# Clean the wato folder first
+        os.chdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
+	for entry in os.listdir('.'):
+		if entry not in ['..', '.']:
+			if os.path.isdir(entry):
+				shutil.rmtree(entry)
+			else:
+				os.remove(entry)
+	# Untar the content and place in wato folder
+	try:
+		t = tarfile.open('/omd/sites/master_UA/etc/check_mk/conf.d/wato_backup.tar', 'r')
+		t.extractall('/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
+	except Exception, err:
+		logger.error('Exception in opening backup  tarfile: ' + pprint.pformat(err))
 
 
 def toggle_sync_flag(mode=True):
@@ -1120,7 +1155,6 @@ def nocout_distributed_sites():
     sites_file = defaults.default_config_dir + "/multisite.d/sites.mk"
     if os.path.exists(sites_file):
         execfile(sites_file, nocout_site_vars, nocout_site_vars)
-    logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_site_vars.get('sites')))
     logger.debug('[--]')
 
     return nocout_site_vars.get('sites')

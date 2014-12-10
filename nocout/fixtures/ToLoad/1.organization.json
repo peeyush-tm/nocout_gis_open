@@ -1,0 +1,53 @@
+[
+{
+  "pk": 1,
+  "model": "organization.organization",
+  "fields": {
+    "city": "Pune",
+    "name": "TCL",
+    "parent": null,
+    "lft": 4,
+    "country": "India",
+    "level": 0,
+    "alias": "TCL",
+    "state": "Maharashtra",
+    "tree_id": 0,
+    "rght": 4,
+    "description": "Default Organisation for TCL"
+  }
+},
+{
+  "pk": 2,
+  "model": "organization.organization",
+  "fields": {
+    "city": "Gurgaon",
+    "name": "Teramatrix",
+    "parent": 1,
+    "lft": 0,
+    "country": "India",
+    "level": 1,
+    "alias": "Teramatrix Technologies",
+    "state": "Haryana",
+    "tree_id": 0,
+    "rght": 3,
+    "description": "Teramatrix Technologies Private Limited"
+  }
+},
+{
+  "pk": 3,
+  "model": "organization.organization",
+  "fields": {
+    "city": "Gurgaon",
+    "name": "Code Cope",
+    "parent": 2,
+    "lft": 1,
+    "country": "India",
+    "level": 2,
+    "alias": "TTPL",
+    "state": "Haryana",
+    "tree_id": 0,
+    "rght": 2,
+    "description": "Handling over all RF critical project"
+  }
+}
+]

@@ -596,7 +596,9 @@ function advanceSearchClass() {
 
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
 			current_data_array = main_devices_data_earth;
-		} else {
+		} else if (window.location.pathname.indexOf("white_background") > -1) { 
+			current_data_array = main_devices_data_wmap;
+		}else {
 			current_data_array = main_devices_data_gmaps;
 		}
 
@@ -799,6 +801,10 @@ function advanceSearchClass() {
 	        /*create the BS-SS network on the google earth*/
 	        earth_instance.plotDevices_earth(data_for_filters_earth,"base_station");
 
+        } else if (window.location.pathname.indexOf("white_background") > -1) { 
+
+        		showWmapFilteredData(result_plot_devices);
+
         } else {
 
 	        /*Create a instance of networkMapClass*/
@@ -830,15 +836,14 @@ function advanceSearchClass() {
 
 
 	this.removeFilters = function() {
-
+		
 		/*Reset filter data array*/
 		lastSelectedValues = [];
 		appliedAdvFilter = [];
 		appliedAdvFilter_Active = [];
         result_plot_device=[]
-		$("#advFilterFormContainer").html("");
 
-		if(!($("#advFilterContainerBlock").hasClass("hide"))) {
+        if(!($("#advFilterContainerBlock").hasClass("hide"))) {
 			$("#advFilterContainerBlock").addClass("hide");
 		}
 
@@ -847,11 +852,22 @@ function advanceSearchClass() {
 			$("#removeFilterBtn").addClass("hide");
 		}
 
+        // Not to clear the html for gmap page
+    	$("#filter_technology").select2("val","");
+    	$("#filter_vendor").select2("val","");
+    	$("#filter_state").select2("val","");
+    	$("#filter_city").select2("val","");
+    	$("#filter_frequency").select2("val","");
+    	$("#filter_polarization").select2("val","");
+    	// Reset Advance Filters Flag
+        isAdvanceFilter = 0;
+        
 		/*Call the resetVariables function to reset all global variables*/
 		advSearch_self.resetVariables();
 
 		/*Click The Refresh Button*/
-		$("#resetFilters").click();
+		// $("#resetFilters").click();
+		networkMapInstance.updateStateCounter_gmaps();
 	};
 
 	/**

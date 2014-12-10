@@ -1,14 +1,11 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Device Technology</li>
-{% endblock %}
+
 {% block content_title %}Device Technology Management{% endblock %}
 {% block content_description %}List of device technologies{% endblock %}
 {% block content %}
     <p><a href="/technology/new"><i class="fa fa-plus">&nbsp;</i> Create Device Technology</a></p>
-    
+
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>DEVICE TECHNOLOGY LISTING</h4>

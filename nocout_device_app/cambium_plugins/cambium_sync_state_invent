@@ -49,6 +49,7 @@ def check_cambium_sync_state_invent(item, _no_params, info):
         if info:
             if info[0][0]:
                 sync_state = info[0][0]
+		sync_state = sync_state.replace(" ","_")
                 state = 0
                 infotext = "%s" % (sync_state)
     except ValueError:

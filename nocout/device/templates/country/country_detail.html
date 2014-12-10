@@ -1,0 +1,19 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
+{% endblock %}
+
+{% block content_title %}Country Detial{% endblock %}
+{% block content_description %}Detail of country{% endblock %}
+{% block content %}
+    <h1>{{ object.country_name }}</h1><br/>
+    <div id="device">
+        <table>
+            <tr>
+                <td><strong>Country Name:</strong></td>
+                <td>{{ object.country_name }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}

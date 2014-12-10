@@ -1,0 +1,165 @@
+#!/usr/bin/python
+
+import sys
+from telnetlib import Telnet
+import socket
+import json
+import os
+import binascii
+import mysql.connector
+"""
+operating Frequency of ss device  Poller script.
+
+This is part of device application. 
+Poller script determines the operating ptx of device. 
+poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.1.2.0 from snmp agent of device at specific interval.
+Device on which Frequency operating is sent to device application 
+
+"""
+# ######################################################################
+# Function: check_wimax_ss_frequency
+#
+# Parameters: info (SNMP Ouput) _no_params (No Parameters)
+#
+# Output: service state ,plugin output
+# ######################################################################
+
+
+
+def extract_bsinfo_from_wimax_topology(ss_host_mac):
+        query = """
+        select device_name,ip_address,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+        db = mysql_conn()
+        cur = db.cursor()
+        cur.execute(query)
+        data = cur.fetchall()
+        cur.close()
+
+        return data
+
+def connection_telnet_ss_frequency(host_ip, port,matched_string):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+
+        """
+        try:
+                tn = Telnet(host_ip,port,timeout=3)
+        except socket.timeout:
+        	ss_frequency = None
+		return ss_frequency
+        tn.read_until("Login:")
+        tn.write("admin" + "\r\n")
+        tn.read_until("Password:")
+        tn.write("admin" + "\r\n")
+        tn.write("show running-config\r\n")
+        tn.write("exit\r\n")
+        data = tn.read_all()
+        ss_frequency = None
+
+        try:
+                for i,row in enumerate(data.split("\n")):
+                        if matched_string in row:
+                                ss_frequency = int([r for r in row.split()][-1])
+                                break
+        except:
+                ss_frequency = None
+
+        return ss_frequency
+
+
+
+
+def live_query_ss_frequency(mac):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+    
+        """
+        sector_id = None
+        ss_frequency = None
+
+        bs_info = extract_bsinfo_from_wimax_topology(mac)
+        try:
+                if bs_info[0][0]:
+                        query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("wimax_topology",bs_info[0][0])
+			
+			site = bs_info[0][2]
+                        machine_name = bs_info[0][2].split('_')[0]
+                        socket_ip = _LIVESTATUS[machine_name]['host']
+                        socket_port = _LIVESTATUS[machine_name][site]['port']
+
+                        query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
+                        if query_output[0][0]:
+                                plugin_output = str(query_output[0][0].split('OK -')[1])
+                                plugin_output = [entry for entry in plugin_output.split(' ')]
+                                entry=filter(lambda x: mac in x.lower(), plugin_output)
+                                sector_id = entry[0].split('=')[1].split(',')[8]
+                                if int(sector_id) == 1:
+                                        ss_frequency = connection_telnet_ss_frequency(bs_info[0][1],23,"wimax 1/1 frequency")
+                                elif int(sector_id)  == 2:
+                                        ss_frequency = connection_telnet_ss_frequency(bs_info[0][1],23,"wimax 1/2 frequency")
+	except:
+                ss_frequency= None
+        return ss_frequency
+
+
+
+def check_wimax_ss_frequency(item, _no_params, info):
+    """
+            check_wimax_ss_frequency function calcdlates the operating ptx
+
+            Args:
+                    item (str) Specific item on SNMP output on which we want to filter resdlts
+
+            Kwargs:
+                    params (tuple) Check parameters for critical and warning state of service
+
+            Returns:
+                    state (int) :
+                                    0 : OK
+                                    1 : Warning
+                                    2: Critical
+                3: unknown
+                    infotext(string):
+                                    plugin output
+                                    Example : OK - 5835
+
+                    Raises:
+                            ValueError ,Exception
+"""
+    state = 3
+    infotext = "unknown_value"
+    ss_frequency =None
+    try:
+	if info[1]:
+                ss_mac = info[1][0]
+		a=binascii.b2a_hex(ss_mac)
+		n = 2
+		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
+                if ss_mac:
+                        ss_frequency = live_query_ss_frequency( ss_mac )
+			if ss_frequency:
+                        	state = 0
+        			infotext = "%s" % ss_frequency
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext,[("frequency",ss_frequency)])
+
+
+check_info["wimax_ss_frequency"] = {
+    'check_function': check_wimax_ss_frequency,
+    'service_description': 'wimax_ss_frequency',
+    'has_perfdata': True,
+}
+
+#########################################################################
+#	SNMP OID for the operating ptx
+#########################################################################
+snmp_info["wimax_ss_frequency"] = ( ".1.3.6.1.2.1.10.184.1.3.1.1.1", ["17.1"] )

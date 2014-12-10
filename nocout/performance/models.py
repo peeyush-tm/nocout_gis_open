@@ -25,6 +25,10 @@ class PerformanceMetric(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
 ####Network Performance Tables
 
 class PerformanceNetwork(models.Model):
@@ -49,6 +53,9 @@ class PerformanceNetwork(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 ### Every 30 Minutes
 
@@ -75,6 +82,9 @@ class PerformanceNetworkBiHourly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 ### Hourly Tables
 
 class PerformanceNetworkHourly(models.Model):
@@ -99,6 +109,9 @@ class PerformanceNetworkHourly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 ### Daily Tables
 
@@ -125,6 +138,9 @@ class PerformanceNetworkDaily(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 ### Weekly Tables
 
 class PerformanceNetworkWeekly(models.Model):
@@ -149,6 +165,9 @@ class PerformanceNetworkWeekly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 ##Monthly Tables
 
@@ -175,6 +194,9 @@ class PerformanceNetworkMonthly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 ### Yearly Tables
 
 class PerformanceNetworkYearly(models.Model):
@@ -199,6 +221,9 @@ class PerformanceNetworkYearly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 ####Network Performance Tables
 
@@ -227,6 +252,9 @@ class PerformanceService(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 #### Bi Hourly : twice in one hour
 
 class PerformanceServiceBiHourly(models.Model):
@@ -251,6 +279,9 @@ class PerformanceServiceBiHourly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 #### Hourly
 
@@ -277,6 +308,9 @@ class PerformanceServiceHourly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 ### Daily
 
 class PerformanceServiceDaily(models.Model):
@@ -301,6 +335,9 @@ class PerformanceServiceDaily(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 #### Weekly
 
@@ -327,6 +364,9 @@ class PerformanceServiceWeekly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 #### Monthly
 
 class PerformanceServiceMonthly(models.Model):
@@ -352,6 +392,9 @@ class PerformanceServiceMonthly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 #### Yearly
 
 class PerformanceServiceYearly(models.Model):
@@ -376,6 +419,9 @@ class PerformanceServiceYearly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 
 #### Service Perfromance Tables
@@ -405,6 +451,38 @@ class PerformanceStatus(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+### Daily
+
+class PerformanceStatusDaily(models.Model):
+    """
+    Performance Status Table columns declared
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
 #### Weekly update of status tables
 
 class PerformanceStatusWeekly(models.Model):
@@ -429,6 +507,9 @@ class PerformanceStatusWeekly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 #### Monthly update of status tables
 
@@ -455,6 +536,9 @@ class PerformanceStatusMonthly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 #### Yearly update of status tables
 
 class PerformanceStatusYearly(models.Model):
@@ -479,6 +563,9 @@ class PerformanceStatusYearly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 
 #### Status Services
@@ -506,6 +593,9 @@ class PerformanceMachine(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 #### Inventory Service Performance : Once Daily
 
 class PerformanceInventory(models.Model):
@@ -531,6 +621,38 @@ class PerformanceInventory(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+#### Inventory Service Performance : Once Daily
+
+class PerformanceInventoryDaily(models.Model):
+    """
+    Performance Inventory Table columns declared
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
 class PerformanceInventoryWeekly(models.Model):
     """
     Performance Inventory Table columns declared
@@ -553,6 +675,9 @@ class PerformanceInventoryWeekly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 
 class PerformanceInventoryMonthly(models.Model):
@@ -578,6 +703,9 @@ class PerformanceInventoryMonthly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 
 class PerformanceInventoryYearly(models.Model):
     """
@@ -601,6 +729,9 @@ class PerformanceInventoryYearly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 #### Inventory Service Perfomance
 
@@ -629,6 +760,10 @@ class EventNetwork(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
 class EventNetworkDaily(models.Model):
     """
     Event Network Table columns declared
@@ -652,6 +787,9 @@ class EventNetworkDaily(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 
 class EventNetworkWeekly(models.Model):
@@ -677,6 +815,10 @@ class EventNetworkWeekly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 
 class EventNetworkMonthly(models.Model):
     """
@@ -727,6 +869,9 @@ class EventNetworkYearly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 
 #### Event Network
 
@@ -756,6 +901,10 @@ class EventService(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
 class EventServiceDaily(models.Model):
     """
     Event Service Table columns declared
@@ -779,6 +928,10 @@ class EventServiceDaily(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 
 class EventServiceWeekly(models.Model):
     """
@@ -804,6 +957,10 @@ class EventServiceWeekly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
 class EventServiceYearly(models.Model):
     """
     Event Service Table columns declared
@@ -828,6 +985,8 @@ class EventServiceYearly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 #### Events Service
 
@@ -855,6 +1014,9 @@ class EventStatus(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 
 class EventMachine(models.Model):
     """
@@ -879,6 +1041,9 @@ class EventMachine(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 
 class EventInventory(models.Model):
@@ -905,6 +1070,9 @@ class EventInventory(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 
 class NetworkStatus(models.Model):
     """
@@ -925,9 +1093,13 @@ class NetworkStatus(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 
 class ServiceStatus(models.Model):
@@ -949,9 +1121,13 @@ class ServiceStatus(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 
 class MachineStatus(models.Model):
@@ -977,6 +1153,9 @@ class MachineStatus(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 
 class InventoryStatus(models.Model):
     """
@@ -1000,6 +1179,9 @@ class InventoryStatus(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 
 class Status(models.Model):
@@ -1025,65 +1207,9 @@ class Status(models.Model):
     def __unicode__(self):
         return self.device_name
 
-### Adding Tables for Event Status
-### Latest Single Event State would be maintained here
+    class Meta:
+        ordering = ['-sys_timestamp']
 
-class EventNetworkStatus(models.Model):
-    """
-    Event Service Table columns declared
-    """
-    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
-    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
-    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
-    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
-    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
-    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
-    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
-    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
-    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
-    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
-    check_timestamp = models.IntegerField('Check Timestamp', default=0)
-    description = models.CharField('Event Description', max_length=255, null=True, blank=True)
-    age = models.IntegerField('Event Age', default=0)
-
-    def __unicode__(self):
-        return self.device_name
-
-
-
-class EventServiceStatus(models.Model):
-    """
-    Event Service Table columns declared
-    """
-    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
-    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
-    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
-    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
-    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
-    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
-    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
-    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
-    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
-    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
-    check_timestamp = models.IntegerField('Check Timestamp', default=0)
-    description = models.CharField('Event Description', max_length=255, null=True, blank=True)
-    age = models.IntegerField('Event Age', default=0)
-
-    def __unicode__(self):
-        return self.device_name
-
-
-
-### END Adding Tables for Event Status
-### END Latest Single Event State would be maintained here
 
 
 ############################################################################################################
@@ -1116,6 +1242,9 @@ class NetworkAvailabilityDaily(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 
 class NetworkAvailabilityWeekly(models.Model):
     """
@@ -1139,6 +1268,9 @@ class NetworkAvailabilityWeekly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 
 class NetworkAvailabilityMonthly(models.Model):
@@ -1164,6 +1296,9 @@ class NetworkAvailabilityMonthly(models.Model):
     def __unicode__(self):
         return self.device_name
 
+    class Meta:
+        ordering = ['-sys_timestamp']
+
 
 class NetworkAvailabilityYearly(models.Model):
     """
@@ -1187,6 +1322,9 @@ class NetworkAvailabilityYearly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
 
 
 ############################################################################################################
@@ -1215,3 +1353,212 @@ class Topology(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+############################################################################################################
+############################################################################################################
+#####################      Sector//Backhaul Utilization            #########################################
+############################################################################################################
+############################################################################################################
+
+## Creating Separate Tables because these are KPI reports
+## which does not instantly affect the system
+## but are pre calculated based on various fields
+## and formulas defined by any user
+## TODO: create a separate app for holding this
+## that would ensure easy removal
+## we will user "refer" varaible as SECTOR ID in case of PMP and WiMAX
+## we will use "refer variable as PORT Number in case of BAckhaul
+
+class Utilization(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
+class UtilizationDaily(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
+class UtilizationWeekly(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
+class UtilizationMonthly(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
+class UtilizationYearly(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
+class UtilizationStatus(models.Model):
+    """
+    Sector Utilization model for calculating the sector Utilization per sector
+    It keeps the current Value for the Sector Utilization Status.
+    Per device, per sector, per port
+    Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']

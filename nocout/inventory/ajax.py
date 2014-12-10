@@ -6,6 +6,10 @@ from inventory.models import IconSettings
 from service.models import Service
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
+from device.models import Device
+from organization.models import Organization
+from inventory.models import Backhaul, BaseStation, Antenna, Sector, Customer, SubStation
+
 logger = logging.getLogger(__name__)
 
 
@@ -366,7 +370,6 @@ def gt_critical_initial_choices(request):
                    .format(icon_setting.id, img_url, icon_setting.alias))
     dajax.assign('#id_gt_critical', 'innerHTML', ''.join(out))
     return dajax.json()
-
 
 # @dajaxice_register(method='GET')
 # def load_sheet_no_select_menu(request, uploaded_file):

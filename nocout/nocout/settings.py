@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 import os
 from django.conf import global_settings
 from collections import namedtuple
+from datetime import timedelta
+from celery.schedules import crontab
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
@@ -118,6 +120,9 @@ TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
 )
 
 MIDDLEWARE_CLASSES = (
+    #caching
+    # 'django.middleware.cache.UpdateCacheMiddleware',
+    #caching
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -132,6 +137,10 @@ MIDDLEWARE_CLASSES = (
     # Uncomment the next line for simple clickjacking protection
     #required for GISS SCAN
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    #caching
+    # 'django.middleware.cache.FetchFromCacheMiddleware',
+    #caching
 )
 
 #cookies settings
@@ -157,6 +166,7 @@ INSTALLED_APPS = (
     'django_extensions',
     'session_security',
     'south',
+    'nocout.signals', # Load before nocout apps
     'user_profile',
     'user_group',
     'device',
@@ -176,18 +186,33 @@ INSTALLED_APPS = (
     'capacity_management',
     'download_center',
     'performance',
+    'dashboard',
     'scheduling_management',
     'dajaxice',
     'dajax',
     'django.contrib.admin',
-    'actstream',
     'session_management',
     'corsheaders',
-    'actstream',
     'activity_stream',
     'jsonify',
-    'djcelery'
+    'djcelery',
+    'rest_framework',
+    'alarm_escalation',
 )
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'nocout-gis-rf-critical',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
+    }
+}
+
+ALLOWED_APPS_TO_CLEAR_CACHE = [
+    'inventory',
+]
 
 '''
 # RabbitMQ configuration for django-celery
@@ -207,6 +232,28 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
     "taskmeta_collection": "c_queue"            # collection name to use for task output
 }
 BROKER_URL = 'mongodb://localhost:27017/nocout_celery_db'
+
+#=time zone for celery periodic tasks
+CELERY_TIMEZONE = 'Asia/Calcutta'
+
+
+CELERYBEAT_SCHEDULE = {
+    'wimax-topology': {
+        'task': 'inventory.tasks.get_topology',
+        'schedule': timedelta(seconds=300),
+        'args': ['WiMAX']
+    },
+    'pmp-topology': {
+        'task': 'inventory.tasks.get_topology',
+        'schedule': timedelta(seconds=300),
+        'args': ['PMP']
+    },
+    'update-sector-frequency': {
+        'task': 'inventory.tasks.update_sector_frequency_per_day',
+        'schedule': crontab(minute=0, hour=0)
+    },
+}
+
 
 import djcelery
 djcelery.setup_loader()
@@ -299,28 +346,6 @@ MPTT_TREE= namedtuple('MPTT_TREE', 'lft rght level')
 
 ISOLATED_NODE= MPTT_TREE(lft=1, rght=2, level=0)
 
-
-ACTSTREAM_SETTINGS = {
-    'MODELS': ('auth.user', 'auth.group', 'sites.site', 'comments.comment','user_profile.userprofile', 'user_group.usergroup',
-                'device.device', 'device_group.devicegroup', 'device.devicetypefields','device.devicetechnology',
-                'device.devicevendor', 'device.devicemodel', 'device.devicetype','site_instance.siteinstance','service.service',
-                'service.serviceparameters','command.command','organization.organization','inventory.inventory',
-                'inventory.antenna', 'inventory.basestation', 'inventory.sector', 'inventory.backhaul', 'inventory.customer',
-                'inventory.substation', 'inventory.circuit', 'machine.machine', 'service.servicedatasource', 'device.deviceport',
-                'device.devicefrequency', 'service.protocol', 'inventory.iconsettings', 'inventory.livepollingsettings',
-                'inventory.thresholdconfiguration', 'inventory.thematicsettings'),
-
-
-
-
-    'MANAGER': 'actstream.managers.ActionManager',
-    'FETCH_RELATIONS': True,
-    'USE_PREFETCH': True,
-    'USE_JSONFIELD': True,
-    'GFK_FETCH_DEPTH': 1,
-
-}
-
 # Default PING parameters
 PING_PACKETS = 60
 PING_TIMEOUT = 20
@@ -343,6 +368,12 @@ DEVICE_APPLICATION = {
         'NAME': 'master_UA',  # Or path to database file if using sqlite3.
     }
 }
+
+
+###################REPORT_PATH
+
+REPORT_PATH = '/opt/nocout/nocout_gis/nocout/media/download_center/reports'
+REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 
 # Import the local_settings.py file to override global settings
 

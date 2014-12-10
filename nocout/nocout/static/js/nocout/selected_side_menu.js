@@ -8,16 +8,18 @@ var currentRouterString = "",
     sideMenu = $("#sidebar ul li a"),
     routerArray = window.location.href.split("/"),
     checkValue = $.trim(routerArray[routerArray.length-2]),
-    typeCheck = (+checkValue) + 1;
+    typeCheck = (+checkValue) + 1,
+    isForm = false;
 
-if(checkValue == "new" || checkValue == "update" || checkValue == "treeview" || checkValue == "edit" || checkValue == "delete") {
+if(checkValue == "create" || checkValue == "add" || checkValue == "new" || checkValue == "update" || checkValue == "treeview" || checkValue == "edit" || checkValue == "delete") {
     if($.trim(typeCheck) != "NaN") {        
         /*Current router url text*/
         currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-3));
     } else {
         /*Current router url text*/
         currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-2));
-    }    
+    }
+    isForm = true;
 } else if($.trim(typeCheck) != "NaN"){
     /*Current router url text*/
     currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-2));
@@ -48,12 +50,15 @@ for(var i = 0; i < sideMenu.length; i++) {
         }
 
         /*If the routertext matches the hiperlink text then add the active & current classes at the desired element*/
-        if(currentRouter.indexOf('alert_center/customer/') > -1 && menuLink.indexOf('alert_center/customer/') > -1 && currentRouter != menuLink) {
-            var sub_tag = currentRouter.split("/");
-            if(menuLink.indexOf(sub_tag[sub_tag.length-1]) > -1) {
-                applySelectedClasses(sideMenu[i]);
-            }
-        } else if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
+        // if(currentRouter.indexOf('alert_center/customer/') > -1 && menuLink.indexOf('alert_center/customer/') > -1 && currentRouter != menuLink) {
+        //     var sub_tag = currentRouter.split("/");
+        //     if(menuLink.indexOf(sub_tag[sub_tag.length-1]) > -1) {
+        //         applySelectedClasses(sideMenu[i]);
+        //     }
+        // } else if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
+        //     applySelectedClasses(sideMenu[i]);
+        // }
+        if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
             applySelectedClasses(sideMenu[i]);
         }
     }
@@ -62,11 +67,13 @@ for(var i = 0; i < sideMenu.length; i++) {
 /*This function apply selected classes on current menu tag & its parents*/
 function applySelectedClasses(menuTag) {
 
-    var closest_has_sub = $(menuTag).closest(".has-sub");
-    var closest_has_sub_sub = $(menuTag).closest(".has-sub-sub");
-    var closest_li = $(menuTag).closest("li");
-    var closest_sub_sub = $(menuTag).closest(".sub-sub");
-    var closest_arrow = $(menuTag).closest("span.arrow");
+    var closest_has_sub = $(menuTag).closest(".has-sub"),
+        closest_has_sub_sub = $(menuTag).closest(".has-sub-sub"),
+        closest_li = $(menuTag).closest("li"),
+        closest_sub_sub = $(menuTag).closest(".sub-sub"),
+        closest_arrow = $(menuTag).closest("span.arrow"),
+        breadcrumb_txt = '<li><a href="/home/"><i class="fa fa-home"></i> Home</a></li>',
+        isTab = $('.nav li.active .hidden-inline-mobile');
 
     if(closest_has_sub.length > 0 && closest_has_sub_sub.length > 0) {
         
@@ -82,6 +89,31 @@ function applySelectedClasses(menuTag) {
 
         /*Add current class to parent element*/
         closest_li.addClass("current");
+        breadcrumb_txt += "<li>"+closest_has_sub[0].children[0].outerHTML+"</li>";
+        breadcrumb_txt += "<li>"+closest_has_sub_sub[0].children[0].outerHTML+"</li>";
+        breadcrumb_txt += closest_li[0].outerHTML;
+
+        $(".breadcrumb").html(breadcrumb_txt);
+            
+        // If any tab Exists
+        if(isTab.length > 0) {
+            setTimeout(function() {
+                if($(".lite > .box-title > h4").text().indexOf("(") > -1) {
+                    var tab_breadcrumb = '<li><a href="'+window.location.href.split("#")[0]+'">'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</a></li>';
+                } else {
+                    var tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
+                }
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
+
+        // If create/update form
+        if(isForm) {
+            setTimeout(function() {
+                var tab_breadcrumb = '<li><a href="'+window.location.href+'"><strong>'+$('.lite > .box-title > h4').text()+'</strong></a></li>';
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
 
     } else if(closest_has_sub.length > 0 && closest_has_sub_sub.length == 0) {
         
@@ -89,12 +121,61 @@ function applySelectedClasses(menuTag) {
         var main_child_length = closest_has_sub.children().first()[0].children.length;
         var top_arrow = closest_has_sub.children().first()[0].children[main_child_length - 1];
         top_arrow.className = top_arrow.className+" open";
-
+        // console.log((window.location.pathname.indexOf('performance') || window.location.pathname.indexOf('alert_center')))
         /*Add current class to parent element*/
         closest_li.addClass("current");
+        breadcrumb_txt += "<li>"+closest_has_sub[0].children[0].outerHTML+"</li>";
+        breadcrumb_txt += closest_li[0].outerHTML;
+        $(".breadcrumb").html(breadcrumb_txt);
+
+        // If any tab Exists
+        if(isTab.length > 0) {
+            setTimeout(function() {
+                if($(".lite > .box-title > h4").text().indexOf("(") > -1) {
+                    var tab_breadcrumb = '<li><a href="'+window.location.href.split("#")[0]+'">'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</a></li>';
+                } else {
+                    var tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
+                }
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
+
+        // If create/update form
+        if(isForm) {
+            setTimeout(function() {
+                var tab_breadcrumb = '<li><a href="'+window.location.href+'"><strong>'+$('.lite > .box-title > h4').text()+'</strong></a></li>';
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
+
+
+
     } else {
         /*Add current class to parent element*/
         closest_li.addClass("active");
+        var breadcrumb_text = closest_li[0].innerHTML;
+
+        $(".breadcrumb").html(breadcrumb_text);
+        
+        // If any tab Exists
+        if(isTab.length > 0) {
+            setTimeout(function() {
+                if($(".lite > .box-title > h4").text().indexOf("(") > -1) {
+                    var tab_breadcrumb = '<li><a href="'+window.location.href.split("#")[0]+'">'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</a></li>';
+                } else {
+                    var tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
+                }
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
+
+        // If create/update form
+        if(isForm) {
+            setTimeout(function() {
+                var tab_breadcrumb = '<li><a href="'+window.location.href+'"><strong>'+$('.lite > .box-title > h4').text()+'</strong></a></li>';
+                $(".breadcrumb").append(tab_breadcrumb);
+            },150);
+        }
     }
 
     /*Show sub menu.*/
@@ -114,11 +195,19 @@ $("#headerToggleBtn").click(function(e) {
         $("#headerToggleBtn").html('<i class="fa fa-eye-slash"></i> Hide Page Controls');
         $("#headerToggleBtn").removeClass('btn-info');
         $("#headerToggleBtn").addClass('btn-danger');
+
+        // if(window.location.pathname.indexOf("googleEarth") > -1) {
+        //     $("#page_content_div .box-title").removeClass('hide');
+        // }
     } else {
         $("#headerToggleBtn").html('<i class="fa fa-eye"></i> Show Page Controls');
         $("#headerToggleBtn").removeClass('btn-danger');
         $("#headerToggleBtn").addClass('btn-info');
         $("#page_content_div .box-title").removeClass('hide');
+
+        // if(window.location.pathname.indexOf("googleEarth") > -1) {
+        //     $("#page_content_div .box-title").addClass('hide');
+        // }
     }
 
     /*Toggle Page Header*/
@@ -213,8 +302,35 @@ $("#goFullScreen").click(function() {
             var bb= $("#page_content_div .box-title").height();
             var cc= $("#page_header_container").height();
 
-            if($("#deviceMap").length) {
-                /*Remove padding & margin*/
+            if(window.location.pathname.indexOf("googleEarth") > -1) {
+
+                $("#content").addClass("zero_padding_margin");
+                $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
+
+                // toggleBoxTitle();
+                /*Set width-height for map div in fullscreen*/
+                var mapDiv = $("#google_earth_container");
+                mapDiv.attr('style', 'width: 100%; height:'+ screen.height+ 'px');
+                // mapDiv.attr('style', 'height: 100%;');
+                // mapDiv.style.width = "100%";
+                // mapDiv.style.height = screen.height+"px";
+                $("#content").css("min-height","200px");
+             
+            } else if (window.location.pathname.indexOf("white_background") > -1) {
+
+                $("#content").addClass("zero_padding_margin");
+                $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
+
+                // toggleBoxTitle();
+                /*Set width-height for map div in fullscreen*/
+                var mapDiv = $("#wmap_container");
+                mapDiv.attr('style', 'width: 100%; height:'+ screen.height+ 'px');
+                // mapDiv.attr('style', 'height: 100%;');
+                // mapDiv.style.width = "100%";
+                // mapDiv.style.height = screen.height+"px";
+                $("#content").css("min-height","200px");
+            } else {
+                   /*Remove padding & margin*/
                 $("#content").addClass("zero_padding_margin");
                 $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
 
@@ -224,28 +340,64 @@ $("#goFullScreen").click(function() {
                 toggleControlButtons();
 
                 /*Set width-height for map div in fullscreen*/
-                var mapDiv = mapInstance.getDiv();
-                mapDiv.style.width = "100%";
-                mapDiv.style.height = screen.height+"px";
+                if($(".mapContainerBlock").length > 0) {
+                    var mapDiv = mapInstance.getDiv();
+                    mapDiv.style.width = "100%";
+                    mapDiv.style.height = screen.height+"px";
+                }
                 $("#content").css("min-height","200px");
 
-                google.maps.event.trigger(mapInstance, 'resize');
-                mapInstance.setCenter(mapInstance.getCenter());
+                if($(".mapContainerBlock").length > 0) {
+                    google.maps.event.trigger(mapInstance, 'resize');
+                    mapInstance.setCenter(mapInstance.getCenter());
 
-                if(showControlDiv) {
-                    showControlDiv= "";
-                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);
+                    if(showControlDiv) {
+                        showControlDiv= "";
+                        mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);
+                    }
+                    showControlDiv = document.createElement('div');
+                    var showControl = new ShowControl(showControlDiv, mapInstance);
+                    showControlDiv.index = 1;
+                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(showControlDiv);
+                    $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Exit Full Screen');
                 }
-                showControlDiv = document.createElement('div');
-                var showControl = new ShowControl(showControlDiv, mapInstance);
-                showControlDiv.index = 1;
-                mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(showControlDiv);
-                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Exit Full Screen');
+
             }
+
+
         } else {
             exitFullscreen();
-            if($("#deviceMap").length) {
+            if(window.location.pathname.indexOf("googleEarth") > -1) {
+
                 showControlDiv= "";
+                $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
+                /*Reset width-height for map div in normal screen*/
+                var mapDiv = $("#google_earth_container");
+                mapDiv.attr('style', 'width: 100%; height: 550px');
+
+                $("#content").removeAttr("style");
+                $(".mapContainerBlock .box-title").removeClass('hide');
+
+                $("#goFullScreen").removeClass('hide');
+
+                $("#headerToggleBtn").removeClass('hide');
+             
+            } else if (window.location.pathname.indexOf("white_background") > -1) {
+                showControlDiv= "";
+                $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
+                /*Reset width-height for map div in normal screen*/
+                var mapDiv = $("#wmap_container");
+                mapDiv.attr('style', 'width: 100%; height: 550px');
+
+                $("#content").removeAttr("style");
+                $(".mapContainerBlock .box-title").removeClass('hide');
+
+                $("#goFullScreen").removeClass('hide');
+
+                $("#headerToggleBtn").removeClass('hide');
+            } else if (window.location.pathname.indexOf("gis") > -1) {
+                showControlDiv= "";
+                $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
                 if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 3) {
                     mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
                 }
@@ -264,10 +416,11 @@ $("#goFullScreen").click(function() {
                 mapInstance.setCenter(mapInstance.getCenter());
 
                 $(".mapContainerBlock .box-title").removeClass('hide');
-                $("#goFullScreen").removeClass('hide');
-                $("#headerToggleBtn").removeClass('hide');
                 // $("#headerToggleBtn").trigger('click');
             }
+            $("#content").removeClass("zero_padding_margin");
+            $("#goFullScreen").removeClass('hide');
+            $("#headerToggleBtn").removeClass('hide');
         }
     } else {
         bootbox.alert("Fullscreen facility not supported by your browser.Please update.")
@@ -290,8 +443,6 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
         $("#goFullScreen").addClass('btn-info');
         if($("#deviceMap").length) {
 
-            /*Remove padding & margin*/
-            $("#content").removeClass("zero_padding_margin");
             $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
 
             showControlDiv= "";
@@ -312,9 +463,12 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
 
             // toggleBoxTitle();
             $(".mapContainerBlock .box-title").removeClass('hide');
-            $("#goFullScreen").removeClass('hide');
-            $("#headerToggleBtn").removeClass('hide');
         }
+        /*Remove padding & margin*/
+        $("#content").removeClass("zero_padding_margin");
+        
+        $("#goFullScreen").removeClass('hide');
+        $("#headerToggleBtn").removeClass('hide');
     }
 });
 
@@ -341,3 +495,222 @@ function exitFullscreen() {
     document.webkitExitFullscreen();
   }
 }
+
+
+
+/**********************************Activity Stream for add,edit & delete*************************************/
+var isNewForm = window.location.href.indexOf('new'),
+    isCreateForm = window.location.href.indexOf('create'),
+    isAddForm = window.location.href.indexOf('add'),
+    isEditForm = window.location.href.indexOf('edit'),
+    isUpdateForm = window.location.href.indexOf('update'),
+    isModifyForm = window.location.href.indexOf('modify'),
+    page_title = "",
+    module_name = "",
+    isFormSubmit = 0;
+
+if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
+    
+    page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" add ");
+    module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+} else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1) {
+
+    page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ");
+    module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+
+    if(isFormSubmit === 0) {
+        var oldFieldsArray = $("form input").serializeArray(),
+            select_boxes = $("select");
+
+        setTimeout(function() {
+            for(var i=0;i<select_boxes.length;i++) {
+                var select_id = select_boxes[i].attributes["id"].value,
+                    values_array = $("#"+select_id).select2("data"),
+                    selected_values = "";
+                if(values_array && values_array.length) {
+                    $.grep(values_array,function(data){
+                        if(selected_values.length > 0) {
+                            selected_values +=  data.text ? ","+data.text : "";
+                        } else {
+                            selected_values += data.text ? data.text : "";
+                        }
+                    });
+                } else {
+                    selected_values = values_array ? values_array.text : "";
+                }
+
+                var data_obj = {
+                    "name" : select_boxes[i].attributes["name"].value,
+                    "value" : selected_values
+                };
+                oldFieldsArray.push(data_obj);
+            }
+        },600);
+    } 
+}
+
+/*Form Submit Event*/
+$("form").submit(function(e) {
+
+    // Disabel submit button
+    if($("form button[type='submit']").length > 0) {
+        $("form button[type='submit']").addClass("disabled");
+    }
+    /*Create case*/
+    if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
+        /*When first time form submitted*/
+        if(isFormSubmit === 0) {
+
+            var alias = $("form input[name*='alias']").val(),
+                action = "A new "+module_name.toLowerCase()+" is created - "+alias,
+                action_response = "";
+
+            /*Call function to save user action*/
+            save_user_action(module_name,action,function(result) {
+                action_response = result;
+                if(typeof result == 'string' && result.indexOf('success') > -1) {
+                    action_response = JSON.parse(result);
+                } else {
+                    action_response = result;
+                }
+                isFormSubmit = 1;
+                // Enable submit button
+                if($("form button[type='submit']").length > 0) {
+                    $("form button[type='submit']").removeClass("disabled");
+                }
+                /*Trigger Form Submit*/
+                $("form").trigger('submit');
+            });
+        } else {
+            return true;
+        }
+    /*Edit case*/
+    } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1) {
+        /*When first time form submitted*/
+        if(isFormSubmit === 0) {
+
+            var newFieldsArray = $("form input").serializeArray(),
+                select_boxes = $("select"),
+                modifiedFieldsStr = "[";
+            /*Get New Fields*/
+            for(var i=0;i<select_boxes.length;i++) {
+                var select_id = select_boxes[i].attributes["id"] ? select_boxes[i].attributes["id"].value : "",
+                    values_array = select_id ? $("#"+select_id).select2("data") : "",
+                    selected_values = "";
+                if(values_array.length) {
+                    $.grep(values_array,function(data){
+                        if(selected_values.length > 0) {
+                            selected_values += data.text ? ","+data.text : "";
+                        } else {
+                            selected_values += data.text ? data.text : "";
+                        }
+                    });
+                } else {
+                    selected_values = values_array ? values_array.text : "";
+                }
+
+                var data_obj = {
+                    "name" : select_boxes[i].attributes["name"].value,
+                    "value" : selected_values
+                };
+
+                newFieldsArray.push(data_obj);
+            }
+
+            /*Get Modified Fields*/
+            for(var j=0;j<oldFieldsArray.length;j++) {
+                var old_field = oldFieldsArray[j],
+                    new_field = newFieldsArray[j];
+                if(old_field && new_field) {
+                    if($.trim(old_field.value) != $.trim(new_field.value) && old_field.name.indexOf('password') === -1) {
+                        var new_val = new_field.value.toLowerCase() != 'select' ? new_field.value : "",
+                            old_val = old_field.value.toLowerCase() != 'select' ? old_field.value : "",
+                            modified_str = old_field.name+"{"+old_val+" To "+new_val+"}";
+                        if($.trim(modifiedFieldsStr) != '[') {
+                            modifiedFieldsStr += ","+modified_str;
+                        } else {
+                            modifiedFieldsStr += modified_str;
+                        }
+                    }
+                }
+            }
+            /*If any changes done then save user action else return.*/
+            if($.trim(modifiedFieldsStr) != '[') {
+                
+                modifiedFieldsStr += ']';
+                /*Call function to save user action*/
+                save_user_action(module_name,modifiedFieldsStr,function(result) {
+                    if(typeof result == 'string' && result.indexOf('success') > -1) {
+                        action_response = JSON.parse(result);
+                    } else {
+                        action_response = result;
+                    }
+
+                    isFormSubmit = 1;
+                    // Enable submit button
+                    if($("form button[type='submit']").length > 0) {
+                        $("form button[type='submit']").removeClass("disabled");
+                    }
+                    /*Trigger Form Submit*/
+                    $("form").trigger('submit');
+                });
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
+    } else {
+        return true;
+    }
+
+    return false;
+});
+
+/**
+ * This function save user action by calling respective API.
+ * @method save_user_action
+ */
+function save_user_action(module,action,callback) {
+
+    var csrftoken = $.cookie("csrftoken"),
+        base_url = "";
+
+    /*Set the base url of application for ajax calls*/
+    if(window.location.origin) {
+        base_url = window.location.origin;
+    } else {
+        base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+    }
+
+    $.ajax({
+        url : base_url+"/logs/actions/log/", 
+        type : "POST",
+        dataType: "json", 
+        data : {
+            module : module,
+            action : action,
+            csrfmiddlewaretoken : csrftoken,
+        },
+        success : function(response) {     
+            callback(response);
+        },
+        error : function(xhr,errmsg,err) {
+            callback(xhr.status + ": " + xhr.responseText)
+        }
+    });
+}
+
+
+/*Hide hightcharts.com link from charts if exist.*/
+setTimeout(function() {
+    var highcharts_link = $("svg text:last-child");
+    if(highcharts_link.length > 0) {
+        for(var i=0;i<highcharts_link.length;i++) {
+            var link_text = $("svg text:last-child")[i] ? $.trim($("svg text:last-child")[i].innerHTML.toLowerCase()) : "";
+            if(link_text === 'highcharts.com') {
+                $("svg text:last-child")[i].innerHTML = "";
+            }
+        }
+    }
+},500);

@@ -45,7 +45,7 @@ def check_radwin_link_distance_invent(item, _no_params, info):
         if info:
             link_distance = int(info[0][0])
             if link_distance == -1:
-                infotext = "Device Link is not established "
+                infotext = "link_not_established"
                 state = 0
             elif link_distance > 0:
                 state = 0

@@ -9,19 +9,33 @@ This script collects and stores data for all services running on all configured 
 from nocout_site_name import *
 import os
 import demjson,json
+from pprint import pformat
 import re
 from datetime import datetime, timedelta
-from xml.etree import ElementTree as ET
 import subprocess
 import pymongo
 import imp
 import time
+import socket
+import json
+from itertools import groupby
+
+try:
+        import nocout_settings
+        from nocout_settings import _LIVESTATUS, _DATABASES
+except Exception, exp:
+        print exp
 
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
-def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
+network_data_values = []
+service_data_values = []
+network_update_list = []
+service_update_list = []
+
+def build_export(site, network_result, service_result, db):
 	"""
 	Function name: build_export  (function export data from the rrdtool (which stores the period data) for all services for particular host
 	and stores them in mongodb in particular structure)
@@ -31,191 +45,384 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
                 mongo_db (mongo db connection),mongo_port(port for mongodb)
 	Return : None
         Raises:
-	     Exception: IOError 
+	    Exception: None
 	"""
-	_folder = '/omd/sites/%s/var/pnp4nagios/perfdata/%s/' % (site,host)
-	xml_file_list = []
-	#tmp_service =service
-	#service = service.replace(' ','_')
-	params = []
-	perf_data =None
-	m = 0
-	ds_index =None
-	file_paths = []
-	temp_dict = {}
+        current = int(time.time())
+	global network_data_values
+	global service_data_values
+	global network_update_list
+	global service_update_list
+
+        age = None
+	rt_min, rt_max = None, None
+	rta_dict = {}
 	data_dict = {
-		"host": str(host),
+		"host": None,
 		"service": None,
 		"ds": None,
 		"data": [],
 		"meta": None,
-		"ip_address": str(ip),
-		"severity":None
-	}
-	status_dict = {
-		"host": str(host),
-		"service": None,
-		"ds": None,
-		"data": [],
-		"meta": None,
-		"ip_address": str(ip),
-		"severity":None
+		"ip_address": None,
+		"severity":None,
+		"age": None
 	}
 	matching_criteria ={}
-    	perf_db = None
 	threshold_values = {}
-	db = mongo_module.mongo_conn(
-	    host=mongo_host,
-	    port=int(mongo_port),
-	    db_name=mongo_db
-	)
-	# all rrdtool .xml files corresponding to services
-	for perf_file in os.listdir(_folder):
-		if perf_file.endswith(".xml"):
-			xml_file_list.append(perf_file)
-	# Extracts the services data for each host from rrdtool
-	for xml_file in xml_file_list:
-		try:
-			tree = ET.parse(_folder + xml_file)
-			root = tree.getroot()
-		except IOError, e:
-			raise IOError ,e
-
-		perf_data = root.find("NAGIOS_PERFDATA").text.strip()
-		serv_disc = root.find("NAGIOS_SERVICEDESC").text.strip()
-		if serv_disc == '_HOST_':
-			data_dict['service'] = 'ping'
-			status_dict['service'] = 'ping'
-			serv_disc = 'ping'
-		else:
-			data_dict['service'] = serv_disc
-			status_dict['service'] = serv_disc
-
-		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
-			continue
-		# Extracts the performance data from the rrdtool for services
-		try:
-			if serv_disc == 'ping':
-				query_string = "GET services\nColumns: host_state\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
-				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-				if query_output:
-					service_state = (query_output[0][0])
-					if service_state == 0:
-						service_state = "up"
-					elif service_state == 1:
-						service_state = "down"
-				else:
-					service_state= "UNKNOWN"
-					
-			else:
-				query_string = "GET services\nColumns: service_state\nFilter: " + \
-				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (serv_disc,host)
-				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-				if query_output:
-					service_state = (query_output[0][0])
-					if service_state == 0:
-						service_state = "OK"
-					elif service_state == 1:
-						service_state = "WARNING"
-					elif service_state == 2:
-						service_state = "CRITICAL"
-					elif service_state == 3:
-						service_state = "UNKNOWN"
-				else:
-					service_state = "UNKNOWN"
-		except:
-			service_state= "UNKNOWN"
-		
-		threshold_values = get_threshold(perf_data)
-		for ds in root.findall('DATASOURCE'):
-			params.append(ds.find('NAME').text)
-			file_paths.append(ds.find('RRDFILE').text)
-		for i, path in enumerate(file_paths):
-			if params[file_paths.index(path)] == 'rtmin' or params[file_paths.index(path)] == 'rtmax':
-				continue
-			m = -5
-			ds_index = params[file_paths.index(path)]
-			if i == 0:
-	    			# Data will be exported from last inserted entry in mongodb uptill current time
-				start_time = mongo_module.get_latest_entry(db_type='mongodb', db=db, table_name=None,
-								host=host, serv=data_dict['service'], ds=ds_index)
-			data_series = do_export(site, host, path, ds_index, start_time, data_dict['service'])
-                        if len(data_series) == 0:
-                            continue
-			data_dict.update({
-				"check_time": data_series.get('check_time'),
-				"local_timestamp": data_series.get('local_timestamp'),
-				"site": data_series.get('site')
-				})
-			
-			status_dict.update({
-				"check_time": data_series.get('check_time'),
-				"local_timestamp": data_series.get('local_timestamp'),
-				"site": data_series.get('site')
-				})
-			data_dict['ds'] = ds_index
-
-			status_dict['ds'] = ds_index
-			ds_values = data_series['data'][:-1]
-			start_time = mongo_module.get_latest_entry(db_type='mongodb', db=db, table_name=None,
-                                                                host=host, serv=data_dict['service'], ds=ds_index)
-			for d in ds_values:
-				if d[-1] is not None:
-					m += 5
-					temp_dict = dict(
-						time=data_series.get('check_time') + timedelta(minutes=m),
-						value=d[-1]
-					)
-					# forcing to not add deuplicate entry in mongo db. currenltly suppose at time 45.00 50.00 data comes in
-					# in one iteration then in second iteration 50.00 55.00 data comes .So Not adding second iteration
-					# 50.00 data again.
-					if ds_index == 'rta':
-						temp_dict.update({"min_value":d[-3],"max_value":d[-2]}) 
-					if start_time == temp_dict.get('time'):
-						data_dict.update({"local_timestamp":temp_dict.get('time')+timedelta(minutes=5),
-						"check_time":temp_dict.get('time')+ timedelta(minutes=5)})
-						continue
-					data_dict.get('data').append(temp_dict)
-			data_dict['meta'] = threshold_values.get(ds_index)
-			# dictionariers to hold values for the service status tables
-			status_dict.get('data').append(temp_dict)	
-			status_dict['meta'] = threshold_values.get(ds_index)
-			status_dict.update({"local_timestamp":temp_dict.get('time'),"check_time":temp_dict.get('time')})
-			
-			data_dict['severity'] = service_state
-			status_dict['severity'] = service_state
-			matching_criteria.update({'host':str(host),'service':data_dict['service'],'site':site,'ds':ds_index})
-			if xml_file == '_HOST_.xml':
-				mongo_module.mongo_db_update(db,matching_criteria,status_dict,"network_perf_data")
-				mongo_module.mongo_db_insert(db,data_dict,"network_perf_data")
-			else:
-				mongo_module.mongo_db_update(db,matching_criteria,status_dict,"serv_perf_data")
-				mongo_module.mongo_db_insert(db,data_dict,"serv_perf_data")
-
-		#status = insert_data(data_dict)
-
-			data_dict = {
-					"host": str(host),
-					"service": serv_disc,
-					"ip_address": str(ip),
-					"data": [],
-					"meta": None,
-					"severity": None,
-					"ds": None
-			}
-			matching_criteria = {}
-			status_dict = {
-					"host": str(host),
-					"service": serv_disc,
-					"ip_address": str(ip),
-					"data": [],
-					"meta": None,
-					"severity": None,
-					"ds": None
-			}
+	severity = 'UNKNOWN'
+	host_severity = 'UNKNOWN'
+#	db = mongo_module.mongo_conn(
+#	    host=mongo_host,
+#	    port=int(mongo_port),
+#	    db_name=mongo_db
+#	)
+	# Process network perf data
 	
-		params = []
-		file_paths = []
+        nw_qry_output = network_result
+	for entry in nw_qry_output:
+                try:
+		    threshold_values = get_threshold(entry[-1])
+		    rt_min = threshold_values.get('rtmin').get('cur')
+		    rt_max = threshold_values.get('rtmax').get('cur')
+		    # rtmin, rtmax values are not used in perf calc
+		    threshold_values.pop('rtmin', '')
+		    threshold_values.pop('rtmax', '')
+		    #print '-- threshold_values'
+		    #print threshold_values
+		    if entry[2] == 0:
+		        host_severity = 'UP'
+		    elif entry[2] == 1:
+			host_severity = 'DOWN'
+		# Age of last service state change
+		    last_state_change = entry[-2]
+		    age =last_state_change
+                except:
+                    continue
+		for ds, ds_values in threshold_values.items():
+			check_time = datetime.fromtimestamp(entry[3]) 
+			# Pivot the time stamp to next 5 mins time frame
+			local_timestamp = pivot_timestamp_fwd(check_time)
+			if ds == 'pl':
+				ds_values['cur'] = ds_values['cur'].strip('%')
+			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
+			if ds == 'rta':
+				rta_dict = {'min_value': rt_min, 'max_value': rt_max}
+				data_values[0].update(rta_dict)
+			data_dict.update({
+				'site': site,
+				'host': entry[0],
+				'service': 'ping',
+				'ip_address': entry[1],
+				'severity': host_severity,
+				'age': age,
+				'ds': ds,
+				'data': data_values,
+				'meta': ds_values,
+				'check_time': check_time,
+				'local_timestamp': local_timestamp 
+				})
+			matching_criteria.update({
+				'host': entry[0],
+				'service': 'ping',
+				'ds': str(ds)
+				})
+			# Update the value in status collection, Mongodb
+			network_update_list.append(matching_criteria)
+			#mongo_module.mongo_db_update(db, matching_criteria, data_dict, 'network_perf_data')
+			#print entry[0],data_dict.get('check_time')
+			network_data_values.append(data_dict)
+			data_dict = {}
+			matching_criteria = {}
+	after = int(time.time())
+	elapsed = after -current
+	#if host_severity == 'UP':
+	#	print 'network_data_values'
+	#	print network_data_values
+	#try:
+	#	mongo_module.mongo_db_insert(db, network_data_values, 'network_perf_data')
+	#except Exception, e:
+	#	print e.message
+	# If host is Down, do not process its service perf data
+	#if host_severity == 'DOWN':
+	#	return
+	data_dict = {}
+	# Process service perf data
+	#count1 =0
+	current1 = int(time.time())
+        serv_qry_output = service_result
+	for entry in serv_qry_output:
+                if len(entry) < 8:
+                        continue
+		if not len(entry[-1]):
+			continue
+		if int(entry[6]) == 1:
+			continue 	
+		#print entry[-1]
+		threshold_values = get_threshold(entry[-1])
+		#print '-- threshold_values'
+		#print threshold_values
+		severity = calculate_severity(entry[3])
+		# Age of last service state change
+		last_state_change = entry[-2]
+		age = last_state_change
+		data_dict.update({
+			'service': str(entry[2]),
+			'ip_address': entry[1],
+			'severity': severity,
+			'age': age
+			})
+		for ds, ds_values in threshold_values.items():
+			check_time = datetime.fromtimestamp(entry[4])
+			# Pivot the time stamp to next 5 mins time frame
+			local_timestamp = pivot_timestamp_fwd(check_time)
+			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
+			data_dict.update({
+				'site': site,
+				'host': entry[0],
+				'service': str(entry[2]),
+				'ip_address': entry[1],
+				'severity': severity,
+				'age': age,
+				'ds': ds,
+				'data': data_values,
+				'meta': ds_values,
+				'check_time': check_time,
+				'local_timestamp': local_timestamp 
+				})
+			matching_criteria.update({
+				'host': entry[0],
+				'service': str(entry[2]),
+				'ds': str(ds)
+				})
+			# Update the value in status collection, Mongodb
+			service_update_list.append(matching_criteria)
+			#mongo_module.mongo_db_update(db, matching_criteria, data_dict, 'serv_perf_data')
+			service_data_values.append(data_dict)
+			data_dict = {}
+			matching_criteria = {}
+	elap = int(time.time()) - current1
+	#print 'service_data_values'
+	#print service_data_values
+	# Bulk insert the values into Mongodb
+	#try:
+	#	mongo_module.mongo_db_insert(db, service_data_values, 'serv_perf_data')
+	#except Exception, e:
+	#	print e.message
+
+
+def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
+	#db = mongo_module.mongo_conn(
+	#    host=mongo_host,
+	#    port=int(mongo_port),
+	#    db_name=mongo_db
+	#)
+
+	try:
+		for index3 in range(len(net_values)):
+			mongo_module.mongo_db_update(db,net_update[index3], net_values[index3], 'network_perf_data')
+		
+		for index4 in range(len(serv_values)):
+			mongo_module.mongo_db_update(db,service_update[index4], serv_values[index4], 'serv_perf_data')
+	except Exception ,e:
+		print e.message
+	index1 = 0
+	index2 = min(1000,len(net_values))
+	try:
+		while(index2 <= len(net_values)):
+			mongo_module.mongo_db_insert(db, net_values[index1:index2], 'network_perf_data')
+			#mongo_module.mongo_db_update(db,net_update[index1:index2], net_values[index1:index2], 'network_perf_data')
+			index1 = index2
+			if index2 >= len(net_values):
+				break
+			if (len(net_values) - index2)  < 1000:
+				index2 += (len(net_values) - index2)
+			else:
+				index2 += 1000
+	except Exception, e:
+		print 'Insert error in NW perf values'
+		print e.message
+
+	try:
+		index1 = 0
+		index2 = min(1000,len(serv_values))
+		while(index2 <= len(serv_values)):
+			mongo_module.mongo_db_insert(db, serv_values[index1:index2], 'serv_perf_data')
+			#mongo_module.mongo_db_update(db,service_update[index1:index2], serv_values[index1:index2], 'serv_perf_data')
+			index1 = index2
+			if index2 >= len(serv_values):
+				break
+			if (len(serv_values) - index2)  < 1000:
+				index2 += (len(serv_values) - index2)
+			else:
+				index2 += 1000
+	except Exception, e:
+		print 'Insert error in Serv values'
+		print e.message
+
+
+def calculate_severity(severity_bit):
+	"""
+	Function to compute host service states
+	"""
+	severity = 'UNKNOWN'
+	if severity_bit == 0:
+		severity = 'OK'
+	elif severity_bit == 1:
+		severity = 'WARNING'
+	elif severity_bit == 2:
+		severity = 'CRITICAL'
+
+	return severity
+
+
+def get_host_services_name(site_name=None, db=None):
+        """
+        Function_name : get_host_services_name (extracts the services monitotred on that poller)
+
+        Args: site_name (poller on which monitoring data is to be collected)
+
+        Kwargs: mongo_host(host on which we have to monitor services and collect the data),mongo_db(mongo_db connection),
+                mongo_port( port for the mongodb database)
+        Return : None
+
+        raise
+             Exception: SyntaxError,socket error
+        """
+        try:
+            st = datetime.now()
+            current = int(time.time())
+            network_perf_query = "GET hosts\nColumns: host_name host_address host_state last_check host_last_state_change host_perf_data\nOutputFormat: python\n"
+	    service_perf_query = "GET services\nColumns: host_name host_address service_description service_state "+\
+                            "last_check service_last_state_change host_state service_perf_data\nFilter: service_description ~ _invent\n"+\
+                            "Filter: service_description ~ _status\n"+\
+                            "Filter: service_description ~ Check_MK\n"+\
+                            "Filter: service_description ~ wimax_pmp1_dl_utilization_kpi\n"+\
+                            "Filter: service_description ~ wimax_pmp1_ul_utilization_kpi\n"+\
+                            "Filter: service_description ~ wimax_pmp2_dl_utilization_kpi\n"+\
+                            "Filter: service_description ~ wimax_pmp2_ul_utilization_kpi\n"+\
+                            "Filter: service_description ~ cambium_ul_utilization_kpi\n"+\
+                            "Filter: service_description ~ cambium_dl_utilization_kpi\n"+\
+                            "Or: 9\nNegate:\nOutputFormat: python\n"
+
+            #service_perf_query = "GET services\nColumns: host_name host_address service_description service_state "+\
+            #                "last_check service_last_state_change host_state service_perf_data\nFilter: service_description ~ _invent\n"+\
+            #                "Filter: service_description ~ _status\nFilter: service_description ~ Check_MK\nOr: 3\nNegate:\nOutputFormat: python\n"
+            nw_qry_output = eval(get_from_socket(site_name, network_perf_query))
+            #print 'NW qry OUT --'
+            #print nw_qry_output
+            serv_qry_output = eval(get_from_socket(site_name, service_perf_query))
+            #print 'Serv qry OUT --'
+            #print serv_qry_output
+            # Group service perf data host-wise
+            #serv_qry_output = sorted(serv_qry_output, key=lambda k: k[0])
+            #for host, group in groupby(serv_qry_output, key=lambda e: e[0]):
+            #        i += 1
+                    # Find the entry in network perf data, for this host
+            #        nw_entry = filter(lambda t: host == t[0], nw_qry_output)
+                    #print 'nw_entry -----'
+                    #print nw_entry
+            #        serv_entry = list(group)
+            #        if i == 1000:
+            #           break
+            build_export(
+                       site_name,
+                       nw_qry_output,
+                       serv_qry_output,
+                       db
+            )
+	    elapsed = int(time.time()) - current
+
+        except SyntaxError, e:
+            raise MKGeneralException(("Can not get performance data: %s") % (e))
+        except socket.error, msg:
+            raise MKGeneralException(("Failed to create socket. Error code %s Error Message %s:") % (str(msg[0]), msg[1]))
+        except ValueError, val_err:
+                print 'Error in serv/nw qry output'
+                print val_err.message
+
+def get_from_socket(site_name, query):
+    """
+        Function_name : get_from_socket (collect the query data from the socket)
+
+        Args: site_name (poller on which monitoring data is to be collected)
+
+        Kwargs: query (query for which data to be collectes from nagios.)
+
+        Return : None
+
+        raise
+             Exception: SyntaxError,socket error
+    """
+    socket_path = "/omd/sites/%s/tmp/run/live" % site_name
+    #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    machine = site_name[:-8]
+    socket_ip = _LIVESTATUS[machine]['host']
+    socket_port = _LIVESTATUS[machine][site_name]['port']
+    #s.connect((socket_ip, socket_port))
+    s.connect(socket_path)
+    s.send(query)
+    s.shutdown(socket.SHUT_WR)
+    output = ''
+    while True:
+     out = s.recv(100000000)
+     out.strip()
+     if not len(out):
+        break
+     output += out
+
+    return output
+
+
+class MKGeneralException(Exception):
+    """
+        This is the Exception class handing exception in this file.
+        Args: Exception instance
+
+        Kwargs: None
+
+        return: class object
+
+    """
+    def __init__(self, reason):
+        self.reason = reason
+    def __str__(self):
+        return self.reason
+
+
+
+def get_ss(host=None, interface=None):
+	ss_device = None
+	global nocout_site_name
+        l_host_vars = {
+		    "FOLDER_PATH": "",
+		    "ALL_HOSTS": '', # [ '@all' ]
+		    "all_hosts": [],
+		    "clusters": {},
+		    "ipaddresses": {},
+		    "extra_host_conf": { "alias" : [] },
+		    "extra_service_conf": { "_WATO" : [] },
+		    "host_attributes": {},
+		    "host_contactgroups": [],
+		    "_lock": False,
+	}
+	# path to hosts file
+	hosts_file = '/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk' % nocout_site_name
+	try:
+		execfile(hosts_file, l_host_vars, l_host_vars)
+		del l_host_vars['__builtins__']
+		
+		host_row = filter(lambda t: re.match(interface, t.split('|')[2]) \
+				and re.match(host, t.split('|')[3]), l_host_vars['all_hosts'])
+		ss_device = host_row[0].split('|')[0]
+	except Exception, e:
+		return ss_device
+
+	return ss_device
+
+
+def split_service_interface(serv_disc):
+
+	return serv_disc[:-18], serv_disc[-17:]
 
 
 def do_export(site, host, file_name,data_source, start_time, serv):
@@ -249,7 +456,7 @@ def do_export(site, host, file_name,data_source, start_time, serv):
     if start_time is None:
         start_time = end_time - timedelta(minutes=6)
     else:
-	start_time = start_time - timedelta(minutes=1)
+	start_time = start_time + timedelta(minutes=1)
 
     #end_time = datetime.now() - timedelta(minutes=10)
     #start_time = end_time - timedelta(minutes=5)
@@ -261,8 +468,9 @@ def do_export(site, host, file_name,data_source, start_time, serv):
     #start_epoch -= 19800
     #end_epoch -= 19800
 
-    print start_epoch,end_epoch
     # Command for rrdtool data extraction
+    if start_time > end_time:
+	return
     cmd = '/omd/sites/%s/bin/rrdtool xport --json --daemon unix:/omd/sites/%s/tmp/run/rrdcached.sock -s %s -e %s --step 300 '\
         %(site,site, str(start_epoch), str(end_epoch))
     RRAs = ['MIN','MAX','AVERAGE']
@@ -312,8 +520,8 @@ def get_threshold(perf_data):
 
     threshold_values = {}
 
-    #if len(perf_data) == 1:
-     #   return threshold_values
+    if not len(perf_data):
+    	return threshold_values
     for param in perf_data.split(" "):
 	param = param.strip("['\n', ' ']")
 	if param.partition('=')[2]:
@@ -353,7 +561,28 @@ def pivot_timestamp(timestamp):
     """
     t_stmp = timestamp + timedelta(minutes=-(timestamp.minute % 5))
 
+  
     return t_stmp
+
+def pivot_timestamp_fwd(timestamp):
+    """
+    Function_name : pivot_timestamp (function for pivoting the time to 5 minutes interval)
+
+    Args: timestamp
+
+    Kwargs: None
+    return:
+           t_stmp (pivoted time stamp)
+    Exception:
+           None
+    """
+    t_stmp = timestamp + timedelta(minutes=-(timestamp.minute % 5))
+    if (timestamp.minute %5) != 0:
+    	t_stmp = t_stmp + timedelta(minutes=5)
+
+  
+    return t_stmp
+
 
 
 def db_port(site_name=None):
@@ -458,9 +687,134 @@ def rrd_migration_main(site,host,services,ip, mongo_host, mongo_db, mongo_port):
 	    Exception : None
 	"""
 	build_export(site, host, ip, mongo_host, mongo_db, mongo_port)
-        #for service in services[0]:
 
 """if __name__ == '__main__':
     build_export('BT','AM-400','PING')
 """
+
+
+
+def collect_data_for_wimax(host,site,db):
+		matching_criteria = {}
+		wimax_service_list = ['wimax_modulation_dl_fec','wimax_modulation_ul_fec','wimax_dl_intrf','wimax_ul_intrf','wimax_ss_ip','wimax_ss_mac']
+                for service in wimax_service_list:
+                        query_string = "GET services\nColumns: service_state service_perf_data host_address last_check\nFilter: " + \
+                        "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n"                % (service,host)
+                        query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
+                        try:
+                                if query_output[0][1]:
+                                        perf_data_output = str(query_output[0][1])
+                                        service_state = (query_output[0][0])
+                                        host_ip = str(query_output[0][2])
+					last_check = (query_output[0][3])
+                                        if service_state == 0:
+                                                service_state = "OK"
+                                        elif service_state == 1:
+                                                service_state = "WARNING"
+                                        elif service_state == 2:
+                                                service_state = "CRITICAL"
+                                        elif service_state == 3:
+                                                service_state = "UNKNOWN"
+                                        perf_data = utility_module.get_threshold(perf_data_output)
+                                else:
+                                        continue
+                        except:
+                                continue
+                        for datasource in perf_data.iterkeys():
+				data = []
+                                cur =perf_data.get(datasource).get('cur')
+                                war =perf_data.get(datasource).get('war')
+                                crit =perf_data.get(datasource).get('cric')
+				temp_dict = dict(value = cur,time = pivot_timestamp_fwd(datetime.fromtimestamp(last_check)))
+                                wimax_service_dict = dict (check_time=datetime.fromtimestamp(last_check),
+						local_timestamp=pivot_timestamp_fwd(datetime.fromtimestamp(last_check)),host=str(host),
+                                                service=service,data=[temp_dict],meta ={'cur':cur,'war':war,'cric':crit},
+                                                ds=datasource,severity=service_state,site=site,ip_address=host_ip)
+                                matching_criteria.update({'host':str(host),'service':service,'ds':datasource})
+                                mongo_module.mongo_db_update(db,matching_criteria,wimax_service_dict,"serv_perf_data")
+                                mongo_module.mongo_db_insert(db,wimax_service_dict,"serv_perf_data")
+				matching_criteria = {}
+                wimax_service_dict = {}
+
+
+def collect_data_from_rrd(db,site,path,host,replaced_host,service,ds_index,start_time,data_dict,status_dict):
+
+	service_data_type = {
+		"radwin_rssi" : int,
+		"radwin_uas"  : int,
+		"radwin_uptime": int,
+		"radwin_service_throughput" : float,
+		"radwin_dl_utilization": int,
+		"radwin_ul_utilization" : int
+	}
+
+	m = -5
+	data_series = do_export(site, host, path, ds_index, start_time, service)
+	if data_series is None:
+		return 1
+	data_dict.update({
+		"check_time": data_series.get('check_time'),
+		"local_timestamp": data_series.get('local_timestamp'),
+		"site": data_series.get('site')
+        })
+	status_dict.update({
+		"check_time": data_series.get('check_time'),
+		"local_timestamp": data_series.get('local_timestamp'),
+		"site": data_series.get('site')
+        })
+ 
+	data_dict['ds'] = ds_index
+
+	status_dict['ds'] = ds_index
+			
+	ds_values = data_series['data'][:-1]
+
+	start_time = mongo_module.get_latest_entry(db_type='mongodb', db=db, table_name=None,
+                                                                host=replaced_host, serv=data_dict['service'], ds=ds_index)
+	temp_dict = {}
+	for d in ds_values:
+		if d[-1] is not None:
+			m += 5
+			if service in service_data_type:
+				d_type = service_data_type[service]
+			else:
+				d_type = float
+					
+			temp_dict = dict(
+					time=data_series.get('check_time') + timedelta(minutes=m),
+						value=d_type(d[-1]))
+			# forcing to not add deuplicate entry in mongo db. currenltly suppose at time 45.00 50.00 data comes in
+			# in one iteration then in second iteration 50.00 55.00 data comes .So Not adding second iteration
+			# 50.00 data again.
+			if ds_index == 'rta':
+				temp_dict.update({"min_value":d[-3],"max_value":d[-2]}) 
+			if start_time == temp_dict.get('time'):
+				data_dict.update({"local_timestamp":temp_dict.get('time')+timedelta(minutes=5),
+				"check_time":temp_dict.get('time')+ timedelta(minutes=5)})
+				continue
+			data_dict.get('data').append(temp_dict)
+	if len(temp_dict):
+		status_dict.get('data').append(temp_dict)
+		status_dict.update({"local_timestamp":temp_dict.get('time'),"check_time":temp_dict.get('time')})
+
+
+if __name__ == '__main__':
+    """
+    main function for this file which is called in 5 minute interval.Every 5 min interval calculates the host configured on this poller
+    and extracts data
+
+    """
+    configs = config_module.parse_config_obj()
+    desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
+    desired_config = configs.get(desired_site)
+    site = desired_config.get('site')
+    db = mongo_module.mongo_conn(
+	    host=desired_config.get('host'),
+	    port = int(desired_config.get('port')),
+	    db_name= desired_config.get('nosql_db')
+    )
+    get_host_services_name(
+    site_name=site,db=db
+    )
+    insert_bulk_perf(network_data_values, service_data_values,network_update_list,service_update_list ,db)
 

@@ -1,9 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Commands</li>
-{% endblock %}
+
 {% block content_title %}Commands{% endblock %}
 {% block content_description %}List of commands{% endblock %}
 {% block content %}
@@ -28,7 +25,7 @@
 {#            </div>#}
         </div>
 
-        <div id="tableContainer" class="box-body">
+        <div id="tableContainer" class="box-body Tbl_FixHeight">
             <table cellpadding="0" cellspacing="0" border="0"
                    class="datatable table table-striped table-bordered table-hover" id="CommandListingTable">
                 <thead></thead>

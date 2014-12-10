@@ -1,10 +1,6 @@
 {% extends "department/department.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>User Management</li>
-    <li>Users</li>
-    <li>Edit</li>
-{% endblock %}
+
 {% block content_title %}Edit User{% endblock %}
 {% block content_description %}Edit user{% endblock %}
 {% block content %}
@@ -57,6 +53,77 @@
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            //Check weather the organization and parent is selected or not
+            if ($("#id_organization").val() == "") {
+                $("#id_parent").empty();
+            }
+            else if ($("#id_parent").val() == ""){
+                $("#id_parent").empty();
+                list_parent_according_to_organisation()
+            }
+            else{
+                select_parent_already_selected()
+            }
+
+            //on change of the organisation list the parent list.
+            $('#id_organization').change(function(){
+                list_parent_according_to_organisation()
+            })
+
+            //function to get the list of the parent according to the ogranisation.
+            function list_parent_according_to_organisation(){
+                var organisation_id = $('#id_organization option:selected').val()
+                //if no organisation is selected.
+                if(organisation_id == '' ){
+                    $('#id_parent').html("<option value=>Select</option>").change();
+                }
+                else{
+                    $.ajax({
+                        url : "/user/organisation/user/list/",
+                        type : "GET",
+                        dataType: "html",
+                        data: {
+                            organisation_id : organisation_id
+                        },
+                        success : function(parent_list_option) {
+                            $('#id_parent').html(parent_list_option);
+                            $('#id_parent').change();
+                        },
+                        error : function(xhr,errmsg,err) {
+                            alert(xhr.status + ": " + xhr.responseText);
+                        }
+                    });
+                    return false;
+                }
+            }
+
+            function select_parent_already_selected(){
+                var organization_id = $('#id_organization option:selected').val()
+                var parent_id = $('#id_parent option:selected').val()
+                //if no organisation is selected.
+                if(organization_id == '' ){
+                    $('#id_parent').html("<option value=>Select</option>").change();
+                }
+                else{
+                    $.ajax({
+                        url : "/user/organisation/user/select/",
+                        type : "GET",
+                        dataType: "html",
+                        data: {
+                            parent_id : parent_id,
+                        },
+                        success : function(parent_select) {
+                            $('#id_parent').empty();
+                            $('#id_parent').html(parent_select);
+                        },
+                        error : function(xhr,errmsg,err) {
+                            console.log(xhr.status + ": " + xhr.responseText);
+                        }
+                    });
+                    return false;
+                }
+            }
         })
     </script>
 {% endblock %}

@@ -1,391 +1,36 @@
 # -*- coding: utf-8 -*-
 import ast, sys
 import json, logging
-import urllib
+import urllib, datetime
 from multiprocessing import Process, Queue
 from django.db.models import Q, Count
 from django.views.generic.base import View
 from django.http import HttpResponse
 from inventory.models import BaseStation, Sector, Circuit, SubStation, Customer, LivePollingSettings, \
-    ThresholdConfiguration, ThematicSettings
+    ThresholdConfiguration, ThematicSettings, PingThematicSettings
 from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, DeviceModel, State, Country, City
 import requests
 from nocout.utils import logged_in_user_organizations
-from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value
+from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value, \
+    query_all_gis_inventory, cached_all_gis_inventory, cache_for
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
+from performance.models import Topology
 from sitesearch.views import prepare_raw_bs_result
-from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
+from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, DEBUG
 
 from django.db import connections
 
-logger=logging.getLogger(__name__)
+from pprint import pprint
+logger = logging.getLogger(__name__)
+
+global gis_information
+gis_information = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
 
 
-class DeviceStatsApi(View):
-
-    def get(self, request):
-
-        self.result = {
-            "success": 0,
-            "message": "Device Loading Completed",
-            "data": {
-                "meta": {},
-                "objects": None
-            }
-        }
-        # page_number= request.GET['page_number']
-        # limit= request.GET['limit']
-
-        organizations= logged_in_user_organizations(self)
-
-        if organizations:
-            # for organization in organizations:
-            page_number= self.request.GET.get('page_number', None)
-            start, offset= None, None
-            if page_number:
-                #Setting the Start and Offset limit for the Query.
-                offset= int(page_number)*GIS_MAP_MAX_DEVICE_LIMIT
-                start= offset - GIS_MAP_MAX_DEVICE_LIMIT
-
-            # base_stations_and_sector_configured_on_devices= \
-            #     Sector.objects.filter(sector_configured_on__id__in= \
-            #                                   organization.device_set.values_list('id', flat=True))[start:offset]\
-            #                                   .values_list('base_station').annotate(dcount=Count('base_station'))
-            base_stations_and_sector_configured_on_devices = BaseStation.objects.prefetch_related(
-                'sector', 'backhaul').filter(
-                    sector__in = Sector.objects.filter(
-                        sector_configured_on__organization__in=organizations)
-                )[start:offset].annotate(dcount=Count('name'))
-
-            bs_id = BaseStation.objects.prefetch_related(
-                'sector', 'backhaul').filter(
-                    sector__in = Sector.objects.filter(
-                        sector_configured_on__organization__in=organizations)
-                )[start:offset].annotate(dcount=Count('name')).values_list('id',flat=True)
-
-            if base_stations_and_sector_configured_on_devices:
-                #if the total count key is not in the meta objects then run the query
-                total_count=self.request.GET.get('total_count')
-
-                if not int(total_count):
-                    total_count= BaseStation.objects.filter(
-                    sector__in = Sector.objects.filter(
-                        sector_configured_on__organization__in=organizations)
-                    ).annotate(dcount=Count('name')).count()
-                    self.result['data']['meta']['total_count']= total_count
-
-                else:
-                    #Otherthan first request the total_count will be echoed back and then can be placed in the result.
-                    total_count= self.request.GET.get('total_count')
-                    self.result['data']['meta']['total_count']= total_count
-
-                self.result['data']['meta']['limit']= GIS_MAP_MAX_DEVICE_LIMIT
-                self.result['data']['meta']['offset']= offset
-                self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
-                                                        { "unspiderfy_icon" : "static/img/icons/bs.png" }
-                                                }
-                self.result['data']['objects']['children']= list()
-
-                query = """
-                    select * from (
-                        select basestation.id as BSID,
-                                basestation.name as BSNAME,
-                                basestation.alias as BSALIAS,
-                                basestation.bs_site_id as BSSITEID,
-                                basestation.bs_site_type as BSSITETYPE,
-
-                                device.ip_address as BSSWITCH,
-
-                                basestation.bs_type as BSTYPE,
-                                basestation.bh_bso as BSBHBSO,
-                                basestation.hssu_used as BSHSSUUSED,
-                                basestation.latitude as BSLAT,
-                                basestation.longitude as BSLONG,
-
-                                basestation.infra_provider as BSINFRAPROVIDER,
-                                basestation.gps_type as BSGPSTYPE,
-                                basestation.building_height as BSBUILDINGHGT,
-                                basestation.tower_height as BSTOWERHEIGHT,
-
-                                city.city_name as BSCITY,
-                                state.state_name as BSSTATE,
-                                country.country_name as BSCOUNTRY,
-
-                                basestation.address as BSADDRESS,
-
-                                backhaul.id as BHID,
-                                sector.id as SID
-
-                        from inventory_basestation as basestation
-                        left join (
-                            inventory_sector as sector,
-                            inventory_backhaul as backhaul,
-                            device_country as country,
-                            device_city as city,
-                            device_state as state,
-                            device_device as device
-                        )
-                        on (
-                            sector.base_station_id = basestation.id
-                        and
-                            backhaul.id = basestation.backhaul_id
-                        and
-                            city.id = basestation.city
-                        and
-                            state.id = basestation.state
-                        and
-                            country.id = basestation.country
-                        and
-                            device.id = basestation.bs_switch_id
-                        )
-                    )as bs_info
-                    left join (
-                        select * from (select
-
-                            sector.id as SECTOR_ID,
-                            sector.name as SECTOR_NAME,
-                            sector.alias as SECTOR_ALIAS,
-                            sector.sector_id as SECTOR_SECTOR_ID,
-                            sector.base_station_id as SECTOR_BS_ID,
-                            sector.mrc as SECTOR_MRC,
-                            sector.tx_power as SECTOR_TX,
-                            sector.rx_power as SECTOR_RX,
-                            sector.rf_bandwidth as SECTOR_RFBW,
-                            sector.frame_length as SECTOR_FRAME_LENGTH,
-                            sector.cell_radius as SECTOR_CELL_RADIUS,
-                            sector.modulation as SECTOR_MODULATION,
-
-                            technology.name as SECTOR_TECH,
-                            vendor.name as SECTOR_VENDOR,
-                            devicetype.name as SECTOR_TYPE,
-                            devicetype.device_icon as SECTOR_ICON,
-                            devicetype.device_gmap_icon as SECTOR_GMAP_ICON,
-
-                            device.id as SECTOR_CONF_ON_ID,
-                            device.device_name as SECTOR_CONF_ON,
-                            device.ip_address as SECTOR_CONF_ON_IP,
-                            device.mac_address as SECTOR_CONF_ON_MAC,
-
-                            antenna.antenna_type as SECTOR_ANTENNA_TYPE,
-                            antenna.height as SECTOR_ANTENNA_HEIGHT,
-                            antenna.polarization as SECTOR_ANTENNA_POLARIZATION,
-                            antenna.tilt as SECTOR_ANTENNA_TILT,
-                            antenna.gain as SECTOR_ANTENNA_GAIN,
-                            antenna.mount_type as SECTORANTENNAMOUNTTYPE,
-                            antenna.beam_width as SECTOR_BEAM_WIDTH,
-                            antenna.azimuth_angle as SECTOR_ANTENNA_AZMINUTH_ANGLE,
-                            antenna.reflector as SECTOR_ANTENNA_REFLECTOR,
-                            antenna.splitter_installed as SECTOR_ANTENNA_SPLITTER,
-                            antenna.sync_splitter_used as SECTOR_ANTENNA_SYNC_SPLITTER,
-                            antenna.make_of_antenna as SECTOR_ANTENNA_MAKE,
-
-                            frequency.color_hex_value as SECTOR_FREQUENCY_COLOR,
-                            frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
-                            frequency.value as SECTOR_FREQUENCY
-
-                            from inventory_sector as sector
-                            join (
-                                device_device as device,
-                                inventory_antenna as antenna,
-                                device_devicetechnology as technology,
-                                device_devicevendor as vendor,
-                                device_devicetype as devicetype
-                            )
-                            on (
-                                device.id = sector.sector_configured_on_id
-                            and
-                                antenna.id = sector.antenna_id
-                            and
-                                technology.id = device.device_technology
-                            and
-                                devicetype.id = device.device_type
-                            and
-                                vendor.id = device.device_vendor
-                            ) left join (device_devicefrequency as frequency)
-                            on (
-                                frequency.id = sector.frequency_id
-                            )
-                        ) as sector_info
-                        left join (
-                            select circuit.id as CID,
-                                circuit.alias as CALIAS,
-                                circuit.circuit_id as CCID,
-                                circuit.sector_id as SID,
-
-                                circuit.circuit_type as CIRCUIT_TYPE,
-                                circuit.qos_bandwidth as QOS,
-                                circuit.dl_rssi_during_acceptance as RSSI,
-                                circuit.dl_cinr_during_acceptance as CINR,
-                                circuit.jitter_value_during_acceptance as JITTER,
-                                circuit.throughput_during_acceptance as THROUHPUT,
-                                circuit.date_of_acceptance as DATE_OF_ACCEPT,
-
-                                customer.alias as CUST,
-                                customer.address as SS_CUST_ADDR,
-
-                                substation.id as SSID,
-                                substation.name as SS_NAME,
-                                substation.alias as SS_ALIAS,
-                                substation.version as SS_VERSION,
-                                substation.serial_no as SS_SERIAL_NO,
-                                substation.building_height as SS_BUILDING_HGT,
-                                substation.tower_height as SS_TOWER_HGT,
-                                substation.ethernet_extender as SS_ETH_EXT,
-                                substation.cable_length as SS_CABLE_LENGTH,
-                                substation.latitude as SS_LATITUDE,
-                                substation.longitude as SS_LONGITUDE,
-                                substation.mac_address as SS_MAC,
-
-                                antenna.height as SSHGT,
-                                antenna.antenna_type as SS_ANTENNA_TYPE,
-                                antenna.height as SS_ANTENNA_HEIGHT,
-                                antenna.polarization as SS_ANTENNA_POLARIZATION,
-                                antenna.tilt as SS_ANTENNA_TILT,
-                                antenna.gain as SS_ANTENNA_GAIN,
-                                antenna.mount_type as SSANTENNAMOUNTTYPE,
-                                antenna.beam_width as SS_BEAM_WIDTH,
-                                antenna.azimuth_angle as SS_ANTENNA_AZMINUTH_ANGLE,
-                                antenna.reflector as SS_ANTENNA_REFLECTOR,
-                                antenna.splitter_installed as SS_ANTENNA_SPLITTER,
-                                antenna.sync_splitter_used as SS_ANTENNA_SYNC_SPLITTER,
-                                antenna.make_of_antenna as SS_ANTENNA_MAKE,
-
-                                device.ip_address as SSIP,
-                                device.id as SS_DEVICE_ID,
-                                device.device_alias as SSDEVICEALIAS,
-                                device.device_name as SSDEVICENAME,
-
-                                technology.name as SS_TECH,
-                                vendor.name as SS_VENDOR,
-
-                                devicetype.device_icon as SS_ICON,
-                                devicetype.device_gmap_icon as SS_GMAP_ICON
-
-                            from inventory_circuit as circuit
-                            join (
-                                inventory_substation as substation,
-                                inventory_customer as customer,
-                                inventory_antenna as antenna,
-                                device_device as device,
-                                device_devicetechnology as technology,
-                                device_devicevendor as vendor,
-                                device_devicetype as devicetype
-                            )
-                            on (
-                                customer.id = circuit.customer_id
-                            and
-                                substation.id = circuit.sub_station_id
-                            and
-                                antenna.id = substation.antenna_id
-                            and
-                                device.id = substation.device_id
-                            and
-                                technology.id = device.device_technology
-                            and
-                                vendor.id = device.device_vendor
-                            and
-                                devicetype.id = device.device_type
-                            )
-                        ) as ckt_info
-                        on (
-                            ckt_info.SID = sector_info.SECTOR_ID
-                        )
-                    ) as sect_ckt
-                    on (sect_ckt.SECTOR_BS_ID = bs_info.BSID)
-                    left join
-                        (
-                            select bh_info.BHID as BHID,
-                                    bh_info.BH_PORT as BH_PORT,
-                                    bh_info.BH_TYPE as BH_TYPE,
-                                    bh_info.BH_PE_HOSTNAME as BH_PE_HOSTNAME,
-                                    bh_info.BH_PE_IP as BH_PE_IP,
-                                    bh_info.BH_CONNECTIVITY as BH_CONNECTIVITY,
-                                    bh_info.BH_CIRCUIT_ID as BH_CIRCUIT_ID,
-                                    bh_info.BH_CAPACITY as BH_CAPACITY,
-                                    bh_info.BH_TTSL_CIRCUIT_ID as BH_TTSL_CIRCUIT_ID,
-                                    bh_info.BH_DR_SITE as BH_DR_SITE,
-
-                                    bh_info.BHCONF as BHCONF,
-                                    bh_info.BHCONF_IP as BHCONF_IP,
-                                    POP_IP,
-                                    AGGR_IP,
-                                    BSCONV_IP
-
-                            from (
-                            select backhaul.id as BHID,
-                                    backhaul.bh_port_name as BH_PORT,
-                                    backhaul.bh_type as BH_TYPE,
-                                    backhaul.pe_hostname as BH_PE_HOSTNAME,
-                                    backhaul.pe_ip as BH_PE_IP,
-                                    backhaul.bh_connectivity as BH_CONNECTIVITY,
-                                    backhaul.bh_circuit_id as BH_CIRCUIT_ID,
-                                    backhaul.bh_capacity as BH_CAPACITY,
-                                    backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
-                                    backhaul.dr_site as BH_DR_SITE,
-
-                                    device.device_name as BHCONF,
-                                    device.ip_address as BHCONF_IP
-
-                            from inventory_backhaul as backhaul
-                            join (
-                                device_device as device
-                            )
-                            on (
-                                device.id = backhaul.bh_configured_on_id
-                            )
-                            ) as bh_info left join (
-                                    select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
-                                    left join (
-                                        device_device as device
-                                    )
-                                    on (
-                                        device.id = backhaul.pop_id
-                                    )
-                            ) as pop_info
-                            on (bh_info.BHID = pop_info.BHID)
-                            left join ((
-                                    select backhaul.id as BHID, device.device_name as BSCONV, device.ip_address as BSCONV_IP from inventory_backhaul as backhaul
-                                    left join (
-                                        device_device as device
-                                    )
-                                    on (
-                                        device.id = backhaul.bh_switch_id
-                                    )
-                            ) as bscon_info
-                            ) on (bh_info.BHID = bscon_info.BHID)
-                            left join ((
-                                    select backhaul.id as BHID, device.device_name as AGGR, device.ip_address as AGGR_IP from inventory_backhaul as backhaul
-                                    left join (
-                                        device_device as device
-                                    )
-                                    on (
-                                        device.id = backhaul.aggregator_id
-                                    )
-                            ) as aggr_info
-                            ) on (bh_info.BHID = aggr_info.BHID)
-
-                        ) as bh
-                    on
-                        (bh.BHID = bs_info.BHID)
-                where (bs_info.BSID in ({0}))
-                Group by BSID,SECTOR_ID,CID
-                ;
-                """.format(', '.join(str(i) for i in bs_id))
-                # print ((fetch_raw_result(query)))
-
-                raw_result = prepare_raw_result(fetch_raw_result(query))
-                for basestation in raw_result:
-                    base_station_info= prepare_raw_bs_result(raw_result[basestation])
-                    self.result['data']['objects']['children'].append(base_station_info)
-
-                self.result['data']['meta']['device_count']= len(self.result['data']['objects']['children'])
-            self.result['message']='Data Fetched Successfully.'
-            self.result['success']=1
-        return HttpResponse(json.dumps(self.result))
-
+@cache_for(600)
 def prepare_raw_result(bs_dict = []):
     """
 
@@ -406,6 +51,84 @@ def prepare_raw_result(bs_dict = []):
     return bs_result
 
 
+class DeviceStatsApi(View):
+
+    raw_result = prepare_raw_result(gis_information)
+
+    def get(self, request):
+
+        self.result = {
+            "success": 0,
+            "message": "Device Loading Completed",
+            "data": {
+                "meta": {},
+                "objects": None
+            }
+        }
+        # page_number= request.GET['page_number']
+        # limit= request.GET['limit']
+
+        organizations = logged_in_user_organizations(self)
+
+        if organizations:
+            # for organization in organizations:
+            page_number= self.request.GET.get('page_number', None)
+            start, offset= None, None
+            if page_number:
+                #Setting the Start and Offset limit for the Query.
+                offset= int(page_number)*GIS_MAP_MAX_DEVICE_LIMIT
+                start= offset - GIS_MAP_MAX_DEVICE_LIMIT
+
+            bs_id = BaseStation.objects.prefetch_related(
+                'sector', 'backhaul').filter(organization__in=organizations
+                )[start:offset].annotate(dcount=Count('name')).values_list('id',flat=True)
+
+            #if the total count key is not in the meta objects then run the query
+            total_count=self.request.GET.get('total_count')
+
+            if not int(total_count):
+                total_count= BaseStation.objects.filter(
+                    organization__in=organizations).annotate(dcount=Count('name')
+                ).count()
+
+                self.result['data']['meta']['total_count']= total_count
+
+            else:
+                #Otherthan first request the total_count will be echoed back and then can be placed in the result.
+                total_count= self.request.GET.get('total_count')
+                self.result['data']['meta']['total_count']= total_count
+
+            self.result['data']['meta']['limit']= GIS_MAP_MAX_DEVICE_LIMIT
+            self.result['data']['meta']['offset']= offset
+            self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
+                                                    { "unspiderfy_icon" : "static/img/icons/bs.png" }
+                                            }
+            self.result['data']['objects']['children']= list()
+
+            st = datetime.datetime.now()
+            if DEBUG:
+                st = datetime.datetime.now()
+                logger.debug("Base-Station CREATION : Start")
+                logger.debug("START %s" %st)
+
+            for bs in bs_id:
+                if bs in self.raw_result:
+                    base_station_info= prepare_raw_bs_result(self.raw_result[bs])
+                    self.result['data']['objects']['children'].append(base_station_info)
+
+            if DEBUG:
+                endtime = datetime.datetime.now()
+                elapsed = endtime - st
+                logger.debug("END {}".format(divmod(elapsed.total_seconds(), 60)))
+                logger.debug("Base-Station CREATION : END")
+
+
+            self.result['data']['meta']['device_count']= len(self.result['data']['objects']['children'])
+            self.result['message'] = 'Data Fetched Successfully.'
+            self.result['success'] = 1
+        return HttpResponse(json.dumps(self.result))
+
+
 class DeviceFilterApi(View):
 
     def get(self, request):
@@ -423,15 +146,15 @@ class DeviceFilterApi(View):
         for device_technology in DeviceTechnology.objects.all():
             technology_data.append({ 'id':device_technology.id,
                                      'value':device_technology.name })
-            vendors = device_technology.device_vendors.all()
-            for vendor in vendors:
-                if vendor not in vendor_list:
-                    vendor_list.append(vendor.id)
-                    vendor_data.append({ 'id':vendor.id,
-                                         'value':vendor.name,
-                                         'tech_id': device_technology.id,
-                                         'tech_name': device_technology.name
-                    })
+            # vendors = device_technology.device_vendors.all()
+            # for vendor in vendors:
+            #     if vendor not in vendor_list:
+            #         vendor_list.append(vendor.id)
+            #         vendor_data.append({ 'id':vendor.id,
+            #                              'value':vendor.name,
+            #                              'tech_id': device_technology.id,
+            #                              'tech_name': device_technology.name
+            #         })
         # for vendor in DeviceVendor.objects.all():
         #     vendor_data.append({ 'id':vendor.id,
         #                              'value':vendor.name })
@@ -439,21 +162,21 @@ class DeviceFilterApi(View):
         # for state in State.objects.all():
         #     state_data.append({ 'id':state.id,
         #                              'value':state.state_name })
-        state_list = []
-        for city in City.objects.all():
-            city_data.append({'id':city.id,
-                             'value':city.city_name,
-                             'state_id': city.state.id,
-                             'state_name': city.state.state_name }
-            )
-            if city.state.id not in state_list:
-                state_list.append(city.state.id)
-                state_data.append({ 'id':city.state.id,'value':city.state.state_name })
+        # state_list = []
+        # for city in City.objects.all():
+        #     city_data.append({'id':city.id,
+        #                      'value':city.city_name,
+        #                      'state_id': city.state.id,
+        #                      'state_name': city.state.state_name }
+        #     )
+        #     if city.state.id not in state_list:
+        #         state_list.append(city.state.id)
+        #         state_data.append({ 'id':city.state.id,'value':city.state.state_name })
 
         self.result['data']['objects']['technology']={'data':technology_data}
-        self.result['data']['objects']['vendor']={'data':vendor_data}
-        self.result['data']['objects']['state']={'data':state_data}
-        self.result['data']['objects']['city']={'data':city_data}
+        # self.result['data']['objects']['vendor']={'data':vendor_data}
+        # self.result['data']['objects']['state']={'data':state_data}
+        # self.result['data']['objects']['city']={'data':city_data}
         self.result['message']='Data Fetched Successfully.'
         self.result['success']=1
 
@@ -908,13 +631,16 @@ class FetchThematicSettingsApi(View):
         # result dictionary to be returned as output of api
         result = {
             "success": 0,
-            "message": "Failed to fetch live polling settings.",
+            "message": "Failed to fetch thematic settings.",
             "data": {
             }
         }
 
         # initializing 'lp_templates' list containing live setting templates
         result['data']['thematic_settings'] = list()
+
+        # service type
+        service_type = self.request.GET.get('service_type', None)
 
         # converting 'json' into python object
         technology_id = int(self.request.GET.get('technology', None))
@@ -928,21 +654,30 @@ class FetchThematicSettingsApi(View):
             lps = LivePollingSettings.objects.filter(technology=technology)
         except Exception as e:
             logger.info(e.message)
-
-        if lps:
-            tc_temp = dict()
-            for lp in lps:
-                threshold_configurations = ThresholdConfiguration.objects.filter(live_polling_template=lp)
-                if threshold_configurations:
-                    for tc in threshold_configurations:
-                        thematic_settings = ThematicSettings.objects.filter(threshold_template=tc)
-                        if thematic_settings:
-                            for ts in thematic_settings:
-                                ts_temp = dict()
-                                ts_temp['id'] = ts.id
-                                ts_temp['value'] = ts.alias
-                                result['data']['thematic_settings'].append(ts_temp)
-                                print "********************************* ts_temp - ", ts_temp
+        if service_type == 'ping':
+            thematic_settings = PingThematicSettings.objects.filter(technology=technology)
+            for ts in thematic_settings:
+                ts_temp = dict()
+                ts_temp['id'] = ts.id
+                ts_temp['value'] = ts.alias
+                result['data']['thematic_settings'].append(ts_temp)
+                print "********************************* ts_temp - ", ts_temp
+            result['message'] = "Successfully fetched thematic settings."
+            result['success'] = 1
+        else:
+            if lps:
+                for lp in lps:
+                    threshold_configurations = ThresholdConfiguration.objects.filter(live_polling_template=lp)
+                    if threshold_configurations:
+                        for tc in threshold_configurations:
+                            thematic_settings = ThematicSettings.objects.filter(threshold_template=tc)
+                            if thematic_settings:
+                                for ts in thematic_settings:
+                                    ts_temp = dict()
+                                    ts_temp['id'] = ts.id
+                                    ts_temp['value'] = ts.alias
+                                    result['data']['thematic_settings'].append(ts_temp)
+                                    print "********************************* ts_temp - ", ts_temp
             result['message'] = "Successfully fetched thematic settings."
             result['success'] = 1
         return HttpResponse(json.dumps(result))
@@ -954,7 +689,6 @@ class BulkFetchLPDataApi(View):
         :Parameters:
             - 'ts_template' (unicode) - threshold configuration template id
             - 'devices' (list) - list of devices
-
         :Returns:
            - 'result' (dict) - dictionary containing list of live polled values and icon urls
             {
@@ -1021,36 +755,54 @@ class BulkFetchLPDataApi(View):
         """Returns json containing live polling values and icon urls for bulk devices"""
 
         # converting 'json' into python object
+        service_type = self.request.GET.get('service_type', 'normal')
         devices = eval(str(self.request.GET.get('devices', None)))
         ts_template_id = int(self.request.GET.get('ts_template', None))
+        exceptional_services = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
+                                'wimax_ul_rssi', 'wimax_ul_intrf', 'wimax_dl_intrf',
+                                'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec',
+                                'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count',
+                                'cambium_rereg_count']
 
         service = ""
         data_source = ""
-        # Responsed form multiprocessing
+        lp_template_id = ""
 
         # selected thematic setting
-        ts = ThematicSettings.objects.get(pk=ts_template_id)
+        if service_type == 'ping':
+            ts = PingThematicSettings.objects.get(pk=ts_template_id)
+            service = ts.service
+            data_source = ts.data_source
 
-        # getting live polling template
-        lp_template_id = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id).live_polling_template.id
-
-        # getting service and data source form live polling settings
-        try:
-            service = LivePollingSettings.objects.get(pk=lp_template_id).service
-            data_source = LivePollingSettings.objects.get(pk=lp_template_id).data_source
-
-        except Exception as e:
-            logger.info("No service and data source corresponding to this live pollig setting template.")
-
-        # result dictionary to be returned as output of ap1
-        result = {
-            "success": 0,
-            "message": "Failed to fetch live polling data.",
-            "data": {
+            # result dictionary to be returned as output of api
+            result = {
+                "success": 0,
+                "message": "Failed to fetch thematic settings.",
+                "data": {}
             }
-        }
+        else:
+            ts = ThematicSettings.objects.get(pk=ts_template_id)
+
+            # getting live polling template
+            lp_template_id = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id).live_polling_template.id
+
+            # getting service and data source from live polling settings
+            try:
+                service = LivePollingSettings.objects.get(pk=lp_template_id).service
+                data_source = LivePollingSettings.objects.get(pk=lp_template_id).data_source
+            except Exception as e:
+                logger.info("No service and data source corresponding to this live pollig setting template.")
+
+            # result dictionary to be returned as output of api
+            result = {
+                "success": 0,
+                "message": "Failed to fetch live polling data.",
+                "data": {}
+            }
+            bs_device, site_name = None, None
 
         result['data']['devices'] = dict()
+
         # get machines associated with current devices
         machine_list = []
         for device in devices:
@@ -1067,8 +819,10 @@ class BulkFetchLPDataApi(View):
                     'value': []
                 }
                 responses = []
+
                 # live polling setting
-                lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
+                if service_type != "ping":
+                    lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
 
                 # current machine devices
                 current_devices_list = []
@@ -1085,18 +839,40 @@ class BulkFetchLPDataApi(View):
                 for device_name in current_devices_list:
                     try:
                         device = Device.objects.get(device_name=device_name)
-                        site_instances_list.append(device.site_instance.id)
+                        if str(service) in exceptional_services:
+                            mac_address = device.mac_address
+                            mac = device.mac_address.upper()
+                            bs_device = Topology.objects.get(connected_device_mac=mac)
+                            device = Device.objects.get(device_name=bs_device.device_name)
+                        if device.site_instance.id not in site_instances_list:
+                            site_instances_list.append(device.site_instance.id)
                     except Exception as e:
                         logger.info(e.message)
 
                 sites = set(site_instances_list)
                 site_list = []
                 for site_id in sites:
+                    bs_name_ss_mac_mapping = {}
+                    ss_name_mac_mapping = {}
                     devices_in_current_site = []
                     for device_name in current_devices_list:
                         try:
                             device = Device.objects.get(device_name=device_name)
-                            if device.site_instance.id == site_id:
+                            if str(service) in exceptional_services:
+                                device_ss_mac = device.mac_address
+                                ss_name_mac_mapping[device.device_name] = device_ss_mac
+                                mac = device.mac_address
+                                mac = mac.upper()
+                                bs_device = Topology.objects.get(connected_device_mac=mac)
+                                device = Device.objects.get(device_name=bs_device.device_name)
+                                if device.device_name in bs_name_ss_mac_mapping.keys():
+                                    bs_name_ss_mac_mapping[device.device_name].append(device_ss_mac)
+                                else:
+                                    bs_name_ss_mac_mapping[device.device_name] = [device_ss_mac]
+                                bs_site_id = device.site_instance.id
+                                if bs_site_id == site_id and device.device_name not in devices_in_current_site:
+                                    devices_in_current_site.append(device.device_name)
+                            elif device.site_instance.id == site_id:
                                 devices_in_current_site.append(device.device_name)
                         except Exception as e:
                             logger.info(e.message)
@@ -1104,9 +880,15 @@ class BulkFetchLPDataApi(View):
                     # live polling data dictionary (payload for nocout.py api call)
                     lp_data = dict()
                     lp_data['mode'] = "live"
+                    lp_data['bs_name_ss_mac_mapping'] = bs_name_ss_mac_mapping
+                    lp_data['ss_name_mac_mapping'] = ss_name_mac_mapping
                     lp_data['device_list'] = devices_in_current_site
-                    lp_data['service_list'] = [str(lp_template.service.name)]
-                    lp_data['ds'] = [str(lp_template.data_source.name)]
+                    if service_type == 'ping':
+                        lp_data['service_list'] = [str(service)]
+                        lp_data['ds'] = [str(data_source)]
+                    else:
+                        lp_data['service_list'] = [str(lp_template.service.name)]
+                        lp_data['ds'] = [str(lp_template.data_source.name)]
                     site = SiteInstance.objects.get(pk=int(site_id))
                     site_list.append({
                         'username': site.username,
@@ -1130,7 +912,6 @@ class BulkFetchLPDataApi(View):
                     j.start()
                 for k in jobs:
                     k.join()
-
                 while True:
                     if not q.empty():
                         responses.append(q.get())
@@ -1159,119 +940,75 @@ class BulkFetchLPDataApi(View):
 
                         result['data']['devices'][device_name]['value'] = device_value
 
-                        # threshold configuration for getting warning, critical comparison values
-                        tc = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id)
-
-                        #default image to be loaded
+                        # default image to be loaded
                         image_partial = "icons/mobilephonetower10.png"
+
+                        # icon
+                        icon = ""
+
+                        # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
+                        th_icon_settings = ""
+                        try:
+                            th_icon_settings = ts.icon_settings
+                        except Exception as e:
+                            logger.info("No icon settings for thematic settings. Exception: ", e.message)
+
+                        # fetch thematic ranges as per service type selected i.e. 'ping' or 'normal'
+                        th_ranges = ""
+                        try:
+                            if service_type == "ping":
+                                th_ranges = ts
+                            else:
+                                th_ranges = ts.threshold_template
+                        except Exception as e:
+                            logger.info("No ranges for thematic settings. Exception: ", e.message)
+
+                        # fetch service type if 'ts_type' is "normal"
+                        svc_type = ""
+                        try:
+                            if service_type != "ping":
+                                svc_type = ts.threshold_template.service_type
+                        except Exception as e:
+                            logger.info("Service Type not exist. Exception: ", e.message)
 
                         # comparing threshold values to get icon
                         try:
-                            # icon as per thematic setting
-
                             if len(device_value):
+                                print "*************************** device_value - ", type(device_value), device_value
+                                print "*************************** service_type - ", type(service_type), service_type
+                                print "*************************** th_ranges - ", type(th_ranges), th_ranges
+                                print "*************************** th_icon_settings - ", type(th_icon_settings), th_icon_settings
+                                print "*************************** svc_type - ", type(svc_type), svc_type
+
                                 # live polled value of device service
-                                value = ast.literal_eval(str(device_value))
                                 try:
-                                    if (float(tc.range1_start)) <= (float(value)) <= (float(tc.range1_end)):
-                                        icon_settings = eval(ts.icon_settings)
-                                        for icon_setting in icon_settings:
-                                            if 'icon_settings1' in icon_setting.keys():
-                                                image_partial = str(icon_setting['icon_settings1'])
+                                    value = ast.literal_eval(str(device_value))
                                 except Exception as e:
-                                    logger.info(e.message)
+                                    value = device_value
+                                    logger.info("Value can't be converted. Exception: ", e.message)
+                                print "*************************** value 2 - ", type(value), value
 
-                                try:
-                                    if (float(tc.range2_start)) <= (float(value)) <= (float(tc.range2_end)):
-                                        icon_settings = eval(ts.icon_settings)
-                                        for icon_setting in icon_settings:
-                                            if 'icon_settings2' in icon_setting.keys():
-                                                image_partial = str(icon_setting['icon_settings2'])
-                                except Exception as e:
-                                    logger.info(e.message)
+                                # get appropriate icon
+                                if service_type == "normal":
+                                    print "*************************** Enter in normal - ", type(value), value
+                                    if svc_type == "INT":
+                                        print "*************************** svc_type 2 - ", type(svc_type), svc_type
+                                        icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
+                                    elif svc_type == "STR":
+                                        icon = self.get_icon_for_string_service(th_ranges, th_icon_settings, value)
+                                    else:
+                                        pass
+                                elif service_type == "ping":
+                                    print "*************************** Enter in ping - ", type(value), value
+                                    icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
+                                else:
+                                    pass
+                                print "*************************** icon - ", type(icon), icon
 
-                                try:
-                                    if (float(tc.range3_start)) <= (float(value)) <= (float(tc.range3_end)):
-                                        icon_settings = eval(ts.icon_settings)
-                                        for icon_setting in icon_settings:
-                                            if 'icon_settings3' in icon_setting.keys():
-                                                image_partial = str(icon_setting['icon_settings3'])
-                                except Exception as e:
-                                    logger.info(e.message)
-
-                                try:
-                                    if (float(tc.range4_start)) <= (float(value)) <= (float(tc.range4_end)):
-                                        icon_settings = eval(ts.icon_settings)
-                                        for icon_setting in icon_settings:
-                                            if 'icon_settings4' in icon_setting.keys():
-                                                image_partial = str(icon_setting['icon_settings4'])
-                                except Exception as e:
-                                    logger.info(e.message)
-
-                                try:
-                                    if (float(tc.range5_start)) <= (float(value)) <= (float(tc.range5_end)):
-                                        icon_settings = eval(ts.icon_settings)
-                                        for icon_setting in icon_settings:
-                                            if 'icon_settings5' in icon_setting.keys():
-                                                image_partial = str(icon_setting['icon_settings5'])
-                                except Exception as e:
-                                    logger.info(e.message)
-
-                                try:
-                                    if (float(tc.range6_start)) <= (float(value)) <= (float(tc.range6_end)):
-                                        icon_settings = eval(ts.icon_settings)
-                                        for icon_setting in icon_settings:
-                                            if 'icon_settings6' in icon_setting.keys():
-                                                image_partial = str(icon_setting['icon_settings6'])
-                                except Exception as e:
-                                    logger.info(e.message)
-
-                                try:
-                                    if (float(tc.range7_start)) <= (float(value)) <= (float(tc.range7_end)):
-                                        icon_settings = eval(ts.icon_settings)
-                                        for icon_setting in icon_settings:
-                                            if 'icon_settings7' in icon_setting.keys():
-                                                image_partial = str(icon_setting['icon_settings7'])
-                                except Exception as e:
-                                    logger.info(e.message)
-
-                                try:
-                                    if (float(tc.range8_start)) <= (float(value)) <= (float(tc.range8_end)):
-                                        icon_settings = eval(ts.icon_settings)
-                                        for icon_setting in icon_settings:
-                                            if 'icon_settings8' in icon_setting.keys():
-                                                image_partial = str(icon_setting['icon_settings8'])
-                                except Exception as e:
-                                    logger.info(e.message)
-
-                                try:
-                                    if (float(tc.range9_start)) <= (float(value)) <= (float(tc.range9_end)):
-                                        icon_settings = eval(ts.icon_settings)
-                                        for icon_setting in icon_settings:
-                                            if 'icon_settings9' in icon_setting.keys():
-                                                image_partial = str(icon_setting['icon_settings9'])
-                                except Exception as e:
-                                    logger.info(e.message)
-
-                                try:
-                                    if (float(tc.range10_start)) <= (float(value)) <= (float(tc.range10_end)):
-                                        icon_settings = eval(ts.icon_settings)
-                                        for icon_setting in icon_settings:
-                                            if 'icon_settings10' in icon_setting.keys():
-                                                image_partial = str(icon_setting['icon_settings10'])
-                                except Exception as e:
-                                    logger.info(e.message)
-                            # image url
-                            img_url = "media/" + str(image_partial) if "uploaded" in str(image_partial) else "static/img/" + str(image_partial)
-
-                            # icon to be send in response
-                            icon = str(img_url)
                         except Exception as e:
-                            icon = str(image_partial)
-                            logger.info(e.message)
+                            logger.info("Icon not exist. Exception: ", e.message)
 
                         result['data']['devices'][device_name]['icon'] = icon
-
                         # if response_dict doesn't have key 'success'
                         if not response_dict.get('success'):
                             logger.info(response_dict.get('error_message'))
@@ -1286,6 +1023,231 @@ class BulkFetchLPDataApi(View):
             result['message'] = e.message
             logger.info(e)
         return HttpResponse(json.dumps(result))
+
+    def get_icon_for_numeric_service(self, th_ranges=None, th_icon_settings=None, value=None):
+        # default image to be loaded
+        image_partial = "icons/mobilephonetower10.png"
+
+        # icon
+        icon = str(image_partial)
+        print "***************************** th_ranges - ", th_ranges
+        print "***************************** th_icon_settings - ", th_icon_settings
+        print "***************************** value - ", type(value), value
+
+        # fetching number from string for e.g. 45 from 'ab4cd5e'
+        if not isinstance(value, float):
+            value = ''.join(x for x in str(value) if x.isdigit())
+
+        if th_ranges and th_icon_settings and len(str(value)):
+            print "************************ Enter here - "
+            try:
+                if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
+                    print "***************************** range 1 - "
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings1' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings1'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if (float(th_ranges.range2_start)) <= (float(value)) <= (float(th_ranges.range2_end)):
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings2' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings2'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if (float(th_ranges.range3_start)) <= (float(value)) <= (float(th_ranges.range3_end)):
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings3' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings3'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if (float(th_ranges.range4_start)) <= (float(value)) <= (float(th_ranges.range4_end)):
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings4' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings4'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if (float(th_ranges.range5_start)) <= (float(value)) <= (float(th_ranges.range5_end)):
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings5' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings5'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if (float(th_ranges.range6_start)) <= (float(value)) <= (float(th_ranges.range6_end)):
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings6' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings6'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if (float(th_ranges.range7_start)) <= (float(value)) <= (float(th_ranges.range7_end)):
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings7' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings7'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if (float(th_ranges.range8_start)) <= (float(value)) <= (float(th_ranges.range8_end)):
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings8' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings8'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if (float(th_ranges.range9_start)) <= (float(value)) <= (float(th_ranges.range9_end)):
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings9' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings9'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if (float(th_ranges.range10_start)) <= (float(value)) <= (float(th_ranges.range10_end)):
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings10' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings10'])
+            except Exception as e:
+                logger.info(e.message)
+
+        # image url
+        img_url = "media/" + str(image_partial) if "uploaded" in str(
+            image_partial) else "static/img/" + str(image_partial)
+
+        # icon to be send in response
+        icon = str(img_url)
+
+        print "************************************ icon1 - ", icon
+
+        return icon
+
+    def get_icon_for_string_service(self, th_ranges=None, th_icon_settings=None, value=None):
+        # default image to be loaded
+        image_partial = "icons/mobilephonetower10.png"
+
+        # icon
+        icon = str(image_partial)
+
+        if th_ranges and th_icon_settings and value:
+            try:
+                if str(value).lower().strip() == str(th_ranges.range1_start).lower().strip():
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings1' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings1'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if str(value).lower().strip() == str(th_ranges.range2_start).lower().strip():
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings2' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings2'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if str(value).lower().strip() == str(th_ranges.range3_start).lower().strip():
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings3' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings3'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if str(value).lower().strip() == str(th_ranges.range4_start).lower().strip():
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings4' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings4'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if str(value).lower().strip() == str(th_ranges.range5_start).lower().strip():
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings5' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings5'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if str(value).lower().strip() == str(th_ranges.range6_start).lower().strip():
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings6' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings6'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if str(value).lower().strip() == str(th_ranges.range7_start).lower().strip():
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings7' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings7'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if str(value).lower().strip() == str(th_ranges.range8_start).lower().strip():
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings8' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings8'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if str(value).lower().strip() == str(th_ranges.range9_start).lower().strip():
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings9' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings9'])
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                if str(value).lower().strip() == str(th_ranges.range10_start).lower().strip():
+                    icon_settings = eval(th_icon_settings)
+                    for icon_setting in icon_settings:
+                        if 'icon_settings10' in icon_setting.keys():
+                            image_partial = str(icon_setting['icon_settings10'])
+            except Exception as e:
+                logger.info(e.message)
+
+        # image url
+        img_url = "media/" + str(image_partial) if "uploaded" in str(
+            image_partial) else "static/img/" + str(image_partial)
+
+        # icon to be send in response
+        icon = str(img_url)
+
+        return icon
 
 
 def nocout_live_polling(q, site):
@@ -1311,7 +1273,3 @@ def nocout_live_polling(q, site):
             q.put(response_dict)
     except Exception as e:
         logger.info(e.message)
-
-
-
-

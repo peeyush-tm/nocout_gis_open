@@ -558,15 +558,15 @@ def device_soft_delete(request, device_id, new_parent_id):
     try:
         # new_parent: new parent device for associated devices
         new_parent = Device.objects.get(id=new_parent_id)
-    except:
-        logger.info("No new device parent exist.")
+    except Exception as e:
+        logger.info("No new device parent exist. Exception: ", e.message)
 
     # fetching all child devices of device which needs to be deleted
     child_devices = ""
     try:
         child_devices = Device.objects.filter(parent_id=device_id)
-    except:
-        logger.info("No child device exists.")
+    except Exception as e:
+        logger.info("No child device exists. Exception: ", e.message)
 
     # assign new parent device to all child devices
     if new_parent:
@@ -574,6 +574,59 @@ def device_soft_delete(request, device_id, new_parent_id):
             for dv in child_devices:
                 dv.parent = new_parent
                 dv.save()
+
+    # delete device from nms core if it is already added there(nms core)
+    if device.host_state != "Disable" and device.is_added_to_nms != 0:
+        # get 'agent_tag' from DeviceType model
+        agent_tag = ""
+        try:
+            agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
+        except Exception as e:
+            logger.info("Device has no device type. Exception: ", e.message)
+
+        device_data = {'mode': 'deletehost', 'device_name': device.device_name}
+
+        # site to which configuration needs to be pushed
+        master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
+
+        # url for nocout.py
+        # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+        # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                master_site.password,
+                                                                master_site.machine.machine_ip,
+                                                                master_site.web_service_port,
+                                                                master_site.name)
+        # sending post request to device app for deleting device to nms core
+        try:
+            r = requests.post(url, data=device_data)
+        except Exception as e:
+            result['message'] = "<i class=\"fa fa-times red-dot\"></i> Something wrong with 'Machine IP' or 'Web Service Port'."
+            return json.dumps({'result': result})
+
+        # converting string in 'r' to dictionary
+        try:
+            response_dict = ast.literal_eval(r.text)
+        except Exception as e:
+            result['message'] = "<i class=\"fa fa-times red-dot\"></i> Something wrong with site 'Username' or 'Password'."
+            return json.dumps({'result': result})
+
+        if r:
+            result['data'] = device_data
+            result['success'] = 1
+            if response_dict['error_code'] is not None:
+                result['message'] = "<i class=\"fa fa-times red-dot\"></i> ", response_dict['error_message'].capitalize()
+            else:
+                result['message'] = "<i class=\"fa fa-check green-dot\"></i> ", str(response_dict['message'].capitalize())
+                # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
+                device.is_added_to_nms = 0
+                # set 'is_monitored_on_nms' to 1 if service is added successfully
+                device.is_monitored_on_nms = 0
+                device.save()
+                # remove device services from 'service_deviceserviceconfiguration' table
+                DeviceServiceConfiguration.objects.filter(device_name=device.device_name).delete()
+                # remove device ping service from 'service_devicepingconfiguration' table
+                DevicePingConfiguration.objects.filter(device_name=device.device_name).delete()
 
     # setting 'is_deleted' bit of device to 1 which means device is soft deleted
     if device.is_deleted == 0:
@@ -584,6 +637,96 @@ def device_soft_delete(request, device_id, new_parent_id):
     else:
         result['success'] = 0
         result['message'] = "Already soft deleted."
+    return json.dumps({'result': result})
+
+
+# generate content for soft delete popup form
+@dajaxice_register(method='GET')
+def device_restore_form(request, value):
+    """ Get data to show on device restore form
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        value (int): device id
+
+    Returns:
+        result (dictionary): dictionary contains device and it's children's values
+                            i.e. {
+                                    'message': 'Successfully render form.',
+                                    'data': {
+                                        'meta': '',
+                                        'objects': {
+                                            'alias': u'091HYDE030007077237_NE',
+                                            'id': 6247L,
+                                            'name': u'1'
+                                        }
+                                    },
+                                    'success': 1
+                                }
+
+    """
+    # device which needs to be deleted
+    device = Device.objects.get(id=value)
+
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Failed to render form correctly."
+    result['data']['meta'] = ''
+    result['data']['objects'] = {}
+    if device:
+        result['data']['objects']['id'] = device.id
+        result['data']['objects']['name'] = device.device_name
+        result['data']['objects']['alias'] = device.device_alias
+        result['success'] = 1
+        result['message'] = "Successfully render form."
+    return json.dumps({'result': result})
+
+
+@dajaxice_register(method='GET')
+def device_restore(request, device_id):
+    """ Restoring device to device inventory
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        device_id (int): device id
+
+    Returns:
+        result (dictionary): dictionary contains device and it's children's values
+                            i.e. {
+                                    'message': 'Successfully restored device (091HYDE030007077237_NE).',
+                                    'data': {
+                                        'meta': '',
+                                        'objects': {
+                                            'device_name': u'1',
+                                            'device_id': u'6247'
+                                        }
+                                    },
+                                    'success': 1
+                                }
+
+    """
+    # device: device which needs to be deleted
+    device = Device.objects.get(id=device_id)
+    # result: data dictionary send in ajax response
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "No data exists."
+    result['data']['meta'] = ''
+    result['data']['objects'] = {}
+    result['data']['objects']['device_id'] = device_id
+    result['data']['objects']['device_name'] = device.device_name
+
+    # setting 'is_deleted' bit of device to 0 which means device is restored
+    if device.is_deleted == 1:
+        device.is_deleted = 0
+        device.save()
+        result['success'] = 1
+        result['message'] = "Successfully restored device ({}).".format(device.device_alias)
+    else:
+        result['success'] = 0
+        result['message'] = "Already restored."
     return json.dumps({'result': result})
 
 
@@ -847,11 +990,11 @@ def add_device_to_nms_core(request, device_id, ping_data):
                        'ping_levels': ping_levels,
                        'parent_device_name': None,
                        'mac': str(device.mac_address),
-                       'device_type' : device_type_name
+                       'device_type': device_type_name
                        }
 
         device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
-        if len(device_tech) and device_tech[0].name.lower() in ['pmp','wimax']:
+        if len(device_tech) and device_tech[0].name.lower() in ['pmp', 'wimax']:
             if device.substation_set.exists():
                 try:
                     substation = device.substation_set.get()
@@ -864,14 +1007,16 @@ def add_device_to_nms_core(request, device_id, ping_data):
                             'parent_device_name': parent_device.device_name
                         })
                     else:
-                        result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+                        result['message'] = "<i class=\"fa fa-check red-dot\"></i> Could not find BS for this SS in the topology"
                         return json.dumps({'result': result})
                 except Exception as e:
-                    result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+                    result['message'] = "<i class=\"fa fa-check red-dot\"></i> Could not find BS for this SS in the topology"
                     logger.exception(e.message)
                     return json.dumps({'result': result})
+
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
+
         # url for nocout.py
         # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
         # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -882,13 +1027,25 @@ def add_device_to_nms_core(request, device_id, ping_data):
                                                                 master_site.name)
 
         # encoding service_data
-        encoded_data = urllib.urlencode(device_data)
+        try:
+            encoded_data = urllib.urlencode(device_data)
+        except Exception as e:
+            result['message'] = "Something wrong with url encoding."
+            return json.dumps({'result': result})
 
         # sending post request to nocout device app to add single service at a time
-        r = requests.post(url, data=encoded_data)
+        try:
+            r = requests.post(url, data=encoded_data)
+        except Exception as e:
+            result['message'] = "<i class=\"fa fa-times red-dot\"></i> Something wrong with 'Machine IP' or 'Web Service Port'."
+            return json.dumps({'result': result})
 
         # converting string in 'r' to dictionary
-        response_dict = ast.literal_eval(r.text)
+        try:
+            response_dict = ast.literal_eval(r.text)
+        except Exception as e:
+            result['message'] = "<i class=\"fa fa-times red-dot\"></i> Something wrong with site 'Username' or 'Password'."
+            return json.dumps({'result': result})
 
         if r:
             result['data'] = device_data
@@ -909,12 +1066,12 @@ def add_device_to_nms_core(request, device_id, ping_data):
                 dpc.pl_critical = ping_data['pl_critical']
                 dpc.save()
 
-                result['message'] = "<i class=\"fa fa-check green-dot\"></i>Device added successfully."
+                result['message'] = "<i class=\"fa fa-check green-dot\"></i> Device added successfully."
                 # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
                 device.is_added_to_nms = 1
                 device.save()
     else:
-        result['message'] = "Device state is disabled. First enable it than add it to nms core."
+        result['message'] = "<i class=\"fa fa-check red-dot\"></i> Device state is disabled. First enable it than add it to nms core."
     return json.dumps({'result': result})
 
 
@@ -980,10 +1137,10 @@ def edit_device_in_nms_core(request, device_id):
                             'parent_device_name': parent_device.device_name
                         })
                     else:
-                        result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+                        result['message'] = "<i class=\"fa fa-check red-dot\"></i> Could not find BS for this SS in the topology"
                         return json.dumps({'result': result})
                 except Exception as e:
-                    result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+                    result['message'] = "<i class=\"fa fa-check red-dot\"></i> Could not find BS for this SS in the topology"
                     logger.exception(e.message)
                     return json.dumps({'result': result})
         # site to which configuration needs to be pushed
@@ -1009,12 +1166,12 @@ def edit_device_in_nms_core(request, device_id):
             if response_dict['error_code'] is not None:
                 result['message'] = response_dict['error_message'].capitalize()
             else:
-                result['message'] = "<i class=\"fa fa-check green-dot\"></i>Device edited successfully."
+                result['message'] = "<i class=\"fa fa-check green-dot\"></i> Device edited successfully."
                 # set 'is_added_to_nms' to 1 after device successfully edited in nocout nms core
                 device.is_added_to_nms = 1
                 device.save()
     else:
-        result['message'] = "<i class=\"fa fa-info text-info\"></i>Device state is disabled. First enable it than add it to nms core."
+        result['message'] = "<i class=\"fa fa-info text-info\"></i> Device state is disabled. First enable it than add it to nms core."
     return json.dumps({'result': result})
 
 
@@ -1049,9 +1206,9 @@ def delete_device_from_nms_core(request, device_id):
         agent_tag = ""
         try:
             agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
-        except:
-            logger.info("Device has no device type.")
-        device_data = {'mode': 'deletehost', 'device_name': device.device_name,}
+        except Exception as e:
+            logger.info("Device has no device type. Exception: ", e.message)
+        device_data = {'mode': 'deletehost', 'device_name': device.device_name}
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
         # url for nocout.py
@@ -1063,16 +1220,26 @@ def delete_device_from_nms_core(request, device_id):
                                                                 master_site.web_service_port,
                                                                 master_site.name)
         # sending post request to device app for deleting device to nms core
-        r = requests.post(url, data=device_data)
+        try:
+            r = requests.post(url, data=device_data)
+        except Exception as e:
+            result['message'] = "<i class=\"fa fa-times red-dot\"></i> Something wrong with 'Machine IP' or 'Web Service Port'."
+            return json.dumps({'result': result})
+
         # converting string in 'r' to dictionary
-        response_dict = ast.literal_eval(r.text)
+        try:
+            response_dict = ast.literal_eval(r.text)
+        except Exception as e:
+            result['message'] = "<i class=\"fa fa-times red-dot\"></i> Something wrong with site 'Username' or 'Password'."
+            return json.dumps({'result': result})
+
         if r:
             result['data'] = device_data
             result['success'] = 1
             if response_dict['error_code'] is not None:
-                result['message'] = response_dict['error_message'].capitalize()
+                result['message'] = "<i class=\"fa fa-times red-dot\"></i> ", response_dict['error_message'].capitalize()
             else:
-                result['message'] = response_dict['message'].capitalize()
+                result['message'] = "<i class=\"fa fa-check green-dot\"></i> ", str(response_dict['message'].capitalize())
                 # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
                 device.is_added_to_nms = 0
                 # set 'is_monitored_on_nms' to 1 if service is added successfully
@@ -1080,8 +1247,11 @@ def delete_device_from_nms_core(request, device_id):
                 device.save()
                 # remove device services from 'service_deviceserviceconfiguration' table
                 DeviceServiceConfiguration.objects.filter(device_name=device.device_name).delete()
+                # remove device ping service from 'service_devicepingconfiguration' table
+                DevicePingConfiguration.objects.filter(device_name=device.device_name).delete()
+
     else:
-        result['message'] = "Device state is disabled. First enable it than add it to nms core."
+        result['message'] = "<i class=\"fa fa-times red-dot\"></i> Device state is disabled. First enable it than add it to nms core."
     return json.dumps({'result': result})
 
 
@@ -1131,7 +1301,7 @@ def sync_device_with_nms_core(request):
             result['data'] = device_data
             result['success'] = 1
             result['message'] = response_dict['message'].capitalize()
-    except:
+    except Exception as e:
         result['message'] = "Failed to sync device and services."
         logger.info(r.text)
     return json.dumps({'result': result})

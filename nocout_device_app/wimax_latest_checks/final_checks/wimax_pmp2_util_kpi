@@ -1,0 +1,16 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+
+def check_wimax_pmp2_util_kpi_arguments(params):
+    description, host,settings = params
+    args =''
+    args += ' %s' % host
+    return args
+
+active_check_info['wimax_pmp2_util_kpi'] = {
+    "command_line"        : '$USER1$/check_wimax_pmp2_util_kpi $ARG1$',
+    "argument_function"   : check_wimax_pmp2_util_kpi_arguments,
+    "service_description" : lambda params: "%s" % params[0],
+    "has_perfdata"        :True,
+}
+

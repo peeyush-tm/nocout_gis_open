@@ -1,0 +1,95 @@
+#!/usr/bin/python
+"""
+Link Ethernet Poller script.
+
+This is part of device application. 
+Poller script determines the all ports ethernet status. 
+poller script takes the snmp value of OID .1.3.6.1.2.1.2.2.1.8 from snmp agent of device at specific interval.
+all ports status are sent to device application 
+
+"""
+
+# ####################################################################################
+# Function : check_rici_line_1_port_state
+#
+#Parameters: info (SNMP output ) _no_params ( No Parameters)
+#
+#Output: plugin output ,service state,performance data
+#####################################################################################
+
+
+def port_state_value(st):
+    """
+        utility function for mapping the interget OID value to string status.
+    """
+    names = {'1': 'up', '2': 'down'}
+    return names.get(st)
+
+
+def check_rici_line_1_port_state(item, _no_params, info):
+    """
+                check_rici_line_1_port_state function calculates the link ethernet status of the port 
+
+                Args:
+                        item (str) Specific item on SNMP output on which we want to filter results
+                
+                Kwargs:
+                        params (tuple) Check parameters for critical and warning state of service
+
+                Returns:
+                        state (int) :
+                                        0 : OK
+                                        1 : Warning
+                                        2: Critical
+                    3: unknown
+                        infotext(string):
+                                        plugin output
+                                        Example : [Management_Port_on_Odu]up [Radio_Interface]up
+
+                        performance_data  (list):
+                                        performance data
+                                        Example: Management_Port_on_Odu=up;;;; Radio_Interface=up;;;;
+                        Raises:
+                                ValueError ,Exception
+    """
+    state = 3
+    infotext = "unknown_value"
+    port_state_list = []
+    port1_string = "logical_port1"
+    port2_string = "logical_port2"
+    port_state = None
+    try:
+	if info[0][0]:
+		port1_state = info[0][0]
+		port2_state = info[0][1]
+		port1_state = port_state_value(str(port1_state))
+		port2_state = port_state_value(str(port2_state))
+		if port1_state == None:
+			port1_state = "unknown_port_state"
+		if port2_state == None:
+			port2_state = "unknown_port_state"
+		port_state_list.append((port1_string, port1_state))
+		port_state_list.append((port2_string, port2_state))
+		state = 0
+		if int(info[0][0]) == 2 or int(info[0][1]) == 2:
+			state =2
+                infotext = "[%s] %s [%s] %s"  % (port1_string, port1_state,port2_string, port2_state)
+
+    except ValueError :	
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext, port_state_list)
+
+
+check_info["rici_line_1_port_state"] = {
+    'check_function': check_rici_line_1_port_state,
+    'service_description': 'rici_line_1_port_state',
+    'has_perfdata': True,
+    'snmp_info': ( ".1.3.6.1.2.1.2.2.1.8", ["31","32"] ),
+}
+
+#####################################################################
+#snmp OID corrosponding to ports ethernet status.
+######################################################################

@@ -1,11 +1,8 @@
 from operator import itemgetter
-from actstream import action
-from django.contrib.auth.decorators import permission_required
 from django.db.models import Q
 import json
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin
 from django.core.urlresolvers import reverse_lazy
@@ -15,14 +12,16 @@ from nocout.utils.util import DictDiffer
 from user_group.models import UserGroup, Organization
 from forms import UserGroupForm
 from user_profile.models import UserProfile
+from nocout.mixins.permissions import PermissionsRequiredMixin
 
 
-class UserGroupList(ListView):
+class UserGroupList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to list User Group
     """
     model = UserGroup
     template_name = 'user_group/ug_list.html'
+    required_permissions = ('user_group.view_usergroup',)
 
     def get_context_data(self, **kwargs):
         """
@@ -41,11 +40,12 @@ class UserGroupList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class UserGroupListingTable(BaseDatatableView):
+class UserGroupListingTable(PermissionsRequiredMixin, BaseDatatableView):
     """
     Class Based View for the User Group data table rendering.
     """
     model = UserGroup
+    required_permissions = ('user_group.view_usergroup',)
     columns = ['name', 'alias', 'users__first_name','organization__name']
     order_columns = ['name', 'alias','organization__name']
 
@@ -173,14 +173,16 @@ class UserGroupListingTable(BaseDatatableView):
                }
         return ret
 
-class UserGroupDetail(DetailView):
+class UserGroupDetail(PermissionsRequiredMixin, DetailView):
     """
     Class Based View to render the User Group Detail Information.
     """
     model = UserGroup
+    required_permissions = ('user_group.view_usergroup',)
     template_name = 'user_group/ug_detail.html'
 
-class UserGroupCreate(CreateView):
+
+class UserGroupCreate(PermissionsRequiredMixin, CreateView):
     """
     Class Based View to Create the User Group.
     """
@@ -188,26 +190,17 @@ class UserGroupCreate(CreateView):
     model = UserGroup
     form_class = UserGroupForm
     success_url = reverse_lazy('ug_list')
-
-    @method_decorator(permission_required('user_group.add_usergroup', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(UserGroupCreate, self).dispatch(*args, **kwargs)
+    required_permissions = ('user_group.add_usergroup',)
 
     def form_valid(self, form):
         """
         to log the user activity after submitting the form.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb=u'created', action_object=self.object)
-        except Exception as activity:
-            pass
         return super(ModelFormMixin, self).form_valid(form)
 
-class UserGroupUpdate(UpdateView):
+
+class UserGroupUpdate(PermissionsRequiredMixin, UpdateView):
     """
     Class Based View to Update the User Group.
     """
@@ -215,68 +208,22 @@ class UserGroupUpdate(UpdateView):
     model = UserGroup
     form_class = UserGroupForm
     success_url = reverse_lazy('ug_list')
+    required_permissions = ('user_group.change_usergroup',)
 
 
-    @method_decorator(permission_required('user_group.change_usergroup', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(UserGroupUpdate, self).dispatch(*args, **kwargs)
-
-    def form_valid(self, form):
-        """
-        To log the user activity after submitting.
-        """
-        #IntegrityError: (1062, "Duplicate entry 'test_group4' for key 'name'")
-        #TODO:Disable the edit of name from the UI (name should be unique)
-        self.object = form.save()
-
-        #User Activity log
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of User group : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-
-            self.object=form.save()
-            try:
-                action.send( self.request.user, verb=verb_string )
-            except Exception as activity:
-                pass
-
-        return super(ModelFormMixin, self).form_valid(form)
-
-
-
-class UserGroupDelete(DeleteView):
+class UserGroupDelete(PermissionsRequiredMixin, DeleteView):
     """
     Class based View to delete the User Group
     """
     model = UserGroup
     template_name = 'user_group/ug_delete.html'
     success_url = reverse_lazy('ug_list')
-
-    @method_decorator(permission_required('user_group.delete_usergroup', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch method restricted with the permissions.
-        """
-        return super(UserGroupDelete, self).dispatch(*args, **kwargs)
+    required_permissions = ('user_group.delete_usergroup',)
 
     def delete(self, request, *args, **kwargs):
         """
         The delete function to overriding to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting user group: %s'%(self.get_object().name))
-        except Exception as activity:
-            pass
         return super(UserGroupDelete, self).delete(request, *args, **kwargs)
 
 def user_group_users_render_wrt_organization(request):

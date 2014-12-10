@@ -1,0 +1,115 @@
+{% extends "inventory/inventory.html" %}
+{% block content %}
+    <style type="text/css">
+        #user_profile table tr td:first-child {
+            font-weight: bold;
+        }
+        #user_profile table tr td {
+            font-weight: normal;
+        }
+    </style>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i> Base Station - {{ object.name }}</h4>
+        </div>
+        <div class="box-body">
+            <div id="user_profile" class="col-md-6 col-md-offset-3">
+                <table class="table table-hover table-bordered">
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Alias </td>
+                        <td>{{ object.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Organization </td>
+                        <td>{{ object.organization }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Latitude </td>
+                        <td>{{ object.latitude }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Longitude </td>
+                        <td>{{ object.longitude }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Building_height </td>
+                        <td>{{ object.building_height }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Tower_height </td>
+                        <td>{{ object.tower_height }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Country </td>
+                        <td>{{ object.country }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station State </td>
+                        <td>{{ object.state }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station City </td>
+                        <td>{{ object.city }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Address </td>
+                        <td>{{ object.address }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station site id </td>
+                        <td>{{ object.bs_site_id }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station site type </td>
+                        <td>{{ object.bs_site_type }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Switch </td>
+                        <td>{{ object.bs_switch }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Type </td>
+                        <td>{{ object.bs_type }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station bh bso </td>
+                        <td>{{ object.bh_bso }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station hssu used </td>
+                        <td>{{ object.hssu_used }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Infra provider </td>
+                        <td>{{ object.infra_provider }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Gps type </td>
+                        <td>{{ object.gps_type }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Tag1 </td>
+                        <td>{{ object.tag1 }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Tag2 </td>
+                        <td>{{ object.tag2 }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Description </td>
+                        <td>{{ object.description }}</td>
+                    </tr>
+                </table>
+                {% if object.backhaul %}
+                    {% url 'gis-wizard-backhaul-detail' bs_pk=object.id pk=object.backhaul_id as next_url %}
+                    <br><button type="reset" class="btn btn-success" onclick="window.location.replace('{{ next_url }}')"><i class="fa fa-pencil"></i>Next (Backhaul)</button>
+                {% else %}
+                    {% url 'gis-wizard-sector-list' bs_pk=object.id as next_url %}
+                    <br><h3>No backhaul for this base station.</h3>
+                    <button type="reset" class="btn btn-success" onclick="window.location.replace('{{ next_url }}')"><i class="fa fa-pencil"></i>Next (Sectors List)</button>
+                {% endif %}
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}

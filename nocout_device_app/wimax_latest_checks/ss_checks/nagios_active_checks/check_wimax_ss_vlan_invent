@@ -8,6 +8,31 @@ import sys
 from telnetlib import Telnet
 import socket
 
+import mysql.connector
+
+def mysql_conn():
+        db = mysql.connector.connect(
+                        user='root',
+                        host='10.133.12.163',
+                        password='root',
+                        database='nocout_24_09_14',
+                        port=3200)
+
+        return db
+
+def extract_host_from_wimax_topology(ss_host_mac):
+        query = """
+        select device_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+        db = mysql_conn()
+        cur = db.cursor()
+        cur.execute(query)
+        data = cur.fetchall()
+        cur.close()
+
+        return data
+
+
+
 def connection_telnet(host_name, port,mac):
 	"""
     	Connects to a socket, checks for the WELCOME-MSG and closes the
@@ -58,10 +83,18 @@ def main():
     
     """
     exit_value =3
+    ss_vlan = '' 
     try:
-	host_name = sys.argv[1]
-	mac= sys.argv[2]
-        connection_telnet(host_name, 23,mac)
+	mac= sys.argv[1]
+	host_name = extract_host_from_wimax_topology(mac)
+	if host_name[0][0]:
+        	connection_telnet(host_name[0][0], 23,mac)
+	else:
+		ss_vlan_state = "UNKNOWN"
+		plugin_message += "wimax_ss_vlan %s - %s " % (ss_vlan_state,ss_vlan)
+		sys.stdout.write(plugin_message)  
+		sys.exit((exit_value))
+	
     except socket.error, message:
         sys.stdout.write("Could not open socket: ") 
         sys.exit((exit_value))

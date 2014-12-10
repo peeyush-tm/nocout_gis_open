@@ -51,12 +51,12 @@ def get_latest_event_entry(db_type=None, db=None, site=None,table_name=None):
         	entry = cursor.fetchone()
         	try:
             		time = entry[0]
+        		cursor.close()
 			return time
         	except TypeError, e:
             		cursor.close()
            		return time
 
-        	cursor.close()
 
 	return time
 
@@ -78,7 +78,6 @@ def service_perf_data_live_query(db,site,log_split):
         """
 
 	# Adding check for not storing data for check_mk service
-	print log_split
 	if log_split[5] == 'Check_MK':
 		return
 	if log_split[0] == "CURRENT SERVICE STATE":
@@ -92,11 +91,13 @@ def service_perf_data_live_query(db,site,log_split):
 		description=log_split[9]
 	# calculating the perf_data for all services except for inventory services as they do not have performance data
 	if 'invent' not in log_split[5]:
-		query = "GET services\nColumns: service_perf_data\nFilter: service_description ~ %s\nFilter: host_name = %s\n" % ( 
-		log_split[5],log_split[4]) 
+		query = "GET services\nColumns: service_last_state_change service_perf_data\n"+\
+			"Filter: service_description ~ %s\nFilter: host_name = %s\n" % (log_split[5],log_split[4]) 
 		perf_data= utility_module.get_from_socket(site, query)
-		perf_data = utility_module.get_threshold(perf_data)
-		
+                age1 =int(perf_data.split(';',1)[0])
+                perf_data1 = perf_data.split(';',1)[-1]
+		perf_data = utility_module.get_threshold(perf_data1)
+	     	
 		for ds in perf_data.iterkeys():
 			# Adding check for not storing data for rtmin and rtmax data source of ping services
 			if ds =='rtmin' or ds == 'rtmax':
@@ -110,7 +111,7 @@ def service_perf_data_live_query(db,site,log_split):
 					description=description,min_value=0,max_value=0,avg_value =0,current_value=cur,
 					data_source = ds,warning_threshold=war,
 					critical_threshold =crit ,check_timestamp = int(log_split[1]),
-					ip_address=host_ip,service_name=log_split[5],site_name=site)
+					ip_address=host_ip,service_name=log_split[5],site_name=site,age=age1)
 			if log_split[5] == 'PING':
 				serv_event_dict.update({"service_name":"ping"})
                 		mongo_module.mongo_db_insert(db,serv_event_dict,"host_event")
@@ -125,7 +126,9 @@ def service_perf_data_live_query(db,site,log_split):
 		log_split[5],log_split[4]) 
 		try:
 			perf_data= utility_module.get_from_socket(site, query)
-			current_value = perf_data.split('- ')[1].strip('\n')
+			age1 =int(perf_data.split(';',1)[0])
+                	perf_data1 = perf_data.split(';',1)[-1]
+			current_value = perf_data1.split('- ')[1].strip('\n')
 		except:
 			current_value =None
 		serv_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[8],
@@ -133,7 +136,7 @@ def service_perf_data_live_query(db,site,log_split):
 				current_value=current_value,
 				data_source = log_split[5],warning_threshold=0,
 				critical_threshold =0 ,check_timestamp = int(log_split[1]),
-				ip_address=host_ip,service_name=log_split[5],site_name=site)
+				ip_address=host_ip,service_name=log_split[5],site_name=site,age=age1)
 		mongo_module.mongo_db_insert(db,serv_event_dict,"serv_event")
 
 
@@ -156,9 +159,11 @@ def network_perf_data_live_query(db,site,log_split):
         """
 
 
-	query = "GET hosts\nColumns: host_perf_data\nFilter: host_name = %s\n" % (log_split[4]) 
+	query = "GET hosts\nColumns: host_perf_data host_last_state_change\nFilter: host_name = %s\nOutputFormat: python\n" % (log_split[4]) 
 	perf_data= utility_module.get_from_socket(site, query)
-	host_perf_data = utility_module.get_threshold(perf_data)
+	age1 =int(perf_data.split(';',1)[0])
+        perf_data1 = perf_data.split(';',1)[-1]
+	host_perf_data = utility_module.get_threshold(perf_data1)
 	if log_split[0] == "CURRENT HOST STATE":
 		host_ip = log_split[11]
 		description=log_split[10]
@@ -180,7 +185,7 @@ def network_perf_data_live_query(db,site,log_split):
                 		description=description,min_value=0,max_value=0,avg_value=0,current_value=host_cur,
 				data_source=ds,warning_threshold=host_war,critical_threshold=host_crit,
 				check_timestamp=int(log_split[1]),
-				ip_address=host_ip,site_name=site,service_name='ping')
+				ip_address=host_ip,site_name=site,service_name='ping',age=age1)
 		# mongo db insertion
                 mongo_module.mongo_db_insert(db,host_event_dict,"host_event")
 

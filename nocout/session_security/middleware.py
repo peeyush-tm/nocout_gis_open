@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from django import http
 from django.contrib.auth import logout
 from django.core.urlresolvers import reverse
+from django.utils import timezone
 
 from .utils import get_last_activity, set_last_activity
 from .settings import EXPIRE_AFTER, PASSIVE_URLS
@@ -37,6 +38,18 @@ class SessionSecurityMiddleware(object):
         if hasattr(request.user, 'visitor'):
             key_from_cookie = request.session.session_key
             session_key_in_visitor_db = request.user.visitor.session_key
+
+            # If user has not changed password after first time login
+            # And trying to access closing pop-up dialog then logout
+            is_first_time_login = False if request.user.userprofile.password_changed_at else True
+            if request.path != '/user/change_password/' and is_first_time_login:
+                logout(request)
+
+            if request.user.userprofile.password_changed_at:
+                password_changed_at = request.user.userprofile.password_changed_at
+                is_password_expired = password_changed_at + timedelta(days=30) < timezone.now()
+                if is_password_expired and request.path != '/user/change_password/':
+                    logout(request)
 
             if session_key_in_visitor_db != key_from_cookie and request.path != '/sm/dialog_action/':
                 logout(request)

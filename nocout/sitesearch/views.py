@@ -2,10 +2,13 @@ import logging
 from inventory.models import BaseStation, Customer, Antenna
 from device.models import DeviceType, DeviceVendor, DeviceTechnology, City
 from random import randint, uniform
+import datetime
+from nocout.settings import DEBUG
 
-from nocout.utils.util import format_value
+from nocout.utils.util import format_value, cache_for
 
 logger = logging.getLogger(__name__)
+
 
 def tech_marker_url(device_type, techno, ms=True):
     """
@@ -45,6 +48,7 @@ def tech_marker_url_master(techno, master=True):
     else:
         return tech_marker_url_slave(techno)
 
+
 def tech_marker_url_slave(techno):
     """
 
@@ -60,87 +64,6 @@ def tech_marker_url_slave(techno):
     else:
         return "static/img/marker/icon4_small.png"
 
-def prepare_basestation(base_station, bs_city_name, bs_state_name):
-    try:
-        base_station_info = [
-            {
-                'name': 'name',
-                'title': 'Base-Station Name',
-                'show': 0,
-                'value': base_station.name if base_station.name else 'N/A'
-            },
-            {
-                'name': 'alias',
-                'title': 'Base-Station Name',
-                'show': 1,
-                'value': base_station.alias if base_station.name else 'N/A'
-            },
-            {
-                'name': 'bs_site_id',
-                'title': 'BS Site Name',
-                'show': 1,
-                'value': base_station.bs_site_id if base_station.bs_site_id else 'N/A'
-            },
-            {
-                'name': 'bs_site_type',
-                'title': 'BS Site Type',
-                'show': 1,
-                'value': base_station.bs_site_type if base_station.bs_site_type else 'N/A'
-            },
-            {
-                'name': 'building_height',
-                'title': 'Building Height',
-                'show': 1,
-                'value': base_station.building_height if base_station.building_height else 'N/A'
-            },
-            {
-                'name': 'tower_height',
-                'title': 'Tower Height',
-                'show': 1,
-                'value': base_station.tower_height if base_station.tower_height else 'N/A'
-            },
-            {
-                'name': 'bs_city',
-                'title': 'City',
-                'show': 1,
-                'value': bs_city_name
-            },
-            {
-                'name': 'bs_state',
-                'title': 'State',
-                'show': 1,
-                'value': bs_state_name
-            },
-            {
-                'name': 'bs_address',
-                'title': 'Address',
-                'show': 1,
-                'value': base_station.address if base_station.address else 'N/A'
-            },
-            {
-                'name': 'bs_gps_type',
-                'title': 'GPS Type',
-                'show': 1,
-                'value': base_station.gps_type if base_station.gps_type else 'N/A'
-            },
-            {
-                'name':'bs_type',
-                'title':'BS Type',
-                'show':1,
-                'value': base_station.bs_type if base_station.bs_type else 'N/A'
-            },
-            {
-                'name':'bs_switch',
-                'title':'BS Switch',
-                'show':1,
-                'value': base_station.bs_switch.ip_address
-                        if (base_station and base_station.bs_switch and base_station.bs_switch.ip_address)
-                        else 'N/A'
-            }
-        ]
-        return base_station_info
-    except Exception as no_basestation:
-        return []
 
 def prepare_raw_basestation(base_station=None):
     """
@@ -226,65 +149,6 @@ def prepare_raw_basestation(base_station=None):
         return base_station_info
     return []
 
-def prepare_backhaul(backhaul):
-    try:
-        backhaul_info = [
-            {
-                'name': 'bh_configured_on',
-                'title': 'BH Configured On',
-                'show': 1,
-                'value': backhaul.bh_configured_on.device_name if backhaul else 'N/A'
-            },
-            {
-                'name': 'bh_capacity',
-                'title': 'BH Capacity',
-                'show': 1,
-                'value': backhaul.bh_capacity if backhaul else 'N/A'
-            },
-            {
-                'name': 'bh_type',
-                'title': 'BH Type',
-                'show': 1,
-                'value': backhaul.bh_type if backhaul else 'N/A'
-            },
-            {
-                'name': 'pe_ip',
-                'title': 'PE IP',
-                'show': 1,
-                'value': backhaul.pe_ip if backhaul else 'N/A'
-            },
-            {
-                'name': 'bh_connectivity',
-                'title': 'BH Connectivity',
-                'show': 1,
-                'value': backhaul.bh_connectivity if backhaul else 'N/A'
-            },
-            {
-                'name': 'aggregation_switch',
-                'title': 'Aggregation Switch',
-                'show': 1,
-                'value': backhaul.aggregator.ip_address
-                        if (backhaul and  backhaul.aggregator)
-                        else 'N/A'
-            },
-            {
-                'name': 'aggregation_port',
-                'title': 'Aggregation Port',
-                'show': 1,
-                'value': str(backhaul.aggregator_port_name) + "/" + str(backhaul.aggregator_port)
-                        if (backhaul and  backhaul.aggregator_port_name and backhaul.aggregator_port)
-                        else 'N/A'
-            },
-            {
-                'name': 'bs_converter_ip',
-                'title': 'BS Converter IP',
-                'show': 1,
-                'value': str(backhaul.bh_switch.ip_address) if (backhaul and backhaul.bh_switch) else 'N/A'
-            }
-        ]
-        return backhaul_info
-    except Exception as no_backhaul:
-        return []
 
 def prepare_raw_backhaul(backhaul):
     """
@@ -292,9 +156,81 @@ def prepare_raw_backhaul(backhaul):
     :param backhaul:
     :return:
     """
+
     backhaul_info = []
+    backhaul_list = []
+
     if backhaul:
+        # for backhaul in backhaul:
         if backhaul['BHID']:
+            # if backhaul['BHID'] not in backhaul_list:
+                # Save BHID in list to reduce redundancy
+                # backhaul_list.append(backhaul['BHID'])
+                # Create backhaul info dict list
+            # backhaul_info.append({
+            #     "id" : backhaul['BHID'],
+            #     "name" : format_value(backhaul['BH_NAME']),
+            #     "alias" : format_value(backhaul['BH_ALIAS']),
+            #     "bh_ip" : format_value(backhaul['BHCONF_IP']),
+            #     "bh_tech" : format_value(backhaul['BHTECH']),
+            #     "markerUrl": tech_marker_url(backhaul['BHTYPEID'],backhaul['BHTECH']),
+            #     'info': [
+            #         {
+            #             'name': 'bh_configured_on',
+            #             'title': 'BH Configured On',
+            #             'show': 1,
+            #             'value': format_value(backhaul['BHCONF_IP'])
+            #         },
+            #         {
+            #             'name': 'bh_capacity',
+            #             'title': 'BH Capacity',
+            #             'show': 1,
+            #             'value': format_value(backhaul['BH_CAPACITY'])
+            #         },
+            #         {
+            #             'name': 'bh_tech',
+            #             'title': 'BH Technology',
+            #             'show': 1,
+            #             'value': format_value(backhaul['BHTECH'])
+            #         },
+            #         {
+            #             'name': 'bh_type',
+            #             'title': 'BH Type',
+            #             'show': 1,
+            #             'value': format_value(backhaul['BH_TYPE'])
+            #         },
+            #         {
+            #             'name': 'pe_ip',
+            #             'title': 'PE IP',
+            #             'show': 1,
+            #             'value': format_value(backhaul['BH_PE_IP'])
+            #         },
+            #         {
+            #             'name': 'bh_connectivity',
+            #             'title': 'BH Connectivity',
+            #             'show': 1,
+            #             'value': format_value(backhaul['BH_CONNECTIVITY'])
+            #         },
+            #         {
+            #             'name': 'aggregation_switch',
+            #             'title': 'Aggregation Switch',
+            #             'show': 1,
+            #             'value': format_value(backhaul['AGGR_IP'])
+            #         },
+            #         {
+            #             'name': 'pop',
+            #             'title': 'POP IP',
+            #             'show': 1,
+            #             'value': format_value(backhaul['POP_IP'])
+            #         },
+            #         {
+            #             'name': 'bs_converter_ip',
+            #             'title': 'BS Converter IP',
+            #             'show': 1,
+            #             'value': format_value(backhaul['BSCONV_IP'])
+            #         }           
+            #     ]
+            # })
             backhaul_info = [
                 {
                     'name': 'bh_configured_on',
@@ -307,6 +243,12 @@ def prepare_raw_backhaul(backhaul):
                     'title': 'BH Capacity',
                     'show': 1,
                     'value': format_value(backhaul['BH_CAPACITY'])
+                },
+                {
+                    'name': 'bh_tech',
+                    'title': 'BH Technology',
+                    'show': 1,
+                    'value': format_value(backhaul['BHTECH'])
                 },
                 {
                     'name': 'bh_type',
@@ -345,6 +287,9 @@ def prepare_raw_backhaul(backhaul):
                     'value': format_value(backhaul['BSCONV_IP'])
                 }
             ]
+            # else:
+            #     break
+
     return backhaul_info
 
 def prepare_raw_sector(basestations):
@@ -359,8 +304,8 @@ def prepare_raw_sector(basestations):
     sector_ss_vendor = []
     sector_ss_technology = []
     sector_configured_on_devices = []
+    sector_planned_frequencies = []
     circuit_ids = []
-
     if basestations:
         for sector in basestations:
             if sector['SECTOR_ID']:
@@ -368,10 +313,14 @@ def prepare_raw_sector(basestations):
                     sector_list.append(sector['SECTOR_ID'])
                     #prepare sector vendor list
                     sector_ss_vendor.append(format_value(format_this=sector['SECTOR_VENDOR']))
-                    #prepare technology list
+                    #prepare Sector technology list
                     sector_ss_technology.append(format_value(format_this=sector['SECTOR_TECH']))
+                    #prepare BH technology list
+                    # sector_ss_technology.append(format_value(format_this=sector['BHTECH']))
                     #prepare sector configured on device
                     sector_configured_on_devices.append(format_value(format_this=sector['SECTOR_CONF_ON_IP']))
+                    #prepare BH configured on device
+                    # sector_configured_on_devices.append(format_value(format_this=sector['BHCONF_IP']))
 
                     #circuit id prepare ?
                     substation, circuit_id, substation_ip = prepare_raw_ss_result(basestations=basestations,
@@ -385,7 +334,8 @@ def prepare_raw_sector(basestations):
                                                                  )
                     )
                     circuit_ids += circuit_id
-                    sector_configured_on_devices+=substation_ip
+                    sector_configured_on_devices += substation_ip
+                    sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_FREQUENCY']))
                     sector_info.append(
                         {
                             "color": format_value(format_this=sector['SECTOR_FREQUENCY_COLOR'],type_of='frequency_color'),
@@ -393,6 +343,7 @@ def prepare_raw_sector(basestations):
                             #sector.cell_radius if sector.cell_radius else 0,
                             'azimuth_angle': format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE'],type_of='integer'),
                             'beam_width': format_value(format_this=sector['SECTOR_BEAM_WIDTH'],type_of='integer'),
+                            'planned_frequency': format_value(format_this=sector['SECTOR_FREQUENCY']),
                             # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
                             'orientation': format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'],type_of='antenna'),
                             'technology':format_value(format_this=sector['SECTOR_TECH']),
@@ -400,6 +351,7 @@ def prepare_raw_sector(basestations):
                             'sector_configured_on': format_value(format_this=sector['SECTOR_CONF_ON_IP']),
                             'sector_configured_on_device': format_value(format_this=sector['SECTOR_CONF_ON']),
                             'circuit_id':None,
+                            'sector_id' : format_value(format_this=sector['SECTOR_ID']),
                             'antenna_height': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'], type_of='random'),
                             "markerUrl": format_value(format_this=sector['SECTOR_GMAP_ICON'], type_of='icon'),
                             'device_info':[
@@ -408,7 +360,7 @@ def prepare_raw_sector(basestations):
                                  "name": "device_name",
                                  "title": "Device Name",
                                  "show": 1,
-                                 "value": format_value(format_this=sector['SECTOR_CONF_ON'])
+                                 "value": format_value(format_this=sector['SECTOR_CONF_ON_IP'])
                              },
                              {
                                  "name": "device_id",
@@ -477,7 +429,7 @@ def prepare_raw_sector(basestations):
                             'sub_station': substation
                         }
                     )
-    return (sector_info, sector_ss_vendor, sector_ss_technology, sector_configured_on_devices, circuit_ids)
+    return (sector_info, sector_ss_vendor, sector_ss_technology, sector_configured_on_devices, circuit_ids, sector_planned_frequencies)
 
 def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
     """
@@ -655,6 +607,7 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
 
     return (substation_info, circuit_ids, substation_ip)
 
+
 def prepare_raw_bs_result(bs_result=None):
     """
 
@@ -665,6 +618,7 @@ def prepare_raw_bs_result(bs_result=None):
     sector_ss_technology = []
     sector_configured_on_devices = []
     circuit_ids = []
+    sector_planned_frequencies = []
 
     if bs_result:
 
@@ -684,21 +638,24 @@ def prepare_raw_bs_result(bs_result=None):
                 'state': base_station['BSSTATE'],
                 'param': {
                     'base_station': prepare_raw_basestation(base_station=base_station),
-                    'backhual': prepare_raw_backhaul(backhaul=base_station)
+                    'backhual' : prepare_raw_backhaul(backhaul=base_station)
                 }
             },
         }
+
         sector_info, \
         sector_ss_vendor, \
         sector_ss_technology, \
         sector_configured_on_devices, \
-        circuit_ids = prepare_raw_sector(basestations=bs_result)
+        circuit_ids, \
+        sector_planned_frequencies = prepare_raw_sector(basestations=bs_result)
 
         base_station_info['data']['param']['sector'] = sector_info
         base_station_info['sector_ss_vendor'] = "|".join(sector_ss_vendor)
         base_station_info['sector_ss_technology'] = "|".join(sector_ss_technology)
         base_station_info['sector_configured_on_devices'] = "|".join(sector_configured_on_devices)
         base_station_info['circuit_ids'] = "|".join(circuit_ids)
+        base_station_info['sector_planned_frequencies'] = "|".join(sector_planned_frequencies)
 
         return base_station_info
 

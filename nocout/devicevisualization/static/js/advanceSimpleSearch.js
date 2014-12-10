@@ -62,6 +62,10 @@ function advanceSearchMainClass() {
                     ge.getFeatures().removeChild(child);
                 }
             }
+        } else if(window.location.pathname.indexOf("white_background") > -1) {
+            ccpl_map.getLayersByName("Search Layer")[0].removeAllFeatures();
+            ccpl_map.getLayersByName("Search Layer")[0].setVisibility(false);
+            // whiteMapClass.searchMarkerLayer.removeAllFeatures();
         } else {
             var markers = this.searchMarkers;
             for(var i=0; i< markers.length; i++) {
@@ -75,63 +79,85 @@ function advanceSearchMainClass() {
 
     //Here we create a new Marker based on the lat, long and show it on the map.
     this.applyIconToSearchedResult = function(lat, long, iconUrl) {
+
         var searchMarker, searchedInputs, isOnlyStateorCityIsApplied= false;
         search_marker_count++;
 
         if(window.location.pathname.indexOf("googleEarth") > -1) {
-            // Create BS placemark.
-            var searchMarker = ge.createPlacemark('search_'+search_marker_count);
+
+            iconUrl = iconUrl ? iconUrl : base_url+'/static/img/icons/bs_bounce.png';
+            // Create the placemark.
+            searchMarker = ge.createPlacemark('search_'+search_marker_count);
+
             // Define a custom icon.
-            var search_icon = ge.createIcon('');
-            search_icon.setHref(base_url+"/"+iconUrl);
-            var search_style = ge.createStyle(''); //create a new style
-            search_style.getIconStyle().setIcon(search_icon); //apply the icon to the style
-            searchMarker.setStyleSelector(search_style); //apply the style to the placemark         
+            var icon = ge.createIcon('');
+            icon.setHref(iconUrl);
             
-            // Set the placemark's location.
-            var search_point = ge.createPoint('');
-            search_point.setLatitude(lat);
-            search_point.setLongitude(long);
-            searchMarker.setGeometry(search_point);
-            // Add the placemark to Earth.
-            ge.getFeatures().appendChild(searchMarker);
+            var style = ge.createStyle(''); //create a new style
+            style.getIconStyle().setIcon(icon); //apply the icon to the style
+            searchMarker.setStyleSelector(style); //apply the style to the searchMarker
+            style.getIconStyle().setScale(4.0);
 
-            var gex = new GEarthExtensions(ge);
-            gex.fx.bounce(searchMarker, {
-                duration: 300,
-                repeat: 0,
-                dampen: 0.3
-            });
+            // Set the searchMarker's location.  
+            var point = ge.createPoint('');
+            point.setLatitude(lat);
+            point.setLongitude(long);
+            searchMarker.setGeometry(point);
 
+
+            // gexInstance.fx.bounce(searchMarker, {
+            //     duration: 300,
+            //     repeat: 0,
+            //     dampen: 0.3
+            // });
+
+
+        } else if (window.location.pathname.indexOf("white_background") > -1) {
+            
+            ccpl_map.getLayersByName("Search Layer")[0].setVisibility(true);
+
+            //create a new marker
+            searchMarker = whiteMapClass.createOpenLayerVectorMarker(undefined, undefined, long, lat, {icon: icon});
+            if(searchMarker) {
+                if(iconUrl) {
+                    //set icon from global object
+                    searchMarker.attributes.icon = iconUrl;
+                } else {
+                    //set icon from global object
+                    searchMarker.attributes.icon = this.constants.search_bs_icon;
+                }
+            }
+            
+            // whiteMapClass.searchMarkerLayer.display(true);
+            ccpl_map.getLayersByName("Search Layer")[0].addFeatures([searchMarker]);
+
+            // google.maps.event.addListener(searchMarker, 'click', function() {
+            //     if(iconUrl) {
+            //         google.maps.event.trigger(markersMasterObj['SS'][String(lat)+long], 'click');
+            //     } else {
+            //         google.maps.event.trigger(markersMasterObj['BS'][String(lat)+long], 'click');
+            //     }
+            // });
         } else {
 
             //create a new marker
             searchMarker = new google.maps.Marker({position: new google.maps.LatLng(lat, long), zIndex: 999});
 
-            //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
-            searchedInputs= this.getInputArray();
-
-            if(searchedInputs['BS Name'].length || searchedInputs['Circuit Id'].length || searchedInputs['IP'].length) {
-                isOnlyStateorCityIsApplied= false;
+            if(iconUrl) {
+                //set icon from global object
+                searchMarker.setIcon(iconUrl);  
+            } else {
+                //set icon from global object
+                searchMarker.setIcon(this.constants.search_bs_icon);
             }
-
-            if(!isOnlyStateorCityIsApplied) {
-                    if(iconUrl) {
-                        //set icon from global object
-                        searchMarker.setIcon(iconUrl);  
-                    } else {
-                        //set icon from global object
-                        searchMarker.setIcon(this.constants.search_bs_icon);
-                    }
-                    //set animation to marker bounce
-                    if(searchMarker.getAnimation() != null) {
-                        searchMarker.setAnimation(null);
-                    } else {
-                        searchMarker.setAnimation(google.maps.Animation.BOUNCE);
-                    }
-                    //show the marker on map.
-                    searchMarker.setMap(mapInstance);
+            //set animation to marker bounce
+            if(searchMarker.getAnimation() != null) {
+                searchMarker.setAnimation(null);
+            } else {
+                searchMarker.setAnimation(google.maps.Animation.BOUNCE);
             }
+            //show the marker on map.
+            // searchMarker.setMap(mapInstance);
 
             google.maps.event.addListener(searchMarker, 'click', function() {
                 if(iconUrl) {
@@ -169,6 +195,7 @@ function advanceSearchMainClass() {
                 if($.trim(currentItem["element_type"]== "multiselect")) {
                     if(currentItem["values"].length) {
                         formElement+= '<select multiple class="multiSelectBox col-md-12" id="search_'+currentItem.key+'">';
+                        
                         for(j=0; j< currentItem["values"].length; j++) {
                             if(currentItem["key"]=== "sector_configured_on") {
                                 var sector_config_val = currentItem["values"][j]["value"];
@@ -376,18 +403,21 @@ function advanceSearchMainClass() {
         var bounds = "";
         if(window.location.pathname.indexOf("googleEarth") > -1) {
             
+        } else if(window.location.pathname.indexOf("white_background") > -1) {
+            bounds = new OpenLayers.Bounds();
         } else {
             bounds= new google.maps.LatLngBounds();
         }
 
         function extendBound(lat, lon) {
             if(window.location.pathname.indexOf("googleEarth") > -1) {
-
                   var lookAt = ge.createLookAt('');
                   lookAt.setLatitude(lat);
                   lookAt.setLongitude(lon);
-                  lookAt.setRange(8000);
+                  lookAt.setRange(ZoomToAlt(13));
                   ge.getView().setAbstractView(lookAt);
+            } else if(window.location.pathname.indexOf("white_background") > -1) {
+                bounds.extend(new OpenLayers.LonLat(lon, lat));
             } else {
 
                 bounds.extend(new google.maps.LatLng(lat, lon));
@@ -405,6 +435,8 @@ function advanceSearchMainClass() {
 
                 if(window.location.pathname.indexOf("googleEarth") > -1) {
 
+                } else if(window.location.pathname.indexOf("white_background") > -1) {
+                    bounds.extend(new OpenLayers.LonLat(devicesInMap[i]['data']['lon'], devicesInMap[i]['data']['lat']));
                 } else {
                     bounds.extend(new google.maps.LatLng(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']));
                 }
@@ -425,7 +457,7 @@ function advanceSearchMainClass() {
         if(this.searchedCircuitLines.length) {
             for(var i=0; i< this.searchedCircuitLines.length; i++) {
                 if(window.location.pathname.indexOf("googleEarth") > -1) {
-
+                } else if(window.location.pathname.indexOf("white_background") > -1) {
                 } else {
                     bounds.extend(this.searchedCircuitLines[i]);
                 }
@@ -438,7 +470,11 @@ function advanceSearchMainClass() {
                 this.removeSearchMarkers();
             }
             if(window.location.pathname.indexOf("googleEarth") > -1) {
-                
+            } else if(window.location.pathname.indexOf("white_background") > -1) {
+                ccpl_map.zoomToExtent(bounds);
+                // if(mapInstance.getZoom() >= this.constants.maxZoomLevel) {
+                //     mapInstance.setZoom(this.constants.maxZoomLevel);
+                // }
             } else {
                 mapInstance.fitBounds(bounds);
                 if(mapInstance.getZoom() >= this.constants.maxZoomLevel) {
@@ -477,6 +513,7 @@ function advanceSearchMainClass() {
         this.filtersList= [];
         this.appliedSearch= [];
         this.searchMarkers= [];
+        searchMarkers_global = [];
         this.searchedCircuitLines= [];
         this.search_marker_count = 0;
     };

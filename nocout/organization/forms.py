@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 import re
 from django import forms
 from .models import Organization
+from nocout.utils import logged_in_user_organizations
 from django.forms.util import ErrorList
 import logging
 logger = logging.getLogger(__name__)
@@ -10,14 +11,24 @@ logger = logging.getLogger(__name__)
 class OrganizationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
 
-        try:
-            if 'instance' in kwargs:
-                self.id = kwargs['instance'].id
-        except Exception as e:
-            logger.info(e.message)
+        self.request = kwargs.pop('request') # Also used in logged_in_user_organizations below
+        if 'instance' in kwargs and kwargs['instance']:
+            self.id = kwargs['instance'].id
+        else:
+            self.id = None
 
         super(OrganizationForm, self).__init__(*args, **kwargs)
-        self.fields['parent'].empty_label = 'Select'
+        if self.id and self.id == self.request.user.userprofile.organization.id:
+            # User can not update self organization's parent.
+            self.fields.pop('parent')
+        else:
+            # Organization's parent is required but can not be set to self.
+            self.fields['parent'].empty_label = 'Select'
+            self.fields['parent'].required = True
+            parent_queryset = self.fields['parent'].queryset.filter(id__in=logged_in_user_organizations(self))
+            if self.id:
+                self.fields['parent'].queryset = parent_queryset.exclude(id=self.id)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):

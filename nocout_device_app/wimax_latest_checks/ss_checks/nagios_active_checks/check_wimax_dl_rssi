@@ -10,6 +10,31 @@ import socket
 import json
 import os
 
+import mysql.connector
+
+def mysql_conn():
+        db = mysql.connector.connect(
+                        user='root',
+                        host='10.133.12.163',
+                        password='root',
+                        database='nocout_24_09_14',
+                        port=3200)
+
+        return db
+
+
+def extract_host_from_wimax_topology(ss_host_mac):
+        query = """
+        select device_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+        db = mysql_conn()
+        cur = db.cursor()
+        cur.execute(query)
+        data = cur.fetchall()
+        cur.close()
+
+        return data
+
+
 
 def get_from_socket(socket_ip,socket_port, query):
     """
@@ -33,7 +58,7 @@ def get_from_socket(socket_ip,socket_port, query):
     return output
 
 
-def live_query_dl_rssi(host_name, socket_ip,socket_port,mac,warn,crit):
+def live_query_dl_rssi(socket_ip,socket_port,mac,warn,crit):
 	"""
     	Connects to a socket, checks for the WELCOME-MSG and closes the
     	connection.
@@ -45,26 +70,28 @@ def live_query_dl_rssi(host_name, socket_ip,socket_port,mac,warn,crit):
 	dl_rssi_state = "UNKNOWN"
 	dl_rssi = ''
 	perf = ''
+	host_name = extract_host_from_wimax_topology(mac)
 	try:
-		query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                        "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("bs_show_ss",host_name)
-        	query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
-		if query_output[0][0]:
-			plugin_output = str(query_output[0][0].split('OK-')[1])
-			plugin_output = [entry for entry in plugin_output.split(' ')]
-			entry=filter(lambda x: mac in x, plugin_output)
-			dl_rssi = int(entry[0].split('=')[1].split(',')[0])
-			if dl_rssi:
-				perf += 'dl_rssi' + "=%s" %(dl_rssi) 
-				if dl_rssi < crit:
-					dl_rssi_state = "CRITICAL"
-					exit_value  = 2 
-                                elif dl_rssi > crit and dl_rssi < warn:
-					dl_rssi_state = "WARNING"
-					exit_value = 1
-				else:
-					dl_rssi_state = "OK"
-					exit_value = 0	
+		if host_name[0][0]:
+			query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                        	"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("wimax_topology",host_name[0][0])
+        		query_output = json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
+			if query_output[0][0]:
+				plugin_output = str(query_output[0][0].split('OK-')[1])
+				plugin_output = [entry for entry in plugin_output.split(' ')]
+				entry=filter(lambda x: mac in x, plugin_output)
+				dl_rssi = int(entry[0].split('=')[1].split(',')[0])
+				if dl_rssi:
+					perf += 'dl_rssi' + "=%s" %(dl_rssi) 
+					if dl_rssi < crit:
+						dl_rssi_state = "CRITICAL"
+						exit_value  = 2 
+                                	elif dl_rssi > crit and dl_rssi < warn:
+						dl_rssi_state = "WARNING"
+						exit_value = 1
+					else:
+						dl_rssi_state = "OK"
+						exit_value = 0	
 	except:
 		dl_rssi_state = "UNKNOWN1"
 
@@ -75,13 +102,12 @@ def live_query_dl_rssi(host_name, socket_ip,socket_port,mac,warn,crit):
 def main():
     exit_value =3
     try:
-	host_name = sys.argv[1]
-	socket_ip = sys.argv[2]
-	socket_port = sys.argv[3]
-	mac = sys.argv[4]
-	warn = sys.argv[5]
-	crit =sys.argv[6]
-        live_query_dl_rssi(host_name,socket_ip,int(socket_port),mac,int(warn),int(crit))
+	socket_ip = sys.argv[1]
+	socket_port = sys.argv[2]
+	mac = sys.argv[3]
+	warn = sys.argv[4]
+	crit =sys.argv[5]
+        live_query_dl_rssi(socket_ip,int(socket_port),mac,int(warn),int(crit))
     except socket.error, message:
         sys.stdout.write("Could not open socket: " + message) 
         sys.exit((exit_value))

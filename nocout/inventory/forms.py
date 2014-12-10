@@ -1,17 +1,22 @@
 import os
 from django.core.exceptions import ValidationError
 import re
+import ast
 from django import forms
+from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
 from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, \
-    GISInventoryBulkImport
+    GISInventoryBulkImport, PingThematicSettings
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
 from django.forms.util import ErrorList
-from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
+from device.models import Device
+from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, CircuitL2Report
 from django.utils.html import escape
+from django.forms.models import inlineformset_factory,  BaseInlineFormSet, modelformset_factory
+from nocout.utils import logged_in_user_organizations
 import logging
 logger = logging.getLogger(__name__)
 
@@ -144,6 +149,7 @@ class AntennaForm(forms.ModelForm):
     reflector = forms.TypedChoiceField(choices=REFLECTOR, required=False)
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(AntennaForm, self).__init__(*args, **kwargs)
         self.fields['height'].initial = 0
         self.fields['azimuth_angle'].initial = 0
@@ -156,6 +162,17 @@ class AntennaForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            '''
+            Checks if user is admin then organization field will be admin's organization & suborganization else
+            organization field will be user's organization only.
+            '''
+            organization = self.request.user.userprofile.organization
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -239,9 +256,14 @@ class BackhaulForm(forms.ModelForm):
 
     bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
     bh_connectivity = forms.TypedChoiceField(choices=BH_CONNECTIVITY, required=False)
-    dr_site = forms.TypedChoiceField(choices=DR_SITE, required=False)
+    dr_site = forms.TypedChoiceField(choices=DR_SITE, initial='No', required=False)
+    pe_hostname = forms.CharField(label='PE Hostname', required=False,
+            validators=[RegexValidator(regex=r'^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$',
+                message="Enter valid domain name.")]
+        )
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(BackhaulForm, self).__init__(*args, **kwargs)
         self.fields['bh_configured_on'].empty_label = 'Select'
         self.fields['bh_switch'].empty_label = 'Select'
@@ -249,11 +271,24 @@ class BackhaulForm(forms.ModelForm):
         self.fields['aggregator'].empty_label = 'Select'
         self.fields['bh_configured_on'].required = True
 
+        self.fields['bh_configured_on'].widget = forms.HiddenInput()
+        self.fields['bh_switch'].widget = forms.HiddenInput()
+        self.fields['pop'].widget = forms.HiddenInput()
+        self.fields['aggregator'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
+
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            request = self.request
+
+            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -338,31 +373,41 @@ class BaseStationForm(forms.ModelForm):
 
     bs_type = forms.TypedChoiceField(choices=BS_TYPE, required=False)
     bs_site_type = forms.TypedChoiceField(choices=BS_SITE_TYPE, required=False)
+    building_height = forms.FloatField(label='Building Height', required=True, initial=0, help_text='(mtr) Enter a number.',
+            validators=[MaxValueValidator(99), MinValueValidator(-1)])
+    tower_height = forms.FloatField(label='Tower Height', required=True, initial=0, help_text='(mtr) Enter a number.',
+            validators=[MaxValueValidator(99), MinValueValidator(-1)])
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(BaseStationForm, self).__init__(*args, **kwargs)
         self.fields['bs_switch'].empty_label = 'Select'
         self.fields['backhaul'].empty_label = 'Select'
         self.fields['country'].empty_label = 'Select'
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
-        self.fields['building_height'].initial = 0
-        self.fields['tower_height'].initial = 0
         self.fields['latitude'].required = True
         self.fields['longitude'].required = True
         self.fields['country'].required = True
-        self.fields['city'].required = True
-        self.fields['state'].required = True
-        self.fields['building_height'].required = True
-        self.fields['tower_height'].required = True
         self.fields['state'].required = True
         self.fields['city'].required = True
 
+        self.fields['bs_switch'].widget = forms.HiddenInput()
+        self.fields['backhaul'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
+
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            request = self.request
+
+            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -431,24 +476,45 @@ class SectorForm(forms.ModelForm):
         ('No', 'No')
     )
 
-    mrc = forms.TypedChoiceField(choices=MRC, required=False)
+    DR_SITE = (
+        ('', 'Select'),
+        ('Yes', 'Yes'),
+        ('No', 'No')
+    )
+
+    mrc = forms.TypedChoiceField(choices=MRC, initial='No', required=False)
+    dr_site = forms.TypedChoiceField(choices=DR_SITE, initial='No', required=False)
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(SectorForm, self).__init__(*args, **kwargs)
         self.fields['base_station'].empty_label = 'Select'
         self.fields['bs_technology'].empty_label = 'Select'
         self.fields['bs_technology'].required = True
         self.fields['sector_configured_on'].empty_label = 'Select'
+        self.fields['dr_configured_on'].empty_label = 'Select'
         self.fields['sector_configured_on_port'].empty_label = 'Select'
         self.fields['antenna'].empty_label = 'Select'
         self.fields['frequency'].empty_label = 'Select'
         self.fields['sector_id'].empty_label = True
 
+        self.fields['sector_configured_on'].widget = forms.HiddenInput()
+        self.fields['base_station'].widget = forms.HiddenInput()
+        self.fields['antenna'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
+
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            request = self.request
+
+            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -504,14 +570,15 @@ class SectorForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-        
-        
+
+
 #************************************* Customer ***************************************
 class CustomerForm(forms.ModelForm):
     """
         Class Based View Customer Model form to update and create.
     """
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(CustomerForm, self).__init__(*args, **kwargs)
 
         try:
@@ -519,6 +586,17 @@ class CustomerForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            '''
+            Checks if user is admin then organization field will be admin's organization & suborganization else
+            organization field will be user's organization only.
+            '''
+            organization = self.request.user.userprofile.organization
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = self.request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -568,8 +646,8 @@ class CustomerForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-        
-        
+
+
 #*********************************** Sub Station *************************************
 class SubStationForm(forms.ModelForm):
     """
@@ -586,12 +664,13 @@ class SubStationForm(forms.ModelForm):
     ETHERNET_EXTENDER = (
         ('', 'Select'),
         ('Yes', 'Yes'),
-        ('Yo', 'No')
+        ('No', 'No')
     )
 
     ethernet_extender = forms.TypedChoiceField(choices=ETHERNET_EXTENDER, required=False)
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request',None)
         super(SubStationForm, self).__init__(*args, **kwargs)
         self.fields['tower_height'].initial = 0
         self.fields['building_height'].initial = 0
@@ -610,11 +689,21 @@ class SubStationForm(forms.ModelForm):
         self.fields['longitude'].required = True
         self.fields['mac_address'].required = True
 
+        self.fields['device'].widget = forms.HiddenInput()
+        self.fields['antenna'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            request = self.request
+
+            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -670,8 +759,8 @@ class SubStationForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-        
-        
+
+
 #*********************************** Circuit ***************************************
 class CircuitForm(forms.ModelForm):
     """
@@ -682,17 +771,29 @@ class CircuitForm(forms.ModelForm):
                                          required=False, widget=forms.widgets.DateInput(format="%m/%d/%Y", attrs={'class': 'datepicker'}))
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(CircuitForm, self).__init__(*args, **kwargs)
         self.fields['sector'].empty_label = 'Select'
         self.fields['customer'].empty_label = 'Select'
         self.fields['sub_station'].empty_label = 'Select'
         self.fields['date_of_acceptance'].required = True
 
+        self.fields['sector'].widget = forms.HiddenInput()
+        self.fields['customer'].widget = forms.HiddenInput()
+        self.fields['sub_station'].widget = forms.HiddenInput()
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
+
+        if self.request is not None:
+            request = self.request
+
+            if request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                self.fields['organization'].queryset = request.user.userprofile.organization.get_descendants(include_self=True)
+            else:
+                self.fields['organization'].queryset = Organization.objects.filter(id=request.user.userprofile.organization.id)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -748,6 +849,74 @@ class CircuitForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+
+
+#******************************* Circuit L2 Reports Form **************************
+class CircuitL2ReportForm(forms.ModelForm):
+    """
+    Class Based View CircuitL2Report Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(CircuitL2ReportForm, self).__init__(*args, **kwargs)
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+            	if not(isinstance(field.widget, forms.widgets.CheckboxInput)):
+	                field.widget.attrs['class'] += ' tip-focus form-control'
+	                field.widget.attrs['data-toggle'] = 'tooltip'
+	                field.widget.attrs['data-placement'] = 'right'
+	                field.widget.attrs['title'] = field.help_text
+	                field.widget.attrs['style'] = 'padding:0px 12px;height:40px;'
+                else:
+                	field.widget.attrs['checked'] = "true"
+            else:
+            	if not(isinstance(field.widget, forms.widgets.CheckboxInput)):
+	                field.widget.attrs.update({'class': ' tip-focus form-control'})
+	                field.widget.attrs.update({'data-toggle': 'tooltip'})
+	                field.widget.attrs.update({'data-placement': 'right'})
+	                field.widget.attrs.update({'title': field.help_text})
+	                field.widget.attrs.update({'style' : 'padding:0px 12px;height:40px;'})
+                else:
+                	field.widget.attrs['checked'] = "true"
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = CircuitL2Report
+        exclude = ['added_on', 'user_id', 'circuit_id']
+
+    def clean_file_name(self):
+        IMPORT_FILE_TYPES = ['.xls', '.xlsx']
+        input_excel = self.cleaned_data.get('file_name')
+        extension = os.path.splitext(input_excel.name)[1]
+        if not (extension in IMPORT_FILE_TYPES):
+            raise ValidationError( u'%s is not the supported file. Please make sure your input file is an excel(.xls) file.' % extension )
+        else:
+            return input_excel
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = CircuitL2Report.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+
+        return name
 
 
 #*********************************** IconSettings ***************************************
@@ -813,8 +982,79 @@ class IconSettingsForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-        
-        
+
+#*********************************** ServiceThresholdConfiguration *****************************
+class ServiceThresholdConfigurationForm(forms.ModelForm):
+
+    """
+    Class Based View  Service Threshold Configuration Model form to update and create.
+    """
+    def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(ServiceThresholdConfigurationForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            field.widget.attrs.update({'style': 'width:20%'})
+            if name.endswith('start'):
+                field.widget.attrs.update({'placeholder': 'Start'})
+            else:
+                field.widget.attrs.update({'placeholder': 'End'})
+
+            field.widget.attrs.update({'class': 'form-control col-md-4'})
+        self.fields['service_type'].widget.attrs.update({'style': 'width:340px'})
+        #self.fields['service_type'].empty_label = 'Select'
+
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = ThresholdConfiguration
+        exclude = ('name', 'alias', 'live_polling_template')
+
+#*********************************** ServiceLivePollingSettings ********************************
+class ServiceLivePollingSettingsForm(forms.ModelForm):
+    """
+    Class Based View ServiceLivePollingSettings Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(ServiceLivePollingSettingsForm, self).__init__(*args, **kwargs)
+        self.fields['technology'].empty_label = 'Select'
+        self.fields['service'].empty_label = 'Select'
+        self.fields['data_source'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = LivePollingSettings
+        exclude = ('name', 'alias')
+
 #*********************************** LivePollingSettings ***************************************
 class LivePollingSettingsForm(forms.ModelForm):
     """
@@ -950,7 +1190,6 @@ class ThresholdConfigurationForm(forms.ModelForm):
         return self.cleaned_data
 
 
-
 #*********************************** LivePollingSettings ***************************************
 class ThematicSettingsForm(forms.ModelForm):
     """
@@ -1015,7 +1254,70 @@ class ThematicSettingsForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+#*********************************** Service Thematic Settings *************************
+class ServiceThematicSettingsForm(forms.ModelForm):
+    """
+    Class Based View Service Thematic Settings Model form to update and create.
+    """
+    def __init__(self, *args, **kwargs):
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
 
+        super(ServiceThematicSettingsForm, self).__init__(*args, **kwargs)
+        #self.fields['threshold_template'].empty_label = 'Select'
+        # if self.instance.pk:
+        #     self.fields['threshold_template'].widget.attrs['disabled'] = 'disabled'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12 form-control'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 form-control'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = ThematicSettings
+        exclude =['icon_settings', 'user_profile', 'threshold_template']
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = ThematicSettings.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
+
+    def clean(self):
+        """
+        Validations for thematic settings form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 #*********************************** Bulk Import ***************************************
 class GISInventoryBulkImportForm(forms.Form):
@@ -1101,3 +1403,320 @@ class GISInventoryBulkImportEditForm(forms.ModelForm):
         """
         model = GISInventoryBulkImport
         exclude = ['status', 'uploaded_by', 'added_on', 'modified_on', 'upload_status']
+
+
+#************************************** Ping Thematic Settings **********************************
+class PingThematicSettingsForm(forms.ModelForm):
+    """
+        Ping thematic settings form
+    """
+    # icon choices fetched from 'IconSettings' model
+    ICON_CHOICES = [('', 'Select')]
+    try:
+        ICON_CHOICES = [('', 'Select')] + [(icon.upload_image, icon.alias) for icon in IconSettings.objects.all()]
+    except Exception as e:
+        logger.info("No choices for icon. Exception: {}".format(e.message))
+
+    # services select menu choices
+    SERVICES = (
+        ('', 'Select'),
+        ('ping', 'Ping')
+    )
+
+    # data sources menu choices
+    DATA_SOURCES = (
+        ('', 'Select'),
+        ('pl', 'PL'),
+        ('rta', 'RTA')
+    )
+
+    # icon fields
+    icon_settings1 = forms.ChoiceField(label='Icon 1', choices=ICON_CHOICES, required=False)
+    icon_settings2 = forms.ChoiceField(label='Icon 2', choices=ICON_CHOICES, required=False)
+    icon_settings3 = forms.ChoiceField(label='Icon 3', choices=ICON_CHOICES, required=False)
+    icon_settings4 = forms.ChoiceField(label='Icon 4', choices=ICON_CHOICES, required=False)
+    icon_settings5 = forms.ChoiceField(label='Icon 5', choices=ICON_CHOICES, required=False)
+    icon_settings6 = forms.ChoiceField(label='Icon 6', choices=ICON_CHOICES, required=False)
+    icon_settings7 = forms.ChoiceField(label='Icon 7', choices=ICON_CHOICES, required=False)
+    icon_settings8 = forms.ChoiceField(label='Icon 8', choices=ICON_CHOICES, required=False)
+    icon_settings9 = forms.ChoiceField(label='Icon 9', choices=ICON_CHOICES, required=False)
+    icon_settings10 = forms.ChoiceField(label='Icon 10', choices=ICON_CHOICES, required=False)
+
+    # service field
+    service = forms.TypedChoiceField(choices=SERVICES, required=True)
+
+    # data source field
+    data_source = forms.TypedChoiceField(choices=DATA_SOURCES, required=True)
+
+    def __init__(self, *args, **kwargs):
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        super(PingThematicSettingsForm, self).__init__(*args, **kwargs)
+
+        # modify technology field initial option
+        self.fields['technology'].empty_label = 'Select'
+
+        # fetch default options for icon setting fields
+        icon_settings = ""
+        try:
+            icon_settings = PingThematicSettings.objects.get(id=self.id).icon_settings
+
+            # convert string into python list of dictionaries
+            icon_settings = ast.literal_eval(icon_settings)
+
+            # loop through list 'icon_settings' containing dictionaries for icon settings for all selected ranges
+            for ic_dict in icon_settings:
+                field, value = ic_dict.items()[0]
+                # setting initial value for a field
+                self.initial[field] = value
+
+        except Exception as e:
+            pass
+
+        for name, field in self.fields.items():
+
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = PingThematicSettings
+        exclude = ['icon_settings', 'user_profile']
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = ThematicSettings.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
+
+    def clean(self):
+        """
+        Validations for thematic settings form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
+
+
+#**************************************** GIS Wizard Forms ****************************************#
+
+class WizardBaseStationForm(BaseStationForm):
+    """
+    Class Based View Base Station Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(WizardBaseStationForm, self).__init__(*args, **kwargs)
+
+        self.fields.pop('backhaul')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = BaseStation
+        fields = ('alias', 'organization', 'backhaul', 'latitude', 'longitude', 'building_height', 'tower_height', 'country',
+            'state', 'city', 'address', 'bs_site_id', 'bs_site_type', 'bs_switch', 'bs_type', 'bh_bso', 'hssu_used',
+            'infra_provider', 'gps_type', 'tag1', 'tag2', 'description',
+        )
+
+
+class WizardBackhaulForm(BackhaulForm):
+    """
+    Class Based View Backhaul Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(WizardBackhaulForm, self).__init__(*args, **kwargs)
+
+        self.fields.pop('dr_site')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = Backhaul
+        fields = ('organization', 'bh_configured_on', 'bh_port_name', 'bh_port', 'bh_type', 'bh_switch',
+                'switch_port_name', 'switch_port', 'pop', 'pop_port_name', 'pop_port', 'aggregator',
+                'aggregator_port_name', 'aggregator_port', 'pe_hostname', 'pe_ip', 'bh_connectivity', 'bh_circuit_id',
+                'bh_capacity', 'ttsl_circuit_id', 'dr_site',
+        )
+
+
+class WizardSectorForm(SectorForm):
+    """
+    Class Based View Sector Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.technology = kwargs.pop('technology')
+        super(WizardSectorForm, self).__init__(*args, **kwargs)
+
+        if self.technology == 'P2P':
+            self.fields['sector_configured_on'].label = 'Near End IP'
+
+        self.fields.pop('organization')
+        self.fields.pop('base_station')
+        self.fields.pop('bs_technology')
+        self.fields.pop('antenna')
+
+        if self.technology == 'P2P':
+            self.fields.pop('sector_id')
+
+        if self.technology != 'WiMAX':
+            self.fields.pop('sector_configured_on_port')
+            self.fields.pop('dr_site')
+            self.fields.pop('mrc')
+
+        if self.technology != 'PMP':
+            self.fields.pop('rf_bandwidth')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = Sector
+        fields = ('sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
+
+    def clean_sector_id(self):
+        """
+        Sector ID: unique validation.
+        """
+        sector_id = self.cleaned_data['sector_id']
+        sector_ids = Sector.objects.filter(sector_id=sector_id)
+        try:
+            if self.id:
+                sector_ids = sector_ids.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if sector_ids.count() > 0:
+            raise ValidationError('This sector_id is already in use.')
+        return sector_id
+
+
+class WizardAntennaForm(AntennaForm):
+    """
+    Class Based View Antenna Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.technology = kwargs.pop('technology')
+
+        super(WizardAntennaForm, self).__init__(*args, **kwargs)
+
+        # Organization is used from base station.
+        self.fields.pop('organization')
+
+        if self.technology == 'P2P':
+            self.fields.pop('tilt')
+            self.fields.pop('gain')
+            self.fields.pop('beam_width')
+            self.fields.pop('azimuth_angle')
+            self.fields.pop('reflector')
+            self.fields.pop('splitter_installed')
+            self.fields.pop('sync_splitter_used')
+            self.fields.pop('make_of_antenna')
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = Antenna
+        fields = ('organization', 'antenna_type', 'height', 'polarization', 'tilt', 'gain', 'mount_type', 'beam_width', 'azimuth_angle', 'reflector', 'splitter_installed', 'sync_splitter_used', 'make_of_antenna')
+
+
+class RequestFormSet(forms.models.BaseModelFormSet):
+    """
+    Formset that passes the HttpRequest on to every Form's __init__
+    Suitable to populate Fields dynamically depending on request
+    """
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        self.technology = kwargs.pop('technology', None)
+        super(RequestFormSet, self).__init__(*args, **kwargs)  #this calls _construct_forms()
+
+    def _construct_form(self, i, **kwargs): #this one is merely taken from django's BaseFormSet
+        # except the additional request parameter for the Form-constructor
+        return super(RequestFormSet, self)._construct_form(i, technology=self.technology, request=self.request, **kwargs)
+
+
+WizardPTPSubStationAntennaFormSet = forms.models.modelformset_factory(Antenna, form=WizardAntennaForm, formset=RequestFormSet, max_num=1, extra=1, validate_max=True)
+
+
+class WizardSubStationForm(SubStationForm):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('technology')
+        super(WizardSubStationForm, self).__init__(*args, **kwargs)
+
+        self.fields.pop('name')
+        self.fields.pop('alias')
+        self.fields.pop('organization')
+        self.fields.pop('antenna')
+        self.fields.pop('address')
+        self.fields.pop('description')
+
+
+class WizardCustomerForm(CustomerForm):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('technology')
+        super(WizardCustomerForm, self).__init__(*args, **kwargs)
+        self.fields.pop('name')
+        self.fields.pop('organization')
+        self.fields.pop('description')
+
+
+class WizardCircuitForm(CircuitForm):
+
+    def __init__(self, *args, **kwargs):
+        self.technology = kwargs.pop('technology')
+        super(WizardCircuitForm, self).__init__(*args, **kwargs)
+        self.fields['circuit_id'].required = True
+
+        self.fields.pop('name')
+        self.fields.pop('alias')
+        self.fields.pop('organization')
+        self.fields.pop('circuit_type')
+        self.fields.pop('sector')
+        self.fields.pop('customer')
+        self.fields.pop('sub_station')
+        self.fields.pop('date_of_acceptance')
+        self.fields.pop('description')
+
+        if self.technology == 'P2P':
+            self.fields.pop('dl_cinr_during_acceptance')
+            self.fields.pop('jitter_value_during_acceptance')
+        else: # WiMAX & PMP
+            self.fields.pop('throughput_during_acceptance')

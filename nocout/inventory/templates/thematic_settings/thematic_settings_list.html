@@ -1,9 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_title %}
-    <li>Settings</li>
-    <li>Thematic Settings</li>
-{% endblock %}
+
 {% block content_title %}Thematic Settings Management{% endblock %}
 {% block content_description %}List of thematic settings{% endblock %}
 {% block content %}
@@ -56,10 +53,10 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
         $(document).ready(function (e) {
-            
+
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
-            
+
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
@@ -79,12 +76,12 @@
 
             var destroy = false;
 
-            /*Call createDataTable function of ourDataTableWidget class*/            
+            /*Call createDataTable function of ourDataTableWidget class*/
             dataTableInstance.createDataTable("ThematicSettingsListingTable_ptp", gridHeadersObj, ajax_url_ptp, destroy);
             dataTableInstance.createDataTable("ThematicSettingsListingTable_pmp", gridHeadersObj, ajax_url_pmp, destroy);
             dataTableInstance.createDataTable("ThematicSettingsListingTable_wimax", gridHeadersObj, ajax_url_wimax, destroy);
         });
-	
+
 		/*Change event for PTP checkboxes*/
         $(document).on('change', '#ThematicSettingsListingTable_ptp .check_class', function() {
 			select_theme("ThematicSettingsListingTable_ptp", this);

@@ -1,0 +1,93 @@
+#!/usr/bin/python
+"""
+Link Ethernet Poller script.
+
+This is part of device application. 
+Poller script determines the all interfaces ethernet status. 
+poller script takes the snmp value of OID .1.3.6.1.2.1.2.2.1.8 from snmp agent of device at specific interval.
+all interfaces status are sent to device application 
+
+"""
+
+# ####################################################################################
+# Function : check_mrotek_e1_interface_alarm
+#
+#Parameters: info (SNMP output ) _no_params ( No Parameters)
+#
+#Output: plugin output ,service state,performance data
+#####################################################################################
+
+
+def interface_alarm_value(st):
+    """
+        utility function for mapping the interget OID value to string status.
+    """
+    names = {'0': 'NO_ALARM', '1': 'CRC',
+             '2': 'LOS', '4': 'LOF',
+             '8': 'AIS',
+             '16': 'GID_ERROR', '32': 'REMOTE_LOSS',
+             '64': 'REMOTE_LOOP'}
+    return names.get(st)
+
+
+def check_mrotek_e1_interface_alarm(item, _no_params, info):
+    """
+                check_mrotek_e1_interface_alarm function calculates the link ethernet status of the interface 
+
+                Args:
+                        item (str) Specific item on SNMP output on which we want to filter results
+                
+                Kwargs:
+                        params (tuple) Check parameters for critical and warning state of service
+
+                Returns:
+                        state (int) :
+                                        0 : OK
+                                        1 : Warning
+                                        2: Critical
+                    3: unknown
+                        infotext(string):
+                                        plugin output
+                                        Example : [Management_Port_on_Odu]up [Radio_Interface]up
+
+                        performance_data  (list):
+                                        performance data
+                                        Example: Management_Port_on_Odu=up;;;; Radio_Interface=up;;;;
+                        Raises:
+                                ValueError ,Exception
+    """
+    state = 3
+    infotext = "unknown_value"
+    interface_status_list = []
+    interface_string = "E1_"
+    try:
+	interface_status_list = []
+        infotext = ""
+        for index in range(len(info)):
+		interface_alarm = info[index][0]
+		interface_alarm = interface_alarm_value(str(interface_alarm))
+                if interface_alarm == None:
+                    interface_alarm = "unknown_interface_alarm"
+                interface_status_list.append((interface_string+"%s" % (index+1), interface_alarm.lower()))
+	for index, interface_status in interface_status_list:
+                infotext += "[interface %s] %s" % (index, interface_status)
+	state = 0
+
+    except ValueError :	
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext, interface_status_list)
+
+
+check_info["mrotek_e1_interface_alarm"] = {
+    'check_function': check_mrotek_e1_interface_alarm,
+    'service_description': 'mrotek_e1_interface_alarm',
+    'has_perfdata': True,
+    'snmp_info': ( ".1.3.6.1.4.1.8886.15.1.24.1.3.1", ["8"] ),
+}
+
+#####################################################################
+#snmp OID corrosponding to interfaces ethernet status.
+######################################################################

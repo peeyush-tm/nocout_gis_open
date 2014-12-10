@@ -1,5 +1,4 @@
 import json
-from actstream import action
 from django.db.models.query import ValuesQuerySet
 from django.db.models import Q
 from django.http import HttpResponseRedirect
@@ -13,15 +12,21 @@ from .models import Organization
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from nocout.utils.util import date_handler, DictDiffer
 from user_group.models import UserGroup
+from nocout.utils import logged_in_user_organizations
+from nocout.mixins.user_action import UserLogDeleteMixin
+from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.generics import FormRequestMixin
 
 
-class OrganizationList(ListView):
+class OrganizationList(PermissionsRequiredMixin, ListView):
     """
     Class Based View to render Organization List page.
     """
 
     model = Organization
     template_name = 'organization/organization_list.html'
+    required_permissions = ('organization.view_organization',)
 
     def get_context_data(self, **kwargs):
         """
@@ -43,48 +48,17 @@ class OrganizationList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class OrganizationListingTable(BaseDatatableView):
+
+class OrganizationListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixin, DatatableSearchMixin, BaseDatatableView):
     """
     Class based View to render Organization Data table.
     """
     model = Organization
+    required_permissions = ('organization.view_organization',)
     columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
     order_columns = ['name',  'alias', 'parent__name', 'city', 'state', 'country']
-
-    def logged_in_user_organization_ids(self):
-        """
-        return the logged in user descendants organization ids.
-        """
-        return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
-
-    def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-
-        :param qs:
-        :return qs:
-        """
-        sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
-            query=[]
-            organization_descendants_ids= self.logged_in_user_organization_ids()
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query) + ", id__in = %s"%organization_descendants_ids + \
-                          ").values(*"+str(self.columns+['id'])+")"
-            exec exec_query
-        return qs
-
-    def get_initial_queryset(self):
-        """
-        Preparing  Initial Queryset for the for rendering the data table.
-        """
-        if not self.model:
-            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= self.logged_in_user_organization_ids()
-        return Organization.objects.filter(pk__in=organization_descendants_ids).values(*self.columns + ['id'])
+    search_columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
+    organization_field = 'id'
 
     def prepare_results(self, qs):
         """
@@ -94,54 +68,23 @@ class OrganizationListingTable(BaseDatatableView):
         :return qs
 
         """
-        if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-        for dct in qs:
-            dct.update(actions='<a href="/organization/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/organization/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
-        return qs
+        json_data = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in json_data:
+            dct.update(actions='<a href="/organization/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/organization/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return json_data
 
-    def get_context_data(self, *args, **kwargs):
-        """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
-        """
-        request = self.request
-        self.initialize(*args, **kwargs)
 
-        qs = self.get_initial_queryset()
-
-        # number of records before filtering
-        total_records = qs.count()
-
-        qs = self.filter_queryset(qs)
-
-        # number of records after filtering
-        total_display_records = qs.count()
-
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
-        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
-
-        # prepare output data
-        aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
-               'iTotalRecords': total_records,
-               'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
-               }
-        return ret
-
-class OrganizationDetail(DetailView):
+class OrganizationDetail(PermissionsRequiredMixin, DetailView):
     """
     Class based view to render the organization detail.
     """
     model = Organization
+    required_permissions = ('organization.view_organization',)
     template_name = 'organization/organization_detail.html'
 
 
-class OrganizationCreate(CreateView):
+class OrganizationCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     """
     Class based view to create new organization.
     """
@@ -149,6 +92,8 @@ class OrganizationCreate(CreateView):
     model = Organization
     form_class = OrganizationForm
     success_url = reverse_lazy('organization_list')
+    required_permissions = ('organization.add_organization',)
+
 
     def form_valid(self, form):
         """
@@ -156,10 +101,10 @@ class OrganizationCreate(CreateView):
         """
         self.object=form.save()
         self.model.objects.rebuild()
-        action.send( self.request.user, verb='Created', action_object = self.object )
         return super(ModelFormMixin, self).form_valid(form)
 
-class OrganizationUpdate(UpdateView):
+
+class OrganizationUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     """
     Class based view to update organization.
     """
@@ -167,36 +112,28 @@ class OrganizationUpdate(UpdateView):
     model = Organization
     form_class = OrganizationForm
     success_url = reverse_lazy('organization_list')
+    required_permissions = ('organization.change_organization',)
 
+    def get_queryset(self):
+        return logged_in_user_organizations(self)
 
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
         """
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of Organization : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-
-            self.object=form.save()
-            self.model.objects.rebuild()
-            action.send( self.request.user, verb=verb_string )
+        self.object=form.save()
+        self.model.objects.rebuild()
         return HttpResponseRedirect( OrganizationUpdate.success_url )
 
 
-class OrganizationDelete(DeleteView):
+class OrganizationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
     Class based View to Delete the Organization.
     """
     model = Organization
     template_name = 'organization/organization_delete.html'
     success_url = reverse_lazy('organization_list')
+    required_permissions = ('organization.delete_organization',)
 
-
-
+    def get_queryset(self):
+        return logged_in_user_organizations(self)
