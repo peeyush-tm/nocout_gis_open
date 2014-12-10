@@ -3,11 +3,19 @@
 	"message" : "Live Polling Data Fetched Successfully",
 	"data" : {
 		"devices" : {
+<<<<<<< dev_master
 			"115.114.15.188" : {
 			 	"value" : "50",
 				"icon" : "static/img/marker/icon1_small.png"
 			},
 			"14.141.111.132" : {
+=======
+			"2121" : {
+			 	"value" : "50",
+				"icon" : "static/img/marker/icon1_small.png"
+			},
+			"2122" : {
+>>>>>>> local
 			 	"value" : "20",
 				"icon" : "static/img/marker/icon2_small.png"
 			},
