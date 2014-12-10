@@ -121,7 +121,11 @@
     <script>
         $(document).ready(function(){
             // Initialize the select2 selectbox.
-            $("#id_device").select2();
+            $(".select2select").select2();
+            $('.tip-focus').tooltip({
+                placement: 'right',
+                trigger: 'focus'
+            });
 
             $("#id_start_on").datepicker({
                 hideIfNoPrevNext: true,

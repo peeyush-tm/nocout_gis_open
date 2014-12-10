@@ -44,8 +44,6 @@ class EventForm(forms.ModelForm):
             else:
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
-                if isinstance(field.widget, forms.widgets.RadioSelect):
-                    field.widget.attrs.update({'class': ''})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
 
