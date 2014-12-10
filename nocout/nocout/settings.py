@@ -197,6 +197,7 @@ INSTALLED_APPS = (
     'jsonify',
     'djcelery',
     'rest_framework',
+    'alarm_escalation',
 )
 
 CACHES = {

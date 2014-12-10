@@ -1,5 +1,6 @@
 from mysql_connection import mysql_conn
 from pprint import pformat
+from operator import itemgetter
 from nocout_logger import nocout_log
 
 logger = nocout_log()
@@ -20,10 +21,10 @@ def main():
 	global host_attributes
 	# This file contains device names, to be updated in configuration db
 	open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
-	try:
-		make_BS_data()
-	except Exception, exp:
-		logger.error('Exception in make_BS_data: ' + pformat(exp))
+	#try:
+	make_BS_data()
+	#except Exception, exp:
+	#	logger.error('Exception in make_BS_data: ' + pformat(exp))
 	try:
 		make_SS_data()
 	except Exception, exp:
@@ -32,7 +33,6 @@ def main():
 
 
 def make_BS_data():
-	global all_hosts
 	db = mysql_conn()
 	query = """
 	select 
@@ -65,20 +65,30 @@ def make_BS_data():
 	cur = db.cursor() 
 	cur.execute(query) 
 	data = cur.fetchall() 
+	# Removing duplicate entries for devices having more than one Ckt-ids
+	unq_device_data = []
+	device_ips = set(map(lambda e: e[0], data))
+	for i, e in enumerate(data):
+		if e[0] in device_ips:
+			unq_device_data.append(e)
+			device_ips.remove(e[0])
+	data = unq_device_data
 	cur.close() 
 	db.close()
         processed = []
-	dr_en_devices = filter(lambda e: e[9] == 'yes', data)
+	dr_en_devices = sorted(filter(lambda e: e[9].lower() == 'yes' and e[10], data), key=itemgetter(10))
 	#print 'dr_en_devices --'
-	#print dr_en_devices
-	data = filter(lambda e: e[9] == '' or e[9] == 'no', data)
-	#print 'BS devices data'
-	#print data
+	#print len(dr_en_devices)
+	data = filter(lambda e: e[9] == '' or e[9].lower() == 'no', data)
 	# dr_enabled devices ids
 	dr_configured_on_ids = map(lambda e: e[10], dr_en_devices)
+	#print '--dr_configured_on_ids----'
+	#print len(dr_configured_on_ids)
 	# Find dr_configured on devices from device_device table
 	dr_configured_on_devices = get_dr_configured_on_devices(device_ids=dr_configured_on_ids)
 	final_dr_devices = zip(dr_en_devices, dr_configured_on_devices)
+	#print '-- final_dr_devices --'
+	#print len(final_dr_devices)
 	hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 
 	for entry in final_dr_devices:
@@ -90,7 +100,7 @@ def make_BS_data():
 		processed.append(str(entry[1][0]))
 		# Entries for dr device
 		dr_device_entry = str(entry[0][1]) + '|' + str(entry[0][2]) + '|' + str(entry[0][3]) + \
-				'| dr: ' + str(entry[1][0]) + '|wan|prod' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
+				'| dr: ' + str(entry[1][0]) + '|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
 		dr_all_hosts.append(dr_device_entry)
 		dr_ipaddresses.update({str(entry[0][1]): str(entry[0][0])})
 		dr_host_attributes.update({str(entry[0][1]):
@@ -105,8 +115,7 @@ def make_BS_data():
 		# counter dr device stands for device which got its entry as `dr_configured_on_id` in
 		# inventory_sector table
 		dr_device_entry = str(entry[1][0]) + '|' + str(entry[0][2]) + '|' + str(entry[1][2]) + \
-				'| dr: ' + str(entry[0][0]) + '|wan|prod' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
-		dr_all_hosts.append(dr_device_entry)
+				'| dr: ' + str(entry[0][1]) + '|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
 		dr_all_hosts.append(dr_device_entry)
 		dr_ipaddresses.update({str(entry[1][0]): str(entry[1][1])})
 		dr_host_attributes.update({str(entry[1][0]):
@@ -141,8 +150,7 @@ def make_BS_data():
 def get_dr_configured_on_devices(device_ids=[]):
 	dr_configured_on_devices = []
 	if device_ids:
-		query = "SELECT device_name, ip_address, mac_address, device_alias FROM device_device \
-				WHERE id IN %s" % pformat(tuple(device_ids))
+		query = "SELECT device_name, ip_address, mac_address, device_alias, id FROM device_device WHERE id IN %s" % pformat(tuple(device_ids))
 		db = mysql_conn()
 		cur = db.cursor()
 		cur.execute(query)
