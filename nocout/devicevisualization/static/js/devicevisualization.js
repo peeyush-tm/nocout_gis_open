@@ -282,17 +282,16 @@ $("#setAdvSearchBtn").click(function(e) {
         selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').split(',') : [],
         selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').split(',') : [],
         isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0;
-
     // If any value is selected in searcg
     if(isSearchApplied) {
 
         if($("#removeSearchBtn").hasClass('hide')) {
             $("#removeSearchBtn").removeClass('hide');
+        } else {
+            // pass
         }
-
         // Set Advance Search Flag
         isAdvanceSearch = 1;
-        advJustSearch.showNotification();
         gmap_self.advanceSearchFunc();
     } else {
         // Reset Advance Search Flag
@@ -301,12 +300,6 @@ $("#setAdvSearchBtn").click(function(e) {
         hideSpinner();
         bootbox.alert("Please select atleast one field.");
     }
-    // if(window.location.pathname.indexOf("white_background") > -1) {
-    //     advJustSearch.showNotification();
-    //     advJustSearch.searchAndCenterData(data_for_filter_wmap);
-    // } else {
-
-    // }
 });
 
 $("#cancelAdvSearchBtn").click(function(e) {
@@ -516,11 +509,11 @@ $("#tech_send").click(function(e) {
 
 $("#fetch_polling").click(function(e) {
 
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        earth_instance.getDevicesPollingData_earth();
-    } else {
+    // if(window.location.pathname.indexOf("googleEarth") > -1) {
+    //     earth_instance.fetchDevicesPollingData_earth();
+    // } else {
         networkMapInstance.fetchDevicesPollingData();
-    }
+    // }
 });
 
 $("#play_btn").click(function(e) {
@@ -529,9 +522,9 @@ $("#play_btn").click(function(e) {
         $(".play_pause_btns").removeClass("disabled");
     }
 
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
+    // if(window.location.pathname.indexOf("googleEarth") > -1) {
         
-    } else {
+    // } else {
         if(polygonSelectedDevices && (polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "")) {
             if(!$("#play_btn").hasClass("disabled")) {
                 $("#play_btn").addClass("disabled");
@@ -551,7 +544,9 @@ $("#play_btn").click(function(e) {
             remainingPollCalls = Math.floor((60*pollingMaxInterval)/pollingInterval);
             isPollingPaused = 0;
 
-            if(window.location.pathname.indexOf("white_background") > -1) {
+            if(window.location.pathname.indexOf("googleEarth") > -1) {
+                earth_instance.startDevicePolling_earth();
+            } else if(window.location.pathname.indexOf("white_background") > -1) {
                 whiteMapClass.startDevicePolling_wmap();
             } else {
                 networkMapInstance.startDevicePolling_gmap();
@@ -560,7 +555,7 @@ $("#play_btn").click(function(e) {
         } else {
             bootbox.alert("Please select devices & polling template first.");
         }
-    }
+    // }
 });
 
 $("#pause_btn").click(function(e) {
@@ -569,11 +564,11 @@ $("#pause_btn").click(function(e) {
         $(".play_pause_btns").removeClass("disabled");
     }
 
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
+    // if(window.location.pathname.indexOf("googleEarth") > -1) {
         
-    } else if(window.location.pathname.indexOf("white_background") > -1) {
+    // } else if(window.location.pathname.indexOf("white_background") > -1) {
         
-    } else {
+    // } else {
         if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
             if(remainingPollCalls > 0) {
                 if(!$("#pause_btn").hasClass("disabled")) {
@@ -590,7 +585,7 @@ $("#pause_btn").click(function(e) {
         } else {
             bootbox.alert("Please select devices & polling template first.");
         }
-    }
+    // }
 });
 
 $("#stop_btn").click(function(e) {
