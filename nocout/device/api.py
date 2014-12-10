@@ -1151,7 +1151,7 @@ class BulkFetchLPDataApi(View):
 
         if th_ranges and th_icon_settings and value:
             try:
-                if str(value).lower().strip() == str(th_ranges).range1_start.lower().strip():
+                if str(value).lower().strip() == str(th_ranges.range1_start).lower().strip():
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings1' in icon_setting.keys():
@@ -1160,7 +1160,7 @@ class BulkFetchLPDataApi(View):
                 logger.info(e.message)
 
             try:
-                if str(value).lower().strip() == str(th_ranges).range2_start.lower().strip():
+                if str(value).lower().strip() == str(th_ranges.range2_start).lower().strip():
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings2' in icon_setting.keys():
@@ -1169,7 +1169,7 @@ class BulkFetchLPDataApi(View):
                 logger.info(e.message)
 
             try:
-                if str(value).lower().strip() == str(th_ranges).range3_start.lower().strip():
+                if str(value).lower().strip() == str(th_ranges.range3_start).lower().strip():
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings3' in icon_setting.keys():
@@ -1178,7 +1178,7 @@ class BulkFetchLPDataApi(View):
                 logger.info(e.message)
 
             try:
-                if str(value).lower().strip() == str(th_ranges).range4_start.lower().strip():
+                if str(value).lower().strip() == str(th_ranges.range4_start).lower().strip():
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings4' in icon_setting.keys():
@@ -1187,7 +1187,7 @@ class BulkFetchLPDataApi(View):
                 logger.info(e.message)
 
             try:
-                if str(value).lower().strip() == str(th_ranges).range5_start.lower().strip():
+                if str(value).lower().strip() == str(th_ranges.range5_start).lower().strip():
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings5' in icon_setting.keys():
@@ -1196,7 +1196,7 @@ class BulkFetchLPDataApi(View):
                 logger.info(e.message)
 
             try:
-                if str(value).lower().strip() == str(th_ranges).range6_start.lower().strip():
+                if str(value).lower().strip() == str(th_ranges.range6_start).lower().strip():
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings6' in icon_setting.keys():
@@ -1205,7 +1205,7 @@ class BulkFetchLPDataApi(View):
                 logger.info(e.message)
 
             try:
-                if str(value).lower().strip() == str(th_ranges).range7_start.lower().strip():
+                if str(value).lower().strip() == str(th_ranges.range7_start).lower().strip():
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings7' in icon_setting.keys():
@@ -1214,7 +1214,7 @@ class BulkFetchLPDataApi(View):
                 logger.info(e.message)
 
             try:
-                if str(value).lower().strip() == str(th_ranges).range8_start.lower().strip():
+                if str(value).lower().strip() == str(th_ranges.range8_start).lower().strip():
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings8' in icon_setting.keys():
@@ -1223,7 +1223,7 @@ class BulkFetchLPDataApi(View):
                 logger.info(e.message)
 
             try:
-                if str(value).lower().strip() == str(th_ranges).range9_start.lower().strip():
+                if str(value).lower().strip() == str(th_ranges.range9_start).lower().strip():
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings9' in icon_setting.keys():
@@ -1232,7 +1232,7 @@ class BulkFetchLPDataApi(View):
                 logger.info(e.message)
 
             try:
-                if str(value).lower().strip() == str(th_ranges).range10_start.lower().strip():
+                if str(value).lower().strip() == str(th_ranges.range10_start).lower().strip():
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings10' in icon_setting.keys():
