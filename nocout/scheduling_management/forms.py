@@ -18,10 +18,8 @@ class EventForm(forms.ModelForm):
 
     end_never = forms.BooleanField(initial=True, required=False)
     # Note take a boolean field in model and replate select_device name with that field.
-    select_device = forms.ChoiceField(widget=forms.RadioSelect(),
-                    choices=((True, 'Add all device'),(False, 'Select specific devices')))
-    device = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple(),
-                queryset=Device.objects.all(), required=False)
+    select_device = forms.ChoiceField(widget=forms.RadioSelect(), initial=False,
+                    choices=((True, 'Add all device'),(False, 'Select specific devices')), required=False)
 
 
     def __init__(self, *args, **kwargs):
@@ -47,8 +45,6 @@ class EventForm(forms.ModelForm):
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 if isinstance(field.widget, forms.widgets.RadioSelect):
-                    field.widget.attrs.update({'class': ''})
-                elif isinstance(field.widget, forms.widgets.CheckboxSelectMultiple):
                     field.widget.attrs.update({'class': ''})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
