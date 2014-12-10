@@ -64,8 +64,8 @@ def extract_pmp1_util_from_live(hostname,site):
         pmp1_ul = None
 	pmp1_dl = None
 	query = "GET services\nColumns: service_perf_data\n" + \
-		"Filter: service_description = wimax_pmp1_ul_util\n" + \
-		"Filter: service_description = wimax_pmp1_dl_util\n" + \
+		"Filter: service_description = wimax_pmp1_ul_util_bgp\n" + \
+		"Filter: service_description = wimax_pmp1_dl_util_bgp\n" + \
 		"Or: 2\n" + \
 		"Filter: host_name = %s\nOutputFormat: python\n" % (hostname)
 	try:
