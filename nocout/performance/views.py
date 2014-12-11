@@ -1190,6 +1190,127 @@ class Inventory_Device_Service_Data_Source(View):
         return HttpResponse(json.dumps(result))
 
 
+class Get_Service_Status(View):
+    """
+    Class to get the latest Performance Value for a device, device data source and service
+    """
+    def get(self, request, service_name, service_data_source_type, device_id):
+        """
+
+        :param request:
+        :param service_name:
+        :param service_data_source_type:
+        :param device_id:
+        """
+        self.result = {
+            'success': 0,
+            'message': 'No Data.',
+            'data': {
+                'meta': {},
+                'objects': {}
+            }
+        }
+
+        date_format = "%d-%m-%Y %H:%M:%S"
+
+        device = Device.objects.get(id=int(device_id))
+        inventory_device_name = device.device_name
+        inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
+
+        if service_data_source_type in ['pl', 'rta']:
+            performance_data = NetworkStatus.objects.filter(device_name=inventory_device_name,
+                                                                 service_name=service_name,
+                                                                 data_source=service_data_source_type,
+                                                                 ).using(
+                                                                 alias=inventory_device_machine_name)
+
+        elif "availability" in service_name or service_data_source_type in ['availability']:
+            performance_data = None
+
+        elif "topology" in service_name or service_data_source_type in ['topology']:
+            performance_data = None
+
+        elif '_status' in service_name:
+            performance_data = Status.objects.filter(device_name=inventory_device_name,
+                                                                service_name=service_name,
+                                                                data_source=service_data_source_type,
+                                                                ).using(
+                                                                alias=inventory_device_machine_name)
+
+        elif '_invent' in service_name:
+            performance_data = InventoryStatus.objects.filter(device_name=inventory_device_name,
+                                                                   service_name=service_name,
+                                                                   data_source=service_data_source_type
+                                                                    ).using(
+                                                                   alias=inventory_device_machine_name)
+
+        else:
+            performance_data = ServiceStatus.objects.filter(device_name=inventory_device_name,
+                                                                 service_name=service_name,
+                                                                 data_source=service_data_source_type,
+                                                                 ).using(
+                                                                 alias=inventory_device_machine_name)
+
+        if performance_data:
+            try:
+                current_value = performance_data[0].current_value
+                last_updated = datetime.datetime.fromtimestamp(
+                                float(performance_data[0].sys_timestamp)
+                                ).strftime(date_format)
+                self.result = {
+                'success': 1,
+                'message': 'Service Status Fetched Successfully',
+                'data': {
+                    'meta': {},
+                    'objects': {
+                        'perf': current_value,
+                        'last_updated': last_updated
+                        }
+                    }
+                }
+            except Exception as e:
+                log.exception(e.message)
+
+        return HttpResponse(json.dumps(self.result), mimetype="application/json")
+
+    def formulate_data(self, current_value, service_data_source_type):
+        """
+
+        :param current_value: current value for the service
+        :param service_data_source_type: current value to be transformed
+        """
+        if service_data_source_type == 'uptime':
+            if current_value:
+                tt_sec = float(current_value)/100
+                return self.display_time(tt_sec)
+        else:
+            return current_value
+
+    def display_time(self, seconds, granularity=4):
+        """
+
+        :param seconds: seconds on float
+        :param granularity:
+        :return:
+        """
+        intervals = (
+            ('weeks', 604800),
+            ('days', 86400),
+            ('hours', 3600),
+            ('minutes', 60),
+            ('seconds', 1),
+        )
+        result = []
+        for name, count in intervals:
+            value = seconds // count
+            if value:
+                seconds -= value * count
+                if value == 1:
+                    name = name.rstrip('s')
+                result.append("{} {}".format(value, name))
+        return ', '.join(result[:granularity])
+
+
 class Get_Service_Type_Performance_Data(View):
     """
     Generic Class based View to Fetch the Performance Data.
@@ -1409,7 +1530,6 @@ class Get_Service_Type_Performance_Data(View):
             table_data=data_list
         return table_data, table_header
 
-
     def get_perf_table_result(self, performance_data):
 
         result_data, aggregate_data = list(), dict()
@@ -1536,8 +1656,6 @@ class Get_Service_Type_Performance_Data(View):
                                                                'last_updated'
         ]
         return self.result
-
-
 
     def get_performance_data_result(self, performance_data, data_source = None):
         chart_data = list()
