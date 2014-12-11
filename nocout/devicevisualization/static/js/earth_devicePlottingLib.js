@@ -2372,7 +2372,7 @@ var state_wise_device_label_text= {};
 											}
 										}
 									}
-									
+
 									if(polygonSelectedDevices.length == 0) {
 
 										gexInstance.edit.endEditLineString(polyPlacemark);
@@ -3188,7 +3188,7 @@ var state_wise_device_label_text= {};
 
 				exportDataPolygon = polyPlacemark;
 				try {
-					exportDataPolygon.type = 'Export Polygon';
+					exportDataPolygon['type'] = 'Export Polygon';
 				} catch(e) {
 					// console.log(e);
 				}

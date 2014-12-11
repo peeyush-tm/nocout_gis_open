@@ -7423,8 +7423,9 @@ function devicePlottingClass_gmap() {
 		/*Reset the drawing object if exist*/
 		if(window.location.pathname.indexOf('googleEarth') > -1) {
 			if(polyPlacemark) {
-				gexInstance.edit.endEditLineString(polyPlacemark);
 				polyPlacemark.setVisibility(false);
+				gexInstance.edit.endEditLineString(polyPlacemark);
+				polyPlacemark = "";
 			}
 			$("#exportDevices_Iframe").addClass('hide');
 		} else if(window.location.pathname.indexOf("white_background") > -1) {
@@ -7442,12 +7443,7 @@ function devicePlottingClass_gmap() {
 		/*Remove the polygon if exists*/
 		if((typeof exportDataPolygon == 'object' && Object.keys(exportDataPolygon).length > 0) || (typeof exportDataPolygon == 'function' && exportDataPolygon)) {
 			if(window.location.pathname.indexOf('googleEarth') > -1) {
-				try {
-					exportDataPolygon.setVisibility(false);
-					exportDataPolygon.map = '';
-				} catch(e) {
-					// console.log(e);
-				}
+				exportDataPolygon.setVisibility(false);
 			} else if(window.location.pathname.indexOf("white_background") > -1) {
 				if(whiteMapClass.livePollingPolygonControl) {
 					whiteMapClass.livePollingPolygonControl.deactivate();
