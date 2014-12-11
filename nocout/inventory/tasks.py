@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 @task()
 def update_sector_frequency_per_day():
+    """ Update all sectors/(sector configured on) frequency once a day (daily)
+
+    """
     # fetch all sectors
     sectors = Sector.objects.all()
 
@@ -63,6 +66,74 @@ def update_sector_frequency_per_day():
 
 @task()
 def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_list, full_time, filename):
+    """ Validate and upload GIS inventory excel workbook for PTP, PMP and WiMAX technologies
+
+        Args:
+            gis_obj_id (long) - GISInventoryBulkImport object id (id from table `inventory_gisinventorybulkimport`)
+                                    i.e. 108
+            complete_d (str) - list of rows (as dictionary with column name as key and row value as value)
+                               from excel sheet i.e.
+                               [
+                                    {
+                                        'City': u'Hyderabad',
+                                        'SSBSName': u'ApLodge',
+                                        'BSAddress': u'Nampally-AP,
+                                        Lodage,
+                                        Nampally,
+                                        Hyderabad',
+                                        'AntennaHeight': '',
+                                        'SSRSSIDuringAcceptance': '',
+                                        'SSCity': u'Hyderabad',
+                                        'PEIP': u'192.168.208.135',
+                                        'SSCircuitID': u'091HYDE030007077237',
+                                        'Polarization': '',
+                                        'SSPolarization': '',
+                                        'State': u'AndhraPradesh'
+                                    },
+                                    {
+                                        'City': u'Hyderabad',
+                                        'SSBSName': u'ApLodge',
+                                        'BSAddress': u'Nampally-AP,
+                                        Lodage,
+                                        Nampally,
+                                        Hyderabad',
+                                        'AntennaHeight': '',
+                                        'SSRSSIDuringAcceptance': '',
+                                        'SSCity': u'Hyderabad',
+                                        'PEIP': u'192.168.208.135',
+                                        'SSCircuitID': u'091HYDE030007077237',
+                                        'Polarization': '',
+                                        'SSPolarization': '',
+                                        'State': u'AndhraPradesh'
+                                    }
+
+                                ]
+            sheet_name (unicode) - name of sheet from uploaded excel workbook i.e. u'PTP'
+            keys_list (list) - list of columns in excel sheet i.e
+                           ['City', 'State', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address',
+                           'BS Name', 'QOS (BW)', 'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height',
+                           'Polarization', 'Antenna Type', 'Antenna Gain', 'Antenna Mount Type',
+                           'Ethernet Extender', 'Building Height', 'Tower/Pole Height', 'Cable Length',
+                           'RSSI During Acceptance', 'Throughput During Acceptance', 'Date Of Acceptance',
+                           'BH BSO', 'IP', 'MAC', 'HSSU used', 'HSSU Port', 'BS Switch IP', 'Aggregation Switch',
+                           'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP', 'Converter Type',
+                           'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity',
+                           'BH Offnet/Onnet', 'Backhaul Type', 'BSO Circuit ID', 'PE Hostname', 'PE IP',
+                           'SS City', 'SS State', 'SS Circuit ID', 'SS Customer Name', 'SS Customer Address',
+                           'SS BS Name', 'SS QOS (BW)', 'SS Latitude', 'SS Longitude', 'SS Antenna Height',
+                           'SS Polarization', 'SS Antenna Type', 'SS Antenna Mount Type', 'SS Ethernet Extender',
+                           'SS Building Height', 'SS Tower/Pole Height', 'SS Cable Length', 'SS RSSI During Acceptance',
+                           'SS Throughput During Acceptance', 'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC']
+
+            full_time (str) - timestamp to append in filename i.e. '2014-12-10-13-12-01'
+            filename (unicode) - name of uploaded file i.e. u'PTP Few Rows.xls'
+
+        Returns:
+            gis_bulk_obj.original_filename (unicode) - name of orinal uploaded file
+                                                e.g. u'inventory_files/original/2014-12-10-14-41-52_PTP Few Rows.xls'
+
+    """
+
     valid_rows_dicts = []
     invalid_rows_dicts = []
     valid_rows_lists = []
@@ -1321,6 +1392,17 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
 
 @task()
 def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
+    """ Uploading PTP inventory from excel sheet to database
+
+        Parameters:
+            gis_id (unicode) - GISInventoryBulkImport object id (id from table `inventory_gisinventorybulkimport`)
+                               e.g. 98
+            organization (<class 'organization.models.Organization'>) - organization object e.g. TCL
+            sheettype (unicode) - type of sheet valid/invalid e.g. invalid
+
+        Returns:
+           - Nothing
+    """
     # gis bulk upload id
     gis_id = gis_id
 
@@ -2477,6 +2559,17 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
 @task()
 def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
+    """ Uploading PTP BH (PTP Backhaul) inventory from excel sheet to database
+
+        Parameters:
+            gis_id (unicode) - GISInventoryBulkImport object id (id from table `inventory_gisinventorybulkimport`)
+                               e.g. 98
+            organization (<class 'organization.models.Organization'>) - organization object e.g. TCL
+            sheettype (unicode) - type of sheet valid/invalid e.g. invalid
+
+        Returns:
+           - Nothing
+    """
     # gis bulk upload id
     gis_id = gis_id
 
@@ -3301,6 +3394,17 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
 @task()
 def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
+    """ Uploading PMP BS inventory from excel sheet to database
+
+        Parameters:
+            gis_id (unicode) - GISInventoryBulkImport object id (id from table `inventory_gisinventorybulkimport`)
+                               e.g. 98
+            organization (<class 'organization.models.Organization'>) - organization object e.g. TCL
+            sheettype (unicode) - type of sheet valid/invalid e.g. invalid
+
+        Returns:
+           - Nothing
+    """
     # gis bulk upload id
     gis_id = gis_id
 
@@ -3901,6 +4005,17 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
 @task()
 def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
+    """ Uploading PMP SM inventory from excel sheet to database
+
+        Parameters:
+            gis_id (unicode) - GISInventoryBulkImport object id (id from table `inventory_gisinventorybulkimport`)
+                               e.g. 98
+            organization (<class 'organization.models.Organization'>) - organization object e.g. TCL
+            sheettype (unicode) - type of sheet valid/invalid e.g. invalid
+
+        Returns:
+           - Nothing
+    """
     # gis bulk upload id
     gis_id = gis_id
 
@@ -4229,6 +4344,17 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
 @task()
 def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
+    """ Uploading WiMAX BS inventory from excel sheet to database
+
+        Parameters:
+            gis_id (unicode) - GISInventoryBulkImport object id (id from table `inventory_gisinventorybulkimport`)
+                               e.g. 98
+            organization (<class 'organization.models.Organization'>) - organization object e.g. TCL
+            sheettype (unicode) - type of sheet valid/invalid e.g. invalid
+
+        Returns:
+           - Nothing
+    """
     # gis bulk upload id
     gis_id = gis_id
 
@@ -4890,6 +5016,17 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
 @task()
 def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
+    """ Uploading WiMAX SS inventory from excel sheet to database
+
+        Parameters:
+            gis_id (unicode) - GISInventoryBulkImport object id (id from table `inventory_gisinventorybulkimport`)
+                               e.g. 98
+            organization (<class 'organization.models.Organization'>) - organization object e.g. TCL
+            sheettype (unicode) - type of sheet valid/invalid e.g. invalid
+
+        Returns:
+           - Nothing
+    """
     # gis bulk upload id
     gis_id = gis_id
 
@@ -7816,10 +7953,14 @@ def ip_sanitizer(name):
 
 
 def get_state(state=None):
-    """
+    """ Return id of state or None
 
-    :param state:
-    :return:
+    Kwargs:
+        state (unicode): u'West Bengal'
+
+    Returns:
+        state_objects[0].id (long): u'29'
+
     """
     if state:
         state_objects = State.objects.filter(state_name__icontains=state)
@@ -7829,10 +7970,15 @@ def get_state(state=None):
 
 
 def get_city(state=None, city_name=None):
-    """
+    """ Return id of city or None
 
-    :param state:
-    :return:
+    Kwargs:
+        state (unicode): u'Tamil Nadu'
+        city (unicode): u'Chennai'
+
+    Returns:
+        city_objects[0].id (long): u'1135'
+
     """
     if state and city_name:
         city_objects = City.objects.filter(city_name__icontains=city_name, state__state_name__icontains=state)
@@ -7842,6 +7988,15 @@ def get_city(state=None, city_name=None):
 
 
 def sanitize_mac_address(mac=None):
+    """ Check and clean mac address
+
+    Kwargs:
+        mac (unicode): u'0a:00:3e:66:fd:94'
+
+    Returns:
+        mac (unicode): u'0a:00:3e:66:fd:94'
+
+    """
     mac = ''.join(e for e in mac if e.isalnum()).lower()
     if len(mac) == 12:
         mac = ':'.join(mac[i:i+2] for i in range(0, len(mac), 2))
