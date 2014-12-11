@@ -3981,7 +3981,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'name': name,
                     'alias': alias,
                     'base_station': basestation,
-                    'sector_id': row['Sector ID'].strip() if 'Sector ID' in row.keys() else "",
+                    'sector_id': row['Sector ID'].strip().lower() if 'Sector ID' in row.keys() else "",
                     'bs_technology': 4,
                     'sector_configured_on': base_station,
                     'antenna': sector_antenna,
@@ -4571,7 +4571,8 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     try:
                         machine_and_site = get_machine_and_site(ospf5_machine_and_site_info)
                     except Exception as e:
-                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:",
+                                    e.message)
 
                     if machine_and_site:
                         # get machine
@@ -4637,7 +4638,8 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     try:
                         machine_and_site = get_machine_and_site(ospf5_machine_and_site_info)
                     except Exception as e:
-                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:",
+                                    e.message)
 
                     if machine_and_site:
                         # get machine
@@ -4990,7 +4992,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 sector_data = {
                     'name': name,
                     'alias': alias,
-                    'sector_id': row['Sector ID'].strip() if 'Sector ID' in row.keys() else "",
+                    'sector_id': row['Sector ID'].strip().lower() if 'Sector ID' in row.keys() else "",
                     'base_station': basestation,
                     'bs_technology': 3,
                     'sector_configured_on': base_station,
