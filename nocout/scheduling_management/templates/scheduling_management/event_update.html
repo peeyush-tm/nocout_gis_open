@@ -42,6 +42,17 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                        <div class="form-group" style="display: None">
+                                            <label for="{{ form.repeat_every.id_for_label }}" class="col-sm-3 control-label">{{ form.repeat_every.label|title }}</label>
+                                            <div class="col-sm-9">
+                                                <div class="col-md-8">
+                                                    {{ form.repeat_every }} {{ form.repeat_every.errors }}
+                                                </div>
+                                                <div class="col-md-4 help_text">
+                                                    {{ form.repeat_every.help_text }}
+                                                </div>
+                                            </div>
+                                        </div>
                                             <div class="form-group">
                                                 <label for="{{ form.start_on.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.start_on.label|title }}</label>
                                                 <div class="col-sm-9">
@@ -168,6 +179,23 @@
                     console.log($(this).val())
                 }
             });
+
+            // handle the repeatition on basis of the repeat select.
+            var ele = $("#id_repeat").val()
+            if ((ele=='dai') || (ele=='wee') || (ele=='mon') || (ele=='yea')){
+                $("#id_repeat_every").parent().parent().parent().css({ "display": "block"});
+            }
+
+            $("#id_repeat").change(function(el) {
+                if ((el.val=='dai') || (el.val=='wee') || (el.val=='mon') || (el.val=='yea')){
+                    $("#id_repeat_every").parent().parent().parent().css({ "display": "block"});
+                }
+                else{
+                    $("#id_repeat_every").parent().parent().parent().css({ "display": "None"});
+                }
+
+            });
+
 
         })// end document.ready
     </script>
