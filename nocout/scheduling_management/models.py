@@ -51,8 +51,6 @@ class Event(models.Model):
         (None, 'Select'),
         ('devi', 'Device Specific'),
         ('dety', 'Device Type'),
-        ('serv', 'Service'),
-        ('sdso', 'Service Data Source'),
     )
     name = models.CharField('Title', max_length=255)
     repeat = models.CharField('Repeats', max_length=10, choices=REPEAT, default='dai')

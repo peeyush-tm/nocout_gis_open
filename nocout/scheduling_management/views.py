@@ -47,6 +47,7 @@ class EventList(PermissionsRequiredMixin, TemplateView):
         #if the user role is Admin or operator or superuser then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role or self.request.user.is_superuser:
+            datatable_headers.append({'mData': 'no_of_devices', 'sTitle': 'No.of devices', 'sWidth': '5%', 'bSortable': True})
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -92,7 +93,10 @@ class EventListingTable(PermissionsRequiredMixin,
             dct.update(created_by__username=obj.created_by.username)
             scheduling_type = scheduling_type_choice["%s"%(obj.scheduling_type)]
             dct.update(scheduling_type=scheduling_type)
-            dct.update(device__device_alias=', '.join(list(obj.device.values_list('device_alias', flat=True))))
+            # display the device with ip address upto 5 devices.
+            dev_list = ["{}-{}".format(dev.device_alias,dev.ip_address) for i,dev in enumerate(obj.device.all()) if i < 5 ]
+            dct.update(device__device_alias=', '.join(dev_list))
+            dct.update(no_of_devices=obj.device.count())
             dct.update(actions='<a href="/scheduling/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/scheduling/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj.id))
             json_data.append(dct)
@@ -130,6 +134,7 @@ class EventCreate(PermissionsRequiredMixin, CreateView):
             self.object.created_by = user
             self.object.organization = user.organization
             self.object.save()
+            form.save_m2m()
             return HttpResponseRedirect(EventCreate.success_url)
         else:
             return self.render_to_response(
