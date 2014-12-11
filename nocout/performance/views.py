@@ -1433,6 +1433,7 @@ class Get_Service_Type_Performance_Data(View):
                 packet_loss = 'NA'
                 latency = 'NA'
                 status_since = 'NA'
+                machine = 'default'
                 #now lets check if SS exists for a device
                 #and that the customer and circuit are present for that SS
 
@@ -1448,12 +1449,13 @@ class Get_Service_Type_Performance_Data(View):
 
                     #now lets see what the performance data it holds
                     if connected_device.is_added_to_nms:
+                        machine = connected_device.machine.name
                         #is it added?
                         #only then query the performance network database
                         #for getting latest status
                         perf_data = NetworkStatus.objects.filter(device_name=connected_device.device_name
                         ).annotate(dcount=Count('data_source')
-                        ).values('data_source', 'current_value', 'age', 'sys_timestamp')
+                        ).values('data_source', 'current_value', 'age', 'sys_timestamp').using(alias=machine)
                         processed = []
                         for data in perf_data:
                             if data['data_source'] not in processed:
@@ -1470,6 +1472,8 @@ class Get_Service_Type_Performance_Data(View):
                                 else:
                                     continue
                                 status_since = data['age']
+                                status_since = datetime.datetime.fromtimestamp(float(status_since)
+                                               ).strftime("%d/%B/%Y %I:%M %p")
                             else:
                                 continue
 
