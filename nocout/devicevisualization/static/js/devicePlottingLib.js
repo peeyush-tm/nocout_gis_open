@@ -850,8 +850,7 @@ function devicePlottingClass_gmap() {
 
 	            	google.maps.event.removeListener(listener);
 
-			    	searchResultData = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true)))
-	            	// google.maps.event.removeListener(listener);
+			    	searchResultData = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true)));
 	            });
 	        });
 
@@ -3590,7 +3589,7 @@ function devicePlottingClass_gmap() {
 				$("#polling_tech").html(techOptions);
 			},
 			error : function(err) {
-				console.log(err.statusText);
+				// console.log(err.statusText);
 			}
 		});
 
@@ -4620,6 +4619,8 @@ function devicePlottingClass_gmap() {
 		if(!isIdleCase) {
 			/*Clear Existing Labels & Reset Counters*/
 			if(window.location.pathname.indexOf("googleEarth") > -1) {
+				/*Clear all the elements from google earth*/
+		        earth_instance.clearEarthElements();
 				earth_self.clearStateCounters();
 			} else if (window.location.pathname.indexOf("white_background") > -1) { 
 				whiteMapClass.clearStateCounters_wmaps();			
@@ -6100,10 +6101,18 @@ function devicePlottingClass_gmap() {
 
     this.clearPointsTool_gmap= function() {
 
-    	for(var i=0; i< map_points_array.length; i++) {
+    	if(window.location.pathname.indexOf("googleEarth") > -1) {
+        	for(var i=0; i< map_points_array.length; i++) {
+	    		map_points_array[i].setVisibility(false);
+	    	}
+	    } else if(window.location.pathname.indexOf("white_background") > -1) {
 
-    		map_points_array[i].setMap(null);
-    	}
+	    } else {
+	    	for(var i=0; i< map_points_array.length; i++) {
+	    		map_points_array[i].setMap(null);
+	    	}
+	    }
+
 
     	map_points_array= [];
 
@@ -6274,16 +6283,16 @@ function devicePlottingClass_gmap() {
 
 		var right_click_html = "",
 			markerInfo = {
-				'name' 				: 	marker.point_name,
-				'desc' 				: 	marker.point_desc,
-				'lat'  				: 	marker.lat,
-				'lon'  				: 	marker.lon,
-				'connected_lat' 	: 	marker.connected_lat,
-				'connected_lon' 	: 	marker.connected_lon,
-				'point_id' 			: 	marker.point_id,
-				'icon_url' 			: 	marker.icon_url,
-				'is_delete_req' 	: 	marker.is_delete_req,
-				'is_update_req' 	: 	marker.is_update_req
+				'name' 				: 	marker['point_name'],
+				'desc' 				: 	marker['point_desc'],
+				'lat'  				: 	marker['lat'],
+				'lon'  				: 	marker['lon'],
+				'connected_lat' 	: 	marker['connected_lat'],
+				'connected_lon' 	: 	marker['connected_lon'],
+				'point_id' 			: 	marker['point_id'],
+				'icon_url' 			: 	marker['icon_url'],
+				'is_delete_req' 	: 	marker['is_delete_req'],
+				'is_update_req' 	: 	marker['is_update_req']
 			},
 			method_var = JSON.stringify(markerInfo);
 
@@ -6327,43 +6336,47 @@ function devicePlottingClass_gmap() {
 	 */
 	this.savePointInfo_gmap = function(marker) {
 
-		var marker_lat_str = String(marker.lat).split(".").join("-"),
-			marker_lon_str = String(marker.lon).split(".").join("-"),
+		var marker_lat_str = String(marker['lat']).split(".").join("-"),
+			marker_lon_str = String(marker['lon']).split(".").join("-"),
 			current_marker = point_data_obj["point_"+marker_lat_str+"_"+marker_lon_str];
 
 		if($.trim($("#point_name").val()) == '') {
 			bootbox.alert("Please enter point name");
 		} else {
 
-			marker.name = current_marker.point_name = $("#point_name").val();
-			marker.desc = current_marker.point_desc = $("#point_desc").val();
-			marker.point_id = current_marker.point_id;
-			marker.is_update_req = current_marker.is_update_req;
-			marker.is_delete_req = current_marker.is_delete_req;
+			try {
+				marker['name'] = current_marker['point_name'] = document.getElementById("point_name").value;
+				marker['desc'] = current_marker['point_desc'] = document.getElementById("point_desc").value;
+				marker['point_id'] = current_marker['point_id'];
+				marker['is_update_req'] = current_marker['is_update_req'];
+				marker['is_delete_req'] = current_marker['is_delete_req'];
 
-			$.ajax({
-            	url: base_url+'/network_maps/tools/point/',
-            	data: JSON.stringify(marker),
-            	type: 'POST',
-            	dataType: 'json',
-            	success : function(result) {
-            		if(result.success === 1) {
-            			current_marker.point_id = result.data.point_id;
-            			current_marker.is_update_req = result.data.point_id;
-            		} else {
-            			current_marker.name = "";
-            			current_marker.desc = "";
-            			$("#point_name").val("");
-            			$("#point_desc").val("");
-            			current_marker.point_id = 0;
-            			current_marker.is_update_req = 0;
-            		}
-            		$("#response_msg_container").html(result.message);
-            	},
-            	error : function(err) {
-            		console.log(err);
-            	}
-        	});
+				$.ajax({
+	            	url: base_url+'/network_maps/tools/point/',
+	            	data: JSON.stringify(marker),
+	            	type: 'POST',
+	            	dataType: 'json',
+	            	success : function(result) {
+	            		if(result.success === 1) {
+	            			current_marker['point_id'] = result.data.point_id;
+	            			current_marker['is_update_req'] = result.data.point_id;
+	            		} else {
+	            			current_marker['name'] = "";
+	            			current_marker['desc'] = "";
+	            			$("#point_name").val("");
+	            			$("#point_desc").val("");
+	            			current_marker['point_id'] = 0;
+	            			current_marker['is_update_req'] = 0;
+	            		}
+	            		$("#response_msg_container").html(result.message);
+	            	},
+	            	error : function(err) {
+	            		// console.log(err);
+	            	}
+	        	});
+			} catch(e) {
+				console.log(e);
+			}
 		}
 	}
 
@@ -6405,7 +6418,7 @@ function devicePlottingClass_gmap() {
         			}
             	},
             	error : function(err) {
-            		console.log(err);
+            		// console.log(err);
             	}
 			});
 		} else {
@@ -6550,7 +6563,7 @@ function devicePlottingClass_gmap() {
         		}
         	},
         	error : function(err) {
-        		console.log(err);
+        		// console.log(err);
         	}
     	});
 
@@ -6637,7 +6650,7 @@ function devicePlottingClass_gmap() {
 	        		}
 	        	},
 	        	error : function(err) {
-	        		console.log(err);
+	        		// console.log(err);
 	        	}
 	    	});
 		}
@@ -6754,7 +6767,7 @@ function devicePlottingClass_gmap() {
 				}
 			},
 			error : function(err) {
-				console.log(err.statusText);
+				// console.log(err.statusText);
 			}
 		})
 	};
@@ -7410,8 +7423,9 @@ function devicePlottingClass_gmap() {
 		/*Reset the drawing object if exist*/
 		if(window.location.pathname.indexOf('googleEarth') > -1) {
 			if(polyPlacemark) {
-				gexInstance.edit.endEditLineString(polyPlacemark);
 				polyPlacemark.setVisibility(false);
+				gexInstance.edit.endEditLineString(polyPlacemark);
+				polyPlacemark = "";
 			}
 			$("#exportDevices_Iframe").addClass('hide');
 		} else if(window.location.pathname.indexOf("white_background") > -1) {
@@ -7429,12 +7443,7 @@ function devicePlottingClass_gmap() {
 		/*Remove the polygon if exists*/
 		if((typeof exportDataPolygon == 'object' && Object.keys(exportDataPolygon).length > 0) || (typeof exportDataPolygon == 'function' && exportDataPolygon)) {
 			if(window.location.pathname.indexOf('googleEarth') > -1) {
-				try {
-					exportDataPolygon.setVisibility(false);
-					exportDataPolygon.map = '';
-				} catch(e) {
-					// console.log(e);
-				}
+				exportDataPolygon.setVisibility(false);
 			} else if(window.location.pathname.indexOf("white_background") > -1) {
 				if(whiteMapClass.livePollingPolygonControl) {
 					whiteMapClass.livePollingPolygonControl.deactivate();

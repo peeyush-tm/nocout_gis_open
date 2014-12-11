@@ -187,7 +187,8 @@ function nocoutPerfLib() {
             dataType: "json",
             success: function (result) {
                 if (result.success == 1) {
-                    device_services_tab = Object.keys(result.data.objects);
+
+                    var device_services_tab = Object.keys(result.data.objects);
 
                     /*Loop to get services from object*/
                     var li_style = "background: #f5f5f5; width:100%; border:1px solid #dddddd;"
