@@ -1217,6 +1217,21 @@ class Get_Service_Status(View):
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
+        device_nms_uptime = NetworkStatus.objects.filter(
+            device_name=inventory_device_name,
+            data_source='pl',
+            ).using(
+            alias=inventory_device_machine_name
+        ).values('age', 'severity')
+        age = 'NA'
+        severity = 'NA'
+        if len(device_nms_uptime):
+            data = device_nms_uptime[0]
+
+            age = datetime.datetime.fromtimestamp(float(data['age'])
+                                               ).strftime(date_format)
+            severity = data['severity']
+
         if service_data_source_type in ['pl', 'rta']:
             performance_data = NetworkStatus.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
@@ -1264,7 +1279,9 @@ class Get_Service_Status(View):
                     'meta': {},
                     'objects': {
                         'perf': current_value,
-                        'last_updated': last_updated
+                        'last_updated': last_updated,
+                        'status': severity,
+                        'age': age
                         }
                     }
                 }
