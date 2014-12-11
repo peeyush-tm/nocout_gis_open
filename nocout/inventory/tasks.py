@@ -47,21 +47,28 @@ def update_sector_frequency_per_day():
         # polled frequency
         polled_frequency = ""
         try:
-            polled_frequency = InventoryStatus.objects.filter(device_name=sector_configured_on,
+            polled_frequency = InventoryStatus.objects.filter(device_name=sector_configured_on.device_name,
                                                               data_source='frequency').using(
                                                               alias=machine_name)[0].current_value
         except Exception as e:
-            logger.info("Frequency not exist for sector configured on device ({}).".format(sector_configured_on.name,
+            logger.exception("Frequency not exist for sector configured on device ({}).".format(sector_configured_on,
                                                                                            e.message))
+            continue
 
-        # get frequency object
-        frequency_obj = DeviceFrequency.objects.filter(value=str(polled_frequency))[0]
+        frequency_obj = None
+        try:
+            # get frequency object
+            frequency_obj = DeviceFrequency.objects.filter(value=str(polled_frequency))[0]
 
-        # update sector frequency
-        if frequency_obj:
-            sector.frequency = frequency_obj
-            sector.save()
+            # update sector frequency
+            if frequency_obj:
+                sector.frequency = frequency_obj
+                sector.save()
+        except:
+            logger.exception("No Frequency Found ({})".format(frequency_obj))
+            continue
 
+    return True
 
 
 @task()

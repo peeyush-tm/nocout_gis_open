@@ -6,6 +6,9 @@
 
 {% block content %}
 
+    {% if perms.scheduling_management.add_event %}
+    <p><a href="/scheduling/new"><i class="fa fa-plus">&nbsp;</i> Create Event</a></p>
+    {% endif %}
 	<div class="box border lite">
         <div class="box-title">
             <h4><i class="fa fa-calendar"></i>SCHEDULING</h4>
@@ -28,19 +31,25 @@
             		<div class="col-md-6 box border">
             			<div id="scheduling_calendar"></div>
             		</div>
-            		<div class="col-md-6">
-            			<table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
-		                    <thead>
-		                        <th>Time</th>
-		                        <th>Device</th>
-		                        <th>Status</th>
-		                    </thead>
-		                    <tbody></tbody>
-		                </table>
-            		</div>
+
         			<div class="clearfix"></div>
             	</div>
             </div>
+
+                <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="EventListingTable">
+                    <thead>
+                        <th>Name</th>
+                        <th>Created At</th>
+                        <th>Repeat</th>
+                        <th>Execute On</th>
+                        <th>Created By</th>
+                        <th>Scheduling Type</th>
+                        <th>Device</th>
+                        <th>Action</th>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
             <!-- scheduling_container End-->
             <div class="clearfix"></div>
         </div>
@@ -54,10 +63,21 @@
 	<script type="text/javascript" src={% static "js/fullcalendar/fullcalendar.min.js" %}></script>
 	<!-- Custom Script-->
 	<script type="text/javascript" src={% static "js/nocout_scheduling.js" %}></script>
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
 	<script>
 	    $(document).ready(function () {
+            var dataTableInstance = new ourDataTableWidget();
+
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
+            var ajax_url = '{% url "EventListingTable" %}';
+
+            var destroy=false;
+            dataTableInstance.createDataTable("EventListingTable", gridHeadersObj, ajax_url, destroy);
+
 	        App.setPage("");  //Set current page
 	        App.init(); //Initialise plugins and elements
 	    });
 	</script>
 {% endblock %}
+

@@ -1420,6 +1420,63 @@ class Get_Service_Type_Performance_Data(View):
                 continue
             else:
                 aggregate_data[connected_mac] = data.connected_device_mac
+                connected_ip = data.connected_device_ip
+                #check if the devices connected exists in the database
+                #we will loop through the set of connected device
+                #TODO : make a single call to DB
+                connected_devices = Device.objects.filter(ip_address=connected_ip)
+                #since connected devices are all SS
+                #they may exist or not
+                #we will assume them to be no present in db
+                circuit_id = 'NA'
+                customer_name = 'NA'
+                packet_loss = 'NA'
+                latency = 'NA'
+                status_since = 'NA'
+                machine = 'default'
+                #now lets check if SS exists for a device
+                #and that the customer and circuit are present for that SS
+
+                if connected_devices:
+                    connected_device = connected_devices[0]
+                    try:
+                        ss = connected_device.substation_set.get()
+                        ckt = ss.circuit_set.get()
+                        circuit_id = ckt.circuit_id
+                        customer_name = ckt.customer.alias
+                    except Exception as e:
+                        pass
+
+                    #now lets see what the performance data it holds
+                    if connected_device.is_added_to_nms:
+                        machine = connected_device.machine.name
+                        #is it added?
+                        #only then query the performance network database
+                        #for getting latest status
+                        perf_data = NetworkStatus.objects.filter(device_name=connected_device.device_name
+                        ).annotate(dcount=Count('data_source')
+                        ).values('data_source', 'current_value', 'age', 'sys_timestamp').using(alias=machine)
+                        processed = []
+                        for data in perf_data:
+                            if data['data_source'] not in processed:
+                                if data['data_source'] == 'pl':
+                                    packet_loss = data['current_value']
+                                elif data['data_source'] == 'rta':
+
+                                    try:
+                                        latency = float(data['current_value'])
+                                        if int(latency) == 0:
+                                            latency = "DOWN"
+                                    except:
+                                        latency = data['current_value']
+                                else:
+                                    continue
+                                status_since = data['age']
+                                status_since = datetime.datetime.fromtimestamp(float(status_since)
+                                               ).strftime("%d/%B/%Y %I:%M %p")
+                            else:
+                                continue
+
                 result_data.append({
                         'device_name': data.device_name,
                         'ip_address': data.ip_address,
@@ -1427,9 +1484,16 @@ class Get_Service_Type_Performance_Data(View):
                         'sector_id': data.sector_id,
                         'connected_device_ip': data.connected_device_ip,
                         'connected_device_mac': data.connected_device_mac,
-                        'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
-                        'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%I:%M %p")
+                        'circuit_id': circuit_id,
+                        'customer_name': customer_name,
+                        'packet_loss': packet_loss,
+                        'latency': latency,
+                        'status_since': datetime.datetime.fromtimestamp(float(status_since)
+                        ).strftime("%d/%B/%Y %I:%M %p"),
+                        'last_updated': datetime.datetime.fromtimestamp(float(data.sys_timestamp)
+                        ).strftime("%d/%B/%Y %I:%M %p"),
                     })
+
         self.result['success'] = 1
         self.result['message'] = 'Device Data Fetched Successfully.' if result_data else 'No Record Found.'
         self.result['data']['objects']['table_data'] = result_data
@@ -1439,8 +1503,12 @@ class Get_Service_Type_Performance_Data(View):
                                                                'sector_id',
                                                                'connected_device_ip',
                                                                'connected_device_mac',
-                                                               'date',
-                                                               'time'
+                                                               'circuit_id',
+                                                               'customer_name',
+                                                               'packet_loss',
+                                                               'latency',
+                                                               'status_since',
+                                                               'last_updated'
         ]
         return self.result
 

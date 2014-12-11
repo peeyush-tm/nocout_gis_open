@@ -1,5 +1,4 @@
 from django.db import models
-from alarm_escalation.fields import MultiEmailField
 from organization.models import Organization
 from device.models import DeviceType, DeviceTechnology
 from service.models import Service, ServiceDataSource
@@ -20,10 +19,10 @@ class EscalationLevel(models.Model):
     """
     Class to define model Level.
     """
-    name = models.PositiveSmallIntegerField(choices=LEVEL_CHOICES)
+    name = models.PositiveSmallIntegerField(choices=LEVEL_CHOICES, default=1)
     region_name = models.CharField('Location Region', max_length=50, default='', blank=True)
     organization = models.ForeignKey(Organization)
-    emails = MultiEmailField('Emails', default='', blank=True)
+    emails = models.TextField('Emails', default='', blank=True)
     phones = models.TextField('Phones', default='', blank=True)
     device_type = models.ForeignKey(DeviceType)
     service = models.ForeignKey(Service)
@@ -31,13 +30,20 @@ class EscalationLevel(models.Model):
     alarm_age = models.IntegerField('Alarm Age')
 
     def __unicode__(self):
-        return self.name
+        return '%s' % (self.get_name_display())
 
     def get_phones(self):
         phones = self.phones.split(',')
         return phones
 
     def get_phones_field(value):
+        return ",".join(value)
+
+    def get_emails(self):
+        phones = self.phones.split(',')
+        return phones
+
+    def get_emails_field(value):
         return ",".join(value)
 
 
