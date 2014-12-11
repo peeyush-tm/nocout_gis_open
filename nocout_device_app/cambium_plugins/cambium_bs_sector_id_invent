@@ -49,7 +49,7 @@ def check_cambium_bs_sector_id_invent(item, _no_params, info):
                 color_code = int(info[0][1])
 		bs_ip = info[0][0]
                 state = 0
-                infotext = "%s:%s" % (bs_ip,color_code)
+                infotext = "%s_%s" % (bs_ip,color_code)
     except ValueError:
         infotext = "type_mismatch_value"
     except:

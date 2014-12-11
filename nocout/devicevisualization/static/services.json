@@ -3,11 +3,11 @@
 	"message" : "Live Polling Data Fetched Successfully",
 	"data" : {
 		"devices" : {
-			"7624" : {
+			"2121" : {
 			 	"value" : "50",
 				"icon" : "static/img/marker/icon1_small.png"
 			},
-			"7625" : {
+			"2122" : {
 			 	"value" : "20",
 				"icon" : "static/img/marker/icon2_small.png"
 			}
