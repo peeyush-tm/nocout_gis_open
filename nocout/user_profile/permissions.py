@@ -46,6 +46,14 @@ admin_perms = [
     'user_profile.change_userprofile',
     'user_profile.view_userprofile',
     'user_profile.delete_userprofile',
+    'alarm_escalation.add_escalationlevel',
+    'alarm_escalation.change_escalationlevel',
+    'alarm_escalation.delete_escalationlevel',
+    'alarm_escalation.view_escalationlevel',
+    'alarm_escalation.add_alarmescalation',
+    'alarm_escalation.change_alarmescalation',
+    'alarm_escalation.delete_alarmescalation',
+    'alarm_escalation.view_alarmescalation',
 ]
 
 
@@ -74,6 +82,8 @@ operator_perms = [
     'inventory.view_thresholdconfiguration',
     'organization.view_organization',
     'user_profile.view_userprofile',
+    'alarm_escalation.view_escalationlevel',
+    'alarm_escalation.view_alarmescalation',
 ]
 
 
@@ -90,5 +100,7 @@ viewer_perms = [
     'inventory.view_sector',
     'inventory.view_substation',
     'inventory.view_thematicsettings',
-    'inventory.view_thresholdconfiguration'
+    'inventory.view_thresholdconfiguration',
+    'alarm_escalation.view_escalationlevel',
+    'alarm_escalation.view_alarmescalation',
 ]
