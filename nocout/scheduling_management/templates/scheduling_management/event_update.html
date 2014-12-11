@@ -53,6 +53,20 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="form-group" style="display: None">
+                                            <label for="{{ form.repeat_by.id_for_label }}" class="col-sm-3 control-label">{{ form.repeat_by.label|title }}</label>
+                                            <div class="col-sm-9">
+                                                <div class="col-md-8">
+                                                {% for radio in form.repeat_by %}
+                                                    {{ radio }}
+                                                {% endfor %}
+                                                {{ form.repeat_by.errors }}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 help_text">
+                                                {{ form.repeat_by.help_text }}
+                                            </div>
+                                        </div>
                                             <div class="form-group">
                                                 <label for="{{ form.start_on.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.start_on.label|title }}</label>
                                                 <div class="col-sm-9">
@@ -183,19 +197,30 @@
             // handle the repeatition on basis of the repeat select.
             var ele = $("#id_repeat").val()
             if ((ele=='dai') || (ele=='wee') || (ele=='mon') || (ele=='yea')){
-                $("#id_repeat_every").parent().parent().parent().css({ "display": "block"});
+                $("#id_repeat_every").parents(".form-group").first().css({ "display": "block"});
+                // display in case of month is selected
+                if (ele=='mon'){
+                    $('[name=repeat_by]').parents('.form-group').first().css({'display': 'block'});
+                }
+                else{ $('[name=repeat_by]').parents('.form-group').first().css({'display': 'None'}) }
             }
 
             $("#id_repeat").change(function(el) {
                 if ((el.val=='dai') || (el.val=='wee') || (el.val=='mon') || (el.val=='yea')){
-                    $("#id_repeat_every").parent().parent().parent().css({ "display": "block"});
+                    $("#id_repeat_every").parents(".form-group").first().css({ "display": "block"});
+                    // display in case of month is selected
+                    if (el.val=='mon'){
+                        $('[name=repeat_by]').parents('.form-group').first().css({'display': 'block'});
+                        $('[name=repeat_by]').eq(0).prop('checked', true);
+                    }
+                    else{ $('[name=repeat_by]').parents('.form-group').first().css({'display': 'None'}); }
                 }
                 else{
-                    $("#id_repeat_every").parent().parent().parent().css({ "display": "None"});
+                    $("#id_repeat_every").parents(".form-group").first().css({ "display": "None"});
+                    $('[name=repeat_by]').parents('.form-group').first().css({'display': 'None'})
                 }
 
             });
-
 
         })// end document.ready
     </script>

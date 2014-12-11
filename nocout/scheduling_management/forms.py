@@ -17,6 +17,7 @@ class EventForm(forms.ModelForm):
     REPEAT_EVERY = tuple(repeat_every_list)
 
     repeat_every = forms.ChoiceField(initial=1, choices=REPEAT_EVERY, required=False)
+    repeat_by = forms.ChoiceField(widget=forms.RadioSelect(), choices=Event.REPEAT_BY, required=False)
     end_never = forms.BooleanField(initial=True, required=False)
     # Note take a boolean field in model and replate select_device name with that field.
     select_device = forms.ChoiceField(widget=forms.RadioSelect(), initial=False,
@@ -43,7 +44,9 @@ class EventForm(forms.ModelForm):
                 else:
                     field.widget.attrs['class'] += ' form-control'
             else:
-                if isinstance(field.widget, forms.widgets.Select):
+                if name =='repeat_by':
+                    field.widget.attrs.update({'class': 'col-md'})
+                elif isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
@@ -53,4 +56,4 @@ class EventForm(forms.ModelForm):
         Meta Information
         """
         model = Event
-        exclude = ('created_by', 'organization', 'repeat_by', 'repeat_on',)
+        exclude = ('created_by', 'organization', 'repeat_on')
