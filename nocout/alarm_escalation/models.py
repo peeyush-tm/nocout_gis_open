@@ -40,7 +40,7 @@ class EscalationLevel(models.Model):
         return ",".join(value)
 
     def get_emails(self):
-        phones = self.phones.split(',')
+        phones = self.emails.split(',')
         return phones
 
     def get_emails_field(value):
@@ -75,4 +75,12 @@ class AlarmEscalation(models.Model):
     l7_email_status = models.IntegerField('Level7 Email Status', default=0, choices=STATUS_CHOICES)
     l7_phone_status = models.IntegerField('Level7 SMS Status', default=0, choices=STATUS_CHOICES)
     alert_description = models.TextField('Alert Description', default='', blank=True)
+    status_since = models.DateTimeField(auto_now_add=True)
     is_closed = models.BooleanField(default=False)
+
+    def get_level(self, age):
+        to_level = None
+        for level in self.level.all():
+            if age>=level.alarm_age:
+                to_level = level
+        return to_level
