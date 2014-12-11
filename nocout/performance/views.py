@@ -1286,7 +1286,8 @@ class Get_Service_Status(View):
 
         if performance_data:
             try:
-                current_value = performance_data[0].current_value
+                current_value = current_value = self.formulate_data(performance_data[0].current_value,
+                                                                    service_data_source_type)
                 last_updated = datetime.datetime.fromtimestamp(
                                 float(performance_data[0].sys_timestamp)
                                 ).strftime(date_format)
