@@ -1207,7 +1207,12 @@ class Get_Service_Status(View):
             'message': 'No Data.',
             'data': {
                 'meta': {},
-                'objects': {}
+                'objects': {
+                    'perf': None,
+                    'last_updated': None,
+                    'status': None,
+                    'age': None
+                }
             }
         }
 
@@ -1223,8 +1228,7 @@ class Get_Service_Status(View):
             ).using(
             alias=inventory_device_machine_name
         ).values('age', 'severity')
-        age = 'NA'
-        severity = 'NA'
+
         if len(device_nms_uptime):
             data = device_nms_uptime[0]
 
