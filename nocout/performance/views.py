@@ -1232,6 +1232,20 @@ class Get_Service_Status(View):
                                                ).strftime(date_format)
             severity = data['severity']
 
+            self.result = {
+                'success': 1,
+                'message': 'Service Status Fetched Successfully',
+                'data': {
+                    'meta': {},
+                    'objects': {
+                        'perf': None,
+                        'last_updated': None,
+                        'status': severity,
+                        'age': age
+                        }
+                    }
+                }
+
         if service_data_source_type in ['pl', 'rta']:
             performance_data = NetworkStatus.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
@@ -1272,19 +1286,8 @@ class Get_Service_Status(View):
                 last_updated = datetime.datetime.fromtimestamp(
                                 float(performance_data[0].sys_timestamp)
                                 ).strftime(date_format)
-                self.result = {
-                'success': 1,
-                'message': 'Service Status Fetched Successfully',
-                'data': {
-                    'meta': {},
-                    'objects': {
-                        'perf': current_value,
-                        'last_updated': last_updated,
-                        'status': severity,
-                        'age': age
-                        }
-                    }
-                }
+                self.result['data']['objects']['perf'] = current_value
+                self.result['data']['objects']['last_updated'] = last_updated
             except Exception as e:
                 log.exception(e.message)
 
