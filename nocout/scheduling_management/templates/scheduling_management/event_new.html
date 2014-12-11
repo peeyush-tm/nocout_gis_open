@@ -54,22 +54,6 @@
                                                 </div>
                                             </div>
                                             <div class="form-group">
-                                                <label class="col-sm-3 control-label"><span class="mandatory">* </span>Ends</label>
-                                                <div class="col-sm-9">
-                                                    <label class="radio-inline">
-                                                        <input type="radio" id="id_ends" class="radioField" value="end_never" name="ends" checked> Never {{ form.end_never }}
-                                                    </label><br>
-                                                    <label class="radio-inline">
-                                                        <input type="radio" id="id_ends" class="radioField" value="end_after" name="ends">
-                                                        After<div class="radio-inline">{{ form.end_after }}</div>&nbsp;occurence
-                                                    </label><br>
-                                                    <label class="radio-inline">
-                                                        <input type="radio" id="id_ends" class="radioField" value="end_on" name="ends">
-                                                        On&nbsp;&nbsp;&nbsp;<div class="radio-inline">{{ form.end_on }}</div>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            <div class="form-group">
                                                 <label for="{{ form.scheduling_type.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.scheduling_type.label|title }}</label>
                                                 <div class="col-sm-9">
                                                     <div class="col-md-8">
@@ -93,12 +77,31 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="form-group">
+                                                <label class="col-sm-3 control-label"><span class="mandatory">* </span>Ends</label>
+                                                <div class="col-sm-9">
+                                                    <label class="radio-inline">
+                                                        <input type="radio" id="id_ends" class="radioField" value="end_never" name="ends" checked> Never {{ form.end_never }}
+                                                    </label><br>
+                                                    <label class="radio-inline">
+                                                        <input type="radio" id="id_ends" class="radioField" value="end_after" name="ends">
+                                                        After<div class="radio-inline">{{ form.end_after }}</div>&nbsp;occurence
+                                                    </label><br>
+                                                    <label class="radio-inline">
+                                                        <input type="radio" id="id_ends" class="radioField" value="end_on" name="ends">
+                                                        On&nbsp;&nbsp;&nbsp;<div class="radio-inline">{{ form.end_on }}</div>
+                                                    </label>
+                                                </div>
+                                            </div>
                                     </div>
+                                    <div class="clearfix"></div>
                                     <div class="form-group">
                                         <div class="col-sm-offset-3 col-sm-9">
                                             <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
                                             &nbsp;
                                             <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
+                                            &nbsp;
+                                            <button type="reset" class="btn btn-warning" onclick="window.location.replace('/scheduling/')"><i class="fa fa-times"></i>Skip</button>
                                             &nbsp;
                                             <button type="reset" class="btn btn-danger" onclick="window.location.replace('/scheduling/')"><i class="fa fa-times"></i>Cancel</button>
                                         </div>

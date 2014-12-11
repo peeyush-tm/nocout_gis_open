@@ -6,6 +6,9 @@
 
 {% block content %}
 
+    {% if perms.scheduling_management.add_event %}
+    <p><a href="/scheduling/new"><i class="fa fa-plus">&nbsp;</i> Create Event</a></p>
+    {% endif %}
 	<div class="box border lite">
         <div class="box-title">
             <h4><i class="fa fa-calendar"></i>SCHEDULING</h4>

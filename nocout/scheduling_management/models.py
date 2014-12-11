@@ -48,7 +48,7 @@ class Event(models.Model):
 
     # choices for the scheduling type.
     SCHEDULING_TYPE = (
-        (None, 'Select'),
+        ('', 'Select'),
         ('devi', 'Device Specific'),
         ('dety', 'Device Type'),
     )
