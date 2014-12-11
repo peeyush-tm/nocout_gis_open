@@ -55,7 +55,7 @@ SERVICE_DATA_SOURCE = {
         "display_name": "Latency",
         "type": "area", "valuesuffix":
         "ms", "valuetext": "ms",
-        "formula": None
+        "formula": "rta_null"
     },
     "pl": {
         "display_name": "Packet Drop",
@@ -178,6 +178,11 @@ SERVICES = {
 #     if uptime:
 #         ret_val = int(float(uptime)/(60 * 60 * 2``))
 #         return ret_val if ret_val > 0 else int(float(uptime)/(60 * 60))
+
+
+def rta_null(rta=0):
+    if int(rta) == 0:
+        return None
 
 class Live_Performance(ListView):
     """
@@ -879,7 +884,8 @@ class Inventory_Device_Status(View):
                                                     'State',
                                                     'IP Address',
                                                     'MAC Address',
-                                                    'Planned Frequency'
+                                                    'Planned Frequency',
+                                                    'Frequency'
                 ]
             else:
                 result['data']['objects']['headers'] = ['BS Name',
@@ -891,7 +897,8 @@ class Inventory_Device_Status(View):
                                                     'State',
                                                     'IP Address',
                                                     'MAC Address',
-                                                    'Planned Frequency'
+                                                    'Planned Frequency',
+                                                    'Frequency'
                 ]
             result['data']['objects']['values'] = []
             sector_objects = Sector.objects.filter(sector_configured_on=device.id)
@@ -899,8 +906,10 @@ class Inventory_Device_Status(View):
             pmp_port = 'N/A'
             for sector in sector_objects:
                 base_station = sector.base_station
-                planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
+                planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
+                frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                 planned_frequency = ",".join(planned_frequency)
+                frequency = ",".join(frequency)
                 if technology.name in ['P2P','PTP','ptp','p2p']:
                     try:
                         circuits = sector.circuit_set.get()
@@ -934,7 +943,8 @@ class Inventory_Device_Status(View):
                                                        state_name,
                                                        device.ip_address,
                                                        device.mac_address,
-                                                       planned_frequency
+                                                       planned_frequency,
+                                                       frequency
                 ])
                 else:
                     result['data']['objects']['values'].append([base_station.alias,
@@ -946,7 +956,8 @@ class Inventory_Device_Status(View):
                                                        state_name,
                                                        device.ip_address,
                                                        device.mac_address,
-                                                       planned_frequency
+                                                       planned_frequency,
+                                                       frequency
                 ])
 
         elif device.substation_set.exists():
@@ -961,7 +972,8 @@ class Inventory_Device_Status(View):
                                                     'State',
                                                     'IP Address',
                                                     'MAC Address',
-                                                    'Planned Frequency'
+                                                    'Planned Frequency',
+                                                    'Frequency'
             ]
             result['data']['objects']['values'] = []
             substation_objects = device.substation_set.filter()
@@ -976,8 +988,10 @@ class Inventory_Device_Status(View):
                     sector = circuit.sector
                     base_station = sector.base_station
 
-                    planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
+                    planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
+                    frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                     planned_frequency = ",".join(planned_frequency)
+                    frequency = ",".join(frequency)
 
                     try:
                         city_name = City.objects.get(id=base_station.city).city_name\
@@ -1002,7 +1016,8 @@ class Inventory_Device_Status(View):
                                                            state_name,
                                                            device.ip_address,
                                                            device.mac_address,
-                                                           planned_frequency
+                                                           planned_frequency,
+                                                           frequency
                     ])
 
         result['success'] = 1
