@@ -18,6 +18,8 @@ class EventForm(forms.ModelForm):
 
     repeat_every = forms.ChoiceField(initial=1, choices=REPEAT_EVERY, required=False)
     repeat_by = forms.ChoiceField(widget=forms.RadioSelect(), choices=Event.REPEAT_BY, required=False)
+    repeat_on = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple(),
+                queryset=Weekdays.objects.filter().order_by('id'), required=False)
     end_never = forms.BooleanField(initial=True, required=False)
     # Note take a boolean field in model and replate select_device name with that field.
     select_device = forms.ChoiceField(widget=forms.RadioSelect(), initial=False,
@@ -38,13 +40,15 @@ class EventForm(forms.ModelForm):
         super(EventForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
+                if (name =='repeat_by') or (name == 'repeat_on'): # prevent these field from assigning of th select2 class.
+                    field.widget.attrs['class'] += ' col-md'
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
                     field.widget.attrs['class'] += ' form-control'
             else:
-                if name =='repeat_by':
+                if (name =='repeat_by') or (name == 'repeat_on'): # prevent these field from assigning of th select2 class.
                     field.widget.attrs.update({'class': 'col-md'})
                 elif isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
@@ -56,4 +60,4 @@ class EventForm(forms.ModelForm):
         Meta Information
         """
         model = Event
-        exclude = ('created_by', 'organization', 'repeat_on')
+        exclude = ('created_by', 'organization')

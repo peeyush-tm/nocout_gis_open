@@ -67,6 +67,14 @@
                                                 {{ form.repeat_by.help_text }}
                                             </div>
                                         </div>
+                                        <div class="form-group" style="display: None">
+                                            <label for="{{ form.repeat_on.id_for_label }}" class="col-sm-3 control-label">{{ form.repeat_on.label|title }}</label>
+                                            <div class="col-sm-9">
+                                                <div class="col-md-8">
+                                                    {{ form.repeat_on }} {{ form.repeat_on.errors }}
+                                                </div>
+                                            </div>
+                                        </div>
                                             <div class="form-group">
                                                 <label for="{{ form.start_on.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.start_on.label|title }}</label>
                                                 <div class="col-sm-9">
@@ -194,6 +202,9 @@
                 }
             });
 
+            // display weekdays inline when repeat weekly
+            $("#id_repeat_on li").css({"display":"inline"})
+
             // handle the repeatition on basis of the repeat select.
             var ele = $("#id_repeat").val()
             if ((ele=='dai') || (ele=='wee') || (ele=='mon') || (ele=='yea')){
@@ -201,8 +212,15 @@
                 // display in case of month is selected
                 if (ele=='mon'){
                     $('[name=repeat_by]').parents('.form-group').first().css({'display': 'block'});
+                    $('[name=repeat_by]').eq(0).prop('checked', true)
                 }
-                else{ $('[name=repeat_by]').parents('.form-group').first().css({'display': 'None'}) }
+                else if (ele=='wee'){
+                    $('[name=repeat_on]').parents('.form-group').first().css({'display': 'block'});
+                }
+                else{
+                    $('[name=repeat_by]').parents('.form-group').first().css({'display': 'None'});
+                    $('[name=repeat_on]').parents('.form-group').first().css({'display': 'None'});
+                }
             }
 
             $("#id_repeat").change(function(el) {
@@ -210,14 +228,23 @@
                     $("#id_repeat_every").parents(".form-group").first().css({ "display": "block"});
                     // display in case of month is selected
                     if (el.val=='mon'){
-                        $('[name=repeat_by]').parents('.form-group').first().css({'display': 'block'});
+                        $('[name=repeat_by]').parents('.form-group').first().css({'display': 'block'}); // display on month
+                        $('[name=repeat_on]').parents('.form-group').first().css({'display': 'None'}); // hide of weekly
                         $('[name=repeat_by]').eq(0).prop('checked', true);
                     }
-                    else{ $('[name=repeat_by]').parents('.form-group').first().css({'display': 'None'}); }
+                    else if (el.val=='wee'){
+                        $('[name=repeat_by]').parents('.form-group').first().css({'display': 'None'}); // hide of month
+                        $('[name=repeat_on]').parents('.form-group').first().css({'display': 'block'}); // display on weekly
+                    }
+                    else{
+                        $('[name=repeat_by]').parents('.form-group').first().css({'display': 'None'});
+                        $('[name=repeat_on]').parents('.form-group').first().css({'display': 'None'});
+                    }
                 }
                 else{
                     $("#id_repeat_every").parents(".form-group").first().css({ "display": "None"});
-                    $('[name=repeat_by]').parents('.form-group').first().css({'display': 'None'})
+                    $('[name=repeat_by]').parents('.form-group').first().css({'display': 'None'});
+                    $('[name=repeat_on]').parents('.form-group').first().css({'display': 'None'});
                 }
 
             });
