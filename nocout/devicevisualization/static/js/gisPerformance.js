@@ -147,7 +147,7 @@ function GisPerformance() {
                 //If data is there
                 if(data) {
                     //Store data in gisData
-                    if(data.success && data.success == 1) {
+                    if(data.bs_id) {
                         perf_self.gisData = data;
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             //Update Map with the data
