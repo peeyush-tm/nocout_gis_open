@@ -147,28 +147,30 @@ function GisPerformance() {
                 //If data is there
                 if(data) {
                     //Store data in gisData
-                    perf_self.gisData = data;
-                    if(window.location.pathname.indexOf("white_background") > -1) {
-                        //Update Map with the data
-                        perf_self.updateMap(function(response) {
-                            //Send Request for the next counter
-                            perf_self.sendRequest(counter);
-                        });
-                    } else if(window.location.pathname.indexOf("googleEarth") > -1) {
-                        //Update Map with the data
-                        perf_self.updateMap(function(response) {
-                            //Send Request for the next counter
-                            perf_self.sendRequest(counter);
-                        });
-                    } else {
-                        var current_bs_in_bound = getMarkerInCurrentBound();
-                        /*Check that the bsname is present in current bounds or not*/
-                        if (current_bs_in_bound.indexOf(data.bs_id) > -1) {
+                    if(data.success && data.success == 1) {
+                        perf_self.gisData = data;
+                        if(window.location.pathname.indexOf("white_background") > -1) {
                             //Update Map with the data
                             perf_self.updateMap(function(response) {
                                 //Send Request for the next counter
-                            perf_self.sendRequest(counter);
+                                perf_self.sendRequest(counter);
                             });
+                        } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                            //Update Map with the data
+                            perf_self.updateMap(function(response) {
+                                //Send Request for the next counter
+                                perf_self.sendRequest(counter);
+                            });
+                        } else {
+                            var current_bs_in_bound = getMarkerInCurrentBound();
+                            /*Check that the bsname is present in current bounds or not*/
+                            if (current_bs_in_bound.indexOf(data.bs_id) > -1) {
+                                //Update Map with the data
+                                perf_self.updateMap(function(response) {
+                                    //Send Request for the next counter
+                                perf_self.sendRequest(counter);
+                                });
+                            }
                         }
                     }
                 }
