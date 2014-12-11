@@ -106,9 +106,9 @@ class LevelList(TemplateView):
         """
         context = super(LevelList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
-            {'mData': 'organization__alias', 'sTitle': 'organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'emails', 'sTitle': 'Emails', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Level', 'sWidth': 'auto', },
+            {'mData': 'emails', 'sTitle': 'Email', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'phones', 'sTitle': 'SMS', 'sWidth': '10%', },
             {'mData': 'service__alias', 'sTitle': 'Service', 'sWidth': 'auto', },
             {'mData': 'device_type__alias', 'sTitle': 'Device Type', 'sWidth': '10%', },
