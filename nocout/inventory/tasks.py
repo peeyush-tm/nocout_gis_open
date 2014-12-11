@@ -9,6 +9,7 @@ from device.models import State, City
 from nocout.settings import MEDIA_ROOT
 from performance.models import InventoryStatus
 from IPy import IP
+import ipaddr
 from decimal import *
 import os
 import re
@@ -4531,43 +4532,43 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 base_station = ""
 
             # ******************************************************************************************
-            # *********************************** DR Site Check (Start) ********************************
+            # ****************************** DR Site Anonymous Check (Start) ***************************
 
-            # check for dr site (disaster recovery site); if it's yes than do not create any entry beyond this point
-            # just get base station/idu device and make it 'dr configured on' attribute of current sector
-            # get dr site status
-            dr_site_status = row['DR Site'] if 'DR Site' in row.keys() else ""
+            # # check for dr site (disaster recovery site); if it's yes than do not create any entry beyond this point
+            # # just get base station/idu device and make it 'dr configured on' attribute of current sector
+            # # get dr site status
+            # dr_site_status = row['DR Site'] if 'DR Site' in row.keys() else ""
+            #
+            # # get current sector
+            # sector_id = row['Sector ID'] if 'Sector ID' in row.keys() else ""
+            #
+            # # pmp name
+            # pmp = ""
+            # try:
+            #     if 'PMP' in row.keys():
+            #         pmp = row['PMP']
+            #         if isinstance(pmp, basestring) or isinstance(pmp, float):
+            #             pmp = int(pmp)
+            # except Exception as e:
+            #     logger.info("PMP not in sheet or something wrong. Exception: ", e.message)
+            #
+            # # sector name
+            # sector_name = '{}_{}_{}'.format(
+            #     special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
+            #     row['Sector Name'] if 'Sector Name' in row.keys() else "", pmp)
+            #
+            # # get sector with current sector id
+            # dr_sector = Sector.objects.filter(name=sector_name)
+            #
+            # if (dr_site_status.lower() == "yes") and dr_sector:
+            #     if dr_sector:
+            #         # if sector already exist than make base station/idu device it's 'dr configured on' device
+            #         # and than skip the current loop by using 'continue' so that no entry beyond this point created
+            #         dr_sector[0].dr_configured_on = base_station
+            #         dr_sector[0].save()
+            #         continue
 
-            # get current sector
-            sector_id = row['Sector ID'] if 'Sector ID' in row.keys() else ""
-
-            # pmp name
-            pmp = ""
-            try:
-                if 'PMP' in row.keys():
-                    pmp = row['PMP']
-                    if isinstance(pmp, basestring) or isinstance(pmp, float):
-                        pmp = int(pmp)
-            except Exception as e:
-                logger.info("PMP not in sheet or something wrong. Exception: ", e.message)
-
-            # sector name
-            sector_name = '{}_{}_{}'.format(
-                special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
-                row['Sector Name'] if 'Sector Name' in row.keys() else "", pmp)
-
-            # get sector with current sector id
-            dr_sector = Sector.objects.filter(name=sector_name)
-
-            if (dr_site_status.lower() == "yes") and dr_sector:
-                if dr_sector:
-                    # if sector already exist than make base station/idu device it's 'dr configured on' device
-                    # and than skip the current loop by using 'continue' so that no entry beyond this point created
-                    dr_sector[0].dr_configured_on = base_station
-                    dr_sector[0].save()
-                    continue
-
-            # *********************************** DR Site Check (End) **********************************
+            # ****************************** DR Site Anonymous Check (End) *****************************
             # ******************************************************************************************
 
             try:
@@ -4995,6 +4996,84 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 # sector alias
                 alias = '{}'.format(row['Sector ID'].strip() if 'Sector ID' in row.keys() else "")
 
+                # dr site
+                dr_site = row['DR Site'] if 'DR Site' in row.keys() else ""
+
+                # idu ip
+                idu_ip = row['IDU IP'] if 'IDU IP' in row.keys() else ""
+
+                # master device
+                master_device = base_station
+
+                # slave device
+                slave_device = ""
+
+                # *********************************************************************************************
+                # ************************ DR handling according to ip address (Start) ************************
+                # *********************************************************************************************
+
+                # Rule for identifing master/slave device:
+                # Master device ip address is just previous to ip address of slave device.
+                # For e.g. if master device ip is '10.156.4.2' than slave device ip is '10.156.4.3'
+
+                # identify whether device is master/slave if 'dr site' is 'yes' and current sector is already present
+                if dr_site.lower() == "yes":
+                    if idu_ip:
+                        # current sector
+                        current_sector = ""
+
+                        # current sector 'sector_configured_on' device
+                        sector_device = ""
+
+                        try:
+                            # get current sector only if it's 'dr_site' is 'Yes'
+                            current_sector = Sector.objects.get(name=name, dr_site="Yes")
+                            sector_device = current_sector.sector_configured_on
+                        except Exception as e:
+                            logger.info("Sector with sector id - {} not exist. Exception: {} ".format(alias, e.message))
+
+                        if current_sector:
+                            if sector_device:
+                                # sector device previous ip (decrement idu ip by 1)
+                                sd_prev_ip = ""
+                                try:
+                                    sd_prev_ip = ipaddr.IPAddress(sector_device.ip_address) - 1
+                                except Exception as e:
+                                    logger.info("No ip address for device {}. Exception: {}".format(
+                                        sector_device.ip_address,
+                                        e.message))
+
+                                # next ip (increment idu ip by 1)
+                                sd_next_ip = ""
+                                try:
+                                    sd_next_ip = ipaddr.IPAddress(sector_device.ip_address) + 1
+                                except Exception as e:
+                                    logger.info("No ip address for device {}. Exception: {}".format(
+                                        sector_device.ip_address,
+                                        e.message))
+
+                                # idu ip address 'ipaddr' object
+                                idu_ip_address = ipaddr.IPAddress(idu_ip)
+
+                                # if 'idu_ip_address' is ip address just previous to 'sector_configured_on' device
+                                # than make current 'sector_configured_on' device to 'dr_configured_on' device
+                                # and make 'base_station' device new 'sector_configured_on' device
+                                if idu_ip_address == sd_prev_ip:
+                                    master_device = base_station
+                                    slave_device = sector_device
+                                # if 'idu_ip_address' is ip address just next to 'sector_configured_on' device
+                                # than just 'base_station' device new 'dr_configured_on' device
+                                # and 'sector_configured_on' device remains the same
+                                elif idu_ip_address == sd_next_ip:
+                                    master_device = sector_device
+                                    slave_device = base_station
+                                else:
+                                    pass
+
+                # *********************************************************************************************
+                # ************************ DR handling according to ip address (End) **************************
+                # *********************************************************************************************
+
                 # sector data
                 sector_data = {
                     'name': name,
@@ -5002,10 +5081,11 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'sector_id': row['Sector ID'].strip().lower() if 'Sector ID' in row.keys() else "",
                     'base_station': basestation,
                     'bs_technology': 3,
-                    'sector_configured_on': base_station,
+                    'sector_configured_on': master_device,
                     'sector_configured_on_port': port,
                     'antenna': sector_antenna,
-                    'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
+                    'dr_site': dr_site,
+                    'dr_configured_on': slave_device,
                     'description': 'Sector created on {}.'.format(full_time)
                 }
 
@@ -6791,7 +6871,7 @@ def create_sector(sector_payload):
     # initializing variables
     name, alias, sector_id, base_station, bs_technology, sector_configured_on, sector_configured_on_port = [''] * 7
     antenna, mrc, tx_power, rx_power, rf_bandwidth, frame_length, cell_radius, frequency, modulation = [''] * 9
-    dr_site, description = [''] * 2
+    dr_site, dr_configured_on, description = [''] * 3
 
     # get sector parameters
     if 'name' in sector_payload.keys():
@@ -6812,6 +6892,8 @@ def create_sector(sector_payload):
         antenna = sector_payload['antenna'] if sector_payload['antenna'] else ""
     if 'dr_site' in sector_payload.keys():
         dr_site = sector_payload['dr_site'].lower() if sector_payload['dr_site'] else ""
+    if 'dr_configured_on' in sector_payload.keys():
+        dr_configured_on = sector_payload['dr_configured_on'] if sector_payload['dr_configured_on'] else ""
     if 'mrc' in sector_payload.keys():
         mrc = sector_payload['mrc'] if sector_payload['mrc'] else ""
     if 'tx_power' in sector_payload.keys():
@@ -6896,6 +6978,12 @@ def create_sector(sector_payload):
                             sector.dr_site = ""
                     except Exception as e:
                         logger.info("DR Site: ({} - {})".format(dr_site, e.message))
+                # dr configured on
+                if dr_configured_on:
+                    try:
+                        sector.dr_configured_on = dr_configured_on
+                    except Exception as e:
+                        logger.info("DR Configured On: ({} - {})".format(dr_configured_on, e.message))
                 # tx power
                 if tx_power:
                     if isinstance(tx_power, int) or isinstance(tx_power, float):
