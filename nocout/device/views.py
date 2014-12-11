@@ -3388,7 +3388,8 @@ class GisWizardServiceListing(PermissionsRequiredMixin, DatatableSearchMixin, Ba
     """
     model = DeviceTypeService
     required_permissions = ('device.view_devicetypeservice',)
-    columns = ['device_type', 'service__name', 'service__alias', 'parameter__parameter_description']
+    columns = ['device_type', 'service__name', 'service__alias', 'parameter__parameter_description', 'service_data_sources__alias']
+    search_columns = ['device_type__alias', 'service__name', 'service__alias', 'parameter__parameter_description', 'service_data_sources__alias']
     order_columns = ['device_type', 'service__name', 'service__alias']
 
     def get_initial_queryset(self):
