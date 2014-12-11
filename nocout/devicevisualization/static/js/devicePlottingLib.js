@@ -850,8 +850,7 @@ function devicePlottingClass_gmap() {
 
 	            	google.maps.event.removeListener(listener);
 
-			    	searchResultData = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true)))
-	            	// google.maps.event.removeListener(listener);
+			    	searchResultData = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true)));
 	            });
 	        });
 
@@ -3590,7 +3589,7 @@ function devicePlottingClass_gmap() {
 				$("#polling_tech").html(techOptions);
 			},
 			error : function(err) {
-				console.log(err.statusText);
+				// console.log(err.statusText);
 			}
 		});
 
@@ -4620,6 +4619,8 @@ function devicePlottingClass_gmap() {
 		if(!isIdleCase) {
 			/*Clear Existing Labels & Reset Counters*/
 			if(window.location.pathname.indexOf("googleEarth") > -1) {
+				/*Clear all the elements from google earth*/
+		        earth_instance.clearEarthElements();
 				earth_self.clearStateCounters();
 			} else if (window.location.pathname.indexOf("white_background") > -1) { 
 				whiteMapClass.clearStateCounters_wmaps();			
@@ -6361,7 +6362,7 @@ function devicePlottingClass_gmap() {
             		$("#response_msg_container").html(result.message);
             	},
             	error : function(err) {
-            		console.log(err);
+            		// console.log(err);
             	}
         	});
 		}
@@ -6405,7 +6406,7 @@ function devicePlottingClass_gmap() {
         			}
             	},
             	error : function(err) {
-            		console.log(err);
+            		// console.log(err);
             	}
 			});
 		} else {
@@ -6550,7 +6551,7 @@ function devicePlottingClass_gmap() {
         		}
         	},
         	error : function(err) {
-        		console.log(err);
+        		// console.log(err);
         	}
     	});
 
@@ -6637,7 +6638,7 @@ function devicePlottingClass_gmap() {
 	        		}
 	        	},
 	        	error : function(err) {
-	        		console.log(err);
+	        		// console.log(err);
 	        	}
 	    	});
 		}
@@ -6754,7 +6755,7 @@ function devicePlottingClass_gmap() {
 				}
 			},
 			error : function(err) {
-				console.log(err.statusText);
+				// console.log(err.statusText);
 			}
 		})
 	};

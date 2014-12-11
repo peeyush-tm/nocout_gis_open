@@ -1350,7 +1350,7 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
                         bootbox.alert("No L2 Report Found.");
                     } else {
                         var url = base_url+"/"+result['data'][0]['url'];
-                        console.log(url);
+                        // console.log(url);
                         var win = window.open(url, '_blank');
                         win.focus();
                     }
@@ -1359,7 +1359,7 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
                 }
             },
             error : function(err) {
-                console.log(err);
+                // console.log(err);
             }
         });
     }
@@ -1424,7 +1424,10 @@ function showGoogleEarthInBounds(boundsArr, callback) {
     var boundPolygonArray= [];
     for(var i=0;i< boundsArr.length; i++) {
         (function(i) {
-            boundPolygonArray.push(gexInstance.dom.buildPointPlacemark([boundsArr[i].lat, boundsArr[i].lon]));
+            var point = gexInstance.dom.buildPointPlacemark([boundsArr[i].lat, boundsArr[i].lon]);
+            // Hide this placemark
+            point.setVisibility(false);
+            boundPolygonArray.push(point);
         }(i));
     }
 
@@ -1433,7 +1436,7 @@ function showGoogleEarthInBounds(boundsArr, callback) {
     // var bounds = gexInstance.dom.computeBounds(folder);
     // gexInstance.view.setToBoundsView(bounds, { aspectRatio: 1.0 });
     gexInstance.util.flyToObject(folder);
-
+    isFromSearch = true;
     callback();
     
 
@@ -1532,8 +1535,13 @@ function updateGoogleEarthPlacedmarkNewSize(placemark, newSize) {
 }
 
 function getCurrentEarthBoundPolygon() {
-    var globeBounds = ge.getView().getViewportGlobeBounds();
-    var poly = [ {lat: globeBounds.getNorth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getEast()}, {lat: globeBounds.getSouth(), lon: globeBounds.getEast()},{lat: globeBounds.getSouth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getWest()} ];
+    var poly = [];
+    try {
+        var globeBounds = ge.getView().getViewportGlobeBounds();
+        poly = [ {lat: globeBounds.getNorth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getEast()}, {lat: globeBounds.getSouth(), lon: globeBounds.getEast()},{lat: globeBounds.getSouth(), lon: globeBounds.getWest()}, {lat: globeBounds.getNorth(), lon: globeBounds.getWest()} ];
+    } catch(e) {
+        // console.log(e);
+    }
     return poly;
 }
 
