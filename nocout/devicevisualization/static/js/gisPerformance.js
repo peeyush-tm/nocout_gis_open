@@ -543,6 +543,19 @@ function GisPerformance() {
                                 // pass
                             }
 
+                            // Remove currently Linked Label
+                            try {
+                                if(tooltipInfoLabel["ss_"+removed_key[x]]) {
+                                    tooltipInfoLabel["ss_"+removed_key[x]].setVisibility(false);
+                                    // Remove from global object
+                                    delete tooltipInfoLabel["ss_"+removed_key[x]];
+                                } else {
+                                    // pass
+                                }
+                            } catch(e) {
+                                // console.log(e);
+                            }
+
                         } else {
                             if(allMarkersObject_gmap['sub_station']["ss_"+removed_key[x]]) {
                                 delete allMarkersObject_gmap['sub_station']["ss_"+removed_key[x]];
@@ -557,6 +570,19 @@ function GisPerformance() {
                                 delete allMarkersObject_gmap['path']['line_'+removed_key[x]];
                             } else {
                                 // pass
+                            }
+
+                            // Remove currently Linked Label
+                            try {
+                                if(tooltipInfoLabel["ss_"+removed_key[x]]) {
+                                    tooltipInfoLabel["ss_"+removed_key[x]].close();
+                                    // Remove from global object
+                                    delete tooltipInfoLabel["ss_"+removed_key[x]];
+                                } else {
+                                    // pass
+                                }
+                            } catch(e) {
+                                // console.log(e);
                             }
                         }
                     }
@@ -1164,27 +1190,24 @@ function GisPerformance() {
 
             // Update Loki Object
             all_devices_loki_db.update(bs_object);
-
             // Update loki db object end
 
             
             // Show New Plotted SS Markers
-            // setTimeout(function() {
-            //     if(window.location.pathname.indexOf("white_background") > -1) {
-            //         for (var i = 0; i < new_plotted_ss.length; i++) {
-            //             showOpenLayerFeature(new_plotted_ss[i]);
-            //         }
-            //     } else if(window.location.pathname.indexOf("googleEarth") > -1) {
-            //         for (var i = 0; i < new_plotted_ss.length; i++) {
-
-            //         }
-            //     } else {
-            //         for (var i = 0; i < new_plotted_ss.length; i++) {
-            //             new_plotted_ss[i].setMap(mapInstance);
-            //         }
-            //     }
-            //     callback(true);
-            // }, 200);
+            if(window.location.pathname.indexOf("white_background") > -1) {
+                // for (var i = 0; i < new_plotted_ss.length; i++) {
+                //     showOpenLayerFeature(new_plotted_ss[i]);
+                // }
+            } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                // for (var i = 0; i < new_plotted_ss.length; i++) {
+                // }
+            } else {
+                for (var i = 0; i < new_plotted_ss.length; i++) {
+                    if(!new_plotted_ss[i].map) {
+                        new_plotted_ss[i].setMap(mapInstance);
+                    }
+                }
+            }
             callback(true);
         } else {
             callback(true);
