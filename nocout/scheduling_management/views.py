@@ -47,7 +47,7 @@ class EventList(PermissionsRequiredMixin, TemplateView):
         #if the user role is Admin or operator or superuser then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role or self.request.user.is_superuser:
-            datatable_headers.append({'mData': 'no_of_devices', 'sTitle': 'No.of devices', 'sWidth': '5%', 'bSortable': True})
+            datatable_headers.append({'mData': 'no_of_devices', 'sTitle': 'No.of devices', 'sWidth': '5%', 'bSortable': False})
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -128,6 +128,12 @@ class EventCreate(PermissionsRequiredMixin, CreateView):
         self.object = None
         form_class = self.get_form_class()
         form = self.get_form(form_class)
+
+        device = self.request.POST['device']
+        self.request.POST['device'] = device.split(',')
+        if not form.is_valid():
+            self.request.POST['device'] = device
+
         if form.is_valid():
             user = self.request.user.userprofile
             self.object = form.save(commit=False)
@@ -158,7 +164,8 @@ class EventUpdate(PermissionsRequiredMixin, UpdateView):
         """
         self.object = self.get_object()
         form_class = self.get_form_class()
-        form = self.get_form(form_class)
+        device_initial = ','.join([str(device_id) for device_id in self.object.device.values_list('id', flat=True)])
+        form = EventForm(instance=self.object, initial={'device': device_initial})
         return self.render_to_response(
             self.get_context_data(form=form))
 
@@ -166,6 +173,11 @@ class EventUpdate(PermissionsRequiredMixin, UpdateView):
         self.object = self.get_object()
         form_class = self.get_form_class()
         form = self.get_form(form_class)
+        device = self.request.POST['device'] # device id come in format '1,2,3'
+        self.request.POST['device'] = device.split(',') # update device id as ['1', '2', '3']
+        if not form.is_valid():
+            self.request.POST['device'] = device # again undo the changes if form is not valid
+
         if form.is_valid():
             self.object = form.save()
             return HttpResponseRedirect(EventUpdate.success_url)
