@@ -52,6 +52,8 @@ def connection_telnet_bs_for_p1_mrc_stc(hostip, port):
 		try:
 			pmp1_mrc = params[9]
 			pmp1_mrc  = pmp1_mrc.split(':')[1]
+			if pmp1_mrc == "master":
+				pmp1_mrc = "enabled"
 		except:
 			pmp1_mrc = None
 		try:
