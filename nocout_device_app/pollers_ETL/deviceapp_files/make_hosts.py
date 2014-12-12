@@ -10,9 +10,9 @@ all_hosts = []
 ipaddresses = {}
 host_attributes = {}
 # Specific to DR enabled
-dr_all_hosts = []
-dr_ipaddresses = {}
-dr_host_attributes = {}
+#dr_all_hosts = []
+#dr_ipaddresses = {}
+#dr_host_attributes = {}
 
 
 def main():
@@ -76,11 +76,12 @@ def make_BS_data():
 	cur.close() 
 	db.close()
         processed = []
-	dr_en_devices = sorted(filter(lambda e: e[9].lower() == 'yes' and e[10], data), key=itemgetter(10))
+	dr_en_devices = sorted(filter(lambda e: e[9] and e[9].lower() == 'yes' and e[10], data), key=itemgetter(10))
 	#print 'dr_en_devices --'
 	#print len(dr_en_devices)
 	data = filter(lambda e: e[9] == '' or e[9].lower() == 'no', data)
 	# dr_enabled devices ids
+	# dr_configured_on_devices would be treated as master device
 	dr_configured_on_ids = map(lambda e: e[10], dr_en_devices)
 	#print '--dr_configured_on_ids----'
 	#print len(dr_configured_on_ids)
@@ -100,10 +101,10 @@ def make_BS_data():
 		processed.append(str(entry[1][0]))
 		# Entries for dr device
 		dr_device_entry = str(entry[0][1]) + '|' + str(entry[0][2]) + '|' + str(entry[0][3]) + \
-				'| dr: ' + str(entry[1][0]) + '|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
-		dr_all_hosts.append(dr_device_entry)
-		dr_ipaddresses.update({str(entry[0][1]): str(entry[0][0])})
-		dr_host_attributes.update({str(entry[0][1]):
+				'| dr: ' + str(entry[1][0]) + '|dr_slave|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
+		all_hosts.append(dr_device_entry)
+		ipaddresses.update({str(entry[0][1]): str(entry[0][0])})
+		host_attributes.update({str(entry[0][1]):
 			{
 				'alias': entry[0][8],
 			        'contactgroups': (True, ['all']),
@@ -111,14 +112,14 @@ def make_BS_data():
 				'tag_agent': str(entry[0][5])
 				}
 			})
-		# Entries for counter dr device
-		# counter dr device stands for device which got its entry as `dr_configured_on_id` in
+		# Entries for master dr device
+		# master dr device stands for device which got its entry as `dr_configured_on_id` in
 		# inventory_sector table
 		dr_device_entry = str(entry[1][0]) + '|' + str(entry[0][2]) + '|' + str(entry[1][2]) + \
-				'| dr: ' + str(entry[0][1]) + '|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
-		dr_all_hosts.append(dr_device_entry)
-		dr_ipaddresses.update({str(entry[1][0]): str(entry[1][1])})
-		dr_host_attributes.update({str(entry[1][0]):
+				'| dr: ' + str(entry[0][1]) + '|dr_master|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
+		all_hosts.append(dr_device_entry)
+		ipaddresses.update({str(entry[1][0]): str(entry[1][1])})
+		host_attributes.update({str(entry[1][0]):
 			{
 				'alias': entry[1][3],
 			        'contactgroups': (True, ['all']),
@@ -148,6 +149,10 @@ def make_BS_data():
 
 
 def get_dr_configured_on_devices(device_ids=[]):
+	"""
+	dr_configured_on_devices would be treaed as
+	master device in this case
+	"""
 	dr_configured_on_devices = []
 	if device_ids:
 		query = "SELECT device_name, ip_address, mac_address, device_alias, id FROM device_device WHERE id IN %s" % pformat(tuple(device_ids))
@@ -170,14 +175,14 @@ def write_data():
 		f.write("host_attributes.update(\n%s)\n" % pformat(host_attributes))
 
 	
-	# Write DR enabled devices to seperate .mk file
-	with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/wimax_dr_en.mk', 'w') as f:
-		f.write("# encoding: utf-8\n\n")
-		f.write("\nhost_contactgroups += []\n\n\n")
-		f.write("all_hosts += %s\n" % pformat(dr_all_hosts))
-		f.write("\n\n# Explicit IP Addresses\n")
-		f.write("ipaddresses.update(%s)\n\n" % pformat(dr_ipaddresses))
-		f.write("host_attributes.update(\n%s)\n" % pformat(dr_host_attributes))
+	## Write DR enabled devices to seperate .mk file
+	#with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/wimax_dr_en.mk', 'w') as f:
+	#	f.write("# encoding: utf-8\n\n")
+	#	f.write("\nhost_contactgroups += []\n\n\n")
+	#	f.write("all_hosts += %s\n" % pformat(dr_all_hosts))
+	#	f.write("\n\n# Explicit IP Addresses\n")
+	#	f.write("ipaddresses.update(%s)\n\n" % pformat(dr_ipaddresses))
+	#	f.write("host_attributes.update(\n%s)\n" % pformat(dr_host_attributes))
 
 
 def make_SS_data():
