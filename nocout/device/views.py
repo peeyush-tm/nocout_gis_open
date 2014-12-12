@@ -19,11 +19,11 @@ from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, 
     WizardDeviceTypeForm, WizardDeviceTypeServiceForm, DeviceTypeServiceDataSourceCreateFormset, \
     DeviceTypeServiceDataSourceUpdateFormset
 from nocout.utils.util import DictDiffer
-from django.http.response import HttpResponseRedirect
+from django.http.response import HttpResponseRedirect, HttpResponse
 from organization.models import Organization
 from service.models import Service
 from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.template import RequestContext, loader
 from django.conf import settings                                      # Importing settings for logger
 from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
@@ -35,6 +35,8 @@ from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
 from django.db.models import Q
 from service.forms import DTServiceDataSourceUpdateFormSet
+from performance.views import ptp_device_circuit_backhaul, organization_customer_devices, \
+    organization_network_devices, organization_backhaul_devices
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -3511,3 +3513,35 @@ class GisWizardDeviceTypeServiceMixin(object):
 class GisWizardServiceUpdateView(GisWizardDeviceTypeServiceMixin, DeviceTypeServiceUpdateView):
     pass
 
+
+def list_schedule_device(request):
+    """
+    Used to return the list to the select2 element using ajax call.
+    Return the list of devices while creating/updating the event.
+    """
+    # ptp_device_circuit_backhaul(specify_type='all')
+    # organization_customer_devices(organizations, technology = None, specify_ptp_type='all')
+    # organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all')
+    # organization_backhaul_devices(organizations, technology = None)
+
+    sSearch = request.GET['sSearch']
+    org = request.user.userprofile.organization
+    device = organization_customer_devices(organizations=[org], technology = None, specify_ptp_type='all').\
+                filter(device_alias__icontains=sSearch).values('id', 'device_alias')
+
+    return HttpResponse(json.dumps({
+        "total_count": device.count(),
+        "incomplete_results": False,
+        "items": list(device)
+    }))
+
+def select_schedule_device(request):
+    """
+    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
+    Call to initialize the device list when create/update the event.
+    """
+    ids = request.GET['ids']
+    device_result = [{'id': dev.id, 'device_alias': dev.device_alias } for dev in Device.objects.filter(id__in=ids.split(','))]
+    return HttpResponse(json.dumps({
+        'device_result': device_result
+        }) )
