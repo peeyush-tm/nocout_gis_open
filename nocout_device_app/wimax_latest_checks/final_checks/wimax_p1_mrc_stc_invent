@@ -50,18 +50,10 @@ def connection_telnet_bs_for_p1_mrc_stc(hostip, port):
 	if data:
 		params =[row for row in data.split("\n")]
 		try:
-			pmp1_freq = params[8]
-			pmp1_freq  = pmp1_freq.split(':')[1]
-			pmp2_freq = params[21]
-			pmp2_freq  = pmp2_freq.split(':')[1]
-			if int(pmp2_freq) == int(pmp1_freq):
+			pmp1_mrc = params[9]
+			pmp1_mrc  = pmp1_mrc.split(':')[1]
+			if pmp1_mrc == "master":
 				pmp1_mrc = "enabled"
-			else:
-				pmp1_mrc = "disabled"
-			#pmp1_mrc = params[9]
-			#pmp1_mrc  = pmp1_mrc.split(':')[1]
-			#if pmp1_mrc == "master":
-			#	pmp1_mrc = "enabled"
 		except:
 			pmp1_mrc = None
 		try:
