@@ -20,7 +20,7 @@ from service.models import ServiceDataSource, Service, DeviceServiceConfiguratio
 from django.utils.dateformat import format
 from operator import itemgetter
 from nocout.utils.util import fetch_raw_result, dict_fetchall, \
-    format_value, cache_for, \
+    format_value, cache_for, time_it, \
     cached_all_gis_inventory, query_all_gis_inventory, query_all_gis_inventory_improved
 
 from multiprocessing import Process, Queue
@@ -481,16 +481,12 @@ class LivePerformanceListing(BaseDatatableView):
         :param device_list:
         :return:
         """
-        if DEBUG:
-            log.debug("preparing devices")
         page_type = self.request.GET['page_type']
         return prepare_gis_devices(qs, page_type)
 
     def prepare_machines(self, qs):
         """
         """
-        if DEBUG:
-            log.debug("preparing machines")
         device_list = []
         for device in qs:
             device_list.append(
@@ -509,8 +505,6 @@ class LivePerformanceListing(BaseDatatableView):
         preparing polled results
         after creating static inventory first
         """
-        if DEBUG:
-            log.debug("preparing polled results")
         result_qs = polled_results(qs=qs,
                                    multi_proc=multi_proc,
                                    machine_dict=machine_dict,
@@ -525,8 +519,6 @@ class LivePerformanceListing(BaseDatatableView):
         :param qs:
         :return qs
         """
-        if DEBUG:
-            log.debug("preparing final result")
         page_type = self.request.GET['page_type']
         if qs:
             for dct in qs:
@@ -1113,7 +1105,7 @@ class Inventory_Device_Service_Data_Source(View):
                 'active': 0,
                 'service_type_tab': 'network_perf_tab'
             })
-        
+
         result['data']['objects']['network_perf_tab']["info"].append(
             {
                 'name': "rta",
@@ -2224,12 +2216,6 @@ def pre_map_indexing(index_dict, index_on='device_name'):
 def map_results(perf_result, qs):
     """
     """
-    st = datetime.datetime.now()
-    if DEBUG:
-        if DEBUG:
-            log.debug("MAP RESULTS : Start")
-            log.debug("START %s" %st)
-
     result_qs = []
     performance = perf_result
     processed = []
@@ -2246,11 +2232,6 @@ def map_results(perf_result, qs):
                 log.exception(e.message)
                 continue
 
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("MAPPING END {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("MAP RESULTS  : RETURN")
     return result_qs
 
 
@@ -2260,11 +2241,6 @@ def combined_indexed_gis_devices(indexes):
     indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}
     :return:
     """
-    st = datetime.datetime.now()
-
-    if DEBUG:
-        log.debug("PERFORMANCE : GIS INDEXED sector ss bh results")
-        log.debug("START TIME : %s" %st)
 
     indexed_sector = {}
     indexed_ss = {}
@@ -2291,11 +2267,6 @@ def combined_indexed_gis_devices(indexes):
             indexed_ss[defined_ss_index].append(result)
             indexed_bh[defined_bh_index].append(result)
 
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("PERFORMANCE : GIS INDEXED sector ss bh results : COMPLETED")
 
     return indexed_sector, indexed_ss, indexed_bh
 
@@ -2317,26 +2288,10 @@ def prepare_gis_devices(devices, page_type):
 
     st = datetime.datetime.now()
 
-    if DEBUG:
-        log.debug("PERFORMANCE : CALL : combined_indexed_gis_devices")
-        log.debug("START TIME : %s" %st)
-
     indexed_sector, indexed_ss, indexed_bh = \
         combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'})
 
     # gis_result = indexed_gis_devices(page_type=page_type)
-
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("PERFORMANCE : CALL : combined_indexed_gis_devices : COMPLETED")
-
-    st = datetime.datetime.now()
-
-    if DEBUG:
-        log.debug("FINAL RESULTS : GIS Inventory Mapped")
-        log.debug("START TIME : %s" %st)
 
     processed_device = {}
 
@@ -2407,12 +2362,6 @@ def prepare_gis_devices(devices, page_type):
                         "device_technology": format_value(bs_row['BHTECH'])
                     })
 
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("FINAL RESULTS : GIS Inventory Mapped : COMPLETED")
-
     return devices
 
 
@@ -2448,7 +2397,6 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
     :param device_list:
     :return:
     """
-    st = datetime.datetime.now()
 
     device_result = {}
     perf_result = {"packet_loss": "N/A",
@@ -2458,10 +2406,6 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
                    "last_updated_time": "N/A",
                    "age": "N/A"
                   }
-
-    if DEBUG:
-        log.debug("preparing polled results : query")
-        log.debug("start time %s" %st)
 
     query = prepare_row_query(table_name="performance_networkstatus",
                           devices=device_list,
@@ -2475,18 +2419,6 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
     for device in device_list:
         if device not in device_result:
             device_result[device] = perf_result
-
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("preparing polled results : query execution complete")
-        log.debug("Ending Query Time {}".format(divmod(elapsed.total_seconds(), 60)))
-
-    st = datetime.datetime.now()
-
-    if DEBUG:
-        log.debug("preparing polled results : processing in loop start")
-        log.debug("start time %s" %st)
 
     processed = []
     for device in indexed_perf_data:
@@ -2531,12 +2463,6 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
     try:
         q.put(device_result)
 
-        if DEBUG:
-            endtime = datetime.datetime.now()
-            elapsed = endtime - st
-            log.debug("preparing polled results : processing in loop end")
-            log.debug("Ending Multiprocessing time {}".format(divmod(elapsed.total_seconds(), 60)))
-
     except Exception as e:
         log.exception(e.message)
 
@@ -2560,10 +2486,6 @@ def get_performance_data(device_list, machine, model):
                    "age": "N/A"
                   }
 
-    if DEBUG:
-        log.debug("preparing polled results : query")
-        log.debug("start time %s" %st)
-
     query = prepare_row_query(table_name="performance_networkstatus",
                           devices=device_list
     )
@@ -2576,19 +2498,6 @@ def get_performance_data(device_list, machine, model):
     for device in device_list:
         if device not in device_result:
             device_result[device] = perf_result
-
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("preparing polled results : query execution complete")
-        log.debug("Ending Query Time {}".format(divmod(elapsed.total_seconds(), 60)))
-
-    st = datetime.datetime.now()
-
-    if DEBUG:
-        log.debug("preparing polled results : processing in loop start")
-        log.debug("start time %s" %st)
-
 
     processed = []
     for device in indexed_perf_data:
@@ -2631,10 +2540,5 @@ def get_performance_data(device_list, machine, model):
             device_result[device] = perf_result
     # (device_result)
     #  device_result
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("preparing polled results : processing in loop end")
-        log.debug("Ending single thread processing time {}".format(divmod(elapsed.total_seconds(), 60)))
 
     return device_result
