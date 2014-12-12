@@ -23,7 +23,7 @@ from django.http.response import HttpResponseRedirect, HttpResponse
 from organization.models import Organization
 from service.models import Service
 from django.shortcuts import render_to_response
-from django.template import RequestContext, loader
+from django.template import RequestContext
 from django.conf import settings                                      # Importing settings for logger
 from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
@@ -3526,7 +3526,7 @@ def list_schedule_device(request):
 
     sSearch = request.GET['sSearch']
     org = request.user.userprofile.organization
-    device = organization_customer_devices(organizations=[org], technology = None, specify_ptp_type='all').\
+    device = Device.objects.filter(organization__in=[org]).\
                 filter(device_alias__icontains=sSearch).values('id', 'device_alias')
 
     return HttpResponse(json.dumps({
