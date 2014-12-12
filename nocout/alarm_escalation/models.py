@@ -47,7 +47,7 @@ class EscalationLevel(models.Model):
         return ",".join(value)
 
 
-class AlarmEscalation(models.Model):
+class EscalationStatus(models.Model):
     """
     Class to define model AlarmEscalation.
     """
@@ -56,9 +56,16 @@ class AlarmEscalation(models.Model):
         (1, 'Sent'),
     )
 
-    level = models.ManyToManyField(EscalationLevel)
+    PERFOEMANCE_CHOICES = (
+        (0, 'Bad'),
+        (1, 'Good')
+    )
+
+    organization = models.ForeignKey(Organization)
+    device_type = models.ForeignKey(DeviceType)
+    service = models.ForeignKey(Service)
+    service_data_source = models.ForeignKey(ServiceDataSource)
     technology = models.ForeignKey(DeviceTechnology)
-    base_station = models.ForeignKey(BaseStation)
     ip = models.IPAddressField('IP Address')
     l1_email_status = models.IntegerField('Level1 Email Status', default=0, choices=STATUS_CHOICES)
     l1_phone_status = models.IntegerField('Level1 SMS Status', default=0, choices=STATUS_CHOICES)
@@ -76,11 +83,5 @@ class AlarmEscalation(models.Model):
     l7_phone_status = models.IntegerField('Level7 SMS Status', default=0, choices=STATUS_CHOICES)
     alert_description = models.TextField('Alert Description', default='', blank=True)
     status_since = models.DateTimeField(auto_now_add=True)
-    is_closed = models.BooleanField(default=False)
-
-    def get_level(self, age):
-        to_level = None
-        for level in self.level.all():
-            if age>=level.alarm_age:
-                to_level = level
-        return to_level
+    old_status = models.IntegerField(default=0, choices=PERFOEMANCE_CHOICES)
+    new_status = models.IntegerField(default=0, choices=PERFOEMANCE_CHOICES)
