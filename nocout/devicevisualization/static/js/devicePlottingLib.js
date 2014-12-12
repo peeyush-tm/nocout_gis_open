@@ -1353,16 +1353,18 @@ function devicePlottingClass_gmap() {
 				"city" : $.trim($("#city option:selected").text())
 			},
 			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-			isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()) || $.trim($("#city").val());
+			isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()).length > 0 || $.trim($("#city").val()).length > 0;
 
 		var filtered_Data = all_devices_loki_db.where(function(obj) {
 
-			var sectors = obj.data.param.sector,
+			var bs_city = obj.data.city ? $.trim(obj.data.city.toLowerCase()) : "",
+				bs_state = obj.data.state ? $.trim(obj.data.state.toLowerCase()) : "",
+				sectors = obj.data.param.sector,
 				backhaul = obj.data.param.backhual,
-				basic_filter_condition1 = filterObj['state'] != 'Select State' ? obj.data.state == filterObj['state'] : true,
-				basic_filter_condition2 = filterObj['city'] != 'Select City' ? obj.data.city == filterObj['city'] : true,
-				advance_filter_condition1 = state_filter.length > 0 ? state_filter.indexOf(obj.data.state) > -1 : true,
-				advance_filter_condition2 = city_filter.length > 0 ? city_filter.indexOf(obj.data.city) > -1 : true;
+				basic_filter_condition1 = filterObj['state'] != 'Select State' ? bs_state == $.trim(filterObj['state'].toLowerCase()) : true,
+				basic_filter_condition2 = filterObj['city'] != 'Select City' ? bs_city == $.trim(filterObj['city'].toLowerCase()) : true,
+				advance_filter_condition1 = state_filter.length > 0 ? state_filter.indexOf(bs_state) > -1 : true,
+				advance_filter_condition2 = city_filter.length > 0 ? city_filter.indexOf(bs_city) > -1 : true;
 
         	// If any basic filter is applied
         	if(isBasicFilterApplied) {        		
@@ -1803,8 +1805,8 @@ function devicePlottingClass_gmap() {
 
 							// Create hover infowindow html content
 							info_html += '<table class="table table-responsive table-bordered table-hover">';
-							info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-							info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+							info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+							info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
 							info_html += '</table>';
 
 					    	/*Set the content for infowindow*/
@@ -1940,8 +1942,8 @@ function devicePlottingClass_gmap() {
 
 							// Create hover infowindow html content
 							info_html += '<table class="table table-responsive table-bordered table-hover">';
-							info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-							info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+							info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+							info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
 							info_html += '</table>';
 
 					    	/*Set the content for infowindow*/
@@ -4636,7 +4638,7 @@ function devicePlottingClass_gmap() {
 			frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').toLowerCase().split(',') : [],
 			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').toLowerCase().split(',') : [],
 			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
-			isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()) || $.trim($("#city").val()),
+			isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()).length > 0 || $.trim($("#city").val()).length > 0,
 			basic_filter_condition = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0,
 			advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
 			filtered_data_1 = [],
@@ -4647,6 +4649,7 @@ function devicePlottingClass_gmap() {
 		} else {
 			filtered_data_1 = JSON.parse(JSON.stringify(all_devices_loki_db.data));
 		}
+
 		if(advance_filter_condition || basic_filter_condition) {
         	data_to_plot_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredBySectors(filtered_data_1)));
     	} else {
@@ -5292,7 +5295,7 @@ function devicePlottingClass_gmap() {
 							}
 
 							var dateObj = new Date(),
-								current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+								current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(), //+":"+dateObj.getMilliseconds(),
 								final_chart_data = [];
 							
 							if($("#pollVal_"+new_device_name+" li").length == 0) {
@@ -6450,6 +6453,8 @@ function devicePlottingClass_gmap() {
 		// Close current info window
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
 			ge.setBalloon(null);
+		} else if(window.location.pathname.indexOf("white_background") > -1) {
+			
 		} else {
 			infowindow.close();
 		}
@@ -6475,6 +6480,8 @@ function devicePlottingClass_gmap() {
 					connected_end_obj = {};
 				}
 			}
+		} else if(window.location.pathname.indexOf("white_background") > -1) {
+
 		} else {
 	        google.maps.event.clearListeners(mapInstance,'click');
 

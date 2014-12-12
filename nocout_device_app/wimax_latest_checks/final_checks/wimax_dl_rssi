@@ -153,7 +153,7 @@ def check_wimax_dl_rssi(item, params, info):
 			if dl_rssi:
                                 if dl_rssi < crit:
                                         state  = 2
-                                elif dl_rssi > crit and dl_rssi < warn:
+                                elif dl_rssi >= crit and dl_rssi <= warn:
                                         state = 1
                                 else:
                                         state = 0

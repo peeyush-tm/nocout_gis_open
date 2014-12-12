@@ -108,7 +108,7 @@ def check_wimax_ul_rssi(item, params, info):
                         if isinstance(ul_rssi,int):
                                 if ul_rssi < crit:
                                         state  = 2
-                                elif ul_rssi > crit and ul_rssi < warn:
+                                elif ul_rssi >= crit and ul_rssi <= warn:
                                         state = 1
                                 else:
                                         state = 0

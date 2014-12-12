@@ -13,7 +13,17 @@ var perf_that = "",
     single_service_data = "",
     getServiceDataUrl = "",
     chart_instance = "",
-    old_table = "";
+    old_table = "",
+    base_url = "",
+    green_status_array = ['ok','success'],
+    red_status_array = ['warning','critical','down'];
+
+/*Set the base url of application for ajax calls*/
+if(window.location.origin) {
+    base_url = window.location.origin;
+} else {
+    base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+}
 
 $.urlParam = function (name) {
     var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
@@ -177,7 +187,8 @@ function nocoutPerfLib() {
         showSpinner();
 
         var active_tab_id = "",
-            active_tab_url = "";
+            active_tab_url = "",
+            active_tab_content_dom_id = "";
 
         /*Ajax call to Get Devices API*/
         var get_url = get_service_url;
@@ -232,13 +243,14 @@ function nocoutPerfLib() {
 
                                     if (is_first_tab == 1 && count == 0) {
                                         active_tab_id = value.name;
+                                        active_tab_content_dom_id = value.name + "_" + device_services_tab[i] + '_block';
                                         active_tab_url = "/" + value.url;
                                         count++;
                                         service_tabs += '<li class="active" style="' + li_style + '"><a href="#' + value.name + "_" + device_services_tab[i] + '_block" url="' + value.url + '" id="' + value.name + '_tab" data-toggle="tab" style="' + li_a_style + '">' + value.title + '</a></li>';
-                                        service_tabs_data += '<div class="tab-pane active" id="' + value.name + "_" + device_services_tab[i] + '_block"><div class="chart_container"><div id="' + value.name + '_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="' + value.name + '_bottom_table"></div></div></div>';
+                                        service_tabs_data += '<div class="tab-pane active" id="' + value.name + "_" + device_services_tab[i] + '_block"><div align="center" id="last_updated_' + value.name + "_" + device_services_tab[i] + '_block"></div><div class="chart_container"><div id="' + value.name + '_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="' + value.name + '_bottom_table"></div></div></div>';
                                     } else {
                                         service_tabs += '<li class="" style="' + li_style + '"><a href="#' + value.name + "_" + device_services_tab[i] + '_block" url="' + value.url + '" id="' + value.name + '_tab" data-toggle="tab" style="' + li_a_style + '">' + value.title + '</a></li>';
-                                        service_tabs_data += '<div class="tab-pane" id="' + value.name + "_" + device_services_tab[i] + '_block"><div class="chart_container" style="width:100%;"><div id="' + value.name + '_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="' + value.name + '_bottom_table"></div></div></div>';
+                                        service_tabs_data += '<div class="tab-pane" id="' + value.name + "_" + device_services_tab[i] + '_block"><div align="center" id="last_updated_' + value.name + "_" + device_services_tab[i] + '_block"></div><div class="chart_container" style="width:100%;"><div id="' + value.name + '_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="' + value.name + '_bottom_table"></div></div></div>';
                                     }
                                 });
 
@@ -253,6 +265,7 @@ function nocoutPerfLib() {
                         /*Bind click event on tabs*/
                         $('.inner_tab_container .nav-tabs li a').click(function (e) {
                             var serviceId = e.currentTarget.id.slice(0, -4);
+                            var tab_content_dom_id = e.currentTarget.attributes.href.value.split("#").length > 0 ? e.currentTarget.attributes.href.value.split("#")[1] : e.currentTarget.attributes.href.value.split("#")[0];
                             //@TODO: all the ursl must end with a / - django style
                             var serviceDataUrl = "/" + $.trim(e.currentTarget.attributes.url.value);
                             /*Reset Variables & counters */
@@ -260,7 +273,28 @@ function nocoutPerfLib() {
                             chart_instance = "";
                             $("#other_perf_table").remove();
                             $("#perf_data_table").remove();
-                            perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
+                            // First get the service status then get the data for that service
+                            perfInstance.getServiceStatus(serviceDataUrl,function(response_type,data_obj) {
+                                if(response_type == 'success') {
+                                    if($.trim(data_obj.last_updated) != "" || $.trim(data_obj.perf) != "") {
+                                        var last_updated = data_obj.last_updated ? data_obj.last_updated : "N/A",
+                                            perf = data_obj.perf ? data_obj.perf : "N/A",
+                                            inner_status_html = '<div class="well well-sm">';
+                                        
+                                        inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">';
+                                        inner_status_html += '<thead><tr><td>Perf Value</td><td>Last Updated</td></tr></thead>';
+                                        inner_status_html += '<tbody>';
+                                        inner_status_html += '<tr><td>'+last_updated+'</td><td>'+perf+'</td></tr>';
+                                        inner_status_html += '</tbody></table><div class="clearfix"></div></div><div class="divide-20"></div>';
+                                        $("#last_updated_"+tab_content_dom_id).html(inner_status_html);
+                                    } else {
+                                        $("#last_updated_"+tab_content_dom_id).html("");
+                                    }
+                                } else {
+                                    $("#last_updated_"+tab_content_dom_id).html("");
+                                }
+                                perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
+                            });
 
                         });
                     }
@@ -301,23 +335,101 @@ function nocoutPerfLib() {
                     if(parent_tab_id && $('#'+parent_tab_id).length) {
                         $('#'+parent_tab_id).trigger('click');
                     } else {
-                        perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
-                    }
+                        perfInstance.getServiceStatus(active_tab_url,function(response_type,data_obj) {
+                            if(response_type == 'success') {
+                                if($.trim(data_obj.last_updated) != "" || $.trim(data_obj.perf) != "") {
+                                    var last_updated = data_obj.last_updated ? data_obj.last_updated : "N/A",
+                                        perf = data_obj.perf ? data_obj.perf : "N/A",
+                                        inner_status_html = '<div class="well well-sm">';
 
-                    // console.log(tab_id);
-                    // if(tab_id) {
-                    //     $("#"+tab_id).trigger('click');
-                    // } else {
-                        // perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
-                    // }
+                                    inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">';
+                                    inner_status_html += '<thead><tr><td>Perf Value</td><td>Last Updated</td></tr></thead>';
+                                    inner_status_html += '<tbody>';
+                                    inner_status_html += '<tr><td>'+last_updated+'</td><td>'+perf+'</td></tr>';
+                                    inner_status_html += '</tbody></table><div class="clearfix"></div></div><div class="divide-20"></div>';
+                                    
+                                    $("#last_updated_"+active_tab_content_dom_id).html(inner_status_html);
+                                } else {
+                                    $("#last_updated_"+active_tab_content_dom_id).html("");
+                                }
+                            } else {
+                                $("#last_updated_"+active_tab_content_dom_id).html("");
+                            }
+                            perf_that.getServiceData(active_tab_url, active_tab_id, device_id, data_obj);
+                        });
+                    }
                 }
             }
         });
     };
 
     /**
+     * This function get the service status for given url
+     * @method getServiceStatus
+     * @param service_status_url "String", It contains the url to fetch the status of current device.
+     * @callback Back to the called function.
+     */
+    this.getServiceStatus = function(service_status_url,callback) {
+
+        var updated_url = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url+"/" : service_status_url;
+        // Replace 'service' with 'servicestatus'
+        updated_url = updated_url.replace("/service/","/servicestatus/");
+        $.ajax({
+            url : base_url+""+updated_url,
+            type : "GET",
+            success : function(response) {
+                var result = "",
+                    age = "",
+                    last_updated = "",
+                    perf = "",
+                    status = "",
+                    status_class = "",
+                    status_html = "";
+
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+
+                if(result.data && result.data.objects) {
+                    age = result.data.objects.age ? result.data.objects.age : "Unknown";
+                    status = result.data.objects.status ? result.data.objects.status : "Unknown";
+                    last_updated = result.data.objects.last_updated ? result.data.objects.last_updated : "";
+                    perf = result.data.objects.perf ? result.data.objects.perf : "";
+
+                    if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+                        status_class = "text-success";
+                    } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+                        status_class = "text-danger";
+                    } else {
+                        status_class = "";
+                    }
+
+                    status_html = "";
+                    status_html += '<i class="fa fa-circle '+status_class+'" style="vertical-align: middle;"> </i>';
+                    status_html += '<span class="'+status_class+'">(Status :- '+status+' & Age :- '+age+')</span>';
+
+                    // Update Status Block HTML as per the device status
+                    $("#device_status_container").html("Device Status "+status_html);
+
+                    var response_obj = {
+                        "last_updated" : last_updated,
+                        "perf" : perf
+                    };
+
+                    callback("success",response_obj);
+                }
+            },
+            error : function(err) {
+                // console.log(err.statusText);
+                callback("error","");
+            }
+        });
+    };
+
+    /**
      * This function fetches data regarding particular service
-     * @class nocout.perf.lib
      * @method getServiceData
      * @param get_service_data_url "String", It contains the url to fetch the status of current device.
      * @param service_id "String", It contains unique name for service.
@@ -327,11 +439,10 @@ function nocoutPerfLib() {
 
         $.cookie('activeTabId', service_id+"_tab", {path: '/', secure: true});
 
-        var base_url = "",
-            start_date = "",
+        var start_date = "",
             end_date = "",
             get_url = "";
-        base_url = window.location.origin ? window.location.origin : window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+        // base_url = window.location.origin ? window.location.origin : window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
 
         showSpinner();
 

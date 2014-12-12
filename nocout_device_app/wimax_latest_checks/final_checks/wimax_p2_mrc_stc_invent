@@ -49,8 +49,11 @@ def connection_telnet_bs_for_p2_mrc_stc(hostip, port):
 	if data:
 		params =[row for row in data.split("\n")]
 		try:
-			pmp2_mrc = params[9]
+			pmp2_mrc = params[22]
 			pmp2_mrc  = pmp2_mrc.split(':')[1]
+			if pmp2_mrc == "slave":
+				pmp2_mrc = "enabled"
+				
 		except:
 			pmp2_mrc = None
 		try:

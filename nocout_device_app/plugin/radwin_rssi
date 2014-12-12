@@ -55,7 +55,7 @@ def check_radwin_rssi(item, params, info):
             rssi = int(info[0][0])
             if rssi < crit:
                 state = 2
-            elif rssi > crit and rssi < warn:
+            elif rssi >= crit and rssi <= warn:
                 state = 1
             else:
                 state = 0

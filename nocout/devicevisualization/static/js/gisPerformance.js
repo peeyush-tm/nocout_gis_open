@@ -147,7 +147,7 @@ function GisPerformance() {
                 //If data is there
                 if(data) {
                     //Store data in gisData
-                    if(data.success && data.success == 1) {
+                    if(data.bs_id) {
                         perf_self.gisData = data;
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             //Update Map with the data
@@ -211,9 +211,23 @@ function GisPerformance() {
             if(window.location.pathname.indexOf("googleEarth") > -1) {
                 other_icons_obj = base_url+'/static/img/icons/1x1.png';
                 bs_marker = allMarkersObject_earth['base_station']['bs_'+bs_name];
+                // Update BH polled info to bs marker tooltip.
+                if(bs_marker) {
+                    try {
+                        bs_marker['bhInfo'] = bs_marker['bhInfo'].concat(perf_bh_info);
+                        bs_marker['bhSeverity'] = perf_bh_severity;
+                    } catch(e) {
+                        // console.log(e);
+                    }
+                }
             } else if (window.location.pathname.indexOf("white_background") > -1) {
                 other_icons_obj = base_url+'/static/img/icons/1x1.png';
                 bs_marker = allMarkersObject_wmap['base_station']['bs_'+bs_name];
+                // Update BH polled info to bs marker tooltip.
+                if(bs_marker) {
+                    bs_marker['bhInfo'] = bs_marker['bhInfo'].concat(perf_bh_info);
+                    bs_marker['bhSeverity'] = perf_bh_severity;
+                }
             } else {
                 other_icons_obj = new google.maps.MarkerImage(
                     base_url+'/static/img/icons/1x1.png',
@@ -223,15 +237,10 @@ function GisPerformance() {
                     null
                 );
                 bs_marker = allMarkersObject_gmap['base_station']['bs_'+bs_name];
-            }
-
-            // Update BH polled info to bs marker tooltip.
-            if(bs_marker) {
-                try {
+                // Update BH polled info to bs marker tooltip.
+                if(bs_marker) {
                     bs_marker['bhInfo'] = bs_marker['bhInfo'].concat(perf_bh_info);
                     bs_marker['bhSeverity'] = perf_bh_severity;
-                } catch(e) {
-                    // console.log(e);
                 }
             }
 
@@ -543,6 +552,19 @@ function GisPerformance() {
                                 // pass
                             }
 
+                            // Remove currently Linked Label
+                            try {
+                                if(tooltipInfoLabel["ss_"+removed_key[x]]) {
+                                    tooltipInfoLabel["ss_"+removed_key[x]].setVisibility(false);
+                                    // Remove from global object
+                                    delete tooltipInfoLabel["ss_"+removed_key[x]];
+                                } else {
+                                    // pass
+                                }
+                            } catch(e) {
+                                // console.log(e);
+                            }
+
                         } else {
                             if(allMarkersObject_gmap['sub_station']["ss_"+removed_key[x]]) {
                                 delete allMarkersObject_gmap['sub_station']["ss_"+removed_key[x]];
@@ -557,6 +579,19 @@ function GisPerformance() {
                                 delete allMarkersObject_gmap['path']['line_'+removed_key[x]];
                             } else {
                                 // pass
+                            }
+
+                            // Remove currently Linked Label
+                            try {
+                                if(tooltipInfoLabel["ss_"+removed_key[x]]) {
+                                    tooltipInfoLabel["ss_"+removed_key[x]].close();
+                                    // Remove from global object
+                                    delete tooltipInfoLabel["ss_"+removed_key[x]];
+                                } else {
+                                    // pass
+                                }
+                            } catch(e) {
+                                // console.log(e);
                             }
                         }
                     }
@@ -722,8 +757,8 @@ function GisPerformance() {
 
                                         // Create hover infowindow html content
                                         info_html += '<table class="table table-responsive table-bordered table-hover">';
-                                        info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-                                        info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+                                        info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+                                        info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
                                         info_html += '</table>';
 
                                         setTimeout(function() {
@@ -916,6 +951,47 @@ function GisPerformance() {
                                     tooltipInfoLabel['ss_'+ss_marker_data.name] = toolTip_infobox;
                                 }
                             }
+
+                            // Mouseover event on sub-station marker
+                            google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
+                                var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+                                    condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+                                if(condition1 || condition2) {
+                                    var pl = $.trim(this.pl) ? this.pl : "N/A",
+                                        rta = $.trim(this.rta) ? this.rta : "N/A",
+                                        info_html = '';
+
+                                    // Create hover infowindow html content
+                                    info_html += '<table class="table table-responsive table-bordered table-hover">';
+                                    info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+                                    info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
+                                    info_html += '</table>';
+
+                                    if(infowindow) {
+                                        /*Set the content for infowindow*/
+                                        infowindow.setContent(info_html);
+                                        /*Shift the window little up*/
+                                        infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
+                                        /*Set The Position for InfoWindow*/
+                                        infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
+                                        /*Open the info window*/
+                                        infowindow.open(mapInstance);
+                                    }
+                                }
+                            });
+
+                            // Mouseout event on sub-station marker
+                            google.maps.event.addListener(ss_marker, 'mouseout', function() {
+                                var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+                                    condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+                                if(condition1 || condition2) {
+                                    if(infowindow) {
+                                        infowindow.close();
+                                    }
+                                }
+                            });
                         }
 
                         var ss_info = {
@@ -1022,7 +1098,11 @@ function GisPerformance() {
                                     perf_val = "";
                                 }
                             } else if(sector_polygon) {
-                                perf_val = "("+ss_val+")";
+                                if(ss_val) {
+                                    perf_val = "("+ss_val+")";
+                                } else {
+                                    perf_val = "";   
+                                }
                             }
 
                             if($.trim(perf_val)) {
@@ -1164,27 +1244,44 @@ function GisPerformance() {
 
             // Update Loki Object
             all_devices_loki_db.update(bs_object);
-
             // Update loki db object end
 
             
             // Show New Plotted SS Markers
-            // setTimeout(function() {
-            //     if(window.location.pathname.indexOf("white_background") > -1) {
-            //         for (var i = 0; i < new_plotted_ss.length; i++) {
-            //             showOpenLayerFeature(new_plotted_ss[i]);
-            //         }
-            //     } else if(window.location.pathname.indexOf("googleEarth") > -1) {
-            //         for (var i = 0; i < new_plotted_ss.length; i++) {
+            if(window.location.pathname.indexOf("white_background") > -1) {
+                // for (var i = 0; i < new_plotted_ss.length; i++) {
+                //     showOpenLayerFeature(new_plotted_ss[i]);
+                // }
+                if(bs_marker) {
+                    try {
+                        showOpenLayerFeature(bs_marker);    
+                    } catch(e) {
+                        // console.log(e);
+                    }
+                }
 
-            //         }
-            //     } else {
-            //         for (var i = 0; i < new_plotted_ss.length; i++) {
-            //             new_plotted_ss[i].setMap(mapInstance);
-            //         }
-            //     }
-            //     callback(true);
-            // }, 200);
+            } else if(window.location.pathname.indexOf("googleEarth") > -1) {
+                // for (var i = 0; i < new_plotted_ss.length; i++) {
+                // }
+                if(bs_marker) {
+                    if(!bs_marker.getVisibility()) {
+                        bs_marker.setVisibility(true);
+                    }
+                }
+            } else {
+                for (var i = 0; i < new_plotted_ss.length; i++) {
+                    if(!new_plotted_ss[i].map) {
+                        new_plotted_ss[i].setMap(mapInstance);
+                    }
+                }
+
+                if(bs_marker) {
+                    if(!bs_marker.map) {
+                        bs_marker.setMap(mapInstance);
+                    }
+                }
+            }
+
             callback(true);
         } else {
             callback(true);

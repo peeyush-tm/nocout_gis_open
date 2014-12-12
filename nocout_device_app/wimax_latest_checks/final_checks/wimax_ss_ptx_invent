@@ -50,7 +50,7 @@ def check_wimax_ss_ptx_invent(item, params, info):
                 ptx = int(info[0][0])
 		if ptx > crit:
 			state = 2
-		elif ptx >= warn and ptx < crit:
+		elif ptx >= warn and ptx <= crit:
 			state = 1
 		else:
 			state = 0 

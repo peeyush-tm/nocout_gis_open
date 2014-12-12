@@ -29,4 +29,7 @@ urlpatterns = patterns('',
   url(r'^disableddevicelistingtable/', views.DisabledDeviceListingTable.as_view(), name= 'DisabledDeviceListingTable'),
   url(r'^archiveddevicelistingtable/', views.ArchivedDeviceListingTable.as_view(), name= 'ArchivedDeviceListingTable'),
   url(r'^alldevicelistingtable/', views.AllDeviceListingTable.as_view(), name= 'AllDeviceListingTable'),
+
+  url(r'^list/schedule/device/$', views.list_schedule_device, name='list-schedule-device'),
+  url(r'^select/schedule/device/$', views.select_schedule_device, name='select-schedule-device'),
 )

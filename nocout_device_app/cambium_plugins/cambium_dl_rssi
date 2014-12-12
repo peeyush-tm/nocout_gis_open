@@ -56,7 +56,7 @@ def check_cambium_dl_rssi(item, params, info):
 	    rssi = int(rssi.split(' ')[0])
             if rssi < crit:
                 state = 2
-            elif rssi > crit and rssi < warn:
+            elif rssi >= crit and rssi <= warn:
                 state = 1
             else:
                 state = 0
