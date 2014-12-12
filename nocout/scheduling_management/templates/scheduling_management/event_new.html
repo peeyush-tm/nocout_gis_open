@@ -100,7 +100,7 @@
 
                                             <!-- select box to search the devices -->
                                             <div class="form-group">
-                                                <label for="{{ form.device.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.device.label|title }}</label>
+                                                <label for="{{ form.device.id_for_label }}" class="col-sm-3 control-label">{{ form.device.label|title }}</label>
                                                 <div class="col-sm-9">
                                                     <div class="col-md-8">
                                                         {{ form.device }} {{ form.device.errors }}
@@ -253,8 +253,63 @@
             });
 
         })// end document.ready
+
     </script>
 
-
+    <script>
+        $(function() {
+            $("input[name='device']").select2({
+                placeholder: "Search with (IP, Device Name, Device Alias, MAC, Sector ID, Circuit)",
+                minimumInputLength: 2,
+                multiple: true,
+                width: "resolve",
+                ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                    url: "/device/list/schedule/device/",
+                    dataType: 'json',
+                    quietMillis: 250,
+                    data: function (term, page) {
+                        return {
+                            sSearch: term, // search term
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter the remote JSON data
+                        return { results: data.items };
+                    },
+                    cache: false
+                },
+                initSelection: function(element, callback) {
+                    // the input tag has a value attribute preloaded that points to a preselected repository's id
+                    // this function resolves that id attribute to an object that select2 can render
+                    // using its formatResult renderer - that way the repository name is shown preselected
+                    var id = $(element).val();
+                    if (id !== "") {
+                        $.ajax("/device/select/schedule/device/", {
+                            dataType: "json",
+                            data: {
+                                ids : id
+                            }
+                        }).done(function(data) {
+                                callback(
+                                    data.device_result
+                                    );
+                            });
+                    }
+                },
+                formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
+                formatSelection: repoDeviceFormatSelection,  // omitted for brevity, see the source of this page
+            })
+            // .on("select2-selecting", function(el) {
+            //     console.log(el.val)
+            //     // location.href="/gis-wizard/base-station/" + el.val + "/";
+            // });
+        });
+        function repoDeviceFormatResult(device) {
+          return device.device_alias;
+        }
+        function repoDeviceFormatSelection(device) {
+          return device.device_alias;
+        }
+    </script>
 
 {% endblock %}

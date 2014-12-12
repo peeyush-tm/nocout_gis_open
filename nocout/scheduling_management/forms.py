@@ -22,14 +22,15 @@ class EventForm(forms.ModelForm):
                 queryset=Weekdays.objects.filter().order_by('id'), required=False)
     end_never = forms.BooleanField(initial=True, required=False)
     # Note take a boolean field in model and replate select_device name with that field.
-    select_device = forms.ChoiceField(widget=forms.RadioSelect(), initial=False,
-                    choices=((True, 'Add all device'),(False, 'Select specific devices')), required=False)
+    # select_device = forms.ChoiceField(widget=forms.RadioSelect(), initial=False,
+    #                 choices=((True, 'Add all device'),(False, 'Select specific devices')), required=False)
 
 
     def __init__(self, *args, **kwargs):
         # # removing help text for device 'select' field
         self.base_fields['device'].help_text = ''
         self.base_fields['end_never'].widget = forms.HiddenInput()
+        self.base_fields['device'].widget = forms.HiddenInput()
 
         try:
             if 'instance' in kwargs:
@@ -50,6 +51,8 @@ class EventForm(forms.ModelForm):
             else:
                 if (name =='repeat_by') or (name == 'repeat_on'): # prevent these field from assigning of th select2 class.
                     field.widget.attrs.update({'class': 'col-md'})
+                elif name == 'device':
+                   field.widget.attrs.update({'class': 'col-md-12'})
                 elif isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
