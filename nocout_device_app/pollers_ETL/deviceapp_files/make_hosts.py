@@ -79,7 +79,7 @@ def make_BS_data():
 	dr_en_devices = sorted(filter(lambda e: e[9] and e[9].lower() == 'yes' and e[10], data), key=itemgetter(10))
 	#print 'dr_en_devices --'
 	#print len(dr_en_devices)
-	data = filter(lambda e: e[9] == '' or e[9].lower() == 'no', data)
+	data = filter(lambda e: e[9] == '' or (e[9] and e[9].lower() == 'no'), data)
 	# dr_enabled devices ids
 	# dr_configured_on_devices would be treated as master device
 	dr_configured_on_ids = map(lambda e: e[10], dr_en_devices)
