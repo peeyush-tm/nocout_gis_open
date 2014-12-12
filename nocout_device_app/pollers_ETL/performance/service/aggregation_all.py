@@ -115,12 +115,15 @@ def quantify_perf_data(aggregated_data_values=[]):
 			original_time, time = time, datetime.fromtimestamp(time)
 		elif read_from == 'mongodb':
 			time = doc.get('local_timestamp') if doc.get('local_timestamp') else doc.get('sys_timestamp')
-		current_value = doc.get('current_value')
 		check_time = doc.get('check_timestamp') if doc.get('check_timestamp') else doc.get('check_time')
+		if not isinstance(check_time, datetime):
+			check_time = datetime.fromtimestamp(float(check_time))
 		if read_from == 'mysql':
 			war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
+			current_value = doc.get('current_value')
 		elif read_from == 'mongodb':
 			war, cric = doc.get('meta').get('war'), doc.get('meta').get('cric')
+			current_value = doc.get('meta').get('cur')
 
                 if time_frame == 'half_hourly':
 			if time.minute < 30:
@@ -155,13 +158,22 @@ def quantify_perf_data(aggregated_data_values=[]):
 				'ip_address': ip_address,
 				'current_value': current_value,
 				'severity': severity,
-				'min': doc.get('min_value'),
-				'max': doc.get('max_value'),
-				'avg': doc.get('avg_value'),
 				'war': war,
 				'cric': cric,
 				'check_time': check_time
 				}
+		if read_from == 'mysql':
+			aggr_data.update({
+				'min': doc.get('min_value'),
+				'max': doc.get('max_value'),
+				'avg': doc.get('avg_value'),
+			})
+		elif read_from == 'mongodb':
+			aggr_data.update({
+				'min': current_value,
+				'max': current_value,
+				'avg': current_value,
+			})
 
 		# Find the existing doc to update
 		find_query = {
@@ -189,7 +201,10 @@ def quantify_perf_data(aggregated_data_values=[]):
 				min_val = min(values_list) 
 				max_val = max(values_list) 
 				if aggr_data.get('avg'):
-					avg_val = (existing_doc.get('avg') + aggr_data.get('avg'))/ 2
+					try:
+						avg_val = (eval(existing_doc.get('avg')) + eval(aggr_data.get('avg')))/ 2
+					except Exception:
+						avg_val = existing_doc.get('avg')
 				else:
 					avg_val = existing_doc.get('avg')
 			aggr_data.update({

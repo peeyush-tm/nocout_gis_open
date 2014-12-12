@@ -88,12 +88,12 @@ def main():
 
 def prepare_query():
     query = """
-     select
+    select
     devicetype.name as devicetype,
     service.name as service,
     datasource.name as datasource,
-    devicetype_svc_ds.warning as dtype_ds_warning,
-    devicetype_svc_ds.critical as dtype_ds_critical,
+	devicetype_svc_ds.warning as dtype_ds_warning,
+	devicetype_svc_ds.critical as dtype_ds_critical,
     svcds.warning as service_warning,
     svcds.critical as service_critical,
     datasource.warning as warning,
@@ -116,7 +116,7 @@ def prepare_query():
     left join (
         service_service as service,
         device_devicetypeservice as devicetype_svc,
-        device_devicetypeservicedatasource as devicetype_svc_ds,
+
         service_servicespecificdatasource as svcds,
         service_servicedatasource as datasource,
         service_serviceparameters as params,
@@ -134,12 +134,16 @@ def prepare_query():
         devicetype_svc.service_id = service.id
         and
         devicetype.id = devicetype_svc.device_type_id
-        and
-        devicetype_svc_ds.device_type_service_id = devicetype_svc.id
-        and
-        devicetype_svc_ds.service_data_sources_id = datasource.id
     )
-    where devicetype.name <> 'Default'
+    left join
+	device_devicetypeservicedatasource as devicetype_svc_ds
+    on
+    (
+	devicetype_svc_ds.device_type_service_id = devicetype_svc.id
+	and
+	devicetype_svc_ds.service_data_sources_id = datasource.id
+    )
+    where devicetype.name <> 'Default';
     """
     return query
 
@@ -200,7 +204,8 @@ def get_settings():
             except Exception, exp:
                 logger.error('Exception in get_threshold: ' + pformat(exp))
             service_config = [service['devicetype']], ['@all'], service['service'], None, threshold
-            default_checks.append(service_config)
+	    if service_config not in default_checks:
+            	default_checks.append(service_config)
             if service['port'] and service['community']:
                 d_ports = service['port'], [service['devicetype']], ['@all']
                 if d_ports not in snmp_ports_db:
