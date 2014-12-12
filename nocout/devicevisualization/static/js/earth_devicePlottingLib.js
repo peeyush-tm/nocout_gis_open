@@ -6,6 +6,7 @@ var g_earth = "",
 	tech_vendor_obj = {},
 	all_vendor_array = [],
 	isFirstTime = 1,
+	isFromSearch = false,
 	current_zoom = "",
 	ge = "",
 	plotted_bs_earth = [],
@@ -152,9 +153,14 @@ function googleEarthClass() {
 			}
 			function eventHandler() {
 
-				var poly = getCurrentEarthBoundPolygon();
-
 				var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+
+				// if(isFromSearch) {
+				// 	if(AltToZoom(getEarthZoomLevel()) > 12) {
+				// 		lookAt.setRange(ZoomToAlt(12))
+				// 	}
+				// 	isFromSearch = false;
+				// }
 
 				if(AltToZoom(lookAt.getRange()) > 7) {
 					// If zoom level is greate than 10 then start perf calling
@@ -167,7 +173,7 @@ function googleEarthClass() {
             			isPerfCallStarted = 0;
         			}
 					if(AltToZoom(lookAt.getRange()) < 12 || searchResultData.length > 0) {
-
+						var poly = getCurrentEarthBoundPolygon();
 						var states_with_bounds = state_lat_lon_db.where(function(obj) {
 							return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
 						});
@@ -300,6 +306,14 @@ function googleEarthClass() {
 			    // 					},300);
 							// 	}
 							// }
+							
+							if(AltToZoom(lookAt.getRange()) > 8) {
+								earth_self.showLinesInBounds();
+								earth_self.showSubStaionsInBounds();
+								earth_self.showBaseStaionsInBounds();
+								earth_self.showSectorDevicesInBounds();
+								earth_self.showSectorPolygonInBounds();	
+							}
 						}
 
 	            		// Show points line if exist
@@ -313,11 +327,11 @@ function googleEarthClass() {
 	            		}
 					} else {
 						// setTimeout(function() {
-	    	// 				earth_self.showLinesInBounds();
-						// 	earth_self.showSubStaionsInBounds();
-						// 	earth_self.showBaseStaionsInBounds();
-						// 	earth_self.showSectorDevicesInBounds();
-						// 	earth_self.showSectorPolygonInBounds();
+	    		// 			earth_self.showLinesInBounds();
+							// earth_self.showSubStaionsInBounds();
+							// earth_self.showBaseStaionsInBounds();
+							// earth_self.showSectorDevicesInBounds();
+							// earth_self.showSectorPolygonInBounds();
 						// }, 300);
 					}
 					
@@ -495,17 +509,14 @@ function googleEarthClass() {
 
             // var bounds = new google.maps.LatLngBounds();
             for (var i = 0, place; place = places[i]; i++) {
-
-				var marker = earth_self.makePlacemark(place.icon, place.geometry.location.k, place.geometry.location.B, place.place_id, {});
-            	folderBoundArray.push({lat: place.geometry.location.k, lon: place.geometry.location.B});
-				place_markers.push(marker);
+            	folderBoundArray.push({lat: place.geometry.location.lat(), lon: place.geometry.location.lng()});
             }
-
+            searchResultData = JSON.parse(JSON.stringify(networkMapInstance.updateStateCounter_gmaps(true)));
         	showGoogleEarthInBounds(folderBoundArray, function() {
-
-				if(AltToZoom(getEarthZoomLevel()) > 15) {
-					setEarthZoomLevel(ZoomToAlt(15));
-				}
+				for (var i = 0, place; place = places[i]; i++) {
+					var marker = earth_self.makePlacemark(place.icon, place.geometry.location.lat(), place.geometry.location.lng(), place.place_id, {});
+					place_markers.push(marker);
+	            }
 			});
         });
 
@@ -1499,7 +1510,7 @@ var state_wise_device_label_text= {};
 
 	/**
 	 * This function plot the point on google map as per the given details
-	 * @method plotPoint_gmap
+	 * @method plotPoint_earth
 	 * @param {Object} infoObj, It contains information regarding plotting(i.e. lat,lon etc)
 	 */
 	this.plotPoint_earth = function(infoObj) {
@@ -1525,7 +1536,7 @@ var state_wise_device_label_text= {};
 		};
 
 		var uniqueId = "point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-");
-//iconHref, latitude, longitude, placemarkId, description
+		//iconHref, latitude, longitude, placemarkId, description
 		var pointPlacemark= earth_self.makePlacemark(base_url+"/"+infoObj.icon_url, infoObj.lat, infoObj.lon, uniqueId, map_point_obj);
 
 		point_data_obj["point_"+String(infoObj.lat).split(".").join("-")+"_"+String(infoObj.lon).split(".").join("-")] = "";
@@ -1768,22 +1779,22 @@ var state_wise_device_label_text= {};
 				    	var current_line = allMarkersObject_earth['path'][key];
 				    	if(current_line) {
 				    		var earthBounds = getCurrentEarthBoundPolygon();
-						    var nearEndVisible = isPointInPoly(earthBounds, {lat: current_line.nearLat, lon: current_line.nearLon}),
-						      	farEndVisible = isPointInPoly(earthBounds, {lat: current_line.ss_lat, lon: current_line.ss_lon}),
-						      	connected_bs = allMarkersObject_earth['base_station']['bs_'+current_line.filter_data.bs_name],
-						      	connected_ss = allMarkersObject_earth['sub_station']['ss_'+current_line.filter_data.ss_name];
+						    var nearEndVisible = isPointInPoly(earthBounds, {lat: current_line['nearLat'], lon: current_line['nearLon']}),
+						      	farEndVisible = isPointInPoly(earthBounds, {lat: current_line['ss_lat'], lon: current_line['ss_lon']}),
+						      	connected_bs = allMarkersObject_earth['base_station']['bs_'+current_line['filter_data']['bs_name']],
+						      	connected_ss = allMarkersObject_earth['sub_station']['ss_'+current_line['filter_data']['ss_name']];
 
-						    if((nearEndVisible || farEndVisible) && ((connected_bs && connected_ss) && (connected_bs.isActive != 0 && connected_ss.isActive != 0))) {
+						    if((nearEndVisible || farEndVisible) && ((connected_bs && connected_ss) && (connected_bs['isActive'] != 0 && connected_ss['isActive'] != 0))) {
 						    	// If polyline not shown then show the polyline
-						    	if(!current_line.map) {
+						    	if(!current_line.getVisibility()) {
 						    		current_line.setVisibility(true);
-						    		current_line.map = 'current';
+						    		// current_line['map'] = 'current';
 						    	}
 						    } else {
 						    	// If polyline shown then hide the polyline
-						    	if(current_line.map) {
+						    	if(current_line.getVisibility()) {
 						    		current_line.setVisibility(false);
-						    		current_line.map = '';
+						    		// current_line['map'] = '';
 					    		}
 						    }
 				    	}
@@ -1810,24 +1821,24 @@ var state_wise_device_label_text= {};
 				if(allMarkersObject_earth['sub_station'].hasOwnProperty(key)) {
 					var earthBounds = getCurrentEarthBoundPolygon();
 			    	var ss_marker = allMarkersObject_earth['sub_station'][key],
-			    		isMarkerExist = isPointInPoly(earthBounds, {lat: ss_marker.ptLat, lon: ss_marker.ptLon});
+			    		isMarkerExist = isPointInPoly(earthBounds, {lat: ss_marker['ptLat'], lon: ss_marker['ptLon']});
 		    		if(isMarkerExist) {
 		    			try {
-			    			if(ss_marker.isActive && +(ss_marker.isActive) == 1) {
+			    			if(ss_marker['isActive'] && +(ss_marker['isActive']) == 1) {
 					    		// If SS Marker not shown then show the SS Marker
-					    		if(!allMarkersObject_earth['sub_station'][key].map) {
+					    		if(!allMarkersObject_earth['sub_station'][key].getVisibility()) {
 					      			allMarkersObject_earth['sub_station'][key].setVisibility(true);
-					      			allMarkersObject_earth['sub_station'][key].map = 'current';
+					      			// allMarkersObject_earth['sub_station'][key]['map'] = 'current';
 					    		}
 					    	} else {
 					    		// If SS Marker shown then hide the SS Marker
-					    		if(allMarkersObject_earth['sub_station'][key].map) {
+					    		if(allMarkersObject_earth['sub_station'][key].getVisibility()) {
 					      			allMarkersObject_earth['sub_station'][key].setVisibility(false);
-					      			allMarkersObject_earth['sub_station'][key].map = '';
+					      			// allMarkersObject_earth['sub_station'][key]['map'] = '';
 				    			}
 					    	}
 		    			} catch(e) {
-		    				console.log(e);
+		    				// console.log(e);
 		    			}
 		    		}
 			    }
@@ -1845,24 +1856,24 @@ var state_wise_device_label_text= {};
 			if(allMarkersObject_earth['base_station'].hasOwnProperty(key)) {
 				var earthBounds = getCurrentEarthBoundPolygon();
 		    	var bs_marker = allMarkersObject_earth['base_station'][key],
-		      		isMarkerExist = isPointInPoly(earthBounds, {lat: bs_marker.ptLat, lon: bs_marker.ptLon});
+		      		isMarkerExist = isPointInPoly(earthBounds, {lat: bs_marker['ptLat'], lon: bs_marker['ptLon']});
 	      		if(isMarkerExist) {
 	      			try {
-				    	if(bs_marker.isActive && +(bs_marker.isActive) == 1) {
+				    	if(bs_marker['isActive'] && +(bs_marker['isActive']) == 1) {
 				    		// If BS Marker not shown then show the BS Marker
-				    		if(!allMarkersObject_earth['base_station'][key].map) {
+				    		if(!allMarkersObject_earth['base_station'][key].getVisibility()) {
 				      			allMarkersObject_earth['base_station'][key].setVisibility(true);
-				      			allMarkersObject_earth['base_station'][key].map = 'current';
+				      			// allMarkersObject_earth['base_station'][key]['map'] = 'current';
 				    		}
 				        } else {
 				        	// If BS Marker shown then hide the BS Marker
-				        	if(allMarkersObject_earth['base_station'][key].map) {
+				        	if(allMarkersObject_earth['base_station'][key].getVisibility()) {
 				      			allMarkersObject_earth['base_station'][key].setVisibility(false);
-				      			allMarkersObject_earth['base_station'][key].map = '';
+				      			// allMarkersObject_earth['base_station'][key]['map'] = '';
 			        		}
 				        }
 			        } catch(e) {
-	    				console.log(e);
+	    				// console.log(e);
 	    			}
 	      		}
 		    }
@@ -1879,24 +1890,24 @@ var state_wise_device_label_text= {};
 			if(allMarkersObject_earth['sector_device'].hasOwnProperty(key)) {
 				var earthBounds = getCurrentEarthBoundPolygon();
 		    	var sector_marker = allMarkersObject_earth['sector_device'][key],
-		      		isMarkerExist = isPointInPoly(earthBounds, {lat: sector_marker.ptLat, lon: sector_marker.ptLon});
+		      		isMarkerExist = isPointInPoly(earthBounds, {lat: sector_marker['ptLat'], lon: sector_marker['ptLon']});
 	      		if(isMarkerExist) {
 	      			try {
-				    	if(sector_marker.isActive && +(sector_marker.isActive) == 1) {
+				    	if(sector_marker['isActive'] && +(sector_marker['isActive']) == 1) {
 				    		// If Sector Marker not shown then show the Sector Marker
-				    		if(!allMarkersObject_earth['sector_device'][key].map) {
+				    		if(!allMarkersObject_earth['sector_device'][key].getVisibility()) {
 				      			allMarkersObject_earth['sector_device'][key].setVisibility(true);
-				      			allMarkersObject_earth['sector_device'][key].map = 'current';
+				      			// allMarkersObject_earth['sector_device'][key]['map'] = 'current';
 				    		}
 				    	} else {
 				    		// If Sector Marker shown then hide the Sector Marker
-				    		if(allMarkersObject_earth['sector_device'][key].map) {
+				    		if(allMarkersObject_earth['sector_device'][key].getVisibility()) {
 				    			allMarkersObject_earth['sector_device'][key].setVisibility(false);
-				    			allMarkersObject_earth['sector_device'][key].map = '';
+				    			// allMarkersObject_earth['sector_device'][key]['map'] = '';
 			    			}
 				        }
 			        } catch(e) {
-	    				console.log(e);
+	    				// console.log(e);
 	    			}
 	      		}
 		  }
@@ -1914,25 +1925,24 @@ var state_wise_device_label_text= {};
 				var earthBounds = getCurrentEarthBoundPolygon();
 
 		    	var sector_polygon = allMarkersObject_earth['sector_polygon'][key],
-		    		isMarkerExist = isPointInPoly(earthBounds, {lat: sector_polygon.ptLat, lon: sector_polygon.ptLon});
+		    		isMarkerExist = isPointInPoly(earthBounds, {lat: sector_polygon['ptLat'], lon: sector_polygon['ptLon']});
 	    		if(isMarkerExist) {
 	    			try {
-		    			if(sector_polygon.isActive && +(sector_polygon.isActive) == 1) {
+		    			if(sector_polygon['isActive'] && +(sector_polygon['isActive']) == 1) {
 				    		// If Polygon not shown then show the polygon
-				    		if(!allMarkersObject_earth['sector_polygon'][key].map) {
-
+				    		if(!allMarkersObject_earth['sector_polygon'][key].getVisibility()) {
 				      			allMarkersObject_earth['sector_polygon'][key].setVisibility(true);
-				      			allMarkersObject_earth['sector_polygon'][key].map = 'current';
+				      			// allMarkersObject_earth['sector_polygon'][key]['map'] = 'current';
 				    		}
 				    	} else {
 				    		// If Polygon shown then hide the polygon
-				    		if(allMarkersObject_earth['sector_polygon'][key].map) {
+				    		if(allMarkersObject_earth['sector_polygon'][key].getVisibility()) {
 				      			allMarkersObject_earth['sector_polygon'][key].setVisibility(false);
-				      			allMarkersObject_earth['sector_polygon'][key].map = '';
+				      			// allMarkersObject_earth['sector_polygon'][key]['map'] = '';
 			    			}
 				        }
 			        } catch(e) {
-	    				console.log(e);
+	    				// console.log(e);
 	    			}
 	    		}
 		    }
@@ -1951,16 +1961,14 @@ var state_wise_device_label_text= {};
 
 		/*Unchecked case*/
 		if(isLineChecked == 0) {
-
 			for (var i = 0; i < ssLinkArray.length; i++) {
 				ssLinkArray[i].setVisibility(false);
-				ssLinkArray[i].map = '';
+				// ssLinkArray[i]['map'] = '';
 			}
-
 		} else {
 			for (var i = 0; i < current_lines.length; i++) {
 				current_lines[i].setVisibility(true);
-				ssLinkArray[i].map = 'current';
+				// ssLinkArray[i]['map'] = 'current';
 			}
 		}
 	};
@@ -1975,17 +1983,17 @@ var state_wise_device_label_text= {};
 		/*Unchecked case*/
 		if(isSSChecked == 0) {
 			for(key in allMarkersObject_earth['sub_station']) {
-				if(allMarkersObject_earth['sub_station'][key].map) {
+				if(allMarkersObject_earth['sub_station'][key].getVisibility()) {
 					allMarkersObject_earth['sub_station'][key].setVisibility(false);
-					allMarkersObject_earth['sub_station'][key].map = '';
+					// allMarkersObject_earth['sub_station'][key]['map'] = '';
 				}
 			}
 
 		} else {
 			for(key in allMarkersObject_earth['sub_station']) {
-				if(!allMarkersObject_earth['sub_station'][key].map) {
+				if(!allMarkersObject_earth['sub_station'][key].getVisibility()) {
 					allMarkersObject_earth['sub_station'][key].setVisibility(true);
-					allMarkersObject_earth['sub_station'][key].map = 'current';
+					// allMarkersObject_earth['sub_station'][key]['map'] = 'current';
 				}
 			}
 		}
@@ -2318,6 +2326,7 @@ var state_wise_device_label_text= {};
 								pollingPolygonLatLngArr.push({lat: coord.getLatitude(), lon: coord.getLongitude()});
 							},
 							finishCallback: function() {
+								console.log(pollingPolygonLatLngArr.length);
 								if(pollingPolygonLatLngArr.length) {
 									gexInstance.edit.endEditLineString(polyPlacemark);
 									// polyPlacemark.setVisibility(false);
@@ -2334,8 +2343,8 @@ var state_wise_device_label_text= {};
 									var selected_polling_technology = $("#polling_tech option:selected").text();
 
 									for(var k=allSS.length;k--;) {
-										var point = {lat: allSS[k].ptLat, lon: allSS[k].ptLon};
-										if(point) {
+										if(allSS[k]['ptLat'] && allSS[k]['ptLon']) {
+											var point = {lat: allSS[k]['ptLat'], lon: allSS[k]['ptLon']};
 											if (isPointInPoly(pollingPolygonLatLngArr, point)) {
 												if(allSS[k]['technology']) {
 													if($.trim(allSS[k]['technology'].toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
@@ -2349,8 +2358,6 @@ var state_wise_device_label_text= {};
 																}
 																allSSIds.push(allSS[k]['device_name']);
 																polygonSelectedDevices.push(allSS[k]);
-															} else {
-																return;
 															}
 														} else {
 															if(allSS[k]['pointType'] == 'sub_station') {
@@ -2358,8 +2365,6 @@ var state_wise_device_label_text= {};
 																	allSSIds.push(allSS[k]['device_name']);
 																	polygonSelectedDevices.push(allSS[k]);
 																}
-															} else {
-																return;
 															}
 														}
 													}
@@ -2610,7 +2615,6 @@ var state_wise_device_label_text= {};
 
 			// Call function to fetch polled data for selected devices
     		earth_self.getDevicesPollingData_earth(function(response) {
-    			// console.log(response);
     			if(($(".play_pause_btns").hasClass("disabled"))) {
 					$(".play_pause_btns").removeClass("disabled");
 				}
@@ -3143,9 +3147,10 @@ var state_wise_device_label_text= {};
 		lookAt.setLatitude(lat);
 		lookAt.setLongitude(lng);
 
+		searchResultData = JSON.parse(JSON.stringify(networkMapInstance.updateStateCounter_gmaps(true)));
+
 		// Update the view in Google Earth.
 		ge.getView().setAbstractView(lookAt);
-
 		return true;
 	};
 
@@ -3183,7 +3188,7 @@ var state_wise_device_label_text= {};
 
 				exportDataPolygon = polyPlacemark;
 				try {
-					exportDataPolygon.type = 'Export Polygon';
+					exportDataPolygon['type'] = 'Export Polygon';
 				} catch(e) {
 					// console.log(e);
 				}

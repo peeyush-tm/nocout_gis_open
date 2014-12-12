@@ -55,7 +55,7 @@ SERVICE_DATA_SOURCE = {
         "display_name": "Latency",
         "type": "area", "valuesuffix":
         "ms", "valuetext": "ms",
-        "formula": None
+        "formula": "rta_null"
     },
     "pl": {
         "display_name": "Packet Drop",
@@ -178,6 +178,21 @@ SERVICES = {
 #     if uptime:
 #         ret_val = int(float(uptime)/(60 * 60 * 2``))
 #         return ret_val if ret_val > 0 else int(float(uptime)/(60 * 60))
+
+
+def rta_null(rta=0):
+    """
+
+    :param rta:
+    :return:
+    """
+    try:
+        if float(rta) == 0:
+            return None
+    except Exception as e:
+        return None
+
+    return rta
 
 class Live_Performance(ListView):
     """
@@ -879,7 +894,8 @@ class Inventory_Device_Status(View):
                                                     'State',
                                                     'IP Address',
                                                     'MAC Address',
-                                                    'Planned Frequency'
+                                                    'Planned Frequency',
+                                                    'Frequency'
                 ]
             else:
                 result['data']['objects']['headers'] = ['BS Name',
@@ -891,7 +907,8 @@ class Inventory_Device_Status(View):
                                                     'State',
                                                     'IP Address',
                                                     'MAC Address',
-                                                    'Planned Frequency'
+                                                    'Planned Frequency',
+                                                    'Frequency'
                 ]
             result['data']['objects']['values'] = []
             sector_objects = Sector.objects.filter(sector_configured_on=device.id)
@@ -899,8 +916,10 @@ class Inventory_Device_Status(View):
             pmp_port = 'N/A'
             for sector in sector_objects:
                 base_station = sector.base_station
-                planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
+                planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
+                frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                 planned_frequency = ",".join(planned_frequency)
+                frequency = ",".join(frequency)
                 if technology.name in ['P2P','PTP','ptp','p2p']:
                     try:
                         circuits = sector.circuit_set.get()
@@ -934,7 +953,8 @@ class Inventory_Device_Status(View):
                                                        state_name,
                                                        device.ip_address,
                                                        device.mac_address,
-                                                       planned_frequency
+                                                       planned_frequency,
+                                                       frequency
                 ])
                 else:
                     result['data']['objects']['values'].append([base_station.alias,
@@ -946,7 +966,8 @@ class Inventory_Device_Status(View):
                                                        state_name,
                                                        device.ip_address,
                                                        device.mac_address,
-                                                       planned_frequency
+                                                       planned_frequency,
+                                                       frequency
                 ])
 
         elif device.substation_set.exists():
@@ -961,7 +982,8 @@ class Inventory_Device_Status(View):
                                                     'State',
                                                     'IP Address',
                                                     'MAC Address',
-                                                    'Planned Frequency'
+                                                    'Planned Frequency',
+                                                    'Frequency'
             ]
             result['data']['objects']['values'] = []
             substation_objects = device.substation_set.filter()
@@ -976,8 +998,10 @@ class Inventory_Device_Status(View):
                     sector = circuit.sector
                     base_station = sector.base_station
 
-                    planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
+                    planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
+                    frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                     planned_frequency = ",".join(planned_frequency)
+                    frequency = ",".join(frequency)
 
                     try:
                         city_name = City.objects.get(id=base_station.city).city_name\
@@ -1002,7 +1026,8 @@ class Inventory_Device_Status(View):
                                                            state_name,
                                                            device.ip_address,
                                                            device.mac_address,
-                                                           planned_frequency
+                                                           planned_frequency,
+                                                           frequency
                     ])
 
         result['success'] = 1
@@ -1082,17 +1107,18 @@ class Inventory_Device_Service_Data_Source(View):
 
         result['data']['objects']['network_perf_tab']["info"].append(
             {
-                'name': "rta",
-                'title': "Latency",
-                'url': 'performance/service/ping/service_data_source/rta/device/' + str(device_id),
-                'active': 0,
-                'service_type_tab': 'network_perf_tab'
-            })
-        result['data']['objects']['network_perf_tab']["info"].append(
-            {
                 'name': "pl",
                 'title': "Packet Drop",
                 'url': 'performance/service/ping/service_data_source/pl/device/' + str(device_id),
+                'active': 0,
+                'service_type_tab': 'network_perf_tab'
+            })
+        
+        result['data']['objects']['network_perf_tab']["info"].append(
+            {
+                'name': "rta",
+                'title': "Latency",
+                'url': 'performance/service/ping/service_data_source/rta/device/' + str(device_id),
                 'active': 0,
                 'service_type_tab': 'network_perf_tab'
             })
@@ -1163,6 +1189,152 @@ class Inventory_Device_Service_Data_Source(View):
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
         return HttpResponse(json.dumps(result))
+
+
+class Get_Service_Status(View):
+    """
+    Class to get the latest Performance Value for a device, device data source and service
+    """
+    def get(self, request, service_name, service_data_source_type, device_id):
+        """
+
+        :param request:
+        :param service_name:
+        :param service_data_source_type:
+        :param device_id:
+        """
+        self.result = {
+            'success': 0,
+            'message': 'No Data.',
+            'data': {
+                'meta': {},
+                'objects': {
+                    'perf': None,
+                    'last_updated': None,
+                    'status': None,
+                    'age': None
+                }
+            }
+        }
+
+        date_format = "%d-%m-%Y %H:%M:%S"
+
+        device = Device.objects.get(id=int(device_id))
+        inventory_device_name = device.device_name
+        inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
+
+        device_nms_uptime = NetworkStatus.objects.filter(
+            device_name=inventory_device_name,
+            data_source='pl',
+            ).using(
+            alias=inventory_device_machine_name
+        ).values('age', 'severity')
+
+        if len(device_nms_uptime):
+            data = device_nms_uptime[0]
+
+            age = datetime.datetime.fromtimestamp(float(data['age'])
+                                               ).strftime(date_format)
+            severity = data['severity']
+
+            self.result = {
+                'success': 1,
+                'message': 'Service Status Fetched Successfully',
+                'data': {
+                    'meta': {},
+                    'objects': {
+                        'perf': None,
+                        'last_updated': None,
+                        'status': severity,
+                        'age': age
+                        }
+                    }
+                }
+
+        if service_data_source_type in ['pl', 'rta']:
+            performance_data = NetworkStatus.objects.filter(device_name=inventory_device_name,
+                                                                 service_name=service_name,
+                                                                 data_source=service_data_source_type,
+                                                                 ).using(
+                                                                 alias=inventory_device_machine_name)
+
+        elif "availability" in service_name or service_data_source_type in ['availability']:
+            performance_data = None
+
+        elif "topology" in service_name or service_data_source_type in ['topology']:
+            performance_data = None
+
+        elif '_status' in service_name:
+            performance_data = Status.objects.filter(device_name=inventory_device_name,
+                                                                service_name=service_name,
+                                                                data_source=service_data_source_type,
+                                                                ).using(
+                                                                alias=inventory_device_machine_name)
+
+        elif '_invent' in service_name:
+            performance_data = InventoryStatus.objects.filter(device_name=inventory_device_name,
+                                                                   service_name=service_name,
+                                                                   data_source=service_data_source_type
+                                                                    ).using(
+                                                                   alias=inventory_device_machine_name)
+
+        else:
+            performance_data = ServiceStatus.objects.filter(device_name=inventory_device_name,
+                                                                 service_name=service_name,
+                                                                 data_source=service_data_source_type,
+                                                                 ).using(
+                                                                 alias=inventory_device_machine_name)
+
+        if performance_data:
+            try:
+                current_value = self.formulate_data(performance_data[0].current_value,
+                                                                    service_data_source_type)
+                last_updated = datetime.datetime.fromtimestamp(
+                                float(performance_data[0].sys_timestamp)
+                                ).strftime(date_format)
+                self.result['data']['objects']['perf'] = current_value
+                self.result['data']['objects']['last_updated'] = last_updated
+            except Exception as e:
+                log.exception(e.message)
+
+        return HttpResponse(json.dumps(self.result), mimetype="application/json")
+
+    def formulate_data(self, current_value, service_data_source_type):
+        """
+
+        :param current_value: current value for the service
+        :param service_data_source_type: current value to be transformed
+        """
+        if service_data_source_type == 'uptime':
+            if current_value:
+                tt_sec = float(current_value)/100
+                return self.display_time(tt_sec)
+        else:
+            return current_value
+
+    def display_time(self, seconds, granularity=4):
+        """
+
+        :param seconds: seconds on float
+        :param granularity:
+        :return:
+        """
+        intervals = (
+            ('weeks', 604800),
+            ('days', 86400),
+            ('hours', 3600),
+            ('minutes', 60),
+            ('seconds', 1),
+        )
+        result = []
+        for name, count in intervals:
+            value = seconds // count
+            if value:
+                seconds -= value * count
+                if value == 1:
+                    name = name.rstrip('s')
+                result.append("{} {}".format(value, name))
+        return ', '.join(result[:granularity])
 
 
 class Get_Service_Type_Performance_Data(View):
@@ -1384,7 +1556,6 @@ class Get_Service_Type_Performance_Data(View):
             table_data=data_list
         return table_data, table_header
 
-
     def get_perf_table_result(self, performance_data):
 
         result_data, aggregate_data = list(), dict()
@@ -1457,21 +1628,21 @@ class Get_Service_Type_Performance_Data(View):
                         ).annotate(dcount=Count('data_source')
                         ).values('data_source', 'current_value', 'age', 'sys_timestamp').using(alias=machine)
                         processed = []
-                        for data in perf_data:
-                            if data['data_source'] not in processed:
-                                if data['data_source'] == 'pl':
-                                    packet_loss = data['current_value']
-                                elif data['data_source'] == 'rta':
+                        for pdata in perf_data:
+                            if pdata['data_source'] not in processed:
+                                if pdata['data_source'] == 'pl':
+                                    packet_loss = pdata['current_value']
+                                elif pdata['data_source'] == 'rta':
 
                                     try:
-                                        latency = float(data['current_value'])
+                                        latency = float(pdata['current_value'])
                                         if int(latency) == 0:
                                             latency = "DOWN"
                                     except:
-                                        latency = data['current_value']
+                                        latency = pdata['current_value']
                                 else:
                                     continue
-                                status_since = data['age']
+                                status_since = pdata['age']
                                 status_since = datetime.datetime.fromtimestamp(float(status_since)
                                                ).strftime("%d/%B/%Y %I:%M %p")
                             else:
@@ -1488,8 +1659,7 @@ class Get_Service_Type_Performance_Data(View):
                         'customer_name': customer_name,
                         'packet_loss': packet_loss,
                         'latency': latency,
-                        'status_since': datetime.datetime.fromtimestamp(float(status_since)
-                        ).strftime("%d/%B/%Y %I:%M %p"),
+                        'status_since': status_since,
                         'last_updated': datetime.datetime.fromtimestamp(float(data.sys_timestamp)
                         ).strftime("%d/%B/%Y %I:%M %p"),
                     })
@@ -1511,8 +1681,6 @@ class Get_Service_Type_Performance_Data(View):
                                                                'last_updated'
         ]
         return self.result
-
-
 
     def get_performance_data_result(self, performance_data, data_source = None):
         chart_data = list()

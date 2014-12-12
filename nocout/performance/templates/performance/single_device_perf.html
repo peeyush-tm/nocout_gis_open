@@ -87,7 +87,9 @@
         <div class='box-body'>
             <div class="box status_box">
                 <div class="box-title" style="background:transparent;">
-                    <h4>Device Status</h4>
+                    <h4 id="device_status_container">
+                        Device Status
+                    </h4>
                     <div class="tools_status">
                         <a href="javascript:;" title="Hide Status" class="collapse">
                             <i class="fa fa-chevron-up"></i>
@@ -118,11 +120,8 @@
                         <ul class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
                             <li><a href="#errors_tab" id="errors" data-toggle="tab"><span class="hidden-inline-mobile">Errors</span></a></li>
                             <li><a href="#sia_tab" id="sia" data-toggle="tab"><span class="hidden-inline-mobile">SIA</span></a></li>
-
-{#                            <li><a href="#topology_tab" id="topology" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a></li>#}
-
+                            <li><a href="#topology_tab" id="topology" class="hide" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a></li>
                             <li><a href="#availability_tab" id="availability" data-toggle="tab"><span class="hidden-inline-mobile">Availability</span></a></li>
-
                             <li><a href="#inventory_status_tab" id="inventory_status" data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
                             <li><a href="#service_status_tab" id="service_status" data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
                             <li><a href="#service_perf_tab" id="service_perf" data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
@@ -132,7 +131,7 @@
                         <div class="clearfix"></div>
                     </div>
                     <div>
-                        <div class="tab-content">
+                        <div class="tab-content" style="overflow:auto;">
                             <div class="tab-pane active" id="network_perf_tab">
                                 <div class="panel panel-default inner_tab_container">
                                     <div class="panel-body">
@@ -179,15 +178,15 @@
                                     </div>
                                 </div>
                             </div>
-{#                            <div class="tab-pane" id="topology_tab">#}
-{#                                <div class="panel panel-default inner_tab_container">#}
-{#                                    <div class="panel-body">#}
-{#                                        <div class="tabbable tabs-left">#}
-{##}
-{#                                        </div>#}
-{#                                    </div>#}
-{#                                </div>#}
-{#                            </div>#}
+                            <div class="tab-pane hide" id="topology_tab">
+                                <div class="panel panel-default inner_tab_container">
+                                    <div class="panel-body">
+                                        <div class="tabbable tabs-left">
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="tab-pane" id="sia_tab">
                                 <div class="panel panel-default">
                                     <div class="panel-body" style="overflow-x: auto;">
@@ -385,6 +384,25 @@
 
             /*Show SIA tab only for network devices*/
             var device_technology = '{{ device_technology }}';
+
+            // Hide Topology tab for PTP
+            if(page_type_val == 'customer' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
+                if(!$("#topology").hasClass("hide")) {
+                    $("#topology").addClass("hide");
+                }
+
+                if(!$("#topology_tab").hasClass("hide")) {
+                    $("#topology_tab").addClass("hide");
+                }
+            } else {
+                if($("#topology").hasClass("hide")) {
+                    $("#topology").removeClass("hide");
+                }
+
+                if($("#topology_tab").hasClass("hide")) {
+                    $("#topology_tab").removeClass("hide");
+                }
+            }
 
             if(page_type_val != 'network' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
                 if(!$("#sia").hasClass("hide")) {
@@ -635,9 +653,9 @@
 
 
         /*Load first inner tab of inventory status*/
-{#        $("#topology").click(function (e) {#}
-{#            fetchFirstTabContent(e);#}
-{#        });#}
+        $("#topology").click(function (e) {
+            fetchFirstTabContent(e);
+        });
 
         /**
          * This function load the first inner tab content when the tab is opened.
