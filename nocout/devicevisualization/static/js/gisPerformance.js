@@ -211,9 +211,23 @@ function GisPerformance() {
             if(window.location.pathname.indexOf("googleEarth") > -1) {
                 other_icons_obj = base_url+'/static/img/icons/1x1.png';
                 bs_marker = allMarkersObject_earth['base_station']['bs_'+bs_name];
+                // Update BH polled info to bs marker tooltip.
+                if(bs_marker) {
+                    try {
+                        bs_marker['bhInfo'] = bs_marker['bhInfo'].concat(perf_bh_info);
+                        bs_marker['bhSeverity'] = perf_bh_severity;
+                    } catch(e) {
+                        // console.log(e);
+                    }
+                }
             } else if (window.location.pathname.indexOf("white_background") > -1) {
                 other_icons_obj = base_url+'/static/img/icons/1x1.png';
                 bs_marker = allMarkersObject_wmap['base_station']['bs_'+bs_name];
+                // Update BH polled info to bs marker tooltip.
+                if(bs_marker) {
+                    bs_marker['bhInfo'] = bs_marker['bhInfo'].concat(perf_bh_info);
+                    bs_marker['bhSeverity'] = perf_bh_severity;
+                }
             } else {
                 other_icons_obj = new google.maps.MarkerImage(
                     base_url+'/static/img/icons/1x1.png',
@@ -223,15 +237,10 @@ function GisPerformance() {
                     null
                 );
                 bs_marker = allMarkersObject_gmap['base_station']['bs_'+bs_name];
-            }
-
-            // Update BH polled info to bs marker tooltip.
-            if(bs_marker) {
-                try {
+                // Update BH polled info to bs marker tooltip.
+                if(bs_marker) {
                     bs_marker['bhInfo'] = bs_marker['bhInfo'].concat(perf_bh_info);
                     bs_marker['bhSeverity'] = perf_bh_severity;
-                } catch(e) {
-                    // console.log(e);
                 }
             }
 
@@ -1089,7 +1098,11 @@ function GisPerformance() {
                                     perf_val = "";
                                 }
                             } else if(sector_polygon) {
-                                perf_val = "("+ss_val+")";
+                                if(ss_val) {
+                                    perf_val = "("+ss_val+")";
+                                } else {
+                                    perf_val = "";   
+                                }
                             }
 
                             if($.trim(perf_val)) {
@@ -1239,16 +1252,36 @@ function GisPerformance() {
                 // for (var i = 0; i < new_plotted_ss.length; i++) {
                 //     showOpenLayerFeature(new_plotted_ss[i]);
                 // }
+                if(bs_marker) {
+                    try {
+                        showOpenLayerFeature(bs_marker);    
+                    } catch(e) {
+                        // console.log(e);
+                    }
+                }
+
             } else if(window.location.pathname.indexOf("googleEarth") > -1) {
                 // for (var i = 0; i < new_plotted_ss.length; i++) {
                 // }
+                if(bs_marker) {
+                    if(!bs_marker.getVisibility()) {
+                        bs_marker.setVisibility(true);
+                    }
+                }
             } else {
                 for (var i = 0; i < new_plotted_ss.length; i++) {
                     if(!new_plotted_ss[i].map) {
                         new_plotted_ss[i].setMap(mapInstance);
                     }
                 }
+
+                if(bs_marker) {
+                    if(!bs_marker.map) {
+                        bs_marker.setMap(mapInstance);
+                    }
+                }
             }
+
             callback(true);
         } else {
             callback(true);
