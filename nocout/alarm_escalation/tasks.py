@@ -6,9 +6,10 @@ from celery import task
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
-from django.template.loader import render_to_string, render
+from django.template.loader import render_to_string
+from django.shortcuts import render
 
-from alarm_escalation.models import AlarmEscalation
+from alarm_escalation.models import EscalationStatus
 from organization.models import Organization
 from performance.models import ServiceStatus
 from device.models import DeviceType
@@ -64,7 +65,7 @@ def raise_alarms_for_good_performance():
     Raises alarms for good performance of device.
     """
     for org in Organization.objects.all():
-        for alarm in AlarmEscalation.objects.filter(is_closed=False, level__organization=org):
+        for alarm in EscalationStatus.objects.filter(is_closed=False, level__organization=org):
             age = timezone.now() - alarm.status_since
             level = alarm.get_level(age.seconds)
             if getattr(alarm, 'l%d_email_status' % level.name) == 1:
@@ -139,9 +140,9 @@ def prepare_machines(device_list):
 
 
 def prepare_services(device_list):
-"""
-Return list of services of device in device list.
-"""
+    """
+    Return list of services of device in device list.
+    """
     device_type_list = []
     service_list = []
     for device in device_list:
@@ -153,9 +154,9 @@ Return list of services of device in device list.
 
 
 def prepare_service_data_sources(service_list):
-"""
-Return dict of service data source of device in device list.
-"""
+    """
+    Return dict of service data source of device in device list.
+    """
     service_data_source_list = []
 
     for service in service_list:
