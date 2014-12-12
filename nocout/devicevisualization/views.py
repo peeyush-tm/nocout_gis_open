@@ -1537,6 +1537,14 @@ class GISPerfData(View):
             # icon
             icon = ""
 
+            # device type
+            device_type = DeviceType.objects.get(pk=device.device_type)
+
+            try:
+                icon = "media/" + str(device_type.device_icon)
+            except Exception as e:
+                logger.info("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
+
             # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
             th_icon_settings = ""
             try:
@@ -2428,9 +2436,16 @@ class GISPerfData(View):
                 logger.info("Service Type not exist. Exception: ", e.message)
 
             print "***************************** service_type1 - ", service_type
-
             # icon
             icon = ""
+
+            # device type
+            device_type = DeviceType.objects.get(pk=substation_device.device_type)
+
+            try:
+                icon = "media/" + str(device_type.device_icon)
+            except Exception as e:
+                logger.info("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
 
             # comparing threshold values to get icon
             try:
