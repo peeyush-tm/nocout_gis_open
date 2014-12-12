@@ -748,8 +748,8 @@ function GisPerformance() {
 
                                         // Create hover infowindow html content
                                         info_html += '<table class="table table-responsive table-bordered table-hover">';
-                                        info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-                                        info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+                                        info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+                                        info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
                                         info_html += '</table>';
 
                                         setTimeout(function() {
@@ -942,6 +942,47 @@ function GisPerformance() {
                                     tooltipInfoLabel['ss_'+ss_marker_data.name] = toolTip_infobox;
                                 }
                             }
+
+                            // Mouseover event on sub-station marker
+                            google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
+                                var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+                                    condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+                                if(condition1 || condition2) {
+                                    var pl = $.trim(this.pl) ? this.pl : "N/A",
+                                        rta = $.trim(this.rta) ? this.rta : "N/A",
+                                        info_html = '';
+
+                                    // Create hover infowindow html content
+                                    info_html += '<table class="table table-responsive table-bordered table-hover">';
+                                    info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+                                    info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
+                                    info_html += '</table>';
+
+                                    if(infowindow) {
+                                        /*Set the content for infowindow*/
+                                        infowindow.setContent(info_html);
+                                        /*Shift the window little up*/
+                                        infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
+                                        /*Set The Position for InfoWindow*/
+                                        infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
+                                        /*Open the info window*/
+                                        infowindow.open(mapInstance);
+                                    }
+                                }
+                            });
+
+                            // Mouseout event on sub-station marker
+                            google.maps.event.addListener(ss_marker, 'mouseout', function() {
+                                var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+                                    condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+                                if(condition1 || condition2) {
+                                    if(infowindow) {
+                                        infowindow.close();
+                                    }
+                                }
+                            });
                         }
 
                         var ss_info = {

@@ -1803,8 +1803,8 @@ function devicePlottingClass_gmap() {
 
 							// Create hover infowindow html content
 							info_html += '<table class="table table-responsive table-bordered table-hover">';
-							info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-							info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+							info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+							info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
 							info_html += '</table>';
 
 					    	/*Set the content for infowindow*/
@@ -1940,8 +1940,8 @@ function devicePlottingClass_gmap() {
 
 							// Create hover infowindow html content
 							info_html += '<table class="table table-responsive table-bordered table-hover">';
-							info_html += '<tr><td><strong>Packet Drop</strong></td><td><strong>'+pl+'</strong></td></tr>';
-							info_html += '<tr><td><strong>Latency</strong></td><td><strong>'+rta+'</strong></td></tr>';
+							info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+							info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
 							info_html += '</table>';
 
 					    	/*Set the content for infowindow*/
