@@ -193,12 +193,19 @@
                 }
             });
 
+            if ($("#id_scheduling_type").val() == ''){
+                $("#id_device").prop("readonly", true)
+                $("#id_device").select2('val', '')
+            }
+
             $("#id_scheduling_type").change(function() {
-                if ($(this).val() == 'None'){
+                if ($(this).val() == ''){
                     console.log('No schedule type selected')
+                    $("#id_device").prop("readonly", true)
+                    $("#id_device").select2('val', '')
                 }
                 else{
-                    console.log($(this).val())
+                    $("#id_device").prop("readonly", false)
                 }
             });
 
@@ -269,8 +276,10 @@
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
+                        var scheduling_type = $("#id_scheduling_type").val()
                         return {
                             sSearch: term, // search term
+                            scheduling_type: scheduling_type,
                         };
                     },
                     results: function (data, page) { // parse the results into the format expected by Select2.

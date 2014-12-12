@@ -3525,9 +3525,15 @@ def list_schedule_device(request):
     # organization_backhaul_devices(organizations, technology = None)
 
     sSearch = request.GET['sSearch']
+    scheduling_type = request.GET['scheduling_type']
     org = request.user.userprofile.organization
-    device = Device.objects.filter(organization__in=[org]).\
-                filter(device_alias__icontains=sSearch).values('id', 'device_alias')
+    device_list = Device.objects.filter(organization__in=[org])
+    if scheduling_type == 'devi':
+        device = device_list.filter(device_alias__icontains=sSearch).values('id', 'device_alias')
+    elif scheduling_type == 'dety':
+        device = device_list.filter(device_type__in=DeviceType.objects.\
+                    filter(alias__icontains=sSearch).values_list('id', flat=True)).\
+                    values('id', 'device_alias')
 
     return HttpResponse(json.dumps({
         "total_count": device.count(),
