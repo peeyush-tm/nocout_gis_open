@@ -5292,7 +5292,7 @@ function devicePlottingClass_gmap() {
 							}
 
 							var dateObj = new Date(),
-								current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+								current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(), //+":"+dateObj.getMilliseconds(),
 								final_chart_data = [];
 							
 							if($("#pollVal_"+new_device_name+" li").length == 0) {
@@ -6450,6 +6450,8 @@ function devicePlottingClass_gmap() {
 		// Close current info window
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
 			ge.setBalloon(null);
+		} else if(window.location.pathname.indexOf("white_background") > -1) {
+			
 		} else {
 			infowindow.close();
 		}
@@ -6475,6 +6477,8 @@ function devicePlottingClass_gmap() {
 					connected_end_obj = {};
 				}
 			}
+		} else if(window.location.pathname.indexOf("white_background") > -1) {
+
 		} else {
 	        google.maps.event.clearListeners(mapInstance,'click');
 
