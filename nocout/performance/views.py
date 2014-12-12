@@ -1627,21 +1627,21 @@ class Get_Service_Type_Performance_Data(View):
                         ).annotate(dcount=Count('data_source')
                         ).values('data_source', 'current_value', 'age', 'sys_timestamp').using(alias=machine)
                         processed = []
-                        for data in perf_data:
-                            if data['data_source'] not in processed:
-                                if data['data_source'] == 'pl':
-                                    packet_loss = data['current_value']
-                                elif data['data_source'] == 'rta':
+                        for pdata in perf_data:
+                            if pdata['data_source'] not in processed:
+                                if pdata['data_source'] == 'pl':
+                                    packet_loss = pdata['current_value']
+                                elif pdata['data_source'] == 'rta':
 
                                     try:
-                                        latency = float(data['current_value'])
+                                        latency = float(pdata['current_value'])
                                         if int(latency) == 0:
                                             latency = "DOWN"
                                     except:
-                                        latency = data['current_value']
+                                        latency = pdata['current_value']
                                 else:
                                     continue
-                                status_since = data['age']
+                                status_since = pdata['age']
                                 status_since = datetime.datetime.fromtimestamp(float(status_since)
                                                ).strftime("%d/%B/%Y %I:%M %p")
                             else:
@@ -1658,8 +1658,7 @@ class Get_Service_Type_Performance_Data(View):
                         'customer_name': customer_name,
                         'packet_loss': packet_loss,
                         'latency': latency,
-                        'status_since': datetime.datetime.fromtimestamp(float(status_since)
-                        ).strftime("%d/%B/%Y %I:%M %p"),
+                        'status_since': status_since,
                         'last_updated': datetime.datetime.fromtimestamp(float(data.sys_timestamp)
                         ).strftime("%d/%B/%Y %I:%M %p"),
                     })
