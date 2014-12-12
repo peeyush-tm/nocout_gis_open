@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-import ast, sys
 import json, logging
+import ast
 import urllib, datetime
 from multiprocessing import Process, Queue
-from django.db.models import Q, Count
 from django.views.generic.base import View
 from django.http import HttpResponse
 from inventory.models import BaseStation, Sector, Circuit, SubStation, Customer, LivePollingSettings, \
@@ -855,9 +854,20 @@ class BulkFetchLPDataApi(View):
                     bs_name_ss_mac_mapping = {}
                     ss_name_mac_mapping = {}
                     devices_in_current_site = []
+		    lp_data = {'dr_master_slave': {}}
                     for device_name in current_devices_list:
                         try:
+			    slave_dr_site_id, slave_dr_site = None, None
                             device = Device.objects.get(device_name=device_name)
+			    if str(service) in ['wimax_pmp1_utilization', 'wimax_pmp2_utilization']:
+		                slave_dr_site_id = Sector.objects.get(sector_configured_on_id=device.id).dr_configured_on_id
+				if slave_dr_site_id:
+				    slave_dr_site = Device.objects.get(id=slave_dr_site_id).device_name
+				# Send both dr sites (master/slave) to live polling
+				devices_in_current_site.append(device.device_name)
+				if slave_dr_site:
+				    devices_in_current_site.append(slave_dr_site)
+				    lp_data['dr_master_slave'].update({device.device_name: slave_dr_site})
                             if str(service) in exceptional_services:
                                 device_ss_mac = device.mac_address
                                 ss_name_mac_mapping[device.device_name] = device_ss_mac
@@ -878,7 +888,6 @@ class BulkFetchLPDataApi(View):
                             logger.info(e.message)
 
                     # live polling data dictionary (payload for nocout.py api call)
-                    lp_data = dict()
                     lp_data['mode'] = "live"
                     lp_data['bs_name_ss_mac_mapping'] = bs_name_ss_mac_mapping
                     lp_data['ss_name_mac_mapping'] = ss_name_mac_mapping
@@ -1270,6 +1279,19 @@ def nocout_live_polling(q, site):
         r = requests.post(url, data=encoded_data)
         response_dict = ast.literal_eval(r.text)
         if len(response_dict):
-            q.put(response_dict)
+	        if response_dict.get('dr_master_slave'):
+		    dr_masters = response_dict.get('dr_master_slave').keys()
+		    # Filter master and slave dr devices data, seperately
+		    dr_masters_data = filter(lambda e: e.keys()[0] in dr_masters, response_dict.get('value'))
+		    dr_slaves_data = filter(lambda e: e.keys(0) not in dr_masters, response_dict.get('value'))
+		    for v in dr_masters_data:
+			    if not v.values()[0]:
+				    matching_dr_slave = response_dict.get('dr_master_slave').get(v.keys()[0])
+				    matching_dr_slave_data = filter(lambda e: e.keys()[0] == matching_dr_slave, dr_slaves_data)
+				    v_key = v.keys()[0]
+				    v.update({v_key: matching_dr_slave_data.values()[0]})
+		    response_dict['values'] = dr_masters_data
+	        else:
+                    q.put(response_dict)
     except Exception as e:
         logger.info(e.message)

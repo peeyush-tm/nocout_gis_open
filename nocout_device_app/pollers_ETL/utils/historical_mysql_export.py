@@ -28,7 +28,7 @@ def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_for
 
 
 def mysql_export(table, db, data_values):
-	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], e.get('severity'), e.get('current_value'), e['min'], e['max'], e['avg'], e['war'], e['cric'], e['time'].strftime('%s'), e['check_time']), data_values)
+	data_values = map(lambda e: (e['host'], e['service'], e['site'][:-8], e['site'], e['ip_address'], e['ds'], e.get('severity'), e.get('current_value'), e['min'], e['max'], e['avg'], e['war'], e['cric'], e['time'].strftime('%s'), e['check_time'].strftime('%s')), data_values)
 
 	insert_query = "INSERT INTO %s" % table
 	insert_query += """
