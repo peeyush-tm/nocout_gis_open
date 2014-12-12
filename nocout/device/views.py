@@ -3527,7 +3527,9 @@ def list_schedule_device(request):
     sSearch = request.GET['sSearch']
     scheduling_type = request.GET['scheduling_type']
     org = request.user.userprofile.organization
-    device_list = Device.objects.filter(organization__in=[org])
+    device_list = Device.objects.filter(organization__in=[org],
+                                        is_added_to_nms=1,
+                                        is_deleted=0,)
     if scheduling_type == 'devi':
         device = device_list.filter(device_alias__icontains=sSearch).values('id', 'device_alias')
     elif scheduling_type == 'dety':
