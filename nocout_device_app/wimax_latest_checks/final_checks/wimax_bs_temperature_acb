@@ -18,7 +18,7 @@ RSSI information is sent to device application
 
 
 
-def check_wimax_bs_temperature_acb(item, _no_params, info):
+def check_wimax_bs_temperature_acb(item, params, info):
     """
         Check_wimax_bs_temperature_acb function calcaulates the received signal strength indication
 
@@ -47,11 +47,17 @@ def check_wimax_bs_temperature_acb(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     acb_temp = None
-
+    warn,crit =params
     try:
         if info:
             acb_temp = int(info[0][0])
-            state = 0
+	    if acb_temp > crit:
+                state = 2
+            elif acb_temp >= warn:
+                state =1
+            else:
+                state = 0
+
             infotext = "ACB temperature of BS is %s " % acb_temp
     except ValueError:
         infotext = "type_mismatch_value"
