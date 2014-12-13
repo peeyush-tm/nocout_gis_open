@@ -936,7 +936,7 @@ function GisPerformance() {
                                 labelsArray.splice(existing_index, 1);
                             }
                             
-                            var ss_val = ss_marker_data.data.perf_value,
+                            var ss_val = ss_marker_data.data.perf_value ? ss_marker_data.data.perf_value : "N/A",
                                 perf_val = "";
 
                             if(sector_marker) {
@@ -952,8 +952,6 @@ function GisPerformance() {
                             } else if(sector_polygon) {
                                 if(ss_val) {
                                     perf_val = "("+ss_val+")";
-                                } else {
-                                    perf_val = "";   
                                 }
                             }
 
