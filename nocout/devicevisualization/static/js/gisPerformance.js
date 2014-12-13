@@ -898,6 +898,44 @@ function GisPerformance() {
                             ssLinkArray.push(ss_link_line);
                             ssLinkArray_filtered = ssLinkArray;
                             ss_link_line.setMap(mapInstance);
+
+                            // This is to show "X"(Cross) on line if pl is 100%
+                            if(ss_marker['pl'] && (ss_marker['pl'] == '100' || ss_marker['pl'] == '100%')) {
+                                var link_path_array = ss_link_line.getPath().getArray();
+                                // Calculate the center point lat lon to plot "X"
+                                //convert degree to radians
+                                var lat1 = link_path_array[0].lat() * Math.PI / 180;
+                                var lat2 = link_path_array[1].lat() * Math.PI / 180;
+                                var lon1 = link_path_array[0].lng() * Math.PI / 180;
+
+                                var dLon = (link_path_array[1].lng() - link_path_array[0].lng()) * Math.PI / 180;
+
+                                var Bx = Math.cos(lat2) * Math.cos(dLon);
+                                var By = Math.cos(lat2) * Math.sin(dLon);
+                                var center_lat = Math.atan2(Math.sin(lat1) + Math.sin(lat2), Math.sqrt((Math.cos(lat1) + Bx) * (Math.cos(lat1) + Bx) + By * By)),
+                                    center_lon = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
+                                
+                                center_lat = center_lat * 180 / Math.PI;
+                                center_lon = center_lon * 180 / Math.PI;
+                                // Create Label
+                                var cross_label = new InfoBox({
+                                    content: "<i class='fa fa-times'></i>",
+                                    boxStyle: {
+                                        background: "transparent",
+                                        fontSize: "15px",
+                                        color: "red",
+                                    },
+                                    // pixelOffset : new google.maps.Size(-8,0),
+                                    disableAutoPan: true,
+                                    position: new google.maps.LatLng(center_lat,center_lon),
+                                    closeBoxURL: "",
+                                    enableEventPropagation: true,
+                                    zIndex: 80
+                                });
+
+                                cross_label.open(mapInstance);
+                                cross_label_array['line_'+ss_marker_data.name] = cross_label;
+                            }
                             
                             allMarkersObject_gmap['path']['line_'+ss_marker_data.name] = ss_link_line;
 
@@ -936,7 +974,7 @@ function GisPerformance() {
                                 labelsArray.splice(existing_index, 1);
                             }
                             
-                            var ss_val = ss_marker_data.data.perf_value,
+                            var ss_val = ss_marker_data.data.perf_value ? ss_marker_data.data.perf_value : "N/A",
                                 perf_val = "";
 
                             if(sector_marker) {
@@ -952,8 +990,6 @@ function GisPerformance() {
                             } else if(sector_polygon) {
                                 if(ss_val) {
                                     perf_val = "("+ss_val+")";
-                                } else {
-                                    perf_val = "";   
                                 }
                             }
 

@@ -75,7 +75,8 @@ var main_devices_data_gmaps = [],
     place_markers = [],
 	currentDevicesObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}},
 	exportDataPolygon = {},
-	inventory_bs_ids = [];
+	inventory_bs_ids = [],
+	cross_label_array = {};
 
 /* Live Polling Variables */
 var allSSIds = [],
@@ -700,6 +701,11 @@ function devicePlottingClass_gmap() {
 					        labelsArray[x].close();
 					    }
 
+					    // Remove CROSS info label
+					    for (key in cross_label_array) {
+					        cross_label_array[key].close();
+					    }
+
 					    // Remove tooltip info label
 					    for (key in tooltipInfoLabel) {
 					        tooltipInfoLabel[key].close();
@@ -708,6 +714,7 @@ function devicePlottingClass_gmap() {
 
 	                    // Reset labels array 
 	                    labelsArray = [];
+	                    cross_label_array = {};
 	                    tooltipInfoLabel = {};
 
 	                    /*Clear all everything from map*/
@@ -2241,11 +2248,21 @@ function devicePlottingClass_gmap() {
 					    	if(!current_line.map) {
 					    		current_line.setMap(mapInstance);
 					    	}
+
+					    	// Show cross if exist
+					    	// Remove CROSS info label
+						    if(cross_label_array[key]) {
+						    	cross_label_array[key].show();
+						    }
 					    } else {
 					    	// If polyline shown then hide the polyline
 					    	if(current_line.map) {
 					    		current_line.setMap(null);
 				    		}
+
+				    		if(cross_label_array[key]) {
+						    	cross_label_array[key].hide();
+						    }
 					    }
 			    	}
 			    }
