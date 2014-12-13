@@ -879,16 +879,26 @@ class SingleDeviceAlertDetails(View):
         start_date= self.request.GET.get('start_date','')
         end_date= self.request.GET.get('end_date','')
         isSet = False
+        start_date_object=""
+        end_date_object=""
 
-        if len(start_date) and len(end_date):
-            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
-            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
-            start_date= format( start_date_object, 'U')
-            end_date= format( end_date_object, 'U')
-            isSet = True
-            if start_date == end_date:
-                # Converting the end date to the highest time in a day.
-                end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+        if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
+            try:
+                start_date = float(start_date)
+                end_date = float(end_date)
+            except Exception, e:
+                start_date_object= datetime.datetime.strptime(start_date, "%d-%m-%Y %H:%M:%S")
+                end_date_object= datetime.datetime.strptime(end_date, "%d-%m-%Y %H:%M:%S")
+                start_date= format( start_date_object, 'U')
+                end_date= format( end_date_object, 'U')
+            # start_date_object= datetime.datetime.strptime( start_date , "%d-%m-%Y %H:%M:%S" )
+            # end_date_object= datetime.datetime.strptime( end_date , "%d-%m-%Y %H:%M:%S" )
+            # start_date= format( start_date_object, 'U')
+            # end_date= format( end_date_object, 'U')
+            # isSet = True
+            # if start_date == end_date:
+            #     # Converting the end date to the highest time in a day.
+            #     end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
         else:
             # The end date is the end limit we need to make query till.
             end_date_object = datetime.datetime.now()
@@ -904,17 +914,20 @@ class SingleDeviceAlertDetails(View):
 
         device_obj = Device.objects.get(id= device_id)
         device_name = device_obj.device_name
+        device_alias = device_obj.device_alias+"("+device_obj.ip_address+")"
+        device_id = device_id
         machine_name = device_obj.machine.name
 
         data_list = None
-        required_columns = ["device_name",
-                            "ip_address",
-                            "service_name",
-                            "data_source",
-                            "severity",
-                            "current_value",
-                            "sys_timestamp",
-                            "description"
+        required_columns = [
+              # "device_name",
+              "ip_address",
+              "service_name",
+              "data_source",
+              "severity",
+              "current_value",
+              "sys_timestamp",
+              "description"
         ]
 
         is_ping = False
@@ -996,7 +1009,7 @@ class SingleDeviceAlertDetails(View):
             data_list = fetch_raw_result(query, machine_name)
 
         required_columns = [
-            "device_name",
+            # "device_name",
             "ip_address",
             "service_name",
             "data_source",
@@ -1009,7 +1022,7 @@ class SingleDeviceAlertDetails(View):
 
         if is_ping:
             required_columns = [
-                "device_name",
+                # "device_name",
                 "ip_address",
                 "service_name",
                 "severity",
@@ -1093,6 +1106,8 @@ class SingleDeviceAlertDetails(View):
                            current_device_id=device_id,
                            get_status_url='performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
                            current_device_name=device_name,
+                           device_id=device_id,
+                           device_alias=device_alias,
                            page_type=page_type,
                            table_data=data_list,
                            table_header=required_columns,
