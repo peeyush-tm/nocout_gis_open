@@ -360,6 +360,12 @@ PING_PL_CRITICAL = 100
 PRIVATE_IPS_PREFIX = ('10.', '172.', '192.', )
 GIS_MAP_MAX_DEVICE_LIMIT=1000
 
+##############################################
+EXCEPTIONAL_SERVICES = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
+                        'wimax_ul_rssi', 'wimax_ul_intrf', 'wimax_dl_intrf',
+                        'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec',
+                        'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count',
+                        'cambium_rereg_count']
 
 ###################################################################################################################
 
