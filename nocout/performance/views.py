@@ -2331,17 +2331,24 @@ def prepare_gis_devices(devices, page_type):
         else:
             continue
 
+        sector_details = []
+        apnd = ""
+
         if is_sector:
             for bs_row in raw_result:
+                port = bs_row['SECTOR_PORT']
+                if port:
+                    apnd = "( " + port + " )"
                 if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
                     and bs_row['SECTOR_SECTOR_ID'] is not None:
                     sector_id.append(bs_row['SECTOR_SECTOR_ID'])
+                    sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd)
 
         for bs_row in raw_result:
             if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
-                        "sector_id": ", ".join(sector_id),
+                        "sector_id": ", ".join(sector_details),
                         "circuit_id": format_value(bs_row['CCID']),
                         "customer_name": format_value(bs_row['CUST']),
                         "bs_name": format_value(bs_row['BSALIAS']),
@@ -2352,7 +2359,7 @@ def prepare_gis_devices(devices, page_type):
                     })
                 if is_ss:
                     device.update({
-                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']),
+                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']) + apnd,
                         "device_type": format_value(bs_row['SS_TYPE']),
                         "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })

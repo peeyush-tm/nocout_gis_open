@@ -104,6 +104,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                       "severity",
                       "current_value",
                       "max_value",
+                      "min_value",
                       "sys_timestamp",
                       "age"
                       # "description"
@@ -319,6 +320,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                       "severity",
                       "current_value",
                       "max_value",
+                      "min_value",
                       "sys_timestamp",
                       "age"
                       # "description"
@@ -650,6 +652,7 @@ class AlertListingTable(BaseDatatableView):
                       "severity",
                       "current_value",
                       "max_value",
+                      "min_value",
                       "sys_timestamp",
                       "age"
                       # "description"
@@ -1367,6 +1370,7 @@ def prepare_raw_alert_results(performance_data=None):
                 'data_source_name': " ".join(map(lambda a: a.title(), data_source.split("_"))),
                 'current_value': data["current_value"],
                 'max_value': data["max_value"],
+                'min_value': data["min_value"],
                 'sys_timestamp': datetime.datetime.fromtimestamp(
                     float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                 'age': datetime.datetime.fromtimestamp(
