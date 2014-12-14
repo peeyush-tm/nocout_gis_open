@@ -898,17 +898,17 @@ function GisPerformance() {
                             ssLinkArray.push(ss_link_line);
                             ssLinkArray_filtered = ssLinkArray;
                             ss_link_line.setMap(mapInstance);
-
+                            // ss_marker['pl'] = '100';
                             // This is to show "X"(Cross) on line if pl is 100%
                             if(ss_marker['pl'] && (ss_marker['pl'] == '100' || ss_marker['pl'] == '100%')) {
                                 var link_path_array = ss_link_line.getPath().getArray();
                                 // Calculate the center point lat lon to plot "X"
                                 //convert degree to radians
-                                var lat1 = link_path_array[0].lat() * Math.PI / 180;
-                                var lat2 = link_path_array[1].lat() * Math.PI / 180;
-                                var lon1 = link_path_array[0].lng() * Math.PI / 180;
+                                var lat1 = link_path_array[1].lat() * Math.PI / 180;
+                                var lat2 = link_path_array[0].lat() * Math.PI / 180;
+                                var lon1 = link_path_array[1].lng() * Math.PI / 180;
 
-                                var dLon = (link_path_array[1].lng() - link_path_array[0].lng()) * Math.PI / 180;
+                                var dLon = (link_path_array[0].lng() - link_path_array[1].lng()) * Math.PI / 180;
 
                                 var Bx = Math.cos(lat2) * Math.cos(dLon);
                                 var By = Math.cos(lat2) * Math.sin(dLon);
@@ -917,20 +917,21 @@ function GisPerformance() {
                                 
                                 center_lat = center_lat * 180 / Math.PI;
                                 center_lon = center_lon * 180 / Math.PI;
+                                
                                 // Create Label
                                 var cross_label = new InfoBox({
                                     content: "<i class='fa fa-times'></i>",
                                     boxStyle: {
                                         background: "transparent",
-                                        fontSize: "15px",
+                                        fontSize: "16px",
                                         color: "red",
                                     },
-                                    // pixelOffset : new google.maps.Size(-8,0),
+                                    pixelOffset : new google.maps.Size(-7,-16),
                                     disableAutoPan: true,
                                     position: new google.maps.LatLng(center_lat,center_lon),
                                     closeBoxURL: "",
-                                    enableEventPropagation: true,
-                                    zIndex: 80
+                                    enableEventPropagation: true
+                                    // zIndex: 80
                                 });
 
                                 cross_label.open(mapInstance);
@@ -943,7 +944,6 @@ function GisPerformance() {
                         }
 
                         if(ss_marker_data.data.perf_value || sector_perf_val) {
-
                             // Create Label for Perf Value
                             var existing_index = -1;
                             for (var x = 0; x < labelsArray.length; x++) {
