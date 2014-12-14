@@ -220,8 +220,33 @@ class GetCustomerAlertDetail(BaseDatatableView):
                     '<a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'
                            .format(dct['id'], service_tab_name, page_type)
                 )
+                current_value = dct['current_value']
+                if dct['severity'].upper() == 'DOWN' \
+                        or "CRITICAL" in dct['description'].upper() \
+                        or dct['severity'].upper() == 'CRITICAL':
+                    dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
-            return common_prepare_results(qs)
+                elif dct['severity'].upper() == 'WARNING' \
+                        or "WARNING" in dct['description'].upper() \
+                        or "WARN" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
+
+                elif dct['severity'].upper() == 'UP' \
+                        or "OK" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
+
+                else:
+                    dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
+
+            return qs
 
         return []
 
@@ -466,8 +491,33 @@ class GetNetworkAlertDetail(BaseDatatableView):
                             service_tab_name,
                             page_type)
                 )
+                current_value = dct['current_value']
+                if dct['severity'].upper() == 'DOWN' \
+                        or "CRITICAL" in dct['description'].upper() \
+                        or dct['severity'].upper() == 'CRITICAL':
+                    dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
-        return common_prepare_results(qs)
+                elif dct['severity'].upper() == 'WARNING' \
+                        or "WARNING" in dct['description'].upper() \
+                        or "WARN" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
+
+                elif dct['severity'].upper() == 'UP' \
+                        or "OK" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
+
+                else:
+                    dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
+
+        return qs
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -823,7 +873,33 @@ class AlertListingTable(BaseDatatableView):
                                        <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
                                format(dct['id'], service_tab, page_type ))
 
-            return common_prepare_results(qs)
+                current_value = dct['current_value']
+                if dct['severity'].upper() == 'DOWN' \
+                        or "CRITICAL" in dct['description'].upper() \
+                        or dct['severity'].upper() == 'CRITICAL':
+                    dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
+
+                elif dct['severity'].upper() == 'WARNING' \
+                        or "WARNING" in dct['description'].upper() \
+                        or "WARN" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
+
+                elif dct['severity'].upper() == 'UP' \
+                        or "OK" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
+
+                else:
+                    dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
+
+            return qs
 
         return []
 
@@ -1213,47 +1289,47 @@ def prepare_query(table_name=None,
 
     return query
 
-
-def common_prepare_results(qs):
-    """
-    Common function to prepare result on query set
-
-    :params qs:
-    :return qs:
-    """
-
-    for dct in qs:
-        current_value = dct['current_value']
-        try:
-            current_value = float(current_value)
-        except:
-            pass
-        if dct['severity'].upper() == 'DOWN' \
-                or "CRITICAL" in dct['description'].upper() \
-                or dct['severity'].upper() == 'CRITICAL':
-            dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
-            dct['current_value'] = current_value
-            dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
-
-        elif dct['severity'].upper() == 'WARNING' \
-                or "WARNING" in dct['description'].upper() \
-                or "WARN" in dct['description'].upper():
-            dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
-            dct['current_value'] = current_value
-            dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
-
-        elif dct['severity'].upper() == 'UP' \
-                or "OK" in dct['description'].upper():
-            dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
-            dct['current_value'] = current_value
-            dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
-
-        else:
-            dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
-            dct['current_value'] = current_value
-            dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
-
-    return qs
+#
+# def common_prepare_results(qs):
+#     """
+#     Common function to prepare result on query set
+#
+#     :params qs:
+#     :return qs:
+#     """
+#
+#     for dct in qs:
+#         current_value = dct['current_value']
+#         try:
+#             current_value = float(current_value)
+#         except:
+#             pass
+#         if dct['severity'].upper() == 'DOWN' \
+#                 or "CRITICAL" in dct['description'].upper() \
+#                 or dct['severity'].upper() == 'CRITICAL':
+#             dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
+#             dct['current_value'] = current_value
+#             dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
+#
+#         elif dct['severity'].upper() == 'WARNING' \
+#                 or "WARNING" in dct['description'].upper() \
+#                 or "WARN" in dct['description'].upper():
+#             dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
+#             dct['current_value'] = current_value
+#             dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
+#
+#         elif dct['severity'].upper() == 'UP' \
+#                 or "OK" in dct['description'].upper():
+#             dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
+#             dct['current_value'] = current_value
+#             dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
+#
+#         else:
+#             dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
+#             dct['current_value'] = current_value
+#             dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
+#
+#     return qs
 
 
 def severity_level_check(list_to_check):

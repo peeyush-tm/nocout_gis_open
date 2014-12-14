@@ -2358,6 +2358,12 @@ def prepare_gis_devices(devices, page_type):
                         "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
                 if is_ss:
+                    if bs_row['CIRCUIT_TYPE']:
+                        if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
+                            device.update({
+                                "bs_name": format_value(bs_row['CUST']),
+                            })
+
                     device.update({
                         "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']) + apnd,
                         "device_type": format_value(bs_row['SS_TYPE']),
