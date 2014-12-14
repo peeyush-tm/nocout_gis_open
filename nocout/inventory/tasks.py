@@ -5012,13 +5012,18 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 # ************************ DR handling according to ip address (Start) ************************
                 # *********************************************************************************************
 
-                # Rule for identifing master/slave device:
+                # Rule for identifying master/slave device:
                 # Master device ip address is just previous to ip address of slave device.
                 # For e.g. if master device ip is '10.156.4.2' than slave device ip is '10.156.4.3'
 
                 # identify whether device is master/slave if 'dr site' is 'yes' and current sector is already present
                 if dr_site.lower() == "yes":
+                    print "***************************** DR is Yes --------------------------  "
                     if idu_ip:
+                        print "*************************** IDU IP Exist -----------------------"
+                        # master/slave identifier from workbook
+                        ms_identifier = row['DR Master/Slave'] if 'DR Master/Slave' in row.keys() else ""
+                        print "***************************** MS Identifier - ", type(ms_identifier), ms_identifier
                         # current sector
                         current_sector = ""
 
@@ -5033,6 +5038,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                             logger.info("Sector with sector id - {} not exist. Exception: {} ".format(alias, e.message))
 
                         if current_sector:
+                            print "*************************** Sector {} already exist.".format(current_sector.name)
                             if sector_device:
                                 # sector device previous ip (decrement idu ip by 1)
                                 sd_prev_ip = ""
@@ -5055,17 +5061,43 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                                 # idu ip address 'ipaddr' object
                                 idu_ip_address = ipaddr.IPAddress(idu_ip)
 
-                                # if 'idu_ip_address' is ip address just previous to 'sector_configured_on' device
-                                # than make current 'sector_configured_on' device to 'dr_configured_on' device
-                                # and make 'base_station' device new 'sector_configured_on' device
-                                if idu_ip_address == sd_prev_ip:
+                                if ms_identifier:
+                                    if ms_identifier == "Master":
+                                        print "********************** Master is yes ------------ "
+                                        master_device = base_station
+                                        slave_device = ""
+                                    elif ms_identifier == "Slave":
+                                        print "*********************** Slave is yes -----------"
+                                        master_device = ""
+                                        slave_device = base_station
+                                    else:
+                                        pass
+                                else:
+                                    print "********************* No master slave ......."
+                                    # if 'idu_ip_address' is ip address just previous to 'sector_configured_on'
+                                    # device
+                                    # than make current 'sector_configured_on' device to 'dr_configured_on' device
+                                    # and make 'base_station' device new 'sector_configured_on' device
+                                    if idu_ip_address == sd_prev_ip:
+                                        master_device = base_station
+                                        slave_device = sector_device
+                                    # if 'idu_ip_address' is ip address just next to 'sector_configured_on' device
+                                    # than just 'base_station' device new 'dr_configured_on' device
+                                    # and 'sector_configured_on' device remains the same
+                                    elif idu_ip_address == sd_next_ip:
+                                        master_device = sector_device
+                                        slave_device = base_station
+                                    else:
+                                        pass
+                        else:
+                            if ms_identifier:
+                                print "*********************** Master 2 is yes -----------"
+                                if ms_identifier == "Master":
                                     master_device = base_station
-                                    slave_device = sector_device
-                                # if 'idu_ip_address' is ip address just next to 'sector_configured_on' device
-                                # than just 'base_station' device new 'dr_configured_on' device
-                                # and 'sector_configured_on' device remains the same
-                                elif idu_ip_address == sd_next_ip:
-                                    master_device = sector_device
+                                    slave_device = ""
+                                elif ms_identifier == "Slave":
+                                    print "*********************** Slave 2 is yes -----------"
+                                    master_device = ""
                                     slave_device = base_station
                                 else:
                                     pass
@@ -5074,6 +5106,8 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 # ************************ DR handling according to ip address (End) **************************
                 # *********************************************************************************************
 
+                print "*************************** master_device - ", master_device
+                print "*************************** slave_device - ", slave_device
                 # sector data
                 sector_data = {
                     'name': name,
