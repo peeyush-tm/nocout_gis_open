@@ -43,7 +43,7 @@ if($.cookie("isLabelChecked")) {
 
 if(window.location.pathname.indexOf("white_background") > -1) {
 } else {
-    if(google.maps) {
+    if(google && google.maps) {
         google.maps.event.clearListeners(mapInstance,'click');
     }
     

@@ -554,7 +554,9 @@ $("form").submit(function(e) {
 
     // Disabel submit button
     if($("form button[type='submit']").length > 0) {
-        $("form button[type='submit']").addClass("disabled");
+        if(!$("form button[type='submit']").hasClass("disabled")) {
+            $("form button[type='submit']").addClass("disabled");
+        }
     }
     /*Create case*/
     if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
@@ -576,12 +578,20 @@ $("form").submit(function(e) {
                 isFormSubmit = 1;
                 // Enable submit button
                 if($("form button[type='submit']").length > 0) {
-                    $("form button[type='submit']").removeClass("disabled");
+                    if($("form button[type='submit']").hasClass("disabled")) {
+                        $("form button[type='submit']").removeClass("disabled");
+                    }
                 }
                 /*Trigger Form Submit*/
                 $("form").trigger('submit');
             });
         } else {
+            // Enable submit button
+            if($("form button[type='submit']").length > 0) {
+                if($("form button[type='submit']").hasClass("disabled")) {
+                    $("form button[type='submit']").removeClass("disabled");
+                }
+            }
             return true;
         }
     /*Edit case*/
@@ -649,18 +659,38 @@ $("form").submit(function(e) {
                     isFormSubmit = 1;
                     // Enable submit button
                     if($("form button[type='submit']").length > 0) {
-                        $("form button[type='submit']").removeClass("disabled");
+                        if($("form button[type='submit']").hasClass("disabled")) {
+                            $("form button[type='submit']").removeClass("disabled");
+                        }
                     }
                     /*Trigger Form Submit*/
                     $("form").trigger('submit');
                 });
             } else {
+                // Enable submit button
+                if($("form button[type='submit']").length > 0) {
+                    if($("form button[type='submit']").hasClass("disabled")) {
+                        $("form button[type='submit']").removeClass("disabled");
+                    }
+                }
                 return true;
             }
         } else {
+            // Enable submit button
+            if($("form button[type='submit']").length > 0) {
+                if($("form button[type='submit']").hasClass("disabled")) {
+                    $("form button[type='submit']").removeClass("disabled");
+                }
+            }
             return true;
         }
     } else {
+        // Enable submit button
+        if($("form button[type='submit']").length > 0) {
+            if($("form button[type='submit']").hasClass("disabled")) {
+                $("form button[type='submit']").removeClass("disabled");
+            }
+        }
         return true;
     }
 

@@ -318,7 +318,9 @@ left join (
 
         frequency.color_hex_value as SECTOR_FREQUENCY_COLOR,
         frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
-        frequency.value as SECTOR_FREQUENCY
+        frequency.value as SECTOR_FREQUENCY,
+
+        dport.name as SECTOR_PORT
 
         from inventory_sector as sector
         join (
@@ -341,6 +343,9 @@ left join (
         ) left join (device_devicefrequency as frequency)
         on (
             frequency.id = sector.frequency_id
+        ) left join ( device_deviceport as dport )
+        on (
+            dport.id = sector.sector_configured_on_port_id
         )
 {0}
     ) as sector_info
@@ -618,7 +623,9 @@ left join (
 
         frequency.color_hex_value as SECTOR_FREQUENCY_COLOR,
         frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
-        frequency.value as SECTOR_FREQUENCY
+        frequency.value as SECTOR_FREQUENCY,
+
+        dport.name as SECTOR_PORT
 
         from inventory_sector as sector
         join (
@@ -641,6 +648,9 @@ left join (
         ) left join (device_devicefrequency as frequency)
         on (
             frequency.id = sector.frequency_id
+        ) left join ( device_deviceport as dport )
+        on (
+            dport.id = sector.sector_configured_on_port_id
         )
 {0}
     ) as sector_info

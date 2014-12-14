@@ -55,7 +55,7 @@ def check_wimax_pmp2_utilization(item, _no_params, info):
 		if info[0][0]:
 			ul_utilization = info[0][0]
 			dl_utilization = info[0][1]
-			total_utilization = dl_utilization +ul_utilization
+			total_utilization = int(dl_utilization) +int(ul_utilization)
 			this_time = int(time.time())
 			try:
                         	timedif, rate = get_counter("wimax_pmp2_utilization", this_time, saveint(total_utilization))
