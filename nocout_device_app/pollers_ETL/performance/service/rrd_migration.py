@@ -124,9 +124,9 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 				data_values[0].update(rta_dict)
 			data_dict.update({
 				'site': site,
-				'host': entry[0],
+				'host': str(entry[0]),
 				'service': 'ping',
-				'ip_address': entry[1],
+				'ip_address': str(entry[1]),
 				'severity': host_severity,
 				'age': age,
 				'ds': ds,
@@ -136,7 +136,7 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 				'local_timestamp': local_timestamp 
 				})
 			matching_criteria.update({
-				'host': entry[0],
+				'host': str(entry[0]),
 				'service': 'ping',
 				'ds': str(ds)
 				})
@@ -191,8 +191,8 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
 			data_dict.update({
 				'site': site,
-				'host': entry[0],
-				'service': entry[2],
+				'host': str(entry[0]),
+				'service': str(entry[2]),
 				'ip_address': entry[1],
 				'severity': severity,
 				'age': age,
@@ -203,8 +203,8 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 				'local_timestamp': local_timestamp 
 				})
 			matching_criteria.update({
-				'host': entry[0],
-				'service': entry[2],
+				'host': str(entry[0]),
+				'service': str(entry[2]),
 				'ds': str(ds)
 				})
 			if (str(entry[2]) == 'wimax_pmp1_utilization' ) and str(entry[0]) in mrc_hosts:
