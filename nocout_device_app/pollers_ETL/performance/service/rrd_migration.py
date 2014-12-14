@@ -35,7 +35,23 @@ service_data_values = []
 network_update_list = []
 service_update_list = []
 
-def build_export(site, network_result, service_result, db):
+
+def load_file(file_path):
+    #Reset the global vars
+    host_vars = {
+        "all_hosts": [],
+        "ipaddresses": {},
+        "host_attributes": {},
+        "host_contactgroups": [],
+    }
+    try:
+        execfile(file_path, host_vars, host_vars)
+        del host_vars['__builtins__']
+    except IOError, e:
+        pass
+    return host_vars
+
+def build_export(site, network_result, service_result,mrc_hosts, db):
 	"""
 	Function name: build_export  (function export data from the rrdtool (which stores the period data) for all services for particular host
 	and stores them in mongodb in particular structure)
@@ -68,16 +84,17 @@ def build_export(site, network_result, service_result, db):
 	}
 	matching_criteria ={}
 	threshold_values = {}
-	severity = 'UNKNOWN'
-	host_severity = 'UNKNOWN'
+	severity = 'unknown'
+	host_severity = 'unknown'
 #	db = mongo_module.mongo_conn(
 #	    host=mongo_host,
 #	    port=int(mongo_port),
 #	    db_name=mongo_db
 #	)
 	# Process network perf data
-	
         nw_qry_output = network_result
+	file_path = "/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk" % site
+	host_var = load_file(file_path)
 	for entry in nw_qry_output:
                 try:
 		    threshold_values = get_threshold(entry[-1])
@@ -86,12 +103,10 @@ def build_export(site, network_result, service_result, db):
 		    # rtmin, rtmax values are not used in perf calc
 		    threshold_values.pop('rtmin', '')
 		    threshold_values.pop('rtmax', '')
-		    #print '-- threshold_values'
-		    #print threshold_values
 		    if entry[2] == 0:
-		        host_severity = 'UP'
+		        host_severity = 'up'
 		    elif entry[2] == 1:
-			host_severity = 'DOWN'
+			host_severity = 'down'
 		# Age of last service state change
 		    last_state_change = entry[-2]
 		    age =last_state_change
@@ -128,38 +143,37 @@ def build_export(site, network_result, service_result, db):
 			# Update the value in status collection, Mongodb
 			network_update_list.append(matching_criteria)
 			#mongo_module.mongo_db_update(db, matching_criteria, data_dict, 'network_perf_data')
-			#print entry[0],data_dict.get('check_time')
 			network_data_values.append(data_dict)
 			data_dict = {}
 			matching_criteria = {}
 	after = int(time.time())
 	elapsed = after -current
-	#if host_severity == 'UP':
-	#	print 'network_data_values'
-	#	print network_data_values
-	#try:
-	#	mongo_module.mongo_db_insert(db, network_data_values, 'network_perf_data')
-	#except Exception, e:
-	#	print e.message
-	# If host is Down, do not process its service perf data
-	#if host_severity == 'DOWN':
-	#	return
 	data_dict = {}
-	# Process service perf data
-	#count1 =0
 	current1 = int(time.time())
+	matching_criteria ={}
+	mrc_update = []
+	mrc_insert = []
+        indexed_insert_entry = {}
+        indexed_update_entry = {}
+	value = 0
+	mrc_host = None
+	host_matched_row = None
         serv_qry_output = service_result
 	for entry in serv_qry_output:
                 if len(entry) < 8:
                         continue
+		for host_row in host_var['all_hosts']:
+			if re.match(str(entry[0]),host_row) and 'dr:' in host_row:
+				host_matched_row = host_row		
+				break
+		
 		if not len(entry[-1]):
 			continue
-		if int(entry[6]) == 1:
-			continue 	
-		#print entry[-1]
+		
+		if int(entry[6]) == 1 and  not (host_matched_row and (str(entry[2]) == 'wimax_pmp1_utilization' or str(entry[2]) == 'wimax_pmp2_utilization')):
+			continue
+			   	
 		threshold_values = get_threshold(entry[-1])
-		#print '-- threshold_values'
-		#print threshold_values
 		severity = calculate_severity(entry[3])
 		# Age of last service state change
 		last_state_change = entry[-2]
@@ -178,7 +192,7 @@ def build_export(site, network_result, service_result, db):
 			data_dict.update({
 				'site': site,
 				'host': entry[0],
-				'service': str(entry[2]),
+				'service': entry[2],
 				'ip_address': entry[1],
 				'severity': severity,
 				'age': age,
@@ -190,15 +204,81 @@ def build_export(site, network_result, service_result, db):
 				})
 			matching_criteria.update({
 				'host': entry[0],
-				'service': str(entry[2]),
+				'service': entry[2],
 				'ds': str(ds)
 				})
+			if (str(entry[2]) == 'wimax_pmp1_utilization' ) and str(entry[0]) in mrc_hosts:
+				mrc_insert.append(data_dict)
+			        mrc_update.append(matching_criteria)	
+				mrc_host =  str(entry[0])
+				matching_criteria = {}
+				data_dict = {}
+				if ds_values.get('cur'):
+					value = ds_values.get('cur')
+				else:
+					value = 0
+				continue
+			if (str(entry[2]) == 'wimax_pmp2_utilization') and str(entry[0]) in mrc_hosts and mrc_host == str(entry[0]):
+				if ds_values.get('cur'):
+					updated_value = eval(ds_values.get('cur')) + eval(value)
+					if mrc_insert:
+			 			mrc_insert[0].get('data')[0]['value'] = updated_value
+				if mrc_insert:
+					service_update_list.append(mrc_update[0])
+					service_data_values.append(mrc_insert[0])
+				mrc_host = None	
+				value = 0
+				mrc_update = []
+				mrc_insert = []
+					
+			 					 
+			if host_matched_row:
+				dr_host = host_matched_row.split('|')[3].split(':')[1].strip(' ')
+				#print 'dr_host'
+				#print dr_host
+				#print (dr_host,str(entry[2]))
+				if (dr_host,str(entry[2])) in indexed_insert_entry:
+					if (str(entry[2]) == 'wimax_pmp1_utilization' or str(entry[2]) == 'wimax_pmp2_utilization'):
+						if ds_values.get('cur') and indexed_insert_entry[(dr_host,str(entry[2]))].get('data')[0]['value']:
+							total_val = eval(ds_values.get('cur')) + eval(indexed_insert_entry[(dr_host,str(entry[2]))].get('data')[0]['value'])
+							indexed_insert_entry[(dr_host,str(entry[2]))].get('data')[0]['value']= total_val
+							data_dict.get('data')[0]['value']=total_val
+						elif ds_values.get('cur'):
+							indexed_insert_entry[(dr_host,str(entry[2]))].get('data')[0]['value'] = ds_values.get('cur')
+						#print ',,,,,,,,,,,,'
+						#print data_dict
+						#print indexed_insert_entry
+		
+						if indexed_insert_entry[(dr_host,str(entry[2]))]:
+							service_update_list.append(indexed_update_entry[(dr_host,str(entry[2]))])
+							service_data_values.append(indexed_insert_entry[(dr_host,str(entry[2]))])
+							del indexed_insert_entry[(dr_host,str(entry[2]))]
+							del indexed_update_entry[(dr_host,str(entry[2]))]
+				elif str(entry[2]) == 'wimax_pmp1_utilization' or str(entry[2]) == 'wimax_pmp2_utilization':
+					indexed_insert_entry[(str(entry[0]),str(entry[2]))]=data_dict
+					indexed_update_entry[(str(entry[0]),str(entry[2]))]=matching_criteria
+					#print 'indexed_entry'
+					#print indexed_insert_entry
+					#print 'updated_entry'
+					#print indexed_update_entry
+					data_dict = {}
+					matching_criteria = {}
+					continue
+
+
+				# insert utilization entry in dict with host as key		
 			# Update the value in status collection, Mongodb
 			service_update_list.append(matching_criteria)
 			#mongo_module.mongo_db_update(db, matching_criteria, data_dict, 'serv_perf_data')
 			service_data_values.append(data_dict)
 			data_dict = {}
 			matching_criteria = {}
+	for key,values in indexed_insert_entry.items():
+		try:
+			service_update_list.append(indexed_update_entry[key])
+			service_data_values.append(values)
+		except:
+			continue
 	elap = int(time.time()) - current1
 	#print 'service_data_values'
 	#print service_data_values
@@ -263,13 +343,13 @@ def calculate_severity(severity_bit):
 	"""
 	Function to compute host service states
 	"""
-	severity = 'UNKNOWN'
+	severity = 'unknown'
 	if severity_bit == 0:
-		severity = 'OK'
+		severity = 'ok'
 	elif severity_bit == 1:
-		severity = 'WARNING'
+		severity = 'warning'
 	elif severity_bit == 2:
-		severity = 'CRITICAL'
+		severity = 'critical'
 
 	return severity
 
@@ -287,46 +367,48 @@ def get_host_services_name(site_name=None, db=None):
         raise
              Exception: SyntaxError,socket error
         """
+	
         try:
+	    mrc_hosts = []
             st = datetime.now()
             current = int(time.time())
+	    mrc_query = "GET services\nColumns: host_name service_state host_state host_address plugin_output\n"+ \
+                        "Filter: service_description ~ wimax_pmp1_sector_id_invent\n"+\
+                        "Filter: service_description ~ wimax_pmp2_sector_id_invent\nOr: 2\nOutputFormat: python\n"
+
             network_perf_query = "GET hosts\nColumns: host_name host_address host_state last_check host_last_state_change host_perf_data\nOutputFormat: python\n"
 	    service_perf_query = "GET services\nColumns: host_name host_address service_description service_state "+\
                             "last_check service_last_state_change host_state service_perf_data\nFilter: service_description ~ _invent\n"+\
                             "Filter: service_description ~ _status\n"+\
                             "Filter: service_description ~ Check_MK\n"+\
-                            "Filter: service_description ~ wimax_pmp1_dl_utilization_kpi\n"+\
-                            "Filter: service_description ~ wimax_pmp1_ul_utilization_kpi\n"+\
-                            "Filter: service_description ~ wimax_pmp2_dl_utilization_kpi\n"+\
-                            "Filter: service_description ~ wimax_pmp2_ul_utilization_kpi\n"+\
+                            "Filter: service_description ~ PING\n"+\
+                            "Filter: service_description ~ wimax_pmp1_util_kpi\n"+\
+                            "Filter: service_description ~ wimax_pmp2_util_kpi\n"+\
+                            "Filter: service_description ~ wimax_pmp1_ul_util_bgp\n"+\
+                            "Filter: service_description ~ wimax_pmp1_dl_util_bgp\n"+\
+                            "Filter: service_description ~ wimax_pmp2_dl_util_bgp\n"+\
+                            "Filter: service_description ~ wimax_pmp2_ul_util_bgp\n"+\
                             "Filter: service_description ~ cambium_ul_utilization_kpi\n"+\
                             "Filter: service_description ~ cambium_dl_utilization_kpi\n"+\
-                            "Or: 9\nNegate:\nOutputFormat: python\n"
+                            "Or: 12\nNegate:\nOutputFormat: python\n"
 
             #service_perf_query = "GET services\nColumns: host_name host_address service_description service_state "+\
             #                "last_check service_last_state_change host_state service_perf_data\nFilter: service_description ~ _invent\n"+\
             #                "Filter: service_description ~ _status\nFilter: service_description ~ Check_MK\nOr: 3\nNegate:\nOutputFormat: python\n"
             nw_qry_output = eval(get_from_socket(site_name, network_perf_query))
-            #print 'NW qry OUT --'
-            #print nw_qry_output
             serv_qry_output = eval(get_from_socket(site_name, service_perf_query))
-            #print 'Serv qry OUT --'
-            #print serv_qry_output
-            # Group service perf data host-wise
-            #serv_qry_output = sorted(serv_qry_output, key=lambda k: k[0])
-            #for host, group in groupby(serv_qry_output, key=lambda e: e[0]):
-            #        i += 1
-                    # Find the entry in network perf data, for this host
-            #        nw_entry = filter(lambda t: host == t[0], nw_qry_output)
-                    #print 'nw_entry -----'
-                    #print nw_entry
-            #        serv_entry = list(group)
-            #        if i == 1000:
-            #           break
+            mrc_qry_output = eval(get_from_socket(site_name, mrc_query))
+	    for index in range(0,len(mrc_qry_output),2):
+            	try:
+                        if mrc_qry_output[index][0] == mrc_qry_output[index+1][0] and mrc_qry_output[index][2] != 1:
+                                if mrc_qry_output[index][4] == mrc_qry_output[index+1][4]:
+                                        mrc_hosts.append(mrc_qry_output[index][0])
+                except:
+                        continue
             build_export(
                        site_name,
                        nw_qry_output,
-                       serv_qry_output,
+                       serv_qry_output,mrc_hosts,
                        db
             )
 	    elapsed = int(time.time()) - current
@@ -577,8 +659,8 @@ def pivot_timestamp_fwd(timestamp):
            None
     """
     t_stmp = timestamp + timedelta(minutes=-(timestamp.minute % 5))
-    if (timestamp.minute %5) != 0:
-    	t_stmp = t_stmp + timedelta(minutes=5)
+    #if (timestamp.minute %5) != 0:
+    t_stmp = t_stmp + timedelta(minutes=5)
 
   
     return t_stmp
