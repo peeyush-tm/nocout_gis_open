@@ -5012,13 +5012,15 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 # ************************ DR handling according to ip address (Start) ************************
                 # *********************************************************************************************
 
-                # Rule for identifing master/slave device:
+                # Rule for identifying master/slave device:
                 # Master device ip address is just previous to ip address of slave device.
                 # For e.g. if master device ip is '10.156.4.2' than slave device ip is '10.156.4.3'
 
                 # identify whether device is master/slave if 'dr site' is 'yes' and current sector is already present
                 if dr_site.lower() == "yes":
                     if idu_ip:
+                        # master/slave identifier from workbook
+                        ms_identifier = row['DR Master/Slave'] if 'DR Master/Slave' in row.keys() else ""
                         # current sector
                         current_sector = ""
 
@@ -5028,44 +5030,69 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                         try:
                             # get current sector only if it's 'dr_site' is 'Yes'
                             current_sector = Sector.objects.get(name=name, dr_site="Yes")
-                            sector_device = current_sector.sector_configured_on
                         except Exception as e:
                             logger.info("Sector with sector id - {} not exist. Exception: {} ".format(alias, e.message))
 
                         if current_sector:
-                            if sector_device:
+                            # sector configured on device
+                            sector_device = current_sector.sector_configured_on
+
+                            # dr configured on device
+                            dr_device = current_sector.dr_configured_on
+                            if sector_device or dr_device:
                                 # sector device previous ip (decrement idu ip by 1)
                                 sd_prev_ip = ""
                                 try:
                                     sd_prev_ip = ipaddr.IPAddress(sector_device.ip_address) - 1
                                 except Exception as e:
-                                    logger.info("No ip address for device {}. Exception: {}".format(
-                                        sector_device.ip_address,
-                                        e.message))
+                                    logger.info("No ip address for sector device. Exception: {}".format(e.message))
 
                                 # next ip (increment idu ip by 1)
                                 sd_next_ip = ""
                                 try:
                                     sd_next_ip = ipaddr.IPAddress(sector_device.ip_address) + 1
                                 except Exception as e:
-                                    logger.info("No ip address for device {}. Exception: {}".format(
-                                        sector_device.ip_address,
-                                        e.message))
+                                    logger.info("No ip address for sector device. Exception: {}".format(e.message))
 
                                 # idu ip address 'ipaddr' object
                                 idu_ip_address = ipaddr.IPAddress(idu_ip)
 
-                                # if 'idu_ip_address' is ip address just previous to 'sector_configured_on' device
-                                # than make current 'sector_configured_on' device to 'dr_configured_on' device
-                                # and make 'base_station' device new 'sector_configured_on' device
-                                if idu_ip_address == sd_prev_ip:
+                                # identify master/slave device corresponding to master/slave bit
+                                if ms_identifier:
+                                    if ms_identifier == "Master":
+                                        master_device = base_station
+                                        slave_device = ""
+                                    elif ms_identifier == "Slave":
+                                        master_device = ""
+                                        slave_device = base_station
+                                    else:
+                                        pass
+                                else:
+                                    # if 'idu_ip_address' is ip address just previous to 'sector_configured_on'
+                                    # device
+                                    # than make current 'sector_configured_on' device to 'dr_configured_on' device
+                                    # and make 'base_station' device new 'sector_configured_on' device
+                                    if idu_ip_address == sd_prev_ip:
+                                        master_device = base_station
+                                        slave_device = sector_device
+                                    # if 'idu_ip_address' is ip address just next to 'sector_configured_on' device
+                                    # than just 'base_station' device new 'dr_configured_on' device
+                                    # and 'sector_configured_on' device remains the same
+                                    elif idu_ip_address == sd_next_ip:
+                                        master_device = sector_device
+                                        slave_device = base_station
+                                    else:
+                                        pass
+                        else:
+                            # if current sector not exist in database and needs to be created
+                            # than if master/slave bit 'ms_identifier' exist than assign sector devices according
+                            # to the corresponding bit else continue with the normal flow
+                            if ms_identifier:
+                                if ms_identifier == "Master":
                                     master_device = base_station
-                                    slave_device = sector_device
-                                # if 'idu_ip_address' is ip address just next to 'sector_configured_on' device
-                                # than just 'base_station' device new 'dr_configured_on' device
-                                # and 'sector_configured_on' device remains the same
-                                elif idu_ip_address == sd_next_ip:
-                                    master_device = sector_device
+                                    slave_device = ""
+                                elif ms_identifier == "Slave":
+                                    master_device = ""
                                     slave_device = base_station
                                 else:
                                     pass
@@ -5093,6 +5120,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 sector = create_sector(sector_data)
             except Exception as e:
                 sector = ""
+                logger.info("Sector Exception: ", e.message)
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
@@ -6865,6 +6893,7 @@ def create_sector(sector_payload):
 
     """
 
+
     # dictionary containing sector payload
     sector_payload = sector_payload
 
@@ -6925,6 +6954,7 @@ def create_sector(sector_payload):
                         sector.alias = alias
                     except Exception as e:
                         logger.info("Sector Alias: ({} - {})".format(alias, e.message))
+
                 # sector id
                 if sector_id:
                     try:
@@ -6978,12 +7008,13 @@ def create_sector(sector_payload):
                             sector.dr_site = ""
                     except Exception as e:
                         logger.info("DR Site: ({} - {})".format(dr_site, e.message))
+
                 # dr configured on
                 if dr_configured_on:
                     try:
                         sector.dr_configured_on = dr_configured_on
                     except Exception as e:
-                        logger.info("DR Configured On: ({} - {})".format(dr_configured_on, e.message))
+                        logger.exception("DR Configured On: ({} - {})".format(dr_configured_on, e.message))
                 # tx power
                 if tx_power:
                     if isinstance(tx_power, int) or isinstance(tx_power, float):
@@ -7110,6 +7141,13 @@ def create_sector(sector_payload):
                             sector.dr_site = ""
                     except Exception as e:
                         logger.info("DR Site: ({} - {})".format(dr_site, e.message))
+
+                # dr configured on
+                if dr_configured_on:
+                    try:
+                        sector.dr_configured_on = dr_configured_on
+                    except Exception as e:
+                        logger.exception("DR Configured On: ({} - {})".format(dr_configured_on, e.message))
                 # tx power
                 if tx_power:
                     if isinstance(tx_power, int) or isinstance(tx_power, float):
