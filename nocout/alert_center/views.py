@@ -619,6 +619,15 @@ class AlertCenterListing(ListView):
                     'bSortable': True,
                     "sSortDataType": "dom-text",
                     "sType": "numeric"
+                },
+                {
+                    'mData': 'min_value',
+                    'sTitle': 'Latency Min (ms)',
+                    'sWidth': 'auto',
+                    'sClass': 'hidden-xs',
+                    'bSortable': True,
+                    "sSortDataType": "dom-text",
+                    "sType": "numeric"
                 }
             ]
         datatable_headers += [
