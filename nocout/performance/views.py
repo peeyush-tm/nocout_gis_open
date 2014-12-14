@@ -35,62 +35,81 @@ SERVICE_DATA_SOURCE = {
         "type": "area",
         "valuesuffix": "seconds",
         "valuetext": "Seconds",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "rssi": {
         "display_name": "RSSI",
         "type": "column",
         "valuesuffix": "dB",
         "valuetext": "dB",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "uptime": {
         "display_name": "UPTIME",
         "type": "line",
         "valuesuffix": " seconds",
         "valuetext": "up since (timeticks)",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "rta": {
         "display_name": "Latency",
-        "type": "area", "valuesuffix":
-        "ms", "valuetext": "ms",
-        "formula": "rta_null"
+        "type": "area",
+        "valuesuffix": "ms",
+        "valuetext": "ms",
+        "formula": "rta_null",
+        "show_min": False,
+        "show_max": False
     },
     "pl": {
         "display_name": "Packet Drop",
         "type": "column",
         "valuesuffix": "%",
         "valuetext": "Percentage (%)",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "service_throughput": {
         "display_name": "Service throughput",
         "type": "area",
         "valuesuffix": " mbps",
         "valuetext": " mbps",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "management_port_on_odu": {
         "display_name": "Management Port on ODU",
         "type": "area",
         "valuesuffix": " mbps",
         "valuetext": " mbps",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "radio_interface": {
         "display_name": "Radio Interface" ,
         "type": "area",
         "valuesuffix": " mbps",
         "valuetext": " mbps",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "availability": {
         "display_name": "Availability",
         "type": "column",
         "valuesuffix": " %",
         "valuetext": " %",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     ##listing there special performance checks with type string
     #wimax_ss_ip#ss_ip
@@ -108,7 +127,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "modulation_dl_fec": {
@@ -116,7 +137,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "ss_sector_id": {
@@ -124,7 +147,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "frequency": {
@@ -132,7 +157,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " MHz",
         "valuetext": " MHz",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "modulation_ul_fec": {
@@ -140,7 +167,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "ul_intrf": {
@@ -148,7 +177,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "dl_intrf": {
@@ -156,7 +187,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "ss_mac": {
@@ -164,7 +197,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
 
@@ -1678,31 +1713,36 @@ class Get_Service_Type_Performance_Data(View):
         chart_data = list()
         if performance_data:
             data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
+            min_data_list = list()
+            max_data_list = list()
             for data in performance_data:
                 temp_time = data.sys_timestamp
 
                 if temp_time in aggregate_data:
                     continue
                 else:
+
+                    sds_name = str(data.data_source).strip().lower()
+
                     aggregate_data[temp_time] = data.sys_timestamp
                     self.result['data']['objects']['display_name'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["display_name"]\
-                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[sds_name]["display_name"]\
+                            if sds_name in SERVICE_DATA_SOURCE \
                             else str(data.data_source).upper()
 
                     self.result['data']['objects']['type'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["type"]\
-                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[sds_name]["type"]\
+                            if sds_name in SERVICE_DATA_SOURCE \
                             else "area"
 
                     self.result['data']['objects']['valuesuffix'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["valuesuffix"]\
-                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[sds_name]["valuesuffix"]\
+                            if sds_name in SERVICE_DATA_SOURCE \
                             else ""
 
                     self.result['data']['objects']['valuetext'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["valuetext"]\
-                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[sds_name]["valuetext"]\
+                            if sds_name in SERVICE_DATA_SOURCE \
                             else str(data.data_source).upper()
 
                     self.result['data']['objects']['plot_type'] = 'charts'
@@ -1717,6 +1757,13 @@ class Get_Service_Type_Performance_Data(View):
                         if data.critical_threshold else None])
 
                         ###to draw each data point w.r.t threshold we would need to use the following
+                        if SERVICE_DATA_SOURCE[sds_name]["show_min"]:
+                            min_data_list.append([data.sys_timestamp * 1000, float(data.min_value)
+                            if data.min_value else None])
+
+                        if SERVICE_DATA_SOURCE[sds_name]["show_max"]:
+                            min_data_list.append([data.sys_timestamp * 1000, float(data.max_value)
+                            if data.max_value else None])
 
                         compare_point = lambda p1, p2, p3: '#70AFC4' \
                             if abs(p1) < abs(p2) \
@@ -1727,8 +1774,8 @@ class Get_Service_Type_Performance_Data(View):
                                         )
                                 )
 
-                        formula = SERVICE_DATA_SOURCE[str(data.data_source).lower().strip()]["formula"]\
-                                    if str(data.data_source).lower().strip() in SERVICE_DATA_SOURCE \
+                        formula = SERVICE_DATA_SOURCE[sds_name]["formula"]\
+                                    if sds_name in SERVICE_DATA_SOURCE \
                                     else None
 
                         if data.current_value:
@@ -1757,8 +1804,33 @@ class Get_Service_Type_Performance_Data(View):
                                      'type': self.result['data']['objects']['type'],
                                      'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                      'valuetext': self.result['data']['objects']['valuetext']
+                                    }
+                        ]
+                        if len(min_data_list):
+                            chart_data += [
+                                {'name': str("min value").title(),
+                                     'color': '#FFFF0D',
+                                     'data': min_data_list,
+                                     'type': 'line',
+                                     'marker' : {
+                                         'enabled': False
+                                     }
                                     },
-                                    {'name': str("warning threshold").title(),
+                            ]
+
+                        if len(max_data_list):
+                            chart_data += [
+                                {'name': str("max value").title(),
+                                     'color': '#EEEE0D',
+                                     'data': min_data_list,
+                                     'type': 'line',
+                                     'marker' : {
+                                         'enabled': False
+                                     }
+                                    },
+                            ]
+
+                        chart_data += [{'name': str("warning threshold").title(),
                                      'color': '#FFE90D',
                                      'data': warn_data_list,
                                      'type': 'line',
@@ -2331,17 +2403,24 @@ def prepare_gis_devices(devices, page_type):
         else:
             continue
 
+        sector_details = []
+        apnd = ""
+
         if is_sector:
             for bs_row in raw_result:
+                port = bs_row['SECTOR_PORT']
+                if port:
+                    apnd = "( " + port + " )"
                 if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
                     and bs_row['SECTOR_SECTOR_ID'] is not None:
                     sector_id.append(bs_row['SECTOR_SECTOR_ID'])
+                    sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd)
 
         for bs_row in raw_result:
             if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
-                        "sector_id": ", ".join(sector_id),
+                        "sector_id": ", ".join(sector_details),
                         "circuit_id": format_value(bs_row['CCID']),
                         "customer_name": format_value(bs_row['CUST']),
                         "bs_name": format_value(bs_row['BSALIAS']),
@@ -2351,8 +2430,14 @@ def prepare_gis_devices(devices, page_type):
                         "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
                 if is_ss:
+                    if bs_row['CIRCUIT_TYPE']:
+                        if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
+                            device.update({
+                                "bs_name": format_value(bs_row['CUST']),
+                            })
+
                     device.update({
-                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']),
+                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']) + apnd,
                         "device_type": format_value(bs_row['SS_TYPE']),
                         "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
