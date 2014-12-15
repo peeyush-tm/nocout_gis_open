@@ -6973,9 +6973,12 @@ class GisWizardPTPListingTable(SectorListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            dct['sector_configured_on__country'] = Country.objects.get(id=dct['sector_configured_on__country']).country_name
-            dct['sector_configured_on__state'] = State.objects.get(id=dct['sector_configured_on__state']).state_name
-            dct['sector_configured_on__city'] = City.objects.get(id=dct['sector_configured_on__city']).city_name
+            if ['sector_configured_on__country']:
+                dct['sector_configured_on__country'] = Country.objects.get(id=dct['sector_configured_on__country']).country_name
+            if ['sector_configured_on__state']:
+                dct['sector_configured_on__state'] = State.objects.get(id=dct['sector_configured_on__state']).state_name
+            if ['sector_configured_on__city']:
+                dct['sector_configured_on__city'] = City.objects.get(id=dct['sector_configured_on__city']).city_name
 
             device_id = dct.pop('id')
             sector = Sector.objects.get(id=device_id)
