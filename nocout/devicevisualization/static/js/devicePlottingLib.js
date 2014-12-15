@@ -1760,15 +1760,31 @@ function devicePlottingClass_gmap() {
 						/*Call createSectorData function to get the points array to plot the sector on google maps.*/
 						gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
 						
-							var halfPt = Math.floor(pointsArray.length / (+2));
-								/*Plot sector on map with the retrived points*/
-								gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation,rad,azimuth,beam_width);
+							var halfPt = Math.floor(pointsArray.length / (+2)),
+								polyStartLat = "",
+								polyStartLon = "";
 
-								startEndObj["startLat"] = pointsArray[halfPt].lat;
-								startEndObj["startLon"] = pointsArray[halfPt].lon;
+							if(halfPt == 1) {
+								var latLonArray = [
+									pointsArray[0],
+									pointsArray[1]
+								];
+								var centerPosition = gmap_self.getMiddlePoint(latLonArray);
 
-								startEndObj["sectorLat"] = pointsArray[halfPt].lat;
-								startEndObj["sectorLon"] = pointsArray[halfPt].lon;
+								polyStartLat = centerPosition.lat * 180 / Math.PI;
+								polyStartLon = centerPosition.lon * 180 / Math.PI;
+							} else {
+								polyStartLat = pointsArray[halfPt].lat;
+								polyStartLon = pointsArray[halfPt].lon;
+							}
+							/*Plot sector on map with the retrived points*/
+							gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation,rad,azimuth,beam_width);
+
+							startEndObj["startLat"] = polyStartLat;
+							startEndObj["startLon"] = polyStartLon;
+
+							startEndObj["sectorLat"] = polyStartLat;
+							startEndObj["sectorLon"] = polyStartLon;
 						});
 					// }
 
@@ -5798,10 +5814,32 @@ function devicePlottingClass_gmap() {
 	            sPaginationType : "full_numbers"
 			});
 		}
-
     };
-    
 
+    /**
+     * This function retunrns middle point lat lon as per given param
+     * @method getMiddlePoint
+     */
+    this.getMiddlePoint = function(latLonArray) {
+    	
+    	var lat1 = latLonArray[0].lat * Math.PI / 180,
+        	lat2 = latLonArray[1].lat * Math.PI / 180,
+        	lon1 = latLonArray[0].lon * Math.PI / 180,
+        	dLon = (latLonArray[1].lon - latLonArray[0].lon) * Math.PI / 180,
+        	Bx = Math.cos(lat2) * Math.cos(dLon),
+        	By = Math.cos(lat2) * Math.sin(dLon);
+
+        var center_lat = Math.atan2(Math.sin(lat1) + Math.sin(lat2), Math.sqrt((Math.cos(lat1) + Bx) * (Math.cos(lat1) + Bx) + By * By)),
+            center_lon = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
+
+        return {"lat" : center_lat, "lon" : center_lon};
+    };
+
+    
+    /**
+     * This function retunrns the distance between 2 points & middle point lat lon as per given param
+     * @method calculateDistance
+     */
     this.calculateDistance = function(array) {
 
     	var latLon1 = new google.maps.LatLng(array[0].getPosition().lat(), array[0].getPosition().lng()),
@@ -5810,20 +5848,27 @@ function devicePlottingClass_gmap() {
     	/*Distance in m's */
     	var distance = (google.maps.geometry.spherical.computeDistanceBetween(latLon1, latLon2) / 1000).toFixed(2) * 1000;
 
+    	var latLonArray = [
+            {"lat" : array[0].getPosition().lat(), "lon" : array[0].getPosition().lng()},
+            {"lat" : array[1].getPosition().lat(), "lon" : array[1].getPosition().lng()},
+        ];
+
+        var center_obj = gmap_self.getMiddlePoint(latLonArray);
+
     	//convert degree to radians
-    	var lat1 = array[0].getPosition().lat() * Math.PI / 180;
-    	var lat2 = array[1].getPosition().lat() * Math.PI / 180;
-    	var lon1 = array[0].getPosition().lng() * Math.PI / 180;
+    	// var lat1 = array[0].getPosition().lat() * Math.PI / 180;
+    	// var lat2 = array[1].getPosition().lat() * Math.PI / 180;
+    	// var lon1 = array[0].getPosition().lng() * Math.PI / 180;
 
-    	var dLon = (array[1].getPosition().lng() - array[0].getPosition().lng()) * Math.PI / 180;
+    	// var dLon = (array[1].getPosition().lng() - array[0].getPosition().lng()) * Math.PI / 180;
 
-    	var Bx = Math.cos(lat2) * Math.cos(dLon);
-    	var By = Math.cos(lat2) * Math.sin(dLon);
-    	var lat3 = Math.atan2(Math.sin(lat1) + Math.sin(lat2), Math.sqrt((Math.cos(lat1) + Bx) * (Math.cos(lat1) + Bx) + By * By));
-    	var lon3 = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
+    	// var Bx = Math.cos(lat2) * Math.cos(dLon);
+    	// var By = Math.cos(lat2) * Math.sin(dLon);
+    	// var lat3 = Math.atan2(Math.sin(lat1) + Math.sin(lat2), Math.sqrt((Math.cos(lat1) + Bx) * (Math.cos(lat1) + Bx) + By * By));
+    	// var lon3 = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
 
-    	return {distance: distance, lat: lat3, lon: lon3};
-    }
+    	return {distance: distance, lat: center_obj.lat, lon: center_obj.lon};
+    };
 
     this.createDistanceInfobox = function(distanceObject) {
     	var distanceInfoBox= new InfoBox({

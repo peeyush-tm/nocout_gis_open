@@ -303,13 +303,29 @@ function GisPerformance() {
                         beam_width = current_sector.beam_width ? current_sector.beam_width : 10,
                         radius = current_sector.radius ? current_sector.radius : 0.5,
                         sector_color = current_sector.color ? current_sector.color : 'rgba(74,72,94,0.58)',
-                        orientation = current_sector.polarization ? current_sector.polarization : "vertical";
+                        orientation = current_sector.polarization ? current_sector.polarization : sector_polygon.polarisation;
 
                     gmap_self.createSectorData(bs_lat,bs_lon,radius,azimuth_angle,beam_width,orientation,function(pointsArray) {
 
                         var halfPt = Math.floor(pointsArray.length / (+2)),
+                            polyStartLat = "",
+                            polyStartLon = "",
                             polyPathArray = [],
                             polyPoints= "";
+
+                        if(halfPt == 1) {
+                            var latLonArray = [
+                                pointsArray[0],
+                                pointsArray[1]
+                            ];
+                            var centerPosition = gmap_self.getMiddlePoint(latLonArray);
+
+                            polyStartLat = centerPosition.lat * 180 / Math.PI;
+                            polyStartLon = centerPosition.lon * 180 / Math.PI;
+                        } else {
+                            polyStartLat = pointsArray[halfPt].lat;
+                            polyStartLon = pointsArray[halfPt].lon;
+                        }
 
                         if(window.location.pathname.indexOf("googleEarth") > -1) {
                             try {
@@ -361,11 +377,11 @@ function GisPerformance() {
                             });
                         }
 
-                        startEndObj["startLat"] = pointsArray[halfPt].lat;
-                        startEndObj["startLon"] = pointsArray[halfPt].lon;
+                        startEndObj["startLat"] = polyStartLat;
+                        startEndObj["startLon"] = polyStartLon;
 
-                        startEndObj["sectorLat"] = pointsArray[halfPt].lat;
-                        startEndObj["sectorLon"] = pointsArray[halfPt].lon;
+                        startEndObj["sectorLat"] = polyStartLat;
+                        startEndObj["sectorLon"] = polyStartLon;
                         
                         // Add polled info to sector polygon object
                         try {
@@ -403,33 +419,38 @@ function GisPerformance() {
                             ss_pl = perf_self.getKeyValue(ss_perf_info,"pl",true),
                             ss_rta = perf_self.getKeyValue(ss_perf_info,"rta",true);
 
-                        if(window.location.pathname.indexOf("googleEarth") > -1) {
-                            var ssInfo= {
-                                map                :    'current',
-                                ptLat              :    ss_marker_data.data.lat,
-                                ptLon              :    ss_marker_data.data.lon,
-                                technology         :    sector_tech,
-                                icon               :    base_url+"/"+ss_marker_data.data.markerUrl,
-                                oldIcon            :    base_url+"/"+ss_marker_data.data.markerUrl,
-                                clusterIcon        :    base_url+"/"+ss_marker_data.data.markerUrl,
-                                pointType          :    "sub_station",
-                                dataset            :    ss_perf_info,
-                                bhInfo             :    [],
-                                poll_info          :    [],
-                                pl                 :    ss_pl,
-                                rta                :    ss_rta,
-                                antenna_height     :    ss_marker_data.data.antenna_height,
-                                name               :    ss_marker_data.name,
-                                bs_name            :    apiResponse.bs_name,
-                                bs_sector_device   :    sector_device,
-                                filter_data        :    {"bs_name" : apiResponse.bs_name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.bs_id, "sector_id" : sector_id},
-                                device_name        :    ss_marker_data.device_name,
-                                ss_ip              :    ss_marker_data.data.substation_device_ip_address,
-                                sector_ip          :    sector_ip,
-                                isActive           :    1
-                            };
+                        // var ss_marker_object = {};
+                        var ss_marker_object = {
+                            ptLat            :  ss_marker_data.data.lat,
+                            ptLon            :  ss_marker_data.data.lon,
+                            pointType        :  "sub_station",
+                            dataset          :  ss_perf_info,
+                            bhInfo           :  [],
+                            poll_info        :  [],
+                            pl               :  ss_pl,
+                            rta              :  ss_rta,
+                            antenna_height   :  ss_marker_data.data.antenna_height,
+                            name             :  ss_marker_data.name,
+                            technology       :  sector_tech,
+                            bs_name          :  apiResponse.bs_name,
+                            bs_sector_device :  sector_device,
+                            filter_data      :  {"bs_name" : apiResponse.bs_name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.bs_id, "sector_id" : sector_id},
+                            device_name      :  ss_marker_data.device_name,
+                            ss_ip            :  ss_marker_data.data.substation_device_ip_address,
+                            sector_ip        :  sector_ip,
+                            zIndex           :  200,
+                            optimized        :  false,
+                            isActive         :  1,
+                            // layerReference   :  ccpl_map.getLayersByName("Markers")[0]
+                        };
 
-                            var ss_marker = earth_self.makePlacemark(base_url+"/"+ss_marker_data.data.markerUrl, ss_marker_data.data.lat, ss_marker_data.data.lon,'ss_'+ss_marker_data.id, ssInfo);
+                        if(window.location.pathname.indexOf("googleEarth") > -1) {
+                            ss_marker_object['map'] = 'current';
+                            ss_marker_object['icon'] = base_url+"/"+ss_marker_data.data.markerUrl;
+                            ss_marker_object['oldIcon'] = base_url+"/"+ss_marker_data.data.markerUrl;
+                            ss_marker_object['clusterIcon'] = base_url+"/"+ss_marker_data.data.markerUrl;
+
+                            var ss_marker = earth_self.makePlacemark(base_url+"/"+ss_marker_data.data.markerUrl, ss_marker_data.data.lat, ss_marker_data.data.lon,'ss_'+ss_marker_data.id, ss_marker_object);
 
                             (function(ss_marker) {
                                 google.earth.addEventListener(ss_marker, 'click', function(event) {
@@ -475,35 +496,12 @@ function GisPerformance() {
                                 ss_marker_icon = ss_marker_data.data.markerUrl ? iconImageObj : "";
 
                             /*Create SS Marker Object*/
-                            var ss_marker_object = {};
-                            ss_marker_object = {
-                                position         :  new OpenLayers.LonLat(ss_marker_data.data.lon, ss_marker_data.data.lat),
-                                ptLat            :  ss_marker_data.data.lat,
-                                ptLon            :  ss_marker_data.data.lon,
-                                map              :  'current',
-                                icon             :  ss_marker_icon,
-                                oldIcon          :  ss_marker_icon,
-                                clusterIcon      :  ss_marker_icon,
-                                pointType        :  "sub_station",
-                                dataset          :  ss_perf_info,
-                                bhInfo           :  [],
-                                poll_info        :  [],
-                                pl               :  ss_pl,
-                                rta              :  ss_rta,
-                                antenna_height   :  ss_marker_data.data.antenna_height,
-                                name             :  ss_marker_data.name,
-                                technology       :  sector_tech,
-                                bs_name          :  apiResponse.bs_name,
-                                bs_sector_device :  sector_device,
-                                filter_data      :  {"bs_name" : apiResponse.bs_name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.bs_id, "sector_id" : sector_id},
-                                device_name      :  ss_marker_data.device_name,
-                                ss_ip            :  ss_marker_data.data.substation_device_ip_address,
-                                sector_ip        :  sector_ip,
-                                zIndex           :  200,
-                                optimized        :  false,
-                                isActive         :  1,
-                                layerReference   :  ccpl_map.getLayersByName("Markers")[0]
-                            };
+                            ss_marker_object['position'] = new OpenLayers.LonLat(ss_marker_data.data.lon, ss_marker_data.data.lat);
+                            ss_marker_object['map'] = 'current';
+                            ss_marker_object['icon'] = ss_marker_icon;
+                            ss_marker_object['oldIcon'] = ss_marker_icon;
+                            ss_marker_object['clusterIcon'] = ss_marker_icon;
+                            ss_marker_object['layerReference'] = ccpl_map.getLayersByName("Markers")[0];
 
                             var size = new OpenLayers.Size(32, 37);
                             /*Create SS Marker*/
@@ -549,41 +547,19 @@ function GisPerformance() {
                         } else {
 
                             /*Create SS Marker Object*/
-                            var ss_marker_object = {},
-                                ss_marker_icon = new google.maps.MarkerImage(
+                            var ss_marker_icon = new google.maps.MarkerImage(
                                     base_url+"/"+ss_marker_data.data.markerUrl,
                                     null,
                                     null,
                                     null,
                                     new google.maps.Size(32,37)
                                 );
-                            ss_marker_object = {
-                                position         :  new google.maps.LatLng(ss_marker_data.data.lat,ss_marker_data.data.lon),
-                                ptLat            :  ss_marker_data.data.lat,
-                                ptLon            :  ss_marker_data.data.lon,
-                                map              :  mapInstance,
-                                icon             :  ss_marker_icon,
-                                oldIcon          :  ss_marker_icon,
-                                clusterIcon      :  ss_marker_icon,
-                                pointType        :  "sub_station",
-                                dataset          :  ss_perf_info,
-                                bhInfo           :  [],
-                                poll_info        :  [],
-                                pl               :  ss_pl,
-                                rta              :  ss_rta,
-                                antenna_height   :  ss_marker_data.data.antenna_height,
-                                name             :  ss_marker_data.name,
-                                bs_name          :  apiResponse.bs_name,
-                                bs_sector_device :  sector_device,
-                                filter_data      :  {"bs_name" : apiResponse.bs_name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.bs_id, "sector_id" : sector_id},
-                                device_name      :  ss_marker_data.device_name,
-                                ss_ip            :  ss_marker_data.data.substation_device_ip_address,
-                                technology       :  sector_tech,
-                                sector_ip        :  sector_ip,
-                                zIndex           :  200,
-                                optimized        :  false,
-                                isActive         :  1
-                            };
+
+                            ss_marker_object['position'] = new google.maps.LatLng(ss_marker_data.data.lat,ss_marker_data.data.lon);
+                            ss_marker_object['map'] = mapInstance;
+                            ss_marker_object['icon'] = ss_marker_icon;
+                            ss_marker_object['oldIcon'] = ss_marker_icon;
+                            ss_marker_object['clusterIcon'] = ss_marker_icon;
 
                             /*Create SS Marker*/
                             var ss_marker = new google.maps.Marker(ss_marker_object);
@@ -727,22 +703,19 @@ function GisPerformance() {
                             // ss_marker['pl'] = '100';
                             // This is to show "X"(Cross) on line if pl is 100%
                             if(ss_marker['pl'] && (ss_marker['pl'] == '100' || ss_marker['pl'] == '100%')) {
-                                var link_path_array = ss_link_line.getPath().getArray();
-                                // Calculate the center point lat lon to plot "X"
-                                //convert degree to radians
-                                var lat1 = link_path_array[1].lat() * Math.PI / 180;
-                                var lat2 = link_path_array[0].lat() * Math.PI / 180;
-                                var lon1 = link_path_array[1].lng() * Math.PI / 180;
-
-                                var dLon = (link_path_array[0].lng() - link_path_array[1].lng()) * Math.PI / 180;
-
-                                var Bx = Math.cos(lat2) * Math.cos(dLon);
-                                var By = Math.cos(lat2) * Math.sin(dLon);
-                                var center_lat = Math.atan2(Math.sin(lat1) + Math.sin(lat2), Math.sqrt((Math.cos(lat1) + Bx) * (Math.cos(lat1) + Bx) + By * By)),
-                                    center_lon = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
                                 
-                                center_lat = center_lat * 180 / Math.PI;
-                                center_lon = center_lon * 180 / Math.PI;
+                                var link_path_array = ss_link_line.getPath().getArray();
+
+                                // Calculate the center point lat lon to plot "X"
+                                var latLonArray = [
+                                    {"lat" : link_path_array[0].lat(), "lon" : link_path_array[0].lng()},
+                                    {"lat" : link_path_array[1].lat(), "lon" : link_path_array[1].lng()},
+                                ];
+
+                                var center_obj = gmap_self.getMiddlePoint(latLonArray),
+                                    center_lat = center_obj.lat * 180 / Math.PI,
+                                    center_lon = center_obj.lon * 180 / Math.PI;
+
                                     
                                 var crossLabelPosition = new google.maps.LatLng(center_lat,center_lon),
                                     cross_label = perf_self.createInfoboxLabel(
