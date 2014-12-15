@@ -79,14 +79,22 @@
                 <div class="tabbable header-tabs">
                     <!-- nav-tab Start -->
                     <ul class="nav nav-tabs">
-                        <li><a href="#network_bhUtil_block" id="network_bhUtil_tab" data-toggle="tab"><span class="hidden-inline-mobile">BH Utilisation</span></a></li>
-                        <li><a href="#network_sectorUtil_block" id="network_sectorUtil_tab" data-toggle="tab"><span class="hidden-inline-mobile">Sector Utilisation</span></a></li>
-                        <li><a href="#network_ulIssue_block" id="network_ulIssue_tab" data-toggle="tab"><span class="hidden-inline-mobile">UL Issue</span></a></li>
-                        <li><a href="#network_converter_block" id="network_converter_tab" data-toggle="tab"><span class="hidden-inline-mobile">Converter</span></a></li>
-                        <li><a href="#network_temp_block" id="network_temp_tab" data-toggle="tab"><span class="hidden-inline-mobile">Temperature</span></a></li>
-                        <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP BS</span></a></li>
-                        <li><a href="#network_wimax_block" id="network_wimax_tab" data-toggle="tab"><span class="hidden-inline-mobile">Wimax BS</span></a></li>
-                        <li class="active"><a href="#network_ptp_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PTP BH</span></a></li>
+                        <li><a href="#network_bhUtil_block" id="network_bhUtil_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">BH Utilisation</span></a></li>
+                        <li><a href="#network_sectorUtil_block" id="network_sectorUtil_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">Sector Utilisation</span></a></li>
+                        <li><a href="#network_ulIssue_block" id="network_ulIssue_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">UL Issue</span></a></li>
+                        <li><a href="#network_converter_block" id="network_converter_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">Converter</span></a></li>
+                        <li><a href="#network_temp_block" id="network_temp_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">Temperature</span></a></li>
+                        <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">PMP BS</span></a></li>
+                        <li><a href="#network_wimax_block" id="network_wimax_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">Wimax BS</span></a></li>
+                        <li class="active"><a href="#network_ptp_block" id="network_ptp_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">PTP BH</span></a></li>
                     </ul>
                     <!-- nav-tab End -->
 
@@ -214,16 +222,16 @@
     <!-- Custom script for data table-->
     <script type="text/javascript">
         var dataTableInstance = "",
-            base_url = "",
-            excel_columns = [];
+                base_url = "",
+                excel_columns = [];
 
         $(document).ready(function () {
 
             /*Set the base url of application for ajax calls*/
-            if(window.location.origin) {
+            if (window.location.origin) {
                 base_url = window.location.origin;
             } else {
-                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
             }
 
             /* Removing the pagination in the datatable*/
@@ -241,9 +249,9 @@
                     /*Show the spinner*/
                     showSpinner();
 
-                    for(var i=0;i<tableheaders.length;i++) {
+                    for (var i = 0; i < tableheaders.length; i++) {
                         var current_column = tableheaders[i];
-                        if(current_column && current_column['sClass'] != 'hide' && current_column['mData'] != 'action') {
+                        if (current_column && current_column['sClass'] != 'hide' && current_column['mData'] != 'action') {
                             excel_columns.push(i);
                         }
                     }
@@ -265,18 +273,18 @@
                     var dtable = $("#" + tableId).DataTable({
                         sDom: 'T<"clear">lfrtip',
                         oTableTools: {
-                            sSwfPath : base_url+"/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
-                            aButtons : [
+                            sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                            aButtons: [
                                 {
-                                    sExtends : "xls",
-                                    sButtonText : "Download Excel",
-                                    sFileName : "*.xls",
-                                    mColumns : excel_columns
+                                    sExtends: "xls",
+                                    sButtonText: "Download Excel",
+                                    sFileName: "*.xls",
+                                    mColumns: excel_columns
                                 }
                             ]
                         },
                         bAutoWidth: false,
-                        bDestroy : true,
+                        bDestroy: true,
                         bPaginate: true,
                         bProcessing: true,
                         bServerSide: false,
@@ -338,15 +346,14 @@
             $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
 
-
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy = false;
 
             /*Hide SECTOR ID Column*/
             for (var i = 0; i < gridHeadersObj.length; i++) {
                 var column = gridHeadersObj[i];
-                if(column.mData.indexOf("sector_id") > -1) {
-                    if(column.sClass) {
+                if (column.mData.indexOf("sector_id") > -1) {
+                    if (column.sClass) {
                         column.sClass = "hide";
                     } else {
                         column["sClass"] = "hide";
@@ -356,23 +363,23 @@
 
             var location_array = window.location.href.split("#");
 
-            if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+            if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
 
                 /*Trigger click event on active tab to load its data*/
-                $("#network_ptp_tab").trigger('click',true);
+                $("#network_ptp_tab").trigger('click', true);
             }
-{#            dataTableInstance.createDataTable("network_ptp_block_table", gridHeadersObj, ajax_url_p2p, destroy);#}
+            {#            dataTableInstance.createDataTable("network_ptp_block_table", gridHeadersObj, ajax_url_p2p, destroy);#}
 
             // if tabination is there in page add its text in breadcrumb
             var tab = $('.nav li').filter('.active').find('.hidden-inline-mobile')
-            if (tab.length){
+            if (tab.length) {
                 $('#nav_tab_name').text(tab.text());
             }
-            else{
+            else {
                 $(".breadcrumb").children().last().hide()
             }
             // change name of the tab on click of the tab
-            $(".nav-tabs li").click( function() {
+            $(".nav-tabs li").click(function () {
                 $('#nav_tab_name').text($(this).text());
             });
         });

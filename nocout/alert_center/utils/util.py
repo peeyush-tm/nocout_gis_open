@@ -2,7 +2,7 @@
 
 import datetime
 
-#utilities core
+# utilities core
 from nocout.utils import util as nocout_utils
 
 from performance.utils import util as perf_utils
@@ -34,16 +34,16 @@ def prepare_query(table_name=None,
         return None
 
     if table_name and devices:
-        query = "SELECT {0} FROM {1} as original_table " \
-                "LEFT OUTER JOIN ({1} as derived_table) " \
+        query = "SELECT {0} FROM {1} AS original_table " \
+                "LEFT OUTER JOIN ({1} AS derived_table) " \
                 "ON ( " \
                 "        original_table.data_source = derived_table.data_source " \
                 "    AND original_table.device_name = derived_table.device_name " \
                 "    AND original_table.id < derived_table.id" \
                 ") " \
                 "WHERE ( " \
-                "        derived_table.id is null " \
-                "    AND original_table.device_name in ( {2} ) " \
+                "        derived_table.id IS NULL " \
+                "    AND original_table.device_name IN ( {2} ) " \
                 "    {3}" \
                 "    {4}" \
                 ")" \
@@ -56,7 +56,7 @@ def prepare_query(table_name=None,
                 (',').join(map(in_string, data_sources))
             ) if data_sources else "",
             condition.format("original_table") if condition else "",
-            )
+        )
         if limit is not None and offset is not None:
             query += "LIMIT {0}, {1}".format(offset, limit)
 
@@ -85,7 +85,7 @@ def raw_prepare_result(performance_data,
                        condition=None,
                        offset=0,
                        limit=5000
-    ):
+):
     """
 
     :param performance_data:
@@ -105,7 +105,7 @@ def raw_prepare_result(performance_data,
     # while count <= math.ceil(len(devices) / limit):
 
     query = prepare_query(table_name=table_name,
-                          devices=devices, #[limit * count:limit * (count + 1)],# spilicing the devices here
+                          devices=devices,  # [limit * count:limit * (count + 1)],# spilicing the devices here
                           data_sources=data_sources,
                           columns=columns,
                           condition=condition,
@@ -134,7 +134,7 @@ def indexed_alert_results(performance_data):
     indexed_raw_results = {}
 
     for data in performance_data:
-        #this would be a unique combination
+        # this would be a unique combination
         if data['data_source'] is not None and data['device_name'] is not None:
             defined_index = data['device_name'], data['data_source']
             if defined_index not in indexed_raw_results:
@@ -142,6 +142,7 @@ def indexed_alert_results(performance_data):
             indexed_raw_results[defined_index] = data
 
     return indexed_raw_results
+
 
 @nocout_utils.cache_for(300)
 def prepare_raw_alert_results(performance_data=None):
@@ -159,7 +160,7 @@ def prepare_raw_alert_results(performance_data=None):
 
     for device_alert in indexed_alert_data:
         # the data would be a tuple of ("device_name"."data_source")
-        #sample index data
+        # sample index data
         #{(u'511', u'pl'): {
         # 'data_source': u'pl',
         # 'severity': u'down',
@@ -190,9 +191,9 @@ def prepare_raw_alert_results(performance_data=None):
                     float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                 'age': datetime.datetime.fromtimestamp(
                     float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S")
-                    if data["age"]
-                    else "",
-                'description': ''#data['description']
+                if data["age"]
+                else "",
+                'description': ''  #data['description']
             })
 
             device_list.append(device_events)
@@ -230,37 +231,37 @@ def ping_service_query(device_name, start_date, end_date):
 
     :return:
     """
-    query = " "\
-                    " SELECT " \
-                    " original_table.`device_name`," \
-                    " original_table.`ip_address`," \
-                    " original_table.`service_name`," \
-                    " original_table.`severity`," \
-                    " original_table.`current_value` as latency," \
-                    " `derived_table`.`current_value` as packet_loss, " \
-                    " `original_table`.`sys_timestamp`," \
-                    " original_table.`description` " \
-                    " FROM `performance_eventnetwork` as original_table "\
-                    " INNER JOIN (`performance_eventnetwork` as derived_table) "\
-                    " ON( "\
-                    "    original_table.`data_source` <> derived_table.`data_source` "\
-                    "    AND "\
-                    "   original_table.`sys_timestamp` = derived_table.`sys_timestamp` "\
-                    "    AND "\
-                    "    original_table.`device_name` = derived_table.`device_name` "\
-                    " ) "\
-                    " WHERE( "\
-                    "    original_table.`device_name`= '{0}' "\
-                    "    AND "\
-                    "    original_table.`sys_timestamp` BETWEEN {1} AND {2} "\
-                    " ) "\
-                    " GROUP BY original_table.`sys_timestamp` "\
-                    " ORDER BY original_table.`sys_timestamp` DESC ".format(
-                    # (',').join(["original_table.`" + col_name + "`" for col_name in required_columns]),
-                    device_name,
-                    start_date,
-                    end_date
-                    )
+    query = " " \
+            " SELECT " \
+            " original_table.`device_name`," \
+            " original_table.`ip_address`," \
+            " original_table.`service_name`," \
+            " original_table.`severity`," \
+            " original_table.`current_value` AS latency," \
+            " `derived_table`.`current_value` AS packet_loss, " \
+            " `original_table`.`sys_timestamp`," \
+            " original_table.`description` " \
+            " FROM `performance_eventnetwork` AS original_table " \
+            " INNER JOIN (`performance_eventnetwork` AS derived_table) " \
+            " ON( " \
+            "    original_table.`data_source` <> derived_table.`data_source` " \
+            "    AND " \
+            "   original_table.`sys_timestamp` = derived_table.`sys_timestamp` " \
+            "    AND " \
+            "    original_table.`device_name` = derived_table.`device_name` " \
+            " ) " \
+            " WHERE( " \
+            "    original_table.`device_name`= '{0}' " \
+            "    AND " \
+            "    original_table.`sys_timestamp` BETWEEN {1} AND {2} " \
+            " ) " \
+            " GROUP BY original_table.`sys_timestamp` " \
+            " ORDER BY original_table.`sys_timestamp` DESC ".format(
+        # (',').join(["original_table.`" + col_name + "`" for col_name in required_columns]),
+        device_name,
+        start_date,
+        end_date
+    )
     return query
 
 
@@ -280,25 +281,33 @@ def common_prepare_results(dct):
     if dct['severity'].upper() == 'DOWN' \
             or "CRITICAL" in dct['description'].upper() \
             or dct['severity'].upper() == 'CRITICAL':
-        dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
+        dct[
+            'severity'
+        ] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
     elif dct['severity'].upper() == 'WARNING' \
             or "WARNING" in dct['description'].upper() \
             or "WARN" in dct['description'].upper():
-        dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
+        dct[
+            'severity'
+        ] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
 
     elif dct['severity'].upper() == 'UP' \
             or "OK" in dct['description'].upper():
-        dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
+        dct[
+            'severity'
+        ] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
 
     else:
-        dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
+        dct[
+            'severity'
+        ] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
         dct['current_value'] = current_value
         dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
 
