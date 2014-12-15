@@ -76,7 +76,17 @@ var main_devices_data_gmaps = [],
 	currentDevicesObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}},
 	exportDataPolygon = {},
 	inventory_bs_ids = [],
-	cross_label_array = {};
+	cross_label_array = {},
+	ssParamLabelStyle = {
+        border 		  : "1px solid #B0AEAE",
+        background 	  : "white",
+        textAlign 	  : "center",
+        fontSize 	  : "10px",
+        color 		  : "black",
+        padding 	  : '2px',
+        borderRadius  : "5px",
+        width  		  : '110px'
+    };
 
 /* Live Polling Variables */
 var allSSIds = [],
@@ -512,6 +522,17 @@ function devicePlottingClass_gmap() {
             /*show co ordinates on mouse move*/
             google.maps.event.addListener(mapInstance, 'mousemove', function (event) {
                 displayCoordinates(event.latLng);
+            });
+
+            /*Trigger when map pan*/
+            google.maps.event.addListener(mapInstance, 'center_changed', function (event) {
+
+                if(mapInstance.getZoom() > 10 && isPerfCallStarted == 1) {
+                	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
+                	if(new_bs.length > 0) {
+                		gisPerformanceClass.start(new_bs);
+                	}
+                }
             });
 
             google.maps.event.addListener(mapInstance, 'idle', function() {
@@ -1639,7 +1660,6 @@ function devicePlottingClass_gmap() {
 				oldIcon 	       : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
 				clusterIcon 	   : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
 				pointType	       : 	stationType,
-				child_ss   	       : 	bs_ss_devices[i].data.param.sector,
 				dataset 	       : 	bs_ss_devices[i].data.param.base_station,
 				device_name 	   : 	bs_ss_devices[i].data.device_name,
 				bsInfo 			   : 	bs_ss_devices[i].data.param.base_station,
@@ -1788,7 +1808,6 @@ function devicePlottingClass_gmap() {
 							sector_lon  		: startEndObj["startLon"],
 							zIndex 				: 200,
 							optimized 			: false,
-							hasPerf  			: 0,
 	                        antenna_height 		: sector_array[j].antenna_height,
 	                        isActive 			: 1
 	                    }
@@ -1895,7 +1914,6 @@ function devicePlottingClass_gmap() {
 				    	ss_ip 	 		 : 	ss_marker_obj.data.substation_device_ip_address,
 				    	sector_ip 		 :  sector_array[j].sector_configured_on,
 				    	zIndex 			 : 	200,
-				    	hasPerf 		 :  0,
 				    	optimized 		 : 	false,
 				    	isActive 		 : 1
 				    };
@@ -1904,34 +1922,16 @@ function devicePlottingClass_gmap() {
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
 				    if($.trim(last_selected_label)) {
-				    	var labelHtml = "";
-				    	for(var z=ss_marker.dataset.length;z--;) {
-				    		if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
-				    			labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
-				    		}
-				    	}
+				    	var labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false),
+                        	labelHtml = "";
+
+                    	if(labelInfoObject) {
+                            labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                        }
+
 				    	// If any html created then show label on ss
 				    	if(labelHtml) {
-							var perf_infobox = new InfoBox({
-	                            content: labelHtml,
-	                            boxStyle: {
-	                                border: "1px solid #B0AEAE",
-	                                background: "white",
-	                                textAlign: "center",
-	                                fontSize: "10px",
-	                                color: "black",
-	                                padding: '2px',
-	                                borderRadius: "5px",
-	                                width : '110px'
-	                            },
-	                            pixelOffset : new google.maps.Size(-120,-10),
-	                            disableAutoPan: true,
-	                            position: ss_marker.getPosition(),
-	                            closeBoxURL: "",
-	                            isHidden: hide_flag,
-	                            enableEventPropagation: true,
-	                            zIndex: 80
-	                        });
+				    		var perf_infobox = gisPerformanceClass.createInfoboxLabel(labelHtml,ssParamLabelStyle,-120,-10,ss_marker.getPosition(),hide_flag);
 	                        perf_infobox.open(mapInstance, ss_marker);
 	                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = perf_infobox;
 				    	}
@@ -2689,9 +2689,7 @@ function devicePlottingClass_gmap() {
 			startLon 	     : startLon,
 			filter_data 	 : {"bs_name" : sectorInfo.bs_name, "sector_name" : sectorInfo.sector_name, "sector_id" : sectorInfo.sector_id},
 			bhInfo 			 : [],
-			child_ss 	     : sector_child,
 			polarisation 	 : polarisation,
-			original_sectors : sector_child,
 			zIndex 			 : 180,
 			geodesic		 : true,
 			isActive 		 : 1
@@ -2701,11 +2699,11 @@ function devicePlottingClass_gmap() {
 
         allMarkersObject_gmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+sectorInfo.sector_id] = poly;
 
-		if(sector_child) {
-			for(var i=sector_child.length;i--;) {
-				markersMasterObj['Poly'][sector_child[i]["device_name"]]= poly;
-			}			
-		}
+		// if(sector_child) {
+		// 	for(var i=sector_child.length;i--;) {
+		// 		markersMasterObj['Poly'][sector_child[i]["device_name"]]= poly;
+		// 	}			
+		// }
         
 
         /*listener for click event of sector*/
@@ -7507,12 +7505,11 @@ function devicePlottingClass_gmap() {
 			for(key in ss_list) {
 
 				var ss_marker = ss_list[key],
-					labelHtml = "";
+					labelHtml = "",
+					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
 
-				for(var z=ss_marker.dataset.length;z--;) {
-                    if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
-                        labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
-                    }
+            	if(labelInfoObject) {
+                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
                 }
 
                 var toolTip_infobox = "";
@@ -7530,26 +7527,14 @@ function devicePlottingClass_gmap() {
 					ccpl_map.addPopup(toolTip_infobox);
         	    	toolTip_infobox.updateSize();
 	            } else {
-	                toolTip_infobox = new InfoBox({
-	                    content: labelHtml,
-	                    boxStyle: {
-	                        border: "1px solid #B0AEAE",
-	                        background: "white",
-	                        textAlign: "center",
-	                        fontSize: "10px",
-	                        color: "black",
-	                        padding: '2px',
-	                        borderRadius: "5px",
-	                        width : '110px'
-	                    },
-	                    pixelOffset : new google.maps.Size(-120,-10),
-	                    disableAutoPan: true,
-	                    position: ss_marker.getPosition(),
-	                    closeBoxURL: "",
-	                    isHidden: hide_flag,
-	                    enableEventPropagation: true,
-	                    zIndex: 80
-	                });
+	            	toolTip_infobox = gisPerformanceClass.createInfoboxLabel(
+                        labelHtml,
+                        ssParamLabelStyle,
+                        -120,
+                        -10,
+                        ss_marker.getPosition(),
+                        hide_flag
+                    );
 
 	                toolTip_infobox.open(mapInstance, ss_marker);
 	            }
@@ -7560,12 +7545,11 @@ function devicePlottingClass_gmap() {
 
 			for(key in ss_list) {
 				var ss_marker = ss_list[key],
-					labelHtml = "";
+					labelHtml = "",
+					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
 
-				for(var z=ss_marker.dataset.length;z--;) {
-                    if($.trim(ss_marker.dataset[z]['name']) === $.trim(last_selected_label)) {
-                        labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
-                    }
+            	if(labelInfoObject) {
+                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
                 }
 
                 if(window.location.pathname.indexOf("googleEarth") > -1) {
@@ -7591,26 +7575,14 @@ function devicePlottingClass_gmap() {
 	                if(tooltipInfoLabel[key]) {
 	                	tooltipInfoLabel[key].setContent(labelHtml);
 	                } else {
-	                	var toolTip_infobox = new InfoBox({
-		                    content: labelHtml,
-		                    boxStyle: {
-		                        border: "1px solid #B0AEAE",
-		                        background: "white",
-		                        textAlign: "center",
-		                        fontSize: "10px",
-		                        color: "black",
-		                        padding: '2px',
-		                        borderRadius: "5px",
-		                        width : '110px'
-		                    },
-		                    pixelOffset : new google.maps.Size(-120,-10),
-		                    disableAutoPan: true,
-		                    position: ss_marker.getPosition(),
-		                    closeBoxURL: "",
-		                    isHidden: hide_flag,
-		                    enableEventPropagation: true,
-		                    zIndex: 80
-		                });
+	                	var toolTip_infobox = gisPerformanceClass.createInfoboxLabel(
+	                        labelHtml,
+	                        ssParamLabelStyle,
+	                        -120,
+	                        -10,
+	                        ss_marker.getPosition(),
+	                        hide_flag
+	                    );
 
 		                toolTip_infobox.open(mapInstance, ss_marker);
 		                tooltipInfoLabel[key] = toolTip_infobox;

@@ -1665,7 +1665,7 @@ $("#apply_label").click(function(e) {
             $.cookie("tooltipLabel", last_selected_label, {path: '/', secure: true});
 
             if(window.location.pathname.indexOf("googleEarth") > -1) {
-                
+                // Pass
             } else if(window.location.pathname.indexOf("white_background") > -1) {
                 if(ccpl_map && ccpl_map.getZoom() >= 4) {
                     networkMapInstance.updateTooltipLabel_gmap();
