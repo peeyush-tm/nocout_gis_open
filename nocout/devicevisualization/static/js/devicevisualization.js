@@ -1618,6 +1618,23 @@ function deleteGoogleEarthPlacemarker(uniqueID) {
     }
 }
 
+/**
+ * This event trigger when any label is selected or changed from labels dropdown.
+ * @event change
+ */
+$("#static_label").change(function(e) {
+
+    if(($(this).val()) && ($(this).val() != last_selected_label)) {
+        if(!$("#apply_label").hasClass("btn-success")) {
+            $("#apply_label").addClass("btn-success");
+            $("#apply_label").html("Apply Label")
+        }
+
+        if($("#apply_label").hasClass("btn-danger")) {
+            $("#apply_label").removeClass("btn-danger");
+        }
+    }
+});
 
 /**
  * This event trigger when 'Apply Label' button in tools section clicked.
@@ -1648,8 +1665,27 @@ $("#apply_label").click(function(e) {
         // Reset Variables
         tooltipInfoLabel = {};
 
+        if(!$("#apply_label").hasClass("btn-success")) {
+            $("#apply_label").addClass("btn-success");
+            $("#apply_label").html("Apply Label")
+        }
+
+        if($("#apply_label").hasClass("btn-danger")) {
+            $("#apply_label").removeClass("btn-danger");
+        }
+
     } else {
         if((selected_val) && (selected_val != last_selected_label)) {
+
+            if($("#apply_label").hasClass("btn-success")) {
+                $("#apply_label").removeClass("btn-success");
+            }
+
+            if(!$("#apply_label").hasClass("btn-danger")) {
+                $("#apply_label").addClass("btn-danger");
+                $("#apply_label").html("Remove Label")
+            }
+
             // Save selected value to global variable
             last_selected_label = selected_val;
             // Update cookie value with the selected value.
@@ -1682,7 +1718,41 @@ $("#apply_label").click(function(e) {
                 }
             }
         } else {
-            bootbox.alert("Please select different value.");
+            if($.trim($("#apply_label").html()) == 'Remove Label') {
+                $("#static_label").val($("#static_label option:first").val())
+                selected_val = "";
+                // Save selected value to global variable
+                last_selected_label = selected_val;
+                // Update cookie value with the selected value.
+                $.cookie("tooltipLabel", last_selected_label, {path: '/', secure: true});
+
+                if(window.location.pathname.indexOf("googleEarth") > -1) {
+                    
+                } else if(window.location.pathname.indexOf("white_background") > -1) {
+                    // Remove tooltip info label
+                    for (key in tooltipInfoLabel) {
+                        tooltipInfoLabel[key].destroy();
+                    }
+                } else {
+                    // Remove tooltip info label
+                    for (key in tooltipInfoLabel) {
+                        tooltipInfoLabel[key].close();
+                    }
+                }
+                // Reset Variables
+                tooltipInfoLabel = {};
+
+                if(!$("#apply_label").hasClass("btn-success")) {
+                    $("#apply_label").addClass("btn-success");
+                    $("#apply_label").html("Apply Label")
+                }
+
+                if($("#apply_label").hasClass("btn-danger")) {
+                    $("#apply_label").removeClass("btn-danger");
+                }
+            } else {
+                bootbox.alert("Please select different value.");
+            }
         }
     }
 });
