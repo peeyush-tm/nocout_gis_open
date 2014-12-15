@@ -200,6 +200,9 @@ def dialog_action(request):
         session_key = request.session.session_key
         if hasattr(request.user, 'visitor'):
             Session.objects.filter(session_key=request.user.visitor.session_key).delete()
+            # If Session object is modified as session key is changed.
+            # Above doesn't remove existing Visitor object. So removing it below.
+            Visitor.objects.filter(user=request.user).delete()
         Visitor.objects.create(session_key=session_key, user=request.user)
         if request.POST.get('password_alert'):
             result = {
