@@ -35,7 +35,7 @@ from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
 from django.db.models import Q
 from service.forms import DTServiceDataSourceUpdateFormSet
-from performance.views import ptp_device_circuit_backhaul, organization_customer_devices, \
+from inventory.utils.util import ptp_device_circuit_backhaul, organization_customer_devices, \
     organization_network_devices, organization_backhaul_devices
 
 

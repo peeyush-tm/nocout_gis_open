@@ -8314,7 +8314,7 @@ def get_ip_network(ip):
 ## TOPOLOGY UPDATE ##
 #################################################################################################
 from performance.models import Topology
-from performance.views import organization_network_devices, prepare_machines
+from inventory.utils.util import organization_network_devices, prepare_machines
 from organization.models import Organization
 from device.models import DeviceTechnology
 from inventory.models import Sector, Circuit, SubStation
