@@ -11,39 +11,30 @@ from device.models import Device, City, State, DeviceTechnology, DeviceType
 from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 
-from performance.utils.util import combined_indexed_gis_devices,\
-    indexed_polled_results,\
-    prepare_gis_devices,\
-    pre_map_indexing
+#utilities performance
+from performance.utils import util as perf_utils
 
-from inventory.utils.util import ptp_device_circuit_backhaul, \
-    organization_customer_devices, \
-    organization_network_devices, \
-    organization_backhaul_devices, \
-    filter_devices, \
-    prepare_machines
+#utilities inventory
+from inventory.utils import util as inventory_utils
 
 from django.utils.dateformat import format
 from django.db.models import Q
 
-from django.conf import settings
+#nocout project settings
 from nocout.settings import P2P, WiMAX, PMP, DEBUG
 
-from nocout.utils.util import fetch_raw_result, dict_fetchall, \
-    format_value, cache_for, \
-    cached_all_gis_inventory,query_all_gis_inventory
+#utilities core
+from nocout.utils import util as nocout_utils
 
+#get the organisation of logged in user
 from nocout.utils import logged_in_user_organizations
+
+#alert center utilities
+from alert_center.utils import util as alert_utils
 
 import logging
 logger = logging.getLogger(__name__)
 
-#import alert center utilities
-from alert_center.utils.util import ping_service_query, \
-    raw_prepare_result, \
-    prepare_raw_alert_results, \
-    common_prepare_results, \
-    map_results
 
 def getCustomerAlertDetail(request):
     """
@@ -133,7 +124,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         device_tab_technology = self.request.GET.get('data_tab')
 
-        devices = filter_devices(organizations=kwargs['organizations'],
+        devices = inventory_utils.filter_devices(organizations=kwargs['organizations'],
                                  data_tab=device_tab_technology,
                                  page_type=page_type,
                                  required_value_list=required_value_list
@@ -148,7 +139,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         :return:
         """
         page_type = self.request.GET.get('page_type')
-        return prepare_gis_devices(qs, page_type)
+        return perf_utils.prepare_gis_devices(qs, page_type)
 
     def prepare_machines(self, qs):
         """
@@ -164,7 +155,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                 }
             )
 
-        return prepare_machines(device_list)
+        return inventory_utils.prepare_machines(device_list)
 
     def prepare_polled_results(self, qs, machine_dict=None):
         """
@@ -184,7 +175,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         for machine, machine_device_list in machine_dict.items():
             device_list = list()
             performance_data = list()
-            performance_data = raw_prepare_result(performance_data=performance_data,
+            performance_data = alert_utils.raw_prepare_result(performance_data=performance_data,
                                                   machine=machine,
                                                   table_name=search_table,
                                                   devices=machine_device_list,
@@ -193,7 +184,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                                                   condition=extra_query_condition if extra_query_condition else None
             )
 
-            device_list = prepare_raw_alert_results(performance_data=performance_data)
+            device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
 
             sorted_device_list += device_list
 
@@ -216,7 +207,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                     '<a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'
                            .format(dct['id'], service_tab_name, page_type)
                 )
-                dct = common_prepare_results(dct)
+                dct = alert_utils.common_prepare_results(dct)
 
             return qs
 
@@ -241,7 +232,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         perf_results = self.prepare_polled_results(qs, machine_dict=machines)
         # this is query set with complete polled result
 
-        qs = map_results(perf_results, qs)
+        qs = alert_utils.map_results(perf_results, qs)
 
         #this function is for mapping to GIS inventory
         qs = self.prepare_devices(qs, perf_results)
@@ -371,13 +362,13 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
             if not is_bh:
                 for techno in technology:
-                    device_list += filter_devices(organizations=organizations,
+                    device_list += inventory_utils.filter_devices(organizations=organizations,
                                  data_tab=techno,
                                  page_type=page_type,
                                  required_value_list=required_value_list
                     )
             else:
-                device_list += filter_devices(organizations=organizations,
+                device_list += inventory_utils.filter_devices(organizations=organizations,
                                  data_tab=None,
                                  page_type=page_type,
                                  required_value_list=required_value_list
@@ -404,7 +395,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
         for machine, machine_device_list in machine_dict.items():
             device_list = list()
             performance_data = list()
-            performance_data = raw_prepare_result(performance_data=performance_data,
+            performance_data = alert_utils.raw_prepare_result(performance_data=performance_data,
                                                   machine=machine,
                                                   table_name=search_table,
                                                   devices=machine_device_list,
@@ -413,7 +404,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                                                   condition=extra_query_condition if extra_query_condition else None
             )
 
-            device_list = prepare_raw_alert_results(performance_data=performance_data)
+            device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
 
             sorted_device_list += device_list
 
@@ -426,7 +417,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
         :return:
         """
         page_type = self.request.GET.get('page_type', "network")
-        return prepare_gis_devices(qs, page_type)
+        return perf_utils.prepare_gis_devices(qs, page_type)
 
     def prepare_machines(self, qs):
         """
@@ -442,7 +433,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 }
             )
 
-        return prepare_machines(device_list)
+        return inventory_utils.prepare_machines(device_list)
 
     def prepare_results(self, qs):
         """
@@ -463,7 +454,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                             service_tab_name,
                             page_type)
                 )
-                dct = common_prepare_results(dct)
+                dct = alert_utils.common_prepare_results(dct)
 
         return qs
 
@@ -486,7 +477,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
         perf_results = self.prepare_polled_results(qs, machine_dict=machines)
         # this is query set with complete polled result
 
-        qs = map_results(perf_results, qs)
+        qs = alert_utils.map_results(perf_results, qs)
 
         #this function is for mapping to GIS inventory
         qs = self.prepare_devices(qs, perf_results)
@@ -695,7 +686,7 @@ class AlertListingTable(BaseDatatableView):
 
         device_tab_technology = self.request.GET.get('data_tab')
 
-        devices = filter_devices(organizations=kwargs['organizations'],
+        devices = inventory_utils.filter_devices(organizations=kwargs['organizations'],
                                  data_tab=device_tab_technology,
                                  page_type=page_type,
                                  required_value_list=required_value_list
@@ -710,7 +701,7 @@ class AlertListingTable(BaseDatatableView):
         :return:
         """
         page_type = self.request.GET['page_type']
-        return prepare_gis_devices(qs, page_type)
+        return perf_utils.prepare_gis_devices(qs, page_type)
 
     def prepare_machines(self, qs):
         """
@@ -726,7 +717,7 @@ class AlertListingTable(BaseDatatableView):
                 }
             )
 
-        return prepare_machines(device_list)
+        return inventory_utils.prepare_machines(device_list)
 
     def prepare_polled_results(self, qs, machine_dict=None):
         """
@@ -772,7 +763,7 @@ class AlertListingTable(BaseDatatableView):
         for machine, machine_device_list in machine_dict.items():
             device_list = list()
             performance_data = list()
-            performance_data = raw_prepare_result(performance_data=performance_data,
+            performance_data = alert_utils.raw_prepare_result(performance_data=performance_data,
                                                   machine=machine,
                                                   table_name=search_table,
                                                   devices=machine_device_list,
@@ -781,7 +772,7 @@ class AlertListingTable(BaseDatatableView):
                                                   condition=extra_query_condition if extra_query_condition else None
             )
 
-            device_list = prepare_raw_alert_results(performance_data=performance_data)
+            device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
 
             sorted_device_list += device_list
 
@@ -821,7 +812,7 @@ class AlertListingTable(BaseDatatableView):
                                        <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
                                format(dct['id'], service_tab, page_type ))
 
-                dct = common_prepare_results(dct)
+                dct = alert_utils.common_prepare_results(dct)
 
             return qs
 
@@ -845,7 +836,7 @@ class AlertListingTable(BaseDatatableView):
         #prepare the polled results
         perf_results = self.prepare_polled_results(qs, machine_dict=machines)
         # this is query set with complete polled result
-        qs = map_results(perf_results, qs)
+        qs = alert_utils.map_results(perf_results, qs)
         #this function is for mapping to GIS inventory
         qs = self.prepare_devices(qs, perf_results)
         #this function is for mapping to GIS inventory
@@ -987,8 +978,8 @@ class SingleDeviceAlertDetails(View):
             col_string = lambda x: "`" + str(x) + "`"
             is_ping = True
             # raw query is required here so as to get data
-            query = ping_service_query(device_name, start_date, end_date)
-            data_list = fetch_raw_result(query, machine_name)
+            query = alert_utils.ping_service_query(device_name, start_date, end_date)
+            data_list = nocout_utils.fetch_raw_result(query, machine_name)
 
         required_columns = [
             # "device_name",
@@ -1112,10 +1103,10 @@ class SingleDeviceAlertDetails(View):
         device_result = []
 
         if page_type == "customer" :
-            device_result = organization_customer_devices(organizations=organizations)
+            device_result = inventory_utils.organization_customer_devices(organizations=organizations)
 
         elif page_type == "network":
-            device_result = organization_network_devices(organizations=organizations)
+            device_result = inventory_utils.organization_network_devices(organizations=organizations)
 
         result = list()
         for device in device_result:
