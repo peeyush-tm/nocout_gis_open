@@ -12,7 +12,7 @@ from django.shortcuts import render
 from alarm_escalation.models import EscalationStatus
 from organization.models import Organization
 from performance.models import ServiceStatus
-from device.models import DeviceType
+from device.models import Device, DeviceType
 
 
 @task
@@ -171,19 +171,16 @@ def check_device_status():
     service_list = []
     service_data_source_list = []
     severity_list = ['critical', 'warning', 'warn', 'crit']
-    service_status_list = []
     for org in Organization.objects.all():
-        device_list = org.device_set.all().values('id', 'machine__name', 'device_name')
+        device_list = list(org.device_set.all().values('id', 'machine__name', 'device_name'))
         machine_dict = prepare_machines(device_list)
-        service_list = prepare_services(device_list)
+        service_list = prepare_services(org.device_set.all())
         service_data_source_list = prepare_service_data_sources(service_list)
         for machine_name, device_list in machine_dict.items():
-            service_status_list = ServiceStatus.objects.filter(
-                                    device_name__in=device_list,
-                                    service__in=service_list,
-                                    service_data_source__in=service_data_source_list).using(machine_name)
-        if service_status_list:
-            raise_alarms(service_status_list, org)
+            service_status_list = ServiceStatus.objects.filter(device_name__in=device_list, service_name__in=service_list,
+                    data_source__in=service_data_source_list).using(machine_name)
+            if service_status_list:
+                raise_alarms.delay(service_status_list, org)
 
 
 def prepare_machines(device_list):
@@ -211,7 +208,7 @@ def prepare_services(device_list):
     for device in device_list:
         device_type_list += DeviceType.objects.filter(id=device.device_type)
     for device_type in device_type_list:
-        service_list = device_type.service.all()
+        service_list += device_type.service.all()
 
     return service_list
 
@@ -223,5 +220,5 @@ def prepare_service_data_sources(service_list):
     service_data_source_list = []
 
     for service in service_list:
-        service_data_source_list += service.data_source.all()
+        service_data_source_list += service.service_data_sources.all()
     return service_data_source_list
