@@ -689,6 +689,12 @@ function GisPerformance() {
                             allMarkersArray_wmap.push(ss_link_line);
                         } else {
                             /*Create the link between BS & SS or Sector & SS*/
+
+                            // Unspiderify the marker
+                            if(oms) {
+                                oms.unspiderfy();
+                            }
+                            
                             var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
                             ssLinkArray.push(ss_link_line);
                             ssLinkArray_filtered = ssLinkArray;
