@@ -20,19 +20,26 @@ def raise_alarms_for_bad_performance(service_status_list, org):
     """
     Raises alarms for bad performance of device.
     """
+    escalation_level = None
     for service_status in service_status_list:
+        device = Device.objects.get(device_name=service_status.device_name)
         obj, created = EscalationStatus.objects.get_or_create(organization=org,
-                                            device_type=DeviceType.objects.get(id=service_status.device.device_type),
+                                            device_type=DeviceType.objects.get(id=device.device_type.name),
                                             service=service_status.service,
-                                            service_data_source=service_status.service_data_source)
-        age = timezone.now() - alarm.status_since
-        #level = alarm.get_level(age.seconds)
+                                            service_data_source=service_status.service_data_source,
+                                            ip=service_status.ip_address,
+                                            severity=service_status.severity)
+        age = timezone.now() - obj.status_since
+        level_list = obj.organization.escalationlevel_set.all()
+        for level in level_list:
+            if age>=level.alarm_age:
+                escalation_level = level
 
-        if getattr(alarm, 'l%d_email_status' % level.name) == 0:
-            alert_emails_for_bad_performance.delay(alarm, level)
-            alert_phones_for_bad_performance.delay(alarm, level)
-            setattr(alarm, 'l%d_email_status' % level.name, 1)
-            alarm.save()
+        if getattr(obj, 'l%d_email_status' % escalation_level.name) == 0:
+            alert_emails_for_bad_performance.delay(obj, escalation_level)
+            alert_phones_for_bad_performance.delay(obj, escalation_level)
+            setattr(obj, 'l%d_email_status' % escalation_level.name, 1)
+            obj.save()
 
 @task
 def alert_emails_for_bad_performance(alarm, level):
@@ -60,18 +67,27 @@ def alert_phones_for_bad_performance(alarm, level):
 
 
 @task
-def raise_alarms_for_good_performance():
+def raise_alarms_for_good_performance(service_status_list, org):
     """
     Raises alarms for good performance of device.
     """
-    for org in Organization.objects.all():
-        for alarm in EscalationStatus.objects.filter(is_closed=False, level__organization=org):
-            age = timezone.now() - alarm.status_since
-            level = alarm.get_level(age.seconds)
-            if getattr(alarm, 'l%d_email_status' % level.name) == 1:
-                alert_emails_for_good_performance.delay(alarm, level)
-                alert_phones_for_good_performance.delay(alarm, level)
-                alarm.is_closed = True
+    for service_status in service_status_list:
+        device = Device.objects.get(device_name=service_status.device_name)
+    for escalation in EscalationStatus.objects.get(organization=org,
+                                            device_type=DeviceType.objects.get(id=device.device_type.name),
+                                            service=service_status.service,
+                                            service_data_source=service_status.service_data_source,
+                                            ip=service_status.ip_address,
+                                            severity=service_status.severity)
+
+    age = timezone.now() - escalation.status_since
+    level_list = EscalationLevel.objects.filter(organization=escalation.organization, alarm_age=age.seconds)
+
+    for level in level_list:
+        if getattr(escalation, 'l%d_email_status' % level.name) == 1:
+            alert_emails_for_good_performance.delay(escalation, level)
+            alert_phones_for_good_performance.delay(escalation, level)
+            escalation.save()
 
 
 @task
@@ -117,8 +133,7 @@ def check_device_status():
             service_status_list = ServiceStatus.objects.filter(
                                     device_name__in=device_list,
                                     service__in=service_list,
-                                    service_data_source__in=service_data_source_list,
-                                    severity__in=severity_list).using(machine_name)
+                                    service_data_source__in=service_data_source_list).using(machine_name)
         if service_status_list:
             raise_alarms_for_bad_performance(service_status_list, org)
 
