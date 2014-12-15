@@ -280,7 +280,7 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
 
             # checking whether device is 'sector configured on' or not
             try:
-                if len(Sector.objects.filter(sector_configured_on=current_device)):
+                if len(Sector.objects.filter(sector_configured_on=current_device)) or len(Sector.objects.filter(dr_configured_on=current_device)):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-success" title="Services Status"></i></a>\
                                             <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
                                             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
@@ -478,7 +478,7 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
 
             # checking whether device is 'sector configured on' or not
             try:
-                if len(Sector.objects.filter(sector_configured_on=current_device)):
+                if len(Sector.objects.filter(sector_configured_on=current_device)) or len(Sector.objects.filter(dr_configured_on=current_device)):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>'.format(
                         dct['id']))
             except Exception as e:

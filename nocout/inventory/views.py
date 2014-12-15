@@ -752,6 +752,8 @@ class SectorList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
+            {'mData': 'dr_site', 'sTitle': 'DR Site', 'sWidth': 'auto', },
+            {'mData': 'dr_configured_on__id', 'sTitle': 'DR Configured On', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
 
@@ -774,9 +776,9 @@ class SectorListingTable(PermissionsRequiredMixin,
     """
     model = Sector
     required_permissions = ('inventory.view_sector',)
-    columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
+    columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id', 'dr_configured_on__id', 'dr_site',
                'base_station__alias', 'sector_configured_on_port__alias', 'antenna__alias', 'mrc', 'description']
-    order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
+    order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id', 'dr_configured_on__id', 'dr_site',
                      'base_station__alias', 'sector_configured_on_port__alias', 'antenna__alias', 'mrc', 'description']
 
     def get_initial_queryset(self):
@@ -810,6 +812,13 @@ class SectorListingTable(PermissionsRequiredMixin,
                     dct['sector_configured_on__id'] = "{} ({})".format(sector_device_alias, sector_device_ip)
             except Exception as e:
                 logger.info("Sector Configured On not present. Exception: ", e.message)
+            try:
+                if 'dr_configured_on__id' in dct:
+                    dr_device_alias = Device.objects.get(id=dct['dr_configured_on__id']).device_alias
+                    dr_device_ip = Device.objects.get(id=dct['dr_configured_on__id']).ip_address
+                    dct['dr_configured_on__id'] = "{} ({})".format(dr_device_alias, dr_device_ip)
+            except Exception as e:
+                logger.info("DR Configured On not present. Exception: ", e.message)
 
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_sector'):

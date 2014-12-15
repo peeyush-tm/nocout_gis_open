@@ -104,6 +104,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                       "severity",
                       "current_value",
                       "max_value",
+                      "min_value",
                       "sys_timestamp",
                       "age"
                       # "description"
@@ -219,8 +220,33 @@ class GetCustomerAlertDetail(BaseDatatableView):
                     '<a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'
                            .format(dct['id'], service_tab_name, page_type)
                 )
+                current_value = dct['current_value']
+                if dct['severity'].upper() == 'DOWN' \
+                        or "CRITICAL" in dct['description'].upper() \
+                        or dct['severity'].upper() == 'CRITICAL':
+                    dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
-            return common_prepare_results(qs)
+                elif dct['severity'].upper() == 'WARNING' \
+                        or "WARNING" in dct['description'].upper() \
+                        or "WARN" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
+
+                elif dct['severity'].upper() == 'UP' \
+                        or "OK" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
+
+                else:
+                    dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
+
+            return qs
 
         return []
 
@@ -319,6 +345,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                       "severity",
                       "current_value",
                       "max_value",
+                      "min_value",
                       "sys_timestamp",
                       "age"
                       # "description"
@@ -464,8 +491,33 @@ class GetNetworkAlertDetail(BaseDatatableView):
                             service_tab_name,
                             page_type)
                 )
+                current_value = dct['current_value']
+                if dct['severity'].upper() == 'DOWN' \
+                        or "CRITICAL" in dct['description'].upper() \
+                        or dct['severity'].upper() == 'CRITICAL':
+                    dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
-        return common_prepare_results(qs)
+                elif dct['severity'].upper() == 'WARNING' \
+                        or "WARNING" in dct['description'].upper() \
+                        or "WARN" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
+
+                elif dct['severity'].upper() == 'UP' \
+                        or "OK" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
+
+                else:
+                    dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
+
+        return qs
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -617,6 +669,15 @@ class AlertCenterListing(ListView):
                     'bSortable': True,
                     "sSortDataType": "dom-text",
                     "sType": "numeric"
+                },
+                {
+                    'mData': 'min_value',
+                    'sTitle': 'Latency Min (ms)',
+                    'sWidth': 'auto',
+                    'sClass': 'hidden-xs',
+                    'bSortable': True,
+                    "sSortDataType": "dom-text",
+                    "sType": "numeric"
                 }
             ]
         datatable_headers += [
@@ -650,6 +711,7 @@ class AlertListingTable(BaseDatatableView):
                       "severity",
                       "current_value",
                       "max_value",
+                      "min_value",
                       "sys_timestamp",
                       "age"
                       # "description"
@@ -811,7 +873,33 @@ class AlertListingTable(BaseDatatableView):
                                        <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
                                format(dct['id'], service_tab, page_type ))
 
-            return common_prepare_results(qs)
+                current_value = dct['current_value']
+                if dct['severity'].upper() == 'DOWN' \
+                        or "CRITICAL" in dct['description'].upper() \
+                        or dct['severity'].upper() == 'CRITICAL':
+                    dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
+
+                elif dct['severity'].upper() == 'WARNING' \
+                        or "WARNING" in dct['description'].upper() \
+                        or "WARN" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
+
+                elif dct['severity'].upper() == 'UP' \
+                        or "OK" in dct['description'].upper():
+                    dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
+
+                else:
+                    dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
+                    dct['current_value'] = current_value
+                    dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
+
+            return qs
 
         return []
 
@@ -879,16 +967,26 @@ class SingleDeviceAlertDetails(View):
         start_date= self.request.GET.get('start_date','')
         end_date= self.request.GET.get('end_date','')
         isSet = False
+        start_date_object=""
+        end_date_object=""
 
-        if len(start_date) and len(end_date):
-            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
-            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
-            start_date= format( start_date_object, 'U')
-            end_date= format( end_date_object, 'U')
-            isSet = True
-            if start_date == end_date:
-                # Converting the end date to the highest time in a day.
-                end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+        if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
+            try:
+                start_date = float(start_date)
+                end_date = float(end_date)
+            except Exception, e:
+                start_date_object= datetime.datetime.strptime(start_date, "%d-%m-%Y %H:%M:%S")
+                end_date_object= datetime.datetime.strptime(end_date, "%d-%m-%Y %H:%M:%S")
+                start_date= format( start_date_object, 'U')
+                end_date= format( end_date_object, 'U')
+            # start_date_object= datetime.datetime.strptime( start_date , "%d-%m-%Y %H:%M:%S" )
+            # end_date_object= datetime.datetime.strptime( end_date , "%d-%m-%Y %H:%M:%S" )
+            # start_date= format( start_date_object, 'U')
+            # end_date= format( end_date_object, 'U')
+            # isSet = True
+            # if start_date == end_date:
+            #     # Converting the end date to the highest time in a day.
+            #     end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
         else:
             # The end date is the end limit we need to make query till.
             end_date_object = datetime.datetime.now()
@@ -904,17 +1002,20 @@ class SingleDeviceAlertDetails(View):
 
         device_obj = Device.objects.get(id= device_id)
         device_name = device_obj.device_name
+        device_alias = device_obj.device_alias+"("+device_obj.ip_address+")"
+        device_id = device_id
         machine_name = device_obj.machine.name
 
         data_list = None
-        required_columns = ["device_name",
-                            "ip_address",
-                            "service_name",
-                            "data_source",
-                            "severity",
-                            "current_value",
-                            "sys_timestamp",
-                            "description"
+        required_columns = [
+              # "device_name",
+              "ip_address",
+              "service_name",
+              "data_source",
+              "severity",
+              "current_value",
+              "sys_timestamp",
+              "description"
         ]
 
         is_ping = False
@@ -996,7 +1097,7 @@ class SingleDeviceAlertDetails(View):
             data_list = fetch_raw_result(query, machine_name)
 
         required_columns = [
-            "device_name",
+            # "device_name",
             "ip_address",
             "service_name",
             "data_source",
@@ -1009,7 +1110,7 @@ class SingleDeviceAlertDetails(View):
 
         if is_ping:
             required_columns = [
-                "device_name",
+                # "device_name",
                 "ip_address",
                 "service_name",
                 "severity",
@@ -1093,6 +1194,8 @@ class SingleDeviceAlertDetails(View):
                            current_device_id=device_id,
                            get_status_url='performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
                            current_device_name=device_name,
+                           device_id=device_id,
+                           device_alias=device_alias,
                            page_type=page_type,
                            table_data=data_list,
                            table_header=required_columns,
@@ -1186,47 +1289,47 @@ def prepare_query(table_name=None,
 
     return query
 
-
-def common_prepare_results(qs):
-    """
-    Common function to prepare result on query set
-
-    :params qs:
-    :return qs:
-    """
-
-    for dct in qs:
-        current_value = dct['current_value']
-        try:
-            current_value = float(current_value)
-        except:
-            pass
-        if dct['severity'].upper() == 'DOWN' \
-                or "CRITICAL" in dct['description'].upper() \
-                or dct['severity'].upper() == 'CRITICAL':
-            dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
-            dct['current_value'] = current_value
-            dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
-
-        elif dct['severity'].upper() == 'WARNING' \
-                or "WARNING" in dct['description'].upper() \
-                or "WARN" in dct['description'].upper():
-            dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
-            dct['current_value'] = current_value
-            dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
-
-        elif dct['severity'].upper() == 'UP' \
-                or "OK" in dct['description'].upper():
-            dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
-            dct['current_value'] = current_value
-            dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
-
-        else:
-            dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
-            dct['current_value'] = current_value
-            dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
-
-    return qs
+#
+# def common_prepare_results(qs):
+#     """
+#     Common function to prepare result on query set
+#
+#     :params qs:
+#     :return qs:
+#     """
+#
+#     for dct in qs:
+#         current_value = dct['current_value']
+#         try:
+#             current_value = float(current_value)
+#         except:
+#             pass
+#         if dct['severity'].upper() == 'DOWN' \
+#                 or "CRITICAL" in dct['description'].upper() \
+#                 or dct['severity'].upper() == 'CRITICAL':
+#             dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
+#             dct['current_value'] = current_value
+#             dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
+#
+#         elif dct['severity'].upper() == 'WARNING' \
+#                 or "WARNING" in dct['description'].upper() \
+#                 or "WARN" in dct['description'].upper():
+#             dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
+#             dct['current_value'] = current_value
+#             dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
+#
+#         elif dct['severity'].upper() == 'UP' \
+#                 or "OK" in dct['description'].upper():
+#             dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
+#             dct['current_value'] = current_value
+#             dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
+#
+#         else:
+#             dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
+#             dct['current_value'] = current_value
+#             dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
+#
+#     return qs
 
 
 def severity_level_check(list_to_check):
@@ -1266,11 +1369,6 @@ def raw_prepare_result(performance_data,
     :return:
     """
 
-    st = datetime.datetime.now()
-    if DEBUG:
-        logger.debug("ALERT : Preparing Query Results")
-        logger.debug("START TIME : %s" %st)
-
     count = 0
 
     # while count <= math.ceil(len(devices) / limit):
@@ -1291,12 +1389,6 @@ def raw_prepare_result(performance_data,
 
         # count += 1
 
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
-        logger.debug("ALERT : Preparing Query Results : COMPLETED")
-
     return performance_data
 
 
@@ -1308,11 +1400,6 @@ def indexed_alert_results(performance_data):
     :return:
     """
 
-    st = datetime.datetime.now()
-    if DEBUG:
-        logger.debug("ALERT : Preparing INDEXED Results")
-        logger.debug("START TIME : %s" %st)
-
     indexed_raw_results = {}
 
     for data in performance_data:
@@ -1322,12 +1409,6 @@ def indexed_alert_results(performance_data):
             if defined_index not in indexed_raw_results:
                 indexed_raw_results[defined_index] = None
             indexed_raw_results[defined_index] = data
-
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
-        logger.debug("ALERT : Preparing INDEXED Results : COMPLETED")
 
     return indexed_raw_results
 
@@ -1341,10 +1422,6 @@ def prepare_raw_alert_results(performance_data=None):
     :param performance_data:
     :return:
     """
-    st = datetime.datetime.now()
-    if DEBUG:
-        logger.debug("ALERT : Preparing ALERT POLLED Results")
-        logger.debug("START TIME : %s" %st)
 
     indexed_alert_data = indexed_alert_results(performance_data)
 
@@ -1378,6 +1455,7 @@ def prepare_raw_alert_results(performance_data=None):
                 'data_source_name': " ".join(map(lambda a: a.title(), data_source.split("_"))),
                 'current_value': data["current_value"],
                 'max_value': data["max_value"],
+                'min_value': data["min_value"],
                 'sys_timestamp': datetime.datetime.fromtimestamp(
                     float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                 'age': datetime.datetime.fromtimestamp(
@@ -1388,12 +1466,6 @@ def prepare_raw_alert_results(performance_data=None):
             })
 
             device_list.append(device_events)
-
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
-        logger.debug("ALERT : Preparing ALERT POLLED Results : COMPLETED")
 
     return device_list
 
@@ -1407,11 +1479,6 @@ def map_results(perf_result, qs):
     :return:
     """
     result_qs = []
-    st = datetime.datetime.now()
-    if DEBUG:
-        if DEBUG:
-            logger.debug("ALERT : MAP RESULTS : Start")
-            logger.debug("START %s" %st)
 
     indexed_qs = pre_map_indexing(index_dict=qs)
     indexed_perf = pre_map_indexing(index_dict=perf_result)
@@ -1424,10 +1491,5 @@ def map_results(perf_result, qs):
                 result_qs.append(dict(device_info + data_source.items()))
         except Exception as e:
             continue
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        logger.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
-        logger.debug("ALERT : FINAL RESULTS : Inventory Mapped : COMPLETED")
 
     return result_qs

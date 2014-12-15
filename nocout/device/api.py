@@ -855,9 +855,21 @@ class BulkFetchLPDataApi(View):
                     bs_name_ss_mac_mapping = {}
                     ss_name_mac_mapping = {}
                     devices_in_current_site = []
+                    lp_data = {'dr_master_slave': {}}
                     for device_name in current_devices_list:
                         try:
+                            slave_dr_site_id, slave_dr_site = None, None
                             device = Device.objects.get(device_name=device_name)
+                            if str(service) in ['wimax_pmp1_utilization', 'wimax_pmp2_utilization']:
+                                slave_dr_site_id = Sector.objects.get(
+                                    sector_configured_on_id=device.id).dr_configured_on_id
+                                if slave_dr_site_id:
+                                    slave_dr_site = Device.objects.get(id=slave_dr_site_id).device_name
+                                # Send both dr sites (master/slave) to live polling
+                                devices_in_current_site.append(device.device_name)
+                                if slave_dr_site:
+                                    devices_in_current_site.append(slave_dr_site)
+                                    lp_data['dr_master_slave'].update({device.device_name: slave_dr_site})
                             if str(service) in exceptional_services:
                                 device_ss_mac = device.mac_address
                                 ss_name_mac_mapping[device.device_name] = device_ss_mac
@@ -878,7 +890,6 @@ class BulkFetchLPDataApi(View):
                             logger.info(e.message)
 
                     # live polling data dictionary (payload for nocout.py api call)
-                    lp_data = dict()
                     lp_data['mode'] = "live"
                     lp_data['bs_name_ss_mac_mapping'] = bs_name_ss_mac_mapping
                     lp_data['ss_name_mac_mapping'] = ss_name_mac_mapping
@@ -1036,10 +1047,15 @@ class BulkFetchLPDataApi(View):
 
         # fetching number from string for e.g. 45 from 'ab4cd5e'
         if not isinstance(value, float):
-            value = ''.join(x for x in str(value) if x.isdigit())
+            value = ''.join(x for x in str(value) if x.isdigit() or (x == '-'))
+        print "***************************** value - ", type(value), value
 
         if th_ranges and th_icon_settings and len(str(value)):
             print "************************ Enter here - "
+            print "************************ float(value) - ", float(value)
+            print "************************ float(th_ranges.range1_start) - ", float(th_ranges.range1_start)
+            print "************************ float(th_ranges.range1_end) - ", float(th_ranges.range1_end)
+
             try:
                 if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
                     print "***************************** range 1 - "
@@ -1052,6 +1068,7 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range2_start)) <= (float(value)) <= (float(th_ranges.range2_end)):
+                    print "***************************** range 2 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings2' in icon_setting.keys():
@@ -1061,6 +1078,7 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range3_start)) <= (float(value)) <= (float(th_ranges.range3_end)):
+                    print "***************************** range 3 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings3' in icon_setting.keys():
@@ -1070,6 +1088,7 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range4_start)) <= (float(value)) <= (float(th_ranges.range4_end)):
+                    print "***************************** range 4 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings4' in icon_setting.keys():
@@ -1079,6 +1098,7 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range5_start)) <= (float(value)) <= (float(th_ranges.range5_end)):
+                    print "***************************** range 5 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings5' in icon_setting.keys():
@@ -1088,6 +1108,7 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range6_start)) <= (float(value)) <= (float(th_ranges.range6_end)):
+                    print "***************************** range 6 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings6' in icon_setting.keys():
@@ -1097,6 +1118,7 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range7_start)) <= (float(value)) <= (float(th_ranges.range7_end)):
+                    print "***************************** range 7 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings7' in icon_setting.keys():
@@ -1106,6 +1128,7 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range8_start)) <= (float(value)) <= (float(th_ranges.range8_end)):
+                    print "***************************** range 8 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings8' in icon_setting.keys():
@@ -1115,6 +1138,7 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range9_start)) <= (float(value)) <= (float(th_ranges.range9_end)):
+                    print "***************************** range 9 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings9' in icon_setting.keys():
@@ -1124,6 +1148,7 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range10_start)) <= (float(value)) <= (float(th_ranges.range10_end)):
+                    print "***************************** range 10 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings10' in icon_setting.keys():
@@ -1270,6 +1295,22 @@ def nocout_live_polling(q, site):
         r = requests.post(url, data=encoded_data)
         response_dict = ast.literal_eval(r.text)
         if len(response_dict):
+            if site.get('lp_data').get('dr_master_slave'):
+                dr_masters = site.get('lp_data').get('dr_master_slave').keys()
+                dr_slaves = site.get('lp_data').get('dr_master_slave').values()
+                # Filter master and slave dr devices data, seperately
+                dr_masters_data = filter(lambda e: e.keys()[0] in dr_masters, response_dict.get('value'))
+                dr_slaves_data = filter(lambda e: e.keys()[0] in dr_slaves, response_dict.get('value'))
+                non_dr_data = filter(lambda e: e.keys()[0] not in dr_slaves and e.keys()[0] not in dr_masters,
+                                     response_dict.get('value'))
+                for v in dr_masters_data:
+                    if not v.values()[0]:
+                        matching_dr_slave = site.get('lp_data').get('dr_master_slave').get(v.keys()[0])
+                        matching_dr_slave_data = filter(lambda e: e.keys()[0] == matching_dr_slave, dr_slaves_data)
+                        v_key = v.keys()[0]
+                        v.update({v_key: matching_dr_slave_data.values()[0]})
+                response_dict['values'] = dr_masters_data + non_dr_data
+
             q.put(response_dict)
     except Exception as e:
         logger.info(e.message)

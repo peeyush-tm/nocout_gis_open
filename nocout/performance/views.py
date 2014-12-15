@@ -20,7 +20,7 @@ from service.models import ServiceDataSource, Service, DeviceServiceConfiguratio
 from django.utils.dateformat import format
 from operator import itemgetter
 from nocout.utils.util import fetch_raw_result, dict_fetchall, \
-    format_value, cache_for, \
+    format_value, cache_for, time_it, \
     cached_all_gis_inventory, query_all_gis_inventory, query_all_gis_inventory_improved
 
 from multiprocessing import Process, Queue
@@ -35,62 +35,81 @@ SERVICE_DATA_SOURCE = {
         "type": "area",
         "valuesuffix": "seconds",
         "valuetext": "Seconds",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "rssi": {
         "display_name": "RSSI",
         "type": "column",
         "valuesuffix": "dB",
         "valuetext": "dB",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "uptime": {
         "display_name": "UPTIME",
         "type": "line",
         "valuesuffix": " seconds",
         "valuetext": "up since (timeticks)",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "rta": {
         "display_name": "Latency",
-        "type": "area", "valuesuffix":
-        "ms", "valuetext": "ms",
-        "formula": "rta_null"
+        "type": "area",
+        "valuesuffix": "ms",
+        "valuetext": "ms",
+        "formula": "rta_null",
+        "show_min": False,
+        "show_max": False
     },
     "pl": {
         "display_name": "Packet Drop",
         "type": "column",
         "valuesuffix": "%",
         "valuetext": "Percentage (%)",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "service_throughput": {
         "display_name": "Service throughput",
         "type": "area",
         "valuesuffix": " mbps",
         "valuetext": " mbps",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "management_port_on_odu": {
         "display_name": "Management Port on ODU",
         "type": "area",
         "valuesuffix": " mbps",
         "valuetext": " mbps",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "radio_interface": {
         "display_name": "Radio Interface" ,
         "type": "area",
         "valuesuffix": " mbps",
         "valuetext": " mbps",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     "availability": {
         "display_name": "Availability",
         "type": "column",
         "valuesuffix": " %",
         "valuetext": " %",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
     ##listing there special performance checks with type string
     #wimax_ss_ip#ss_ip
@@ -108,7 +127,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "modulation_dl_fec": {
@@ -116,7 +137,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "ss_sector_id": {
@@ -124,7 +147,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "frequency": {
@@ -132,7 +157,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " MHz",
         "valuetext": " MHz",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "modulation_ul_fec": {
@@ -140,7 +167,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "ul_intrf": {
@@ -148,7 +177,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "dl_intrf": {
@@ -156,7 +187,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
     "ss_mac": {
@@ -164,7 +197,9 @@ SERVICE_DATA_SOURCE = {
         "type": "table",
         "valuesuffix": " ",
         "valuetext": " ",
-        "formula": None
+        "formula": None,
+        "show_min": False,
+        "show_max": False
     },
 
 
@@ -481,16 +516,12 @@ class LivePerformanceListing(BaseDatatableView):
         :param device_list:
         :return:
         """
-        if DEBUG:
-            log.debug("preparing devices")
         page_type = self.request.GET['page_type']
         return prepare_gis_devices(qs, page_type)
 
     def prepare_machines(self, qs):
         """
         """
-        if DEBUG:
-            log.debug("preparing machines")
         device_list = []
         for device in qs:
             device_list.append(
@@ -509,8 +540,6 @@ class LivePerformanceListing(BaseDatatableView):
         preparing polled results
         after creating static inventory first
         """
-        if DEBUG:
-            log.debug("preparing polled results")
         result_qs = polled_results(qs=qs,
                                    multi_proc=multi_proc,
                                    machine_dict=machine_dict,
@@ -525,8 +554,6 @@ class LivePerformanceListing(BaseDatatableView):
         :param qs:
         :return qs
         """
-        if DEBUG:
-            log.debug("preparing final result")
         page_type = self.request.GET['page_type']
         if qs:
             for dct in qs:
@@ -1113,7 +1140,7 @@ class Inventory_Device_Service_Data_Source(View):
                 'active': 0,
                 'service_type_tab': 'network_perf_tab'
             })
-        
+
         result['data']['objects']['network_perf_tab']["info"].append(
             {
                 'name': "rta",
@@ -1686,31 +1713,36 @@ class Get_Service_Type_Performance_Data(View):
         chart_data = list()
         if performance_data:
             data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
+            min_data_list = list()
+            max_data_list = list()
             for data in performance_data:
                 temp_time = data.sys_timestamp
 
                 if temp_time in aggregate_data:
                     continue
                 else:
+
+                    sds_name = str(data.data_source).strip().lower()
+
                     aggregate_data[temp_time] = data.sys_timestamp
                     self.result['data']['objects']['display_name'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["display_name"]\
-                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[sds_name]["display_name"]\
+                            if sds_name in SERVICE_DATA_SOURCE \
                             else str(data.data_source).upper()
 
                     self.result['data']['objects']['type'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["type"]\
-                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[sds_name]["type"]\
+                            if sds_name in SERVICE_DATA_SOURCE \
                             else "area"
 
                     self.result['data']['objects']['valuesuffix'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["valuesuffix"]\
-                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[sds_name]["valuesuffix"]\
+                            if sds_name in SERVICE_DATA_SOURCE \
                             else ""
 
                     self.result['data']['objects']['valuetext'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["valuetext"]\
-                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[sds_name]["valuetext"]\
+                            if sds_name in SERVICE_DATA_SOURCE \
                             else str(data.data_source).upper()
 
                     self.result['data']['objects']['plot_type'] = 'charts'
@@ -1725,6 +1757,13 @@ class Get_Service_Type_Performance_Data(View):
                         if data.critical_threshold else None])
 
                         ###to draw each data point w.r.t threshold we would need to use the following
+                        if SERVICE_DATA_SOURCE[sds_name]["show_min"]:
+                            min_data_list.append([data.sys_timestamp * 1000, float(data.min_value)
+                            if data.min_value else None])
+
+                        if SERVICE_DATA_SOURCE[sds_name]["show_max"]:
+                            min_data_list.append([data.sys_timestamp * 1000, float(data.max_value)
+                            if data.max_value else None])
 
                         compare_point = lambda p1, p2, p3: '#70AFC4' \
                             if abs(p1) < abs(p2) \
@@ -1735,8 +1774,8 @@ class Get_Service_Type_Performance_Data(View):
                                         )
                                 )
 
-                        formula = SERVICE_DATA_SOURCE[str(data.data_source).lower().strip()]["formula"]\
-                                    if str(data.data_source).lower().strip() in SERVICE_DATA_SOURCE \
+                        formula = SERVICE_DATA_SOURCE[sds_name]["formula"]\
+                                    if sds_name in SERVICE_DATA_SOURCE \
                                     else None
 
                         if data.current_value:
@@ -1765,8 +1804,33 @@ class Get_Service_Type_Performance_Data(View):
                                      'type': self.result['data']['objects']['type'],
                                      'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                      'valuetext': self.result['data']['objects']['valuetext']
+                                    }
+                        ]
+                        if len(min_data_list):
+                            chart_data += [
+                                {'name': str("min value").title(),
+                                     'color': '#FFFF0D',
+                                     'data': min_data_list,
+                                     'type': 'line',
+                                     'marker' : {
+                                         'enabled': False
+                                     }
                                     },
-                                    {'name': str("warning threshold").title(),
+                            ]
+
+                        if len(max_data_list):
+                            chart_data += [
+                                {'name': str("max value").title(),
+                                     'color': '#EEEE0D',
+                                     'data': min_data_list,
+                                     'type': 'line',
+                                     'marker' : {
+                                         'enabled': False
+                                     }
+                                    },
+                            ]
+
+                        chart_data += [{'name': str("warning threshold").title(),
                                      'color': '#FFE90D',
                                      'data': warn_data_list,
                                      'type': 'line',
@@ -2224,12 +2288,6 @@ def pre_map_indexing(index_dict, index_on='device_name'):
 def map_results(perf_result, qs):
     """
     """
-    st = datetime.datetime.now()
-    if DEBUG:
-        if DEBUG:
-            log.debug("MAP RESULTS : Start")
-            log.debug("START %s" %st)
-
     result_qs = []
     performance = perf_result
     processed = []
@@ -2246,11 +2304,6 @@ def map_results(perf_result, qs):
                 log.exception(e.message)
                 continue
 
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("MAPPING END {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("MAP RESULTS  : RETURN")
     return result_qs
 
 
@@ -2260,11 +2313,6 @@ def combined_indexed_gis_devices(indexes):
     indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'}
     :return:
     """
-    st = datetime.datetime.now()
-
-    if DEBUG:
-        log.debug("PERFORMANCE : GIS INDEXED sector ss bh results")
-        log.debug("START TIME : %s" %st)
 
     indexed_sector = {}
     indexed_ss = {}
@@ -2291,11 +2339,6 @@ def combined_indexed_gis_devices(indexes):
             indexed_ss[defined_ss_index].append(result)
             indexed_bh[defined_bh_index].append(result)
 
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("PERFORMANCE : GIS INDEXED sector ss bh results : COMPLETED")
 
     return indexed_sector, indexed_ss, indexed_bh
 
@@ -2317,26 +2360,10 @@ def prepare_gis_devices(devices, page_type):
 
     st = datetime.datetime.now()
 
-    if DEBUG:
-        log.debug("PERFORMANCE : CALL : combined_indexed_gis_devices")
-        log.debug("START TIME : %s" %st)
-
     indexed_sector, indexed_ss, indexed_bh = \
         combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'})
 
     # gis_result = indexed_gis_devices(page_type=page_type)
-
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("PERFORMANCE : CALL : combined_indexed_gis_devices : COMPLETED")
-
-    st = datetime.datetime.now()
-
-    if DEBUG:
-        log.debug("FINAL RESULTS : GIS Inventory Mapped")
-        log.debug("START TIME : %s" %st)
 
     processed_device = {}
 
@@ -2376,17 +2403,24 @@ def prepare_gis_devices(devices, page_type):
         else:
             continue
 
+        sector_details = []
+        apnd = ""
+
         if is_sector:
             for bs_row in raw_result:
+                port = bs_row['SECTOR_PORT']
+                if port:
+                    apnd = "( " + port + " )"
                 if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
                     and bs_row['SECTOR_SECTOR_ID'] is not None:
                     sector_id.append(bs_row['SECTOR_SECTOR_ID'])
+                    sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd)
 
         for bs_row in raw_result:
             if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
-                        "sector_id": ", ".join(sector_id),
+                        "sector_id": ", ".join(sector_details),
                         "circuit_id": format_value(bs_row['CCID']),
                         "customer_name": format_value(bs_row['CUST']),
                         "bs_name": format_value(bs_row['BSALIAS']),
@@ -2396,8 +2430,14 @@ def prepare_gis_devices(devices, page_type):
                         "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
                 if is_ss:
+                    if bs_row['CIRCUIT_TYPE']:
+                        if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
+                            device.update({
+                                "bs_name": format_value(bs_row['CUST']),
+                            })
+
                     device.update({
-                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']),
+                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']) + apnd,
                         "device_type": format_value(bs_row['SS_TYPE']),
                         "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
@@ -2406,12 +2446,6 @@ def prepare_gis_devices(devices, page_type):
                         "device_type": format_value(bs_row['BHTYPE']),
                         "device_technology": format_value(bs_row['BHTECH'])
                     })
-
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("TIME TAKEN : {}".format(divmod(elapsed.total_seconds(), 60)))
-        log.debug("FINAL RESULTS : GIS Inventory Mapped : COMPLETED")
 
     return devices
 
@@ -2448,7 +2482,6 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
     :param device_list:
     :return:
     """
-    st = datetime.datetime.now()
 
     device_result = {}
     perf_result = {"packet_loss": "N/A",
@@ -2458,10 +2491,6 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
                    "last_updated_time": "N/A",
                    "age": "N/A"
                   }
-
-    if DEBUG:
-        log.debug("preparing polled results : query")
-        log.debug("start time %s" %st)
 
     query = prepare_row_query(table_name="performance_networkstatus",
                           devices=device_list,
@@ -2475,18 +2504,6 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
     for device in device_list:
         if device not in device_result:
             device_result[device] = perf_result
-
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("preparing polled results : query execution complete")
-        log.debug("Ending Query Time {}".format(divmod(elapsed.total_seconds(), 60)))
-
-    st = datetime.datetime.now()
-
-    if DEBUG:
-        log.debug("preparing polled results : processing in loop start")
-        log.debug("start time %s" %st)
 
     processed = []
     for device in indexed_perf_data:
@@ -2531,12 +2548,6 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
     try:
         q.put(device_result)
 
-        if DEBUG:
-            endtime = datetime.datetime.now()
-            elapsed = endtime - st
-            log.debug("preparing polled results : processing in loop end")
-            log.debug("Ending Multiprocessing time {}".format(divmod(elapsed.total_seconds(), 60)))
-
     except Exception as e:
         log.exception(e.message)
 
@@ -2560,10 +2571,6 @@ def get_performance_data(device_list, machine, model):
                    "age": "N/A"
                   }
 
-    if DEBUG:
-        log.debug("preparing polled results : query")
-        log.debug("start time %s" %st)
-
     query = prepare_row_query(table_name="performance_networkstatus",
                           devices=device_list
     )
@@ -2576,19 +2583,6 @@ def get_performance_data(device_list, machine, model):
     for device in device_list:
         if device not in device_result:
             device_result[device] = perf_result
-
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("preparing polled results : query execution complete")
-        log.debug("Ending Query Time {}".format(divmod(elapsed.total_seconds(), 60)))
-
-    st = datetime.datetime.now()
-
-    if DEBUG:
-        log.debug("preparing polled results : processing in loop start")
-        log.debug("start time %s" %st)
-
 
     processed = []
     for device in indexed_perf_data:
@@ -2631,10 +2625,5 @@ def get_performance_data(device_list, machine, model):
             device_result[device] = perf_result
     # (device_result)
     #  device_result
-    if DEBUG:
-        endtime = datetime.datetime.now()
-        elapsed = endtime - st
-        log.debug("preparing polled results : processing in loop end")
-        log.debug("Ending single thread processing time {}".format(divmod(elapsed.total_seconds(), 60)))
 
     return device_result

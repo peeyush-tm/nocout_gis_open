@@ -11,88 +11,105 @@
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
-	<!-- JQUERY UI-->
+    <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} >
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
 {% endblock %}
 
 {% block content %}
-	<style>
-		.perfContainerBlock .box-title .pull-right .list-inline > li {
-			max-width: 200px !important;
-		}
-	</style>
-	<!--Single Device Live Perf Start-->
-	<div class='box border lite perfContainerBlock'>
-	    <div class='box-title'>
-	        <h4><i class='fa fa-file-text'></i> {{ page_type| title }} Alert - {{ current_device_name }}</h4>
-        </div>
-        <div class='box-body'>
-            <div class="tabbable header-tabs">
-                <ul id="device_page_tabs" class="nav nav-tabs">
-                    <li><a href="#" id="network_alert_service_tab" data-toggle="tab"><span class="hidden-inline-mobile">Service Impact Alerts</span></a></li>
-                    <li><a href="#" id="network_alert_down_tab" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>
-                    <li><a href="#" id="network_alert_packet_tab" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
-                    <li><a href="#" id="network_alert_latency_tab" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
-                    <li><a href="#" id="network_alert_ping_tab" data-toggle="tab"><span class="hidden-inline-mobile">Ping Details</span></a></li>
-                </ul>
-            </div>
-	        <!--Filters Block Start-->
-            <div class="box-body status_body">
-                <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-	        <div class="pull-right">
-	            <ul class="list-unstyled list-inline">
-	                <li>
-	                    <!--device_name Filter-->
-	                    <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
-                            {% for device in devices %}
-    	                        <option value='{{ device.id }}'>{{ device.technology }} : {{ device.alias }}</option>
-                            {% endfor %}
-	                    </select>
-	                </li>
-	                <li>
-	                    <!--start_date Filter-->
-	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="start_date" size="10" id="start_date" placeholder="Start Date">
-	                </li>
-	                <li>
-	                	<span class="col-xs-1 input-sm">To</span>
-	                </li>
-	                <li>
-	                    <!--end_date Filter-->
-	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10" id="end_date" placeholder="End Date">
-	                </li>
-	                <li>
+    <style>
+        .perfContainerBlock .box-title .pull-right .list-inline > li {
+            max-width: 200px !important;
+        }
+    </style>
+    <!--Single Device Live Perf Start-->
+    <div class='box border lite perfContainerBlock'>
+        <div class='box-title'>
+            <h4><i class='fa fa-file-text'></i>{{ device_alias }}</h4>
+            <div class="pull-right">
+                <ul class="list-unstyled list-inline">
+                    <li style="min-width: 320px;">
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value="" />
+                        </div>
+                    </li>
+                    <li>
                         <div class="btn-group dropdown col-xs-1">
                             <button id="apply_filter" class="btn  btn-default btn-sm">
-                                    Apply Filter
+                                Apply Filter
                             </button>
                         </div>
                     </li>
-	                	<!--CSV or Excel download action. -->
                     <li>
-	                    <div class="btn-group dropdown col-xs-1">
-							<button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
-								Download Report
-								<span class="caret"></span>
-							</button>
-							<ul class="dropdown-menu context">
-								<li>
-									<a id="download_excel">Excel</a>
+                        <div class="btn-group dropdown col-xs-1">
+                            <button id="reset_filter" class="btn  btn-warning btn-sm">
+                                Reset Filter
+                            </button>
+                        </div>
+                    </li>
+                    <li>
+                        <!--CSV or Excel download action. -->
+                        <div class="btn-group dropdown col-xs-1">
+                            <button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                                Download Report
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu context">
+                                <li>
+                                    <a id="download_excel">Excel</a>
                                 </li>
                                 <li>
-									<a id="download_csv">CSV</a>
-								</li>
-							</ul>
-						</div>
-	                </li>
-	            </ul>
-	        </div>
-
-            <div>{{ start_date_object|date:'l d M, Y' }} TO {{ end_date_object|date:'l d M, Y' }}</div>
+                                    <a id="download_csv">CSV</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
             <div class="clearfix"></div>
+        </div>
+        <div class='box-body'>
+
+            <div class="box status_box">
+                <div class="box-title" style="background:transparent;">
+                    <h4 id="device_status_container">
+                        Device Status
+                    </h4>
+                    <div class="tools_status">
+                        <a href="javascript:;" title="Hide Status" class="collapse">
+                            <i class="fa fa-chevron-up"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="box-body status_body">
+                    <div class="well well-sm" id="status_container" style="overflow:auto;">
+                        <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-title" style="background:transparent;"></div>
+                <div id="tableContainer" class="box-body">
+                    <div class="tabbable header-tabs">
+                        <ul id="device_page_tabs" class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
+                            <li><a href="#" id="network_alert_service_tab" data-toggle="tab"><span class="hidden-inline-mobile">Service Impact Alerts</span></a></li>
+                            <li><a href="#" id="network_alert_down_tab" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>
+                            <li><a href="#" id="network_alert_packet_tab" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
+                            <li><a href="#" id="network_alert_latency_tab" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
+                            <li><a href="#" id="network_alert_ping_tab" data-toggle="tab"><span class="hidden-inline-mobile">Ping Details</span></a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+            <!--Filters Block Start-->
+            <!-- <div class="box-body status_body">
+                
+            </div> -->
             <div style="overflow:auto;">
                 <table id="device_alert" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover hide">
                     <thead>
@@ -110,7 +127,6 @@
                             <tr>
                                 {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
                                     <td><i class="fa fa-circle red-dot"><span style="display:none">1</span></i></td>
-                                    <td>{{ data.device_name }}</td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
                                     <td><span class="text-danger">{{ data.severity }}</span></td>
@@ -120,7 +136,6 @@
                                     <td><span class="text-danger">{{ data.description }}</span></td>
                                 {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
                                     <td><i class="fa fa-circle orange-dot"><span style="display:none">2</span></i></td>
-                                    <td>{{ data.device_name }}</td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
                                     <td><span class="text-warning">{{ data.severity }}</span></td>
@@ -130,7 +145,6 @@
                                     <td><span class="text-warning">{{ data.description }}</span></td>
                                 {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
                                     <td><i class="fa fa-circle green-dot"><span style="display:none">3</span></i></td>
-                                    <td>{{ data.device_name }}</td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
                                     <td><span class="text-success">{{ data.severity }}</span></td>
@@ -140,7 +154,6 @@
                                     <td><span class="text-success">{{ data.description }}</span></td>
                                 {% else %}
                                     <td><i class="fa fa-circle grey-dot"><span style="display:none">4</span></i></td>
-                                    <td>{{ data.device_name }}</td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
                                     <td><span class="text-muted">{{ data.severity }}</span></td>
@@ -156,7 +169,6 @@
                                 <tr>
                                     {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
                                         <td><i class="fa fa-circle red-dot"></i></td>
-                                        <td>{{ data.device_name }}</td>
                                         <td>{{ data.ip_address }}</td>
                                         <td>{{ data.service_name }}</td>
                                         <td>{{ data.data_source }}</td>
@@ -166,7 +178,6 @@
                                         <td><span class="text-danger">{{ data.description }}</span></td>
                                     {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
                                         <td><i class="fa fa-circle orange-dot"></i></td>
-                                        <td>{{ data.device_name }}</td>
                                         <td>{{ data.ip_address }}</td>
                                         <td>{{ data.service_name }}</td>
                                         <td>{{ data.data_source }}</td>
@@ -176,7 +187,6 @@
                                         <td><span class="text-warning">{{ data.description }}</span></td>
                                     {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
                                         <td><i class="fa fa-circle green-dot"></i></td>
-                                        <td>{{ data.device_name }}</td>
                                         <td>{{ data.ip_address }}</td>
                                         <td>{{ data.service_name }}</td>
                                         <td>{{ data.data_source }}</td>
@@ -186,7 +196,6 @@
                                         <td><span class="text-success">{{ data.description }}</span></td>
                                     {% else %}
                                         <td><i class="fa fa-circle grey-dot"></i></td>
-                                        <td>{{ data.device_name }}</td>
                                         <td>{{ data.ip_address }}</td>
                                         <td>{{ data.service_name }}</td>
                                         <td>{{ data.data_source }}</td>
@@ -209,9 +218,10 @@
     <script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
 
     <script type="text/javascript">
+        var startDate = "",
+            endDate = "",
+            base_url = "";
         $(document).ready(function(e) {
-
-            var base_url = "";
             /*Set the base url of application for ajax calls*/
             if (window.location.origin) {
                 base_url = window.location.origin;
@@ -220,27 +230,67 @@
             }
 
             perfInstance = new nocoutPerfLib();
-            var current_device = "{{ current_device_name }}";
-            var statusUrl = base_url + "/" + "{{ get_status_url }}" + "/";
+            var current_device = "{{ current_device_name }}",
+                current_device_id = "{{ device_id }}",
+                statusUrl = base_url + "/" + "{{ get_status_url }}" + "/",
+                service_status_url = "";
             /*To populate the status table*/
             perfInstance.getStatus(statusUrl, current_device);
 
+            if(findStringFromUrl()) {
+                if(current_device_id) {
+                    service_status_url = "/performance/servicestatus/"+findStringFromUrl()+"/service_data_source/pl/device/"+current_device_id+"/";
+                }
+            }
 
+            // Call function to get service status
+            if(service_status_url) {
+                getPlServiceStatus(service_status_url);
+            }
 
+            var oldStartDate = $.urlParam('start_date') ? new Date($.urlParam('start_date')*1000) : new Date();
+            var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date')*1000) : new Date();
+
+            $('#reservationtime').daterangepicker(
+                {
+                    timePicker: true,
+                    timePickerIncrement: 1,
+                    // format: 'd/m/Y H:M:S' ,
+                    opens: "left",
+                    showDropdowns: true,
+                    ranges: {
+                        'Today': [moment().startOf('day'), moment()],
+                        'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
+                        'Last 7 Days': [moment().subtract('days', 6), moment()],
+                        'Last 30 Days': [moment().subtract('days', 29), moment()],
+                        'This Month': [moment().startOf('month'), moment().endOf('month')],
+                        'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
+                    },
+                    buttonClasses: ['btn btn-default'],
+                    applyClass: 'btn-small btn-primary',
+                    cancelClass: 'btn-small',
+                    format: "DD-MM-YYYY HH:mm:ss",
+                    separator: ' to ',
+                    startDate: oldStartDate,
+                    endDate:oldENdData
+                },
+                function(start, end) {
+                    startDate= start;
+                    endDate = end;
+                }
+            );
+
+            if($.urlParam('start_date') && $.urlParam('end_date')) {
+                $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss"));
+                startDate = moment(oldStartDate);
+                endDate = moment(oldENdData);
+            }
 
             $("#device_alert").DataTable({
                 sPaginationType: "bs_full",
                 aaSorting: [[7, 'desc']]
             });
             $("#device_alert").removeClass("hide");
-
-            // $("#device_alert").tablecloth({
-            //     theme:"stats",
-            //     bordered: true,
-            //     sortable:true,
-            //     striped: true,
-            //     clean:true
-            // });
 
             $("#network_alert_service_tab").click(function(e) {
                 e.preventDefault();
@@ -334,14 +384,26 @@
             $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
 
             $("#apply_filter").on('click', function(){
-                if ( $("#start_date").datepicker("getDate") > $("#end_date").datepicker("getDate") ){
-                    alert ("Start Date Can not be greater than End Date");
-                    return false
+                if (startDate && endDate) {
+                    //epoch function
+                    var myStartDate = startDate.toDate(), myEndDate = endDate.toDate();
+                    var myStartTime = myStartDate.getTime()/1000.0;
+                    var myEndTime = myEndDate.getTime()/1000.0;
+
+                    window.location.href = '{% url "SingleDeviceDetails"  page_type current_device_id service_name %}' +'?start_date=' + encodeURIComponent(myStartTime)
+                                       + '&end_date=' + encodeURIComponent(myEndTime);
+
+                } else {
+                    alert("Select Start & End Date");
                 }
-                else {
-                    window.location.href = '{% url "SingleDeviceDetails"  page_type current_device_id service_name %}' +'?start_date=' + encodeURIComponent($("#start_date").val())
-                                       + '&end_date=' + encodeURIComponent($("#end_date").val());
-                }
+                // if ( $("#start_date").datepicker("getDate") > $("#end_date").datepicker("getDate") ){
+                //     alert ("Start Date Can not be greater than End Date");
+                //     return false
+                // }
+                // else {
+                //     window.location.href = '{% url "SingleDeviceDetails"  page_type current_device_id service_name %}' +'?start_date=' + encodeURIComponent($("#start_date").val())
+                //                        + '&end_date=' + encodeURIComponent($("#end_date").val());
+                // }
 
             });
 
@@ -354,6 +416,27 @@
                 window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
                         + '?download_csv=true')
             });
+        });
+
+        /*This event will collapse & expand device status block*/
+        $('.status_box .tools_status .collapse, .status_box .tools_status .expand').click(function () {
+            var el = $(this).parents(".status_box").children(".status_body");
+
+            if ($(this).hasClass("collapse")) {
+                $(this).removeClass("collapse");
+                $(this).addClass("expand");
+                $(this).attr("title","Show Status")
+                var i = $(this).children(".fa-chevron-up");
+                i.removeClass("fa-chevron-up").addClass("fa-chevron-down");
+                el.slideUp();
+            } else {
+                $(this).removeClass("expand");
+                $(this).addClass("collapse");
+                $(this).attr("title","Hide Status");
+                var i = $(this).children(".fa-chevron-down");
+                i.removeClass("fa-chevron-down").addClass("fa-chevron-up");
+                el.slideDown();
+            }
         });
 
         function findStringFromUrl() {
@@ -374,8 +457,67 @@
         }
 
         function selectTab(tabId) {
-            console.log(tabId);
             $(tabId).parent().addClass('active').siblings().removeClass('active');
+        }
+
+        $("#reset_filter").on('click', function() {
+            if(window.location.href.indexOf("?") > -1) {
+                window.location.href = window.location.href.split("?")[0];
+            }
+        });
+
+        /**
+         * This  function get the device service(PL) status i.e. Status & AGE
+         * @method getPlServiceStatus
+         * @param url {String}, It contains the API url to fetch the service status.
+         */
+        function getPlServiceStatus(url) {
+            if(url) {    
+                $.ajax({
+                    url : base_url+""+url,
+                    type : "GET",
+                    success : function(response) {
+                        var result = "",
+                            age = "",
+                            last_updated = "",
+                            perf = "",
+                            status = "",
+                            status_class = "",
+                            status_html = "";
+
+                        if(typeof response == 'string') {
+                            result = JSON.parse(response);
+                        } else {
+                            result = response;
+                        }
+
+                        if(result.data && result.data.objects) {
+                            age = result.data.objects.age ? result.data.objects.age : "Unknown";
+                            status = result.data.objects.status ? result.data.objects.status.toUpperCase() : "Unknown";;
+
+                            if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+                                status_class = "text-success";
+                            } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
+                                status_class = "text-danger";
+                            } else {
+                                status_class = "";
+                            }
+
+                            status_html = "";
+                            status_html += '<i class="fa fa-circle '+status_class+'" style="vertical-align: middle;"> </i>';
+                            status_html += 'Device Status ';
+                            status_html += '<span class="'+status_class+'" style="'+left_block_style+'">Status : '+status+'</span>';
+                            status_html += '<span class="'+status_class+'" style="'+right_block_style+'">Status Since : '+age+'</span>';
+
+                            // Update Status Block HTML as per the device status
+                            $("#device_status_container").html(status_html);
+                        }
+                    },
+                    error : function(err) {
+                        // console.log(err.statusText);
+                    }
+                });
+            }
         }
     </script>
 

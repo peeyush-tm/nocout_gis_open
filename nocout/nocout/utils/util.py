@@ -18,6 +18,11 @@ from django.conf import settings
 import socket
 #http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 
+#logging the performance of function
+import logging
+log = logging.getLogger(__name__)
+#logging the performance of function
+
 class DictDiffer(object):
     """
     Calculate the difference between two dictionaries as:
@@ -46,6 +51,29 @@ project_group_role_dict_mapper={
     'viewer':'group_viewer',
 }
 
+
+# #profiler
+def time_it(debug=getattr(settings, 'DEBUG')):
+        def decorator(fn):
+            def wrapper(*args, **kwargs):
+                st = datetime.datetime.now()
+                if debug:
+                    log.debug("+++"*40)
+                    log.debug("START     \t\t\t: { " + fn.__name__ + " } : ")
+                result = fn(*args, **kwargs)
+                end = datetime.datetime.now()
+                if debug:
+                    elapsed = end - st
+                    log.debug("TIME TAKEN\t\t\t: [{}".format(divmod(elapsed.total_seconds(), 60)))
+                    log.debug("END       \t\t\t: { " + fn.__name__ + " } : ")
+                    log.debug("+++"*40)
+
+                return result
+            return wrapper
+        return decorator
+
+
+
 #http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 def test_connection_to_db(database_name):
     """
@@ -65,7 +93,7 @@ def test_connection_to_db(database_name):
         #because connection might not exists in settings file
         return False
 
-
+@time_it()
 def fetch_raw_result(query, machine='default'):
     """
     django raw query does not get result in a single call, it iterates and calls the same query a lot of time
@@ -157,11 +185,29 @@ def cache_get_key(*args, **kwargs):
 def cache_for(time):
     def decorator(fn):
         def wrapper(*args, **kwargs):
+            debug=getattr(settings, 'DEBUG')
+            st = datetime.datetime.now()
+            if debug:
+                log.debug("---"*40)
+                log.debug("FROM CACHE       \t: START : { " + fn.__name__ + " } : ")
             key = cache_get_key(fn.__name__, *args, **kwargs)
             result = cache.get(key)
             if not result:
+                if debug:
+                    log.debug("FUNCTION CALL\t: START : { " + fn.__name__ + " } : ")
                 result = fn(*args, **kwargs)
                 cache.set(key, result, time)
+                if debug:
+                    end = datetime.datetime.now()
+                    elapsed = end - st
+                    log.debug("TIME TAKEN   \t:       : [{}".format(divmod(elapsed.total_seconds(), 60)))
+                    log.debug("FUNCTION CALL\t: END   : { " + fn.__name__ + " } : ")
+            if debug:
+                end = datetime.datetime.now()
+                elapsed = end - st
+                log.debug("TIME TAKEN       \t:       : [{}".format(divmod(elapsed.total_seconds(), 60)))
+                log.debug("FROM CACHE       \t: END   : { " + fn.__name__ + " } : ")
+                log.debug("---"*40)
             return result
 
         return wrapper
@@ -272,7 +318,9 @@ left join (
 
         frequency.color_hex_value as SECTOR_FREQUENCY_COLOR,
         frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
-        frequency.value as SECTOR_FREQUENCY
+        frequency.value as SECTOR_FREQUENCY,
+
+        dport.name as SECTOR_PORT
 
         from inventory_sector as sector
         join (
@@ -295,6 +343,9 @@ left join (
         ) left join (device_devicefrequency as frequency)
         on (
             frequency.id = sector.frequency_id
+        ) left join ( device_deviceport as dport )
+        on (
+            dport.id = sector.sector_configured_on_port_id
         )
 {0}
     ) as sector_info
@@ -572,7 +623,9 @@ left join (
 
         frequency.color_hex_value as SECTOR_FREQUENCY_COLOR,
         frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
-        frequency.value as SECTOR_FREQUENCY
+        frequency.value as SECTOR_FREQUENCY,
+
+        dport.name as SECTOR_PORT
 
         from inventory_sector as sector
         join (
@@ -595,6 +648,9 @@ left join (
         ) left join (device_devicefrequency as frequency)
         on (
             frequency.id = sector.frequency_id
+        ) left join ( device_deviceport as dport )
+        on (
+            dport.id = sector.sector_configured_on_port_id
         )
 {0}
     ) as sector_info

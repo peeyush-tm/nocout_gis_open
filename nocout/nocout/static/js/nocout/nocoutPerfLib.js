@@ -16,7 +16,9 @@ var perf_that = "",
     old_table = "",
     base_url = "",
     green_status_array = ['ok','success'],
-    red_status_array = ['warning','critical','down'];
+    red_status_array = ['warning','critical','down'],
+    left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;margin-left:30px;",
+    right_block_style = "border:1px solid #CCC;padding: 3px 5px;";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -279,13 +281,11 @@ function nocoutPerfLib() {
                                     if($.trim(data_obj.last_updated) != "" || $.trim(data_obj.perf) != "") {
                                         var last_updated = data_obj.last_updated ? data_obj.last_updated : "N/A",
                                             perf = data_obj.perf ? data_obj.perf : "N/A",
-                                            inner_status_html = '<div class="well well-sm">';
+                                            inner_status_html = '';
                                         
                                         inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">';
-                                        inner_status_html += '<thead><tr><td>Perf Value</td><td>Last Updated</td></tr></thead>';
-                                        inner_status_html += '<tbody>';
-                                        inner_status_html += '<tr><td>'+last_updated+'</td><td>'+perf+'</td></tr>';
-                                        inner_status_html += '</tbody></table><div class="clearfix"></div></div><div class="divide-20"></div>';
+                                        inner_status_html += '<tr><td>Latest Performance Output : '+perf+'</td><td>Last Updated At : '+last_updated+'</td></tr>';
+                                        inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
                                         $("#last_updated_"+tab_content_dom_id).html(inner_status_html);
                                     } else {
                                         $("#last_updated_"+tab_content_dom_id).html("");
@@ -340,13 +340,11 @@ function nocoutPerfLib() {
                                 if($.trim(data_obj.last_updated) != "" || $.trim(data_obj.perf) != "") {
                                     var last_updated = data_obj.last_updated ? data_obj.last_updated : "N/A",
                                         perf = data_obj.perf ? data_obj.perf : "N/A",
-                                        inner_status_html = '<div class="well well-sm">';
+                                        inner_status_html = '';
 
                                     inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">';
-                                    inner_status_html += '<thead><tr><td>Perf Value</td><td>Last Updated</td></tr></thead>';
-                                    inner_status_html += '<tbody>';
-                                    inner_status_html += '<tr><td>'+last_updated+'</td><td>'+perf+'</td></tr>';
-                                    inner_status_html += '</tbody></table><div class="clearfix"></div></div><div class="divide-20"></div>';
+                                    inner_status_html += '<tr><td>Latest Performance Output : '+perf+'</td><td>Last Updated At : '+last_updated+'</td></tr>';
+                                    inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
                                     
                                     $("#last_updated_"+active_tab_content_dom_id).html(inner_status_html);
                                 } else {
@@ -394,7 +392,7 @@ function nocoutPerfLib() {
 
                 if(result.data && result.data.objects) {
                     age = result.data.objects.age ? result.data.objects.age : "Unknown";
-                    status = result.data.objects.status ? result.data.objects.status : "Unknown";
+                    status = result.data.objects.status ? result.data.objects.status.toUpperCase() : "Unknown";
                     last_updated = result.data.objects.last_updated ? result.data.objects.last_updated : "";
                     perf = result.data.objects.perf ? result.data.objects.perf : "";
 
@@ -408,10 +406,12 @@ function nocoutPerfLib() {
 
                     status_html = "";
                     status_html += '<i class="fa fa-circle '+status_class+'" style="vertical-align: middle;"> </i>';
-                    status_html += '<span class="'+status_class+'">(Status :- '+status+' & Age :- '+age+')</span>';
+                    status_html += 'Device Status ';
+                    status_html += '<span class="'+status_class+'" style="'+left_block_style+'">Status : '+status+'</span>';
+                    status_html += '<span class="'+status_class+'" style="'+right_block_style+'">Status Since : '+age+'</span>';
 
                     // Update Status Block HTML as per the device status
-                    $("#device_status_container").html("Device Status "+status_html);
+                    $("#device_status_container").html(status_html);
 
                     var response_obj = {
                         "last_updated" : last_updated,
