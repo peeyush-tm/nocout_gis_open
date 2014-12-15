@@ -546,20 +546,13 @@ function GisPerformance() {
                             }
                         } else {
 
-                            /*Create SS Marker Object*/
-                            var ss_marker_icon = new google.maps.MarkerImage(
-                                    base_url+"/"+ss_marker_data.data.markerUrl,
-                                    null,
-                                    null,
-                                    null,
-                                    new google.maps.Size(32,37)
-                                );
+                            var ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_data.data.markerUrl,"other");
 
                             ss_marker_object['position'] = new google.maps.LatLng(ss_marker_data.data.lat,ss_marker_data.data.lon);
                             ss_marker_object['map'] = mapInstance;
-                            ss_marker_object['icon'] = ss_marker_icon;
-                            ss_marker_object['oldIcon'] = ss_marker_icon;
-                            ss_marker_object['clusterIcon'] = ss_marker_icon;
+                            ss_marker_object['icon'] = ss_icon_obj;
+                            ss_marker_object['oldIcon'] = ss_icon_obj;
+                            ss_marker_object['clusterIcon'] = ss_icon_obj;
 
                             /*Create SS Marker*/
                             var ss_marker = new google.maps.Marker(ss_marker_object);
@@ -953,24 +946,13 @@ function GisPerformance() {
             sectorMarkerLayer.redraw();
 
         } else {
-            var largeur= 32,
-                hauteur= 37,
-                divideBy= 1,
-                anchorX= 0,
-                iconUrl = base_url+"/"+new_icon,
-                old_icon_obj = new google.maps.MarkerImage(
-                    iconUrl,
-                    new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
-                    new google.maps.Point(0, 0),
-                    new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
-                    new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
-                );
+            var sector_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+new_icon,"other");
 
             // Update sector marker icon
             marker.setOptions({
                 "icon" : hiddenIconObj,
                 "clusterIcon" : hiddenIconObj,
-                "oldIcon" : old_icon_obj,
+                "oldIcon" : sector_icon_obj,
             });
         }
     };

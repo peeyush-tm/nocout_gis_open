@@ -1647,18 +1647,28 @@ function devicePlottingClass_gmap() {
 		var zoom_level = mapInstance.getZoom(),
 			hide_flag = !$("#show_hide_label")[0].checked;
 
+		var bs_marker_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/static/img/icons/bs.png","base_station"),
+			hiddenIconImageObj = new google.maps.MarkerImage(
+				base_url+'/static/img/icons/1x1.png',
+				null,
+				null,
+				null,
+				new google.maps.Size(1,1)
+			);
+
 		// for(var i=0;i<bs_ss_devices.length;i++) {
 		for(var i=bs_ss_devices.length;i--;) {
 			
+
 			/*Create BS Marker Object*/
 			var bs_marker_object = {
 				position  	       : 	new google.maps.LatLng(bs_ss_devices[i].data.lat,bs_ss_devices[i].data.lon),
 				ptLat 		       : 	bs_ss_devices[i].data.lat,
 				ptLon 		       : 	bs_ss_devices[i].data.lon,
 				// map       	       : 	mapInstance,
-				icon 	  	       : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
-				oldIcon 	       : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
-				clusterIcon 	   : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
+				icon 	  	       : 	bs_marker_icon_obj,
+				oldIcon 	       : 	bs_marker_icon_obj,
+				clusterIcon 	   : 	bs_marker_icon_obj,
 				pointType	       : 	stationType,
 				dataset 	       : 	bs_ss_devices[i].data.param.base_station,
 				device_name 	   : 	bs_ss_devices[i].data.device_name,
@@ -1800,14 +1810,16 @@ function devicePlottingClass_gmap() {
 				if($.trim(sector_array[j].technology.toLowerCase()) == "ptp" || $.trim(sector_array[j].technology.toLowerCase()) == "p2p") {
 					if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
 
+						var sector_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+sector_array[j].markerUrl,"other");
+
 						var sectors_Markers_Obj = {
 							position 		 	: new google.maps.LatLng(lat, lon),
 							// map 				: mapInstance,
 							ptLat 			 	: lat,
 							ptLon 			 	: lon,
-							icon 			 	: new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,new google.maps.Size(1,1)),
-							oldIcon 		 	: new google.maps.MarkerImage(base_url+"/"+sector_array[j].markerUrl,null,null,null,new google.maps.Size(32,37)),
-							clusterIcon 	 	: new google.maps.MarkerImage(base_url+"/static/img/icons/1x1.png",null,null,null,new google.maps.Size(1,1)),
+							icon 			 	: hiddenIconImageObj,
+							oldIcon 		 	: sector_icon_obj,
+							clusterIcon 	 	: hiddenIconImageObj,
 							pointType 		 	: 'sector_Marker',
 							technology 		 	: sector_array[j].technology,
 							vendor 				: sector_array[j].vendor,
@@ -1902,9 +1914,8 @@ function devicePlottingClass_gmap() {
 				/*Plot Sub-Station*/
 				for(var k=sector_child.length;k--;) {
 
-				
 					var ss_marker_obj = sector_child[k];
-
+					var ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other");
 					/*Create SS Marker Object*/
 					var ss_marker_object = {
 						position 		 : 	new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
@@ -1912,9 +1923,9 @@ function devicePlottingClass_gmap() {
 				    	ptLon 			 : 	ss_marker_obj.data.lon,
 				    	technology 		 : 	sector_array[j].technology,
 				    	// map 			 : 	mapInstance,
-				    	icon 			 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
-				    	oldIcon 		 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
-				    	clusterIcon 	 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
+				    	icon 			 : 	ss_icon_obj,
+				    	oldIcon 		 : 	ss_icon_obj,
+				    	clusterIcon 	 : 	ss_icon_obj,
 				    	pointType	     : 	"sub_station",
 				    	dataset 	     : 	ss_marker_obj.data.param.sub_station,
 				    	bhInfo 			 : 	[],
@@ -2118,7 +2129,7 @@ function devicePlottingClass_gmap() {
 				gmap_self.getBasicFilters();
 			}
 
-			gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
+			// gmap_self.updateAllMarkersWithNewIcon_gmap(defaultIconSize);
 		}
 
 		if(isDebug) {
@@ -2491,6 +2502,9 @@ function devicePlottingClass_gmap() {
 
 		var isLineChecked = $("#showConnLines:checked").length;
 
+		// Update Cookie Value
+		$.cookie("isLineChecked", $("#showConnLines")[0].checked, {path: '/', secure : true});
+
 		var current_lines = ssLinkArray_filtered;
 
 		/*Unchecked case*/
@@ -2527,6 +2541,9 @@ function devicePlottingClass_gmap() {
 		}
 
 		var isSSChecked = $("#showAllSS:checked").length;
+
+		// Update Cookie Value
+		$.cookie("isSSChecked", $("#showAllSS")[0].checked, {path: '/', secure : true});
 
 		/*Unchecked case*/
 		if(isSSChecked == 0) {
@@ -3646,6 +3663,17 @@ function devicePlottingClass_gmap() {
 		}).limit(1).data();
 
 		var SSToolTipInfo = BsObj.length > 0 ? BsObj[0].data.param.sector[0].sub_station[0].data.param.sub_station : false;
+		
+		if(last_selected_label) {
+			if($("#apply_label").hasClass("btn-success")) {
+                $("#apply_label").removeClass("btn-success");
+            }
+
+            if(!$("#apply_label").hasClass("btn-danger")) {
+                $("#apply_label").addClass("btn-danger");
+                $("#apply_label").html("Remove Label")
+            }
+		}
 
 		if(SSToolTipInfo) {
 			var labelSelectHtml = '<option value="">Select Label</option>';
@@ -5425,19 +5453,9 @@ function devicePlottingClass_gmap() {
 									var layer = ss_marker.layer ? ss_marker.layer : ss_marker.layerReference;
 									layer.redraw();
 								} else {
-									var largeur= 32,
-			                            hauteur= 37,
-			                            divideBy= 1,
-			                            anchorX= 0,
-			                            live_polled_icon = new google.maps.MarkerImage(
-			                                newIcon,
-			                                new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
-			                                new google.maps.Point(0, 0),
-			                                new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
-			                                new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
-			                            );
+									var ss_live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
 									ss_marker.setOptions({
-										"icon" : live_polled_icon
+										"icon" : ss_live_polled_icon
 									});
 								}
 								marker_polling_obj.ip = ss_marker.ss_ip;
@@ -5456,21 +5474,10 @@ function devicePlottingClass_gmap() {
 									var layer = sector_marker.layer ? sector_marker.layer : sector_marker.layerReference;
 									layer.redraw();
 								} else {
-									var largeur= 32,
-			                            hauteur= 37,
-			                            divideBy= 1,
-			                            anchorX= 0,
-			                            live_polled_icon = new google.maps.MarkerImage(
-			                                newIcon,
-			                                new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
-			                                new google.maps.Point(0, 0),
-			                                new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
-			                                new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
-			                            );
-
+		                            var sector_live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
 			                        // Update sector marker icon
 									sector_marker.setOptions({
-										"icon" : live_polled_icon,
+										"icon" : sector_live_polled_icon,
 										// "clusterIcon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
 										// "oldIcon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
 									});
@@ -5578,13 +5585,15 @@ function devicePlottingClass_gmap() {
 				newIcon = complete_polled_devices_icon[polled_devices_names[i]][nav_click_counter];
 			}
 
+			var live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
+
 			if(ss_marker) {
 				ss_marker.setOptions({
-					"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+					"icon" : live_polled_icon
 				});
 			} else if(sector_marker) {
 				sector_marker.setOptions({
-					"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+					"icon" : live_polled_icon
 				});
 			}
 			$("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className = $("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className+' text-info';
@@ -5644,13 +5653,15 @@ function devicePlottingClass_gmap() {
 				newIcon = complete_polled_devices_icon[polled_devices_names[i]][nav_click_counter];
 			}
 
+			var live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
+
 			if(ss_marker) {
 				ss_marker.setOptions({
-					"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+					"icon" : live_polled_icon
 				});
 			} else if(sector_marker) {
 				sector_marker.setOptions({
-					"icon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
+					"icon" : live_polled_icon
 				});
 			}
 			$("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className = $("#pollVal_"+new_device_name+" li.fetchVal_"+new_device_name)[nav_click_counter-1].className+' text-info';
@@ -5931,7 +5942,7 @@ function devicePlottingClass_gmap() {
     	isCreated= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_ruler', 0, {path: '/', secure: true});
+    	$.cookie('tools_ruler', 0, {path: '/', secure : true});
 
 
     	tools_ruler = $.cookie("tools_ruler");
@@ -5946,6 +5957,7 @@ function devicePlottingClass_gmap() {
      * This function create a ruler if any ruler exist in cookie
      */
     this.create_old_ruler = function() {
+
     	if($.cookie('tools_ruler')) {
     		var ruler_Obj= JSON.parse($.cookie('tools_ruler'));
     		if(ruler_Obj) {
@@ -5957,8 +5969,12 @@ function devicePlottingClass_gmap() {
     			ruler_array.push(second_point);
 
     			var current_line =  gmap_self.createLink_gmaps(ruler_Obj);
+    			// Show line on map
+    			current_line.setMap(mapInstance);
+
     			tools_rule_array.push(current_line);
 
+    			// Update the cookie
     			$.cookie('tools_ruler',JSON.stringify(ruler_Obj),{path: '/', secure : true});
 
     			tools_ruler = $.cookie("tools_ruler");
@@ -6075,7 +6091,7 @@ function devicePlottingClass_gmap() {
     	is_bs_clicked= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_line', 0, {path: '/', secure: true});
+    	$.cookie('tools_line', 0, {path: '/', secure : true});
 
 
     	tools_line = $.cookie("tools_line");
@@ -6186,7 +6202,9 @@ function devicePlottingClass_gmap() {
 
     this.create_old_points= function() {
 
-    	var image = new google.maps.MarkerImage(base_url+"/static/img/icons/caution.png",null,null,null,new google.maps.Size(32, 37));
+    	var image = gmap_self.getMarkerImageBySize(base_url+"/static/img/icons/caution.png","other");
+    	// var image = new google.maps.MarkerImage(base_url+"/static/img/icons/caution.png",null,null,null,new google.maps.Size(32, 37));
+
 
     	if($.cookie("isMaintained")) {
 
@@ -6289,7 +6307,9 @@ function devicePlottingClass_gmap() {
 	 */
 	this.plotPoint_gmap = function(infoObj) {
 
-		var image = new google.maps.MarkerImage(base_url+"/"+infoObj.icon_url,null,null,null,new google.maps.Size(32, 37));
+		// var image = new google.maps.MarkerImage(base_url+"/"+infoObj.icon_url,null,null,null,new google.maps.Size(32, 37));
+		var image = gmap_self.getMarkerImageBySize(base_url+"/"+infoObj.icon_url,"other");
+		
 		var map_point = new google.maps.Marker({
 			position   	    	 : new google.maps.LatLng(infoObj.lat,infoObj.lon),
 			map 	   	    	 : mapInstance,
@@ -6886,10 +6906,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure : true});
 
 	 	freezedAt = (new Date()).getTime();
-	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure : true});
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 1;
@@ -6918,10 +6938,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure : true});
 
 	 	freezedAt = 0;
-	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure : true});
 
 	 	// Call function to restart perf calling
 	 	gmap_self.restartPerfCalling();
@@ -7699,8 +7719,48 @@ function devicePlottingClass_gmap() {
 		$("#resetFilters").button("complete");
 	};
 
+	/**
+	 * This function returns the markerImage object for given marker url as per default size
+	 * @method getMarkerImageBySize
+	 * param markerUrl {String}, It contains the url of marker icon.
+	 */
+	this.getMarkerImageBySize = function(markerUrl,marker_type) {
+
+		var largeur = 32,
+			hauteur = 37,
+			divideBy = 0.8,
+			anchorX = -0.2,
+			markerImageObj = "";
+
+		if(marker_type == 'base_station') {
+			largeur = 20;
+			hauteur = 40;
+		}
+
+		if(current_icon_size == 'small') {
+			divideBy = 1.4;
+			anchorX = 0.4;
+		} else if(current_icon_size == 'medium') {
+			divideBy = 1;
+			anchorX = 0;
+		} else {
+			divideBy = 0.8;
+			anchorX = -0.2;
+		}
+
+		markerImageObj = new google.maps.MarkerImage(
+			markerUrl,
+			new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+			new google.maps.Point(0, 0), 
+			new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+			new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
+		);
+
+		return markerImageObj;
+	};
+
 	//This function updates the Marker Icon with the new Size.
-	this.updateAllMarkersWithNewIcon= function(iconSize) {
+	this.updateAllMarkersWithNewIcon_gmap= function(iconSize) {
 
 		var largeur= 32, hauteur= 37,largeur_bs = 32, hauteur_bs= 37, divideBy;
 		var anchorX, i, markerImage, markerImage2, icon;
@@ -7789,7 +7849,8 @@ function devicePlottingClass_gmap() {
 						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
 						new google.maps.Point(0, 0), 
 						new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
-						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
+						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
+					);
 					//Set icon to Marker Image
 					markerIcon.setIcon(markerImage2);
 					// //Set oldIcon to Marker Image
