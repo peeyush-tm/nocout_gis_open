@@ -2,12 +2,10 @@
 
 import datetime
 
-from nocout.utils.util import fetch_raw_result, dict_fetchall, \
-    format_value, cache_for, \
-    cached_all_gis_inventory,query_all_gis_inventory
+#utilities core
+from nocout.utils import util as nocout_utils
 
-from performance.utils.util import prepare_gis_devices,\
-    pre_map_indexing
+from performance.utils import util as perf_utils
 
 # misc utility functions
 
@@ -77,7 +75,7 @@ def severity_level_check(list_to_check):
                 return True
 
 
-@cache_for(300)
+@nocout_utils.cache_for(300)
 def raw_prepare_result(performance_data,
                        machine,
                        table_name=None,
@@ -116,7 +114,7 @@ def raw_prepare_result(performance_data,
     )
     # print(query)
     if query:
-        performance_data += fetch_raw_result(query, machine)
+        performance_data += nocout_utils.fetch_raw_result(query, machine)
     else:
         return []
 
@@ -125,7 +123,7 @@ def raw_prepare_result(performance_data,
     return performance_data
 
 
-@cache_for(300)
+@nocout_utils.cache_for(300)
 def indexed_alert_results(performance_data):
     """
 
@@ -145,7 +143,7 @@ def indexed_alert_results(performance_data):
 
     return indexed_raw_results
 
-@cache_for(300)
+@nocout_utils.cache_for(300)
 def prepare_raw_alert_results(performance_data=None):
     """
     prepare GIS result using raw query
@@ -202,7 +200,7 @@ def prepare_raw_alert_results(performance_data=None):
     return device_list
 
 
-@cache_for(300)
+@nocout_utils.cache_for(300)
 def map_results(perf_result, qs):
     """
 
@@ -212,8 +210,8 @@ def map_results(perf_result, qs):
     """
     result_qs = []
 
-    indexed_qs = pre_map_indexing(index_dict=qs)
-    indexed_perf = pre_map_indexing(index_dict=perf_result)
+    indexed_qs = perf_utils.pre_map_indexing(index_dict=qs)
+    indexed_perf = perf_utils.pre_map_indexing(index_dict=perf_result)
 
     for device in indexed_qs:
         try:

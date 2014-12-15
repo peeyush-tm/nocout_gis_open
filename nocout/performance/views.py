@@ -15,11 +15,13 @@ from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
 
 #project settings
-from nocout.settings import P2P, WiMAX, PMP, DEBUG, SERVICE_DATA_SOURCE, SERVICES
+from nocout.settings import SERVICE_DATA_SOURCE
 
-from performance.models import PerformanceService, PerformanceNetwork, EventNetwork, EventService, NetworkStatus, \
+from performance.models import PerformanceService, PerformanceNetwork, \
+    EventService, NetworkStatus, \
     ServiceStatus, InventoryStatus, \
-    PerformanceStatus, PerformanceInventory, Status, NetworkAvailabilityDaily, Topology
+    PerformanceStatus, PerformanceInventory, \
+    Status, NetworkAvailabilityDaily, Topology
 
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 
@@ -27,15 +29,14 @@ from django.utils.dateformat import format
 
 from operator import itemgetter
 
-from nocout.utils.util import fetch_raw_result, dict_fetchall, \
-    format_value, cache_for, time_it, \
-    cached_all_gis_inventory, query_all_gis_inventory, query_all_gis_inventory_improved
+from nocout.utils import util as nocout_utils
 
-from inventory.utils.util import organization_network_devices, \
-    organization_customer_devices, \
-    organization_backhaul_devices, filter_devices, prepare_machines
+#utilities inventory
+from inventory.utils import util as inventory_utils
 
-from performance.utils.util import prepare_gis_devices, polled_results
+from performance.utils import util as perf_utils
+
+from alert_center.utils import util as alert_utils
 
 import logging
 log = logging.getLogger(__name__)
@@ -192,7 +193,7 @@ class LivePerformanceListing(BaseDatatableView):
 
         device_tab_technology = self.request.GET.get('data_tab')
 
-        devices = filter_devices(organizations=kwargs['organizations'],
+        devices = inventory_utils.filter_devices(organizations=kwargs['organizations'],
                                  data_tab=device_tab_technology,
                                  page_type=page_type,
                                  required_value_list=required_value_list
@@ -349,7 +350,7 @@ class LivePerformanceListing(BaseDatatableView):
         :return:
         """
         page_type = self.request.GET['page_type']
-        return prepare_gis_devices(qs, page_type)
+        return perf_utils.prepare_gis_devices(qs, page_type)
 
     def prepare_machines(self, qs):
         """
@@ -365,14 +366,14 @@ class LivePerformanceListing(BaseDatatableView):
                 }
             )
 
-        return prepare_machines(device_list)
+        return inventory_utils.prepare_machines(device_list)
 
     def prepare_polled_results(self, qs, multi_proc=False, machine_dict={}):
         """
         preparing polled results
         after creating static inventory first
         """
-        result_qs = polled_results(qs=qs,
+        result_qs = perf_utils.polled_results(qs=qs,
                                    multi_proc=multi_proc,
                                    machine_dict=machine_dict,
                                    model_is=self.model
@@ -551,38 +552,8 @@ class Get_Perfomance(View):
         col_string = lambda x: "`" + str(x) + "`"
         is_ping = True
         # raw query is required here so as to get data
-        query = " "\
-                " SELECT " \
-                " original_table.`device_name`," \
-                " original_table.`ip_address`," \
-                " original_table.`service_name`," \
-                " original_table.`severity`," \
-                " original_table.`current_value` as latency," \
-                " `derived_table`.`current_value` as packet_loss, " \
-                " `original_table`.`sys_timestamp`," \
-                " original_table.`description` " \
-                " FROM `performance_eventnetwork` as original_table "\
-                " INNER JOIN (`performance_eventnetwork` as derived_table) "\
-                " ON( "\
-                "    original_table.`data_source` <> derived_table.`data_source` "\
-                "    AND "\
-                "   original_table.`sys_timestamp` = derived_table.`sys_timestamp` "\
-                "    AND "\
-                "    original_table.`device_name` = derived_table.`device_name` "\
-                " ) "\
-                " WHERE( "\
-                "    original_table.`device_name`= '{0}' "\
-                "    AND "\
-                "    original_table.`sys_timestamp` BETWEEN {1} AND {2} "\
-                " ) "\
-                " GROUP BY original_table.`sys_timestamp` "\
-                " ORDER BY original_table.`sys_timestamp` DESC ".format(
-                # (',').join(["original_table.`" + col_name + "`" for col_name in required_columns]),
-                device.device_name,
-                start_date,
-                end_date
-                )
-        error_data_list = fetch_raw_result(query, device.machine.name)
+        query = alert_utils.ping_service_query(device.device_name, start_date, end_date)
+        error_data_list = nocout_utils(query, device.machine.name)
 
         for data in error_data_list:
             # data["alert_date"] = datetime.datetime. \
@@ -699,13 +670,13 @@ class Fetch_Inventory_Devices(View):
         device_list = []
 
         if page_type == "customer":
-            device_list = organization_customer_devices(organizations)
+            device_list = inventory_utils.organization_customer_devices(organizations)
 
         elif page_type == "network":
-            device_list = organization_network_devices(organizations)
+            device_list = inventory_utils.organization_network_devices(organizations)
 
         elif page_type == 'other':
-            device_list = organization_backhaul_devices(organizations)
+            device_list = inventory_utils.organization_backhaul_devices(organizations)
 
         result = list()
         for device in device_list:
