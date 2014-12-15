@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import json, logging, datetime, xlwt, csv
+import json, datetime, xlwt, csv
 from django.db.models import Count
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
@@ -11,16 +11,17 @@ from device.models import Device, City, State, DeviceTechnology, DeviceType
 from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 
-from performance.views import ptp_device_circuit_backhaul, \
+from performance.utils.util import combined_indexed_gis_devices,\
+    indexed_polled_results,\
+    prepare_gis_devices,\
+    pre_map_indexing
+
+from inventory.utils.util import ptp_device_circuit_backhaul, \
     organization_customer_devices, \
     organization_network_devices, \
     organization_backhaul_devices, \
-    combined_indexed_gis_devices,\
-    indexed_polled_results,\
-    filter_devices,\
-    prepare_machines,\
-    prepare_gis_devices,\
-    pre_map_indexing
+    filter_devices, \
+    prepare_machines
 
 from django.utils.dateformat import format
 from django.db.models import Q
@@ -34,18 +35,7 @@ from nocout.utils.util import fetch_raw_result, dict_fetchall, \
 
 from nocout.utils import logged_in_user_organizations
 
-# going deep with sql cursor to fetch the db results. as the RAW query executes everythong it is recursively used
-from django.db import connections
-
-# for raw query optmisation we will use ceil
-import math
-
-# sort the list of dictionaries
-# http://stackoverflow.com/questions/72899/how-do-i-sort-a-list-of-dictionaries-by-values-of-the-dictionary-in-python
-from operator import itemgetter
-
-from multiprocessing import Process, Queue
-
+import logging
 logger = logging.getLogger(__name__)
 
 #import alert center utilities

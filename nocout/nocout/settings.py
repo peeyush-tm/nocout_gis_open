@@ -403,6 +403,186 @@ DEVICE_APPLICATION = {
     }
 }
 
+###Services & SErvice Datasoruces settings
+SERVICE_DATA_SOURCE = {
+    "uas": {
+        "display_name": "UAS",
+        "type": "area",
+        "valuesuffix": "seconds",
+        "valuetext": "Seconds",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+    "rssi": {
+        "display_name": "RSSI",
+        "type": "column",
+        "valuesuffix": "dB",
+        "valuetext": "dB",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+    "uptime": {
+        "display_name": "UPTIME",
+        "type": "line",
+        "valuesuffix": " seconds",
+        "valuetext": "up since (timeticks)",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+    "rta": {
+        "display_name": "Latency",
+        "type": "line",
+        "valuesuffix": "ms",
+        "valuetext": "ms",
+        "formula": "rta_null",
+        "show_min": True,
+        "show_max": True
+    },
+    "pl": {
+        "display_name": "Packet Drop",
+        "type": "column",
+        "valuesuffix": "%",
+        "valuetext": "Percentage (%)",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+    "service_throughput": {
+        "display_name": "Service throughput",
+        "type": "area",
+        "valuesuffix": " mbps",
+        "valuetext": " mbps",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+    "management_port_on_odu": {
+        "display_name": "Management Port on ODU",
+        "type": "area",
+        "valuesuffix": " mbps",
+        "valuetext": " mbps",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+    "radio_interface": {
+        "display_name": "Radio Interface" ,
+        "type": "area",
+        "valuesuffix": " mbps",
+        "valuetext": " mbps",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+    "availability": {
+        "display_name": "Availability",
+        "type": "column",
+        "valuesuffix": " %",
+        "valuetext": " %",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+    ##listing there special performance checks with type string
+    #wimax_ss_ip#ss_ip
+    #wimax_modulation_dl_fec#modulation_dl_fec
+    #wimax_ss_sector_id#ss_sector_id
+    #wimax_ss_frequency#frequency
+    #wimax_modulation_ul_fec#modulation_ul_fec
+    #wimax_ul_intrf#ul_intrf
+    #wimax_dl_intrf#dl_intrf
+    #wimax_ss_mac#ss_mac
+    ##listing there special performance checks with type string
+
+    "ss_ip": {
+        "display_name": "ss_ip",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+
+    "modulation_dl_fec": {
+        "display_name": "modulation_dl_fec",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+
+    "ss_sector_id": {
+        "display_name": "ss_sector_id",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+
+    "frequency": {
+        "display_name": "frequency",
+        "type": "table",
+        "valuesuffix": " MHz",
+        "valuetext": " MHz",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+
+    "modulation_ul_fec": {
+        "display_name": "modulation_ul_fec",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+
+    "ul_intrf": {
+        "display_name": "ul_intrf",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+
+    "dl_intrf": {
+        "display_name": "dl_intrf",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+
+    "ss_mac": {
+        "display_name": "ss_mac",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None,
+        "show_min": False,
+        "show_max": False
+    },
+
+
+}
+
+SERVICES = {
+
+}
 
 ###################REPORT_PATH
 

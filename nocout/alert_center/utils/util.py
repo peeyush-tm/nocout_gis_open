@@ -6,7 +6,7 @@ from nocout.utils.util import fetch_raw_result, dict_fetchall, \
     format_value, cache_for, \
     cached_all_gis_inventory,query_all_gis_inventory
 
-from performance.views import prepare_gis_devices,\
+from performance.utils.util import prepare_gis_devices,\
     pre_map_indexing
 
 # misc utility functions

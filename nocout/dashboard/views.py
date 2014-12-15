@@ -13,7 +13,11 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.utils import logged_in_user_organizations
 from device.models import DeviceTechnology
 from performance.models import ServiceStatus, NetworkAvailabilityDaily
-from performance.views import organization_customer_devices, organization_network_devices
+
+#inventory utils
+from inventory.utils.util import organization_customer_devices, organization_network_devices
+#inventory utils
+
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
