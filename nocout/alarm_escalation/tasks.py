@@ -16,6 +16,54 @@ from device.models import DeviceType
 
 
 @task
+def raise_alarms(service_status_list, org):
+    """
+    Raises alarms.
+    """
+    escalation_level = None
+    for service_status in service_status_list:
+        if service_status.severity=='ok':
+            old_status = 1
+            new_status = 1
+        else:
+            old_status = 0
+            new_status = 0
+        device = Device.objects.get(device_name=service_status.device_name)
+        obj, created = EscalationStatus.objects.get_or_create(organization=org,
+                                            device_type=DeviceType.objects.get(id=device.device_type.name),
+                                            service=service_status.service,
+                                            service_data_source=service_status.service_data_source,
+                                            ip=service_status.ip_address,
+                                            defaults={'severity': service_status.severity, 'old_status': old_status, 'new_status': new_status})
+
+        age = timezone.now() - obj.status_since
+        level_list = obj.organization.escalationlevel_set.all()
+        for level in level_list:
+            if age>=level.alarm_age:
+                escalation_level = level
+
+        if service_status.severity=='ok':
+            obj.new_status = 1
+            obj.save()
+        if escalation_level is not None:
+            if obj.new_status==0 and obj.old_status==0:
+                alert_emails_for_bad_performance.delay(obj, escalation_level)
+                alert_phones_for_bad_performance.delay(obj, escalation_level)
+
+            elif obj.new_status==0 and obj.old_status==1:
+                obj.old_status = 0
+                obj.save()
+                alert_emails_for_bad_performance.delay(obj, escalation_level)
+                alert_phones_for_bad_performance.delay(obj, escalation_level)
+
+            elif obj.new_status==1 and obj.old_status==0:
+                obj.old_status = 1
+                obj.save()
+                alert_emails_for_good_performance.delay(obj, escalation_level)
+                alert_phones_for_good_performance.delay(obj, escalation_level)
+
+
+@task
 def raise_alarms_for_bad_performance(service_status_list, org):
     """
     Raises alarms for bad performance of device.
@@ -66,28 +114,28 @@ def alert_phones_for_bad_performance(alarm, level):
     pass
 
 
-@task
-def raise_alarms_for_good_performance(service_status_list, org):
-    """
-    Raises alarms for good performance of device.
-    """
-    for service_status in service_status_list:
-        device = Device.objects.get(device_name=service_status.device_name)
-    for escalation in EscalationStatus.objects.get(organization=org,
-                                            device_type=DeviceType.objects.get(id=device.device_type.name),
-                                            service=service_status.service,
-                                            service_data_source=service_status.service_data_source,
-                                            ip=service_status.ip_address,
-                                            severity=service_status.severity)
+# @task
+# def raise_alarms_for_good_performance(service_status_list, org):
+#     """
+#     Raises alarms for good performance of device.
+#     """
+#     for service_status in service_status_list:
+#         device = Device.objects.get(device_name=service_status.device_name)
+#     for escalation in EscalationStatus.objects.get(organization=org,
+#                                             device_type=DeviceType.objects.get(id=device.device_type.name),
+#                                             service=service_status.service,
+#                                             service_data_source=service_status.service_data_source,
+#                                             ip=service_status.ip_address,
+#                                             severity=service_status.severity)
 
-    age = timezone.now() - escalation.status_since
-    level_list = EscalationLevel.objects.filter(organization=escalation.organization, alarm_age=age.seconds)
+#     age = timezone.now() - escalation.status_since
+#     level_list = EscalationLevel.objects.filter(organization=escalation.organization, alarm_age=age.seconds)
 
-    for level in level_list:
-        if getattr(escalation, 'l%d_email_status' % level.name) == 1:
-            alert_emails_for_good_performance.delay(escalation, level)
-            alert_phones_for_good_performance.delay(escalation, level)
-            escalation.save()
+#     for level in level_list:
+#         if getattr(escalation, 'l%d_email_status' % level.name) == 1:
+#             alert_emails_for_good_performance.delay(escalation, level)
+#             alert_phones_for_good_performance.delay(escalation, level)
+#             escalation.save()
 
 
 @task
@@ -135,7 +183,7 @@ def check_device_status():
                                     service__in=service_list,
                                     service_data_source__in=service_data_source_list).using(machine_name)
         if service_status_list:
-            raise_alarms_for_bad_performance(service_status_list, org)
+            raise_alarms(service_status_list, org)
 
 
 def prepare_machines(device_list):

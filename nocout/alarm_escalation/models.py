@@ -82,5 +82,5 @@ class EscalationStatus(models.Model):
     l7_phone_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
     status_since = models.DateTimeField(auto_now_add=True)
     severity = models.CharField(max_length=20)
-    old_status = models.IntegerField(default=0, choices=PERFOEMANCE_CHOICES)
-    new_status = models.IntegerField(default=0, choices=PERFOEMANCE_CHOICES)
+    old_status = models.IntegerField(choices=PERFOEMANCE_CHOICES)
+    new_status = models.IntegerField(choices=PERFOEMANCE_CHOICES)
