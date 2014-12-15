@@ -59,12 +59,12 @@ SERVICE_DATA_SOURCE = {
     },
     "rta": {
         "display_name": "Latency",
-        "type": "area",
+        "type": "line",
         "valuesuffix": "ms",
         "valuetext": "ms",
         "formula": "rta_null",
-        "show_min": False,
-        "show_max": False
+        "show_min": True,
+        "show_max": True
     },
     "pl": {
         "display_name": "Packet Drop",
@@ -1762,7 +1762,7 @@ class Get_Service_Type_Performance_Data(View):
                             if data.min_value else None])
 
                         if SERVICE_DATA_SOURCE[sds_name]["show_max"]:
-                            min_data_list.append([data.sys_timestamp * 1000, float(data.max_value)
+                            max_data_list.append([data.sys_timestamp * 1000, float(data.max_value)
                             if data.max_value else None])
 
                         compare_point = lambda p1, p2, p3: '#70AFC4' \
@@ -1809,7 +1809,7 @@ class Get_Service_Type_Performance_Data(View):
                         if len(min_data_list):
                             chart_data += [
                                 {'name': str("min value").title(),
-                                     'color': '#FFFF0D',
+                                     'color': '#01CC14',
                                      'data': min_data_list,
                                      'type': 'line',
                                      'marker' : {
@@ -1821,8 +1821,8 @@ class Get_Service_Type_Performance_Data(View):
                         if len(max_data_list):
                             chart_data += [
                                 {'name': str("max value").title(),
-                                     'color': '#EEEE0D',
-                                     'data': min_data_list,
+                                     'color': '#FF8716',
+                                     'data': max_data_list,
                                      'type': 'line',
                                      'marker' : {
                                          'enabled': False
