@@ -29,7 +29,7 @@ class PerformanceMetric(models.Model):
         ordering = ['-sys_timestamp']
 
 
-####Network Performance Tables
+# ###Network Performance Tables
 
 class PerformanceNetwork(models.Model):
     """
@@ -56,6 +56,7 @@ class PerformanceNetwork(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 ### Every 30 Minutes
 
@@ -85,6 +86,7 @@ class PerformanceNetworkBiHourly(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+
 ### Hourly Tables
 
 class PerformanceNetworkHourly(models.Model):
@@ -112,6 +114,7 @@ class PerformanceNetworkHourly(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 ### Daily Tables
 
@@ -141,6 +144,7 @@ class PerformanceNetworkDaily(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+
 ### Weekly Tables
 
 class PerformanceNetworkWeekly(models.Model):
@@ -168,6 +172,7 @@ class PerformanceNetworkWeekly(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 ##Monthly Tables
 
@@ -197,6 +202,7 @@ class PerformanceNetworkMonthly(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+
 ### Yearly Tables
 
 class PerformanceNetworkYearly(models.Model):
@@ -224,6 +230,7 @@ class PerformanceNetworkYearly(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 ####Network Performance Tables
 
@@ -255,6 +262,7 @@ class PerformanceService(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+
 #### Bi Hourly : twice in one hour
 
 class PerformanceServiceBiHourly(models.Model):
@@ -282,6 +290,7 @@ class PerformanceServiceBiHourly(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 #### Hourly
 
@@ -311,6 +320,7 @@ class PerformanceServiceHourly(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+
 ### Daily
 
 class PerformanceServiceDaily(models.Model):
@@ -338,6 +348,7 @@ class PerformanceServiceDaily(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 #### Weekly
 
@@ -367,6 +378,7 @@ class PerformanceServiceWeekly(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+
 #### Monthly
 
 class PerformanceServiceMonthly(models.Model):
@@ -394,6 +406,7 @@ class PerformanceServiceMonthly(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 #### Yearly
 
@@ -454,6 +467,7 @@ class PerformanceStatus(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+
 ### Daily
 
 class PerformanceStatusDaily(models.Model):
@@ -511,6 +525,7 @@ class PerformanceStatusWeekly(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+
 #### Monthly update of status tables
 
 class PerformanceStatusMonthly(models.Model):
@@ -538,6 +553,7 @@ class PerformanceStatusMonthly(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 #### Yearly update of status tables
 
@@ -596,6 +612,7 @@ class PerformanceMachine(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+
 #### Inventory Service Performance : Once Daily
 
 class PerformanceInventory(models.Model):
@@ -623,6 +640,7 @@ class PerformanceInventory(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 #### Inventory Service Performance : Once Daily
 
@@ -732,6 +750,7 @@ class PerformanceInventoryYearly(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 #### Inventory Service Perfomance
 
@@ -988,6 +1007,7 @@ class EventServiceYearly(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+
 #### Events Service
 
 class EventStatus(models.Model):
@@ -1211,7 +1231,6 @@ class Status(models.Model):
         ordering = ['-sys_timestamp']
 
 
-
 ############################################################################################################
 ############################################################################################################
 ##############################Network Availability##########################################################
@@ -1346,8 +1365,10 @@ class Topology(models.Model):
     ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
     mac_address = models.CharField('MAC Address', max_length=20, null=True, db_index=True, blank=True)
     sector_id = models.CharField('Sector Id', max_length=32, null=True, db_index=True, blank=True)
-    connected_device_ip = models.CharField('Connected Device IP Address', max_length=20, null=True, db_index=True, blank=True)
-    connected_device_mac = models.CharField('Connected Device MAC Address', max_length=20, null=True, db_index=True, blank=True)
+    connected_device_ip = models.CharField('Connected Device IP Address', max_length=20, null=True, db_index=True,
+                                           blank=True)
+    connected_device_mac = models.CharField('Connected Device MAC Address', max_length=20, null=True, db_index=True,
+                                            blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
@@ -1356,6 +1377,7 @@ class Topology(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
 
 ############################################################################################################
 ############################################################################################################

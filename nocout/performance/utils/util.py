@@ -1,6 +1,6 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
-#python utilities
+# python utilities
 import datetime
 #python utilities
 
@@ -14,6 +14,7 @@ from nocout.utils.util import fetch_raw_result, dict_fetchall, \
 
 #python logging
 import logging
+
 log = logging.getLogger(__name__)
 #python logging
 
@@ -41,9 +42,9 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
     if table_name and devices:
         query = " SELECT {0} FROM ( " \
                 " SELECT {0} FROM `{1}` " \
-                " WHERE `{1}`.`device_name` in ( {2} ) " \
-                " AND `{1}`.`data_source` in ( {3} ) {4} " \
-                " ORDER BY `{1}`.sys_timestamp DESC) as `derived_table` " \
+                " WHERE `{1}`.`device_name` IN ( {2} ) " \
+                " AND `{1}`.`data_source` IN ( {3} ) {4} " \
+                " ORDER BY `{1}`.sys_timestamp DESC) AS `derived_table` " \
                 " GROUP BY `derived_table`.`device_name`, `derived_table`.`data_source` " \
             .format(columns,
                     table_name,
@@ -62,51 +63,51 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
     """
     in_string = lambda x: "'" + str(x) + "'"
     query = """
-        select table_1.id as id,
-            table_1.service_name as service_name,
-            table_1.device_name as device_name,
-            table_1.current_value as pl,
-            table_2.current_value as rta,
-            table_1.sys_timestamp as sys_timestamp,
-            table_1.age as age
-        from (
-        select `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`, `age`
-        from
+        SELECT table_1.id AS id,
+            table_1.service_name AS service_name,
+            table_1.device_name AS device_name,
+            table_1.current_value AS pl,
+            table_2.current_value AS rta,
+            table_1.sys_timestamp AS sys_timestamp,
+            table_1.age AS age
+        FROM (
+        SELECT `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`, `age`
+        FROM
             (
-                select `id`,
+                SELECT `id`,
                 `service_name`,
                 `device_name`,
                 `data_source`,
                 `current_value`,
                 `sys_timestamp`,
                 `age`
-                from `performance_networkstatus`
-                where
-                    `performance_networkstatus`.`device_name` in ({0})
-                    and `performance_networkstatus`.`data_source` in ( 'pl' )
-            ) as `derived_table`
-        ) as table_1
-        join (
-            select `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
-            from
+                FROM `performance_networkstatus`
+                WHERE
+                    `performance_networkstatus`.`device_name` IN ({0})
+                    AND `performance_networkstatus`.`data_source` IN ( 'pl' )
+            ) AS `derived_table`
+        ) AS table_1
+        JOIN (
+            SELECT `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
+            FROM
                 (
-                    select `id`,
+                    SELECT `id`,
                     `service_name`,
                     `device_name`,
                     `data_source`,
                     `current_value`,
                     `sys_timestamp`
-                    from `performance_networkstatus`
-                    where
-                        `performance_networkstatus`.`device_name` in ({0})
-                        and `performance_networkstatus`.`data_source` in ( 'rta' )
-              ) as `derived_table`
-        ) as table_2
-        on (table_1.device_name = table_2.device_name
-            and table_1.data_source != table_2.data_source
-            and table_1.sys_timestamp = table_2.sys_timestamp
+                    FROM `performance_networkstatus`
+                    WHERE
+                        `performance_networkstatus`.`device_name` IN ({0})
+                        AND `performance_networkstatus`.`data_source` IN ( 'rta' )
+              ) AS `derived_table`
+        ) AS table_2
+        ON (table_1.device_name = table_2.device_name
+            AND table_1.data_source != table_2.data_source
+            AND table_1.sys_timestamp = table_2.sys_timestamp
             )
-        group by (table_1.device_name);
+        GROUP BY (table_1.device_name);
     """.format(",".join(map(in_string, devices)))
 
     return query
@@ -130,7 +131,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
         jobs = [
             Process(
                 target=get_multiprocessing_performance_data,
-                args=(q,machine_device_list, machine,model)
+                args=(q, machine_device_list, machine, model)
             ) for machine, machine_device_list in machine_dict.items()
         ]
 
@@ -149,7 +150,7 @@ def polled_results(qs, multi_proc=False, machine_dict={}, model_is=None):
         for machine, machine_device_list in machine_dict.items():
             perf_result.append(get_performance_data(machine_device_list, machine, model))
 
-    result_qs = map_results(perf_result,devices)
+    result_qs = map_results(perf_result, devices)
     return result_qs
 
 
@@ -182,7 +183,7 @@ def map_results(perf_result, qs):
     indexed_qs = pre_map_indexing(index_dict=qs)
 
     for device in indexed_qs:
-        for perf in performance: #may run 7 times : per machine once
+        for perf in performance:  #may run 7 times : per machine once
             try:
                 device_info = indexed_qs[device][0].items()
                 data_source = perf[device]
@@ -226,7 +227,6 @@ def combined_indexed_gis_devices(indexes):
             indexed_ss[defined_ss_index].append(result)
             indexed_bh[defined_bh_index].append(result)
 
-
     return indexed_sector, indexed_ss, indexed_bh
 
 
@@ -246,7 +246,7 @@ def prepare_gis_devices(devices, page_type):
     # ##binary search instead
 
     indexed_sector, indexed_ss, indexed_bh = \
-        combined_indexed_gis_devices(indexes={'sector':'SECTOR_CONF_ON_NAME','ss':'SSDEVICENAME','bh':'BHCONF'})
+        combined_indexed_gis_devices(indexes={'sector': 'SECTOR_CONF_ON_NAME', 'ss': 'SSDEVICENAME', 'bh': 'BHCONF'})
 
     # gis_result = indexed_gis_devices(page_type=page_type)
 
@@ -297,7 +297,7 @@ def prepare_gis_devices(devices, page_type):
                 if port:
                     apnd = "( " + port + " )"
                 if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
-                    and bs_row['SECTOR_SECTOR_ID'] is not None:
+                        and bs_row['SECTOR_SECTOR_ID'] is not None:
                     sector_id.append(bs_row['SECTOR_SECTOR_ID'])
                     sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd)
 
@@ -305,15 +305,15 @@ def prepare_gis_devices(devices, page_type):
             if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
-                        "sector_id": ", ".join(sector_details),
-                        "circuit_id": format_value(bs_row['CCID']),
-                        "customer_name": format_value(bs_row['CUST']),
-                        "bs_name": format_value(bs_row['BSALIAS']),
-                        "city": format_value(bs_row['BSCITY']),
-                        "state": format_value(bs_row['BSSTATE']),
-                        "device_type": format_value(bs_row['SECTOR_TYPE']),
-                        "device_technology": format_value(bs_row['SECTOR_TECH'])
-                    })
+                    "sector_id": ", ".join(sector_details),
+                    "circuit_id": format_value(bs_row['CCID']),
+                    "customer_name": format_value(bs_row['CUST']),
+                    "bs_name": format_value(bs_row['BSALIAS']),
+                    "city": format_value(bs_row['BSCITY']),
+                    "state": format_value(bs_row['BSSTATE']),
+                    "device_type": format_value(bs_row['SECTOR_TYPE']),
+                    "device_technology": format_value(bs_row['SECTOR_TECH'])
+                })
                 if is_ss:
                     if bs_row['CIRCUIT_TYPE']:
                         if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
@@ -357,7 +357,7 @@ def indexed_polled_results(performance_data):
 ## and fetch result from the desired machine
 ## max processes = 7 (number of total machines)
 @cache_for(300)
-def get_multiprocessing_performance_data(q,device_list, machine, model):
+def get_multiprocessing_performance_data(q, device_list, machine, model):
     """
     Consolidated Performance Data from the Data base.
 
@@ -375,13 +375,13 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
                    "last_updated_date": "N/A",
                    "last_updated_time": "N/A",
                    "age": "N/A"
-                  }
+    }
 
     query = prepare_row_query(table_name="performance_networkstatus",
-                          devices=device_list,
+                              devices=device_list,
     )
     # (query)
-    performance_data = fetch_raw_result(query=query,machine=machine)#model.objects.raw(query).using(alias=machine)
+    performance_data = fetch_raw_result(query=query, machine=machine)  #model.objects.raw(query).using(alias=machine)
 
     indexed_perf_data = indexed_polled_results(performance_data)
 
@@ -426,7 +426,7 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
             ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                    float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
+                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
 
             device_result[device] = perf_result
     # (device_result)
@@ -454,13 +454,13 @@ def get_performance_data(device_list, machine, model):
                    "last_updated_date": "N/A",
                    "last_updated_time": "N/A",
                    "age": "N/A"
-                  }
+    }
 
     query = prepare_row_query(table_name="performance_networkstatus",
-                          devices=device_list
+                              devices=device_list
     )
 
-    performance_data = fetch_raw_result(query=query,machine=machine)#model.objects.raw(query).using(alias=machine)
+    performance_data = fetch_raw_result(query=query, machine=machine)  #model.objects.raw(query).using(alias=machine)
 
     indexed_perf_data = indexed_polled_results(performance_data)
 
@@ -478,8 +478,8 @@ def get_performance_data(device_list, machine, model):
                            "last_updated": "N/A",
                            "last_updated_date": "N/A",
                            "last_updated_time": "N/A",
-                           "device_name" : "N/A",
-                           "age" : "N/A",
+                           "device_name": "N/A",
+                           "age": "N/A",
             }
             data = indexed_perf_data[device]
             # for data in performance_data:
@@ -504,8 +504,7 @@ def get_performance_data(device_list, machine, model):
             ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)")
 
             perf_result["age"] = datetime.datetime.fromtimestamp(
-                    float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
-
+                float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S") if data["age"] else ""
 
             device_result[device] = perf_result
     # (device_result)
