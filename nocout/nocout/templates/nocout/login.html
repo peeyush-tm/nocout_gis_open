@@ -133,11 +133,12 @@ iframe {
         /*Set cookies for devicevisualization app*/
         $.cookie("isFreezeSelected", 0, {path: '/', secure : true});
         $.cookie("freezedAt", 0, {path: '/', secure : true});
-        $.cookie("isMaintained", 0, {path: '/', secure : true});
         $.cookie("tools_ruler", 0, {path: '/', secure : true});
-        $.cookie("tools_line", 0, {path: '/', secure : true});
-        $.cookie("isLabelChecked", true, {path: '/', secure : true});
-        $.cookie("tooltipLabel", "", {path: '/', secure: true});
+        $.cookie("isLabelChecked", false, {path: '/', secure : true});
+        $.cookie("isLineChecked", true, {path: '/', secure : true});
+        $.cookie("isSSChecked", true, {path: '/', secure : true});
+        $.cookie("markerIconSize", "medium", {path: '/', secure : true});
+        $.cookie("tooltipLabel", "", {path: '/', secure : true});
         /*Cookie for collapsed menu*/
         $.cookie("isMenuOpen", 1, {path: '/', secure : true});
       });
