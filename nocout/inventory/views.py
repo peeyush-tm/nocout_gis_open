@@ -7046,12 +7046,12 @@ class GisWizardSubStationListingTable(SubStationListingTable):
             sub_station = SubStation.objects.get(id=device_id)
             detail_action = ''
             edit_action = ''
-            if len(sub_station.circuit_set.all()) == 1 and sub_station.circuit_set.all()[0].sector:
+            if len(sub_station.circuit_set.all()) == 1 and sub_station.circuit_set.all()[0].sector and sub_station.device:
                 sector = sub_station.circuit_set.all()[0].sector
-                kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sector.bs_technology.id, 'sector_pk': sector.id, 'pk': device_id}
+                kwargs = {'bs_pk': sector.base_station.id, 'selected_technology': sub_station.device.device_technology,
+                        'sector_pk': sector.id, 'pk': device_id}
                 detail_action = '<a href="' + reverse('gis-wizard-sub-station-detail', kwargs=kwargs) + '"><i class="fa fa-list-alt text-info"></i></a>&nbsp'
                 if self.request.user.has_perm('inventory.change_substation'):
                     edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sub_station.circuit_set.all()[0].sector.base_station.id, sub_station.circuit_set.all()[0].sector.bs_technology.id, sub_station.circuit_set.all()[0].sector.id, device_id)
             dct.update(actions=detail_action+edit_action)
         return json_data
-
