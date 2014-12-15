@@ -172,12 +172,32 @@
 
             // handle the ends field of the form.
             var $radios = $('input:radio[name=ends]');
-            $("#id_end_after").val('').prop('readonly',true)
-            $("#id_end_on").val('').prop('readonly',true)
+            $("#id_end_never").val(false)
+            $("#id_end_on").prop('readonly', true)
+            $("#id_end_after").prop('readonly', true)
+            if ($("#id_end_after").val().length){
+                $radios.filter("[value=end_after]").prop('checked', true)
+                $("#id_end_after").prop('readonly', false).prop('required', true)
+            }
+            else if($("#id_end_on").val().length){
+                $radios.filter("[value=end_on]").prop('checked', true)
+                $("#id_end_on").prop('readonly', false).prop('required', true)
+            }
+            else{
+                $("#id_end_never").val(true)
+                $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                $("#id_end_after").val('').prop('readonly',true).prop('required', false)
+            }
+
+            $("#id_end_after").change(function() {
+                var end_after_val = $(this).val();
+                if (end_after_val < 1){ alert('End after value should be positive integer.'); $(this).val('1'); }
+            });
+
             $radios.change(function(){
                 var x = $(this).val();
                 if (x=='end_after'){
-                    $("#id_end_after").val('0').prop('readonly',false).prop('required', true)
+                    $("#id_end_after").val('1').prop('readonly',false).prop('required', true)
                     $("#id_end_never").val(false)
                     $("#id_end_on").val('').prop('readonly',true).prop('required', false)
                 }
@@ -260,11 +280,6 @@
     </script>
 
     <script>
-        // var device_val = $("#id_device").val().split(",")
-        // device_val[0] = device_val[0].split("[")[1]
-        // device_val[device_val.length-1] = device_val[device_val.length-1].split("]")[0]
-        // $("#id_device").val(device_val)
-
         $(function() {
             $("input[name='device']").select2({
                 placeholder: "Search with (IP, Device Name, Device Alias, MAC, Sector ID, Circuit)",
