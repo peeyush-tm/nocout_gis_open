@@ -629,16 +629,16 @@ function GisPerformance() {
                             });
 
                             // Mouseout event on sub-station marker
-                            google.maps.event.addListener(ss_marker, 'mouseout', function() {
-                                var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-                                    condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+                            // google.maps.event.addListener(ss_marker, 'mouseout', function() {
+                            //     var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+                            //         condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
-                                if(condition1 || condition2) {
-                                    if(infowindow) {
-                                        infowindow.close();
-                                    }
-                                }
-                            });
+                            //     if(condition1 || condition2) {
+                            //         if(infowindow) {
+                            //             infowindow.close();
+                            //         }
+                            //     }
+                            // });
                         }
 
                         var ss_info = {
