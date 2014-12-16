@@ -735,86 +735,86 @@ function GisPerformance() {
                             allMarkersArray_gmap.push(ss_link_line);
                         }
 
-                        if(ss_marker_data.data.perf_value || sector_perf_val) {
-                            // Create Label for Perf Value
-                            var existing_index = -1;
-                            for (var x = 0; x < labelsArray.length; x++) {
-                                var move_listener_obj = labelsArray[x].moveListener_;
-                                if (move_listener_obj) {
-                                    var keys_array = Object.keys(move_listener_obj);
-                                    for(var z=0;z<keys_array.length;z++) {
-                                        if(typeof move_listener_obj[keys_array[z]] == 'object') {
-                                           if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-                                                if(($.trim(move_listener_obj[keys_array[z]]["name"]) == $.trim(ss_marker.name)) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == $.trim(ss_marker.bs_name))) {
-                                                    existing_index = x;
-                                                    if(window.location.pathname.indexOf("googleEarth") > -1) {
-                                                        labelsArray[x].setVisibility(false);
-                                                    } else if (window.location.pathname.indexOf("white_background") > -1) {
-                                                        labelsArray[x].destroy();
-                                                    } else {
-                                                        labelsArray[x].close();
-                                                    }
+                        // if(ss_marker_data.data.perf_value || sector_perf_val) {
+                        // Create Label for Perf Value
+                        var existing_index = -1;
+                        for (var x = 0; x < labelsArray.length; x++) {
+                            var move_listener_obj = labelsArray[x].moveListener_;
+                            if (move_listener_obj) {
+                                var keys_array = Object.keys(move_listener_obj);
+                                for(var z=0;z<keys_array.length;z++) {
+                                    if(typeof move_listener_obj[keys_array[z]] == 'object') {
+                                       if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+                                            if(($.trim(move_listener_obj[keys_array[z]]["name"]) == $.trim(ss_marker.name)) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == $.trim(ss_marker.bs_name))) {
+                                                existing_index = x;
+                                                if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                                    labelsArray[x].setVisibility(false);
+                                                } else if (window.location.pathname.indexOf("white_background") > -1) {
+                                                    labelsArray[x].destroy();
+                                                } else {
+                                                    labelsArray[x].close();
                                                 }
-                                           }
-                                        }
+                                            }
+                                       }
                                     }
                                 }
                             }
-                            
-                            /*Remove that label from array*/
-                            if (existing_index >= 0) {
-                                labelsArray.splice(existing_index, 1);
+                        }
+                        
+                        /*Remove that label from array*/
+                        if (existing_index >= 0) {
+                            labelsArray.splice(existing_index, 1);
+                        }
+                        
+                        var ss_val = ss_marker_data.data.perf_value ? ss_marker_data.data.perf_value : "N/A",
+                            perf_val = "";
+
+                        if(sector_marker) {
+                            if(ss_val && sector_perf_val) {
+                                perf_val = "("+ss_val+", "+sector_perf_val+")";
+                            } else if(ss_val && !sector_perf_val) {
+                                perf_val = "("+ss_val+", N/A)";
+                            } else if(!ss_val && sector_perf_val) {
+                                perf_val = "(N/A, "+sector_perf_val+")";
+                            } else {
+                                perf_val = "(N/A, N/A)";
                             }
-                            
-                            var ss_val = ss_marker_data.data.perf_value ? ss_marker_data.data.perf_value : "N/A",
-                                perf_val = "";
-
-                            if(sector_marker) {
-                                if(ss_val && sector_perf_val) {
-                                    perf_val = "("+ss_val+", "+sector_perf_val+")";
-                                } else if(ss_val && !sector_perf_val) {
-                                    perf_val = "("+ss_val+", N/A)";
-                                } else if(!ss_val && sector_perf_val) {
-                                    perf_val = "(N/A, "+sector_perf_val+")";
-                                } else {
-                                    perf_val = "";
-                                }
-                            } else if(sector_polygon) {
-                                if(ss_val) {
-                                    perf_val = "("+ss_val+")";
-                                }
-                            }
-
-                            if($.trim(perf_val)) {
-
-                                if(window.location.pathname.indexOf("googleEarth") > -1) {
-                                    ss_marker_data.perf_val = perf_val;
-                                    //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
-                                } else if (window.location.pathname.indexOf("white_background") > -1) {
-                                   var toolTip_infobox = new OpenLayers.Popup("perfLabel_"+ss_marker.name,
-                                        new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-                                        null,
-                                        perf_val,
-                                        false
-                                    );
-                                    ccpl_map.addPopup(toolTip_infobox);
-                                    toolTip_infobox.updateSize(); 
-                                    labelsArray.push(toolTip_infobox);
-                                } else {
-                                    var perf_infobox = perf_self.createInfoboxLabel(
-                                        perf_val,
-                                        perfLabelStyle,
-                                        10,
-                                        -10,
-                                        ss_marker.getPosition(),
-                                        false
-                                    );
-
-                                    perf_infobox.open(mapInstance, ss_marker);
-                                    labelsArray.push(perf_infobox);
-                                }
+                        } else if(sector_polygon) {
+                            if(ss_val) {
+                                perf_val = "("+ss_val+")";
                             }
                         }
+
+                        if($.trim(perf_val)) {
+
+                            if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                ss_marker_data.perf_val = perf_val;
+                                //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
+                            } else if (window.location.pathname.indexOf("white_background") > -1) {
+                               var toolTip_infobox = new OpenLayers.Popup("perfLabel_"+ss_marker.name,
+                                    new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
+                                    null,
+                                    perf_val,
+                                    false
+                                );
+                                ccpl_map.addPopup(toolTip_infobox);
+                                toolTip_infobox.updateSize(); 
+                                labelsArray.push(toolTip_infobox);
+                            } else {
+                                var perf_infobox = perf_self.createInfoboxLabel(
+                                    perf_val,
+                                    perfLabelStyle,
+                                    10,
+                                    -10,
+                                    ss_marker.getPosition(),
+                                    hide_flag
+                                );
+
+                                perf_infobox.open(mapInstance, ss_marker);
+                                labelsArray.push(perf_infobox);
+                            }
+                        }
+                        // }
                     }//Sub-Station Loop End
 
                     if (window.location.pathname.indexOf("white_background") > -1) {
