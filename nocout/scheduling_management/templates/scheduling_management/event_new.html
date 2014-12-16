@@ -199,18 +199,33 @@
                 disableFocus: true
             });
 
-            $('#id_start_on_time').timepicker().on('changeTime.timepicker', function(e) {
-                var start_on_time = $("#id_start_on_time").val();
-                var end_on_time = $("#id_end_on_time").val();
-                var device_ids = $("input[name='device']").val()
-                filter_selected_device(start_on_time, end_on_time, device_ids)
-
+            $('#id_start_on_time').timepicker().on('hide.timepicker', function(e) {
+                if (( Date.parse('01/01/2011 '+$('#id_start_on_time').val()) <
+                    Date.parse('01/01/2011 '+$('#id_end_on_time').val()) ) &&
+                    ($(this).val() != '') ){
+                    var start_on_time = $("#id_start_on_time").val();
+                    var end_on_time = $("#id_end_on_time").val();
+                    var device_ids = $("input[name='device']").val()
+                    filter_selected_device(start_on_time, end_on_time, device_ids)
+                }
+                else{
+                    $('#id_start_on_time').timepicker('setTime', $('#id_end_on_time').val());
+                    alert('Start time must be lesser than End time')
+                }
             });
-            $('#id_end_on_time').timepicker().on('changeTime.timepicker', function(e) {
-                var start_on_time = $("#id_start_on_time").val();
-                var end_on_time = $("#id_end_on_time").val();
-                var device_ids = $("input[name='device']").val()
-                filter_selected_device(start_on_time, end_on_time, device_ids)
+            $('#id_end_on_time').timepicker().on('hide.timepicker', function(e) {
+                if (( Date.parse('01/01/2011 '+$('#id_start_on_time').val()) <
+                    Date.parse('01/01/2011 '+$('#id_end_on_time').val()) ) &&
+                    ($(this).val() != '') ){
+                    var start_on_time = $("#id_start_on_time").val();
+                    var end_on_time = $("#id_end_on_time").val();
+                    var device_ids = $("input[name='device']").val()
+                    filter_selected_device(start_on_time, end_on_time, device_ids)
+                }
+                else{
+                    $('#id_end_on_time').timepicker('setTime', $('#id_start_on_time').val());
+                    alert('End time must be greater than Start time')
+                }
             });
 
             // filter devices from the select2 on change of the duration of event.

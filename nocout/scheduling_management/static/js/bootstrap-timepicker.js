@@ -264,7 +264,7 @@
            : '') +
            (this.showMeridian ?
              '<td class="separator">&nbsp;</td>'+
-             '<td class="meridian-column"><a href="#" data-action="toggleMeridian"><i class="icon-chevron-up">4</i>▲</a></td>'
+             '<td class="meridian-column"><a href="#" data-action="toggleMeridian"><i class="icon-chevron-up">▲</i></a></td>'
            : '') +
          '</tr>'+
          '<tr>'+
