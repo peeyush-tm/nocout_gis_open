@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
-from django.shortcuts import render
+from django.shortcuts import render_to_response
 
 from organization.models import Organization
 from device.models import Device, DeviceType, DeviceTypeService, DeviceTypeServiceDataSource
@@ -40,7 +40,7 @@ def raise_alarms(service_status_list, org):
         age = timezone.now() - obj.status_since
         level_list = obj.organization.escalationlevel_set.all()
         for level in level_list:
-            if age >= level.alarm_age:
+            if age.seconds >= level.alarm_age:
                 escalation_level = level
 
         if service_status.severity=='ok':
@@ -103,7 +103,7 @@ def alert_emails_for_bad_performance(alarm, level):
     context_dict['level'] = level
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
-    message = render('alarm_message/bad_message.html', context_dict)
+    message = render_to_response('alarm_message/bad_message.html', context_dict)
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
 
 
@@ -152,7 +152,7 @@ def alert_emails_for_good_performance(alarm, level):
     context_dict['level'] = level
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
-    message = render('alarm_message/good_message.html', context_dict)
+    message = render_to_response('alarm_message/good_message.html', context_dict)
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
 
 
@@ -182,8 +182,7 @@ def check_device_status():
         service_data_source_list = prepare_service_data_sources(service_list)
         for machine_name, device_list in machine_dict.items():
             service_status_list = ServiceStatus.objects.filter(device_name__in=device_list, service_name__in=service_list,
-                    data_source__in=service_data_source_list).using(machine_name)
-            print service_status_list
+                    data_source__in=service_data_source_list, ip_address__isnull=False).using(machine_name)
             if service_status_list:
                 raise_alarms.delay(service_status_list, org)
 
