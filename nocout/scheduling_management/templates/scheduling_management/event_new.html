@@ -308,47 +308,17 @@
                                     );
                             });
                     }
-                }, // end initSelction
+                },
                 formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
                 formatSelection: repoDeviceFormatSelection,  // omitted for brevity, see the source of this page
-            }).on("select2-selecting", function(el) {
-                check(el.val);
-                // location.href="/scheduling/get/event/detail/";
             });
-        }); // end function
+        });
         function repoDeviceFormatResult(device) {
           return device.device_alias;
         }
         function repoDeviceFormatSelection(device) {
           return device.device_alias;
         }
-
-        function check(ele) {
-            var ele_id = ele;
-            var repeat = $("#id_repeat option:selected").val();
-            var repeat_every = $("#id_repeat_every option:selected ").val();
-            var start_on = $("#id_start_on").val();
-            var end_never = $("#id_end_never").val();
-            var end_after = $("#id_end_after").val();
-            var end_on = $("#id_end_on").val();
-            $.ajax({
-                url: "/scheduling/get/event/detail/",
-                type: 'GET',
-                dataType: 'json',
-                contentType: 'application/json; charset=utf-8',
-                data: {
-                    ele_id: ele_id,
-                    repeat: repeat, repeat_every: repeat_every,
-                    start_on: start_on, end_never: end_never,
-                    end_after: end_after, end_on: end_on,
-                },
-                success: function (response) {
-                    console.log(response);
-                }
-            });
-        }
-
-
     </script>
 
 {% endblock %}
