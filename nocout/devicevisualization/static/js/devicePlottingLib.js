@@ -5447,7 +5447,7 @@ function devicePlottingClass_gmap() {
 									var layer = ss_marker.layer ? ss_marker.layer : ss_marker.layerReference;
 									layer.redraw();
 								} else {
-									var ss_live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
+									var ss_live_polled_icon = gmap_self.getMarkerImageBySize(newIcon,"other");
 									ss_marker.setOptions({
 										"icon" : ss_live_polled_icon
 									});
@@ -5468,7 +5468,7 @@ function devicePlottingClass_gmap() {
 									var layer = sector_marker.layer ? sector_marker.layer : sector_marker.layerReference;
 									layer.redraw();
 								} else {
-		                            var sector_live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
+		                            var sector_live_polled_icon = gmap_self.getMarkerImageBySize(newIcon,"other");
 			                        // Update sector marker icon
 									sector_marker.setOptions({
 										"icon" : sector_live_polled_icon,
@@ -5579,7 +5579,7 @@ function devicePlottingClass_gmap() {
 				newIcon = complete_polled_devices_icon[polled_devices_names[i]][nav_click_counter];
 			}
 
-			var live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
+			var live_polled_icon = gmap_self.getMarkerImageBySize(newIcon,"other");
 
 			if(ss_marker) {
 				ss_marker.setOptions({
@@ -5647,7 +5647,7 @@ function devicePlottingClass_gmap() {
 				newIcon = complete_polled_devices_icon[polled_devices_names[i]][nav_click_counter];
 			}
 
-			var live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
+			var live_polled_icon = gmap_self.getMarkerImageBySize(newIcon,"other");
 
 			if(ss_marker) {
 				ss_marker.setOptions({
