@@ -7,6 +7,15 @@ from nocout.utils import util as nocout_utils
 
 from performance.utils import util as perf_utils
 
+from nocout.settings import SERVICE_DATA_SOURCE
+
+from service.utils.util import service_data_sources
+
+##execute this globally
+service_data_sources()
+##execute this globally
+
+
 # misc utility functions
 
 def prepare_query(table_name=None,
@@ -178,12 +187,18 @@ def prepare_raw_alert_results(performance_data=None):
         data = indexed_alert_data[device_alert]
 
         if severity_level_check(list_to_check=[data['severity']]):
+            sds_name = data_source.strip().lower()
+            try:
+                sds_name = SERVICE_DATA_SOURCE[sds_name]['display_name']
+            except:
+                sds_name = " ".join(map(lambda a: a.title(), data_source.split("_")))
+
             device_events = {}
             device_events.update({
                 'device_name': device_name,
                 'severity': data['severity'],
                 'ip_address': data["ip_address"],
-                'data_source_name': " ".join(map(lambda a: a.title(), data_source.split("_"))),
+                'data_source_name': sds_name,
                 'current_value': data["current_value"],
                 'max_value': data["max_value"],
                 'min_value': data["min_value"],

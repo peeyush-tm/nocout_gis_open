@@ -26,7 +26,17 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.urlresolvers import reverse_lazy
 import re, ast
 from activity_stream.models import UserAction
+#service data sources mapped
+from nocout.settings import SERVICE_DATA_SOURCE
+
+#update the service data sources
+from service.utils.util import service_data_sources
+
 logger=logging.getLogger(__name__)
+
+##execute this globally to update SERVICE_DATA_SOURCE
+service_data_sources()
+##execute this globally
 
 
 def locate_devices(request , device_name = "default_device_name"):
@@ -2112,48 +2122,60 @@ class GISPerfData(View):
         processed = {}
 
         for perf in device_performance_info:
+            res, name, title = self.sanatize_datasource(perf['data_source'])
+            if not res:
+                continue
             if perf['data_source'] in processed:
                 continue
             processed[perf['data_source']] = []
             perf_info = {
-                "name": perf['data_source'],
-                "title": " ".join(perf['data_source'].split("_")).title(),
+                "name": name,
+                "title": title,
                 "show": 1,
                 "value": perf['current_value'],
             }
             device_info.append(perf_info)
 
         for perf in device_inventory_info:
+            res, name, title = self.sanatize_datasource(perf['data_source'])
+            if not res:
+                continue
             if perf['data_source'] in processed:
                 continue
             processed[perf['data_source']] = []
             perf_info = {
-                "name": perf['data_source'],
-                "title": " ".join(perf['data_source'].split("_")).title(),
+                "name": name,
+                "title": title,
                 "show": 1,
                 "value": perf['current_value'],
             }
             device_info.append(perf_info)
 
         for perf in device_status_info:
+            res, name, title = self.sanatize_datasource(perf['data_source'])
+            if not res:
+                continue
             if perf['data_source'] in processed:
                 continue
             processed[perf['data_source']] = []
             perf_info = {
-                "name": perf['data_source'],
-                "title": " ".join(perf['data_source'].split("_")).title(),
+                "name": name,
+                "title": title,
                 "show": 1,
                 "value": perf['current_value'],
             }
             device_info.append(perf_info)
 
         for perf in device_network_info:
+            res, name, title = self.sanatize_datasource(perf['data_source'])
+            if not res:
+                continue
             if perf['data_source'] in processed:
                 continue
             processed[perf['data_source']] = []
             perf_info = {
-                "name": perf['data_source'],
-                "title": "Latency" if ("rta" in perf['data_source'].lower()) else "Packet Loss",
+                "name": name,
+                "title": title,
                 "show": 1,
                 "value": perf['current_value'],
             }
@@ -2163,6 +2185,21 @@ class GISPerfData(View):
         device_info = remove_duplicate_dict_from_list(device_info)
 
         return device_info
+
+    def sanatize_datasource(self, data_source):
+        """
+
+        :return: False is condition does not match else return name,title
+        """
+        if data_source and data_source[:1].isalpha():
+            title = " ".join(data_source.split("_")).title()
+            name = data_source.strip().lower()
+            try:
+                title = SERVICE_DATA_SOURCE[name]['display_name']
+            except:
+                pass
+            return True, name, title
+        return False, False, False
 
     def get_substation_info(self, substation, substation_device):
         """ Get Sub Station information
