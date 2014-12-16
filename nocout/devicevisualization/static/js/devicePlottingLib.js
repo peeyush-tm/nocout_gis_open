@@ -4737,6 +4737,20 @@ function devicePlottingClass_gmap() {
 					whiteMapClass.showStateWiseData_wmap(data_to_plot_1);
 				} else {
 					data_for_filters = data_to_plot_1;
+					// If any infowindow open then close it.
+					if(infowindow) {
+						infowindow.close();
+					}
+					$('#infoWindowContainer').html("");
+				    if(!$('#infoWindowContainer').hasClass("hide")) {
+				    	$('#infoWindowContainer').addClass("hide");
+				    }
+
+				    if($(".windowIFrame").length) {
+				        $(".windowIFrame").remove();
+				    }
+
+
 					isCallCompleted = 1;
 					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
 					mapInstance.setZoom(5);
