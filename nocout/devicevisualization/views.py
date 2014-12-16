@@ -507,7 +507,6 @@ class PointToolClass(View):
                         result["message"] = "Name already exist. Please enter another"
 
                 except Exception as e:
-                    print "---------------------Exception---------------------"
                     logger.info(e.message)
             return HttpResponse(json.dumps(result))
         return HttpResponse(json.dumps(result))
@@ -573,14 +572,13 @@ class GetToolsData(View):
                 data_object['connected_point_type'] = point_data['connected_point_type']
                 data_object['connected_point_info'] = point_data['connected_point_info']
 
-                #Append data to point list
+                # Append data to point list
                 result["data"]["points"].append(data_object)
 
             result["success"] = 1
             result["message"] = "Tools Data Fetched Successfully"
         except Exception as e:
-            print "-------------Exception-------------"
-            print logger.info(e.message)
+            logger.info(e.message)
             result["success"] = 0
             result["data"]["points"] = []
             result["data"]["ruler"] = []
@@ -767,11 +765,8 @@ class KmzDelete(DeleteView):
             os.remove(filename(kmz_obj[0]['filename']))
             UserAction.objects.create(user_id=self.request.user.id, module='Kmz Report',
                         action='A kmz report is deleted - {}'.format(kmz_obj[0]['name']))
-            print "*********************************"
 
         except Exception as e:
-            print "***********************************"
-            print e.message
             logger.info(e.message)
         # delete entry from database
         KMZReport.objects.filter(id=report_id).delete()
@@ -984,117 +979,174 @@ class PointListingTable(BaseDatatableView):
 class GISPerfData(View):
     """ GIS Inventory performance data
 
-        :Parameters:
-            - 'base_stations' (str) - list of base stations in form of string i.e. [1, 2, 3, 4]
+        Parameters:
+            - base_stations (str) - list of base stations in form of string i.e. [1, 2, 3, 4]
 
-        :URL:
+        URL:
             - "/network_maps/perf_data/?base_stations=[3019]"
 
-        :Returns:
-            - 'performance_data' (dictionary) - dictionary containing perf data
+        Returns:
+            - performance_data (dictionary) - dictionary containing perf data
                         [
                             {
-                                "bs_id": 3019,
-                                "bs_name": "dharma_height_jai_raj",
-                                "bs_alias": "Dharma Height",
-                                "message": "Successfully fetched performance data.",
+                                "bs_name": "jaisalmar_jai_raj",
+                                "bhSeverity": "NA",
                                 "param": {
                                     "sector": [
                                         {
                                             "perf_info": [
                                                 {
-                                                    "title": "Uptime",
-                                                    "name": "uptime",
-                                                    "value": "6.0082333333",
+                                                    "title": "Uas",
+                                                    "name": "uas",
+                                                    "value": "0",
                                                     "show": 1
                                                 },
                                                 {
-                                                    "title": "Frequency",
-                                                    "name": "frequency",
-                                                    "value": "5830",
+                                                    "title": "Management Port On Odu",
+                                                    "name": "Management_Port_on_Odu",
+                                                    "value": "0.0063",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "Radio Interface",
+                                                    "name": "Radio_Interface",
+                                                    "value": "0.0000",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "Uptime",
+                                                    "name": "uptime",
+                                                    "value": "30127212",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "Service Throughput",
+                                                    "name": "service_throughput",
+                                                    "value": "1.61",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "Rssi",
+                                                    "name": "rssi",
+                                                    "value": "-61",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "Site Sync State",
+                                                    "name": "site_sync_state",
+                                                    "value": "independentUnit",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "2",
+                                                    "name": "2",
+                                                    "value": "Auto",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "3",
+                                                    "name": "3",
+                                                    "value": "Auto",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "1",
+                                                    "name": "1",
+                                                    "value": "forcefullDuplex100Mb",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "4",
+                                                    "name": "4",
+                                                    "value": "unknown_port_ode",
+                                                    "show": 1
+                                                },
+                                                {
+                                                    "title": "Latency",
+                                                    "name": "rta",
+                                                    "value": "45.133",
                                                     "show": 1
                                                 },
                                                 {
                                                     "title": "Packet Loss",
                                                     "name": "pl",
-                                                    "value": "4",
+                                                    "value": "0",
                                                     "show": 1
                                                 }
                                             ],
-                                            "sector_id": 3097,
-                                            "color": "rgba(255,192,0,0.97)",
-                                            "polled_frequency": "5830",
-                                            "radius": 0.2,
-                                            "perf_value": "6.0082333333",
-                                            "ip_address": "10.75.165.227",
+                                            "sector_id": 59,
+                                            "color": "",
+                                            "polled_frequency": "",
+                                            "radius": "",
+                                            "perf_value": "-61",
+                                            "ip_address": "115.112.159.195",
                                             "beam_width": null,
-                                            "icon": "static/img/icons/mobilephonetower10.png",
+                                            "icon": "media/uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png",
                                             "sub_station": [
                                                 {
-                                                    "device_name": "1",
+                                                    "device_name": "221",
                                                     "data": {
-                                                        "substation_device_ip_address": "10.75.165.227",
-                                                        "lat": 26.9138611111111,
-                                                        "antenna_height": 33,
-                                                        "perf_value": "6.0082333333",
-                                                        "markerUrl": "/home/priyesh/Documents/Workspace/nocout_gis/
-                                                            nocout/media/uploaded/icons/2014/09/25/P2P-loading4_3.png",
-                                                        "link_color": "rgba(255,192,0,0.97)",
-                                                        "lon": 75.8075,
+                                                        "substation_device_ip_address": "115.112.159.196",
+                                                        "lat": 26.91775,
+                                                        "antenna_height": 12,
+                                                        "perf_value": "-52",
+                                                        "markerUrl": "media/uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png",
+                                                        "link_color": "rgba(255, 216, 3, 0.98)",
+                                                        "lon": 70.9458611111111,
                                                         "param": {
                                                             "sub_station": [
                                                                 {
                                                                     "title": "SS IP",
                                                                     "name": "ss_ip",
-                                                                    "value": "10.75.165.227",
+                                                                    "value": "115.112.159.196",
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "SS MAC",
                                                                     "name": "ss_mac",
-                                                                    "value": "00:15:67:51:5e:34",
+                                                                    "value": "00:15:67:2e:94:0e",
                                                                     "show": 0
                                                                 },
                                                                 {
                                                                     "title": "SS Name",
                                                                     "name": "name",
-                                                                    "value": "091jaip623009280393",
+                                                                    "value": "091jais030007856076",
                                                                     "show": 0
                                                                 },
                                                                 {
                                                                     "title": "Circuit ID",
                                                                     "name": "cktid",
-                                                                    "value": "091JAIP623009280393",
+                                                                    "value": "091JAIS030007856076",
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "QOS(BW)",
                                                                     "name": "qos_bandwidth",
-                                                                    "value": 512,
+                                                                    "value": 2048,
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "Latitude",
                                                                     "name": "latitude",
-                                                                    "value": 26.9138611111111,
+                                                                    "value": 26.91775,
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "Longitude",
                                                                     "name": "longitude",
-                                                                    "value": 75.8075,
+                                                                    "value": 70.9458611111111,
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "Antenna Height",
                                                                     "name": "antenna_height",
-                                                                    "value": 33,
+                                                                    "value": 12,
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "Polarisation",
                                                                     "name": "polarisation",
-                                                                    "value": null,
+                                                                    "value": "NULL",
                                                                     "show": 1
                                                                 },
                                                                 {
@@ -1112,37 +1164,37 @@ class GISPerfData(View):
                                                                 {
                                                                     "title": "tower_height",
                                                                     "name": "tower_height",
-                                                                    "value": null,
+                                                                    "value": 40,
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "SS MountType",
                                                                     "name": "mount_type",
-                                                                    "value": null,
+                                                                    "value": "NULL",
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "Alias",
                                                                     "name": "alias",
-                                                                    "value": "091JAIP623009280393",
+                                                                    "value": "091JAIS030007856076",
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "SS Device ID",
                                                                     "name": "ss_device_id",
-                                                                    "value": 15864,
+                                                                    "value": 221,
                                                                     "show": 0
                                                                 },
                                                                 {
                                                                     "title": "Antenna Type",
                                                                     "name": "antenna_type",
-                                                                    "value": null,
+                                                                    "value": "NULL",
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "Ethernet Extender",
                                                                     "name": "ethernet_extender",
-                                                                    "value": null,
+                                                                    "value": "",
                                                                     "show": 1
                                                                 },
                                                                 {
@@ -1154,16 +1206,13 @@ class GISPerfData(View):
                                                                 {
                                                                     "title": "Customer Address",
                                                                     "name": "customer_address",
-                                                                    "value": "IDBI Federal Life Insurance Co. Ltd.
-                                                                        Office NO.802 at 8th Floor E-2, KJ Tower,,
-                                                                        Ashok Marg, C-Scheme,Jaipur,Rajasthan
-                                                                        India 302001",
+                                                                    "value": "Taj Jaisalmer Jodhpur Jaisalmer Road,, Jaisalmer, Rajasthan 345001,prasitha@dvois.com,Jaisalmer,Rajasthan India 345001",
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "Date of Acceptance",
                                                                     "name": "date_of_acceptance",
-                                                                    "value": null,
+                                                                    "value": "2013-04-01",
                                                                     "show": 1
                                                                 },
                                                                 {
@@ -1179,51 +1228,155 @@ class GISPerfData(View):
                                                                     "show": 1
                                                                 },
                                                                 {
+                                                                    "title": "Service Throughput",
+                                                                    "name": "service_throughput",
+                                                                    "value": "2.14",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Uas",
+                                                                    "name": "uas",
+                                                                    "value": "0",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Management Port On Odu",
+                                                                    "name": "Management_Port_on_Odu",
+                                                                    "value": "0.0045",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Radio Interface",
+                                                                    "name": "Radio_Interface",
+                                                                    "value": "0.0000",
+                                                                    "show": 1
+                                                                },
+                                                                {
                                                                     "title": "Uptime",
                                                                     "name": "uptime",
-                                                                    "value": "6.0082333333",
+                                                                    "value": "1174212",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Rssi",
+                                                                    "name": "rssi",
+                                                                    "value": "-52",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Cbw",
+                                                                    "name": "cbw",
+                                                                    "value": "5000",
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "Frequency",
                                                                     "name": "frequency",
-                                                                    "value": "5830",
+                                                                    "value": "5855",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Idu Sn",
+                                                                    "name": "idu_sn",
+                                                                    "value": "unknown_value",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Link Distance",
+                                                                    "name": "link_distance",
+                                                                    "value": "3300",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Mimo Diversity",
+                                                                    "name": "mimo_diversity",
+                                                                    "value": "unknown_value",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Producttype",
+                                                                    "name": "producttype",
+                                                                    "value": "WL1000-ACCESS/F58/ID",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Ssid",
+                                                                    "name": "ssid",
+                                                                    "value": "SELUCREH091JAIS03000",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Site Sync State",
+                                                                    "name": "site_sync_state",
+                                                                    "value": "notSupported",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "2",
+                                                                    "name": "2",
+                                                                    "value": "Auto",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "3",
+                                                                    "name": "3",
+                                                                    "value": "Auto",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "1",
+                                                                    "name": "1",
+                                                                    "value": "Auto",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "4",
+                                                                    "name": "4",
+                                                                    "value": "unknown_port_ode",
+                                                                    "show": 1
+                                                                },
+                                                                {
+                                                                    "title": "Latency",
+                                                                    "name": "rta",
+                                                                    "value": "56.952",
                                                                     "show": 1
                                                                 },
                                                                 {
                                                                     "title": "Packet Loss",
                                                                     "name": "pl",
-                                                                    "value": "4",
+                                                                    "value": "0",
                                                                     "show": 1
                                                                 }
                                                             ]
                                                         }
                                                     },
-                                                    "id": 15864,
-                                                    "name": "091jaip623009280393"
+                                                    "id": 221,
+                                                    "name": "091jais030007856076"
                                                 }
                                             ],
-                                            "device_name": "1",
+                                            "device_name": "220",
                                             "azimuth_angle": 0,
-                                            "pl": "4"
-                                        },
-                                        {
-                                            "perf_info": [],
-                                            "sector_id": 3104,
-                                            "color": "",
-                                            "polled_frequency": "",
-                                            "radius": "",
-                                            "perf_value": [],
-                                            "ip_address": "10.235.2.19",
-                                            "beam_width": null,
-                                            "icon": "static/img/icons/mobilephonetower10.png",
-                                            "sub_station": [],
-                                            "device_name": "35",
-                                            "azimuth_angle": 0,
-                                            "pl": ""
+                                            "pl": "0"
                                         }
                                     ]
-                                }
+                                },
+                                "bh_info": [
+                                    {
+                                        "show": 1,
+                                        "name": "pl",
+                                        "value": "NA",
+                                        "title": "Packet Drop"
+                                    },
+                                    {
+                                        "show": 1,
+                                        "name": "rta",
+                                        "value": "NA",
+                                        "title": "Latency"
+                                    }
+                                ],
+                                "bs_id": 57,
+                                "bs_alias": "Jaisalmar",
+                                "message": "Successfully fetched performance data."
                             }
                         ]
     """
@@ -1351,16 +1504,42 @@ class GISPerfData(View):
         return HttpResponse(json.dumps(eval(str(performance_data))))
 
     def get_backhaul_info(self, bh_device):
+        """ Get Sector performance info
+
+            Parameters:
+                - bh_device (<class 'device.models.Device'>) - backhaul device for e.g. 10.175.102.3
+
+            Returns:
+               - backhaul_data (dictionary) - dictionary containing backhaul performance data
+                                                {
+                                                    'bhSeverity': 'NA',
+                                                    'bh_info': [
+                                                        {
+                                                            'title': 'PacketDrop',
+                                                            'name': 'pl',
+                                                            'value': 'NA',
+                                                            'show': 1
+                                                        },
+                                                        {
+                                                            'title': 'Latency',
+                                                            'name': 'rta',
+                                                            'value': 'NA',
+                                                            'show': 1
+                                                        }
+                                                    ]
+                                                }
+        """
+
         # backhaul data
         backhaul_data = dict()
         backhaul_data['bh_info'] = list()
+        backhaul_data['bhSeverity'] = "NA"
 
         # backhaul pl dictionary
         pl_dict = dict()
         pl_dict['name'] = "pl"
         pl_dict['show'] = 1
         pl_dict['title'] = "Packet Drop"
-        pl_dict['bhSeverity'] = "NA"
 
         # backhaul rta dictionary
         rta_dict = dict()
@@ -1368,35 +1547,33 @@ class GISPerfData(View):
         rta_dict['show'] = 1
         rta_dict['title'] = "Latency"
 
-        if bh_device.is_added_to_nms == 1:
-            # pl
-            try:
-                pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
-                                                                data_source='pl').using(
-                                                                alias=bh_device.machine.name)[0].current_value
-            except Exception as e:
-                logger.info("PL not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
-                                                                                        e.message))
+        # pl
+        try:
+            pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
+                                                            data_source='pl').using(
+                                                            alias=bh_device.machine.name)[0].current_value
+        except Exception as e:
+            pl_dict['value'] = "NA"
+            logger.info("PL not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
+                                                                                    e.message))
 
-            # rta
-            try:
-                if bh_device.is_added_to_nms:
-                    pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
-                                                                    data_source='rta').using(
-                                                                    alias=bh_device.machine.name)[0].current_value
-                else:
-                    pl_dict['value'] = "NA"
-            except Exception as e:
-                logger.info("RTA not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
-                                                                                         e.message))
+        # rta
+        try:
+            rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
+                                                            data_source='rta').using(
+                                                            alias=bh_device.machine.name)[0].current_value
+        except Exception as e:
+            rta_dict['value'] = "NA"
+            logger.info("RTA not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
+                                                                                     e.message))
 
-            # bh severity
-            try:
-                pl_dict['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device).using(
-                                                                     alias=bh_device.machine.name)[0].severity
-            except Exception as e:
-                logger.info("BH Severity not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
-                                                                                                 e.message))
+        # bh severity
+        try:
+            backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device).using(
+                                                                       alias=bh_device.machine.name)[0].severity
+        except Exception as e:
+            logger.info("BH Severity not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
+                                                                                             e.message))
 
         # append 'pl_dict' to 'bh_info' list
         backhaul_data['bh_info'].append(pl_dict)
@@ -1409,11 +1586,11 @@ class GISPerfData(View):
     def get_sector_performance_info(self, device):
         """ Get Sector performance info
 
-            :Parameters:
-                - 'device' (<class 'device.models.Device'>) - device name
+            Parameters:
+                - device (<class 'device.models.Device'>) - device name
 
-            :Returns:
-               - 'performance_data' (dictionary) - dictionary containing sector performance data
+            Returns:
+               - performance_data (dictionary) - dictionary containing sector performance data
                                                     {
                                                         'perf_info': [
 
@@ -1587,7 +1764,6 @@ class GISPerfData(View):
                         else:
                             pass
                     elif ts_type == "ping":
-                        print "*************************** Enter in ping - "
                         icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
                     else:
                         pass
@@ -1603,17 +1779,32 @@ class GISPerfData(View):
         return performance_data
 
     def get_icon_for_numeric_service(self, th_ranges=None, th_icon_settings=None, value=None):
+        """
+            Get device icon corresponding to fetched performance value
+            Parameters:
+                - th_ranges (<class 'inventory.models.ThresholdConfiguration'>) - threshold configuration object
+                                                                                  for e.g. Wimax DL RSSI
+                - th_icon_settings (unicode) - icon settings in json format for e.g.
+                        [
+                            {
+                                'icon_settings1': u'uploaded/icons/2014-09-26/2014-09-26-11-56-11_SM-GIF.gif'
+                            },
+                            {
+                                'icon_settings2': u'uploaded/icons/2014-10-26/2014-10-26-14-59-40_SM-Red.png'
+                            },
+                            {
+                                'icon_settings3': u'uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png'
+                            }
+                        ]
+                - value (str) - performance value for e.g "-57"
+
+            Returns:
+                - icon (str) - icon location i.e "media/uploaded/icons/2014/09/18/wifi3.png"
+        """
         # default image to be loaded
         image_partial = "icons/mobilephonetower10.png"
 
-        # icon
-        icon = str(image_partial)
-        print "***************************** th_ranges - ", th_ranges
-        print "***************************** th_icon_settings - ", th_icon_settings
-        print "***************************** value - ", type(value), value
-
         if th_ranges and th_icon_settings and len(str(value)):
-            print "************************ Enter here - "
             try:
                 if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
                     icon_settings = eval(th_icon_settings)
@@ -1711,16 +1902,34 @@ class GISPerfData(View):
         # icon to be send in response
         icon = str(img_url)
 
-        print "************************************ icon1 - ", icon
-
         return icon
 
     def get_icon_for_string_service(self, th_ranges=None, th_icon_settings=None, value=None):
+        """
+            Get device icon corresponding to fetched performance value
+            Parameters:
+                - th_ranges (<class 'inventory.models.ThresholdConfiguration'>) - threshold configuration object
+                                                                                  for e.g. Wimax DL RSSI
+                - th_icon_settings (unicode) - icon settings in json format for e.g.
+                        [
+                            {
+                                'icon_settings1': u'uploaded/icons/2014-09-26/2014-09-26-11-56-11_SM-GIF.gif'
+                            },
+                            {
+                                'icon_settings2': u'uploaded/icons/2014-10-26/2014-10-26-14-59-40_SM-Red.png'
+                            },
+                            {
+                                'icon_settings3': u'uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png'
+                            }
+                        ]
+                - value (str) - performance value for e.g "-57"
+
+            Returns:
+                - icon (str) - icon location i.e "media/uploaded/icons/2014/09/18/wifi3.png"
+        """
+
         # default image to be loaded
         image_partial = "icons/mobilephonetower10.png"
-
-        # icon
-        icon = str(image_partial)
 
         if th_ranges and th_icon_settings and value:
             try:
@@ -1825,13 +2034,13 @@ class GISPerfData(View):
     def get_device_info(self, device_name, machine_name, substation=False):
         """ Get Sector/Sub Station device information
 
-            :Parameters:
-                - 'device_name' (unicode) - device name
-                - 'machine_name' (unicode) - machine name
-                - 'substation' (bool) - tell whether device is substation device or not
+            Parameters:
+                - device_name (unicode) - device name
+                - machine_name (unicode) - machine name
+                - substation (bool) - tell whether device is substation device or not
 
-            :Returns:
-               - 'device_info' (list) - list of dictionaries containing device static or polled data
+            Returns:
+               - device_info (list) - list of dictionaries containing device static or polled data
                                                     [
                                                         {
                                                             'show': 1,
@@ -2167,12 +2376,12 @@ class GISPerfData(View):
     def get_substation_info(self, substation, substation_device):
         """ Get Sub Station information
 
-            :Parameters:
-                - 'substation' (<class 'inventory.models.SubStation'>) - substation object
-                - 'substation_device' (<class 'device.models.Device'>) - substation device object
+            Parameters:
+                - substation (<class 'inventory.models.SubStation'>) - substation object
+                - substation_device (<class 'device.models.Device'>) - substation device object
 
-            :Returns:
-               - 'substation_info' (dict) - dictionary containing substation data
+            Returns:
+               - substation_info (dict) - dictionary containing substation data
                                                     {
                                                         'antenna_height': 33.0,
                                                         'link_color': u'rgba(255,
@@ -2435,7 +2644,6 @@ class GISPerfData(View):
             except Exception as e:
                 logger.info("Service Type not exist. Exception: ", e.message)
 
-            print "***************************** service_type1 - ", service_type
             # icon
             icon = ""
 
@@ -2452,8 +2660,6 @@ class GISPerfData(View):
                 if len(performance_value):
                     # live polled value of device service
                     value = ast.literal_eval(str(performance_value))
-
-                    print "***************************** service_type1 - ", service_type
 
                     # get appropriate icon
                     if ts_type == "normal":
@@ -2479,13 +2685,13 @@ class GISPerfData(View):
     def get_device_polled_frequency(self, device_name, machine_name, freeze_time):
         """ Get device polled frequency
 
-            :Parameters:
-                - 'device_name' (unicode) - device name
-                - 'machine_name' (unicode) - machine name
-                - 'freeze_time' (str) - freeze time i.e. '0'
+            Parameters:
+                - device_name (unicode) - device name
+                - machine_name (unicode) - machine name
+                - freeze_time (str) - freeze time i.e. '0'
 
-            :Returns:
-               - 'device_frequency' (str) - device frequency, e.g. "34525"
+            Returns:
+               - device_frequency (str) - device frequency, e.g. "34525"
         """
 
         # device frequency
@@ -2516,13 +2722,13 @@ class GISPerfData(View):
     def get_device_pl(self, device_name, machine_name, freeze_time):
         """ Get device pl
 
-            :Parameters:
-                - 'device_name' (unicode) - device name
-                - 'machine_name' (unicode) - machine name
-                - 'freeze_time' (str) - freeze time i.e. '0'
+            Parameters:
+                - device_name (unicode) - device name
+                - machine_name (unicode) - machine name
+                - freeze_time (str) - freeze time i.e. '0'
 
-            :Returns:
-               - 'device_frequency' (str) - device frequency, e.g. "34525"
+            Returns:
+               - device_frequency (str) - device frequency, e.g. "34525"
         """
 
         # device packet loss
@@ -2557,13 +2763,13 @@ class GISPerfData(View):
     def get_frequency_color_and_radius(self, device_frequency, device_pl):
         """ Get device pl
 
-            :Parameters:
-                - 'device_frequency' (unicode) - device frequency, e.g 5830
-                - 'device_pl' (unicode) - device pl (packet loss) value, e.g. 4
+            Parameters:
+                - device_frequency (unicode) - device frequency, e.g 5830
+                - device_pl (unicode) - device pl (packet loss) value, e.g. 4
 
-            :Returns:
-                - 'device_link_color' (unicode) - device link color, e.g. rgba(255,192,0,0.97)
-                - 'radius' (float) - radius, e.g 2.0
+            Returns:
+                - device_link_color (unicode) - device link color, e.g. rgba(255,192,0,0.97)
+                - radius (float) - radius, e.g 2.0
         """
 
         # device link color
@@ -2607,12 +2813,12 @@ class GISPerfData(View):
     def get_thematic_settings(self, device_technology):
         """ Get device pl
 
-            :Parameters:
-                - 'device_technology' (<class 'device.models.DeviceTechnology'>) - device technology object
-                - 'ts_type' (unicode) - thematic settings type i.e 'ping' or 'normal'
+            Parameters:
+                - device_technology (<class 'device.models.DeviceTechnology'>) - device technology object
+                - ts_type (unicode) - thematic settings type i.e 'ping' or 'normal'
 
-            :Returns:
-               - 'user_thematics' (<class 'inventory.models.UserPingThematicSettings'>) - thematic settings object
+            Returns:
+               - user_thematics (<class 'inventory.models.UserPingThematicSettings'>) - thematic settings object
         """
 
         # thematic settings type i.e. 'ping' or 'normal'
@@ -2648,8 +2854,8 @@ class GISPerfData(View):
     def get_performance_value(self, perf_payload, ts_type):
         """ Get device pl
 
-            :Parameters:
-                - 'perf_payload' (dict) - performance payload dictionary
+            Parameters:
+                - perf_payload (dict) - performance payload dictionary
                                             {
                                                 'device_service_name': u'radwin_uptime',
                                                 'machine_name': u'default',
@@ -2657,10 +2863,10 @@ class GISPerfData(View):
                                                 'device_service_data_source': u'uptime',
                                                 'device_name': u'1'
                                             }
-                - 'ts_type' (unicode) - thematic settings type i.e 'ping' or 'normal'
+                - ts_type (unicode) - thematic settings type i.e 'ping' or 'normal'
 
-            :Returns:
-                - 'performance_value' (unicode) - performance value, e.g. 6.0082333333
+            Returns:
+                - performance_value (unicode) - performance value, e.g. 6.0082333333
         """
 
         # device name
