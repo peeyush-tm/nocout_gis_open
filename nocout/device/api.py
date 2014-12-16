@@ -20,10 +20,8 @@ from site_instance.models import SiteInstance
 from performance.models import Topology
 from sitesearch.views import prepare_raw_bs_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, DEBUG
-
 from django.db import connections
 
-from pprint import pprint
 logger = logging.getLogger(__name__)
 
 global gis_information
@@ -186,11 +184,11 @@ class DeviceFilterApi(View):
 class LPServicesApi(View):
     """
         API for fetching the services and data sources for list of devices.
-        :Parameters:
-            - 'devices' (list) - list of devices
+        Parameters:
+            - devices (list) - list of devices
 
-        :Returns:
-           - 'result' (dict) - dictionary of devices with associates services and data sources
+        Returns:
+           - result (dict) - dictionary of devices with associates services and data sources
            {
                 "success" : 1,
                 "message" : "Services Fetched Successfully",
@@ -324,13 +322,13 @@ class LPServicesApi(View):
 class FetchLPDataApi(View):
     """
         API for fetching the service live polled value
-        :Parameters:
-            - 'device' (list) - list of devices
-            - 'service' (list) - list of services
-            - 'datasource' (list) - list of data sources
+        Parameters:
+            - device (list) - list of devices
+            - service (list) - list of services
+            - datasource (list) - list of data sources
 
-        :Returns:
-           - 'result' (dict) - dictionary containing list of live polled values and icon urls
+        Returns:
+           - result (dict) - dictionary containing list of live polled values and icon urls
             {
                 "success" : 1,
                 "message" : "Live Polling Data Fetched Successfully",
@@ -441,11 +439,11 @@ class FetchLPDataApi(View):
 class FetchLPSettingsApi(View):
     """
         API for fetching the service live polled value
-        :Parameters:
-            - 'technology' (unicode) - id of technology
+        Parameters:
+            - technology (unicode) - id of technology
 
-        :Returns:
-           - 'result' (dict) - dictionary containing list of live polling settings
+        Returns:
+           - result (dict) - dictionary containing list of live polling settings
             {
                 "message": "Successfully fetched live polling settings.",
                 "data": {
@@ -512,11 +510,11 @@ class FetchLPSettingsApi(View):
 class FetchThresholdConfigurationApi(View):
     """
         API for fetching the service live polled value
-        :Parameters:
-            - 'technology' (unicode) - id of technology
+        Parameters:
+            - technology (unicode) - id of technology
 
-        :Returns:
-           - 'result' (dict) - dictionary containing list of threshold configurations
+        Returns:
+           - result (dict) - dictionary containing list of threshold configurations
             {
                 "message": "Successfully fetched threshold configurations.",
                 "data": {
@@ -591,11 +589,11 @@ class FetchThresholdConfigurationApi(View):
 class FetchThematicSettingsApi(View):
     """
         API for fetching the service live polled value
-        :Parameters:
-            - 'technology' (unicode) - id of technology
+        Parameters:
+            - technology (unicode) - id of technology
 
-        :Returns:
-           - 'result' (dict) - dictionary containing list of threshold configurations
+        Returns:
+           - result (dict) - dictionary containing list of threshold configurations
             {
                 "message": "Successfully fetched threshold configurations.",
                 "data": {
@@ -661,7 +659,6 @@ class FetchThematicSettingsApi(View):
                 ts_temp['id'] = ts.id
                 ts_temp['value'] = ts.alias
                 result['data']['thematic_settings'].append(ts_temp)
-                print "********************************* ts_temp - ", ts_temp
             result['message'] = "Successfully fetched thematic settings."
             result['success'] = 1
         else:
@@ -677,7 +674,6 @@ class FetchThematicSettingsApi(View):
                                     ts_temp['id'] = ts.id
                                     ts_temp['value'] = ts.alias
                                     result['data']['thematic_settings'].append(ts_temp)
-                                    print "********************************* ts_temp - ", ts_temp
             result['message'] = "Successfully fetched thematic settings."
             result['success'] = 1
         return HttpResponse(json.dumps(result))
@@ -685,105 +681,94 @@ class FetchThematicSettingsApi(View):
 
 class BulkFetchLPDataApi(View):
     """
-        API for fetching the service live polled value
-        :Parameters:
-            - 'ts_template' (unicode) - threshold configuration template id
-            - 'devices' (list) - list of devices
-        :Returns:
+        API for fetching the service live polled values
+        Parameters:
+            - ts_template (unicode) - threshold configuration template id for e.g. 23
+            - devices (list) - list of devices for e.g. ["3335","1714","2624","2622"]
+            - service_type (unicode) - type of service i.e 'ping' or 'normal'
+
+        Returns:
            - 'result' (dict) - dictionary containing list of live polled values and icon urls
-            {
-                "message": "Successfully fetched.",
-                "data": {
-                    "devices": {
-                        "115.114.15.188": {
-                            "message": "Successfully fetch data for '115.114.15.188'.",
-                            "value": "-62",
-                            "icon": "/media/uploaded/icons/2014/08/19/blinking_dot.gif"
+                    {
+                        "message": "Successfully fetched.",
+                        "data": {
+                            "devices": {
+                                "2622": {
+                                    "message": "Successfully fetch data for '2622'.",
+                                    "value": [
+                                        "-57"
+                                    ],
+                                    "icon": "media/uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png"
+                                },
+                                "2624": {
+                                    "message": "Successfully fetch data for '2624'.",
+                                    "value": "NA",
+                                    "icon": "media/uploaded/icons/2014/09/18/wifi3.png"
+                                },
+                                "3335": {
+                                    "message": "Successfully fetch data for '3335'.",
+                                    "value": "NA",
+                                    "icon": "media/uploaded/icons/2014/09/18/wifi3.png"
+                                },
+                                "1714": {
+                                    "message": "Successfully fetch data for '1714'.",
+                                    "value": [
+                                        "-66"
+                                    ],
+                                    "icon": "media/uploaded/icons/2014-10-26/2014-10-26-14-59-40_SM-Red.png"
+                                }
+                            }
                         },
-                        "121.244.195.36": {
-                            "message": "Successfully fetch data for '121.244.195.36'.",
-                            "value": "",
-                            "icon": "/static/img/icons/wifi7.png"
-                        },
-                        "121.240.119.108": {
-                            "message": "Successfully fetch data for '121.240.119.108'.",
-                            "value": "",
-                            "icon": "/static/img/icons/wifi7.png"
-                        },
-                        "115.112.161.68": {
-                            "message": "Successfully fetch data for '115.112.161.68'.",
-                            "value": "-61",
-                            "icon": "/media/uploaded/icons/2014/08/19/blinking_dot.gif"
-                        },
-                        "121.240.226.243": {
-                            "message": "Successfully fetch data for '121.240.226.243'.",
-                            "value": "",
-                            "icon": "/static/img/icons/wifi7.png"
-                        },
-                        "115.111.230.212": {
-                            "message": "Successfully fetch data for '115.111.230.212'.",
-                            "value": "",
-                            "icon": "/static/img/icons/wifi7.png"
-                        },
-                        "ptp_sectorstation": {
-                            "message": "Successfully fetch data for 'ptp_sectorstation'.",
-                            "value": "",
-                            "icon": "/static/img/icons/wifi7.png"
-                        },
-                        "14.141.83.236": {
-                            "message": "Successfully fetch data for '14.141.83.236'.",
-                            "value": "",
-                            "icon": "/static/img/icons/wifi7.png"
-                        },
-                        "14.141.37.190": {
-                            "message": "Successfully fetch data for '14.141.37.190'.",
-                            "value": "",
-                            "icon": "/static/img/icons/wifi7.png"
-                        },
-                        "14.141.111.132": {
-                            "message": "Successfully fetch data for '14.141.111.132'.",
-                            "value": "-56",
-                            "icon": "/media/uploaded/icons/2014/08/19/blinking_dot.gif"
-                        }
+                        "success": 1
                     }
-                },
-                "success": 1
-            }
     """
 
     def get(self, request):
         """Returns json containing live polling values and icon urls for bulk devices"""
 
-        # converting 'json' into python object
+        # get service type i.e. 'ping' or 'normal'
         service_type = self.request.GET.get('service_type', 'normal')
+
+        # devices list
         devices = eval(str(self.request.GET.get('devices', None)))
+
+        # thematic settings template id
         ts_template_id = int(self.request.GET.get('ts_template', None))
+
+        # exceptional services i.e. 'ss' services which get service data from 'bs' instead from 'ss'
         exceptional_services = ['wimax_dl_cinr', 'wimax_ul_cinr', 'wimax_dl_rssi',
                                 'wimax_ul_rssi', 'wimax_ul_intrf', 'wimax_dl_intrf',
                                 'wimax_modulation_dl_fec', 'wimax_modulation_ul_fec',
                                 'cambium_ul_rssi', 'cambium_ul_jitter', 'cambium_reg_count',
                                 'cambium_rereg_count']
 
+        # service for which live polling runs
         service = ""
+
+        # data source for which live polling runs
         data_source = ""
+
+        # live polling template id
         lp_template_id = ""
 
-        # selected thematic setting
+        # get thematic settings corresponding to the 'service_type'
         if service_type == 'ping':
+            # thematic settings (ping)
             ts = PingThematicSettings.objects.get(pk=ts_template_id)
             service = ts.service
             data_source = ts.data_source
 
-            # result dictionary to be returned as output of api
+            # result dictionary which needs to be returned as an output of api
             result = {
                 "success": 0,
                 "message": "Failed to fetch thematic settings.",
                 "data": {}
             }
         else:
+            # thematic settings (normal)
             ts = ThematicSettings.objects.get(pk=ts_template_id)
 
-            # getting live polling template
+            # live polling template id
             lp_template_id = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id).live_polling_template.id
 
             # getting service and data source from live polling settings
@@ -791,19 +776,21 @@ class BulkFetchLPDataApi(View):
                 service = LivePollingSettings.objects.get(pk=lp_template_id).service
                 data_source = LivePollingSettings.objects.get(pk=lp_template_id).data_source
             except Exception as e:
-                logger.info("No service and data source corresponding to this live pollig setting template.")
+                logger.info("No service and data source corresponding to this live polling setting template.")
 
-            # result dictionary to be returned as output of api
+            # result dictionary which needs to be returned as an output of api
             result = {
                 "success": 0,
                 "message": "Failed to fetch live polling data.",
                 "data": {}
             }
+
+            # bs device to with 'ss' is connected (applied only if 'service' is from 'exceptional_services')
             bs_device, site_name = None, None
 
         result['data']['devices'] = dict()
 
-        # get machines associated with current devices
+        # get machines associated with the current devices
         machine_list = []
         for device in devices:
             try:
@@ -811,6 +798,8 @@ class BulkFetchLPDataApi(View):
                 machine_list.append(machine)
             except Exception as e:
                 logger.info(e.message)
+
+        # remove redundant machine id's from 'machine_list'
         machines = set(machine_list)
 
         try:
@@ -827,6 +816,7 @@ class BulkFetchLPDataApi(View):
                 # current machine devices
                 current_devices_list = []
 
+                # fetch devices associated with current machine
                 for device_name in devices:
                     try:
                         device = Device.objects.get(device_name=device_name)
@@ -835,53 +825,83 @@ class BulkFetchLPDataApi(View):
                     except Exception as e:
                         logger.info(e.message)
 
+                # get site instances associated with the current devices
                 site_instances_list = []
+
+                # fetch all site instances associated with the devices in 'current_devices_list'
                 for device_name in current_devices_list:
                     try:
                         device = Device.objects.get(device_name=device_name)
+
+                        # if service is from 'exceptional_services'
+                        # than get base station and it's device to which 'ss' device is connected from 'Topology'
                         if str(service) in exceptional_services:
+                            # mac address of device
                             mac_address = device.mac_address
-                            mac = device.mac_address.upper()
+                            mac = mac_address.lower()
+
+                            # base station device name to which 'ss' is connected
                             bs_device = Topology.objects.get(connected_device_mac=mac)
+
+                            # get base station device
                             device = Device.objects.get(device_name=bs_device.device_name)
+
                         if device.site_instance.id not in site_instances_list:
+                            site_instances_list.append(device.site_instance.id)
+
+                            # append device site instance id in 'site_instances_list' list
                             site_instances_list.append(device.site_instance.id)
                     except Exception as e:
                         logger.info(e.message)
 
+                # remove redundant site instance id's from 'site_instances_list'
                 sites = set(site_instances_list)
+
                 site_list = []
                 for site_id in sites:
+                    # 'bs' and 'ss' macs mapping dictionary
+                    # for e.g. 'bs_name_ss_mac_mapping': {
+                    #                                     u'1527': [
+                    #                                         u'00: 02: 73: 93: 05: 4f',
+                    #                                         u'00: 02: 73: 90: 80: 98'
+                    #                                    ]}
                     bs_name_ss_mac_mapping = {}
+
+                    # 'ss' name and mac mapping dictionary
+                    # for e.g. 'ss_name_mac_mapping': {
+                    #                                     u'3597': u'00: 02: 73: 91: 2a: 24',
+                    #                                     u'3769': u'00: 02: 73: 93: 06: d3',
+                    #                                     u'3594': u'00: 02: 73: 90: 24: 88',
+                    #                                     u'3047': u'00: 02: 73: 93: 05: 4f'
+                    #                                 }
                     ss_name_mac_mapping = {}
+
+                    # list of devices associated with current site instance
                     devices_in_current_site = []
-                    lp_data = {'dr_master_slave': {}}
+
                     for device_name in current_devices_list:
                         try:
-                            slave_dr_site_id, slave_dr_site = None, None
                             device = Device.objects.get(device_name=device_name)
-                            if str(service) in ['wimax_pmp1_utilization', 'wimax_pmp2_utilization']:
-                                slave_dr_site_id = Sector.objects.get(
-                                    sector_configured_on_id=device.id).dr_configured_on_id
-                                if slave_dr_site_id:
-                                    slave_dr_site = Device.objects.get(id=slave_dr_site_id).device_name
-                                # Send both dr sites (master/slave) to live polling
-                                devices_in_current_site.append(device.device_name)
-                                if slave_dr_site:
-                                    devices_in_current_site.append(slave_dr_site)
-                                    lp_data['dr_master_slave'].update({device.device_name: slave_dr_site})
                             if str(service) in exceptional_services:
+                                # 'ss' device mac address
                                 device_ss_mac = device.mac_address
+
+                                # insert data in 'ss_name_mac_mapping' dictionary
                                 ss_name_mac_mapping[device.device_name] = device_ss_mac
-                                mac = device.mac_address
-                                mac = mac.upper()
-                                bs_device = Topology.objects.get(connected_device_mac=mac)
+
+                                # get base station device name from 'Topology'
+                                bs_device = Topology.objects.get(connected_device_mac=device_ss_mac.lower())
+
+                                # get base station device
                                 device = Device.objects.get(device_name=bs_device.device_name)
                                 if device.device_name in bs_name_ss_mac_mapping.keys():
                                     bs_name_ss_mac_mapping[device.device_name].append(device_ss_mac)
                                 else:
                                     bs_name_ss_mac_mapping[device.device_name] = [device_ss_mac]
+
+                                # base station device site instance id
                                 bs_site_id = device.site_instance.id
+
                                 if bs_site_id == site_id and device.device_name not in devices_in_current_site:
                                     devices_in_current_site.append(device.device_name)
                             elif device.site_instance.id == site_id:
@@ -890,16 +910,34 @@ class BulkFetchLPDataApi(View):
                             logger.info(e.message)
 
                     # live polling data dictionary (payload for nocout.py api call)
+                    # for e.g.
+                    # lp_data -
+                    # {
+                    #   'device_list': [u'1598'],
+                    #   'bs_name_ss_mac_mapping': {u'1598': [u'00:02:73:90:1f:6e']},
+                    #   'service_list': ['wimax_dl_rssi'],
+                    #   'ss_name_mac_mapping': {
+                    #                              u'2622': u'00:02:73:90:1f:6e',
+                    #                              u'2624': u'00:02:73:92:9c:12',
+                    #                              u'3335': u'00:02:73:91:99:1d'
+                    #                          },
+                    #   'mode': 'live',
+                    #   'dr_master_slave': {},
+                    #   'ds': ['dl_rssi']
+                    # }
+                    lp_data = dict()
                     lp_data['mode'] = "live"
                     lp_data['bs_name_ss_mac_mapping'] = bs_name_ss_mac_mapping
                     lp_data['ss_name_mac_mapping'] = ss_name_mac_mapping
                     lp_data['device_list'] = devices_in_current_site
+
                     if service_type == 'ping':
                         lp_data['service_list'] = [str(service)]
                         lp_data['ds'] = [str(data_source)]
                     else:
                         lp_data['service_list'] = [str(lp_template.service.name)]
                         lp_data['ds'] = [str(lp_template.data_source.name)]
+
                     site = SiteInstance.objects.get(pk=int(site_id))
                     site_list.append({
                         'username': site.username,
@@ -933,29 +971,39 @@ class BulkFetchLPDataApi(View):
 
                 # if response(r) is given by post request than process it further to get success/failure messages
                 if len(response_dict):
+                    # get devices from 'response_dict'
                     devices_in_response = response_dict.get('value')
 
-                    for device_dict in devices_in_response:
-                        device_name = ""
-                        device_value = ""
+                    for device_name in devices:
+                        # device object
+                        device_obj = ""
+                        try:
+                            device_obj = Device.objects.get(device_name=device_name)
+                        except Exception as e:
+                            logger.info("Device not exist. Exception: ", e.message)
 
-                        for device, val in device_dict.items():
-                            device_name = device
-                            try:
-                                device_value = val[0]
-                            except Exception as e:
-                                device_value = ""
-                                logger.info(e.message)
+                        device_value = "NA"
+
+                        # check whether device present in 'devices_in_response'
+                        # if present then fetch it's live polled value
+                        for device_dict in devices_in_response:
+                            for device, val in device_dict.items():
+                                if device_name == device:
+                                    device_value = val
+                                    continue
 
                         result['data']['devices'][device_name] = dict()
 
                         result['data']['devices'][device_name]['value'] = device_value
 
-                        # default image to be loaded
-                        image_partial = "icons/mobilephonetower10.png"
-
-                        # icon
+                        # default icon
                         icon = ""
+                        try:
+                            icon = DeviceType.objects.get(pk=device_obj.device_type).device_icon
+                        except Exception as e:
+                            logger.info("No icon for this device. Exception: ", e.message)
+
+                        icon = str(icon)
 
                         # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
                         th_icon_settings = ""
@@ -985,11 +1033,6 @@ class BulkFetchLPDataApi(View):
                         # comparing threshold values to get icon
                         try:
                             if len(device_value):
-                                print "*************************** device_value - ", type(device_value), device_value
-                                print "*************************** service_type - ", type(service_type), service_type
-                                print "*************************** th_ranges - ", type(th_ranges), th_ranges
-                                print "*************************** th_icon_settings - ", type(th_icon_settings), th_icon_settings
-                                print "*************************** svc_type - ", type(svc_type), svc_type
 
                                 # live polled value of device service
                                 try:
@@ -997,32 +1040,35 @@ class BulkFetchLPDataApi(View):
                                 except Exception as e:
                                     value = device_value
                                     logger.info("Value can't be converted. Exception: ", e.message)
-                                print "*************************** value 2 - ", type(value), value
 
                                 # get appropriate icon
                                 if service_type == "normal":
-                                    print "*************************** Enter in normal - ", type(value), value
                                     if svc_type == "INT":
-                                        print "*************************** svc_type 2 - ", type(svc_type), svc_type
-                                        icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
+                                        icon = self.get_icon_for_numeric_service(th_ranges,
+                                                                                 th_icon_settings,
+                                                                                 value,
+                                                                                 icon)
                                     elif svc_type == "STR":
-                                        icon = self.get_icon_for_string_service(th_ranges, th_icon_settings, value)
+                                        icon = self.get_icon_for_string_service(th_ranges,
+                                                                                th_icon_settings,
+                                                                                value,
+                                                                                icon)
                                     else:
                                         pass
                                 elif service_type == "ping":
-                                    print "*************************** Enter in ping - ", type(value), value
-                                    icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
+                                    icon = self.get_icon_for_numeric_service(th_ranges,
+                                                                             th_icon_settings,
+                                                                             value,
+                                                                             icon)
                                 else:
                                     pass
-                                print "*************************** icon - ", type(icon), icon
 
                         except Exception as e:
                             logger.info("Icon not exist. Exception: ", e.message)
 
                         result['data']['devices'][device_name]['icon'] = icon
                         # if response_dict doesn't have key 'success'
-                        if not response_dict.get('success'):
-                            logger.info(response_dict.get('error_message'))
+                        if not device_value:
                             result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % \
                                                                                 device_name
                         else:
@@ -1035,30 +1081,42 @@ class BulkFetchLPDataApi(View):
             logger.info(e)
         return HttpResponse(json.dumps(result))
 
-    def get_icon_for_numeric_service(self, th_ranges=None, th_icon_settings=None, value=None):
-        # default image to be loaded
-        image_partial = "icons/mobilephonetower10.png"
+    def get_icon_for_numeric_service(self, th_ranges=None, th_icon_settings=None, value=None, icon=""):
+        """
+            Get device icon corresponding to fetched performance value
+            Parameters:
+                - th_ranges (<class 'inventory.models.ThresholdConfiguration'>) - threshold configuration object
+                                                                                  for e.g. Wimax DL RSSI
+                - th_icon_settings (unicode) - icon settings in json format for e.g.
+                        [
+                            {
+                                'icon_settings1': u'uploaded/icons/2014-09-26/2014-09-26-11-56-11_SM-GIF.gif'
+                            },
+                            {
+                                'icon_settings2': u'uploaded/icons/2014-10-26/2014-10-26-14-59-40_SM-Red.png'
+                            },
+                            {
+                                'icon_settings3': u'uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png'
+                            }
+                        ]
+                - value (str) - performance value for e.g "-57"
+                - icon (str) - icon location i.e "media/uploaded/icons/2014/09/18/wifi3.png"
 
-        # icon
-        icon = str(image_partial)
-        print "***************************** th_ranges - ", th_ranges
-        print "***************************** th_icon_settings - ", th_icon_settings
-        print "***************************** value - ", type(value), value
+            Returns:
+                - icon (str) - icon location i.e "media/uploaded/icons/2014/09/18/wifi3.png"
+        """
+
+        # default image to be loaded
+        image_partial = icon
 
         # fetching number from string for e.g. 45 from 'ab4cd5e'
         if not isinstance(value, float):
             value = ''.join(x for x in str(value) if x.isdigit() or (x == '-'))
-        print "***************************** value - ", type(value), value
 
         if th_ranges and th_icon_settings and len(str(value)):
-            print "************************ Enter here - "
-            print "************************ float(value) - ", float(value)
-            print "************************ float(th_ranges.range1_start) - ", float(th_ranges.range1_start)
-            print "************************ float(th_ranges.range1_end) - ", float(th_ranges.range1_end)
 
             try:
                 if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
-                    print "***************************** range 1 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings1' in icon_setting.keys():
@@ -1068,7 +1126,6 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range2_start)) <= (float(value)) <= (float(th_ranges.range2_end)):
-                    print "***************************** range 2 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings2' in icon_setting.keys():
@@ -1078,7 +1135,6 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range3_start)) <= (float(value)) <= (float(th_ranges.range3_end)):
-                    print "***************************** range 3 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings3' in icon_setting.keys():
@@ -1088,7 +1144,6 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range4_start)) <= (float(value)) <= (float(th_ranges.range4_end)):
-                    print "***************************** range 4 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings4' in icon_setting.keys():
@@ -1098,7 +1153,6 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range5_start)) <= (float(value)) <= (float(th_ranges.range5_end)):
-                    print "***************************** range 5 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings5' in icon_setting.keys():
@@ -1108,7 +1162,6 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range6_start)) <= (float(value)) <= (float(th_ranges.range6_end)):
-                    print "***************************** range 6 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings6' in icon_setting.keys():
@@ -1118,7 +1171,6 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range7_start)) <= (float(value)) <= (float(th_ranges.range7_end)):
-                    print "***************************** range 7 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings7' in icon_setting.keys():
@@ -1128,7 +1180,6 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range8_start)) <= (float(value)) <= (float(th_ranges.range8_end)):
-                    print "***************************** range 8 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings8' in icon_setting.keys():
@@ -1138,7 +1189,6 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range9_start)) <= (float(value)) <= (float(th_ranges.range9_end)):
-                    print "***************************** range 9 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings9' in icon_setting.keys():
@@ -1148,7 +1198,6 @@ class BulkFetchLPDataApi(View):
 
             try:
                 if (float(th_ranges.range10_start)) <= (float(value)) <= (float(th_ranges.range10_end)):
-                    print "***************************** range 10 - "
                     icon_settings = eval(th_icon_settings)
                     for icon_setting in icon_settings:
                         if 'icon_settings10' in icon_setting.keys():
@@ -1163,16 +1212,35 @@ class BulkFetchLPDataApi(View):
         # icon to be send in response
         icon = str(img_url)
 
-        print "************************************ icon1 - ", icon
-
         return icon
 
-    def get_icon_for_string_service(self, th_ranges=None, th_icon_settings=None, value=None):
-        # default image to be loaded
-        image_partial = "icons/mobilephonetower10.png"
+    def get_icon_for_string_service(self, th_ranges=None, th_icon_settings=None, value=None, icon=""):
+        """
+            Get device icon corresponding to fetched performance value
+            Parameters:
+                - th_ranges (<class 'inventory.models.ThresholdConfiguration'>) - threshold configuration object
+                                                                                  for e.g. Wimax DL RSSI
+                - th_icon_settings (unicode) - icon settings in json format for e.g.
+                        [
+                            {
+                                'icon_settings1': u'uploaded/icons/2014-09-26/2014-09-26-11-56-11_SM-GIF.gif'
+                            },
+                            {
+                                'icon_settings2': u'uploaded/icons/2014-10-26/2014-10-26-14-59-40_SM-Red.png'
+                            },
+                            {
+                                'icon_settings3': u'uploaded/icons/2014-09-25/2014-09-25-13-59-00_P2P-Green.png'
+                            }
+                        ]
+                - value (str) - performance value for e.g "-57"
+                - icon (str) - icon location i.e "media/uploaded/icons/2014/09/18/wifi3.png"
 
-        # icon
-        icon = str(image_partial)
+            Returns:
+                - icon (str) - icon location i.e "media/uploaded/icons/2014/09/18/wifi3.png"
+        """
+
+        # default image to be loaded
+        image_partial = icon
 
         if th_ranges and th_icon_settings and value:
             try:
@@ -1276,8 +1344,6 @@ class BulkFetchLPDataApi(View):
 
 
 def nocout_live_polling(q, site):
-    response_dict = {}
-
     # url for nocout.py
     # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
     # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -1295,22 +1361,6 @@ def nocout_live_polling(q, site):
         r = requests.post(url, data=encoded_data)
         response_dict = ast.literal_eval(r.text)
         if len(response_dict):
-            if site.get('lp_data').get('dr_master_slave'):
-                dr_masters = site.get('lp_data').get('dr_master_slave').keys()
-                dr_slaves = site.get('lp_data').get('dr_master_slave').values()
-                # Filter master and slave dr devices data, seperately
-                dr_masters_data = filter(lambda e: e.keys()[0] in dr_masters, response_dict.get('value'))
-                dr_slaves_data = filter(lambda e: e.keys()[0] in dr_slaves, response_dict.get('value'))
-                non_dr_data = filter(lambda e: e.keys()[0] not in dr_slaves and e.keys()[0] not in dr_masters,
-                                     response_dict.get('value'))
-                for v in dr_masters_data:
-                    if not v.values()[0]:
-                        matching_dr_slave = site.get('lp_data').get('dr_master_slave').get(v.keys()[0])
-                        matching_dr_slave_data = filter(lambda e: e.keys()[0] == matching_dr_slave, dr_slaves_data)
-                        v_key = v.keys()[0]
-                        v.update({v_key: matching_dr_slave_data.values()[0]})
-                response_dict['values'] = dr_masters_data + non_dr_data
-
             q.put(response_dict)
     except Exception as e:
         logger.info(e.message)
