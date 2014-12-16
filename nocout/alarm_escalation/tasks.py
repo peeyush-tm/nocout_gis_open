@@ -12,7 +12,7 @@ from django.shortcuts import render
 from alarm_escalation.models import EscalationStatus
 from organization.models import Organization
 from performance.models import ServiceStatus
-from device.models import Device, DeviceType
+from device.models import Device, DeviceType, DeviceTypeService, DeviceTypeServiceDataSource
 
 
 @task
@@ -29,21 +29,25 @@ def raise_alarms(service_status_list, org):
             old_status = 0
             new_status = 0
         device = Device.objects.get(device_name=service_status.device_name)
+        device_type = DeviceType.objects.get(id=device.device_type)
         obj, created = EscalationStatus.objects.get_or_create(organization=org,
-                                            device_type=DeviceType.objects.get(id=device.device_type.name),
-                                            service=service_status.service,
-                                            service_data_source=service_status.service_data_source,
+                                            device_type=device_type.name,
+                                            service=service_status.service_name,
+                                            service_data_source=service_status.data_source,
                                             ip=service_status.ip_address,
                                             defaults={'severity': service_status.severity, 'old_status': old_status, 'new_status': new_status})
 
         age = timezone.now() - obj.status_since
         level_list = obj.organization.escalationlevel_set.all()
         for level in level_list:
-            if age>=level.alarm_age:
+            if age >= level.alarm_age:
                 escalation_level = level
 
         if service_status.severity=='ok':
             obj.new_status = 1
+            obj.save()
+        else:
+            obj.new_status = 0
             obj.save()
         if escalation_level is not None:
             if obj.new_status==0 and obj.old_status==0:
@@ -63,31 +67,31 @@ def raise_alarms(service_status_list, org):
                 alert_phones_for_good_performance.delay(obj, escalation_level)
 
 
-@task
-def raise_alarms_for_bad_performance(service_status_list, org):
-    """
-    Raises alarms for bad performance of device.
-    """
-    escalation_level = None
-    for service_status in service_status_list:
-        device = Device.objects.get(device_name=service_status.device_name)
-        obj, created = EscalationStatus.objects.get_or_create(organization=org,
-                                            device_type=DeviceType.objects.get(id=device.device_type.name),
-                                            service=service_status.service,
-                                            service_data_source=service_status.service_data_source,
-                                            ip=service_status.ip_address,
-                                            severity=service_status.severity)
-        age = timezone.now() - obj.status_since
-        level_list = obj.organization.escalationlevel_set.all()
-        for level in level_list:
-            if age>=level.alarm_age:
-                escalation_level = level
+# @task
+# def raise_alarms_for_bad_performance(service_status_list, org):
+#     """
+#     Raises alarms for bad performance of device.
+#     """
+#     escalation_level = None
+#     for service_status in service_status_list:
+#         device = Device.objects.get(device_name=service_status.device_name)
+#         obj, created = EscalationStatus.objects.get_or_create(organization=org,
+#                                             device_type=DeviceType.objects.get(id=device.device_type.name),
+#                                             service=service_status.service,
+#                                             service_data_source=service_status.service_data_source,
+#                                             ip=service_status.ip_address,
+#                                             severity=service_status.severity)
+#         age = timezone.now() - obj.status_since
+#         level_list = obj.organization.escalationlevel_set.all()
+#         for level in level_list:
+#             if age>=level.alarm_age:
+#                 escalation_level = level
 
-        if getattr(obj, 'l%d_email_status' % escalation_level.name) == 0:
-            alert_emails_for_bad_performance.delay(obj, escalation_level)
-            alert_phones_for_bad_performance.delay(obj, escalation_level)
-            setattr(obj, 'l%d_email_status' % escalation_level.name, 1)
-            obj.save()
+#         if getattr(obj, 'l%d_email_status' % escalation_level.name) == 0:
+#             alert_emails_for_bad_performance.delay(obj, escalation_level)
+#             alert_phones_for_bad_performance.delay(obj, escalation_level)
+#             setattr(obj, 'l%d_email_status' % escalation_level.name, 1)
+#             obj.save()
 
 @task
 def alert_emails_for_bad_performance(alarm, level):
@@ -179,6 +183,7 @@ def check_device_status():
         for machine_name, device_list in machine_dict.items():
             service_status_list = ServiceStatus.objects.filter(device_name__in=device_list, service_name__in=service_list,
                     data_source__in=service_data_source_list).using(machine_name)
+            print service_status_list
             if service_status_list:
                 raise_alarms.delay(service_status_list, org)
 
@@ -187,15 +192,10 @@ def prepare_machines(device_list):
     """
     Return dict of machine and device.
     """
-    # Unique machine from the device_list
     unique_device_machine_list = {device['machine__name']: True for device in device_list}.keys()
-
     machine_dict = {}
-    #Creating the machine as a key and device_name as a list for that machine.
     for machine in unique_device_machine_list:
-        machine_dict[machine] = [device['device_name'] for device in device_list if
-                                 device['machine__name'] == machine]
-
+        machine_dict[machine] = [device['device_name'] for device in device_list if device['machine__name'] == machine]
     return machine_dict
 
 
@@ -203,22 +203,16 @@ def prepare_services(device_list):
     """
     Return list of services of device in device list.
     """
-    device_type_list = []
-    service_list = []
-    for device in device_list:
-        device_type_list += DeviceType.objects.filter(id=device.device_type)
-    for device_type in device_type_list:
-        service_list += device_type.service.all()
-
-    return service_list
+    device_type_list = DeviceType.objects.filter(id__in=device_list.values_list('device_type', flat=True))
+    return list(DeviceTypeService.objects.filter(
+        device_type__in=device_type_list).values_list('service__name', flat=True)
+    )
 
 
 def prepare_service_data_sources(service_list):
     """
     Return dict of service data source of device in device list.
     """
-    service_data_source_list = []
-
-    for service in service_list:
-        service_data_source_list += service.service_data_sources.all()
-    return service_data_source_list
+    return list(DeviceTypeServiceDataSource.objects.filter(
+        device_type_service__service__name__in=service_list).values_list('service_data_sources__name', flat=True)
+    )
