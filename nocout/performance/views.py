@@ -1084,7 +1084,7 @@ class Get_Service_Status(View):
                     'objects': {
                         'perf': None,
                         'last_updated': None,
-                        'status': severity,
+                        'status': severity.lower().strip() if severity else None,
                         'age': age
                     }
                 }
@@ -1568,11 +1568,11 @@ class Get_Service_Type_Performance_Data(View):
                         if data.critical_threshold else None])
 
                         ###to draw each data point w.r.t threshold we would need to use the following
-                        if SERVICE_DATA_SOURCE[sds_name]["show_min"]:
+                        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_min"]:
                             min_data_list.append([data.sys_timestamp * 1000, float(data.min_value)
                             if data.min_value else None])
 
-                        if SERVICE_DATA_SOURCE[sds_name]["show_max"]:
+                        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_max"]:
                             max_data_list.append([data.sys_timestamp * 1000, float(data.max_value)
                             if data.max_value else None])
 
