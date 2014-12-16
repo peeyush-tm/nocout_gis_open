@@ -38,7 +38,9 @@ def raise_alarms(service_status_list, org):
                                             defaults={'severity': service_status.severity, 'old_status': old_status, 'new_status': new_status})
 
         age = timezone.now() - obj.status_since
-        level_list = obj.organization.escalationlevel_set.all()
+        level_list = obj.organization.escalationlevel_set.filter(device_type__name=obj.device_type,
+                                            service__name=obj.service,
+                                            service_data_source__name=obj.service_data_source)
         for level in level_list:
             if age.seconds >= level.alarm_age:
                 escalation_level = level
@@ -103,7 +105,7 @@ def alert_emails_for_bad_performance(alarm, level):
     context_dict['level'] = level
     subject = render_to_string('alarm_message/subject.txt', context_dict)
     subject = ''.join(subject.splitlines())
-    message = render_to_response('alarm_message/bad_message.html', context_dict)
+    message = render_to_string('alarm_message/bad_message.html', context_dict)
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
 
 
