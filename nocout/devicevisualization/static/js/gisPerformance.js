@@ -182,8 +182,14 @@ function GisPerformance() {
                                     //Send Request for the next counter
                                     perf_self.sendRequest(counter);
                                 });
+                            } else {
+                                //Send Request for the next counter
+                                perf_self.sendRequest(counter);
                             }
                         }
+                    } else {
+                        //Send Request for the next counter
+                        perf_self.sendRequest(counter);
                     }
                 }
 

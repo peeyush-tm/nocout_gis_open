@@ -548,7 +548,7 @@ function devicePlottingClass_gmap() {
 	            	if(mapInstance.getZoom() > 7) {
 
 	            		// If zoom level is greate than 10 then start perf calling
-	            		if(mapInstance.getZoom() > 10) {
+	            		if(mapInstance.getZoom() > 11) {
 		            		// Reset Perf calling Flag
 	            			isPerfCallStopped = 0;
             			} else {
@@ -624,7 +624,7 @@ function devicePlottingClass_gmap() {
 								gmap_self.plotDevices_gmap(inBoundData,"base_station");
 
 								// if(searchResultData.length == 0 || mapInstance.getZoom() <= 10) {
-								if(mapInstance.getZoom() <= 10) {
+								if(mapInstance.getZoom() <= 11) {
 									var polylines = allMarkersObject_gmap['path'],
 										polygons = allMarkersObject_gmap['sector_polygon'];
 
@@ -645,6 +645,12 @@ function devicePlottingClass_gmap() {
 											current_polygons.setMap(null);
 										}
 									}
+
+									// Remove CROSS info label
+								    for (key in cross_label_array) {
+								    	cross_label_array[key].setVisible(false);
+								    }
+
 								} else {
 									if(mapInstance.getZoom() > 10) {
 										gmap_self.showSubStaionsInBounds();
