@@ -118,8 +118,40 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 			local_timestamp = pivot_timestamp_fwd(check_time)
 			if ds == 'pl':
 				ds_values['cur'] = ds_values['cur'].strip('%')
+				try:
+					pl_war = float(ds_values['war'])
+					pl_crit = float(ds_values['crit'])
+					pl_cur = float(ds_values['cur'])
+				except:
+					pl_war=None
+					pl_crit=None
+					pl_cur=None
+					pass
+				if pl_cur and pl_war and pl_crit:
+					if pl_cur < pl_war:
+						host_severity = "up"
+					elif pl_cur >= pl_war and pl_cur <= pl_crit:
+						host_severity = "warning"
+					else:
+						host_severity = "down"
 			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
 			if ds == 'rta':
+				try:
+					rta_war = float(ds_values['war'])
+					rta_crit = float(ds_values['crit'])
+					rta_cur = float(ds_values['crit'])
+				except:
+					rta_war = None
+					rta_cur =  None
+					rta_crit= None
+				if  rta_cur and rta_war and rta_crit:
+					if rta_cur < rta_war:
+						host_severity = "up"
+					elif rta_cur >= rta_war and rta_cur <= rta_crit:
+						host_severity = "warning"
+					else:
+						host_severity = "down"
+					
 				rta_dict = {'min_value': rt_min, 'max_value': rt_max}
 				data_values[0].update(rta_dict)
 			data_dict.update({

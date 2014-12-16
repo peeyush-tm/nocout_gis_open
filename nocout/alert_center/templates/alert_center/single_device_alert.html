@@ -7,15 +7,18 @@
     <li><a href="/device/{{ current_device_id }}">{{ current_device_id }}</a></li>
     <li><b>{{ service_name }}</b></li>
 {% endblock %}
-{% block content_title %} {{ page_type | title  }} Alert{% endblock %}
+{% block content_title %} {{ page_type | title }} Alert{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
     <!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} >
+    <link rel="stylesheet" type="text/css"
+          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
 {% endblock %}
+
+{% load sds %}
 
 {% block content %}
     <style>
@@ -25,105 +28,119 @@
     </style>
     <!--Single Device Live Perf Start-->
     <div class='box border lite perfContainerBlock'>
-        <div class='box-title'>
-            <h4><i class='fa fa-file-text'></i>{{ device_alias }}</h4>
-            <div class="pull-right">
-                <ul class="list-unstyled list-inline">
-                    <li style="min-width: 320px;">
-                        <div class="input-group">
-                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value="" />
-                        </div>
-                    </li>
-                    <li>
-                        <div class="btn-group dropdown col-xs-1">
-                            <button id="apply_filter" class="btn  btn-default btn-sm">
-                                Apply Filter
-                            </button>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="btn-group dropdown col-xs-1">
-                            <button id="reset_filter" class="btn  btn-warning btn-sm">
-                                Reset Filter
-                            </button>
-                        </div>
-                    </li>
-                    <li>
-                        <!--CSV or Excel download action. -->
-                        <div class="btn-group dropdown col-xs-1">
-                            <button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
-                                Download Report
-                                <span class="caret"></span>
-                            </button>
-                            <ul class="dropdown-menu context">
-                                <li>
-                                    <a id="download_excel">Excel</a>
-                                </li>
-                                <li>
-                                    <a id="download_csv">CSV</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                </ul>
+    <div class='box-title'>
+        <h4><i class='fa fa-file-text'></i>{{ device_alias }}</h4>
+
+        <div class="pull-right">
+            <ul class="list-unstyled list-inline">
+                <li style="min-width: 320px;">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text"
+                                                                                                    name="reservation"
+                                                                                                    id="reservationtime"
+                                                                                                    class="form-control input-large search-query"
+                                                                                                    value=""/>
+                    </div>
+                </li>
+                <li>
+                    <div class="btn-group dropdown col-xs-1">
+                        <button id="apply_filter" class="btn  btn-default btn-sm">
+                            Apply Filter
+                        </button>
+                    </div>
+                </li>
+                <li>
+                    <div class="btn-group dropdown col-xs-1">
+                        <button id="reset_filter" class="btn  btn-warning btn-sm">
+                            Reset Filter
+                        </button>
+                    </div>
+                </li>
+                <li>
+                    <!--CSV or Excel download action. -->
+                    <div class="btn-group dropdown col-xs-1">
+                        <button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                            Download Report
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu context">
+                            <li>
+                                <a id="download_excel">Excel</a>
+                            </li>
+                            <li>
+                                <a id="download_csv">CSV</a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+    <div class='box-body'>
+
+        <div class="box status_box">
+            <div class="box-title" style="background:transparent;">
+                <h4 id="device_status_container">
+                    Device Status
+                </h4>
+
+                <div class="tools_status">
+                    <a href="javascript:;" title="Hide Status" class="collapse">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="box-body status_body">
+                <div class="well well-sm" id="status_container" style="overflow:auto;">
+                    <table id="status_table" class="table table-responsive table-bordered"
+                           style="background:#FFFFFF;">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="box">
+            <div class="box-title" style="background:transparent;"></div>
+            <div id="tableContainer" class="box-body">
+                <div class="tabbable header-tabs">
+                    <ul id="device_page_tabs" class="nav nav-tabs"
+                        style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
+                        <li><a href="#" id="network_alert_service_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">Service Impact Alerts</span></a></li>
+                        <li><a href="#" id="network_alert_down_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">Down</span></a></li>
+                        <li><a href="#" id="network_alert_packet_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">Packet Drop</span></a></li>
+                        <li><a href="#" id="network_alert_latency_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">Latency</span></a></li>
+                        <li><a href="#" id="network_alert_ping_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">Ping Details</span></a></li>
+                    </ul>
+                </div>
             </div>
             <div class="clearfix"></div>
         </div>
-        <div class='box-body'>
+        <!--Filters Block Start-->
+        <!-- <div class="box-body status_body">
 
-            <div class="box status_box">
-                <div class="box-title" style="background:transparent;">
-                    <h4 id="device_status_container">
-                        Device Status
-                    </h4>
-                    <div class="tools_status">
-                        <a href="javascript:;" title="Hide Status" class="collapse">
-                            <i class="fa fa-chevron-up"></i>
-                        </a>
-                    </div>
-                </div>
-                <div class="box-body status_body">
-                    <div class="well well-sm" id="status_container" style="overflow:auto;">
-                        <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="box">
-                <div class="box-title" style="background:transparent;"></div>
-                <div id="tableContainer" class="box-body">
-                    <div class="tabbable header-tabs">
-                        <ul id="device_page_tabs" class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
-                            <li><a href="#" id="network_alert_service_tab" data-toggle="tab"><span class="hidden-inline-mobile">Service Impact Alerts</span></a></li>
-                            <li><a href="#" id="network_alert_down_tab" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>
-                            <li><a href="#" id="network_alert_packet_tab" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
-                            <li><a href="#" id="network_alert_latency_tab" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
-                            <li><a href="#" id="network_alert_ping_tab" data-toggle="tab"><span class="hidden-inline-mobile">Ping Details</span></a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="clearfix"></div>
-            </div>
-            <!--Filters Block Start-->
-            <!-- <div class="box-body status_body">
-                
-            </div> -->
-            <div style="overflow:auto;">
-                <table id="device_alert" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover hide">
-                    <thead>
-                        <tr>
-                            <th>&nbsp;</th>
-                            {% for data in table_header %}
-                                <th class="headerSortable" style="background: none;">{{ data | title }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% if table_data %}
-                        {% if is_ping %}
-                            {% for data in table_data %}
+        </div> -->
+        <div style="overflow:auto;">
+            <table id="device_alert" cellpadding="0" cellspacing="0" border="0"
+                   class="datatable table table-striped table-bordered table-hover hide">
+                <thead>
+                <tr>
+                    <th>&nbsp;</th>
+                    {% for data in table_header %}
+                        <th class="headerSortable" style="background: none;">{{ data | title }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                {% if table_data %}
+                    {% if is_ping %}
+                        {% for data in table_data %}
                             <tr>
                                 {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
                                     <td><i class="fa fa-circle red-dot"><span style="display:none">1</span></i></td>
@@ -135,7 +152,8 @@
                                     <td>{{ data.alert_date_time }}</td>
                                     <td><span class="text-danger">{{ data.description }}</span></td>
                                 {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
-                                    <td><i class="fa fa-circle orange-dot"><span style="display:none">2</span></i></td>
+                                    <td><i class="fa fa-circle orange-dot"><span style="display:none">2</span></i>
+                                    </td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
                                     <td><span class="text-warning">{{ data.severity }}</span></td>
@@ -144,7 +162,8 @@
                                     <td>{{ data.alert_date_time }}</td>
                                     <td><span class="text-warning">{{ data.description }}</span></td>
                                 {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
-                                    <td><i class="fa fa-circle green-dot"><span style="display:none">3</span></i></td>
+                                    <td><i class="fa fa-circle green-dot"><span style="display:none">3</span></i>
+                                    </td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
                                     <td><span class="text-success">{{ data.severity }}</span></td>
@@ -153,7 +172,8 @@
                                     <td>{{ data.alert_date_time }}</td>
                                     <td><span class="text-success">{{ data.description }}</span></td>
                                 {% else %}
-                                    <td><i class="fa fa-circle grey-dot"><span style="display:none">4</span></i></td>
+                                    <td><i class="fa fa-circle grey-dot"><span style="display:none">4</span></i>
+                                    </td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
                                     <td><span class="text-muted">{{ data.severity }}</span></td>
@@ -164,94 +184,94 @@
                                 {% endif %}
                             </tr>
                         {% endfor %}
-                        {% else %}
-                            {% for data in table_data %}
-                                <tr>
-                                    {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
-                                        <td><i class="fa fa-circle red-dot"></i></td>
-                                        <td>{{ data.ip_address }}</td>
-                                        <td>{{ data.service_name }}</td>
-                                        <td>{{ data.data_source }}</td>
-                                        <td><span class="text-danger">{{ data.severity }}</span></td>
-                                        <td><span class="text-danger">{{ data.current_value }}</span></td>
-                                        <td>{{ data.alert_date_time }}</td>
-                                        <td><span class="text-danger">{{ data.description }}</span></td>
-                                    {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
-                                        <td><i class="fa fa-circle orange-dot"></i></td>
-                                        <td>{{ data.ip_address }}</td>
-                                        <td>{{ data.service_name }}</td>
-                                        <td>{{ data.data_source }}</td>
-                                        <td><span class="text-warning">{{ data.severity }}</span></td>
-                                        <td><span class="text-warning">{{ data.current_value }}</span></td>
-                                        <td>{{ data.alert_date_time }}</td>
-                                        <td><span class="text-warning">{{ data.description }}</span></td>
-                                    {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
-                                        <td><i class="fa fa-circle green-dot"></i></td>
-                                        <td>{{ data.ip_address }}</td>
-                                        <td>{{ data.service_name }}</td>
-                                        <td>{{ data.data_source }}</td>
-                                        <td><span class="text-success">{{ data.severity }}</span></td>
-                                        <td><span class="text-success">{{ data.current_value }}</span></td>
-                                        <td>{{ data.alert_date_time }}</td>
-                                        <td><span class="text-success">{{ data.description }}</span></td>
-                                    {% else %}
-                                        <td><i class="fa fa-circle grey-dot"></i></td>
-                                        <td>{{ data.ip_address }}</td>
-                                        <td>{{ data.service_name }}</td>
-                                        <td>{{ data.data_source }}</td>
-                                        <td><span class="text-muted">{{ data.severity }}</span></td>
-                                        <td><span class="text-muted">{{ data.current_value }}</span></td>
-                                        <td>{{ data.alert_date_time }}</td>
-                                        <td><span class="text-muted">{{ data.description }}</span></td>
-                                    {% endif %}
-                                </tr>
-                            {% endfor %}
-                        {% endif %}
+                    {% else %}
+                        {% for data in table_data %}
+                            <tr>
+                                {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
+                                    <td><i class="fa fa-circle red-dot"></i></td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td>{{ data.data_source|sds }}</td>
+                                    <td><span class="text-danger">{{ data.severity }}</span></td>
+                                    <td><span class="text-danger">{{ data.current_value }}</span></td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <td><span class="text-danger">{{ data.description }}</span></td>
+                                {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
+                                    <td><i class="fa fa-circle orange-dot"></i></td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td>{{ data.data_source|sds }}</td>
+                                    <td><span class="text-warning">{{ data.severity }}</span></td>
+                                    <td><span class="text-warning">{{ data.current_value }}</span></td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <td><span class="text-warning">{{ data.description }}</span></td>
+                                {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
+                                    <td><i class="fa fa-circle green-dot"></i></td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td>{{ data.data_source|sds }}</td>
+                                    <td><span class="text-success">{{ data.severity }}</span></td>
+                                    <td><span class="text-success">{{ data.current_value }}</span></td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <td><span class="text-success">{{ data.description }}</span></td>
+                                {% else %}
+                                    <td><i class="fa fa-circle grey-dot"></i></td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td>{{ data.data_source|sds }}</td>
+                                    <td><span class="text-muted">{{ data.severity }}</span></td>
+                                    <td><span class="text-muted">{{ data.current_value }}</span></td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <td><span class="text-muted">{{ data.description }}</span></td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
                     {% endif %}
+                {% endif %}
 
-                    </tbody>
-                </table>
-            </div>
+                </tbody>
+            </table>
         </div>
+    </div>
     </div>
 
     <script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
 
     <script type="text/javascript">
-        var startDate = "",
+    var startDate = "",
             endDate = "",
             base_url = "";
-        $(document).ready(function(e) {
-            /*Set the base url of application for ajax calls*/
-            if (window.location.origin) {
-                base_url = window.location.origin;
-            } else {
-                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-            }
+    $(document).ready(function (e) {
+        /*Set the base url of application for ajax calls*/
+        if (window.location.origin) {
+            base_url = window.location.origin;
+        } else {
+            base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+        }
 
-            perfInstance = new nocoutPerfLib();
-            var current_device = "{{ current_device_name }}",
+        perfInstance = new nocoutPerfLib();
+        var current_device = "{{ current_device_name }}",
                 current_device_id = "{{ device_id }}",
                 statusUrl = base_url + "/" + "{{ get_status_url }}" + "/",
                 service_status_url = "";
-            /*To populate the status table*/
-            perfInstance.getStatus(statusUrl, current_device);
+        /*To populate the status table*/
+        perfInstance.getStatus(statusUrl, current_device);
 
-            if(findStringFromUrl()) {
-                if(current_device_id) {
-                    service_status_url = "/performance/servicestatus/"+findStringFromUrl()+"/service_data_source/pl/device/"+current_device_id+"/";
-                }
+        if (findStringFromUrl()) {
+            if (current_device_id) {
+                service_status_url = "/performance/servicestatus/" + findStringFromUrl() + "/service_data_source/pl/device/" + current_device_id + "/";
             }
+        }
 
-            // Call function to get service status
-            if(service_status_url) {
-                getPlServiceStatus(service_status_url);
-            }
+        // Call function to get service status
+        if (service_status_url) {
+            getPlServiceStatus(service_status_url);
+        }
 
-            var oldStartDate = $.urlParam('start_date') ? new Date($.urlParam('start_date')*1000) : new Date();
-            var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date')*1000) : new Date();
+        var oldStartDate = $.urlParam('start_date') ? new Date($.urlParam('start_date') * 1000) : new Date();
+        var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date') * 1000) : new Date();
 
-            $('#reservationtime').daterangepicker(
+        $('#reservationtime').daterangepicker(
                 {
                     timePicker: true,
                     timePickerIncrement: 1,
@@ -272,212 +292,215 @@
                     format: "DD-MM-YYYY HH:mm:ss",
                     separator: ' to ',
                     startDate: oldStartDate,
-                    endDate:oldENdData
+                    endDate: oldENdData
                 },
-                function(start, end) {
-                    startDate= start;
+                function (start, end) {
+                    startDate = start;
                     endDate = end;
                 }
-            );
+        );
 
-            if($.urlParam('start_date') && $.urlParam('end_date')) {
-                $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss"));
-                startDate = moment(oldStartDate);
-                endDate = moment(oldENdData);
-            }
+        if ($.urlParam('start_date') && $.urlParam('end_date')) {
+            $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss"));
+            startDate = moment(oldStartDate);
+            endDate = moment(oldENdData);
+        }
 
-            $("#device_alert").DataTable({
-                sPaginationType: "bs_full",
-                aaSorting: [[7, 'desc']]
-            });
-            $("#device_alert").removeClass("hide");
+        $("#device_alert").DataTable({
+            sPaginationType: "bs_full",
+            aaSorting: [
+                [7, 'desc']
+            ]
+        });
+        $("#device_alert").removeClass("hide");
 
-            $("#network_alert_service_tab").click(function(e) {
-                e.preventDefault();
-                var currentTab= findStringFromUrl();
+        $("#network_alert_service_tab").click(function (e) {
+            e.preventDefault();
+            var currentTab = findStringFromUrl();
 
-                var newUrl= replaceString(location.href, currentTab, 'service');
-                location.href= newUrl;
-                // selectTab('#network_alert_service_tab');
-            });
-
-            $("#network_alert_down_tab").click(function(e) {
-                e.preventDefault();
-                var currentTab= findStringFromUrl();
-                var newUrl= replaceString(location.href, currentTab, 'down');
-                location.href= newUrl;
-                // selectTab('#network_alert_down_tab');
-            });
-
-            $("#network_alert_packet_tab").click(function(e) {
-                e.preventDefault();
-                var currentTab= findStringFromUrl();
-                var newUrl= replaceString(location.href, currentTab, 'packet_drop');
-                location.href= newUrl;
-                // selectTab('#network_alert_packet_tab');
-            });
-
-            $("#network_alert_latency_tab").click(function(e) {
-                e.preventDefault();
-                var currentTab= findStringFromUrl();
-                var newUrl= replaceString(location.href, currentTab, 'latency');
-                location.href= newUrl;
-                // selectTab('#network_alert_latency_tab');
-            });
-
-            $("#network_alert_ping_tab").click(function(e) {
-                e.preventDefault();
-                var currentTab= findStringFromUrl();
-                var newUrl= replaceString(location.href, currentTab, 'ping');
-                location.href= newUrl;
-                // selectTab('#network_alert_latency_tab');
-            });
-
-
-            var currentPage= findStringFromUrl();
-            // ['down', 'latency', 'packet_drop', 'service'];
-            if(currentPage=== 'down') {
-                selectTab('#network_alert_down_tab');
-            } else if (currentPage=== 'latency') {
-                selectTab('#network_alert_latency_tab');
-            } else if (currentPage=== 'packet_drop') {
-                selectTab('#network_alert_packet_tab');
-            } else if (currentPage=== 'service') {
-                selectTab('#network_alert_service_tab');
-            } else {
-                selectTab('#network_alert_ping_tab');
-            }
-
-            //setting up a custom jquery function to retrive the get paramters.
-            $.urlParam = function(name){
-                    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
-                    if (results==null){
-                       return null;
-                    }
-                    else{
-                       return results[1] || 0;
-                    }};
-            start_date= $.urlParam('start_date');
-            if (start_date){
-                 $("#start_date").val(decodeURIComponent(start_date));
-            }
-            end_date= $.urlParam('end_date');
-            if (end_date){
-                 $("#end_date").val(decodeURIComponent(end_date));
-            }
-
-            //set the dropdown to current device value
-            $("#device_name").val("{{current_device_id}}");
-
-            //on change of selection element in device_name
-            // we should redirect user to the new page for the device
-            $("#device_name").on('change', function(){
-                var new_device = $(this).val();
-                var uri = $.url();
-                var path = uri.attr('path').split('/');
-                path[path.length-4] = new_device;
-                var new_url = uri.attr('protocol') + "://" + uri.attr('host') + ":" + uri.attr('port') + path.join("/");
-                window.location.href = new_url;
-            });
-
-            /*Initialize Datepicker*/
-            $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
-
-            $("#apply_filter").on('click', function(){
-                if (startDate && endDate) {
-                    //epoch function
-                    var myStartDate = startDate.toDate(), myEndDate = endDate.toDate();
-                    var myStartTime = myStartDate.getTime()/1000.0;
-                    var myEndTime = myEndDate.getTime()/1000.0;
-
-                    window.location.href = '{% url "SingleDeviceDetails"  page_type current_device_id service_name %}' +'?start_date=' + encodeURIComponent(myStartTime)
-                                       + '&end_date=' + encodeURIComponent(myEndTime);
-
-                } else {
-                    alert("Select Start & End Date");
-                }
-                // if ( $("#start_date").datepicker("getDate") > $("#end_date").datepicker("getDate") ){
-                //     alert ("Start Date Can not be greater than End Date");
-                //     return false
-                // }
-                // else {
-                //     window.location.href = '{% url "SingleDeviceDetails"  page_type current_device_id service_name %}' +'?start_date=' + encodeURIComponent($("#start_date").val())
-                //                        + '&end_date=' + encodeURIComponent($("#end_date").val());
-                // }
-
-            });
-
-            $("#download_excel").on('click', function(){
-                window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
-                        + '?download_excel=true')
-            });
-
-            $("#download_csv").on('click', function(){
-                window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
-                        + '?download_csv=true')
-            });
+            var newUrl = replaceString(location.href, currentTab, 'service');
+            location.href = newUrl;
+            // selectTab('#network_alert_service_tab');
         });
 
-        /*This event will collapse & expand device status block*/
-        $('.status_box .tools_status .collapse, .status_box .tools_status .expand').click(function () {
-            var el = $(this).parents(".status_box").children(".status_body");
-
-            if ($(this).hasClass("collapse")) {
-                $(this).removeClass("collapse");
-                $(this).addClass("expand");
-                $(this).attr("title","Show Status")
-                var i = $(this).children(".fa-chevron-up");
-                i.removeClass("fa-chevron-up").addClass("fa-chevron-down");
-                el.slideUp();
-            } else {
-                $(this).removeClass("expand");
-                $(this).addClass("collapse");
-                $(this).attr("title","Hide Status");
-                var i = $(this).children(".fa-chevron-down");
-                i.removeClass("fa-chevron-down").addClass("fa-chevron-up");
-                el.slideDown();
-            }
+        $("#network_alert_down_tab").click(function (e) {
+            e.preventDefault();
+            var currentTab = findStringFromUrl();
+            var newUrl = replaceString(location.href, currentTab, 'down');
+            location.href = newUrl;
+            // selectTab('#network_alert_down_tab');
         });
 
-        function findStringFromUrl() {
+        $("#network_alert_packet_tab").click(function (e) {
+            e.preventDefault();
+            var currentTab = findStringFromUrl();
+            var newUrl = replaceString(location.href, currentTab, 'packet_drop');
+            location.href = newUrl;
+            // selectTab('#network_alert_packet_tab');
+        });
+
+        $("#network_alert_latency_tab").click(function (e) {
+            e.preventDefault();
+            var currentTab = findStringFromUrl();
+            var newUrl = replaceString(location.href, currentTab, 'latency');
+            location.href = newUrl;
+            // selectTab('#network_alert_latency_tab');
+        });
+
+        $("#network_alert_ping_tab").click(function (e) {
+            e.preventDefault();
+            var currentTab = findStringFromUrl();
+            var newUrl = replaceString(location.href, currentTab, 'ping');
+            location.href = newUrl;
+            // selectTab('#network_alert_latency_tab');
+        });
+
+
+        var currentPage = findStringFromUrl();
+        // ['down', 'latency', 'packet_drop', 'service'];
+        if (currentPage === 'down') {
+            selectTab('#network_alert_down_tab');
+        } else if (currentPage === 'latency') {
+            selectTab('#network_alert_latency_tab');
+        } else if (currentPage === 'packet_drop') {
+            selectTab('#network_alert_packet_tab');
+        } else if (currentPage === 'service') {
+            selectTab('#network_alert_service_tab');
+        } else {
+            selectTab('#network_alert_ping_tab');
+        }
+
+        //setting up a custom jquery function to retrive the get paramters.
+        $.urlParam = function (name) {
+            var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+            if (results == null) {
+                return null;
+            }
+            else {
+                return results[1] || 0;
+            }
+        };
+        start_date = $.urlParam('start_date');
+        if (start_date) {
+            $("#start_date").val(decodeURIComponent(start_date));
+        }
+        end_date = $.urlParam('end_date');
+        if (end_date) {
+            $("#end_date").val(decodeURIComponent(end_date));
+        }
+
+        //set the dropdown to current device value
+        $("#device_name").val("{{current_device_id}}");
+
+        //on change of selection element in device_name
+        // we should redirect user to the new page for the device
+        $("#device_name").on('change', function () {
+            var new_device = $(this).val();
             var uri = $.url();
             var path = uri.attr('path').split('/');
-            return path[path.length - 2 ]
-        }
-
-        function replaceString(mainString, toReplace, replaceWith) {
-            var str = mainString, res;
-            if(toReplace=== "service") {
-                res = str.replace(toReplace+"/", replaceWith+"/");
-            } else {
-                res = str.replace(toReplace, replaceWith);
-            }
-
-            return res;
-        }
-
-        function selectTab(tabId) {
-            $(tabId).parent().addClass('active').siblings().removeClass('active');
-        }
-
-        $("#reset_filter").on('click', function() {
-            if(window.location.href.indexOf("?") > -1) {
-                window.location.href = window.location.href.split("?")[0];
-            }
+            path[path.length - 4] = new_device;
+            var new_url = uri.attr('protocol') + "://" + uri.attr('host') + ":" + uri.attr('port') + path.join("/");
+            window.location.href = new_url;
         });
 
-        /**
-         * This  function get the device service(PL) status i.e. Status & AGE
-         * @method getPlServiceStatus
-         * @param url {String}, It contains the API url to fetch the service status.
-         */
-        function getPlServiceStatus(url) {
-            if(url) {    
-                $.ajax({
-                    url : base_url+""+url,
-                    type : "GET",
-                    success : function(response) {
-                        var result = "",
+        /*Initialize Datepicker*/
+        $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
+
+        $("#apply_filter").on('click', function () {
+            if (startDate && endDate) {
+                //epoch function
+                var myStartDate = startDate.toDate(), myEndDate = endDate.toDate();
+                var myStartTime = myStartDate.getTime() / 1000.0;
+                var myEndTime = myEndDate.getTime() / 1000.0;
+
+                window.location.href = '{% url "SingleDeviceDetails"  page_type current_device_id service_name %}' + '?start_date=' + encodeURIComponent(myStartTime)
+                        + '&end_date=' + encodeURIComponent(myEndTime);
+
+            } else {
+                alert("Select Start & End Date");
+            }
+            // if ( $("#start_date").datepicker("getDate") > $("#end_date").datepicker("getDate") ){
+            //     alert ("Start Date Can not be greater than End Date");
+            //     return false
+            // }
+            // else {
+            //     window.location.href = '{% url "SingleDeviceDetails"  page_type current_device_id service_name %}' +'?start_date=' + encodeURIComponent($("#start_date").val())
+            //                        + '&end_date=' + encodeURIComponent($("#end_date").val());
+            // }
+
+        });
+
+        $("#download_excel").on('click', function () {
+            window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
+                    + '?download_excel=true')
+        });
+
+        $("#download_csv").on('click', function () {
+            window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
+                    + '?download_csv=true')
+        });
+    });
+
+    /*This event will collapse & expand device status block*/
+    $('.status_box .tools_status .collapse, .status_box .tools_status .expand').click(function () {
+        var el = $(this).parents(".status_box").children(".status_body");
+
+        if ($(this).hasClass("collapse")) {
+            $(this).removeClass("collapse");
+            $(this).addClass("expand");
+            $(this).attr("title", "Show Status")
+            var i = $(this).children(".fa-chevron-up");
+            i.removeClass("fa-chevron-up").addClass("fa-chevron-down");
+            el.slideUp();
+        } else {
+            $(this).removeClass("expand");
+            $(this).addClass("collapse");
+            $(this).attr("title", "Hide Status");
+            var i = $(this).children(".fa-chevron-down");
+            i.removeClass("fa-chevron-down").addClass("fa-chevron-up");
+            el.slideDown();
+        }
+    });
+
+    function findStringFromUrl() {
+        var uri = $.url();
+        var path = uri.attr('path').split('/');
+        return path[path.length - 2 ]
+    }
+
+    function replaceString(mainString, toReplace, replaceWith) {
+        var str = mainString, res;
+        if (toReplace === "service") {
+            res = str.replace(toReplace + "/", replaceWith + "/");
+        } else {
+            res = str.replace(toReplace, replaceWith);
+        }
+
+        return res;
+    }
+
+    function selectTab(tabId) {
+        $(tabId).parent().addClass('active').siblings().removeClass('active');
+    }
+
+    $("#reset_filter").on('click', function () {
+        if (window.location.href.indexOf("?") > -1) {
+            window.location.href = window.location.href.split("?")[0];
+        }
+    });
+
+    /**
+     * This  function get the device service(PL) status i.e. Status & AGE
+     * @method getPlServiceStatus
+     * @param url {String}, It contains the API url to fetch the service status.
+     */
+    function getPlServiceStatus(url) {
+        if (url) {
+            $.ajax({
+                url: base_url + "" + url,
+                type: "GET",
+                success: function (response) {
+                    var result = "",
                             age = "",
                             last_updated = "",
                             perf = "",
@@ -485,40 +508,41 @@
                             status_class = "",
                             status_html = "";
 
-                        if(typeof response == 'string') {
-                            result = JSON.parse(response);
-                        } else {
-                            result = response;
-                        }
-
-                        if(result.data && result.data.objects) {
-                            age = result.data.objects.age ? result.data.objects.age : "Unknown";
-                            status = result.data.objects.status ? result.data.objects.status.toUpperCase() : "Unknown";;
-
-                            if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-                                status_class = "text-success";
-                            } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-                                status_class = "text-danger";
-                            } else {
-                                status_class = "";
-                            }
-
-                            status_html = "";
-                            status_html += '<i class="fa fa-circle '+status_class+'" style="vertical-align: middle;"> </i>';
-                            status_html += 'Device Status ';
-                            status_html += '<span class="'+status_class+'" style="'+left_block_style+'">Status : '+status+'</span>';
-                            status_html += '<span class="'+status_class+'" style="'+right_block_style+'">Status Since : '+age+'</span>';
-
-                            // Update Status Block HTML as per the device status
-                            $("#device_status_container").html(status_html);
-                        }
-                    },
-                    error : function(err) {
-                        // console.log(err.statusText);
+                    if (typeof response == 'string') {
+                        result = JSON.parse(response);
+                    } else {
+                        result = response;
                     }
-                });
-            }
+
+                    if (result.data && result.data.objects) {
+                        age = result.data.objects.age ? result.data.objects.age : "Unknown";
+                        status = result.data.objects.status ? result.data.objects.status.toUpperCase() : "Unknown";
+                        ;
+
+                        if (green_status_array.indexOf($.trim(status.toLowerCase())) > -1) {
+                            status_class = "text-success";
+                        } else if (red_status_array.indexOf($.trim(status.toLowerCase())) > -1) {
+                            status_class = "text-danger";
+                        } else {
+                            status_class = "";
+                        }
+
+                        status_html = "";
+                        status_html += '<i class="fa fa-circle ' + status_class + '" style="vertical-align: middle;"> </i>';
+                        status_html += 'Device Status ';
+                        status_html += '<span class="' + status_class + '" style="' + left_block_style + '">Status : ' + status + '</span>';
+                        status_html += '<span class="' + status_class + '" style="' + right_block_style + '">Status Since : ' + age + '</span>';
+
+                        // Update Status Block HTML as per the device status
+                        $("#device_status_container").html(status_html);
+                    }
+                },
+                error: function (err) {
+                    // console.log(err.statusText);
+                }
+            });
         }
+    }
     </script>
 
 {% endblock %}

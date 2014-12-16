@@ -11,6 +11,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=10" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"/>
     <title> Wireless1 </title>
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %}>
     <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher">
     <link rel="stylesheet" type="text/css" href={% static "css/responsive.css" %}>
@@ -133,11 +135,12 @@ iframe {
         /*Set cookies for devicevisualization app*/
         $.cookie("isFreezeSelected", 0, {path: '/', secure : true});
         $.cookie("freezedAt", 0, {path: '/', secure : true});
-        $.cookie("isMaintained", 0, {path: '/', secure : true});
         $.cookie("tools_ruler", 0, {path: '/', secure : true});
-        $.cookie("tools_line", 0, {path: '/', secure : true});
-        $.cookie("isLabelChecked", true, {path: '/', secure : true});
-        $.cookie("tooltipLabel", "", {path: '/', secure: true});
+        $.cookie("isLabelChecked", false, {path: '/', secure : true});
+        $.cookie("isLineChecked", true, {path: '/', secure : true});
+        $.cookie("isSSChecked", true, {path: '/', secure : true});
+        $.cookie("markerIconSize", "medium", {path: '/', secure : true});
+        $.cookie("tooltipLabel", "", {path: '/', secure : true});
         /*Cookie for collapsed menu*/
         $.cookie("isMenuOpen", 1, {path: '/', secure : true});
       });

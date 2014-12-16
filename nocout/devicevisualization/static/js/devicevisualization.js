@@ -6,7 +6,8 @@ var mapPageType = "",
     tools_ruler= "",
     tools_line = ""
     base_url = "",
-    last_selected_label = "";
+    last_selected_label = "",
+    current_icon_size = "medium";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -22,6 +23,10 @@ freezedAt = $.cookie("freezedAt") ? $.cookie("freezedAt") : 0;
 tools_ruler = $.cookie("tools_ruler") ? $.cookie("tools_ruler") : 0;        
 tools_line = $.cookie("tools_line") ? $.cookie("tools_line") : 0;
 last_selected_label = $.cookie("tooltipLabel") ? $.cookie("tooltipLabel") : "";
+current_icon_size = $.cookie("markerIconSize") ? $.cookie("markerIconSize") : "medium";
+
+// Select the last selected item in size dropdown 
+$("select#icon_Size_Select_In_Tools").val(current_icon_size);
 
 isPollingActive = 0;
 
@@ -33,11 +38,30 @@ if(isFreeze == 1 || (tools_ruler && tools_ruler != 0) || (tools_line && tools_li
     $("#showToolsBtn").removeClass("btn-warning");
 }
 
+// Update "Show Labels"  checkbox as per the cookie value
 if($.cookie("isLabelChecked")) {
     if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
         $("#show_hide_label")[0].checked= true;
     } else {
         $("#show_hide_label")[0].checked= false;
+    }
+}
+
+// Update "Show All Connection Lines"  checkbox as per the cookie value
+if($.cookie("isLineChecked")) {
+    if($.cookie("isLineChecked") == true || $.cookie("isLineChecked")=='true') {
+        $("#showConnLines")[0].checked= true;
+    } else {
+        $("#showConnLines")[0].checked= false;
+    }
+}
+
+// Update "Show All SS"  checkbox as per the cookie value
+if($.cookie("isSSChecked")) {
+    if($.cookie("isSSChecked") == true || $.cookie("isSSChecked")=='true') {
+        $("#showAllSS")[0].checked= true;
+    } else {
+        $("#showAllSS")[0].checked= false;
     }
 }
 
@@ -48,7 +72,7 @@ if(window.location.pathname.indexOf("white_background") > -1) {
     }
     
 }
-//$.cookie("isLabelChecked", 1, {path: '/', secure: true});
+//$.cookie("isLabelChecked", 1, {path: '/', secure : true});
 
 /*Call get_page_status function to show the current status*/
 get_page_status();
@@ -695,14 +719,16 @@ function get_page_status() {
 
 //On change of Icon Size, call updateAllMarkers function in DevicePlottingLib with the value.
 $("select#icon_Size_Select_In_Tools").change(function() {
-    var val= $(this).val();
+    var val= $.trim($(this).val());
     defaultIconSize= val;
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.updateMarkersSize(val);
     } else if (window.location.pathname.indexOf("googleEarth") > -1) {
         earth_instance.updateAllMarkersWithNewIcon(val);
     } else {
-        networkMapInstance.updateAllMarkersWithNewIcon(val);
+        current_icon_size = val;
+        $.cookie("markerIconSize", val, {path: '/', secure : true});
+        networkMapInstance.updateAllMarkersWithNewIcon_gmap(val);
         
     }
 });
@@ -1226,7 +1252,7 @@ function clearTools_gmap() {
  */
 
 $("#show_hide_label").click(function(e) {
-    $.cookie("isLabelChecked", e.currentTarget.checked, {path: '/', secure: true});
+    $.cookie("isLabelChecked", e.currentTarget.checked, {path: '/', secure : true});
 
     for(var x=0;x<labelsArray_filtered.length;x++) {
         if(window.location.pathname.indexOf("googleEarth") > -1) {
@@ -1347,7 +1373,9 @@ $("#point_icons_container li").click(function(e) {
 /*Close info window when close button is clicked*/
 $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
     $('#infoWindowContainer').html("");
-    $('#infoWindowContainer').addClass("hide");
+    if(!$('#infoWindowContainer').hasClass("hide")) {
+        $('#infoWindowContainer').addClass("hide");
+    }
 
     if($(".windowIFrame").length) {
         $(".windowIFrame").remove();
@@ -1618,6 +1646,23 @@ function deleteGoogleEarthPlacemarker(uniqueID) {
     }
 }
 
+/**
+ * This event trigger when any label is selected or changed from labels dropdown.
+ * @event change
+ */
+$("#static_label").change(function(e) {
+
+    if(($(this).val()) && ($(this).val() != last_selected_label)) {
+        if(!$("#apply_label").hasClass("btn-success")) {
+            $("#apply_label").addClass("btn-success");
+            $("#apply_label").html("Apply Label")
+        }
+
+        if($("#apply_label").hasClass("btn-danger")) {
+            $("#apply_label").removeClass("btn-danger");
+        }
+    }
+});
 
 /**
  * This event trigger when 'Apply Label' button in tools section clicked.
@@ -1627,36 +1672,28 @@ $("#apply_label").click(function(e) {
     var selected_val = $.trim($("#static_label").val());
 
     if(last_selected_label != "" && selected_val == "") {
-        // Save selected value to global variable
-        last_selected_label = selected_val;
-        // Update cookie value with the selected value.
-        $.cookie("tooltipLabel", last_selected_label, {path: '/', secure: true});
-
-        if(window.location.pathname.indexOf("googleEarth") > -1) {
-            
-        } else if(window.location.pathname.indexOf("white_background") > -1) {
-            // Remove tooltip info label
-            for (key in tooltipInfoLabel) {
-                tooltipInfoLabel[key].destroy();
-            }
-        } else {
-            // Remove tooltip info label
-            for (key in tooltipInfoLabel) {
-                tooltipInfoLabel[key].close();
-            }
-        }
-        // Reset Variables
-        tooltipInfoLabel = {};
+        // Call Function to remove ss param label from map & updates button and dropdown
+        removeSSParamLabel();
 
     } else {
         if((selected_val) && (selected_val != last_selected_label)) {
+
+            if($("#apply_label").hasClass("btn-success")) {
+                $("#apply_label").removeClass("btn-success");
+            }
+
+            if(!$("#apply_label").hasClass("btn-danger")) {
+                $("#apply_label").addClass("btn-danger");
+                $("#apply_label").html("Remove Label")
+            }
+
             // Save selected value to global variable
             last_selected_label = selected_val;
             // Update cookie value with the selected value.
-            $.cookie("tooltipLabel", last_selected_label, {path: '/', secure: true});
+            $.cookie("tooltipLabel", last_selected_label, {path: '/', secure : true});
 
             if(window.location.pathname.indexOf("googleEarth") > -1) {
-            
+                // Pass
             } else if(window.location.pathname.indexOf("white_background") > -1) {
                 if(ccpl_map && ccpl_map.getZoom() >= 4) {
                     networkMapInstance.updateTooltipLabel_gmap();
@@ -1682,10 +1719,53 @@ $("#apply_label").click(function(e) {
                 }
             }
         } else {
-            bootbox.alert("Please select different value.");
+            if($.trim($("#apply_label").html()) == 'Remove Label') {
+                // Call Function to remove ss param label from map & updates button and dropdown
+                removeSSParamLabel();
+            } else {
+                bootbox.alert("Please select different value.");
+            }
         }
     }
 });
+
+
+/**
+ * This function removes the ss param label & updated the button text & dropdown
+ * @metho removeSSParamLabel
+ */
+function removeSSParamLabel() {
+    $("#static_label").val($("#static_label option:first").val());
+    // Save selected value to global variable
+    last_selected_label = "";
+    // Update cookie value with the selected value.
+    $.cookie("tooltipLabel", last_selected_label, {path: '/', secure : true});
+
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        // Remove tooltip info label
+        for (key in tooltipInfoLabel) {
+            tooltipInfoLabel[key].destroy();
+        }
+    } else {
+        // Remove tooltip info label
+        for (key in tooltipInfoLabel) {
+            tooltipInfoLabel[key].close();
+        }
+    }
+    // Reset Variables
+    tooltipInfoLabel = {};
+
+    if(!$("#apply_label").hasClass("btn-success")) {
+        $("#apply_label").addClass("btn-success");
+        $("#apply_label").html("Apply Label")
+    }
+
+    if($("#apply_label").hasClass("btn-danger")) {
+        $("#apply_label").removeClass("btn-danger");
+    }
+}
 
 // This event triggers when service type radio button is changed
 $('input[type=radio][name=thematic_type]').change(function(e) {

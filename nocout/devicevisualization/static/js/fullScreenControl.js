@@ -61,7 +61,9 @@ function FullScreenControl(map) {
 	var originalOverflow = bodyStyle.overflow;
 	
 	var goFullScreen = function() {
-		
+		// Update the position prop from 'absolute' to 'fixed'
+		$(".sideInfoContainer").css("position","fixed");
+
 		if(mapDiv.style.height) {
 			originalHeight = mapDiv.style.height;
 		}
@@ -89,6 +91,9 @@ function FullScreenControl(map) {
 	};
 	
 	var exitFullScreen = function() {
+		// Revert the position prop to absolute
+		$(".sideInfoContainer").css("position","absolute");
+
 		var center = map.getCenter();
 		if (originalPos == "")
 			mapDiv.style.position = "relative";

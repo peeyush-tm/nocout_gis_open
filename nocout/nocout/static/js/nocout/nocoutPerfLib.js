@@ -15,7 +15,9 @@ var perf_that = "",
     chart_instance = "",
     old_table = "",
     base_url = "",
-    green_status_array = ['ok','success'],
+    green_color = "#468847",
+    red_color = "#b94a48",
+    green_status_array = ['ok','success','up'],
     red_status_array = ['warning','critical','down'],
     left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;margin-left:30px;",
     right_block_style = "border:1px solid #CCC;padding: 3px 5px;";
@@ -225,11 +227,19 @@ function nocoutPerfLib() {
 
                             device_services = result.data.objects[device_services_tab[i]].info;
 
-                            if (device_services.length > 0) {
-                                var tabs_with_data = "";
-                                var service_tabs = '<div class="col-md-3"><ul class="nav nav-tabs">';
+                            if(device_services && device_services.length > 0) {
+                                var left_section_class = "col-md-3",
+                                    right_section_class = "col-md-9"
+                                
+                                if(device_services.length == 1) {
+                                    left_section_class = "hide",
+                                    right_section_class = "col-md-12"
+                                }
 
-                                var service_tabs_data = '<div class="col-md-9">'
+                                var tabs_with_data = "";
+                                var service_tabs = '<div class="left_tabs_container '+left_section_class+'"><ul class="nav nav-tabs">';
+
+                                var service_tabs_data = '<div class="'+right_section_class+'">';
                                 service_tabs_data += '<div class="tab-content">';
 
                                 var is_first_tab = 0;
@@ -259,6 +269,10 @@ function nocoutPerfLib() {
                                 service_tabs += '</ul></div>';
                                 service_tabs_data += '</div>';
                                 tabs_with_data = service_tabs + " " + service_tabs_data;
+                            } else {
+                                if(!$("#" + tab_id).hasClass("hide")) {
+                                    $("#" + tab_id).addClass("hide")
+                                }
                             }
 
                             $("#" + device_services_tab[i] + " .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
@@ -381,7 +395,7 @@ function nocoutPerfLib() {
                     last_updated = "",
                     perf = "",
                     status = "",
-                    status_class = "",
+                    txt_color = "",
                     status_html = "";
 
                 if(typeof response == 'string') {
@@ -397,18 +411,18 @@ function nocoutPerfLib() {
                     perf = result.data.objects.perf ? result.data.objects.perf : "";
 
                     if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-                        status_class = "text-success";
+                        txt_color = green_color;
                     } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-                        status_class = "text-danger";
+                        txt_color = red_color;
                     } else {
-                        status_class = "";
+                        txt_color = "";
                     }
 
                     status_html = "";
-                    status_html += '<i class="fa fa-circle '+status_class+'" style="vertical-align: middle;"> </i>';
+                    status_html += '<i class="fa fa-circle" style="vertical-align: middle;color:'+txt_color+';"> </i>';
                     status_html += 'Device Status ';
-                    status_html += '<span class="'+status_class+'" style="'+left_block_style+'">Status : '+status+'</span>';
-                    status_html += '<span class="'+status_class+'" style="'+right_block_style+'">Status Since : '+age+'</span>';
+                    status_html += '<span style="'+left_block_style+'color:'+txt_color+';">Status : '+status+'</span>';
+                    status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Status Since : '+age+'</span>';
 
                     // Update Status Block HTML as per the device status
                     $("#device_status_container").html(status_html);
@@ -452,6 +466,14 @@ function nocoutPerfLib() {
 
         start_date = $.urlParam('start_date');
         end_date = $.urlParam('end_date');
+
+        if (start_date && end_date) {
+            start_date = new Date(start_date*1000);
+            end_date = new Date(end_date*1000);
+            sendAjax(start_date, end_date);
+        } else {
+            sendAjax('', '');
+        }
 
         function getDate(date) {
             var dateSplittedString = date.split('-');
@@ -577,6 +599,7 @@ function nocoutPerfLib() {
             $("#" + table_id).DataTable({
                 bPaginate: true,
                 bDestroy: true,
+                aaSorting : [[0,'desc']],
                 sPaginationType: "full_numbers"
             });
         }
@@ -619,6 +642,7 @@ function nocoutPerfLib() {
             $("#" + table_id).DataTable({
                 bPaginate: true,
                 bDestroy: true,
+                aaSorting : [[0,'desc']],
                 sPaginationType: "full_numbers"
             });
         }
@@ -633,12 +657,11 @@ function nocoutPerfLib() {
             }
         }
 
-        var firstDayTime = "", lastDayTime = "";
-
         function sendAjax(ajax_start_date, ajax_end_date) {
 
             var urlDataStartDate = '', urlDataEndDate = '';
-            if(ajax_start_date == '' && ajax_end_date == '') {                
+            if(ajax_start_date == '' && ajax_end_date == '') {  
+                // Pass              
             } else {
                 var end_Date = "";
                 if(moment(ajax_start_date).date() === moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() === moment(ajax_end_date).dayOfYear()) {
@@ -651,7 +674,7 @@ function nocoutPerfLib() {
             }
 
             if (!(ajax_start_date && ajax_end_date)) {
-                hideSpinner();
+//                 hideSpinner();
                 // return;
             }
 
@@ -713,19 +736,13 @@ function nocoutPerfLib() {
                                 })(ohayoo);
                             }, 400);
                         }
+                    } else {
+                        hideSpinner();
                     }
                 }
             })
             
 
-        }
-
-        if (start_date && end_date) {
-            start_date = new Date(start_date*1000);
-            end_date = new Date(end_date*1000);
-            sendAjax(start_date, end_date);
-        } else {
-            sendAjax('', '');
         }
     };
 }
