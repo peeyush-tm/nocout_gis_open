@@ -188,31 +188,41 @@ def check_device_status():
                 raise_alarms.delay(service_status_list, org)
 
 
-def prepare_machines(device_list):
+def prepare_machines(device_values_list_qs):
     """
-    Return dict of machine and device.
+    Return dict of machine name keys containing values of related devices list.
+
+    :param device_values_list_qs:
+    :return machine_dict:
     """
-    unique_device_machine_list = {device['machine__name']: True for device in device_list}.keys()
+    unique_device_machine_list = {device['machine__name']: True for device in device_values_list_qs}.keys()
+
     machine_dict = {}
     for machine in unique_device_machine_list:
-        machine_dict[machine] = [device['device_name'] for device in device_list if device['machine__name'] == machine]
+        machine_dict[machine] = [device['device_name'] for device in device_values_list_qs if device['machine__name'] == machine]
     return machine_dict
 
 
-def prepare_services(device_list):
+def prepare_services(device_list_qs):
     """
-    Return list of services of device in device list.
+    Return list of services of device types.
+
+    :param device_list_qs:
+    :return service_name_list:
     """
-    device_type_list = DeviceType.objects.filter(id__in=device_list.values_list('device_type', flat=True))
+    device_type_list = DeviceType.objects.filter(id__in=device_list_qs.values_list('device_type', flat=True))
     return list(DeviceTypeService.objects.filter(
         device_type__in=device_type_list).values_list('service__name', flat=True)
     )
 
 
-def prepare_service_data_sources(service_list):
+def prepare_service_data_sources(service_name_list):
     """
-    Return dict of service data source of device in device list.
+    Return list of service data sources of services.
+
+    :param service_name_list (List of service names):
+    :return data_source_name_list (List of service data sources):
     """
     return list(DeviceTypeServiceDataSource.objects.filter(
-        device_type_service__service__name__in=service_list).values_list('service_data_sources__name', flat=True)
+        device_type_service__service__name__in=service_name_list).values_list('service_data_sources__name', flat=True)
     )
