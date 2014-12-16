@@ -22,7 +22,7 @@ def raise_alarms(service_status_list, org):
     """
     escalation_level = None
     for service_status in service_status_list:
-        if service_status.severity=='ok':
+        if service_status.severity == 'ok':
             old_status = 1
             new_status = 1
         else:
@@ -46,24 +46,30 @@ def raise_alarms(service_status_list, org):
             if age.seconds >= level.alarm_age:
                 escalation_level = level
 
-        if service_status.severity=='ok':
+        if service_status.severity == 'ok':
             obj.new_status = 1
         else:
             obj.new_status = 0
         if escalation_level is not None:
-            if obj.new_status==0 and obj.old_status==0:
+            if obj.new_status == 0 and getattr(obj, 'l%d_email_status' % escalation_level.name) == 0:
+                if obj.old_status == 1:
+                    obj.old_status = 0
                 alert_emails_for_bad_performance.delay(obj, escalation_level)
                 alert_phones_for_bad_performance.delay(obj, escalation_level)
+                setattr(obj, 'l%d_email_status' % escalation_level.name, 1)
 
-            elif obj.new_status==0 and obj.old_status==1:
-                obj.old_status = 0
-                alert_emails_for_bad_performance.delay(obj, escalation_level)
-                alert_phones_for_bad_performance.delay(obj, escalation_level)
-
-            elif obj.new_status==1 and obj.old_status==0:
+            elif obj.new_status == 1 and obj.old_status == 0:
                 obj.old_status = 1
-                alert_emails_for_good_performance.delay(obj, escalation_level)
-                alert_phones_for_good_performance.delay(obj, escalation_level)
+
+                escalation_level_list = []
+                for level in level_list:
+                    if getattr(obj, 'l%d_email_status' % level.name) == 1:
+                        escalation_level_list += level
+                        setattr(obj, 'l%d_email_status' % level.name, 0)
+
+                alert_emails_for_good_performance.delay(obj, escalation_level_list)
+                alert_phones_for_good_performance.delay(obj, escalation_level_list)
+
         obj.save()
 
 
@@ -81,6 +87,7 @@ def alert_emails_for_bad_performance(alarm, level):
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, emails, fail_silently=False)
 
 
+
 @task
 def alert_phones_for_bad_performance(alarm, level):
     """
@@ -93,11 +100,13 @@ def alert_phones_for_bad_performance(alarm, level):
 
 
 @task
-def alert_emails_for_good_performance(alarm, level):
+def alert_emails_for_good_performance(alarm, escalation_level_list):
     """
     Sends Emails for good performance.
     """
-    emails = level.get_emails()
+    emails = list()
+    for level in escalation_level_list:
+        emails += (level.get_emails())
     context_dict = {'alarm' : alarm}
     context_dict['level'] = level
     subject = render_to_string('alarm_message/subject.txt', context_dict)
@@ -124,7 +133,6 @@ def check_device_status():
     """
     service_list = []
     service_data_source_list = []
-    severity_list = ['critical', 'warning', 'warn', 'crit']
     for org in Organization.objects.all():
         device_list = list(org.device_set.all().values('id', 'machine__name', 'device_name'))
         machine_dict = prepare_machines(device_list)
