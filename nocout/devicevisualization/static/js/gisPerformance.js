@@ -182,8 +182,14 @@ function GisPerformance() {
                                     //Send Request for the next counter
                                     perf_self.sendRequest(counter);
                                 });
+                            } else {
+                                //Send Request for the next counter
+                                perf_self.sendRequest(counter);
                             }
                         }
+                    } else {
+                        //Send Request for the next counter
+                        perf_self.sendRequest(counter);
                     }
                 }
 
@@ -1007,7 +1013,7 @@ function GisPerformance() {
                 allMarkersObject_gmap['sub_station']['ss_'+ss_name].setMap(null);
 
                 // Remove SS Marker from cluster
-                // masterClusterInstance.removeMarker(allMarkersObject_gmap['sub_station']['ss_'+ss_name]);
+                masterClusterInstance.removeMarker_(allMarkersObject_gmap['sub_station']['ss_'+ss_name]);
 
                 // Delete from gobal object
                 delete allMarkersObject_gmap['sub_station']['ss_'+ss_name];
