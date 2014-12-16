@@ -91,17 +91,11 @@
                                                 <label for="duration" class="col-sm-3 control-label"><span class="mandatory">* </span>Duration: </label>
                                                 <div class="col-sm-9">
                                                     <div class="col-md-8">
-                                                        <div class="col-md-2">
-                                                            From:
+                                                        <div class="bootstrap-timepicker col-md-5">
+                                                            From: {{ form.start_on_time }} {{ form.start_on_time.errors }}
                                                         </div>
-                                                        <div class="input-append bootstrap-timepicker col-md-4">
-                                                            {{ form.start_on_time }} {{ form.start_on_time.errors }}
-                                                        </div>
-                                                        <div class="col-md-1">
-                                                            To:
-                                                        </div>
-                                                        <div class="input-append bootstrap-timepicker col-md-4">
-                                                            {{ form.end_on_time }} {{ form.end_on_time.errors }}
+                                                        <div class="bootstrap-timepicker col-md-5">
+                                                            To: {{ form.end_on_time }} {{ form.end_on_time.errors }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -196,36 +190,51 @@
                 minuteStep: 1,
                 showSeconds: false,
                 showMeridian: false,
-                defaultTime: false
+                disableFocus: true
             });
             $('#id_end_on_time').timepicker({
                 minuteStep: 1,
                 showSeconds: false,
                 showMeridian: false,
-                defaultTime: false
+                disableFocus: true
             });
 
-            start_time = $("#id_start_on_time")
-            end_time = $("#id_end_on_time")
-            if (start_time.val() == ''){
-                start_time.timepicker('setTime', "20:00");
-            }
-            if (end_time.val() == ''){
-                end_time.timepicker('setTime', "23:00");
-            }
-            // $("#id_start_on_time").change(function(el){
-            //     if (start_time.val() > end_time.val() ){
-            //         alert("Start time must be less than end time");
-            //         end_time.timepicker('setTime', start_time.val());
-            //     }
-            // });
-            // end_time.change(function(el){
-            //     if (start_time.val() > end_time.val() ){
-            //         alert("End time must be greater than start time");
-            //         end_time.timepicker('setTime', start_time.val());
-            //     }
-            // });
+            $('#id_start_on_time').timepicker().on('changeTime.timepicker', function(e) {
+                var start_on_time = $("#id_start_on_time").val();
+                var end_on_time = $("#id_end_on_time").val();
+                var device_ids = $("input[name='device']").val()
+                filter_selected_device(start_on_time, end_on_time, device_ids)
 
+            });
+            $('#id_end_on_time').timepicker().on('changeTime.timepicker', function(e) {
+                var start_on_time = $("#id_start_on_time").val();
+                var end_on_time = $("#id_end_on_time").val();
+                var device_ids = $("input[name='device']").val()
+                filter_selected_device(start_on_time, end_on_time, device_ids)
+            });
+
+            // filter devices from the select2 on change of the duration of event.
+            function filter_selected_device(start_on_time, end_on_time, device_ids){
+                var start_on_time = start_on_time;
+                var end_on_time = end_on_time;
+                var device_ids = device_ids;
+                if (device_ids.length){
+                    $.ajax({
+                        url: '/device/filter/selected/device/',
+                        type: 'GET',
+                        dataType: 'json',
+                        contentType: 'application/json; charset=utf-8',
+                        data: {
+                            ids: device_ids,
+                            start_on_time: start_on_time,
+                            end_on_time: end_on_time,
+                        },
+                        success: function (response) {
+                            $("input[name='device']").select2("data", response.device_result)
+                        }
+                    });
+                }
+            }
 
             // handle the ends field of the form.
             var $radios = $('input:radio[name=ends]');
