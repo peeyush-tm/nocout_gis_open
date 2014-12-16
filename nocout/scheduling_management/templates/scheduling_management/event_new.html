@@ -5,6 +5,7 @@
 {% block content_description %}Add device type{% endblock %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/schedule_style.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/bootstrap-timepicker.min.css" %} >
 {% endblock %}
 {% block content %}
     <div class="row formContainer">
@@ -87,6 +88,25 @@
                                                 </div>
                                             </div>
                                             <div class="form-group">
+                                                <label for="duration" class="col-sm-3 control-label"><span class="mandatory">* </span>Duration: </label>
+                                                <div class="col-sm-9">
+                                                    <div class="col-md-8">
+                                                        <div class="col-md-2">
+                                                            From:
+                                                        </div>
+                                                        <div class="input-append bootstrap-timepicker col-md-4">
+                                                            {{ form.start_on_time }} {{ form.start_on_time.errors }}
+                                                        </div>
+                                                        <div class="col-md-1">
+                                                            To:
+                                                        </div>
+                                                        <div class="input-append bootstrap-timepicker col-md-4">
+                                                            {{ form.end_on_time }} {{ form.end_on_time.errors }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
                                                 <label for="{{ form.scheduling_type.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.scheduling_type.label|title }}</label>
                                                 <div class="col-sm-9">
                                                     <div class="col-md-8">
@@ -113,7 +133,6 @@
                                             <div class="form-group">
                                                 <label class="col-sm-3 control-label"><span class="mandatory">* </span>Ends</label>
                                                 <div class="col-sm-9">
-                                                    <div class="col-sm-8">
                                                     <label class="radio-inline">
                                                         <input type="radio" id="id_ends" class="radioField" value="end_never" name="ends" checked> Never {{ form.end_never }}
                                                     </label><br>
@@ -125,7 +144,6 @@
                                                         <input type="radio" id="id_ends" class="radioField" value="end_on" name="ends">
                                                         On&nbsp;&nbsp;&nbsp;<div class="radio-inline">{{ form.end_on }}</div>
                                                     </label>
-                                                    </div>
                                                 </div>
                                             </div>
                                     </div>
@@ -154,6 +172,7 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
         <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-timepicker.js" %}></script>
     {% endblock %}
     <script>
         $(document).ready(function(){
@@ -173,14 +192,50 @@
                 navigationAsDateFormat: true,
             });
 
+            $('#id_start_on_time').timepicker({
+                minuteStep: 1,
+                showSeconds: false,
+                showMeridian: false,
+                defaultTime: false
+            });
+            $('#id_end_on_time').timepicker({
+                minuteStep: 1,
+                showSeconds: false,
+                showMeridian: false,
+                defaultTime: false
+            });
+
+            start_time = $("#id_start_on_time")
+            end_time = $("#id_end_on_time")
+            if (start_time.val() == ''){
+                start_time.timepicker('setTime', "20:00");
+            }
+            if (end_time.val() == ''){
+                end_time.timepicker('setTime', "23:00");
+            }
+            // $("#id_start_on_time").change(function(el){
+            //     if (start_time.val() > end_time.val() ){
+            //         alert("Start time must be less than end time");
+            //         end_time.timepicker('setTime', start_time.val());
+            //     }
+            // });
+            // end_time.change(function(el){
+            //     if (start_time.val() > end_time.val() ){
+            //         alert("End time must be greater than start time");
+            //         end_time.timepicker('setTime', start_time.val());
+            //     }
+            // });
+
+
             // handle the ends field of the form.
             var $radios = $('input:radio[name=ends]');
+            $("#id_end_never").val(true)
             $("#id_end_after").val('').prop('readonly',true)
             $("#id_end_on").val('').prop('readonly',true)
             $radios.change(function(){
                 var x = $(this).val();
                 if (x=='end_after'){
-                    $("#id_end_after").val('0').prop('readonly',false).prop('required', true)
+                    $("#id_end_after").val('1').prop('readonly',false).prop('required', true)
                     $("#id_end_never").val(false)
                     $("#id_end_on").val('').prop('readonly',true).prop('required', false)
                 }
@@ -194,6 +249,11 @@
                     $("#id_end_after").val('').prop('readonly',true).prop('required', false)
                     $("#id_end_on").val('').prop('readonly',true).prop('required', false)
                 }
+            });
+
+            $("#id_end_after").change(function() {
+                var end_after_val = $(this).val();
+                if (end_after_val < 1){ alert('End after value should be positive integer.'); $(this).val('1'); }
             });
 
             if ($("#id_scheduling_type").val() == ''){
@@ -276,9 +336,13 @@
                     quietMillis: 250,
                     data: function (term, page) {
                         var scheduling_type = $("#id_scheduling_type").val()
+                        var start_on_time = $("#id_start_on_time").val()
+                        var end_on_time = $("#id_end_on_time").val()
                         return {
                             sSearch: term, // search term
                             scheduling_type: scheduling_type,
+                            start_on_time: start_on_time,
+                            end_on_time: end_on_time,
                         };
                     },
                     results: function (data, page) { // parse the results into the format expected by Select2.
@@ -286,7 +350,7 @@
                         return { results: data.items };
                     },
                     cache: false
-                },
+                }, // end ajax
                 initSelection: function(element, callback) {
                     // the input tag has a value attribute preloaded that points to a preselected repository's id
                     // this function resolves that id attribute to an object that select2 can render
@@ -307,11 +371,7 @@
                 },
                 formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
                 formatSelection: repoDeviceFormatSelection,  // omitted for brevity, see the source of this page
-            })
-            // .on("select2-selecting", function(el) {
-            //     console.log(el.val)
-            //     // location.href="/gis-wizard/base-station/" + el.val + "/";
-            // });
+            });
         });
         function repoDeviceFormatResult(device) {
           return device.device_alias;

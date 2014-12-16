@@ -5,6 +5,7 @@
 {% block content_description %}Add device type{% endblock %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/schedule_style.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/bootstrap-timepicker.min.css" %} >
 {% endblock %}
 {% block content %}
     <div class="row formContainer">
@@ -87,6 +88,25 @@
                                                 </div>
                                             </div>
                                             <div class="form-group">
+                                                <label for="duration" class="col-sm-3 control-label"><span class="mandatory">* </span>Duration: </label>
+                                                <div class="col-sm-9">
+                                                    <div class="col-md-8">
+                                                        <div class="col-md-2">
+                                                            From:
+                                                        </div>
+                                                        <div class="input-append bootstrap-timepicker col-md-4">
+                                                            {{ form.start_on_time }} {{ form.start_on_time.errors }}
+                                                        </div>
+                                                        <div class="col-md-1">
+                                                            To:
+                                                        </div>
+                                                        <div class="input-append bootstrap-timepicker col-md-4">
+                                                            {{ form.end_on_time }} {{ form.end_on_time.errors }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
                                                 <label for="{{ form.scheduling_type.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.scheduling_type.label|title }}</label>
                                                 <div class="col-sm-9">
                                                     <div class="col-md-8">
@@ -151,6 +171,7 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
         <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-timepicker.js" %}></script>
     {% endblock %}
     <script>
         $(document).ready(function(){
@@ -170,14 +191,56 @@
                 navigationAsDateFormat: true,
             });
 
+            $('#id_start_on_time').timepicker({
+                minuteStep: 1,
+                showSeconds: false,
+                showMeridian: false,
+                defaultTime: false
+            });
+            $('#id_end_on_time').timepicker({
+                minuteStep: 1,
+                showSeconds: false,
+                showMeridian: false,
+                defaultTime: false
+            });
+
+            start_time = $("#id_start_on_time")
+            end_time = $("#id_end_on_time")
+            if (start_time.val() == ''){
+                start_time.timepicker('setTime', "20:00");
+            }
+            if (end_time.val() == ''){
+                end_time.timepicker('setTime', "23:00");
+            }
+
             // handle the ends field of the form.
             var $radios = $('input:radio[name=ends]');
-            $("#id_end_after").val('').prop('readonly',true)
-            $("#id_end_on").val('').prop('readonly',true)
+            $("#id_end_never").val(false)
+            $("#id_end_on").prop('readonly', true)
+            $("#id_end_after").prop('readonly', true)
+            if ($("#id_end_after").val().length){
+                $radios.filter("[value=end_after]").prop('checked', true)
+                $("#id_end_after").prop('readonly', false).prop('required', true)
+            }
+            else if($("#id_end_on").val().length){
+                $radios.filter("[value=end_on]").prop('checked', true)
+                $("#id_end_on").prop('readonly', false).prop('required', true)
+            }
+            else{
+                $("#id_end_never").val(true)
+                $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                $("#id_end_after").val('').prop('readonly',true).prop('required', false)
+            }
+
+            $("#id_end_after").change(function() {
+                var end_after_val = $(this).val();
+                if (end_after_val < 1){ alert('End after value should be positive integer.'); $(this).val('1'); }
+            });
+
             $radios.change(function(){
                 var x = $(this).val();
                 if (x=='end_after'){
-                    $("#id_end_after").val('0').prop('readonly',false).prop('required', true)
+                    $("#id_end_after").val('1').prop('readonly',false).prop('required', true)
                     $("#id_end_never").val(false)
                     $("#id_end_on").val('').prop('readonly',true).prop('required', false)
                 }
@@ -260,11 +323,6 @@
     </script>
 
     <script>
-        // var device_val = $("#id_device").val().split(",")
-        // device_val[0] = device_val[0].split("[")[1]
-        // device_val[device_val.length-1] = device_val[device_val.length-1].split("]")[0]
-        // $("#id_device").val(device_val)
-
         $(function() {
             $("input[name='device']").select2({
                 placeholder: "Search with (IP, Device Name, Device Alias, MAC, Sector ID, Circuit)",
@@ -277,9 +335,13 @@
                     quietMillis: 250,
                     data: function (term, page) {
                         var scheduling_type = $("#id_scheduling_type").val()
+                        var start_on_time = $("#id_start_on_time").val()
+                        var end_on_time = $("#id_end_on_time").val()
                         return {
                             sSearch: term, // search term
                             scheduling_type: scheduling_type,
+                            start_on_time: start_on_time,
+                            end_on_time: end_on_time,
                         };
                     },
                     results: function (data, page) { // parse the results into the format expected by Select2.
