@@ -40,8 +40,9 @@ class EscalationLevel(models.Model):
         return ",".join(value)
 
     def get_emails(self):
-        phones = self.emails.split(',')
-        return phones
+        emails = self.emails.replace(' ','')
+        emails = self.emails.split(',')
+        return emails
 
     def get_emails_field(value):
         return ",".join(value)
