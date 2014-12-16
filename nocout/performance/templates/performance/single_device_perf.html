@@ -682,14 +682,14 @@
      */
     function fetchFirstTabContent(e) {
         var tab_id = e.currentTarget.attributes.href.value.split("#")[1];
-        var li_count = $("#" + tab_id + " .inner_tab_container .col-md-3 ul li").length;
+        var li_count = $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li").length;
         if (li_count > 0) {
             var activeTabId = $.cookie('activeTabId');
             //if activeTabId is stored in cookie and tabEL exist.
-            if (activeTabId && $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#" + activeTabId).length) {
-                $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#" + activeTabId).trigger('click');
+            if (activeTabId && $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li a#" + activeTabId).length) {
+                $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li a#" + activeTabId).trigger('click');
             } else {
-                $("#" + tab_id + " .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
+                $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li:first-child a").trigger('click');
             }
         }
     }
