@@ -18,6 +18,8 @@
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
 {% endblock %}
 
+{% load sds %}
+
 {% block content %}
     <style>
         .perfContainerBlock .box-title .pull-right .list-inline > li {
@@ -185,6 +187,7 @@
                     {% else %}
                         {% for data in table_data %}
                             <tr>
+                                {{  data.service_data_source|sds:data.data_source }}
                                 {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
                                     <td><i class="fa fa-circle red-dot"></i></td>
                                     <td>{{ data.ip_address }}</td>

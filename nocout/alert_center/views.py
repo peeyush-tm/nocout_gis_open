@@ -32,6 +32,13 @@ from nocout.utils import logged_in_user_organizations
 #alert center utilities
 from alert_center.utils import util as alert_utils
 
+from service.utils.util import service_data_sources
+
+##execute this globally
+SERVICE_DATA_SOURCE = service_data_sources()
+##execute this globally
+
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -1088,6 +1095,7 @@ class SingleDeviceAlertDetails(View):
                            service_name=service_name,
                            start_date_object=start_date_object,
                            end_date_object=end_date_object,
+                           service_data_source=SERVICE_DATA_SOURCE
             )
 
             return render(request, 'alert_center/single_device_alert.html', context)
