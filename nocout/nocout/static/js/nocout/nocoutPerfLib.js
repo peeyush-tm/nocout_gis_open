@@ -227,11 +227,19 @@ function nocoutPerfLib() {
 
                             device_services = result.data.objects[device_services_tab[i]].info;
 
-                            if (device_services.length > 0) {
-                                var tabs_with_data = "";
-                                var service_tabs = '<div class="col-md-3"><ul class="nav nav-tabs">';
+                            if(device_services && device_services.length > 0) {
+                                var left_section_class = "col-md-3",
+                                    right_section_class = "col-md-9"
+                                
+                                if(device_services.length == 1) {
+                                    left_section_class = "hide",
+                                    right_section_class = "col-md-12"
+                                }
 
-                                var service_tabs_data = '<div class="col-md-9">'
+                                var tabs_with_data = "";
+                                var service_tabs = '<div class="left_tabs_container '+left_section_class+'"><ul class="nav nav-tabs">';
+
+                                var service_tabs_data = '<div class="'+right_section_class+'">';
                                 service_tabs_data += '<div class="tab-content">';
 
                                 var is_first_tab = 0;
@@ -261,6 +269,10 @@ function nocoutPerfLib() {
                                 service_tabs += '</ul></div>';
                                 service_tabs_data += '</div>';
                                 tabs_with_data = service_tabs + " " + service_tabs_data;
+                            } else {
+                                if(!$("#" + tab_id).hasClass("hide")) {
+                                    $("#" + tab_id).addClass("hide")
+                                }
                             }
 
                             $("#" + device_services_tab[i] + " .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
