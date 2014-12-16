@@ -51,7 +51,7 @@ class SessionSecurityMiddleware(object):
                 if is_password_expired and request.path != '/user/change_password/':
                     logout(request)
 
-            if session_key_in_visitor_db != key_from_cookie and request.path != '/sm/dialog_action/':
+            if session_key_in_visitor_db != key_from_cookie and request.path != '/sm/dialog_action/' and request.path != '/favicon.ico':
                 logout(request)
 
         now = datetime.now()
