@@ -32,4 +32,5 @@ urlpatterns = patterns('',
 
   url(r'^list/schedule/device/$', views.list_schedule_device, name='list-schedule-device'),
   url(r'^select/schedule/device/$', views.select_schedule_device, name='select-schedule-device'),
+  url(r'^filter/selected/device/$', views.filter_selected_device, name='filter-selected-device/'),
 )
