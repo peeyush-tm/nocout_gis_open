@@ -25,27 +25,36 @@
             <div id="tableContainer" class="box-body">
                 <div class="tabbable header-tabs">
                     <ul class="nav nav-tabs">
-                        <li><a href="#{{ page_type|slugify|lower }}_wifi_block" id="{{ page_type|slugify|lower }}_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
-                        <li><a href="#{{ page_type|slugify|lower }}_pmp_block" id="{{ page_type|slugify|lower }}_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
-                        <li class="active"><a href="#{{ page_type|slugify|lower }}_p2p_block" id="{{ page_type|slugify|lower }}_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
+                        <li><a href="#{{ page_type|slugify|lower }}_wifi_block"
+                               id="{{ page_type|slugify|lower }}_wifi_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">WiMAX</span></a></li>
+                        <li><a href="#{{ page_type|slugify|lower }}_pmp_block"
+                               id="{{ page_type|slugify|lower }}_pmp_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">PMP</span></a></li>
+                        <li class="active"><a href="#{{ page_type|slugify|lower }}_p2p_block"
+                                              id="{{ page_type|slugify|lower }}_ptp_tab" data-toggle="tab"><span
+                                class="hidden-inline-mobile">P2P</span></a></li>
                     </ul>
                     <div class="tab-content Tbl_FixHeight" style="overflow-y:auto;">
                         <div class="tab-pane" id="{{ page_type|slugify|lower }}_wifi_block">
-                            <table id="{{ page_type|slugify|lower }}_wifi_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
+                            <table id="{{ page_type|slugify|lower }}_wifi_performancelistingtable" cellpadding="0"
+                                   cellspacing="0" border="0"
                                    class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                         <div class="tab-pane" id="{{ page_type|slugify|lower }}_pmp_block">
-                            <table id="{{ page_type|slugify|lower }}_pmp_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
+                            <table id="{{ page_type|slugify|lower }}_pmp_performancelistingtable" cellpadding="0"
+                                   cellspacing="0" border="0"
                                    class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                         <div class="tab-pane active" id="{{ page_type|slugify|lower }}_p2p_block">
-                            <table id="{{ page_type|slugify|lower }}_p2p_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
+                            <table id="{{ page_type|slugify|lower }}_p2p_performancelistingtable" cellpadding="0"
+                                   cellspacing="0" border="0"
                                    class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
@@ -84,7 +93,7 @@
             /*Ajax url to get grid data*/
             var destroy = false;
             ///for backhaul devices
-            if (ajax_url_get_parameter == "other"){
+            if (ajax_url_get_parameter == "other") {
                 var ajax_url_bh = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter;
                 dataTableInstance.createDataTable("PerformanceLiveTable", gridHeadersObj, ajax_url_bh, destroy);
             }
@@ -98,29 +107,29 @@
                 /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
                 $("#network_wifi_tab").attr("data_url", ajax_url_wifi);
-                $("#network_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
+                $("#network_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
                 $("#network_pmp_tab").attr("data_url", ajax_url_pmp);
-                $("#network_pmp_tab").attr("data_header",'{{ datatable_headers|safe }}');
+                $("#network_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
                 $("#network_ptp_tab").attr("data_url", ajax_url_p2p);
                 $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
 
                 $("#customer_wifi_tab").attr("data_url", ajax_url_wifi);
-                $("#customer_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
+                $("#customer_wifi_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
                 $("#customer_pmp_tab").attr("data_url", ajax_url_pmp);
-                $("#customer_pmp_tab").attr("data_header",'{{ datatable_headers|safe }}');
+                $("#customer_pmp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
                 $("#customer_ptp_tab").attr("data_url", ajax_url_p2p);
                 $("#customer_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
                 var location_array = window.location.href.split("#");
 
-                if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+                if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
                     /*Trigger click event on active tab to load its data*/
-                    $("#"+ajax_url_get_parameter+"_ptp_tab").trigger('click', true);
+                    $("#" + ajax_url_get_parameter + "_ptp_tab").trigger('click', true);
                 }
             }
         });
