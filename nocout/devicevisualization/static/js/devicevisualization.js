@@ -1373,7 +1373,9 @@ $("#point_icons_container li").click(function(e) {
 /*Close info window when close button is clicked*/
 $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
     $('#infoWindowContainer').html("");
-    $('#infoWindowContainer').addClass("hide");
+    if(!$('#infoWindowContainer').hasClass("hide")) {
+        $('#infoWindowContainer').addClass("hide");
+    }
 
     if($(".windowIFrame").length) {
         $(".windowIFrame").remove();
