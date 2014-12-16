@@ -14,9 +14,6 @@ import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
 
-# project settings
-from nocout.settings import SERVICE_DATA_SOURCE
-
 from performance.models import PerformanceService, PerformanceNetwork, \
     EventService, NetworkStatus, \
     ServiceStatus, InventoryStatus, \
@@ -37,6 +34,12 @@ from inventory.utils import util as inventory_utils
 from performance.utils import util as perf_utils
 
 from alert_center.utils import util as alert_utils
+
+from service.utils.util import service_data_sources
+
+##execute this globally
+SERVICE_DATA_SOURCE = service_data_sources()
+##execute this globally
 
 import logging
 

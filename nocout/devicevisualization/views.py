@@ -26,16 +26,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.urlresolvers import reverse_lazy
 import re, ast
 from activity_stream.models import UserAction
-#service data sources mapped
-from nocout.settings import SERVICE_DATA_SOURCE
 
 #update the service data sources
 from service.utils.util import service_data_sources
 
 logger=logging.getLogger(__name__)
 
-##execute this globally to update SERVICE_DATA_SOURCE
-service_data_sources()
+##execute this globally
+SERVICE_DATA_SOURCE = service_data_sources()
 ##execute this globally
 
 

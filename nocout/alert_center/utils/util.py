@@ -7,12 +7,10 @@ from nocout.utils import util as nocout_utils
 
 from performance.utils import util as perf_utils
 
-from nocout.settings import SERVICE_DATA_SOURCE
-
 from service.utils.util import service_data_sources
 
 ##execute this globally
-service_data_sources()
+SERVICE_DATA_SOURCE = service_data_sources()
 ##execute this globally
 
 
