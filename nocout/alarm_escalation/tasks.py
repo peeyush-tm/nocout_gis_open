@@ -9,10 +9,10 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.shortcuts import render
 
-from alarm_escalation.models import EscalationStatus
 from organization.models import Organization
-from performance.models import ServiceStatus
 from device.models import Device, DeviceType, DeviceTypeService, DeviceTypeServiceDataSource
+from performance.models import ServiceStatus
+from alarm_escalation.models import EscalationStatus
 
 
 @task
