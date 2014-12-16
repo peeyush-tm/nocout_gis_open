@@ -4101,7 +4101,10 @@ function devicePlottingClass_gmap() {
         	query: function (query) {
         		var bs_name_array = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var searchPattern = new RegExp('^' + query.term, 'i')
+        			// Special characters handling
+        			var entered_txt = query.term.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&"),
+        				searchPattern = new RegExp('^' + entered_txt, 'i');
+
         			if(searchPattern.test(obj.alias)) {
         				return true;
         			} else {
@@ -4158,7 +4161,8 @@ function devicePlottingClass_gmap() {
         	multiple: true,
         	minimumInputLength: 3,
         	query: function (query) {
-        		var searchPattern = new RegExp('^' + query.term, 'i'),
+        		var entered_txt = query.term.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&"),
+        			searchPattern = new RegExp('^' + entered_txt, 'i'),
         			circuit_id_array = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
         			var circuit_Ids = obj.circuit_ids.toLowerCase();
