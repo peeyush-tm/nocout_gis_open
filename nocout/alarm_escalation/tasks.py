@@ -48,10 +48,8 @@ def raise_alarms(service_status_list, org):
 
         if service_status.severity=='ok':
             obj.new_status = 1
-            obj.save()
         else:
             obj.new_status = 0
-            obj.save()
         if escalation_level is not None:
             if obj.new_status==0 and obj.old_status==0:
                 alert_emails_for_bad_performance.delay(obj, escalation_level)
@@ -59,15 +57,14 @@ def raise_alarms(service_status_list, org):
 
             elif obj.new_status==0 and obj.old_status==1:
                 obj.old_status = 0
-                obj.save()
                 alert_emails_for_bad_performance.delay(obj, escalation_level)
                 alert_phones_for_bad_performance.delay(obj, escalation_level)
 
             elif obj.new_status==1 and obj.old_status==0:
                 obj.old_status = 1
-                obj.save()
                 alert_emails_for_good_performance.delay(obj, escalation_level)
                 alert_phones_for_good_performance.delay(obj, escalation_level)
+        obj.save()
 
 
 @task
