@@ -33,6 +33,7 @@ class EscalationLevel(models.Model):
         return '%s' % (self.get_name_display())
 
     def get_phones(self):
+        phones = self.phones.replace(' ','')
         phones = self.phones.split(',')
         return phones
 
