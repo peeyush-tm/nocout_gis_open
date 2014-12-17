@@ -39,7 +39,7 @@ def raise_alarms(service_status_list, org):
                 service_data_source=service_status.data_source,
                 ip=service_status.ip_address,
                 defaults={'severity': service_status.severity, 'old_status': old_status, 'new_status': new_status,
-                    status_since=(timezone.now() - timezone.timedelta(seconds=service_status.age)),
+                    'status_since': (timezone.now() - timezone.timedelta(seconds=service_status.age)),
                 }
         )
 
@@ -153,7 +153,8 @@ def check_device_status():
     service_list = []
     service_data_source_list = []
     for org in Organization.objects.all():
-        device_list_qs = inventory_utils.organization_network_devices([org])
+        #device_list_qs = inventory_utils.organization_network_devices([org])
+        device_list_qs = org.device_set.all()
         machine_dict = prepare_machines(device_list_qs)
         service_list = prepare_services(device_list_qs)
         service_data_source_list = prepare_service_data_sources(service_list)
