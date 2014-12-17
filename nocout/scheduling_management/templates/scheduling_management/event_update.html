@@ -111,6 +111,17 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="form-group">
+                                                <label class="col-sm-3 control-label">Technology</label>
+                                                <div class="col-sm-9">
+                                                    <div class="col-md-8">
+                                                        {{ form.technology }} {{ form.technology.errors }}
+                                                    </div>
+                                                    <div class="col-md-4 help_text">
+                                                        {{ form.technology.help_text }}
+                                                    </div>
+                                                </div>
+                                            </div>
 
                                             <!-- select box to search the devices -->
                                             <div class="form-group">
@@ -371,12 +382,14 @@
                         var start_on_time = $("#id_start_on_time").val()
                         var end_on_time = $("#id_end_on_time").val()
                         var obj_id = $("#id_form").val()
+                        var technology_id = $("#id_technology").val()
                         return {
                             sSearch: term, // search term
                             scheduling_type: scheduling_type,
                             start_on_time: start_on_time,
                             end_on_time: end_on_time,
                             obj_id: obj_id,
+                            technology_id: technology_id,
                         };
                     },
                     results: function (data, page) { // parse the results into the format expected by Select2.

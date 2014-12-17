@@ -3541,19 +3541,24 @@ def list_schedule_device(request):
     device_list = Device.objects.filter(organization__in=[org],
                                         is_added_to_nms=1,
                                         is_deleted=0,)
+    technology_id = None
+    if request.GET['technology_id']:
+        technology_id = request.GET['technology_id']
+        device_list = device_list.filter(device_technology=int(technology_id))
+
     if scheduling_type == 'devi':
         device_list = device_list.filter(device_alias__icontains=sSearch)
     elif scheduling_type == 'dety':
         device_list = device_list.filter(device_type__in=DeviceType.objects.\
                     filter(alias__icontains=sSearch).values_list('id', flat=True))
     elif scheduling_type == 'cust':
-        device_list = organization_customer_devices(organizations=[org], technology = None, specify_ptp_type='all').\
+        device_list = organization_customer_devices(organizations=[org], technology = technology_id, specify_ptp_type='all').\
                     filter(device_alias__icontains=sSearch)
     elif scheduling_type == 'netw':
-        device_list = organization_network_devices(organizations=[org], technology = None, specify_ptp_bh_type='all').\
+        device_list = organization_network_devices(organizations=[org], technology = technology_id, specify_ptp_bh_type='all').\
                     filter(device_alias__icontains=sSearch)
     elif scheduling_type == 'back':
-        device_list = organization_backhaul_devices(organizations=[org], technology = None).\
+        device_list = organization_backhaul_devices(organizations=[org], technology = technology_id).\
                     filter(device_alias__icontains=sSearch)
 
     device = device_list.exclude(id__in=over_lap_device_ids).values('id', 'device_alias') # excule the overlapping devices
