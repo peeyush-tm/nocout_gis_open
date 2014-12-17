@@ -1,0 +1,1 @@
+0 23 * * * /usr/bin/python nocout/mysql_clean.py -a live_data 
