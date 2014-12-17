@@ -1068,8 +1068,7 @@ var state_wise_device_label_text= {};
 	 */
 	this.plotDevices_earth = function(resultantMarkers,station_type) {
 
-		for(var i=0;i<resultantMarkers.length;i++) {
-			
+		for(var i=0;i<resultantMarkers.length;i++) {			
 
 			var bs_marker_icon = base_url+"/static/img/icons/bs.png";
 
@@ -1087,6 +1086,7 @@ var state_wise_device_label_text= {};
 				device_name: resultantMarkers[i].data.device_name,
 				bsInfo: resultantMarkers[i].data.param.base_station,
 				bhInfo: resultantMarkers[i].data.param.backhual,
+				bhInfo_polled : [],
 				bs_name: resultantMarkers[i].name,
 				name: resultantMarkers[i].name,
 				filter_data: {"bs_name" : resultantMarkers[i].name, "bs_id" : resultantMarkers[i].originalId},
