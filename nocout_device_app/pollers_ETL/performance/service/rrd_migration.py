@@ -109,7 +109,7 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 		    elif entry[2] == 1:
 			host_state = 'down'
 		# Age of last service state change
-		    last_state_change = entry[-3]
+		    last_state_change = entry[-2]
 		    age =last_state_change
                 except:
                     continue
@@ -217,7 +217,7 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 		threshold_values = get_threshold(entry[-1])
 		severity = calculate_severity(entry[3])
 		# Age of last service state change
-		last_state_change = entry[-2]
+		last_state_change = entry[-3]
 		age = last_state_change
 		data_dict.update({
 			'service': str(entry[2]),
