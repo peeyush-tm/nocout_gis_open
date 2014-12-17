@@ -20,10 +20,11 @@ from inventory.utils import util as inventory_utils
 @task
 def raise_alarms(service_status_list, org):
     """
-    Raises alarms.
+    Raise alarms for bad performance or good performance of device for a particular organization.
     """
-    escalation_level = None
     for service_status in service_status_list:
+
+        # Get EscalationStatus to process.
         if service_status.severity == 'ok':
             old_status = 1
             new_status = 1
@@ -42,40 +43,51 @@ def raise_alarms(service_status_list, org):
                 }
         )
 
-        age = timezone.now() - obj.status_since
-        obj.severity = service_status.severity
+        # Get relative levels to inform
         level_list = obj.organization.escalationlevel_set.filter(device_type__name=obj.device_type,
-                                            service__name=obj.service,
-                                            service_data_source__name=obj.service_data_source)
-        for level in level_list:
-            if age.seconds >= level.alarm_age:
-                escalation_level = level
+                service__name=obj.service, service_data_source__name=obj.service_data_source)
 
+        # Get current status of device {'good': 1, 'bad': 0}
         if service_status.severity == 'ok':
             obj.new_status = 1
         else:
             obj.new_status = 0
-        if escalation_level is not None:
-            if obj.new_status == 0 and getattr(obj, 'l%d_email_status' % escalation_level.name) == 0:
+        obj.severity = service_status.severity
+
+        # Notify for good status of device, if it has started performing good from bad.
+        if obj.new_status == 1 and obj.old_status == 0:
+            obj.old_status = 1
+            obj.status_since = timezone.now() - timezone.timedelta(seconds=service_status.age)
+
+            # Notify to only levels which has been previously notfied for bad status.
+            escalation_level_list = []
+            for level in level_list:
+                if getattr(obj, 'l%d_email_status' % level.name) == 1:
+                    escalation_level_list.append(level)
+                    setattr(obj, 'l%d_email_status' % level.name, 0)
+
+            alert_emails_for_good_performance.delay(obj, escalation_level_list)
+            alert_phones_for_good_performance.delay(obj, escalation_level_list)
+
+        # Notify for bad status of device to level according to alarm age.
+        elif obj.new_status == 0:
+
+            # Get level to notify.
+            escalation_level = None
+            for level in level_list:
+                age = timezone.now() - obj.status_since
+                if age.seconds >= level.alarm_age:
+                    escalation_level = level
+
+            # Notify only if escalation level has previously not been notified.
+            if escalation_level is not None and getattr(obj, 'l%d_email_status' % escalation_level.name) == 0:
                 if obj.old_status == 1:
                     obj.old_status = 0
                     obj.status_since = timezone.now() - timezone.timedelta(seconds=service_status.age)
+
                 alert_emails_for_bad_performance.delay(obj, escalation_level)
                 alert_phones_for_bad_performance.delay(obj, escalation_level)
                 setattr(obj, 'l%d_email_status' % escalation_level.name, 1)
-
-            elif obj.new_status == 1 and obj.old_status == 0:
-                obj.old_status = 1
-                obj.status_since = timezone.now() - timezone.timedelta(seconds=service_status.age)
-
-                escalation_level_list = []
-                for level in level_list:
-                    if getattr(obj, 'l%d_email_status' % level.name) == 1:
-                        escalation_level_list.append(level)
-                        setattr(obj, 'l%d_email_status' % level.name, 0)
-
-                alert_emails_for_good_performance.delay(obj, escalation_level_list)
-                alert_phones_for_good_performance.delay(obj, escalation_level_list)
 
         obj.save()
 
