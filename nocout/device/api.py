@@ -1068,11 +1068,11 @@ class BulkFetchLPDataApi(View):
 
                         result['data']['devices'][device_name]['icon'] = icon
                         # if response_dict doesn't have key 'success'
-                        if not device_value:
-                            result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % \
+                        if device_value and (device_value != "NA"):
+                            result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % \
                                                                                 device_name
                         else:
-                            result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % \
+                            result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % \
                                                                                 device_name
             result['success'] = 1
             result['message'] = "Successfully fetched."
