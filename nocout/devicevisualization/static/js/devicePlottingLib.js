@@ -4101,7 +4101,10 @@ function devicePlottingClass_gmap() {
         	query: function (query) {
         		var bs_name_array = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
-        			var searchPattern = new RegExp('^' + query.term, 'i')
+        			// Special characters handling
+        			var entered_txt = query.term.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&"),
+        				searchPattern = new RegExp('^' + entered_txt, 'i');
+
         			if(searchPattern.test(obj.alias)) {
         				return true;
         			} else {
@@ -4158,7 +4161,8 @@ function devicePlottingClass_gmap() {
         	multiple: true,
         	minimumInputLength: 3,
         	query: function (query) {
-        		var searchPattern = new RegExp('^' + query.term, 'i'),
+        		var entered_txt = query.term.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&"),
+        			searchPattern = new RegExp('^' + entered_txt, 'i'),
         			circuit_id_array = [];
         		var filtered_data = all_devices_loki_db.where(function(obj) {
         			var circuit_Ids = obj.circuit_ids.toLowerCase();
@@ -4733,6 +4737,20 @@ function devicePlottingClass_gmap() {
 					whiteMapClass.showStateWiseData_wmap(data_to_plot_1);
 				} else {
 					data_for_filters = data_to_plot_1;
+					// If any infowindow open then close it.
+					if(infowindow) {
+						infowindow.close();
+					}
+					$('#infoWindowContainer').html("");
+				    if(!$('#infoWindowContainer').hasClass("hide")) {
+				    	$('#infoWindowContainer').addClass("hide");
+				    }
+
+				    if($(".windowIFrame").length) {
+				        $(".windowIFrame").remove();
+				    }
+
+
 					isCallCompleted = 1;
 					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
 					mapInstance.setZoom(5);
@@ -5443,7 +5461,7 @@ function devicePlottingClass_gmap() {
 									var layer = ss_marker.layer ? ss_marker.layer : ss_marker.layerReference;
 									layer.redraw();
 								} else {
-									var ss_live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
+									var ss_live_polled_icon = gmap_self.getMarkerImageBySize(newIcon,"other");
 									ss_marker.setOptions({
 										"icon" : ss_live_polled_icon
 									});
@@ -5464,7 +5482,7 @@ function devicePlottingClass_gmap() {
 									var layer = sector_marker.layer ? sector_marker.layer : sector_marker.layerReference;
 									layer.redraw();
 								} else {
-		                            var sector_live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
+		                            var sector_live_polled_icon = gmap_self.getMarkerImageBySize(newIcon,"other");
 			                        // Update sector marker icon
 									sector_marker.setOptions({
 										"icon" : sector_live_polled_icon,
@@ -5575,7 +5593,7 @@ function devicePlottingClass_gmap() {
 				newIcon = complete_polled_devices_icon[polled_devices_names[i]][nav_click_counter];
 			}
 
-			var live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
+			var live_polled_icon = gmap_self.getMarkerImageBySize(newIcon,"other");
 
 			if(ss_marker) {
 				ss_marker.setOptions({
@@ -5643,7 +5661,7 @@ function devicePlottingClass_gmap() {
 				newIcon = complete_polled_devices_icon[polled_devices_names[i]][nav_click_counter];
 			}
 
-			var live_polled_icon = gmap_self.getMarkerImageBySize(base_url+"/"+newIcon,"other");
+			var live_polled_icon = gmap_self.getMarkerImageBySize(newIcon,"other");
 
 			if(ss_marker) {
 				ss_marker.setOptions({

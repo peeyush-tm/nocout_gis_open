@@ -18,6 +18,8 @@
     <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
 {% endblock %}
 
+{% load sds %}
+
 {% block content %}
     <style>
         .perfContainerBlock .box-title .pull-right .list-inline > li {
@@ -189,7 +191,7 @@
                                     <td><i class="fa fa-circle red-dot"></i></td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
-                                    <td>{{ data.data_source }}</td>
+                                    <td>{{ data.data_source|sds }}</td>
                                     <td><span class="text-danger">{{ data.severity }}</span></td>
                                     <td><span class="text-danger">{{ data.current_value }}</span></td>
                                     <td>{{ data.alert_date_time }}</td>
@@ -198,7 +200,7 @@
                                     <td><i class="fa fa-circle orange-dot"></i></td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
-                                    <td>{{ data.data_source }}</td>
+                                    <td>{{ data.data_source|sds }}</td>
                                     <td><span class="text-warning">{{ data.severity }}</span></td>
                                     <td><span class="text-warning">{{ data.current_value }}</span></td>
                                     <td>{{ data.alert_date_time }}</td>
@@ -207,7 +209,7 @@
                                     <td><i class="fa fa-circle green-dot"></i></td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
-                                    <td>{{ data.data_source }}</td>
+                                    <td>{{ data.data_source|sds }}</td>
                                     <td><span class="text-success">{{ data.severity }}</span></td>
                                     <td><span class="text-success">{{ data.current_value }}</span></td>
                                     <td>{{ data.alert_date_time }}</td>
@@ -216,7 +218,7 @@
                                     <td><i class="fa fa-circle grey-dot"></i></td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
-                                    <td>{{ data.data_source }}</td>
+                                    <td>{{ data.data_source|sds }}</td>
                                     <td><span class="text-muted">{{ data.severity }}</span></td>
                                     <td><span class="text-muted">{{ data.current_value }}</span></td>
                                     <td>{{ data.alert_date_time }}</td>

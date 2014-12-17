@@ -14,9 +14,6 @@ import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
 
-# project settings
-from nocout.settings import SERVICE_DATA_SOURCE
-
 from performance.models import PerformanceService, PerformanceNetwork, \
     EventService, NetworkStatus, \
     ServiceStatus, InventoryStatus, \
@@ -37,6 +34,12 @@ from inventory.utils import util as inventory_utils
 from performance.utils import util as perf_utils
 
 from alert_center.utils import util as alert_utils
+
+from service.utils.util import service_data_sources
+
+##execute this globally
+SERVICE_DATA_SOURCE = service_data_sources()
+##execute this globally
 
 import logging
 
@@ -925,7 +928,7 @@ class Inventory_Device_Service_Data_Source(View):
         device_type = DeviceType.objects.get(id=device.device_type)
 
         #if there is no service present in the configuration (BULK SYNC)
-        inventory_device_service_name = device_type.service.filter().values_list('name', 'service_data_sources__name')
+        # inventory_device_service_name = device_type.service.filter().values_list('name', 'service_data_sources__name')
 
         #
         # #Fetch the Service names that are configured w.r.t to a device.
@@ -933,15 +936,15 @@ class Inventory_Device_Service_Data_Source(View):
         #     device_name= device.device_name)\
         #     .values_list('service_name', 'data_source')
 
-        configured_services = DeviceServiceConfiguration.objects.filter(
-            device_name=device.device_name) \
-            .values_list('service_name', 'data_source')
-
-        if len(configured_services):
-            inventory_device_service_name = configured_services
+        # configured_services = DeviceServiceConfiguration.objects.filter(
+        #     device_name=device.device_name) \
+        #     .values_list('service_name', 'data_source')
+        #
+        # if len(configured_services):
+        #     inventory_device_service_name = configured_services
 
         # TODO:to remove this code as the services are getting multi added with their port.
-        inventory_device_service_name = list(set(inventory_device_service_name))
+        # inventory_device_service_name = list(set(inventory_device_service_name))
 
         result['data']['objects']['network_perf_tab']["info"].append(
             {
@@ -961,50 +964,49 @@ class Inventory_Device_Service_Data_Source(View):
                 'service_type_tab': 'network_perf_tab'
             })
 
-        for (service_name, service_data_source) in inventory_device_service_name:
-            if '_status' in service_name:
-                # service_data_sources = Service.objects.get(name=service_name).service_data_sources.all()
-                # for service_data_source in service_data_sources:
-                result['data']['objects']['service_status_tab']["info"].append(
-                    {
-                        'name': service_data_source,
-                        'title': Service.objects.get(name=service_name).alias.upper() +
-                                 " : " +
-                                 ServiceDataSource.objects.filter(name=service_data_source)[0].alias
-                        if len(ServiceDataSource.objects.filter(name=service_data_source)) else service_data_source,
-                        'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/device/' + str(
-                            device_id),
-                        'active': 0,
-                    })
+        device_type_services = device_type.service.filter().prefetch_related('servicespecificdatasource_set')
 
-            elif '_invent' in service_name:
-                # service_data_sources = Service.objects.get(name=service_name).service_data_sources.all()
-                # for service_data_source in service_data_sources:
-                result['data']['objects']['inventory_status_tab']["info"].append(
-                    {
-                        'name': service_data_source,
-                        'title': Service.objects.get(name=service_name).alias.upper() +
-                                 " : " +
-                                 ServiceDataSource.objects.filter(name=service_data_source)[0].alias
-                        if len(ServiceDataSource.objects.filter(name=service_data_source)) else service_data_source,
-                        'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/device/' + str(
-                            device_id),
-                        'active': 0,
-                    })
-            else:
-                # service_data_sources = Service.objects.get(name=service_name).service_data_sources.all()
-                # for service_data_source in service_data_sources:
-                result['data']['objects']['service_perf_tab']["info"].append(
-                    {
-                        'name': service_data_source,
-                        'title': Service.objects.get(name=service_name).alias.upper() +
-                                 " : " +
-                                 ServiceDataSource.objects.filter(name=service_data_source)[0].alias
-                        if len(ServiceDataSource.objects.filter(name=service_data_source)) else service_data_source,
-                        'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/device/' + str(
-                            device_id),
-                        'active': 0,
-                    })
+        for service in device_type_services:
+            service_name = service.name.strip().lower()
+            service_data_sources = service.service_data_sources.filter()
+            for service_data_source in service_data_sources:
+                sds_name = service_data_source.name.strip().lower()
+
+                sds_info = {
+                            'name': service_data_source.name,
+                            'title': service.alias.strip().upper() +
+                                    "<br> [ " +
+                                    service_data_source.alias.strip().title() +
+                                    " ] <br>",
+                            'url': 'performance/service/' + service_name +
+                                   '/service_data_source/' + sds_name +
+                                   '/device/' + str(device_id),
+                            'active': 0,
+                        }
+
+                if '_status' in service_name:
+                    result['data']['objects']['service_status_tab']["info"].append(sds_info)
+
+                elif '_invent' in service_name:
+                    result['data']['objects']['inventory_status_tab']["info"].append(sds_info)
+                elif '_bgp' in service_name or 'topology' in service_name:
+                    continue
+                else:
+                    result['data']['objects']['service_perf_tab']["info"].append(sds_info)
+
+                if sds_name in SERVICE_DATA_SOURCE:
+                    SERVICE_DATA_SOURCE[sds_name]["display_name"] = service_data_source.alias.strip().title()
+                else:
+                    ds_to_append = {
+                        "display_name": service_data_source.alias.strip().title(),
+                        "type": "table",
+                        "valuesuffix": " ",
+                        "valuetext": "",
+                        "formula": None,
+                        "show_min": False,
+                        "show_max": False
+                    }
+                    SERVICE_DATA_SOURCE.update({sds_name: ds_to_append})
 
         result['data']['objects']['availability_tab']["info"].append(
             {
@@ -1084,7 +1086,7 @@ class Get_Service_Status(View):
                     'objects': {
                         'perf': None,
                         'last_updated': None,
-                        'status': severity,
+                        'status': severity.lower().strip() if severity else None,
                         'age': age
                     }
                 }
@@ -1568,11 +1570,11 @@ class Get_Service_Type_Performance_Data(View):
                         if data.critical_threshold else None])
 
                         ###to draw each data point w.r.t threshold we would need to use the following
-                        if SERVICE_DATA_SOURCE[sds_name]["show_min"]:
+                        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_min"]:
                             min_data_list.append([data.sys_timestamp * 1000, float(data.min_value)
                             if data.min_value else None])
 
-                        if SERVICE_DATA_SOURCE[sds_name]["show_max"]:
+                        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_max"]:
                             max_data_list.append([data.sys_timestamp * 1000, float(data.max_value)
                             if data.max_value else None])
 
