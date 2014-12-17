@@ -1492,10 +1492,14 @@ class GISPerfData(View):
 
                             ss_dict = dict()
                             if substation and substation_device:
+                                # substation default line color
+                                ss_default_link_color = sector_performance_data['color']
                                 ss_dict['device_name'] = substation_device.device_name
                                 ss_dict['id'] = substation_device.id
                                 ss_dict['name'] = substation.name
-                                ss_dict['data'] = self.get_substation_info(substation, substation_device)
+                                ss_dict['data'] = self.get_substation_info(substation,
+                                                                           substation_device,
+                                                                           ss_default_link_color)
 
                             # append substation dictionary to 'sub_station' list
                             sector_dict['sub_station'].append(ss_dict)
@@ -2408,7 +2412,7 @@ class GISPerfData(View):
             return True, name, title
         return False, False, False
 
-    def get_substation_info(self, substation, substation_device):
+    def get_substation_info(self, substation, substation_device, ss_default_link_color):
         """ Get Sub Station information
 
             Parameters:
@@ -2628,6 +2632,9 @@ class GISPerfData(View):
 
         # device link/frequency color
         device_link_color = self.get_frequency_color_and_radius(device_frequency, device_pl)[0]
+
+        if not device_link_color:
+            device_link_color = ss_default_link_color
 
         # performance value
         perf_payload = {
