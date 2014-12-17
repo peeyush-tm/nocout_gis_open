@@ -71,7 +71,7 @@ def raise_alarms(service_status_list, org):
                 escalation_level_list = []
                 for level in level_list:
                     if getattr(obj, 'l%d_email_status' % level.name) == 1:
-                        escalation_level_list += level
+                        escalation_level_list.append(level)
                         setattr(obj, 'l%d_email_status' % level.name, 0)
 
                 alert_emails_for_good_performance.delay(obj, escalation_level_list)
@@ -123,11 +123,11 @@ def alert_emails_for_good_performance(alarm, escalation_level_list):
 
 
 @task
-def alert_phones_for_good_performance(alarm, level):
+def alert_phones_for_good_performance(alarm, level_list):
     """
     Sends sms to phones for good performance.
     """
-    phones = level.get_phones()
+    #phones = level.get_phones()
     # message = ''
     # send_sms(subject, message, settings.DEFAULT_FROM_PHONE, phones, fail_silently=False)
     pass
