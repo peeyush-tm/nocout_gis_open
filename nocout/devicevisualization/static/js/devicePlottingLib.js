@@ -5830,7 +5830,15 @@ function devicePlottingClass_gmap() {
 	                    {
 	                        sExtends : "xls",
 	                        sButtonText : "Download Excel",
-	                        sFileName : "*.xls"
+	                        sFileName : "*.xls",
+	                        fnComplete : function(nButton, oConfig, oFlash, sFlash) {
+                        		$.gritter.add({
+						            title: "Live Polling Report",
+						            text: "Live polling report successfully downloaded.",
+						            sticky: false,
+						            time : 1500
+						        });    	
+	                        }
 	                    }
 	                ]
 	            },
