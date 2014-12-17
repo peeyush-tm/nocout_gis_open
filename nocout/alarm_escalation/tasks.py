@@ -19,6 +19,7 @@ from performance.models import ServiceStatus
 from alarm_escalation.models import EscalationStatus
 
 from inventory.utils import util as inventory_utils
+from scheduling_management.models import Event
 
 
 @task
@@ -69,6 +70,7 @@ def raise_alarms(service_status_list, org):
                 if getattr(obj, 'l%d_email_status' % level.name) == 1:
                     escalation_level_list.append(level)
                     setattr(obj, 'l%d_email_status' % level.name, 0)
+                    setattr(obj, 'l%d_phone_status' % level.name, 0)
 
             alert_emails_for_good_performance.delay(obj, escalation_level_list)
             alert_phones_for_good_performance.delay(obj, escalation_level_list)
@@ -92,6 +94,7 @@ def raise_alarms(service_status_list, org):
                 alert_emails_for_bad_performance.delay(obj, escalation_level)
                 alert_phones_for_bad_performance.delay(obj, escalation_level)
                 setattr(obj, 'l%d_email_status' % escalation_level.name, 1)
+                setattr(obj, 'l%d_phone_status' % escalation_level.name, 1)
 
         obj.save()
 
@@ -143,7 +146,7 @@ def alert_phones_for_good_performance(alarm, level_list):
     """
     Sends sms to phones for good performance.
     """
-    #phones = level.get_phones()
+    # phones = level.get_phones()
     # message = ''
     # send_sms(subject, message, settings.DEFAULT_FROM_PHONE, phones, fail_silently=False)
     pass
