@@ -86,6 +86,7 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 	threshold_values = {}
 	severity = 'unknown'
 	host_severity = 'unknown'
+	host_state = "unknown"
 #	db = mongo_module.mongo_conn(
 #	    host=mongo_host,
 #	    port=int(mongo_port),
@@ -104,11 +105,11 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 		    threshold_values.pop('rtmin', '')
 		    threshold_values.pop('rtmax', '')
 		    if entry[2] == 0:
-		        host_severity = 'up'
+		        host_state = 'up'
 		    elif entry[2] == 1:
-			host_severity = 'down'
+			host_state = 'down'
 		# Age of last service state change
-		    last_state_change = entry[-2]
+		    last_state_change = entry[-3]
 		    age =last_state_change
                 except:
                     continue
@@ -116,18 +117,22 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 			check_time = datetime.fromtimestamp(entry[3]) 
 			# Pivot the time stamp to next 5 mins time frame
 			local_timestamp = pivot_timestamp_fwd(check_time)
+			host_severity =host_state
 			if ds == 'pl':
 				ds_values['cur'] = ds_values['cur'].strip('%')
 				try:
-					pl_war = float(ds_values['war'])
-					pl_crit = float(ds_values['crit'])
-					pl_cur = float(ds_values['cur'])
+					pl_war = ds_values['war']
+					pl_crit = ds_values['cric']
+					pl_cur = ds_values['cur']
 				except:
 					pl_war=None
 					pl_crit=None
 					pl_cur=None
 					pass
 				if pl_cur and pl_war and pl_crit:
+					pl_cur = float(pl_cur)
+					pl_war = float(pl_war)
+					pl_crit = float(pl_crit)
 					if pl_cur < pl_war:
 						host_severity = "up"
 					elif pl_cur >= pl_war and pl_cur <= pl_crit:
@@ -137,17 +142,20 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 			data_values = [{'time': check_time, 'value': ds_values.get('cur')}]
 			if ds == 'rta':
 				try:
-					rta_war = float(ds_values['war'])
-					rta_crit = float(ds_values['crit'])
-					rta_cur = float(ds_values['crit'])
+					rta_war =  ds_values['war']
+					rta_crit = ds_values['cric']
+					rta_cur =  ds_values['cur']
 				except:
 					rta_war = None
 					rta_cur =  None
 					rta_crit= None
 				if  rta_cur and rta_war and rta_crit:
+					rta_cur = float(rta_cur)
+					rta_war = float(rta_war)
+					rta_crit = float(rta_crit)
 					if rta_cur < rta_war:
 						host_severity = "up"
-					elif rta_cur >= rta_war and rta_cur <= rta_crit:
+					elif (rta_cur >= rta_war) and (rta_cur <= rta_crit):
 						host_severity = "warning"
 					else:
 						host_severity = "down"
@@ -177,6 +185,7 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 			#mongo_module.mongo_db_update(db, matching_criteria, data_dict, 'network_perf_data')
 			network_data_values.append(data_dict)
 			data_dict = {}
+			host_severity = host_state
 			matching_criteria = {}
 	after = int(time.time())
 	elapsed = after -current
@@ -474,11 +483,18 @@ def get_from_socket(site_name, query):
     socket_port = _LIVESTATUS[machine][site_name]['port']
     #s.connect((socket_ip, socket_port))
     s.connect(socket_path)
+    s.settimeout(60.0)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
     output = ''
     while True:
-     out = s.recv(100000000)
+     try:
+     	out = s.recv(100000000)
+     except socket.timeout,e:
+	err=e.args[0]
+	print 'socket timeout ..Exiting'
+	if err == 'timed out':
+		sys.exit(1) 
      out.strip()
      if not len(out):
         break
