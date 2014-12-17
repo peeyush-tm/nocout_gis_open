@@ -157,8 +157,7 @@ def check_device_status():
     service_list = []
     service_data_source_list = []
     for org in Organization.objects.all():
-        #device_list_qs = inventory_utils.organization_network_devices([org])
-        device_list_qs = org.device_set.all()
+        device_list_qs = inventory_utils.organization_network_devices([org])
         machine_dict = prepare_machines(device_list_qs)
         service_list = prepare_services(device_list_qs)
         service_data_source_list = prepare_service_data_sources(service_list)
