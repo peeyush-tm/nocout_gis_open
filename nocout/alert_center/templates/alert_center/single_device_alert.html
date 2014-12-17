@@ -266,34 +266,43 @@
         var oldStartDate = $.urlParam('start_date') ? new Date($.urlParam('start_date') * 1000) : new Date();
         var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date') * 1000) : new Date();
 
-        $('#reservationtime').daterangepicker(
-            {
-                timePicker: true,
-                timePickerIncrement: 1,
-                // format: 'd/m/Y H:M:S' ,
-                opens: "left",
-                showDropdowns: true,
-                ranges: {
-                    'Today': [moment().startOf('day'), moment()],
-                    'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
-                    'Last 7 Days': [moment().subtract('days', 6), moment()],
-                    'Last 30 Days': [moment().subtract('days', 29), moment()],
-                    'This Month': [moment().startOf('month'), moment().endOf('month')],
-                    'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
-                },
-                buttonClasses: ['btn btn-default'],
-                applyClass: 'btn-small btn-primary',
-                cancelClass: 'btn-small',
-                format: "DD-MM-YYYY HH:mm:ss",
-                separator: ' to ',
-                startDate: oldStartDate,
-                endDate: oldENdData
-            },
-            function (start, end) {
-                startDate = start;
-                endDate = end;
+        $("#device_alert").DataTable({
+            sPaginationType: "bs_full",
+            aaSorting: [
+                [7, 'desc']
+            ],
+            fnInitComplete: function(oSettings) {
+                $('#reservationtime').daterangepicker(
+                    {
+                        timePicker: true,
+                        timePickerIncrement: 1,
+                        // format: 'd/m/Y H:M:S' ,
+                        opens: "left",
+                        showDropdowns: true,
+                        ranges: {
+                            'Today': [moment(), moment()],
+                            'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                            'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                            'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                            'This Month': [moment().startOf('month'), moment().endOf('month')],
+                            'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                        },
+                        buttonClasses: ['btn btn-default'],
+                        applyClass: 'btn-small btn-primary',
+                        cancelClass: 'btn-small',
+                        format: "DD-MM-YYYY HH:mm:ss",
+                        separator: ' to ',
+                        startDate: oldStartDate,
+                        endDate: oldENdData
+                    },
+                    function (start, end) {
+                        $('#reservationtime span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+                        startDate = start;
+                        endDate = end;
+                    }
+                );
             }
-        );
+        });
     
         //Create instance of nocoutPerfLib
         perfInstance = new nocoutPerfLib();
@@ -318,12 +327,6 @@
             endDate = moment(oldENdData);
         }
 
-        $("#device_alert").DataTable({
-            sPaginationType: "bs_full",
-            aaSorting: [
-                [7, 'desc']
-            ]
-        });
         $("#device_alert").removeClass("hide");
 
         $("#network_alert_service_tab").click(function (e) {
@@ -392,31 +395,31 @@
                 return results[1] || 0;
             }
         };
-        start_date = $.urlParam('start_date');
-        if (start_date) {
-            $("#start_date").val(decodeURIComponent(start_date));
-        }
-        end_date = $.urlParam('end_date');
-        if (end_date) {
-            $("#end_date").val(decodeURIComponent(end_date));
-        }
+        // start_date = $.urlParam('start_date');
+        // if (start_date) {
+        //     $("#start_date").val(decodeURIComponent(start_date));
+        // }
+        // end_date = $.urlParam('end_date');
+        // if (end_date) {
+        //     $("#end_date").val(decodeURIComponent(end_date));
+        // }
 
         //set the dropdown to current device value
         $("#device_name").val("{{current_device_id}}");
 
         //on change of selection element in device_name
         // we should redirect user to the new page for the device
-        $("#device_name").on('change', function () {
-            var new_device = $(this).val();
-            var uri = $.url();
-            var path = uri.attr('path').split('/');
-            path[path.length - 4] = new_device;
-            var new_url = uri.attr('protocol') + "://" + uri.attr('host') + ":" + uri.attr('port') + path.join("/");
-            window.location.href = new_url;
-        });
+        // $("#device_name").on('change', function () {
+        //     var new_device = $(this).val();
+        //     var uri = $.url();
+        //     var path = uri.attr('path').split('/');
+        //     path[path.length - 4] = new_device;
+        //     var new_url = uri.attr('protocol') + "://" + uri.attr('host') + ":" + uri.attr('port') + path.join("/");
+        //     window.location.href = new_url;
+        // });
 
         /*Initialize Datepicker*/
-        $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
+        // $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
 
         $("#apply_filter").on('click', function () {
             if (startDate && endDate) {
