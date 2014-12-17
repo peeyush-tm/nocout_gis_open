@@ -12,10 +12,8 @@
 {% load staticfiles %}
 {% block css %}
     <!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css"
-          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
-    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
-    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+    
 {% endblock %}
 
 {% load sds %}
@@ -235,9 +233,12 @@
     </div>
     </div>
 
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/moment.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/bootstrap-daterangepicker/daterangepicker.min.js" %}></script>
     <script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
 
     <script type="text/javascript">
+
     var startDate = "",
         endDate = "",
         base_url = "",
@@ -249,6 +250,7 @@
         right_block_style = "border:1px solid #CCC;padding: 3px 5px;";
 
     $(document).ready(function (e) {
+
         /*Set the base url of application for ajax calls*/
         if (window.location.origin) {
             base_url = window.location.origin;
@@ -256,11 +258,46 @@
             base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
         }
 
-        perfInstance = new nocoutPerfLib();
         var current_device = "{{ current_device_name }}",
-                current_device_id = "{{ device_id }}",
-                statusUrl = base_url + "/" + "{{ get_status_url }}" + "/",
-                service_status_url = "";
+            current_device_id = "{{ device_id }}",
+            statusUrl = base_url + "/" + "{{ get_status_url }}" + "/",
+            service_status_url = "";
+
+        var oldStartDate = $.urlParam('start_date') ? new Date($.urlParam('start_date') * 1000) : new Date();
+        var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date') * 1000) : new Date();
+
+        $('#reservationtime').daterangepicker(
+            {
+                timePicker: true,
+                timePickerIncrement: 1,
+                // format: 'd/m/Y H:M:S' ,
+                opens: "left",
+                showDropdowns: true,
+                ranges: {
+                    'Today': [moment().startOf('day'), moment()],
+                    'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
+                    'Last 7 Days': [moment().subtract('days', 6), moment()],
+                    'Last 30 Days': [moment().subtract('days', 29), moment()],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
+                },
+                buttonClasses: ['btn btn-default'],
+                applyClass: 'btn-small btn-primary',
+                cancelClass: 'btn-small',
+                format: "DD-MM-YYYY HH:mm:ss",
+                separator: ' to ',
+                startDate: oldStartDate,
+                endDate: oldENdData
+            },
+            function (start, end) {
+                startDate = start;
+                endDate = end;
+            }
+        );
+    
+        //Create instance of nocoutPerfLib
+        perfInstance = new nocoutPerfLib();
+
         /*To populate the status table*/
         perfInstance.getStatus(statusUrl, current_device);
 
@@ -274,38 +311,6 @@
         if (service_status_url) {
             getPlServiceStatus(service_status_url);
         }
-
-        var oldStartDate = $.urlParam('start_date') ? new Date($.urlParam('start_date') * 1000) : new Date();
-        var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date') * 1000) : new Date();
-
-        $('#reservationtime').daterangepicker(
-                {
-                    timePicker: true,
-                    timePickerIncrement: 1,
-                    // format: 'd/m/Y H:M:S' ,
-                    opens: "left",
-                    showDropdowns: true,
-                    ranges: {
-                        'Today': [moment().startOf('day'), moment()],
-                        'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
-                        'Last 7 Days': [moment().subtract('days', 6), moment()],
-                        'Last 30 Days': [moment().subtract('days', 29), moment()],
-                        'This Month': [moment().startOf('month'), moment().endOf('month')],
-                        'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')]
-                    },
-                    buttonClasses: ['btn btn-default'],
-                    applyClass: 'btn-small btn-primary',
-                    cancelClass: 'btn-small',
-                    format: "DD-MM-YYYY HH:mm:ss",
-                    separator: ' to ',
-                    startDate: oldStartDate,
-                    endDate: oldENdData
-                },
-                function (start, end) {
-                    startDate = start;
-                    endDate = end;
-                }
-        );
 
         if ($.urlParam('start_date') && $.urlParam('end_date')) {
             $('#reservationtime').val(moment(oldStartDate).format("DD-MM-YYYY HH:mm:ss") + '  to  ' + moment(oldENdData).format("DD-MM-YYYY HH:mm:ss"));
