@@ -3571,3 +3571,19 @@ def select_schedule_device(request):
     return HttpResponse(json.dumps({
         'device_result': device_result
         }) )
+
+def filter_selected_device(request):
+    """
+    On change of the time filter the devices.
+    i.e it removes the devices from the selest2 if device overlaps on that duration.
+    """
+    ids = request.GET['ids']
+    new_start_time = datetime.strptime(request.GET['start_on_time'], '%H:%M').time()
+    new_end_time = datetime.strptime(request.GET['end_on_time'], '%H:%M').time()
+    over_lap_event = Event.objects.exclude(Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
+    over_lap_device_ids = Device.objects.filter(event__in=over_lap_event).values_list("id", flat=True)
+
+    device_result = [{'id': dev.id, 'device_alias': dev.device_alias } for dev in Device.objects.filter(id__in=ids.split(',')).exclude(id__in=over_lap_device_ids)]
+    return HttpResponse(json.dumps({
+        'device_result': device_result
+        }) )
