@@ -846,11 +846,8 @@ class BulkFetchLPDataApi(View):
                             # get base station device
                             device = Device.objects.get(device_name=bs_device.device_name)
 
-                        if device.site_instance.id not in site_instances_list:
-                            site_instances_list.append(device.site_instance.id)
-
-                            # append device site instance id in 'site_instances_list' list
-                            site_instances_list.append(device.site_instance.id)
+                        # append device site instance id in 'site_instances_list' list
+                        site_instances_list.append(device.site_instance.id)
                     except Exception as e:
                         logger.info(e.message)
 
