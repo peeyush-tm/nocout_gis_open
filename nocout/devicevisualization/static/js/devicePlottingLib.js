@@ -1648,7 +1648,6 @@ function devicePlottingClass_gmap() {
 
 		// for(var i=0;i<bs_ss_devices.length;i++) {
 		for(var i=bs_ss_devices.length;i--;) {
-			
 
 			/*Create BS Marker Object*/
 			var bs_marker_object = {
@@ -1664,6 +1663,7 @@ function devicePlottingClass_gmap() {
 				device_name 	   : 	bs_ss_devices[i].data.device_name,
 				bsInfo 			   : 	bs_ss_devices[i].data.param.base_station,
 				bhInfo 			   : 	bs_ss_devices[i].data.param.backhual,
+				bhInfo_polled 	   :    [],
 				bhSeverity 		   :    "",
 				// bhInfo 			   : 	[],
 				bs_name 		   : 	bs_ss_devices[i].name,
@@ -2963,6 +2963,13 @@ function devicePlottingClass_gmap() {
 				for(var i=0;i<contentObject.bhInfo.length;i++) {
 					if(contentObject.bhInfo[i].show == 1) {
 						infoTable += "<tr><td>"+contentObject.bhInfo[i].title+"</td><td>"+contentObject.bhInfo[i].value+"</td></tr>";
+					}
+				}
+				if(contentObject.bhInfo_polled) {
+					for(var i=0;i<contentObject.bhInfo_polled.length;i++) {
+						if(contentObject.bhInfo_polled[i].show == 1) {
+							infoTable += "<tr><td>"+contentObject.bhInfo_polled[i].title+"</td><td>"+contentObject.bhInfo_polled[i].value+"</td></tr>";
+						}
 					}
 				}
 			}
@@ -8194,26 +8201,44 @@ function unique_values_field_and_with_base_station_ids(filter_data_collection, t
     return result_bs_collection
 }
 
+/**
+ * This function returns the in bound BS id's list
+ * @method getMarkerInCurrentBound
+ * @return {Array}, List of in bound base stations id
+ */
 function getMarkerInCurrentBound() {
-    var bsMarkersInBound = [];
-    for(var key in markersMasterObj['BS']) {
-        if(markersMasterObj['BS'].hasOwnProperty(key)) {
+
+    var bsMarkersInBound = [],
+    	allBSObject = {};
+
+	if(window.location.pathname.indexOf("googleEarth") > -1) {
+		allBSObject = allMarkersObject_earth['base_station'];
+	} else if(window.location.pathname.indexOf("white_background") > -1) {
+		allBSObject = allMarkersObject_wmap['base_station'];
+	} else {
+		allBSObject = allMarkersObject_gmap['base_station'];
+	}
+
+	// Loop Bs markers to get which are in current bounds
+    for(var key in allBSObject) {
+        if(allBSObject.hasOwnProperty(key)) {
         	var markerVisible = "";
         	if(window.location.pathname.indexOf("googleEarth") > -1) {
         		var earthBounds = getCurrentEarthBoundPolygon();
-        		markerVisible =  isPointInPoly(earthBounds, {lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon});
+        		markerVisible =  isPointInPoly(earthBounds, {lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon});
         	} else if(window.location.pathname.indexOf("white_background") > -1) {
-        		markerVisible =  whiteMapClass.checkIfPointLiesInside({lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon})
+        		markerVisible =  whiteMapClass.checkIfPointLiesInside({lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon})
         	} else {
-				markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
+				markerVisible = mapInstance.getBounds().contains(allBSObject[key].getPosition());
         	}
             if(markerVisible) {
-            	if(markersMasterObj['BS'][key].isActive && markersMasterObj['BS'][key].isActive == 1) {
-            		bsMarkersInBound.push(markersMasterObj['BS'][key]['filter_data']['bs_id']);
+            	if(allBSObject[key].isActive && allBSObject[key].isActive == 1) {
+            		bsMarkersInBound.push(allBSObject[key]['filter_data']['bs_id']);
             	}
             }
         }
     }
+
     return bsMarkersInBound;
 }
 

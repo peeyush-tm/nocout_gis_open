@@ -280,6 +280,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'inventory.tasks.update_sector_frequency_per_day',
         'schedule': crontab(minute=0, hour=0)
     },
+    'check-device-status': {
+        'task': 'alarm_escalation.tasks.check-device-status',
+        'schedule': crontab(minute=0, hour=0)
+    },
 }
 
 

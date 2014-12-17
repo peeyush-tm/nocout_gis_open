@@ -21,6 +21,8 @@ class EventForm(forms.ModelForm):
     repeat_on = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple(),
                 queryset=Weekdays.objects.filter().order_by('id'), required=False)
     end_never = forms.BooleanField(initial=True, required=False)
+    start_on_time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True)
+    end_on_time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True)
     # Note take a boolean field in model and replate select_device name with that field.
     # select_device = forms.ChoiceField(widget=forms.RadioSelect(), initial=False,
     #                 choices=((True, 'Add all device'),(False, 'Select specific devices')), required=False)
