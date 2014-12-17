@@ -1418,6 +1418,217 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
 });
 
 /**
+ * This event triggers when any polled param name is clicked
+ * @event delegaate
+ */
+$('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
+    
+    var api_url = e.currentTarget.attributes['url'] ? e.currentTarget.attributes['url'].value : "";
+    console.log(api_url);
+    // If api_url exist then fetch l2 report url
+    if(api_url) {
+        $.ajax({
+            url: api_url,
+            type: "GET",
+            dataType: "json",
+            success: function (result) {
+                if (result.success === 1) {
+                    var contentHtml = "";
+                    contentHtml += "<div style='width:650px;height:300px;overflow:auto;'>";
+                    if (result.data.objects.table_data_header) {
+
+                        contentHtml += createDataTableHtml_map(
+                            'other_perf_table',
+                            result.data.objects.table_data_header,
+                            result.data.objects.table_data
+                        );
+                        contentHtml += "</div>";
+
+                        /*Call the bootbox to show the popup with datatable*/
+                        bootbox.dialog({
+                            message: contentHtml,
+                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Fresnel Zone'
+                        });
+
+                        $("#other_perf_table").DataTable({
+                            bPaginate: true,
+                            bDestroy: true,
+                            aaSorting : [[0,'desc']],
+                            sPaginationType: "full_numbers"
+                        });
+
+                    } else {
+                        contentHtml += "<div id='perf_chart'></div>";
+                        contentHtml += "<div id='perf_chart_table'></div>";
+                        contentHtml += createDataTableForChart_map(
+                            "perf_data_table",
+                            result.data.objects.chart_data
+                        );
+                        contentHtml += "</div>";
+                        contentHtml += "</div>";
+
+                        /*Call the bootbox to show the popup with datatable*/
+                        bootbox.dialog({
+                            message: contentHtml,
+                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Fresnel Zone'
+                        });
+
+                        $("#perf_data_table").DataTable({
+                            bPaginate: true,
+                            bDestroy: true,
+                            aaSorting : [[0,'desc']],
+                            sPaginationType: "full_numbers"
+                        });
+
+                        createHighChart_map('perf_chart',result.data.objects);
+                    }
+                }
+            },
+            error : function(err) {
+                console.log(err.statusText);
+            }
+        });
+    }
+});
+
+function createHighChart_map(dom_id,config) {
+    var chart_instance = $('#' + dom_id + '_chart').highcharts({
+        chart: {
+            events: {
+                load : function() {
+                    // Hide highcharts.com link from chart when chart is loaded
+                    var highcharts_link = $("#"+service_id+"_chart svg text:last-child");
+                    $.grep(highcharts_link,function(val) {
+                        if($.trim(val.innerHTML) == 'Highcharts.com') {
+                            val.innerHTML = "";
+                        }
+                    });
+                }
+            },
+            zoomType: 'x',
+            type: config.type
+        },
+        title: {
+            // text: config.name
+            text: ""
+        },
+        legend: {
+            align: 'right',
+            verticalAlign: 'top',
+            x: 0,
+            y: 0,
+            floating: true,
+            borderWidth: 1,
+            backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+        },
+        tooltip: {
+            pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
+            shared: true,
+            crosshairs: true,
+            useHTML: true,
+            valueSuffix: config.valuesuffix
+        },
+        xAxis: {
+            title: {
+                text: "time"
+            },
+            type: 'datetime',
+            minRange: 3600000,
+            dateTimeLabelFormats: {
+                millisecond: '%H:%M:%S.%L',
+                second: '%H:%M:%S',
+                minute: '%H:%M',
+                hour: '%H:%M',
+                day: '%e. %b',
+                week: '%e. %b',
+                month: '%b \'%y',
+                year: '%Y'
+            }
+        },
+        yAxis: {
+            title: {
+                text: config.valuetext
+            }
+        },
+        series: config.chart_data
+    });
+}
+
+function addPointsToHighChart_map(pointArray) {
+    var highChartSeries = $('#' + service_id + '_chart').highcharts().series;
+    for (var i = 0; i < highChartSeries.length; i++) {
+        for (var j = 0; j < pointArray[i].data.length; j++) {
+            $('#' + service_id + '_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
+        }
+    }
+}
+
+function createDataTableForChart_map(table_id, data_obj) {
+
+    var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
+    /*Make table headers*/
+    for (var i = 0; i < data_obj.length; i++) {
+        data_in_table += '<td colspan="2" align="center"><b>' + data_obj[i].name + '</b></td>';
+    }
+    data_in_table += '</tr><tr>';
+
+    for (var i = 0; i < data_obj.length; i++) {
+        data_in_table += '<td><em>Time</em></td><td><em>Value</em></td>';
+    }
+
+    data_in_table += '</tr></thead><tbody>';
+    /*Table header creation end*/
+
+    var data = data_obj[0].data;
+
+    for (var j = 0; j < data.length; j++) {
+        data_in_table += '<tr>';
+        for (var i = 0; i < data_obj.length; i++) {
+            var inner_data = data_obj[i].data[j],
+                time_val = "",
+                val = "";
+            if (inner_data instanceof Array) {
+                time_val = new Date(inner_data[0]).toLocaleString();
+                val = inner_data[1];
+            } else {
+                time_val = new Date(inner_data.x).toLocaleString();
+                val = inner_data.y;
+            }
+            data_in_table += '<td>'+time_val+'</td><td>'+val+'</td>';
+        }
+        data_in_table += '</tr>';
+    }
+
+    data_in_table += '</tbody>';
+    data_in_table += '</table>';
+
+    return data_in_table;
+}
+
+function createDataTableHtml_map(table_id, headers,table_data) {
+
+    var table_string = "";
+    var grid_headers = headers;
+
+    table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
+    /*Table header creation start*/
+    for (var i = 0; i < grid_headers.length; i++) {
+        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+    }
+    table_string += '</thead><tbody>';
+    /*Table header creation end*/
+
+    for (var j = 0; j < table_data.length; j++) {
+        table_string += '<tr>';
+        for (var i = 0; i < grid_headers.length; i++) {
+            table_string += '<td>'+table_data[j][grid_headers[i]]+'</td>';
+        }
+        table_string += '</tr>';
+    }
+    table_string += '</tbody></table>';
+}
+
+/**
  * This event trigger when export data button is clicked
  */
 $("#export_data_gmap").click(function(e) {
