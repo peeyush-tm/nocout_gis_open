@@ -203,10 +203,7 @@
                 if (( Date.parse('01/01/2011 '+$('#id_start_on_time').val()) <
                     Date.parse('01/01/2011 '+$('#id_end_on_time').val()) ) &&
                     ($(this).val() != '') ){
-                    var start_on_time = $("#id_start_on_time").val();
-                    var end_on_time = $("#id_end_on_time").val();
-                    var device_ids = $("input[name='device']").val()
-                    filter_selected_device(start_on_time, end_on_time, device_ids)
+                    filter_selected_device()
                 }
                 else{
                     $('#id_start_on_time').timepicker('setTime', $('#id_end_on_time').val());
@@ -217,10 +214,7 @@
                 if (( Date.parse('01/01/2011 '+$('#id_start_on_time').val()) <
                     Date.parse('01/01/2011 '+$('#id_end_on_time').val()) ) &&
                     ($(this).val() != '') ){
-                    var start_on_time = $("#id_start_on_time").val();
-                    var end_on_time = $("#id_end_on_time").val();
-                    var device_ids = $("input[name='device']").val()
-                    filter_selected_device(start_on_time, end_on_time, device_ids)
+                    filter_selected_device()
                 }
                 else{
                     $('#id_end_on_time').timepicker('setTime', $('#id_start_on_time').val());
@@ -229,10 +223,10 @@
             });
 
             // filter devices from the select2 on change of the duration of event.
-            function filter_selected_device(start_on_time, end_on_time, device_ids){
-                var start_on_time = start_on_time;
-                var end_on_time = end_on_time;
-                var device_ids = device_ids;
+            function filter_selected_device(){
+                var start_on_time = $("#id_start_on_time").val();
+                var end_on_time = $("#id_end_on_time").val();
+                var device_ids = $("input[name='device']").val()
                 if (device_ids.length){
                     $.ajax({
                         url: '/device/filter/selected/device/',
@@ -255,23 +249,23 @@
             var $radios = $('input:radio[name=ends]');
             $("#id_end_never").val(true)
             $("#id_end_after").val('').prop('readonly',true)
-            $("#id_end_on").val('').prop('readonly',true)
+            $("#id_end_on").val('').prop('disabled',true)
             $radios.change(function(){
                 var x = $(this).val();
                 if (x=='end_after'){
                     $("#id_end_after").val('1').prop('readonly',false).prop('required', true)
                     $("#id_end_never").val(false)
-                    $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                    $("#id_end_on").val('').prop('disabled',true).prop('required', false)
                 }
                 else if(x=='end_on'){
-                    $("#id_end_on").val('').prop('readonly',false).prop('required', true)
+                    $("#id_end_on").val('').prop('disabled',false).prop('required', true)
                     $("#id_end_never").val(false)
                     $("#id_end_after").val('').prop('readonly',true).prop('required', false)
                 }
                 else{
                     $("#id_end_never").val(true)
                     $("#id_end_after").val('').prop('readonly',true).prop('required', false)
-                    $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                    $("#id_end_on").val('').prop('disabled',true).prop('required', false)
                 }
             });
 

@@ -249,7 +249,7 @@
             // handle the ends field of the form.
             var $radios = $('input:radio[name=ends]');
             $("#id_end_never").val(false)
-            $("#id_end_on").prop('readonly', true)
+            $("#id_end_on").prop('disabled', true)
             $("#id_end_after").prop('readonly', true)
             if ($("#id_end_after").val().length){
                 $radios.filter("[value=end_after]").prop('checked', true)
@@ -257,11 +257,11 @@
             }
             else if($("#id_end_on").val().length){
                 $radios.filter("[value=end_on]").prop('checked', true)
-                $("#id_end_on").prop('readonly', false).prop('required', true)
+                $("#id_end_on").prop('disabled', false).prop('required', true)
             }
             else{
                 $("#id_end_never").val(true)
-                $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                $("#id_end_on").val('').prop('disabled',true).prop('required', false)
                 $("#id_end_after").val('').prop('readonly',true).prop('required', false)
             }
 
@@ -275,17 +275,17 @@
                 if (x=='end_after'){
                     $("#id_end_after").val('1').prop('readonly',false).prop('required', true)
                     $("#id_end_never").val(false)
-                    $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                    $("#id_end_on").val('').prop('disabled',true).prop('required', false)
                 }
                 else if(x=='end_on'){
-                    $("#id_end_on").val('').prop('readonly',false).prop('required', true)
+                    $("#id_end_on").val('').prop('disabled',false).prop('required', true)
                     $("#id_end_never").val(false)
                     $("#id_end_after").val('').prop('readonly',true).prop('required', false)
                 }
                 else{
                     $("#id_end_never").val(true)
                     $("#id_end_after").val('').prop('readonly',true).prop('required', false)
-                    $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                    $("#id_end_on").val('').prop('disabled',true).prop('required', false)
                 }
             });
 
