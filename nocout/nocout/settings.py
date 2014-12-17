@@ -281,8 +281,8 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute=0, hour=0)
     },
     'check-device-status': {
-        'task': 'alarm_escalation.tasks.check-device-status',
-        'schedule': crontab(minute=0, hour=0)
+        'task': 'alarm_escalation.tasks.check_device_status',
+        'schedule': timedelta(seconds=300),
     },
 }
 

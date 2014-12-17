@@ -846,11 +846,8 @@ class BulkFetchLPDataApi(View):
                             # get base station device
                             device = Device.objects.get(device_name=bs_device.device_name)
 
-                        if device.site_instance.id not in site_instances_list:
-                            site_instances_list.append(device.site_instance.id)
-
-                            # append device site instance id in 'site_instances_list' list
-                            site_instances_list.append(device.site_instance.id)
+                        # append device site instance id in 'site_instances_list' list
+                        site_instances_list.append(device.site_instance.id)
                     except Exception as e:
                         logger.info(e.message)
 
@@ -1068,11 +1065,11 @@ class BulkFetchLPDataApi(View):
 
                         result['data']['devices'][device_name]['icon'] = icon
                         # if response_dict doesn't have key 'success'
-                        if not device_value:
-                            result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % \
+                        if device_value and (device_value != "NA"):
+                            result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % \
                                                                                 device_name
                         else:
-                            result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % \
+                            result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % \
                                                                                 device_name
             result['success'] = 1
             result['message'] = "Successfully fetched."
