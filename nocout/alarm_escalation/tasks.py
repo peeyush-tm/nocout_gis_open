@@ -14,6 +14,8 @@ from device.models import Device, DeviceType, DeviceTypeService, DeviceTypeServi
 from performance.models import ServiceStatus
 from alarm_escalation.models import EscalationStatus
 
+from inventory.utils import util as inventory_utils
+
 
 @task
 def raise_alarms(service_status_list, org):
@@ -134,9 +136,9 @@ def check_device_status():
     service_list = []
     service_data_source_list = []
     for org in Organization.objects.all():
-        device_list = list(org.device_set.all().values('id', 'machine__name', 'device_name'))
-        machine_dict = prepare_machines(device_list)
-        service_list = prepare_services(org.device_set.all())
+        device_list_qs = inventory_utils.organization_network_devices([org])
+        machine_dict = prepare_machines(device_list_qs)
+        service_list = prepare_services(device_list_qs)
         service_data_source_list = prepare_service_data_sources(service_list)
         for machine_name, device_list in machine_dict.items():
             service_status_list = ServiceStatus.objects.filter(device_name__in=device_list, service_name__in=service_list,
@@ -145,18 +147,18 @@ def check_device_status():
                 raise_alarms.delay(service_status_list, org)
 
 
-def prepare_machines(device_values_list_qs):
+def prepare_machines(device_list_qs):
     """
     Return dict of machine name keys containing values of related devices list.
 
-    :param device_values_list_qs:
+    :param device_list_qs:
     :return machine_dict:
     """
-    unique_device_machine_list = {device['machine__name']: True for device in device_values_list_qs}.keys()
+    unique_device_machine_list = {device.machine.name: True for device in device_list_qs}.keys()
 
     machine_dict = {}
     for machine in unique_device_machine_list:
-        machine_dict[machine] = [device['device_name'] for device in device_values_list_qs if device['machine__name'] == machine]
+        machine_dict[machine] = [device.device_name for device in device_list_qs if device.machine.name == machine]
     return machine_dict
 
 
