@@ -1428,7 +1428,7 @@ class GISPerfData(View):
                         logger.info("No backhaul device found. Exception: ", e.message)
 
                     # backhaul data
-                    if backhaul_device:
+                    if backhaul_device and backhaul_device.is_added_to_nms==1:
                         backhaul_data = self.get_backhaul_info(backhaul_device)
                         bs_dict['bh_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
                         bs_dict['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
@@ -2043,7 +2043,7 @@ class GISPerfData(View):
 
         return icon
 
-    def get_device_info(self, device_name, machine_name, substation=False):
+    def get_device_info(self, device_name, machine_name, device_pl="", substation=False):
         """ Get Sector/Sub Station device information
 
             Parameters:
@@ -2052,7 +2052,7 @@ class GISPerfData(View):
                 - substation (bool) - tell whether device is substation device or not
 
             Returns:
-               - device_info (list) - list of dictionaries containing device static or polled data
+                - device_info (list) - list of dictionaries containing device static or polled data
                                                     [
                                                         {
                                                             'show': 1,
@@ -2309,88 +2309,90 @@ class GISPerfData(View):
                 }
             ]
 
-        # to update the info window with all the services
-        # device performance info
-        device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
-            'data_source', 'current_value', 'sys_timestamp'
-        ).using(alias=machine_name)
+        # if device is down than don't show any performance data
+        if device_pl!="100":
+            # to update the info window with all the services
+            # device performance info
+            device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
+                'data_source', 'current_value', 'sys_timestamp'
+            ).using(alias=machine_name)
 
-        # device inventory info
-        device_inventory_info = InventoryStatus.objects.filter(device_name=device_name).values(
-            'data_source', 'current_value', 'sys_timestamp'
-        ).using(alias=machine_name)
+            # device inventory info
+            device_inventory_info = InventoryStatus.objects.filter(device_name=device_name).values(
+                'data_source', 'current_value', 'sys_timestamp'
+            ).using(alias=machine_name)
 
-        # device status info
-        device_status_info = Status.objects.filter(device_name=device_name).values(
-            'data_source', 'current_value', 'sys_timestamp'
-        ).using(alias=machine_name)
+            # device status info
+            device_status_info = Status.objects.filter(device_name=device_name).values(
+                'data_source', 'current_value', 'sys_timestamp'
+            ).using(alias=machine_name)
 
-        # device network info
-        device_network_info = NetworkStatus.objects.filter(device_name=device_name).values(
-            'data_source', 'current_value', 'sys_timestamp'
-        ).using(alias=machine_name)
+            # device network info
+            device_network_info = NetworkStatus.objects.filter(device_name=device_name).values(
+                'data_source', 'current_value', 'sys_timestamp'
+            ).using(alias=machine_name)
 
-        processed = {}
+            processed = {}
 
-        for perf in device_performance_info:
-            res, name, title = self.sanatize_datasource(perf['data_source'])
-            if not res:
-                continue
-            if perf['data_source'] in processed:
-                continue
-            processed[perf['data_source']] = []
-            perf_info = {
-                "name": name,
-                "title": title,
-                "show": 1,
-                "value": perf['current_value'],
-            }
-            device_info.append(perf_info)
+            for perf in device_performance_info:
+                res, name, title = self.sanatize_datasource(perf['data_source'])
+                if not res:
+                    continue
+                if perf['data_source'] in processed:
+                    continue
+                processed[perf['data_source']] = []
+                perf_info = {
+                    "name": name,
+                    "title": title,
+                    "show": 1,
+                    "value": perf['current_value'],
+                }
+                device_info.append(perf_info)
 
-        for perf in device_inventory_info:
-            res, name, title = self.sanatize_datasource(perf['data_source'])
-            if not res:
-                continue
-            if perf['data_source'] in processed:
-                continue
-            processed[perf['data_source']] = []
-            perf_info = {
-                "name": name,
-                "title": title,
-                "show": 1,
-                "value": perf['current_value'],
-            }
-            device_info.append(perf_info)
+            for perf in device_inventory_info:
+                res, name, title = self.sanatize_datasource(perf['data_source'])
+                if not res:
+                    continue
+                if perf['data_source'] in processed:
+                    continue
+                processed[perf['data_source']] = []
+                perf_info = {
+                    "name": name,
+                    "title": title,
+                    "show": 1,
+                    "value": perf['current_value'],
+                }
+                device_info.append(perf_info)
 
-        for perf in device_status_info:
-            res, name, title = self.sanatize_datasource(perf['data_source'])
-            if not res:
-                continue
-            if perf['data_source'] in processed:
-                continue
-            processed[perf['data_source']] = []
-            perf_info = {
-                "name": name,
-                "title": title,
-                "show": 1,
-                "value": perf['current_value'],
-            }
-            device_info.append(perf_info)
+            for perf in device_status_info:
+                res, name, title = self.sanatize_datasource(perf['data_source'])
+                if not res:
+                    continue
+                if perf['data_source'] in processed:
+                    continue
+                processed[perf['data_source']] = []
+                perf_info = {
+                    "name": name,
+                    "title": title,
+                    "show": 1,
+                    "value": perf['current_value'],
+                }
+                device_info.append(perf_info)
 
-        for perf in device_network_info:
-            res, name, title = self.sanatize_datasource(perf['data_source'])
-            if not res:
-                continue
-            if perf['data_source'] in processed:
-                continue
-            processed[perf['data_source']] = []
-            perf_info = {
-                "name": name,
-                "title": title,
-                "show": 1,
-                "value": perf['current_value'],
-            }
-            device_info.append(perf_info)
+            for perf in device_network_info:
+                res, name, title = self.sanatize_datasource(perf['data_source'])
+                if not res:
+                    continue
+                if perf['data_source'] in processed:
+                    continue
+                processed[perf['data_source']] = []
+                perf_info = {
+                    "name": name,
+                    "title": title,
+                    "show": 1,
+                    "value": perf['current_value'],
+                }
+                device_info.append(perf_info)
 
         # remove duplicate dictionaries in list
         device_info = remove_duplicate_dict_from_list(device_info)
@@ -2656,7 +2658,7 @@ class GISPerfData(View):
         substation_info['perf_value'] = performance_value
         substation_info['link_color'] = device_link_color
         substation_info['param'] = dict()
-        substation_info['param']['sub_station'] = self.get_device_info(device_name, machine_name, substation)
+        substation_info['param']['sub_station'] = self.get_device_info(device_name, machine_name, substation, device_pl)
 
         if user_thematics:
             # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
