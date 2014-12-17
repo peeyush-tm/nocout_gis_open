@@ -653,7 +653,7 @@ class AlertListingTable(BaseDatatableView):
                       "max_value",
                       "min_value",
                       "sys_timestamp",
-                      #"age"
+                      "age"
                       # "description"
     ]
 
