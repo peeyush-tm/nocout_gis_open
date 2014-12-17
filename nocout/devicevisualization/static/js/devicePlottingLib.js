@@ -86,6 +86,9 @@ var main_devices_data_gmaps = [],
         padding 	  : '2px',
         borderRadius  : "5px",
         width  		  : '110px'
+    },
+    country_label = {
+    	"india" : ""
     };
 
 /* Live Polling Variables */
@@ -687,44 +690,81 @@ function devicePlottingClass_gmap() {
 	            		}
 
 		            } else if(mapInstance.getZoom() <= 7) {
-		            	
-						// Clear performance calling timeout
-						if(recallPerf != "") {
-	            			clearTimeout(recallPerf);
-	            			recallPerf = "";
-	            		}
-            			// Set Flag
-            			isPerfCallStopped = 1;
-            			isPerfCallStarted = 0;
+		        		
+		        		// Show only country counter below 4 level zoom
+		        		gmap_self.hideStateCountersLabel();
 
-            			// Reset Performance variables
-            			gisPerformanceClass.resetVariable();
+		        		if(mapInstance.getZoom() <= 4) {
+		            		// Hide State Labels which are in current bounds
+		            		var country_click_event = "onClick='gmap_self.state_label_clicked(0)'",
+		            			total_devices_count = gmap_self.getCountryWiseCount();
+	            			var country_label_box = new InfoBox({
+					            content: "<div "+country_click_event+" style='"+counter_div_style+"'><p style='position:relative;padding-top:24px;font-weight:bold;' title='Load India Data.'>"+total_devices_count+"</p></div>",
+					            boxStyle: {
+					                textAlign: "center",
+					                fontSize: "8pt",
+					                color: "black",
+					                width : "100px"
+					            },
+					            disableAutoPan: true,
+					            position: new google.maps.LatLng(24.2870,77.7832),
+					            closeBoxURL: "",
+					            enableEventPropagation: true,
+					            zIndex: 80
+					        });
+					        if(country_label["india"] != "") {
+					        	country_label["india"].close();
+					        	country_label["india"] = "";
+					        }
+				        	country_label_box.open(mapInstance);
+				        	country_label["india"] = country_label_box;
+	            		} else {
+	            			if(country_label["india"] != "") {
+	            				country_label["india"].hide();
+					        	country_label["india"].close();
+					        	country_label["india"] = "";
+					        }
 
-            			// Clear map markers & reset variables
-						gmap_self.clearMapMarkers();
+	            			// gmap_self.showStateCountersLabel();
+							
+							// Clear performance calling timeout
+							if(recallPerf != "") {
+		            			clearTimeout(recallPerf);
+		            			recallPerf = "";
+		            		}
+	            			// Set Flag
+	            			isPerfCallStopped = 1;
+	            			isPerfCallStarted = 0;
 
-						var states_with_bounds = state_lat_lon_db.where(function(obj) {
-	            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
-	            		});
-						for(var i=states_with_bounds.length;i--;) {
-							if(state_wise_device_labels[states_with_bounds[i].name]) {
-								if(state_wise_device_labels[states_with_bounds[i].name].isHidden_) {
-									state_wise_device_labels[states_with_bounds[i].name].show();
+	            			// Reset Performance variables
+	            			gisPerformanceClass.resetVariable();
+
+	            			// Clear map markers & reset variables
+							gmap_self.clearMapMarkers();
+
+							var states_with_bounds = state_lat_lon_db.where(function(obj) {
+		            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
+		            		});
+							for(var i=states_with_bounds.length;i--;) {
+								if(state_wise_device_labels[states_with_bounds[i].name]) {
+									if(state_wise_device_labels[states_with_bounds[i].name].isHidden_) {
+										state_wise_device_labels[states_with_bounds[i].name].show();
+									}
 								}
 							}
-						}
 
-						state_lat_lon_db.where(function(obj) {
-							if(state_wise_device_labels[obj.name]) {
-								state_wise_device_labels[obj.name].show();return ;
-							}
-						});
+							state_lat_lon_db.where(function(obj) {
+								if(state_wise_device_labels[obj.name]) {
+									state_wise_device_labels[obj.name].show();return ;
+								}
+							});
 
-						// Hide points line if exist
-	            		for(key in line_data_obj) {
-	            			if(line_data_obj[key].map) {
-	            				line_data_obj[key].setMap(null);
-	            			}
+							// Hide points line if exist
+		            		for(key in line_data_obj) {
+		            			if(line_data_obj[key].map) {
+		            				line_data_obj[key].setMap(null);
+		            			}
+		            		}
 	            		}
 		            }
 
@@ -1144,6 +1184,52 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
+	 * This function hides all the state counter labels
+	 * @method hideStateCountersLabel
+	 */
+	this.hideStateCountersLabel = function() {
+		var states_with_bounds = state_lat_lon_db.where(function(obj) {
+			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
+		});
+
+		var states_array = [];
+
+		// Hide State Labels which are in current bounds
+		for(var i=states_with_bounds.length;i--;) {
+			if(state_wise_device_labels[states_with_bounds[i].name]) {
+				states_array.push(states_with_bounds[i].name);
+    			if(!(state_wise_device_labels[states_with_bounds[i].name].isHidden_)) {
+        			// Hide Label
+					state_wise_device_labels[states_with_bounds[i].name].hide();
+    			}
+			}
+		}
+	}
+
+	/**
+	 * This function hides all the state counter labels
+	 * @method showStateCountersLabel
+	 */
+	this.showStateCountersLabel = function() {
+		var states_with_bounds = state_lat_lon_db.where(function(obj) {
+			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
+		});
+
+		var states_array = [];
+
+		// Hide State Labels which are in current bounds
+		for(var i=states_with_bounds.length;i--;) {
+			if(state_wise_device_labels[states_with_bounds[i].name]) {
+				states_array.push(states_with_bounds[i].name);
+    			if(state_wise_device_labels[states_with_bounds[i].name].isHidden_) {
+        			// Hide Label
+					state_wise_device_labels[states_with_bounds[i].name].show();
+    			}
+			}
+		}
+	}
+
+	/**
 	 * This function trigger when state label is clicked & loads the state wise data.
 	 * @method state_label_clicked
 	 * @param state_obj, It contains the name of state which is clicked.
@@ -1154,31 +1240,36 @@ function devicePlottingClass_gmap() {
 			console.log("State Label Clicked Start Time :- "+ new Date().toLocaleString());
 		}
 		if(isExportDataActive == 0) {
-			var clicked_state = state_obj ? state_obj.name : "",
-				selected_state_devices = [];
-			if(clicked_state) {
-				//Zoom in to selected state
-				if(window.location.pathname.indexOf("googleEarth") > -1) {
-			        
-			    } else if(window.location.pathname.indexOf("white_background") > -1) {
-					ccpl_map.setCenter(new OpenLayers.LonLat(state_obj.lon, state_obj.lat), whiteMapSettings.zoomLevelAtWhichStateClusterExpands);
-				} else {
-					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(state_obj.lat,state_obj.lon)));
-					mapInstance.setZoom(8);
-				}
-
-				// Hide Clicked state Label
-				if(!(state_wise_device_labels[clicked_state].isHidden_)) {
-        			// Hide Label
-
+			if(state_obj == 0) {
+				mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
+				mapInstance.setZoom(5);
+			} else {
+				var clicked_state = state_obj ? state_obj.name : "",
+					selected_state_devices = [];
+				if(clicked_state) {
+					//Zoom in to selected state
 					if(window.location.pathname.indexOf("googleEarth") > -1) {
-			        
-			    	} else if(window.location.pathname.indexOf("white_background") > -1) {
-						hideOpenLayerFeature(state_wise_device_labels[clicked_state]);
+				        
+				    } else if(window.location.pathname.indexOf("white_background") > -1) {
+						ccpl_map.setCenter(new OpenLayers.LonLat(state_obj.lon, state_obj.lat), whiteMapSettings.zoomLevelAtWhichStateClusterExpands);
 					} else {
-						state_wise_device_labels[clicked_state].hide();	
+						mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(state_obj.lat,state_obj.lon)));
+						mapInstance.setZoom(8);
 					}
-    			}
+
+					// Hide Clicked state Label
+					if(!(state_wise_device_labels[clicked_state].isHidden_)) {
+	        			// Hide Label
+
+						if(window.location.pathname.indexOf("googleEarth") > -1) {
+				        
+				    	} else if(window.location.pathname.indexOf("white_background") > -1) {
+							hideOpenLayerFeature(state_wise_device_labels[clicked_state]);
+						} else {
+							state_wise_device_labels[clicked_state].hide();	
+						}
+	    			}
+				}
 			}
 		}
 
@@ -4779,8 +4870,56 @@ function devicePlottingClass_gmap() {
 	            });
 			}
     	}
+	};
 
+	/**
+	 * This function returns the total number of BS & SS in fetched data
+	 * @method getCountryWiseCount
+	 * @return device_count {Number}, It contains the number of BS & SS in fetched data
+	 */
+	this.getCountryWiseCount = function() {
 
+		var technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').toLowerCase().split(',') : [],
+			vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').toLowerCase().split(',') : [],
+			city_filter = $("#filter_city").select2('val').length > 0 ? $("#filter_city").select2('val').join(',').toLowerCase().split(',') : [],
+			state_filter = $("#filter_state").select2('val').length > 0 ? $("#filter_state").select2('val').join(',').toLowerCase().split(',') : [],
+			frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').toLowerCase().split(',') : [],
+			polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').toLowerCase().split(',') : [],
+			isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || state_filter.length > 0 || city_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+			isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0 || $.trim($("#state").val()).length > 0 || $.trim($("#city").val()).length > 0,
+			basic_filter_condition = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0,
+			advance_filter_condition = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+			filtered_data_1 = [],
+			data_to_plot_1 = [],
+			devices_count = 0;
+
+		if(isAdvanceFilterApplied || isBasicFilterApplied) {
+			filtered_data_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredData_gmap()));
+		} else {
+			filtered_data_1 = JSON.parse(JSON.stringify(all_devices_loki_db.data));
+		}
+
+		if(advance_filter_condition || basic_filter_condition) {
+        	data_to_plot_1 = JSON.parse(JSON.stringify(gmap_self.getFilteredBySectors(filtered_data_1)));
+    	} else {
+    		data_to_plot_1 = filtered_data_1;
+    	}
+
+		if(data_to_plot_1.length > 0) {
+			for(var i=data_to_plot_1.length;i--;) {
+				var sectors_data = data_to_plot_1[i].data.param.sector;
+				// Increment the counter by 1
+				devices_count += 1;
+				//Loop For Sector Devices
+				for(var j=sectors_data.length;j--;) {
+					var total_ss = sectors_data[j].sub_station ? sectors_data[j].sub_station.length : 0;
+					// Increment the counter by ss count
+					devices_count += total_ss;
+				}
+			}
+		}
+
+		return devices_count;
 	};
 
 	/**
