@@ -1,5 +1,9 @@
 """
 Provide celery tasks for Alarm Escalation.
+
+    from alarm_escalation.tasks import check_device_status
+
+    check_device_status.delay()
 """
 
 from celery import task
