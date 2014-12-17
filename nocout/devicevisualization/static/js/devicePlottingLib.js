@@ -2860,7 +2860,6 @@ function devicePlottingClass_gmap() {
 			clickedType = $.trim(contentObject.pointType);
 		/*True,if clicked on the link line*/
 		if(clickedType == "path") {
-
 			try {
 				var path_circuit_id = "";
 				/*Tabbale Start*/
@@ -2983,8 +2982,14 @@ function devicePlottingClass_gmap() {
 			if(contentObject['poll_info']) {
 				/*Poll Parameter Info*/
 				for(var i=0; i< contentObject['poll_info'].length; i++) {
-					if(contentObject['poll_info'][i].show) {
-						infoTable += "<tr><td>"+contentObject['poll_info'][i]['title']+"</td><td>"+contentObject['poll_info'][i]['value']+"</td></tr>";
+					var url = "",
+						text_class = "";
+					if(contentObject['poll_info'][i]["show"]) {
+						// Url
+						url = contentObject['poll_info'][i]["url"] ? contentObject['poll_info'][i]["url"] : "";
+						text_class = url ? "text-primary" : "";
+
+						infoTable += "<tr><td class='"+text_class+"' url='"+url+"'>"+contentObject['poll_info'][i]['title']+"</td><td>"+contentObject['poll_info'][i]['value']+"</td></tr>";
 					}
 				}
 			}
@@ -3017,8 +3022,14 @@ function devicePlottingClass_gmap() {
 			if(contentObject['poll_info']) {
 				/*Poll Parameter Info*/
 				for(var i=0; i< contentObject['poll_info'].length; i++) {
-					if(contentObject['poll_info'][i].show) {
-						infoTable += "<tr><td>"+contentObject['poll_info'][i]['title']+"</td><td>"+contentObject['poll_info'][i]['value']+"</td></tr>";
+					var url = "",
+						text_class = "";
+					if(contentObject['poll_info'][i]["show"]) {
+						// Url
+						url = contentObject['poll_info'][i]["url"] ? contentObject['poll_info'][i]["url"] : "";
+						text_class = url ? "text-primary" : "";
+
+						infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+contentObject['poll_info'][i]['title']+"</td><td>"+contentObject['poll_info'][i]['value']+"</td></tr>";
 					}
 				}
 			}

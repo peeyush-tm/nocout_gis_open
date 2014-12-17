@@ -1635,7 +1635,7 @@ class GISPerfData(View):
         performance_data['pl'] = ""
         performance_data['perf_value'] = ""
         performance_data['icon'] = ""
-        performance_data['perf_info'] = self.get_device_info(device_name, machine_name)
+        performance_data['perf_info'] = self.get_device_info(device, machine_name)
 
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
@@ -2043,7 +2043,7 @@ class GISPerfData(View):
 
         return icon
 
-    def get_device_info(self, device_name, machine_name, device_pl="", substation=False):
+    def get_device_info(self, device_obj, machine_name, device_pl="", substation=False):
         """ Get Sector/Sub Station device information
 
             Parameters:
@@ -2077,20 +2077,19 @@ class GISPerfData(View):
 
         # device info dictionary
         device_info = list()
-
         # is device is a substation device than add static inventory parameters in list
         if substation:
             # substation
             substation = ""
             try:
-                substation = SubStation.objects.get(device__device_name=device_name)
+                substation = SubStation.objects.get(device=device_obj)
             except Exception as e:
                 logger.info("Sub Station not exist. Exception: ", e.message)
 
             # substation device
             substation_device = ""
             try:
-                substation_device = Device.objects.get(device_name=device_name)
+                substation_device = device_obj
             except Exception as e:
                 logger.info("Sub Station device not exist. Exception: ", e.message)
 
@@ -2311,6 +2310,12 @@ class GISPerfData(View):
 
         # if device is down than don't show any performance data
         if device_pl!="100":
+            # get device name
+            device_name = device_obj.device_name
+            
+            # get device id (used to make url for perf api data)
+            device_id = device_obj.id
+
             # to update the info window with all the services
             # device performance info
             device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
@@ -2341,10 +2346,19 @@ class GISPerfData(View):
                 if perf['data_source'] in processed:
                     continue
                 processed[perf['data_source']] = []
+
+                service_name = ""
+                
+                if name in ['pl','rta']:
+                    service_name = 'ping'
+                else:
+                    service_name = name
+
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": 1,
+                    "url" : "performance/service/"+service_name+"/service_data_source/"+name+"/device/"+device_id+"?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
                 device_info.append(perf_info)
@@ -2356,10 +2370,17 @@ class GISPerfData(View):
                 if perf['data_source'] in processed:
                     continue
                 processed[perf['data_source']] = []
+
+                if name in ['pl','rta']:
+                    service_name = 'ping'
+                else:
+                    service_name = name
+
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": 1,
+                    "url" : "performance/service/"+service_name+"/service_data_source/"+name+"/device/"+device_id+"?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
                 device_info.append(perf_info)
@@ -2371,10 +2392,17 @@ class GISPerfData(View):
                 if perf['data_source'] in processed:
                     continue
                 processed[perf['data_source']] = []
+
+                if name in ['pl','rta']:
+                    service_name = 'ping'
+                else:
+                    service_name = name
+
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": 1,
+                    "url" : "performance/service/"+service_name+"/service_data_source/"+name+"/device/"+device_id+"?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
                 device_info.append(perf_info)
@@ -2386,10 +2414,17 @@ class GISPerfData(View):
                 if perf['data_source'] in processed:
                     continue
                 processed[perf['data_source']] = []
+
+                if name in ['pl','rta']:
+                    service_name = 'ping'
+                else:
+                    service_name = name
+
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": 1,
+                    "url" : "performance/service/"+service_name+"/service_data_source/"+name+"/device/"+device_id+"?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
                 device_info.append(perf_info)
@@ -2658,7 +2693,7 @@ class GISPerfData(View):
         substation_info['perf_value'] = performance_value
         substation_info['link_color'] = device_link_color
         substation_info['param'] = dict()
-        substation_info['param']['sub_station'] = self.get_device_info(device_name, machine_name, substation, device_pl)
+        substation_info['param']['sub_station'] = self.get_device_info(substation_device, machine_name, device_pl, substation)
 
         if user_thematics:
             # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
@@ -3197,4 +3232,3 @@ def getL2Report(request, ckt_id = 'no'):
     except Exception, e:
         logger.info(e.message)
     return HttpResponse(json.dumps(result))
-
