@@ -1428,7 +1428,7 @@ class GISPerfData(View):
                         logger.info("No backhaul device found. Exception: ", e.message)
 
                     # backhaul data
-                    if backhaul_device and backhaul_device.is_added_to_nms==1:
+                    if backhaul_device and backhaul_device.is_added_to_nms == 1:
                         backhaul_data = self.get_backhaul_info(backhaul_device)
                         bs_dict['bh_info'] = backhaul_data['bh_info'] if 'bh_info' in backhaul_data else []
                         bs_dict['bhSeverity'] = backhaul_data['bhSeverity'] if 'bhSeverity' in backhaul_data else "NA"
@@ -1656,12 +1656,15 @@ class GISPerfData(View):
         # service & data source
         service = ""
         data_source = ""
-        if ts_type == "normal":
-            service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
-            data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
-        elif ts_type == "ping":
-            service = user_thematics.thematic_template.service
-            data_source = user_thematics.thematic_template.data_source
+        try:
+            if ts_type == "normal":
+                service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
+                data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
+            elif ts_type == "ping":
+                service = user_thematics.thematic_template.service
+                data_source = user_thematics.thematic_template.data_source
+        except Exception as e:
+            logger.info("No thematic setting for device {}. Exception: ".format(device_name, e.message))
 
         # device frequency
         device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
@@ -2310,7 +2313,7 @@ class GISPerfData(View):
             ]
 
         # if device is down than don't show any performance data
-        if device_pl!="100":
+        if device_pl != "100":
             # to update the info window with all the services
             # device performance info
             device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
@@ -2619,12 +2622,15 @@ class GISPerfData(View):
         # service & data source
         service = ""
         data_source = ""
-        if ts_type == "normal":
-            service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
-            data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
-        elif ts_type == "ping":
-            service = user_thematics.thematic_template.service
-            data_source = user_thematics.thematic_template.data_source
+        try:
+            if ts_type == "normal":
+                service = user_thematics.thematic_template.threshold_template.live_polling_template.service.name
+                data_source = user_thematics.thematic_template.threshold_template.live_polling_template.data_source.name
+            elif ts_type == "ping":
+                service = user_thematics.thematic_template.service
+                data_source = user_thematics.thematic_template.data_source
+        except Exception as e:
+            logger.info("No user thematics for device {}. Exception: ".format(device_name, e.message))
 
         # device frequency
         device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
