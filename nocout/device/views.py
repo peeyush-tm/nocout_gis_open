@@ -3527,11 +3527,14 @@ def list_schedule_device(request):
     # organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all')
     # organization_backhaul_devices(organizations, technology = None)
 
+    obj_id = None   # create case
+    if 'obj_id' in request.GET:
+        obj_id = request.GET['obj_id'] # update case
     sSearch = request.GET['sSearch']
     scheduling_type = request.GET['scheduling_type']
     new_start_time = datetime.strptime(request.GET['start_on_time'], '%H:%M').time()
     new_end_time = datetime.strptime(request.GET['end_on_time'], '%H:%M').time()
-    over_lap_event = Event.objects.exclude(Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
+    over_lap_event = Event.objects.exclude(id=obj_id).exclude(Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
     over_lap_device_ids = Device.objects.filter(event__in=over_lap_event).values_list("id", flat=True)
 
     org = request.user.userprofile.organization
@@ -3539,21 +3542,21 @@ def list_schedule_device(request):
                                         is_added_to_nms=1,
                                         is_deleted=0,)
     if scheduling_type == 'devi':
-        device = device_list.filter(device_alias__icontains=sSearch)
+        device_list = device_list.filter(device_alias__icontains=sSearch)
     elif scheduling_type == 'dety':
-        device = device_list.filter(device_type__in=DeviceType.objects.\
+        device_list = device_list.filter(device_type__in=DeviceType.objects.\
                     filter(alias__icontains=sSearch).values_list('id', flat=True))
     elif scheduling_type == 'cust':
-        device_list = organization_customer_devices(organizations=[org], technology = None, specify_ptp_type='all')
-        device = device_list.filter(device_alias__icontains=sSearch)
+        device_list = organization_customer_devices(organizations=[org], technology = None, specify_ptp_type='all').\
+                    filter(device_alias__icontains=sSearch)
     elif scheduling_type == 'netw':
-        device_list = organization_network_devices(organizations=[org], technology = None, specify_ptp_bh_type='all')
-        device = device_list.filter(device_alias__icontains=sSearch)
+        device_list = organization_network_devices(organizations=[org], technology = None, specify_ptp_bh_type='all').\
+                    filter(device_alias__icontains=sSearch)
     elif scheduling_type == 'back':
-        device_list = organization_backhaul_devices(organizations=[org], technology = None)
-        device = device_list.filter(device_alias__icontains=sSearch)
+        device_list = organization_backhaul_devices(organizations=[org], technology = None).\
+                    filter(device_alias__icontains=sSearch)
 
-    device = device.exclude(id__in=over_lap_device_ids).values('id', 'device_alias') # excule the overlapping devices
+    device = device_list.exclude(id__in=over_lap_device_ids).values('id', 'device_alias') # excule the overlapping devices
 
     return HttpResponse(json.dumps({
         "total_count": device.count(),
@@ -3578,9 +3581,12 @@ def filter_selected_device(request):
     i.e it removes the devices from the selest2 if device overlaps on that duration.
     """
     ids = request.GET['ids']
+    obj_id = None   # create case
+    if 'obj_id' in request.GET:
+        obj_id = request.GET['obj_id']  # update case
     new_start_time = datetime.strptime(request.GET['start_on_time'], '%H:%M').time()
     new_end_time = datetime.strptime(request.GET['end_on_time'], '%H:%M').time()
-    over_lap_event = Event.objects.exclude(Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
+    over_lap_event = Event.objects.exclude(id=obj_id).exclude(Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
     over_lap_device_ids = Device.objects.filter(event__in=over_lap_event).values_list("id", flat=True)
 
     device_result = [{'id': dev.id, 'device_alias': dev.device_alias } for dev in Device.objects.filter(id__in=ids.split(',')).exclude(id__in=over_lap_device_ids)]

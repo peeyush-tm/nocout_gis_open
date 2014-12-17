@@ -20,7 +20,7 @@
                             <div class="col-md-8"><br />
                                 <form action="" method="post" class="form-horizontal" role="form" enctype="multipart/form-data">{% csrf_token %}
                                     <div class="form-group">
-
+                                    <input type="hidden" id="id_form" value="{{form.id}}" />
                                             <div class="form-group">
                                                 <label for="{{ form.name.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.name.label|title }}</label>
                                                 <div class="col-sm-9">
@@ -198,14 +198,12 @@
                 disableFocus: true
             });
 
+            // handle the duration start_tim and end_time.
             $('#id_start_on_time').timepicker().on('hide.timepicker', function(e) {
                 if (( Date.parse('01/01/2011 '+$('#id_start_on_time').val()) <
                     Date.parse('01/01/2011 '+$('#id_end_on_time').val()) ) &&
                     ($(this).val() != '') ){
-                    var start_on_time = $("#id_start_on_time").val();
-                    var end_on_time = $("#id_end_on_time").val();
-                    var device_ids = $("input[name='device']").val()
-                    filter_selected_device(start_on_time, end_on_time, device_ids)
+                    filter_selected_device()
                 }
                 else{
                     $('#id_start_on_time').timepicker('setTime', $('#id_end_on_time').val());
@@ -216,10 +214,7 @@
                 if (( Date.parse('01/01/2011 '+$('#id_start_on_time').val()) <
                     Date.parse('01/01/2011 '+$('#id_end_on_time').val()) ) &&
                     ($(this).val() != '') ){
-                    var start_on_time = $("#id_start_on_time").val();
-                    var end_on_time = $("#id_end_on_time").val();
-                    var device_ids = $("input[name='device']").val()
-                    filter_selected_device(start_on_time, end_on_time, device_ids)
+                    filter_selected_device()
                 }
                 else{
                     $('#id_end_on_time').timepicker('setTime', $('#id_start_on_time').val());
@@ -227,10 +222,11 @@
                 }
             });
 
-            function filter_selected_device(start_on_time, end_on_time, device_ids){
-                var start_on_time = start_on_time;
-                var end_on_time = end_on_time;
-                var device_ids = device_ids;
+            function filter_selected_device(){
+                var start_on_time = $("#id_start_on_time").val();
+                var end_on_time = $("#id_end_on_time").val();
+                var device_ids = $("input[name='device']").val()
+                var obj_id = $("#id_form").val()
                 if (device_ids.length){
                     $.ajax({
                         url: '/device/filter/selected/device/',
@@ -241,6 +237,7 @@
                             ids: device_ids,
                             start_on_time: start_on_time,
                             end_on_time: end_on_time,
+                            obj_id: obj_id,
                         },
                         success: function (response) {
                             $("input[name='device']").select2("data", response.device_result)
@@ -373,11 +370,13 @@
                         var scheduling_type = $("#id_scheduling_type").val()
                         var start_on_time = $("#id_start_on_time").val()
                         var end_on_time = $("#id_end_on_time").val()
+                        var obj_id = $("#id_form").val()
                         return {
                             sSearch: term, // search term
                             scheduling_type: scheduling_type,
                             start_on_time: start_on_time,
                             end_on_time: end_on_time,
+                            obj_id: obj_id,
                         };
                     },
                     results: function (data, page) { // parse the results into the format expected by Select2.
