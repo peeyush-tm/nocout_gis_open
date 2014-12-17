@@ -33,11 +33,14 @@ def raise_alarms(service_status_list, org):
         device = Device.objects.get(device_name=service_status.device_name)
         device_type = DeviceType.objects.get(id=device.device_type)
         obj, created = EscalationStatus.objects.get_or_create(organization=org,
-                                            device_type=device_type.name,
-                                            service=service_status.service_name,
-                                            service_data_source=service_status.data_source,
-                                            ip=service_status.ip_address,
-                                            defaults={'severity': service_status.severity, 'old_status': old_status, 'new_status': new_status})
+                device_type=device_type.name,
+                service=service_status.service_name,
+                service_data_source=service_status.data_source,
+                ip=service_status.ip_address,
+                defaults={'severity': service_status.severity, 'old_status': old_status, 'new_status': new_status,
+                    status_since=(timezone.now() - timezone.timedelta(seconds=service_status.age)),
+                }
+        )
 
         age = timezone.now() - obj.status_since
         obj.severity = service_status.severity
@@ -56,12 +59,14 @@ def raise_alarms(service_status_list, org):
             if obj.new_status == 0 and getattr(obj, 'l%d_email_status' % escalation_level.name) == 0:
                 if obj.old_status == 1:
                     obj.old_status = 0
+                    obj.status_since = timezone.now() - timezone.timedelta(seconds=service_status.age)
                 alert_emails_for_bad_performance.delay(obj, escalation_level)
                 alert_phones_for_bad_performance.delay(obj, escalation_level)
                 setattr(obj, 'l%d_email_status' % escalation_level.name, 1)
 
             elif obj.new_status == 1 and obj.old_status == 0:
                 obj.old_status = 1
+                obj.status_since = timezone.now() - timezone.timedelta(seconds=service_status.age)
 
                 escalation_level_list = []
                 for level in level_list:
