@@ -1648,7 +1648,6 @@ function devicePlottingClass_gmap() {
 
 		// for(var i=0;i<bs_ss_devices.length;i++) {
 		for(var i=bs_ss_devices.length;i--;) {
-			
 
 			/*Create BS Marker Object*/
 			var bs_marker_object = {
@@ -1664,6 +1663,7 @@ function devicePlottingClass_gmap() {
 				device_name 	   : 	bs_ss_devices[i].data.device_name,
 				bsInfo 			   : 	bs_ss_devices[i].data.param.base_station,
 				bhInfo 			   : 	bs_ss_devices[i].data.param.backhual,
+				bhInfo_polled 	   :    [],
 				bhSeverity 		   :    "",
 				// bhInfo 			   : 	[],
 				bs_name 		   : 	bs_ss_devices[i].name,
@@ -2963,6 +2963,13 @@ function devicePlottingClass_gmap() {
 				for(var i=0;i<contentObject.bhInfo.length;i++) {
 					if(contentObject.bhInfo[i].show == 1) {
 						infoTable += "<tr><td>"+contentObject.bhInfo[i].title+"</td><td>"+contentObject.bhInfo[i].value+"</td></tr>";
+					}
+				}
+				if(contentObject.bhInfo_polled) {
+					for(var i=0;i<contentObject.bhInfo_polled.length;i++) {
+						if(contentObject.bhInfo_polled[i].show == 1) {
+							infoTable += "<tr><td>"+contentObject.bhInfo_polled[i].title+"</td><td>"+contentObject.bhInfo_polled[i].value+"</td></tr>";
+						}
 					}
 				}
 			}

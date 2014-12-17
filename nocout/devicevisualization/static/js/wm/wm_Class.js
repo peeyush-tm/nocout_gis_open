@@ -1835,6 +1835,7 @@ function WhiteMapClass() {
 					device_name 	   : 	bs_ss_devices[i].data.device_name,
 					bsInfo 			   : 	bs_ss_devices[i].data.param.base_station,
 					bhInfo 			   : 	bs_ss_devices[i].data.param.backhual,
+					bhInfo_polled 	   :    [],
 					bs_name 		   : 	bs_ss_devices[i].name,
 					bs_alias 		   :    bs_ss_devices[i].alias,
 					name 		 	   : 	bs_ss_devices[i].name,
