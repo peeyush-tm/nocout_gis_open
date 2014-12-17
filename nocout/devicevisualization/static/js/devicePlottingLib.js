@@ -8194,26 +8194,44 @@ function unique_values_field_and_with_base_station_ids(filter_data_collection, t
     return result_bs_collection
 }
 
+/**
+ * This function returns the in bound BS id's list
+ * @method getMarkerInCurrentBound
+ * @return {Array}, List of in bound base stations id
+ */
 function getMarkerInCurrentBound() {
-    var bsMarkersInBound = [];
-    for(var key in markersMasterObj['BS']) {
-        if(markersMasterObj['BS'].hasOwnProperty(key)) {
+
+    var bsMarkersInBound = [],
+    	allBSObject = {};
+
+	if(window.location.pathname.indexOf("googleEarth") > -1) {
+		allBSObject = allMarkersObject_earth['base_station'];
+	} else if(window.location.pathname.indexOf("white_background") > -1) {
+		allBSObject = allMarkersObject_wmap['base_station'];
+	} else {
+		allBSObject = allMarkersObject_gmap['base_station'];
+	}
+
+	// Loop Bs markers to get which are in current bounds
+    for(var key in allBSObject) {
+        if(allBSObject.hasOwnProperty(key)) {
         	var markerVisible = "";
         	if(window.location.pathname.indexOf("googleEarth") > -1) {
         		var earthBounds = getCurrentEarthBoundPolygon();
-        		markerVisible =  isPointInPoly(earthBounds, {lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon});
+        		markerVisible =  isPointInPoly(earthBounds, {lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon});
         	} else if(window.location.pathname.indexOf("white_background") > -1) {
-        		markerVisible =  whiteMapClass.checkIfPointLiesInside({lat: markersMasterObj['BS'][key].ptLat, lon: markersMasterObj['BS'][key].ptLon})
+        		markerVisible =  whiteMapClass.checkIfPointLiesInside({lat: allBSObject[key].ptLat, lon: allBSObject[key].ptLon})
         	} else {
-				markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
+				markerVisible = mapInstance.getBounds().contains(allBSObject[key].getPosition());
         	}
             if(markerVisible) {
-            	if(markersMasterObj['BS'][key].isActive && markersMasterObj['BS'][key].isActive == 1) {
-            		bsMarkersInBound.push(markersMasterObj['BS'][key]['filter_data']['bs_id']);
+            	if(allBSObject[key].isActive && allBSObject[key].isActive == 1) {
+            		bsMarkersInBound.push(allBSObject[key]['filter_data']['bs_id']);
             	}
             }
         }
     }
+
     return bsMarkersInBound;
 }
 

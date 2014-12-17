@@ -59,7 +59,7 @@ function GisPerformance() {
      */
     this.start = function (bs_list) {
 
-        if (isPollingActive == 0  && isPerfCallStopped == 0) {
+        if(isPollingActive == 0  && isPerfCallStopped == 0) {
             //Reset Variable
             perf_self.resetVariable()
 
@@ -175,21 +175,32 @@ function GisPerformance() {
                             });
                         } else {
                             var current_bs_in_bound = getMarkerInCurrentBound();
-                            /*Check that the bsname is present in current bounds or not*/
-                            if (current_bs_in_bound.indexOf(data.bs_id) > -1) {
-                                //Update Map with the data
-                                perf_self.updateMap(data,function(response) {
+                            // If map Zoom level is greater than 11 then proceed.
+                            if(mapInstance.getZoom() > 11) {
+                                /*Check that the bsname is present in current bounds or not*/
+                                if (current_bs_in_bound.indexOf(data.bs_id) > -1) {
+                                    //Update Map with the data
+                                    perf_self.updateMap(data,function(response) {
+                                        //Send Request for the next counter
+                                        perf_self.sendRequest(counter);
+                                    });
+                                } else {
                                     //Send Request for the next counter
                                     perf_self.sendRequest(counter);
-                                });
-                            } else {
+                                }
+                            }
+                        }
+                    } else {
+                        if(window.location.pathname.indexOf("white_background") > -1 || window.location.pathname.indexOf("googleEarth") > -1) {
+                            //Send Request for the next counter
+                            perf_self.sendRequest(counter);
+                        } else {
+                            // If map Zoom level is greater than 11 then proceed.
+                            if(mapInstance && mapInstance.getZoom() > 11) {
                                 //Send Request for the next counter
                                 perf_self.sendRequest(counter);
                             }
                         }
-                    } else {
-                        //Send Request for the next counter
-                        perf_self.sendRequest(counter);
                     }
                 }
 
@@ -721,7 +732,14 @@ function GisPerformance() {
                                     center_lat = center_obj.lat * 180 / Math.PI,
                                     center_lon = center_obj.lon * 180 / Math.PI;
 
-                                    
+                                // Close the label if exist
+                                if(cross_label_array['line_'+ss_marker_data.name]) {
+                                    // Remove the cross label
+                                    cross_label_array['line_'+ss_marker_data.name].close();
+                                    // Delete cross label from global object
+                                    delete cross_label_array['line_'+ss_marker_data.name];
+                                }
+
                                 var crossLabelPosition = new google.maps.LatLng(center_lat,center_lon),
                                     cross_label = perf_self.createInfoboxLabel(
                                         crossLabelHTML,
