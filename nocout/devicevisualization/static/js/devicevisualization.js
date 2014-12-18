@@ -1477,14 +1477,13 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                             aaSorting : [[0,'desc']],
                             sPaginationType: "full_numbers"
                         });
-
+                        // Create Chart
                         createHighChart_map('perf_chart',result.data.objects);
-//                         createHighChart_map('perf_chart',result.data.objects);
                     }
                 }
             },
             error : function(err) {
-                console.log(err.statusText);
+                // console.log(err.statusText);
             }
         });
     }
