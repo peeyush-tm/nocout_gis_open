@@ -267,8 +267,14 @@ function prepare_oms_object(oms_instance) {
 	oms_instance.addListener('spiderfy', function(e,markers) {
 		/*Change the markers icon from cluster icon to thrie own icon*/
 		for(var i=0;i<e.length;i++) {
-			/*Change the icon of marker*/
-			e[i].setOptions({"icon":e[i].oldIcon});
+
+			if(isPollingActive) {
+				/*Change the icon of marker*/
+				e[i].setOptions({"icon":e[i].icon});
+			} else {
+				/*Change the icon of marker*/
+				e[i].setOptions({"icon":e[i].oldIcon});
+			}
 
 			for(var j=0;j<ssLinkArray.length;j++) {
 
@@ -318,8 +324,13 @@ function prepare_oms_object(oms_instance) {
         	var latCount= $.grep(latArray, function(elem) {return elem=== e[i].ptLat;}).length;
         	var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
         	if(lonCount> 1 && latCount> 1) {
-        		//change all to cluster icon
-        		e[i].setOptions({"icon": e[i].clusterIcon});
+        		if(isPollingActive) {
+					/*Change the icon of marker*/
+					e[i].setOptions({"icon":e[i].icon});
+				} else {
+	        		//change all to cluster icon
+	        		e[i].setOptions({"icon": e[i].clusterIcon});
+				}
         	}
         	for(var j=0;j<ssLinkArray.length;j++) {
         		var pt_type = $.trim(e[i].pointType);
