@@ -1,7 +1,7 @@
 from django import forms
 
 from scheduling_management.models import Event, Weekdays
-from device.models import Device
+from device.models import Device, DeviceTechnology
 import logging
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ class EventForm(forms.ModelForm):
     end_never = forms.BooleanField(initial=True, required=False)
     start_on_time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True)
     end_on_time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True)
+    technology = forms.ModelChoiceField(queryset=DeviceTechnology.objects.all(), empty_label='Select', required=False)
     # Note take a boolean field in model and replate select_device name with that field.
     # select_device = forms.ChoiceField(widget=forms.RadioSelect(), initial=False,
     #                 choices=((True, 'Add all device'),(False, 'Select specific devices')), required=False)
