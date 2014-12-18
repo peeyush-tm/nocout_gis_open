@@ -3532,8 +3532,11 @@ def list_schedule_device(request):
         obj_id = request.GET['obj_id'] # update case
     sSearch = request.GET['sSearch']
     scheduling_type = request.GET['scheduling_type']
-    new_start_time = datetime.strptime(request.GET['start_on_time'], '%H:%M').time()
-    new_end_time = datetime.strptime(request.GET['end_on_time'], '%H:%M').time()
+    new_start_time = datetime.today().time()
+    new_end_time = datetime.today().time()
+    if request.GET['start_on_time'] and request.GET['end_on_time']:
+        new_start_time = datetime.strptime(request.GET['start_on_time'], '%H:%M').time()
+        new_end_time = datetime.strptime(request.GET['end_on_time'], '%H:%M').time()
     over_lap_event = Event.objects.exclude(id=obj_id).exclude(Q(start_on_time__gte=new_end_time) | Q(end_on_time__lte=new_start_time))
     over_lap_device_ids = Device.objects.filter(event__in=over_lap_event).values_list("id", flat=True)
 
@@ -3560,6 +3563,8 @@ def list_schedule_device(request):
     elif scheduling_type == 'back':
         device_list = organization_backhaul_devices(organizations=[org], technology = technology_id).\
                     filter(device_alias__icontains=sSearch)
+    else:   # if no schedling type is available
+        device_list = device_list.filter(device_alias__icontains=sSearch)
 
     device = device_list.exclude(id__in=over_lap_device_ids).values('id', 'device_alias') # excule the overlapping devices
 
