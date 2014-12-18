@@ -52,7 +52,7 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    db = utility_module.mysql_conn(configs=configs)
+    #db = utility_module.mysql_conn(configs=configs)
     """
     start_time variable would store the latest time uptill which mysql
     table has an entry, so the data having time stamp greater than start_time
@@ -60,14 +60,16 @@ def main(**configs):
     duplicate data.
     """
     #for i in range(len(configs.get('mongo_conf'))):
-    start_time = mongo_module.get_latest_entry(
-	    	db_type='mysql', 
-		    	db=db,
-		    	site=configs.get('mongo_conf')[0][0],
-		    	table_name=configs.get('table_name')
-    )	
+#    start_time = mongo_module.get_latest_entry(
+#	    	db_type='mysql', 
+#		    	db=db,
+#		    	site=configs.get('mongo_conf')[0][0],
+#		    	table_name=configs.get('table_name')
+#    )	
+#    db.close()
 
     end_time = datetime.now()
+    start_time = end_time - timedelta(minutes=5)
     # Get all the entries from mongodb having timestam0p greater than start_time
     docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
     configs1 = config_module.parse_config_obj()
@@ -96,9 +98,9 @@ def main(**configs):
             doc.get('age')
         )
         data_values.append(t)
-	t =()
+	t=()
     if data_values:
-    	insert_data(configs.get('table_name'), data_values, db,configs=configs)
+    	insert_data(configs.get('table_name'), data_values,configs=configs)
     	print "Data inserted into my mysql db"
     else:
     	print "No data in mongo db in this time frame for table %s" % (configs.get('table_name'))
@@ -129,7 +131,7 @@ def read_data(start_time, end_time, **kwargs):
 		cur = db.device_network_status.find()
 	else:
         	cur = db.device_network_status.find({
-            	"check_time": {"$gt": start_time, "$lt": end_time}
+            	"local_timestamp": {"$gt": start_time, "$lt": end_time}
         	})
         for doc in cur:
             docs.append(doc)
@@ -184,7 +186,7 @@ def build_data(doc):
         t = ()
     return values_list
 
-def insert_data(table, data_values, db,**kwargs):
+def insert_data(table, data_values,**kwargs):
 	"""
         Function to bulk insert data into mysqldb
 
@@ -195,7 +197,7 @@ def insert_data(table, data_values, db,**kwargs):
 	Kwargs (dict): Dictionary to hold connection variables
 	"""
 	insert_dict = {'0':[],'1':[]}
-	#db = utility_module.mysql_conn(configs=kwargs.get('configs'))
+	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
 		query = "SELECT * FROM %s " % table +\
                 	"WHERE `device_name`='%s' AND `service_name`='%s' AND `data_source`='%s'" %(str(data_values[i][0]),data_values[i][1],data_values[i][4])
@@ -242,6 +244,7 @@ def insert_data(table, data_values, db,**kwargs):
 				raise mysql.connector.Error, err
     		db.commit()
     		cursor.close()
+	db.close()
 
 
 
