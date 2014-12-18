@@ -1,4 +1,5 @@
 import json
+from django.core.cache import cache
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib import auth
@@ -335,3 +336,11 @@ def logout(request):
     auth.logout(request)
     return HttpResponseRedirect(settings.LOGIN_URL)
 
+
+def reset_cache(request):
+    """
+    Clear complete cache.
+    """
+
+    cache.clear()
+    return HttpResponse(json.dumps({'code': 0, 'message': 'Cache has been cleared.'}), mimetype='application/json')

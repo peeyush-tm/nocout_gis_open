@@ -55,7 +55,7 @@ LANGUAGE_CODE = 'en-us'
 SITE_ID = 1
 
 LOGIN_URL = '/login/'
-LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/')
+LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
