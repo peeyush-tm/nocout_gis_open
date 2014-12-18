@@ -364,6 +364,16 @@ $("#goFullScreen").click(function() {
 
             }
 
+            // Side info container
+            if($(".sideInfoContainer").length > 0) {
+                if($(".sideInfoContainer .box-body").hasClass("zero_padding_margin")) {
+                    $(".sideInfoContainer .box-body").removeClass("zero_padding_margin");
+                }
+
+                if($(".sideInfoContainer .box-title").hasClass('hide')) {
+                    $(".sideInfoContainer .box-title").removeClass('hide');
+                }
+            }
 
         } else {
             exitFullscreen();
