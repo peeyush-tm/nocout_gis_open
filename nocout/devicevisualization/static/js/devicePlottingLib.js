@@ -3074,11 +3074,19 @@ function devicePlottingClass_gmap() {
 			}
 
 			for(var i=0;i<startPtInfo.length;i++) {
+				var url = "",
+					text_class = "";
+
 				if(startPtInfo[i].title && $.trim(startPtInfo[i].title.toLowerCase()) === 'circuit id') {
 					ss_circuit_id = startPtInfo[i].value;
 				}
 				if(startPtInfo[i].show == 1) {
-					infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
+					// Url
+					url = startPtInfo[i]["url"] ? startPtInfo[i]["url"] : "";
+					text_class = url ? "text-primary" : "";
+
+					infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+startPtInfo[i]['title']+"</td><td>"+startPtInfo[i]['value']+"</td></tr>";
+					// infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
 				}
 			}
 

@@ -1424,11 +1424,10 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
 $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
     
     var api_url = e.currentTarget.attributes['url'] ? e.currentTarget.attributes['url'].value : "";
-    console.log(api_url);
     // If api_url exist then fetch l2 report url
     if(api_url) {
         $.ajax({
-            url: api_url,
+            url: base_url+"/"+api_url,
             type: "GET",
             dataType: "json",
             success: function (result) {
