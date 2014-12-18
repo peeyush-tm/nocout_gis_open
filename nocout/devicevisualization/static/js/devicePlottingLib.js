@@ -629,7 +629,9 @@ function devicePlottingClass_gmap() {
 								// if(searchResultData.length == 0 || mapInstance.getZoom() <= 10) {
 								if(mapInstance.getZoom() <= 11) {
 									var polylines = allMarkersObject_gmap['path'],
-										polygons = allMarkersObject_gmap['sector_polygon'];
+										polygons = allMarkersObject_gmap['sector_polygon'],
+										ss_markers = allMarkersObject_gmap['sub_station'],
+										show_ss_len = $("#showAllSS:checked").length;
 
 									// Hide polylines if shown
 									for(key in polylines) {
@@ -653,6 +655,19 @@ function devicePlottingClass_gmap() {
 								    for (key in cross_label_array) {
 								    	cross_label_array[key].setVisible(false);
 								    }
+
+								    // Hide SS if show ss checkbox is unchecked
+								    // Hide polylines if shown
+									for(key in ss_markers) {
+										var current_ss = ss_markers[key];
+										if(show_ss_len <= 0) {
+											// If shown
+											if(current_ss.map) {
+												current_ss.setMap(null);
+											}
+										}
+									}
+
 
 								} else {
 									if(mapInstance.getZoom() > 10) {

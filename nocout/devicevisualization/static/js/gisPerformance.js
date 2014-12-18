@@ -228,7 +228,8 @@ function GisPerformance() {
                 bs_name = apiResponse.bs_name ? apiResponse.bs_name : "",
                 perf_bh_info = apiResponse.bh_info ? apiResponse.bh_info : [],
                 perf_bh_severity = apiResponse.bhSeverity ? apiResponse.bhSeverity : "",
-                bs_marker = "";
+                bs_marker = "",
+                show_ss_len = $("#showAllSS:checked").length;
 
             if(window.location.pathname.indexOf("googleEarth") > -1) {
                 bs_marker = allMarkersObject_earth['base_station']['bs_'+bs_name];
@@ -566,10 +567,15 @@ function GisPerformance() {
                             var ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_data.data.markerUrl,"other");
 
                             ss_marker_object['position'] = new google.maps.LatLng(ss_marker_data.data.lat,ss_marker_data.data.lon);
-                            ss_marker_object['map'] = mapInstance;
+                            ss_marker_object['map'] = null;
                             ss_marker_object['icon'] = ss_icon_obj;
                             ss_marker_object['oldIcon'] = ss_icon_obj;
                             ss_marker_object['clusterIcon'] = ss_icon_obj;
+                            
+                            if(show_ss_len > 0) {
+                                ss_marker_object['map'] = mapInstance;
+                            }
+
 
                             /*Create SS Marker*/
                             var ss_marker = new google.maps.Marker(ss_marker_object);
