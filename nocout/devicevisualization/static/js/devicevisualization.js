@@ -1433,7 +1433,7 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
             success: function (result) {
                 if (result.success === 1) {
                     var contentHtml = "";
-                    contentHtml += "<div style='max-height:300px;overflow:auto;'>";
+                    contentHtml += "<div style='max-height:300px;overflow:auto;position:relative;z-index:9999;'>";
                     if (result.data.objects.table_data_header) {
 
                         contentHtml += createDataTableHtml_map(
@@ -1448,6 +1448,9 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                             title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Performance    '
                         });
 
+                        // Update Modal width to 70%;
+                        $(".modal-dialog").css("width","70%");
+
                         $("#other_perf_table").DataTable({
                             bPaginate: true,
                             bDestroy: true,
@@ -1456,7 +1459,7 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                         });
 
                     } else {
-                        contentHtml += "<div id='perf_chart'></div>";
+                        contentHtml += "<div id='perf_chart' style='width:60%;'></div>";
                         contentHtml += "<div id='perf_chart_table'></div>";
                         contentHtml += createDataTableForChart_map(
                             "perf_data_table",
@@ -1470,6 +1473,9 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                             message: contentHtml,
                             title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Performance'
                         });
+
+                        // Update Modal width to 70%;
+                        $(".modal-dialog").css("width","70%");
 
                         $("#perf_data_table").DataTable({
                             bPaginate: true,
