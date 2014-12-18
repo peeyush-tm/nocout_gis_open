@@ -459,7 +459,7 @@ function GisPerformance() {
                             zIndex           :  200,
                             optimized        :  false,
                             isActive         :  1,
-                            // layerReference   :  ccpl_map.getLayersByName("Markers")[0]
+                            windowTitle      : "Sub Station"
                         };
 
                         if(window.location.pathname.indexOf("googleEarth") > -1) {
@@ -681,6 +681,10 @@ function GisPerformance() {
                         startEndObj["endLat"] = ss_marker_data.data.lat;
                         startEndObj["endLon"] = ss_marker_data.data.lon;
 
+                        startEndObj["windowTitle"] = "BS-SS";
+                        startEndObj["startTitle"] = "BS Info";
+                        startEndObj["endTitle"] = "SS Info";
+
                         /*Link color object*/
                         linkColor = ss_marker_data.data.link_color ? ss_marker_data.data.link_color : 'rgba(74,72,94,0.58)';
 
@@ -718,7 +722,17 @@ function GisPerformance() {
                                 oms.unspiderfy();
                             }
                             
-                            var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
+                            var ss_link_line = gmap_self.createLink_gmaps(
+                                startEndObj,
+                                linkColor,
+                                base_info,
+                                ss_info,
+                                sect_height,
+                                sector_ip,
+                                ss_marker_data.name,
+                                bs_object.name,
+                                bs_object.id
+                            );
                             ssLinkArray.push(ss_link_line);
                             ssLinkArray_filtered = ssLinkArray;
                             ss_link_line.setMap(mapInstance);
