@@ -7,6 +7,7 @@ from alarm_escalation.forms import EscalationLevelForm
 from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.mixins.permissions import PermissionsRequiredMixin
+from nocout.mixins.generics import FormRequestMixin
 
 
 # class EscalationList(TemplateView):
@@ -166,7 +167,7 @@ class LevelListingTable(PermissionsRequiredMixin,
         return json_data
 
 
-class LevelCreate(PermissionsRequiredMixin, CreateView):
+class LevelCreate(PermissionsRequiredMixin, FormRequestMixin, CreateView):
     model = EscalationLevel
     template_name = "level/level_new.html"
     form_class = EscalationLevelForm
@@ -174,7 +175,7 @@ class LevelCreate(PermissionsRequiredMixin, CreateView):
     required_permissions = ('alarm_escalation.add_escalationlevel',)
 
 
-class LevelUpdate(PermissionsRequiredMixin, UpdateView):
+class LevelUpdate(PermissionsRequiredMixin, FormRequestMixin, UpdateView):
     model = EscalationLevel
     template_name = "level/level_update.html"
     form_class = EscalationLevelForm
