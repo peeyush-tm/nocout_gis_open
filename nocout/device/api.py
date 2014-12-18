@@ -1078,7 +1078,7 @@ class BulkFetchLPDataApi(View):
             logger.info(e)
         return HttpResponse(json.dumps(result))
 
-    def get_icon_for_numeric_service(self, th_ranges=None, th_icon_settings=None, value=None, icon=""):
+    def get_icon_for_numeric_service(self, th_ranges=None, th_icon_settings="", value="", icon=""):
         """
             Get device icon corresponding to fetched performance value
             Parameters:
@@ -1106,12 +1106,7 @@ class BulkFetchLPDataApi(View):
         # default image to be loaded
         image_partial = icon
 
-        # fetching number from string for e.g. 45 from 'ab4cd5e'
-        if not isinstance(value, float):
-            value = ''.join(x for x in str(value) if x.isdigit() or (x == '-'))
-
         if th_ranges and th_icon_settings and len(str(value)):
-
             try:
                 if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
                     icon_settings = eval(th_icon_settings)
@@ -1211,7 +1206,7 @@ class BulkFetchLPDataApi(View):
 
         return icon
 
-    def get_icon_for_string_service(self, th_ranges=None, th_icon_settings=None, value=None, icon=""):
+    def get_icon_for_string_service(self, th_ranges=None, th_icon_settings="", value="", icon=""):
         """
             Get device icon corresponding to fetched performance value
             Parameters:
