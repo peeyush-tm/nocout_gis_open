@@ -6960,7 +6960,7 @@ class GisWizardPTPListingTable(SectorListingTable):
 
     def get_initial_queryset(self):
         qs=super(GisWizardPTPListingTable, self).get_initial_queryset()
-        qs = qs.filter(bs_technology__name='p2p')
+        qs = qs.filter(bs_technology__name='P2P')
         return qs
 
     def prepare_results(self, qs):
@@ -6973,11 +6973,11 @@ class GisWizardPTPListingTable(SectorListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            if ['sector_configured_on__country']:
+            if dct['sector_configured_on__country']:
                 dct['sector_configured_on__country'] = Country.objects.get(id=dct['sector_configured_on__country']).country_name
-            if ['sector_configured_on__state']:
+            if dct['sector_configured_on__state']:
                 dct['sector_configured_on__state'] = State.objects.get(id=dct['sector_configured_on__state']).state_name
-            if ['sector_configured_on__city']:
+            if dct['sector_configured_on__city']:
                 dct['sector_configured_on__city'] = City.objects.get(id=dct['sector_configured_on__city']).city_name
 
             device_id = dct.pop('id')
