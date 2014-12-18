@@ -55,3 +55,16 @@ class EscalationLevelForm(forms.ModelForm):
             except ValidationError as e:
                 raise ValidationError('Invalid emails.')
         return self.cleaned_data['emails']
+
+    def clean(self):
+        level_list = list()
+        if 'organization' in self.cleaned_data and 'device_type' in self.cleaned_data and 'service' in self.cleaned_data and 'service_data_source' in self.cleaned_data:
+            level_list = EscalationLevel.objects.filter(organization=self.cleaned_data['organization'],
+                                               name=self.cleaned_data['name'],
+                                               service=self.cleaned_data['service'],
+                                               device_type=self.cleaned_data['device_type'],
+                                               service_data_source=self.cleaned_data['service_data_source']
+                                               )
+        if level_list:
+            raise ValidationError('This Escalation level is already exists.')
+        return self.cleaned_data
