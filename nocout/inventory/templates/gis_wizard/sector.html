@@ -501,6 +501,65 @@
                 {% endif %}
             });
 
+            function bind_dr_configured_on () {
+
+                    $("#id_dr_configured_on").select2({
+                        placeholder: "Search for a dr config on.",
+                        minimumInputLength: 2,
+                        width: "resolve",
+                        ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                            url: "/inventory/list/device/",
+                            dataType: 'json',
+                            quietMillis: 250,
+                            data: function (term, page) {
+                                return {
+                                    sSearch: term, // search term
+                                    org: {{ base_station.organization.id }},
+                                };
+                            },
+                            results: function (data, page) { // parse the results into the format expected by Select2.
+                                // since we are using custom formatting functions we do not need to alter the remote JSON data
+                                return { results: data.items };
+                            },
+                            cache: false
+                        },
+                        initSelection: function(element, callback) {
+                            // the input tag has a value attribute preloaded that points to a preselected repository's id
+                            // this function resolves that id attribute to an object that select2 can render
+                            // using its formatResult renderer - that way the repository name is shown preselected
+                            var id = $(element).val();
+                            if (id !== "") {
+                                $.ajax("/inventory/select/device/" + id+"/", {
+                                    dataType: "json"
+                                }).done(function(data) {
+                                    callback({id: id, device_alias: data[0]});
+                                    });
+                            }
+                        },
+                        formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                        formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+                    });
+            }
+
+            if ($("#id_dr_site").val() == 'Yes') {
+                bind_dr_configured_on();
+            } else {
+                var dr_configured_on = $("#id_dr_configured_on");
+                dr_configured_on.parent().parent().parent().attr('style', 'display:None');
+            }
+
+            $("#id_dr_site").change(function() {
+                if ($("#id_dr_site").val() == 'Yes') {
+                    $("#id_dr_configured_on").parent().parent().parent().attr('style', 'display:Block');
+                    bind_dr_configured_on();
+                } else {
+                    var dr_configured_on = $("#id_dr_configured_on");
+                    dr_configured_on.select2("val", "");
+                    dr_configured_on.select2("container").hide();
+                    dr_configured_on.parent().parent().parent().attr('style', 'display:None');
+                }
+            }); // :END: id_dr_site.change_event
+
         });
 
         function repoSectorFormatResult(result) {
