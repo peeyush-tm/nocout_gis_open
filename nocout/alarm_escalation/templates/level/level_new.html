@@ -24,7 +24,7 @@
                                                             {{ field }} {{ field.errors }}
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {# field.help_text #}
+                                                            {{ field.help_text }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -52,13 +52,51 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
+        var id_data_source = "#id_data_source";
+        var id_service = "#id_service";
+        var id_device_type = "#id_device_type";
         $(document).ready(function() {
-
             // Initialize the select2 selectbox.
             $(".select2select").select2();
             $('.tip-focus').tooltip({
                 placement: 'right',
                 trigger: 'focus'
+            });
+
+            if ($(id_device_type).val()){
+            Dajaxice.inventory.update_services_as_per_device_type(Dajax.process, {'dvt_id': $(id_device_type).val()});
+            }
+            else{
+                $(id_service).select2("val","");
+                $(id_service).empty();
+            }
+
+            $(id_device_type).change(function () {
+            if ($(id_device_type).val()) {
+            Dajaxice.inventory.update_services_as_per_device_type(Dajax.process, {'dvt_id': $(id_device_type).val()});
+                }
+            else{
+            $(id_service).select2("val","");
+            $(id_service).empty();
+            }
+            });
+
+            if ($(id_service).val()){
+                Dajaxice.inventory.update_data_sources_as_per_service(Dajax.process, {'svc_id': $(id_service).val()});
+            }
+            else{
+                $(id_data_source).select2("val","");
+                $(id_data_source).empty();
+            }
+
+            $(id_service).change(function () {
+                if ($(id_service).val()) {
+                Dajaxice.inventory.update_data_sources_as_per_service(Dajax.process, {'svc_id': $(id_service).val()});
+                }
+                else{
+                $(id_data_source).select2("val","");
+                $(id_data_source).empty();
+                }
             });
         });
 
