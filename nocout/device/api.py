@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import ast, sys
 from copy import deepcopy
-import json, logging
+import json, logging, ujson
 from pprint import pprint, pformat
 import urllib, datetime
 from multiprocessing import Process, Queue
@@ -14,20 +14,17 @@ from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, DeviceModel, State, Country, City
 import requests
 from nocout.utils import logged_in_user_organizations
-from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value, \
+from nocout.utils.util import time_it, \
     query_all_gis_inventory, cached_all_gis_inventory, cache_for
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
 from performance.models import Topology
 from sitesearch.views import prepare_raw_bs_result
-from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT, DEBUG
-from django.db import connections
+from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 
 logger = logging.getLogger(__name__)
 
-global gis_information
-gis_information = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
 
 
 @cache_for(600)
@@ -53,8 +50,9 @@ def prepare_raw_result(bs_dict = []):
 
 class DeviceStatsApi(View):
 
-    raw_result = prepare_raw_result(gis_information)
+    raw_result = prepare_raw_result(cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True)))
 
+    # @time_it()
     def get(self, request):
 
         self.result = {
@@ -105,28 +103,16 @@ class DeviceStatsApi(View):
                                             }
             self.result['data']['objects']['children']= list()
 
-            st = datetime.datetime.now()
-            if DEBUG:
-                st = datetime.datetime.now()
-                logger.debug("Base-Station CREATION : Start")
-                logger.debug("START %s" %st)
-
             for bs in bs_id:
                 if bs in self.raw_result:
                     base_station_info= prepare_raw_bs_result(self.raw_result[bs])
                     self.result['data']['objects']['children'].append(base_station_info)
 
-            if DEBUG:
-                endtime = datetime.datetime.now()
-                elapsed = endtime - st
-                logger.debug("END {}".format(divmod(elapsed.total_seconds(), 60)))
-                logger.debug("Base-Station CREATION : END")
-
 
             self.result['data']['meta']['device_count']= len(self.result['data']['objects']['children'])
             self.result['message'] = 'Data Fetched Successfully.'
             self.result['success'] = 1
-        return HttpResponse(json.dumps(self.result))
+        return HttpResponse(ujson.dumps(self.result), content_type="application/json")
 
 
 class DeviceFilterApi(View):
