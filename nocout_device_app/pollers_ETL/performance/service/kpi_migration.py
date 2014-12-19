@@ -19,7 +19,7 @@ def main():
     configs = config_module.parse_config_obj()
     for section, options in configs.items():
 	mongo_conf.append((options.get('site'),options.get('host'), options.get('port')))
-	
+
     kpi_data_script = configs.get(mongo_conf[0][0]).get('kpi_data').get('script')
     kpi_data_migration_script = __import__(kpi_data_script)
     kpi_data_migration_script.main(mongo_conf=mongo_conf,

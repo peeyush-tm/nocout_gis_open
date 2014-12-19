@@ -429,9 +429,8 @@ def get_host_services_name(site_name=None, db=None):
                             "Filter: service_description ~ wimax_pmp1_dl_util_bgp\n"+\
                             "Filter: service_description ~ wimax_pmp2_dl_util_bgp\n"+\
                             "Filter: service_description ~ wimax_pmp2_ul_util_bgp\n"+\
-                            "Filter: service_description ~ cambium_ul_utilization_kpi\n"+\
-                            "Filter: service_description ~ cambium_dl_utilization_kpi\n"+\
-                            "Or: 12\nNegate:\nOutputFormat: python\n"
+                            "Filter: service_description ~ cambium_util_kpi\n"+\
+                            "Or: 11\nNegate:\nOutputFormat: python\n"
 
             #service_perf_query = "GET services\nColumns: host_name host_address service_description service_state "+\
             #                "last_check service_last_state_change host_state service_perf_data\nFilter: service_description ~ _invent\n"+\
