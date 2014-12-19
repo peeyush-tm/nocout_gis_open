@@ -2,6 +2,8 @@ from django import forms
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
+from django.forms.util import ErrorList
+
 from organization.models import Organization
 from alarm_escalation.models import EscalationLevel
 import logging
@@ -76,5 +78,5 @@ class EscalationLevelForm(forms.ModelForm):
                 logger.info(e.message)
 
         if level_list:
-            raise ValidationError('This Escalation level is already exists.')
+            self._errors['name'] = ErrorList([u'This level, device type, service, data source is already exists in this organization.'])
         return self.cleaned_data
