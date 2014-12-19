@@ -128,7 +128,7 @@
     white-space: nowrap;
 }
 .sideInfoContainer {
-    max-height: 550px;
+    max-height: 525px;
     overflow-y: auto;
     position:absolute;
     padding: 0px;

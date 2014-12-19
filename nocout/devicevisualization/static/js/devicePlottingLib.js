@@ -484,14 +484,7 @@ function devicePlottingClass_gmap() {
 			var db = new loki('loki.json');
 			
 			// Create a collection:
-			bs_loki_db = db.addCollection('base_station')
-			ss_loki_db = db.addCollection('sub_station')
-			sector_loki_db = db.addCollection('sector_device')
-			polygon_loki_db = db.addCollection('sector_polygon')
-			line_loki_db = db.addCollection('path')
 			all_devices_loki_db = db.addCollection('allDevices');
-			filtered_devices_loki_db = db.addCollection('filteredDevices');
-			yp_devices_loki_db = db.addCollection('ypDevices');
 
 			state_lat_lon_db = db.addCollection('state_lat_lon');
 
@@ -536,274 +529,281 @@ function devicePlottingClass_gmap() {
 			$("#resetFilters").button("loading");
 
 
-            /*show co ordinates on mouse move*/
+            // Google maps mousemove event, triggers when map mouse move on google maps
             google.maps.event.addListener(mapInstance, 'mousemove', function (event) {
                 displayCoordinates(event.latLng);
             });
 
-            /*Trigger when map pan*/
-            google.maps.event.addListener(mapInstance, 'center_changed', function (event) {
-
-                if(mapInstance.getZoom() > 10 && isPerfCallStarted == 1) {
+            // Google maps dragend event, triggers when map drags
+            google.maps.event.addListener(mapInstance, 'dragend', function () {
+                if(mapInstance.getZoom() > 11 && isPerfCallStarted == 1) {
                 	var new_bs = gisPerformanceClass.get_intersection_bs(current_bs_list,getMarkerInCurrentBound());
                 	if(new_bs.length > 0) {
-                		gisPerformanceClass.start(new_bs);
-                	}
-                }
-            });
-
-            google.maps.event.addListener(mapInstance, 'idle', function() {
-            	setTimeout(function() {
-	            	if(isDebug) {
-						console.log("Google Map Idle Event");
-						console.log("Google Map Idle Event Start Time :- "+ new Date().toLocaleString());
-					}
-            		// Save current zoom value in global variable
-	            	current_zoom = mapInstance.getZoom();
-	            	
-	            	/* When zoom level is greater than 8 show lines */
-	            	if(mapInstance.getZoom() > 7) {
-
-	            		// If zoom level is greate than 10 then start perf calling
-	            		if(mapInstance.getZoom() > 11) {
-		            		// Reset Perf calling Flag
-	            			isPerfCallStopped = 0;
-            			} else {
-            				// Set Perf calling Flag
-	            			isPerfCallStopped = 1;
-	            			isPerfCallStarted = 0;
-            			}
-
-	            		if(mapInstance.getZoom() < 12 || searchResultData.length > 0) {
-	            			var states_with_bounds = state_lat_lon_db.where(function(obj) {
-		            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
-		            		});
-
-		            		var states_array = [];
-
-		            		// Hide State Labels which are in current bounds
-		            		for(var i=states_with_bounds.length;i--;) {
-		            			if(state_wise_device_labels[states_with_bounds[i].name]) {
-		            				states_array.push(states_with_bounds[i].name);
-			            			if(!(state_wise_device_labels[states_with_bounds[i].name].isHidden_)) {
-				            			// Hide Label
-										state_wise_device_labels[states_with_bounds[i].name].hide();
-			            			}
-		            			}
-		            		}
-
-							var plottable_data = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true))),
-								current_bound_devices = [],
-								data_to_plot = [];
-
-            				// IF any states exists
-            				if(states_array.length > 0) {
-	            				for(var i=plottable_data.length;i--;) {
-									var current_bs = plottable_data[i];
-									if(states_array.indexOf(current_bs.data.state) > -1) {
-										current_bound_devices.push(current_bs);
-									}
-	            				}
-            				} else {
-            					current_bound_devices = plottable_data;
-            				}
-
-
-            				data_to_plot = current_bound_devices;
-
-		            		var inBoundData = [];
-		            		// If any data exists
-		            		if(data_to_plot.length > 0) {
-		            			main_devices_data_gmaps = data_to_plot;
-		            			/**
-								 * If anything searched n user is on zoom level 8 then reset 
-								   currentlyPlottedDevices array for removing duplicacy.
-		            			 */
-		            			if(mapInstance.getZoom() == 11 && searchResultData.length > 0) {
-		            				// Reset currentlyPlottedDevices array
-		            				currentlyPlottedDevices = [];
-	            				}
-
-		            			if(currentlyPlottedDevices.length === 0) {
-				            		// Clear map markers & reset variables
-									gmap_self.clearMapMarkers();
-									
-									inBoundData = gmap_self.getInBoundDevices(data_to_plot);
-									// Assign currently plotted devices to global array.
-									currentlyPlottedDevices = inBoundData;
-		            			} else {
-		            				inBoundData = gmap_self.getNewBoundsDevices();
-	            					// Update currently plotted devices global array.
-		            				currentlyPlottedDevices = currentlyPlottedDevices.concat(inBoundData);
-		            			}
-
-		            			// Call function to plot devices on gmap
-								gmap_self.plotDevices_gmap(inBoundData,"base_station");
-
-								// if(searchResultData.length == 0 || mapInstance.getZoom() <= 10) {
-								if(mapInstance.getZoom() <= 11) {
-									var polylines = allMarkersObject_gmap['path'],
-										polygons = allMarkersObject_gmap['sector_polygon'],
-										ss_markers = allMarkersObject_gmap['sub_station'],
-										show_ss_len = $("#showAllSS:checked").length;
-
-									// Hide polylines if shown
-									for(key in polylines) {
-										var current_line = polylines[key];
-										// If shown
-										if(current_line.map) {
-											current_line.setMap(null);
-										}
-									}
-
-									// Hide polygons if shown
-									for(key in polygons) {
-										var current_polygons = polygons[key];
-										// If shown
-										if(current_polygons.map) {
-											current_polygons.setMap(null);
-										}
-									}
-
-									// Remove CROSS info label
-								    for (key in cross_label_array) {
-								    	cross_label_array[key].setVisible(false);
-								    }
-
-								    // Hide SS if show ss checkbox is unchecked
-								    // Hide polylines if shown
-									for(key in ss_markers) {
-										var current_ss = ss_markers[key];
-										if(show_ss_len <= 0) {
-											// If shown
-											if(current_ss.map) {
-												current_ss.setMap(null);
-											}
-										}
-									}
-
-
-								} else {
-									if(mapInstance.getZoom() > 10) {
-										gmap_self.showSubStaionsInBounds();
-										gmap_self.showBaseStaionsInBounds();
-										gmap_self.showSectorDevicesInBounds();
-										// gmap_self.showBackhaulDevicesInBounds();
-										gmap_self.showLinesInBounds();
-										gmap_self.showSectorPolygonInBounds();
-									}
-								}
-		            		}
-		            		// Show points line if exist
-		            		for(key in line_data_obj) {
-		            			if(!line_data_obj[key].map) {
-		            				line_data_obj[key].setMap(mapInstance);
-		            			}
-		            		}
-	            		// 8 LEVEL ZOOM CONDITION
-	            		} else {
-							gmap_self.showSubStaionsInBounds();
-							gmap_self.showBaseStaionsInBounds();
-							gmap_self.showSectorDevicesInBounds();
-							// gmap_self.showBackhaulDevicesInBounds();
-	    					gmap_self.showLinesInBounds();
-							gmap_self.showSectorPolygonInBounds();
-	            		}
-	            		
-	            		// Start Performance API calling
-	            		if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
-							var bs_id_list = getMarkerInCurrentBound();
-			            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
-			            		gisPerformanceClass.start(bs_id_list);
-			            	}
-	            		}
-
-		            } else if(mapInstance.getZoom() <= 7) {
-		        		
-		        		// Show only country counter below 4 level zoom
-		        		gmap_self.hideStateCountersLabel();
-
-		        		if(mapInstance.getZoom() <= 4) {
-		            		// Hide State Labels which are in current bounds
-		            		var country_click_event = "onClick='gmap_self.state_label_clicked(0)'",
-		            			total_devices_count = gmap_self.getCountryWiseCount();
-	            			var country_label_box = new InfoBox({
-					            content: "<div "+country_click_event+" style='"+counter_div_style+"'><p style='position:relative;padding-top:24px;font-weight:bold;' title='Load India Data.'>"+total_devices_count+"</p></div>",
-					            boxStyle: {
-					                textAlign: "center",
-					                fontSize: "8pt",
-					                color: "black",
-					                width : "100px"
-					            },
-					            disableAutoPan: true,
-					            position: new google.maps.LatLng(24.2870,77.7832),
-					            closeBoxURL: "",
-					            enableEventPropagation: true,
-					            zIndex: 80
-					        });
-					        if(country_label["india"] != "") {
-					        	country_label["india"].close();
-					        	country_label["india"] = "";
-					        }
-				        	country_label_box.open(mapInstance);
-				        	country_label["india"] = country_label_box;
-	            		} else {
-	            			if(country_label["india"] != "") {
-	            				country_label["india"].hide();
-					        	country_label["india"].close();
-					        	country_label["india"] = "";
-					        }
-
-	            			// gmap_self.showStateCountersLabel();
-							
-							// Clear performance calling timeout
+                		if(!callsInProcess) {
+                			// Clear performance calling timeout
 							if(recallPerf != "") {
 		            			clearTimeout(recallPerf);
 		            			recallPerf = "";
 		            		}
-	            			// Set Flag
-	            			isPerfCallStopped = 1;
-	            			isPerfCallStarted = 0;
+                			gisPerformanceClass.start(new_bs);
+                		} else {
+                			current_bs_list = current_bs_list.concat(new_bs);
+                		}
+                	}
+                }
+            });
 
-	            			// Reset Performance variables
-	            			gisPerformanceClass.resetVariable();
+            // Google maps idle event
+            google.maps.event.addListener(mapInstance, 'idle', function() {
+            	if(isDebug) {
+					console.log("Google Map Idle Event");
+					console.log("Google Map Idle Event Start Time :- "+ new Date().toLocaleString());
+				}
+        		// Save current zoom value in global variable
+            	current_zoom = mapInstance.getZoom();
+            	
+            	/* When zoom level is greater than 8 show lines */
+            	if(mapInstance.getZoom() > 7) {
 
-	            			// Clear map markers & reset variables
-							gmap_self.clearMapMarkers();
+            		// If zoom level is greate than 11 then start perf calling
+            		if(mapInstance.getZoom() > 11) {
+	            		// Reset Perf calling Flag
+            			isPerfCallStopped = 0;
+        			} else {
+        				// Set Perf calling Flag
+            			isPerfCallStopped = 1;
+            			isPerfCallStarted = 0;
+        			}
 
-							var states_with_bounds = state_lat_lon_db.where(function(obj) {
-		            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
-		            		});
-							for(var i=states_with_bounds.length;i--;) {
-								if(state_wise_device_labels[states_with_bounds[i].name]) {
-									if(state_wise_device_labels[states_with_bounds[i].name].isHidden_) {
-										state_wise_device_labels[states_with_bounds[i].name].show();
+            		if(mapInstance.getZoom() < 12 || searchResultData.length > 0) {
+            			var states_with_bounds = state_lat_lon_db.where(function(obj) {
+	            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
+	            		});
+
+	            		var states_array = [];
+
+	            		// Hide State Labels which are in current bounds
+	            		for(var i=states_with_bounds.length;i--;) {
+	            			if(state_wise_device_labels[states_with_bounds[i].name]) {
+	            				states_array.push(states_with_bounds[i].name);
+		            			if(!(state_wise_device_labels[states_with_bounds[i].name].isHidden_)) {
+			            			// Hide Label
+									state_wise_device_labels[states_with_bounds[i].name].hide();
+		            			}
+	            			}
+	            		}
+
+						var plottable_data = JSON.parse(JSON.stringify(gmap_self.updateStateCounter_gmaps(true))),
+							current_bound_devices = [],
+							data_to_plot = [];
+
+        				// IF any states exists
+        				if(states_array.length > 0) {
+            				for(var i=plottable_data.length;i--;) {
+								var current_bs = plottable_data[i];
+								if(states_array.indexOf(current_bs.data.state) > -1) {
+									current_bound_devices.push(current_bs);
+								}
+            				}
+        				} else {
+        					current_bound_devices = plottable_data;
+        				}
+
+
+        				data_to_plot = current_bound_devices;
+
+	            		var inBoundData = [];
+	            		// If any data exists
+	            		if(data_to_plot.length > 0) {
+	            			main_devices_data_gmaps = data_to_plot;
+	            			/**
+							 * If anything searched n user is on zoom level 8 then reset 
+							   currentlyPlottedDevices array for removing duplicacy.
+	            			 */
+	            			if(mapInstance.getZoom() == 11 && searchResultData.length > 0) {
+	            				// Reset currentlyPlottedDevices array
+	            				currentlyPlottedDevices = [];
+            				}
+
+	            			if(currentlyPlottedDevices.length === 0) {
+			            		// Clear map markers & reset variables
+								gmap_self.clearMapMarkers();
+								
+								inBoundData = gmap_self.getInBoundDevices(data_to_plot);
+								// Assign currently plotted devices to global array.
+								currentlyPlottedDevices = inBoundData;
+	            			} else {
+	            				inBoundData = gmap_self.getNewBoundsDevices();
+            					// Update currently plotted devices global array.
+	            				currentlyPlottedDevices = currentlyPlottedDevices.concat(inBoundData);
+	            			}
+
+	            			// Call function to plot devices on gmap
+							gmap_self.plotDevices_gmap(inBoundData,"base_station");
+
+							// if(searchResultData.length == 0 || mapInstance.getZoom() <= 10) {
+							if(mapInstance.getZoom() <= 11) {
+								var polylines = allMarkersObject_gmap['path'],
+									polygons = allMarkersObject_gmap['sector_polygon'],
+									ss_markers = allMarkersObject_gmap['sub_station'],
+									show_ss_len = $("#showAllSS:checked").length;
+
+								// Hide polylines if shown
+								for(key in polylines) {
+									var current_line = polylines[key];
+									// If shown
+									if(current_line.map) {
+										current_line.setMap(null);
 									}
 								}
-							}
 
-							state_lat_lon_db.where(function(obj) {
-								if(state_wise_device_labels[obj.name]) {
-									state_wise_device_labels[obj.name].show();return ;
+								// Hide polygons if shown
+								for(key in polygons) {
+									var current_polygons = polygons[key];
+									// If shown
+									if(current_polygons.map) {
+										current_polygons.setMap(null);
+									}
 								}
-							});
 
-							// Hide points line if exist
-		            		for(key in line_data_obj) {
-		            			if(line_data_obj[key].map) {
-		            				line_data_obj[key].setMap(null);
-		            			}
-		            		}
+								// Remove CROSS info label
+							    for (key in cross_label_array) {
+							    	cross_label_array[key].setVisible(false);
+							    }
+
+							    // Hide SS if show ss checkbox is unchecked
+							    // Hide polylines if shown
+								for(key in ss_markers) {
+									var current_ss = ss_markers[key];
+									if(show_ss_len <= 0) {
+										// If shown
+										if(current_ss.map) {
+											current_ss.setMap(null);
+										}
+									}
+								}
+
+
+							} else {
+								if(mapInstance.getZoom() > 10) {
+									gmap_self.showSubStaionsInBounds();
+									gmap_self.showBaseStaionsInBounds();
+									gmap_self.showSectorDevicesInBounds();
+									// gmap_self.showBackhaulDevicesInBounds();
+									gmap_self.showLinesInBounds();
+									gmap_self.showSectorPolygonInBounds();
+								}
+							}
 	            		}
-		            }
+	            		// Show points line if exist
+	            		for(key in line_data_obj) {
+	            			if(!line_data_obj[key].map) {
+	            				line_data_obj[key].setMap(mapInstance);
+	            			}
+	            		}
+            		// 8 LEVEL ZOOM CONDITION
+            		} else {
+						gmap_self.showSubStaionsInBounds();
+						gmap_self.showBaseStaionsInBounds();
+						gmap_self.showSectorDevicesInBounds();
+						// gmap_self.showBackhaulDevicesInBounds();
+    					gmap_self.showLinesInBounds();
+						gmap_self.showSectorPolygonInBounds();
+            		}
+            		
+            		// Start Performance API calling
+            		if(isPerfCallStopped == 0 && isPerfCallStarted == 0) {
+						var bs_id_list = getMarkerInCurrentBound();
+		            	if(bs_id_list.length > 0 && isCallCompleted == 1) {
+		            		gisPerformanceClass.start(bs_id_list);
+		            	}
+            		}
 
-		            // Save last Zoom Value
-		            lastZoomLevel = mapInstance.getZoom();
-		            if(isDebug) {
-						console.log("Google Map Idle Event End Time :- "+ new Date().toLocaleString());
-						console.log("*************************************");
-					}
-            	},300);
+	            } else if(mapInstance.getZoom() <= 7) {
+	        		
+	        		// Show only country counter below 4 level zoom
+	        		gmap_self.hideStateCountersLabel();
+
+	        		if(mapInstance.getZoom() <= 4) {
+	            		// Hide State Labels which are in current bounds
+	            		var country_click_event = "onClick='gmap_self.state_label_clicked(0)'",
+	            			total_devices_count = gmap_self.getCountryWiseCount();
+            			var country_label_box = new InfoBox({
+				            content: "<div "+country_click_event+" style='"+counter_div_style+"'><p style='position:relative;padding-top:24px;font-weight:bold;' title='Load India Data.'>"+total_devices_count+"</p></div>",
+				            boxStyle: {
+				                textAlign: "center",
+				                fontSize: "8pt",
+				                color: "black",
+				                width : "100px"
+				            },
+				            disableAutoPan: true,
+				            position: new google.maps.LatLng(24.2870,77.7832),
+				            closeBoxURL: "",
+				            enableEventPropagation: true,
+				            zIndex: 80
+				        });
+				        if(country_label["india"] != "") {
+				        	country_label["india"].close();
+				        	country_label["india"] = "";
+				        }
+			        	country_label_box.open(mapInstance);
+			        	country_label["india"] = country_label_box;
+            		} else {
+            			if(country_label["india"] != "") {
+            				country_label["india"].hide();
+				        	country_label["india"].close();
+				        	country_label["india"] = "";
+				        }
+
+            			// gmap_self.showStateCountersLabel();
+						
+						// Clear performance calling timeout
+						if(recallPerf != "") {
+	            			clearTimeout(recallPerf);
+	            			recallPerf = "";
+	            		}
+            			// Set Flag
+            			isPerfCallStopped = 1;
+            			isPerfCallStarted = 0;
+
+            			// Reset Performance variables
+            			gisPerformanceClass.resetVariable();
+
+            			// Clear map markers & reset variables
+						gmap_self.clearMapMarkers();
+
+						var states_with_bounds = state_lat_lon_db.where(function(obj) {
+	            			return mapInstance.getBounds().contains(new google.maps.LatLng(obj.lat,obj.lon))
+	            		});
+						for(var i=states_with_bounds.length;i--;) {
+							if(state_wise_device_labels[states_with_bounds[i].name]) {
+								if(state_wise_device_labels[states_with_bounds[i].name].isHidden_) {
+									state_wise_device_labels[states_with_bounds[i].name].show();
+								}
+							}
+						}
+
+						state_lat_lon_db.where(function(obj) {
+							if(state_wise_device_labels[obj.name]) {
+								state_wise_device_labels[obj.name].show();return ;
+							}
+						});
+
+						// Hide points line if exist
+	            		for(key in line_data_obj) {
+	            			if(line_data_obj[key].map) {
+	            				line_data_obj[key].setMap(null);
+	            			}
+	            		}
+            		}
+	            }
+
+	            // Save last Zoom Value
+	            lastZoomLevel = mapInstance.getZoom();
+	            if(isDebug) {
+					console.log("Google Map Idle Event End Time :- "+ new Date().toLocaleString());
+					console.log("*************************************");
+				}
             });
 
 	        google.maps.event.addListener(mapInstance,'mousemove',function(e) {
@@ -4745,6 +4745,16 @@ function devicePlottingClass_gmap() {
         /*If no filter is applied the load all the devices*/
         else {
 
+        	if(!$('#infoWindowContainer').hasClass("hide")) {
+		    	$('#infoWindowContainer').addClass("hide");
+		    }
+
+			$('#infoWindowContainer').html("");
+
+		    if($(".windowIFrame").length) {
+		        $(".windowIFrame").remove();
+		    }
+
         	if($.trim(mapPageType) == "googleEarth") {
     			
     			/************************Google Earth Code***********************/
@@ -4792,6 +4802,10 @@ function devicePlottingClass_gmap() {
 				// if(mapInstance.getZoom() <= 7) {
 	        		/*Clear Existing Labels & Reset Counters*/
 					gmap_self.clearStateCounters();
+
+					if(infowindow) {
+						infowindow.close();
+					}
 
 					isCallCompleted = 1;
 					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
@@ -4921,10 +4935,12 @@ function devicePlottingClass_gmap() {
 					if(infowindow) {
 						infowindow.close();
 					}
-					$('#infoWindowContainer').html("");
+
 				    if(!$('#infoWindowContainer').hasClass("hide")) {
 				    	$('#infoWindowContainer').addClass("hide");
 				    }
+
+					$('#infoWindowContainer').html("");
 
 				    if($(".windowIFrame").length) {
 				        $(".windowIFrame").remove();
