@@ -51,6 +51,7 @@ project_group_role_dict_mapper={
     'viewer':'group_viewer',
 }
 
+from line_profiler import LineProfiler
 
 # #profiler
 def time_it(debug=getattr(settings, 'DEBUG')):
@@ -60,7 +61,14 @@ def time_it(debug=getattr(settings, 'DEBUG')):
                 if debug:
                     log.debug("+++"*40)
                     log.debug("START     \t\t\t: { " + fn.__name__ + " } : ")
-                result = fn(*args, **kwargs)
+                    profiler = LineProfiler()
+                    profiled_func = profiler(fn)
+                    try:
+                        result = profiled_func(*args, **kwargs)
+                    finally:
+                        profiler.print_stats()
+                else:
+                    result = fn(*args, **kwargs)
                 end = datetime.datetime.now()
                 if debug:
                     elapsed = end - st
@@ -245,8 +253,17 @@ def cache_for(time):
             if not result:
                 if debug:
                     log.debug("FUNCTION CALL\t: START : { " + fn.__name__ + " } : ")
-                result = fn(*args, **kwargs)
-                cache.set(key, result, time)
+                    profiler = LineProfiler()
+                    profiled_func = profiler(fn)
+                    try:
+                        result = profiled_func(*args, **kwargs)
+                    finally:
+                        profiler.print_stats()
+                    cache.set(key, result, time)
+                else:
+                    result = fn(*args, **kwargs)
+                    cache.set(key, result, time)
+
                 if debug:
                     end = datetime.datetime.now()
                     elapsed = end - st
