@@ -7,12 +7,15 @@ from django.views.generic import ListView, DetailView, TemplateView, View
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.http.response import HttpResponseRedirect
 from django_datatables_view.base_datatable_view import BaseDatatableView
+from datetime import datetime
+from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, YEARLY
 
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from scheduling_management.models import Event, Weekdays
 from scheduling_management.forms import EventForm
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin
+from device.models import Device
 
 # Create your views here.
 # def get_scheduler(request):
@@ -193,3 +196,87 @@ def event_delete(request, pk):
     event = Event.objects.get(id=pk)
     event.delete()
     return HttpResponseRedirect(reverse('event_list'))
+
+
+#**************************************************#
+def event_today_status(event):
+    """
+    To check the statu of event for today date.
+    Note: in dateutil 0==Monday, while in python datetime 0==Sunday.
+
+    :param event: Event object
+    :return the dictionary containing the event id and status for today date.
+    """
+
+    event_ids = event.id
+    status = False
+    today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+    start = event.start_on
+    event_end = today.date() # case1: end never; case2: end after particular occurence
+    count = 0
+    if event.end_on:
+        event_end = event.end_on
+    elif event.end_after:
+        count = event.end_after # case2: end after particular occurence
+
+    end = event_end
+    if event.repeat == 'dai':
+        interval = event.repeat_every
+        if today in list(rrule(DAILY, dtstart=start, interval=interval, count=count, until=end)):
+            status = True
+
+    elif event.repeat == 'wee':
+        interval = event.repeat_every
+        weekday = tuple([int(x.id)-1 for x in event.repeat_on.all()])
+        if today in list(rrule(WEEKLY, dtstart=start, interval=interval, count=count, until=end, byweekday=weekday)):
+            status = True
+
+    elif event.repeat == 'mon':
+        interval = event.repeat_every
+        if event.repeat_by == 'dofm':
+            if today in list(rrule(MONTHLY, dtstart=start, interval=interval, count=count, until=end)):
+                status = True
+        else: # case: day of the week
+            weekno = (start.day+7-1)/7
+            weekday = start.isocalendar()[2] - 1
+            if today in list(rrule(MONTHLY, dtstart=start, interval=interval, count=count, until=end, bysetpos=weekno, byweekday=weekday)):
+                status = True
+
+    elif event.repeat == 'yea':
+        interval = event.repeat_every
+        if today in list(rrule(YEARLY, dtstart=start, interval=interval, count=count, until=end)):
+            status = True
+
+    elif event.repeat == 'tat':
+        # 1==Tuesday and 3==Thursday.
+        if today in list(rrule(DAILY, dtstart=start, count=count, until=end, byweekday=(1,3))):
+            status = True
+
+    elif event.repeat == 'mwf':
+        # 0==Monday, 2==Wednesday and 4==Friday.
+        if today in list(rrule(DAILY, dtstart=start, count=count, until=end, byweekday=(0,2,4))):
+            status = True
+
+    elif event.repeat == 'mtf':
+        # Note: 0==Monday, 1==Tuesday, 2==Wednesday, 3==Thursday and 4==Friday.
+        if today in list(rrule(DAILY, dtstart=start, count=count, until=end, byweekday=(0,1,2,3,4))):
+            status = True
+
+    return {'event_ids': event_ids, 'status': status}
+
+
+def get_today_event_list():
+    """
+    To check event is active for time now.
+    :return dictionary containing list of events and their corresponding devices ids.
+    """
+    event_list = []
+    time = datetime.today().time()
+    for event in Event.objects.all():
+        result = event_today_status(event)
+        if result['status']:
+            if event.start_on_time <= time and time <= event.end_on_time:
+                event_list.append(event)
+    device_ids = Device.objects.filter(event__in=event_list).distinct().values_list('id', flat=True)
+
+    return {'event_list': event_list, 'device_ids': device_ids}
