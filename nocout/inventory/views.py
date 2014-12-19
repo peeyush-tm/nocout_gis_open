@@ -37,6 +37,7 @@ from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.select2 import Select2Mixin
 from nocout.utils import logged_in_user_organizations
 from nocout.utils.util import DictDiffer, cache_for, cache_get_key
 
@@ -74,6 +75,14 @@ def inventory(request):
     Render the inventory page.
     """
     return render(request, 'inventory/inventory.html')
+
+
+class SelectDeviceListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Device
+    obj_alias = 'device_alias'
 
 
 class InventoryListing(PermissionsRequiredMixin, ListView):
@@ -248,37 +257,15 @@ def inventory_details_wrt_organization(request):
         json.dumps({'response': {'device_groups': response_device_groups, 'user_groups': response_user_group}}), \
         mimetype='application/json')
 
-def list_device(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        devices = Device.objects.filter(organization__id__in=organizations).\
-            filter(device_alias__icontains=sSearch).values('id', 'device_alias')[:50]
-    else:
-        devices = Device.objects.filter(organization_id=org_id).\
-            filter(device_alias__icontains=sSearch).values('id', 'device_alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": devices.count(),
-        "incomplete_results": False,
-        "items": list(devices)
-    }))
-
-def select_device(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Device.objects.get(id=pk).device_alias]))
-
 
 #**************************************** Antenna *********************************************
+class SelectAntennaListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Antenna
+
+
 class AntennaList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Antenna data table rendering.
@@ -393,29 +380,14 @@ class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_antenna',)
 
 
-def list_antenna(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    antennas = Antenna.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": antennas.count(),
-        "incomplete_results": False,
-        "items": list(antennas)
-    }))
-
-def select_antenna(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Antenna.objects.get(id=pk).alias]))
-
-
 #****************************************** Base Station ********************************************
+class SelectBaseStationListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = BaseStation
+
+
 class BaseStationList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Base Station data table rendering.
@@ -538,37 +510,14 @@ class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView
     required_permissions = ('inventory.delete_basestation',)
 
 
-def list_base_station(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        base_stations = BaseStation.objects.filter(organization__id__in=organizations).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-    else:
-        base_stations = BaseStation.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": base_stations.count(),
-        "incomplete_results": False,
-        "items": list(base_stations)
-    }))
-
-def select_base_station(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([BaseStation.objects.get(id=pk).alias]))
-
-
 #**************************************** Backhaul *********************************************
+class SelectBackhaulListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Backhaul
+
+
 class BackhaulList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Backhaul data table rendering.
@@ -703,37 +652,14 @@ class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_backhaul',)
 
 
-def list_backhaul(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        backhauls = Backhaul.objects.filter(organization__id__in=organizations).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-    else:
-        backhauls = Backhaul.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": backhauls.count(),
-        "incomplete_results": False,
-        "items": list(backhauls)
-    }))
-
-def select_backhaul(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Backhaul.objects.get(id=pk).alias]))
-
-
 #**************************************** Sector *********************************************
+class SelectSectorListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Sector
+
+
 class SectorList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Sector data table rendering.
@@ -884,37 +810,15 @@ class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     success_url = reverse_lazy('sectors_list')
     required_permissions = ('inventory.delete_sector',)
 
-def list_sector(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        sectors = Sector.objects.filter(organization__id__in=organizations).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-    else:
-        sectors = Sector.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": sectors.count(),
-        "incomplete_results": False,
-        "items": list(sectors)
-    }))
-
-def select_sector(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Sector.objects.get(id=pk).alias]))
-
 
 #**************************************** Customer *********************************************
+class SelectCustomerListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Customer
+
+
 class CustomerList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Customer data table rendering.
@@ -1028,29 +932,15 @@ class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     success_url = reverse_lazy('customers_list')
     required_permissions = ('inventory.delete_customer',)
 
-def list_customer(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    customers = Customer.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": customers.count(),
-        "incomplete_results": False,
-        "items": list(customers)
-    }))
-
-def select_customer(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Customer.objects.get(id=pk).alias]))
-
 
 #**************************************** Sub Station *********************************************
+class SelectSubStationListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = SubStation
+
+
 class SubStationList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Sub Station data table rendering.
@@ -1194,36 +1084,14 @@ class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView)
     required_permissions = ('inventory.delete_substation',)
 
 
-def list_sub_station(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        sub_stations = SubStation.objects.filter(organization__id__in=organizations).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-    else:
-        sub_stations = SubStation.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": sub_stations.count(),
-        "incomplete_results": False,
-        "items": list(sub_stations)
-    }))
-
-def select_sub_station(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([SubStation.objects.get(id=pk).alias]))
-
 #**************************************** Circuit *********************************************
+class SelectCircuitListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Circuit
+
+
 class CircuitList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Circuit data table rendering.
@@ -1352,37 +1220,6 @@ class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     template_name = 'circuit/circuit_delete.html'
     success_url = reverse_lazy('circuits_list')
     required_permissions = ('inventory.delete_circuit',)
-
-
-def list_circuit(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        circuits = Circuit.objects.filter(organization__id__in=organizations).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-    else:
-        circuits = Circuit.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": circuits.count(),
-        "incomplete_results": False,
-        "items": list(circuits)
-    }))
-
-
-def select_circuit(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Circuit.objects.get(id=pk).alias]))
 
 
 #********************************* Circuit L2 Reports*******************************************
