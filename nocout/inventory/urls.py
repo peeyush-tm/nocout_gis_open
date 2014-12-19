@@ -16,5 +16,4 @@ urlpatterns = patterns('',
                            name='ExcelWriterRowByRow'),
                        url(r'^export_selected_bs_inventory/', views.DownloadSelectedBSInventory.as_view(),
                            name='DownloadSelectedBSInventory'),
-                       url(r'^select2/elements/$', views.SelectDeviceListView.as_view(), name='select2-device-elements'),
 )

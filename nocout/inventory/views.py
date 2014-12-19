@@ -77,14 +77,6 @@ def inventory(request):
     return render(request, 'inventory/inventory.html')
 
 
-class SelectDeviceListView(Select2Mixin, ListView):
-    """
-    Provide selector data for jquery select2 when loading data from Remote.
-    """
-    model = Device
-    obj_alias = 'device_alias'
-
-
 class InventoryListing(PermissionsRequiredMixin, ListView):
     """
     Class Based Inventory View to render list page.

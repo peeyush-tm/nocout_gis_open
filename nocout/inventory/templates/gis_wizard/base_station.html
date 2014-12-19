@@ -121,7 +121,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/inventory/list/device/",
+                    url: "/device/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -143,8 +143,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/inventory/select/device/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
                             });
@@ -159,7 +160,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/backhaul/list/backhaul/",
+                    url: "/backhaul/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -181,8 +182,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/backhaul/select/backhaul/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/backhaul/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
                             });
@@ -243,7 +245,7 @@
                             minimumInputLength: 2,
                             width: "resolve",
                             ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                                url: "/base_station/list/base_station/",
+                                url: "/base_station/select2/elements/",
                                 dataType: 'json',
                                 quietMillis: 250,
                                 data: function (term, page) {
@@ -264,8 +266,9 @@
                                 // using its formatResult renderer - that way the repository name is shown preselected
                                 var id = $(element).val();
                                 if (id !== "") {
-                                    $.ajax("/base_station/select/base_station/" + id+"/", {
-                                        dataType: "json"
+                                    $.ajax("/base_station/select2/elements/", {
+                                        dataType: "json",
+                                        data: {'obj_id': id}
                                     }).done(function(data) {
                                         callback({id: id, alias: data[0]});
                                         });
