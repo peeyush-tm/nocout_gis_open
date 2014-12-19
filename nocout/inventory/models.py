@@ -1,29 +1,41 @@
+"""
+Contain Gis Inventory models.
+
+Following are basic models of this module.
+
+- Base Station
+- Backhaul
+- Sector / PTP Near End
+- Sub STation / PTP Far End
+- Circuit
+- Antenna
+- Customer
+- Thematic Settings
+"""
+
 import time
 from datetime import datetime
-from django.contrib.auth.models import User
+
 from django.db import models
-from service.models import Service, ServiceDataSource
-from user_group.models import UserGroup
-from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
-from device_group.models import DeviceGroup
-from organization.models import Organization
-from django.utils.safestring import mark_safe
-from django.core.files.storage import FileSystemStorage
-from django.conf import settings
-from django.utils.translation import ugettext_lazy
-from user_profile.models import UserProfile
-from organization.models import Organization
-from inventory.signals import auto_assign_thematic
 from django.db.models.signals import post_save, pre_save, pre_delete
-from inventory.signals import resize_icon_size, delete_antenna_of_sector, delete_antenna_of_substation, delete_customer_of_circuit
+
+from organization.models import Organization
+from user_profile.models import UserProfile
+from user_group.models import UserGroup
+
+from service.models import Service, ServiceDataSource
+from device_group.models import DeviceGroup
+from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
+
+from inventory import signals as inventory_signals
 
 
 def get_default_org():
     """
-
     :return: organisation ID = 1
     """
     return Organization.objects.get(id=1)
+
 
 # inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
@@ -260,7 +272,6 @@ class IconSettings(models.Model):
 
         return '{}/{}/{}'.format(path, year_month_date, filename)
 
-    # fs = FileSystemStorage(location=settings.MEDIA_ROOT)
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     upload_image = models.ImageField(upload_to=uploaded_file_name)
@@ -388,6 +399,7 @@ class GISInventoryBulkImport(models.Model):
         """
         return self.original_filename
 
+
 #*********** L2 Reports Model *******************
 class CircuitL2Report(models.Model):
 
@@ -464,15 +476,17 @@ class PingThematicSettings(models.Model):
 
 class UserPingThematicSettings(models.Model):
     """
-        User PING thematic settings
+    User PING thematic settings
     """
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(PingThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
 
 
-post_save.connect(auto_assign_thematic, sender=UserProfile)
-pre_save.connect(resize_icon_size, sender=IconSettings)
-pre_delete.connect(delete_antenna_of_sector, sender=Sector)
-pre_delete.connect(delete_antenna_of_substation, sender=SubStation)
-pre_delete.connect(delete_customer_of_circuit, sender=Circuit)
+#********************* Connect Inventory Signals *******************
+
+post_save.connect(inventory_signals.auto_assign_thematic, sender=UserProfile)
+pre_save.connect(inventory_signals.resize_icon_size, sender=IconSettings)
+pre_delete.connect(inventory_signals.delete_antenna_of_sector, sender=Sector)
+pre_delete.connect(inventory_signals.delete_antenna_of_substation, sender=SubStation)
+pre_delete.connect(inventory_signals.delete_customer_of_circuit, sender=Circuit)
