@@ -51,9 +51,10 @@ project_group_role_dict_mapper={
     'viewer':'group_viewer',
 }
 
-from line_profiler import LineProfiler as LLP
-from memory_profiler import LineProfiler as MLP
-from memory_profiler import show_results
+if getattr(settings, 'PROFILE'):
+    from line_profiler import LineProfiler as LLP
+    from memory_profiler import LineProfiler as MLP
+    from memory_profiler import show_results
 
 # #profiler
 def time_it(debug=getattr(settings, 'PROFILE')):
