@@ -19,6 +19,7 @@ from performance.models import ServiceStatus
 from alarm_escalation.models import EscalationStatus
 
 from inventory.utils import util as inventory_utils
+from scheduling_management.views import get_today_event_list
 
 
 @task
@@ -69,6 +70,7 @@ def raise_alarms(service_status_list, org):
                 if getattr(obj, 'l%d_email_status' % level.name) == 1:
                     escalation_level_list.append(level)
                     setattr(obj, 'l%d_email_status' % level.name, 0)
+                    setattr(obj, 'l%d_phone_status' % level.name, 0)
 
             alert_emails_for_good_performance.delay(obj, escalation_level_list)
             alert_phones_for_good_performance.delay(obj, escalation_level_list)
@@ -92,6 +94,7 @@ def raise_alarms(service_status_list, org):
                 alert_emails_for_bad_performance.delay(obj, escalation_level)
                 alert_phones_for_bad_performance.delay(obj, escalation_level)
                 setattr(obj, 'l%d_email_status' % escalation_level.name, 1)
+                setattr(obj, 'l%d_phone_status' % escalation_level.name, 1)
 
         obj.save()
 
@@ -143,7 +146,7 @@ def alert_phones_for_good_performance(alarm, level_list):
     """
     Sends sms to phones for good performance.
     """
-    #phones = level.get_phones()
+    # phones = level.get_phones()
     # message = ''
     # send_sms(subject, message, settings.DEFAULT_FROM_PHONE, phones, fail_silently=False)
     pass
@@ -156,8 +159,9 @@ def check_device_status():
     """
     service_list = []
     service_data_source_list = []
+    device_id_list = get_today_event_list()['device_ids']  #get the device list which is in downtime scheduling today.
     for org in Organization.objects.all():
-        device_list_qs = inventory_utils.organization_network_devices([org])
+        device_list_qs = inventory_utils.organization_network_devices([org]).exclude(id__in=device_id_list) #exclude the devices which is in downtime scheduling today.
         machine_dict = prepare_machines(device_list_qs)
         service_list = prepare_services(device_list_qs)
         service_data_source_list = prepare_service_data_sources(service_list)
