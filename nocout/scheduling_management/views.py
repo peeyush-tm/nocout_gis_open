@@ -220,19 +220,18 @@ def event_today_status(event):
         count = event.end_after # case2: end after particular occurence
 
     end = event_end
+    interval = 1 if not event.repeat_every else event.repeat_every
+
     if event.repeat == 'dai':
-        interval = event.repeat_every
         if today in list(rrule(DAILY, dtstart=start, interval=interval, count=count, until=end)):
             status = True
 
     elif event.repeat == 'wee':
-        interval = event.repeat_every
         weekday = tuple([int(x.id)-1 for x in event.repeat_on.all()])
         if today in list(rrule(WEEKLY, dtstart=start, interval=interval, count=count, until=end, byweekday=weekday)):
             status = True
 
     elif event.repeat == 'mon':
-        interval = event.repeat_every
         if event.repeat_by == 'dofm':
             if today in list(rrule(MONTHLY, dtstart=start, interval=interval, count=count, until=end)):
                 status = True
@@ -243,7 +242,6 @@ def event_today_status(event):
                 status = True
 
     elif event.repeat == 'yea':
-        interval = event.repeat_every
         if today in list(rrule(YEARLY, dtstart=start, interval=interval, count=count, until=end)):
             status = True
 
