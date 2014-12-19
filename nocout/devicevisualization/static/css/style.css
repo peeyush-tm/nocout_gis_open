@@ -443,3 +443,13 @@ iframe {
     width : '110px';
     height: 30px;
 }
+
+#infoWindowContainer td.text-primary {
+    cursor: pointer;
+    text-decoration: none;
+}
+
+#infoWindowContainer td.text-primary:hover {
+    text-decoration: underline;
+    color: #406182;
+}
