@@ -36,11 +36,12 @@ def extract_pmp2_bw_from_live(hostname,site):
 	try:
         	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		socket_path = "/omd/sites/%s/tmp/run/live" % site
-
-        	s.connect(("10.133.19.165",6562))
+        	#s.connect(("10.133.19.165",6562))
+        	s.connect(socket_path)
 		s.send(query_string)
        		s.shutdown(socket.SHUT_WR)
         	query_output = s.recv(100000000)
+		s.close()
         	query_output.strip("\n")
 		query_output = eval(query_output)
         	if query_output:
@@ -69,10 +70,12 @@ def extract_pmp2_util_from_live(hostname,site):
 	try:
         	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		socket_path = "/omd/sites/%s/tmp/run/live" % site
-        	s.connect(("10.133.19.165",6562))
+        	#s.connect(("10.133.19.165",6562))
+        	s.connect(socket_path)
 		s.send(query)
        		s.shutdown(socket.SHUT_WR)
         	query_output = s.recv(100000000)
+		s.close()
         	query_output.strip("\n")
 		query_output = eval(query_output)
         	if query_output[0][0] or query_output[1][0]:

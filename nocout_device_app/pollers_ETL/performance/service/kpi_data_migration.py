@@ -33,27 +33,25 @@ def main(**configs):
     would be imported to mysql, only, and this way mysql would not store
     duplicate data.
     """
-    for i in range(len(configs.get('mongo_conf'))):
-        start_time = mongo_module.get_latest_entry(
-                        db_type='mysql',
-                        db=db,
-                        site=configs.get('mongo_conf')[i][0],
-                        table_name=configs.get('table_name')
-        )
+    #for i in range(len(configs.get('mongo_conf'))):
+    #    start_time = mongo_module.get_latest_entry(
+    #                    db_type='mysql',
+    #                    db=db,
+    #                   site=configs.get('mongo_conf')[i][0],
+    #                    table_name=configs.get('table_name')
+    #   )
 
     end_time = datetime.now()
+    start_time = end_time-timedelta(minutes=5)
     #db = mysql_conn(configs=configs)
     # Get the time for latest entry in mysql
     #start_time = get_latest_entry(db_type='mysql', db=db, site=configs.get('site'),table_name=configs.get('table_name'))
 
     
-    for i in range(len(configs.get('mongo_conf'))):
-    	docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
-    	for doc in docs:
-        	values_list = build_data(doc)
-        	data_values.extend(values_list)
-    if data_values:
-    	insert_data(configs.get('table_name'), data_values, configs=configs)
+    #for i in range(len(configs.get('mongo_conf'))):
+    docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    if docs:
+    	insert_data(configs.get('table_name'), docs, configs=configs)
     	print "Data inserted into performance_utilization table"
     else:
 	print "No data in the mongo db in this time frame"
@@ -86,8 +84,33 @@ def read_data(start_time, end_time, **kwargs):
         cur = db.kpi_data.find({
             "check_timestamp": {"$gt": start_time, "$lt": end_time}
         })
+	configs1 = config_module.parse_config_obj()
+    	for config, options in configs1.items():
+            machine_name = options.get('machine')
         for doc in cur:
-            docs.append(doc)
+		local_timestamp = utility_module.get_epoch_time(doc.get('local_timestamp'))
+		check_timestamp = utility_module.get_epoch_time(doc.get('check_timestamp'))
+        	t = (
+        		doc.get('device_name'),
+        		doc.get('service_name'),
+        		local_timestamp,
+        		check_timestamp,
+        		doc.get('current_value'),
+        		doc.get('min_value'),
+        		doc.get('max_value'),
+        		doc.get('avg_value'),
+        		doc.get('warning_threshold'),
+        		doc.get('critical_threshold'),
+        		doc.get('severity'),
+        		doc.get('site_name'),
+        		doc.get('data_source'),
+        		doc.get('ip_address'),
+			doc.get('refer'),
+			doc.get('age'),
+			machine_name	
+        	)
+            	docs.append(t)
+		t = ()
      
     return docs
 
