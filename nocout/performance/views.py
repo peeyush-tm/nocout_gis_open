@@ -539,25 +539,28 @@ class Get_Perfomance(View):
                             "description"
         ]
 
-        sia_data_list = EventService.objects. \
+        sia_query_set = EventService.objects. \
             filter(device_name=device.device_name,
                    sys_timestamp__gte=start_date,
                    sys_timestamp__lte=end_date). \
             order_by("-sys_timestamp"). \
-            values(*required_columns).using(alias=device.machine.name)
+            values(*required_columns)
+            #.using(alias=device.machine.name)
 
-        for data in sia_data_list:
-            # data["alert_date"] = datetime.datetime. \
-            #     fromtimestamp(float(data["sys_timestamp"])). \
-            #     strftime("%d/%B/%Y")
-            # data["alert_time"] = datetime.datetime. \
-            #     fromtimestamp(float(data["sys_timestamp"])). \
-            #     strftime("%I:%M %p")
-            data["alert_date_time"] = datetime.datetime. \
-                fromtimestamp(float(data["sys_timestamp"])). \
-                strftime("%d/%B/%Y %I:%M %p")
+        sia_data_list = nocout_utils.nocout_query_results(query_set=sia_query_set, using=device.machine.name)
+        if sia_data_list:
+            for data in sia_data_list:
+                # data["alert_date"] = datetime.datetime. \
+                #     fromtimestamp(float(data["sys_timestamp"])). \
+                #     strftime("%d/%B/%Y")
+                # data["alert_time"] = datetime.datetime. \
+                #     fromtimestamp(float(data["sys_timestamp"])). \
+                #     strftime("%I:%M %p")
+                data["alert_date_time"] = datetime.datetime. \
+                    fromtimestamp(float(data["sys_timestamp"])). \
+                    strftime("%d/%B/%Y %I:%M %p")
 
-            del (data["sys_timestamp"])
+                del (data["sys_timestamp"])
 
         in_string = lambda x: "'" + str(x) + "'"
         col_string = lambda x: "`" + str(x) + "`"
@@ -565,19 +568,19 @@ class Get_Perfomance(View):
         # raw query is required here so as to get data
         query = alert_utils.ping_service_query(device.device_name, start_date, end_date)
         error_data_list = nocout_utils.fetch_raw_result(query, device.machine.name)
+        if error_data_list:
+            for data in error_data_list:
+                # data["alert_date"] = datetime.datetime. \
+                #     fromtimestamp(float(data["sys_timestamp"])). \
+                #     strftime("%d/%B/%Y")
+                # data["alert_time"] = datetime.datetime. \
+                #     fromtimestamp(float(data["sys_timestamp"])). \
+                #     strftime("%I:%M %p")
+                data["alert_date_time"] = datetime.datetime. \
+                    fromtimestamp(float(data["sys_timestamp"])). \
+                    strftime("%d/%B/%Y %I:%M %p")
 
-        for data in error_data_list:
-            # data["alert_date"] = datetime.datetime. \
-            #     fromtimestamp(float(data["sys_timestamp"])). \
-            #     strftime("%d/%B/%Y")
-            # data["alert_time"] = datetime.datetime. \
-            #     fromtimestamp(float(data["sys_timestamp"])). \
-            #     strftime("%I:%M %p")
-            data["alert_date_time"] = datetime.datetime. \
-                fromtimestamp(float(data["sys_timestamp"])). \
-                strftime("%d/%B/%Y %I:%M %p")
-
-            del (data["sys_timestamp"])
+                del (data["sys_timestamp"])
 
         """
             TODO END
@@ -1064,13 +1067,15 @@ class Get_Service_Status(View):
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
-        device_nms_uptime = NetworkStatus.objects.filter(
+        device_nms_uptime_query_set = NetworkStatus.objects.filter(
             device_name=inventory_device_name,
             data_source='pl',
-        ).using(
-            alias=inventory_device_machine_name
         ).values('age', 'severity')
-
+        # using(
+        #     alias=inventory_device_machine_name
+        # ).
+        device_nms_uptime = nocout_utils.nocout_query_results(query_set=device_nms_uptime_query_set,
+                                                              using=inventory_device_machine_name)
         if len(device_nms_uptime):
             data = device_nms_uptime[0]
 
@@ -1093,40 +1098,38 @@ class Get_Service_Status(View):
             }
 
         if service_data_source_type in ['pl', 'rta']:
-            performance_data = NetworkStatus.objects.filter(device_name=inventory_device_name,
+            performance_data_query_set = NetworkStatus.objects.filter(device_name=inventory_device_name,
                                                             service_name=service_name,
                                                             data_source=service_data_source_type,
-            ).using(
-                alias=inventory_device_machine_name)
+            )
 
         elif "availability" in service_name or service_data_source_type in ['availability']:
-            performance_data = None
+            performance_data_query_set = None
 
         elif "topology" in service_name or service_data_source_type in ['topology']:
-            performance_data = None
+            performance_data_query_set = None
 
         elif '_status' in service_name:
-            performance_data = Status.objects.filter(device_name=inventory_device_name,
+            performance_data_query_set = Status.objects.filter(device_name=inventory_device_name,
                                                      service_name=service_name,
                                                      data_source=service_data_source_type,
-            ).using(
-                alias=inventory_device_machine_name)
+            )
 
         elif '_invent' in service_name:
-            performance_data = InventoryStatus.objects.filter(device_name=inventory_device_name,
+            performance_data_query_set = InventoryStatus.objects.filter(device_name=inventory_device_name,
                                                               service_name=service_name,
                                                               data_source=service_data_source_type
-            ).using(
-                alias=inventory_device_machine_name)
+            )
 
         else:
-            performance_data = ServiceStatus.objects.filter(device_name=inventory_device_name,
+            performance_data_query_set = ServiceStatus.objects.filter(device_name=inventory_device_name,
                                                             service_name=service_name,
                                                             data_source=service_data_source_type,
-            ).using(
-                alias=inventory_device_machine_name)
+            )
 
-        if performance_data:
+        if performance_data_query_set:
+            performance_data = nocout_utils.nocout_query_results(query_set=performance_data_query_set,
+                                                                 using=inventory_device_machine_name)
             try:
                 current_value = self.formulate_data(performance_data[0].current_value,
                                                     service_data_source_type)

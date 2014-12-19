@@ -72,7 +72,57 @@ def time_it(debug=getattr(settings, 'DEBUG')):
             return wrapper
         return decorator
 
+#http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+#defining utility to exatly choose a database to query from
+#django routers are of no use
+#we will pass in the machine name
+#we will test the connection
+#and we will return the results of the database to be used
 
+import random
+
+@time_it()
+def nocout_db_router(db='default', levels=0):
+    """
+
+    :param db: pass the name for the database
+    :param levels: number of slaves available
+    :return:the database to be queried on
+    """
+    db_slave_up = list()
+    #can choose from master db as well
+    db_slave_up.append(db)
+    db_slave = db + "_slave"
+    if levels and levels != -1:
+        for x in range(1, levels):
+            db_slave = db + "_slave_" + str(x)
+            if test_connection_to_db(db_slave):
+                db_slave_up.append(db_slave)
+    elif levels == -1:
+        return db
+    else:
+        if test_connection_to_db(db_slave):
+                db_slave_up.append(db_slave)
+
+    return random.choice(db_slave_up)
+
+@time_it()
+def nocout_query_results(query_set=None, using='default', levels=0):
+    """
+
+    :param query_set: query set to be executed
+    :param using: the db alias
+    :param levels: levels of slaves default = 0, that is one slave is present, -1 means no slave
+    :return:
+    """
+    if query_set:
+        #choose a random database : slave // master
+        if levels == -1:
+            return query_set.using(alias=using)
+        else:
+            db = nocout_db_router(db=using, levels=levels)
+            return query_set.using(alias=db)
+    return None
 
 #http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 def test_connection_to_db(database_name):
@@ -84,7 +134,7 @@ def test_connection_to_db(database_name):
     try:
         db_definition = getattr(settings, 'DATABASES')[database_name]
         #if it gets a socket connection in 2 seconds
-        s = socket.create_connection((db_definition['HOST'], db_definition['PORT']), 2)
+        s = socket.create_connection((db_definition['HOST'], db_definition['PORT']), 5)
         #if it gets a socket connection in 2 seconds
         s.close()
         return True
