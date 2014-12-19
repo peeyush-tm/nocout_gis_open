@@ -21,7 +21,8 @@ var recallPerf = "",
         padding       : '2px',
         borderRadius  : "5px",
         width         : '90px'
-    };
+    },
+    callsInProcess = false;
 
 if((window.location.pathname.indexOf("googleEarth") > -1) || (window.location.pathname.indexOf("white_background") > -1)) {
     hiddenIconObj = base_url+'/static/img/icons/1x1.png';
@@ -116,11 +117,13 @@ function GisPerformance() {
         // +($.cookie('isFreezeSelected')) == 0 || +($.cookie('freezedAt')) > 0
         if (isPollingActive == 0  && isPerfCallStopped == 0) {
             if(perf_self.bsNamesList.length > 0 && perf_self.bsNamesList[counter]) {
+                callsInProcess = true;
                 //Call waitAndSend function with BS Json Data and counter value
                 perf_self.waitAndSend(perf_self.bsNamesList[counter], counter);
             } else {
+                callsInProcess = false;
                 //1 Minutes Timeout
-                setTimeout(function () {
+                recallPerf = setTimeout(function () {
                     //Start Performance Again
                     var bs_list = getMarkerInCurrentBound();
                     // Clear previous bs list
