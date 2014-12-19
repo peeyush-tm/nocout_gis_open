@@ -1392,6 +1392,7 @@ class GISPerfData(View):
     def get(self, request):
         # get base stations id's list
         bs_ids = eval(str(self.request.GET.get('base_stations', None)))
+        print "###################################### bs_ids - ", bs_ids
 
         # performance data dictionary
         performance_data = list()
@@ -1399,6 +1400,7 @@ class GISPerfData(View):
         # loop through all base stations having id's in bs_ids list
         try:
             for bs_id in bs_ids:
+                print "################################## bs_id - ", bs_id
                 # base station data dictionary
                 bs_dict = dict()
 
@@ -1413,19 +1415,20 @@ class GISPerfData(View):
                     bs_dict['param'] = dict()
                     bs_dict['param']['sector'] = list()
                 except Exception as e:
-                    logger.info("Base Station not exist. Exception: ", e.message)
+                    logger.exception("Base Station not exist. Exception: ", e.message)
 
                 # if base station exist
                 if bs:
                     # get all sectors associated with base station (bs)
                     sectors = bs.sector.all()
+                    print "################################### sectors - ", sectors
 
                     # backhaul device
                     backhaul_device = ""
                     try:
                         backhaul_device = bs.backhaul.bh_configured_on
                     except Exception as e:
-                        logger.info("No backhaul device found. Exception: ", e.message)
+                        logger.exception("No backhaul device found. Exception: ", e.message)
 
                     # backhaul data
                     if backhaul_device and backhaul_device.is_added_to_nms == 1:
@@ -1443,6 +1446,7 @@ class GISPerfData(View):
 
                         # get performance data
                         sector_performance_data = self.get_sector_performance_info(sector_device)
+                        print "###################################### sector_performance_data - ", sector_performance_data
 
                         # sector dictionary
                         sector_dict = dict()
@@ -1480,7 +1484,7 @@ class GISPerfData(View):
                             # try:
                             #     substation = SubStation.objects.get(device__ip_address=ss_ip)
                             # except Exception as e:
-                            #     logger.info("Sub Station not exist. Exception: ", e.message)
+                            #     logger.exception("Sub Station not exist. Exception: ", e.message)
 
                             # substation device
                             substation_device = None
@@ -1488,7 +1492,7 @@ class GISPerfData(View):
                                 substation_device = ss.device
                                 # Device.objects.get(ip_address=ss_ip)
                             except Exception as e:
-                                logger.info("Sub Station device not exist. Exception: ", e.message)
+                                logger.exception("Sub Station device not exist. Exception: ", e.message)
 
                             ss_dict = dict()
                             if substation and substation_device:
@@ -1503,6 +1507,7 @@ class GISPerfData(View):
 
                             # append substation dictionary to 'sub_station' list
                             sector_dict['sub_station'].append(ss_dict)
+                            print "################################# sector_dict - ", sector_dict
 
                         # append 'sector_dict' to 'sector' list
                         bs_dict['param']['sector'].append(sector_dict)
@@ -1510,7 +1515,7 @@ class GISPerfData(View):
                     bs_dict['message'] = "Successfully fetched performance data."
                     performance_data.append(bs_dict)
         except Exception as e:
-            logger.info("Last Exception - ", e.message)
+            logger.exception("Last Exception - ", e.message)
             performance_data = {'message': "No Base Station to fetch performance data."}
 
         return HttpResponse(json.dumps(eval(str(performance_data))))
@@ -1566,7 +1571,7 @@ class GISPerfData(View):
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
             pl_dict['value'] = "NA"
-            logger.info("PL not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
+            logger.exception("PL not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
                                                                                     e.message))
 
         # rta
@@ -1576,7 +1581,7 @@ class GISPerfData(View):
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
             rta_dict['value'] = "NA"
-            logger.info("RTA not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
+            logger.exception("RTA not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
                                                                                      e.message))
 
         # bh severity
@@ -1584,7 +1589,7 @@ class GISPerfData(View):
             backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device).using(
                                                                        alias=bh_device.machine.name)[0].severity
         except Exception as e:
-            logger.info("BH Severity not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
+            logger.exception("BH Severity not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
                                                                                              e.message))
 
         # append 'pl_dict' to 'bh_info' list
@@ -1619,11 +1624,15 @@ class GISPerfData(View):
                                                         ]
                                                     }
         """
+        print "@@@@@@@@@@@@@@@@@@@@@@@@@@@ Enter in sector_performance - ."
         # device name
         device_name = device.device_name
 
         # machine name
         machine_name = device.machine.name
+
+        print "********************************* device_name - ", device_name
+        print "********************************* machine_name - ", machine_name
 
         # performance dictionary
         performance_data = dict()
@@ -1635,7 +1644,12 @@ class GISPerfData(View):
         performance_data['pl'] = ""
         performance_data['perf_value'] = ""
         performance_data['icon'] = ""
-        performance_data['perf_info'] = self.get_device_info(device, machine_name)
+        try:
+            performance_data['perf_info'] = self.get_device_info(device, machine_name)
+        except Exception as e:
+            print "^^^^^^^^^^^^^^^^^^^^^^^^^^^ DEVICE INFO EXCEPTION ^^^^^^^^^^^^^^^^^^^^^^^^^^"
+            logger.exception(e.message)
+        print "************************************ performance_data['perf_info'] - ", performance_data['perf_info']
 
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
@@ -1648,7 +1662,7 @@ class GISPerfData(View):
             device_technology = DeviceTechnology.objects.get(id=device.device_technology)
         except Exception as e:
             device_technology = ""
-            logger.info("Device technology not exist. Exception: ", e.message)
+            logger.exception("Device technology not exist. Exception: ", e.message)
 
         # thematic settings for current user
         user_thematics = self.get_thematic_settings(device_technology)
@@ -1664,7 +1678,7 @@ class GISPerfData(View):
                 service = user_thematics.thematic_template.service
                 data_source = user_thematics.thematic_template.data_source
         except Exception as e:
-            logger.info("No thematic setting for device {}. Exception: ".format(device_name, e.message))
+            logger.exception("No thematic setting for device {}. Exception: ".format(device_name, e.message))
 
         # device frequency
         device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
@@ -1706,7 +1720,7 @@ class GISPerfData(View):
                     # radius
                     radius = self.get_frequency_color_and_radius(device_frequency, device_pl)[1]
         except Exception as e:
-            logger.info(logger.info("Device is not sector configured on or not exist. Exception: ", e.message))
+            logger.exception(logger.exception("Device is not sector configured on or not exist. Exception: ", e.message))
 
         # update azimuth_angle, beam_width, radius
         performance_data['azimuth_angle'] = azimuth_angle
@@ -1735,14 +1749,14 @@ class GISPerfData(View):
             try:
                 icon = "media/" + str(device_type.device_icon)
             except Exception as e:
-                logger.info("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
+                logger.exception("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
 
             # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
             th_icon_settings = ""
             try:
                 th_icon_settings = user_thematics.thematic_template.icon_settings
             except Exception as e:
-                logger.info("No icon settings for thematic settings. Exception: ", e.message)
+                logger.exception("No icon settings for thematic settings. Exception: ", e.message)
 
             # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
             th_ranges = ""
@@ -1754,7 +1768,7 @@ class GISPerfData(View):
                 else:
                     pass
             except Exception as e:
-                logger.info("No ranges for thematic settings. Exception: ", e.message)
+                logger.exception("No ranges for thematic settings. Exception: ", e.message)
 
             # fetch service type if 'ts_type' is "normal"
             service_type = ""
@@ -1762,7 +1776,7 @@ class GISPerfData(View):
                 if ts_type == "normal":
                     service_type = user_thematics.thematic_template.threshold_template.service_type
             except Exception as e:
-                logger.info("Service Type not exist. Exception: ", e.message)
+                logger.exception("Service Type not exist. Exception: ", e.message)
 
             # comparing threshold values to get icon
             try:
@@ -1783,7 +1797,7 @@ class GISPerfData(View):
                     else:
                         pass
             except Exception as e:
-                logger.info("Icon not exist. Exception: ", e.message)
+                logger.exception("Icon not exist. Exception: ", e.message)
 
             # update performance value
             performance_data['perf_value'] = performance_value
@@ -1827,7 +1841,7 @@ class GISPerfData(View):
                         if 'icon_settings1' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings1'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if (float(th_ranges.range2_start)) <= (float(value)) <= (float(th_ranges.range2_end)):
@@ -1836,7 +1850,7 @@ class GISPerfData(View):
                         if 'icon_settings2' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings2'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if (float(th_ranges.range3_start)) <= (float(value)) <= (float(th_ranges.range3_end)):
@@ -1845,7 +1859,7 @@ class GISPerfData(View):
                         if 'icon_settings3' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings3'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if (float(th_ranges.range4_start)) <= (float(value)) <= (float(th_ranges.range4_end)):
@@ -1854,7 +1868,7 @@ class GISPerfData(View):
                         if 'icon_settings4' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings4'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if (float(th_ranges.range5_start)) <= (float(value)) <= (float(th_ranges.range5_end)):
@@ -1863,7 +1877,7 @@ class GISPerfData(View):
                         if 'icon_settings5' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings5'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if (float(th_ranges.range6_start)) <= (float(value)) <= (float(th_ranges.range6_end)):
@@ -1872,7 +1886,7 @@ class GISPerfData(View):
                         if 'icon_settings6' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings6'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if (float(th_ranges.range7_start)) <= (float(value)) <= (float(th_ranges.range7_end)):
@@ -1881,7 +1895,7 @@ class GISPerfData(View):
                         if 'icon_settings7' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings7'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if (float(th_ranges.range8_start)) <= (float(value)) <= (float(th_ranges.range8_end)):
@@ -1890,7 +1904,7 @@ class GISPerfData(View):
                         if 'icon_settings8' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings8'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if (float(th_ranges.range9_start)) <= (float(value)) <= (float(th_ranges.range9_end)):
@@ -1899,7 +1913,7 @@ class GISPerfData(View):
                         if 'icon_settings9' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings9'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if (float(th_ranges.range10_start)) <= (float(value)) <= (float(th_ranges.range10_end)):
@@ -1908,7 +1922,7 @@ class GISPerfData(View):
                         if 'icon_settings10' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings10'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
         # image url
         img_url = "media/" + str(image_partial) if "uploaded" in str(
@@ -1954,7 +1968,7 @@ class GISPerfData(View):
                         if 'icon_settings1' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings1'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if str(value).lower().strip() == str(th_ranges.range2_start).lower().strip():
@@ -1963,7 +1977,7 @@ class GISPerfData(View):
                         if 'icon_settings2' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings2'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if str(value).lower().strip() == str(th_ranges.range3_start).lower().strip():
@@ -1972,7 +1986,7 @@ class GISPerfData(View):
                         if 'icon_settings3' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings3'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if str(value).lower().strip() == str(th_ranges.range4_start).lower().strip():
@@ -1981,7 +1995,7 @@ class GISPerfData(View):
                         if 'icon_settings4' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings4'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if str(value).lower().strip() == str(th_ranges.range5_start).lower().strip():
@@ -1990,7 +2004,7 @@ class GISPerfData(View):
                         if 'icon_settings5' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings5'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if str(value).lower().strip() == str(th_ranges.range6_start).lower().strip():
@@ -1999,7 +2013,7 @@ class GISPerfData(View):
                         if 'icon_settings6' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings6'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if str(value).lower().strip() == str(th_ranges.range7_start).lower().strip():
@@ -2008,7 +2022,7 @@ class GISPerfData(View):
                         if 'icon_settings7' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings7'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if str(value).lower().strip() == str(th_ranges.range8_start).lower().strip():
@@ -2017,7 +2031,7 @@ class GISPerfData(View):
                         if 'icon_settings8' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings8'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if str(value).lower().strip() == str(th_ranges.range9_start).lower().strip():
@@ -2026,7 +2040,7 @@ class GISPerfData(View):
                         if 'icon_settings9' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings9'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
             try:
                 if str(value).lower().strip() == str(th_ranges.range10_start).lower().strip():
@@ -2035,7 +2049,7 @@ class GISPerfData(View):
                         if 'icon_settings10' in icon_setting.keys():
                             image_partial = str(icon_setting['icon_settings10'])
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
         # image url
         img_url = "media/" + str(image_partial) if "uploaded" in str(
@@ -2077,7 +2091,6 @@ class GISPerfData(View):
                                                         }
                                                     ]
         """
-
         # device info dictionary
         device_info = list()
         # is device is a substation device than add static inventory parameters in list
@@ -2087,77 +2100,77 @@ class GISPerfData(View):
             try:
                 substation = SubStation.objects.get(device=device_obj)
             except Exception as e:
-                logger.info("Sub Station not exist. Exception: ", e.message)
+                logger.exception("Sub Station not exist. Exception: ", e.message)
 
             # substation device
             substation_device = ""
             try:
                 substation_device = device_obj
             except Exception as e:
-                logger.info("Sub Station device not exist. Exception: ", e.message)
+                logger.exception("Sub Station device not exist. Exception: ", e.message)
 
             # substation technology
             substation_technology = ""
             try:
                 substation_technology = DeviceTechnology.objects.get(id=substation_device.device_technology).name
             except Exception as e:
-                logger.info("Sub Station has no technology. Exception: ", e.message)
+                logger.exception("Sub Station has no technology. Exception: ", e.message)
 
             # circuit id
             circuit_id = ""
             try:
                 circuit_id = substation.circuit_set.all()[0].circuit_id
             except Exception as e:
-                logger.info("Circuit ID not exist. Exception: ", e.message)
+                logger.exception("Circuit ID not exist. Exception: ", e.message)
 
             # qos bandwidth
             qos = ""
             try:
                 qos = substation.circuit_set.all()[0].qos_bandwidth
             except Exception as e:
-                logger.info("QOS not exist. Exception: ", e.message)
+                logger.exception("QOS not exist. Exception: ", e.message)
 
             # customer address
             customer_address = ""
             try:
                 customer_address = substation.circuit_set.all()[0].customer.address
             except Exception as e:
-                logger.info("Customer Address not exist. Exception: ", e.message)
+                logger.exception("Customer Address not exist. Exception: ", e.message)
 
             # date of acceptance
             date_of_acceptance = ""
             try:
                 date_of_acceptance = str(substation.circuit_set.all()[0].date_of_acceptance)
             except Exception as e:
-                logger.info("Date Of Acceptance not exist. Exception: ", e.message)
+                logger.exception("Date Of Acceptance not exist. Exception: ", e.message)
 
             # dl rssi during acceptance
             dl_rssi_during_acceptance = ""
             try:
                 dl_rssi_during_acceptance = substation.circuit_set.all()[0].dl_rssi_during_acceptance
             except Exception as e:
-                logger.info("DL RSSI During Acceptance not exist. Exception: ", e.message)
+                logger.exception("DL RSSI During Acceptance not exist. Exception: ", e.message)
 
             # ss sector frequency
             ss_sector_frequency = ""
             try:
                 ss_sector_frequency = substation.circuit_set.all()[0].sector.frequency.value
             except Exception as e:
-                logger.info("SS Sector Frequency not exist. Exception: ", e.message)
+                logger.exception("SS Sector Frequency not exist. Exception: ", e.message)
 
             # antenna height
             antenna_height = ""
             try:
                 antenna_height = substation.antenna.height
             except Exception as e:
-                logger.info("Antenna Height not exist. Exception: ", e.message)
+                logger.exception("Antenna Height not exist. Exception: ", e.message)
 
             # antenna polarization
             antenna_polarization = ""
             try:
                 antenna_polarization = substation.antenna.polarization
             except Exception as e:
-                logger.info("Antenna Polarization not exist. Exception: ", e.message)
+                logger.exception("Antenna Polarization not exist. Exception: ", e.message)
 
             # antenna mount type
             antenna_mount_type = ""
@@ -2165,7 +2178,7 @@ class GISPerfData(View):
                 antenna_mount_type = substation.antenna.mount_type
 
             except Exception as e:
-                logger.info("Antenna Type not exist. Exception: ", e.message)
+                logger.exception("Antenna Type not exist. Exception: ", e.message)
 
             # antenna type
             antenna_type = ""
@@ -2173,7 +2186,7 @@ class GISPerfData(View):
                 antenna_type = substation.antenna.antenna_type
 
             except Exception as e:
-                logger.info("Antenna Type not exist. Exception: ", e.message)
+                logger.exception("Antenna Type not exist. Exception: ", e.message)
 
             # adding gis inventory static parameters to device info
             device_info = [
@@ -2313,8 +2326,10 @@ class GISPerfData(View):
 
         # if device is down than don't show any performance data
         if device_pl != "100":
+            print "******************************** ENTER IN PL = 100 "
             # get device name
             device_name = device_obj.device_name
+            print "******************************** DEVICE NAME - ", device_name
             
             # get device id (used to make url for perf api data)
             device_id = device_obj.id
@@ -2322,22 +2337,22 @@ class GISPerfData(View):
             # to update the info window with all the services
             # device performance info
             device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
-                'data_source', 'current_value', 'sys_timestamp'
+                'service_name', 'data_source', 'current_value', 'sys_timestamp'
             ).using(alias=machine_name)
 
             # device inventory info
             device_inventory_info = InventoryStatus.objects.filter(device_name=device_name).values(
-                'data_source', 'current_value', 'sys_timestamp'
+                'service_name', 'data_source', 'current_value', 'sys_timestamp'
             ).using(alias=machine_name)
 
             # device status info
             device_status_info = Status.objects.filter(device_name=device_name).values(
-                'data_source', 'current_value', 'sys_timestamp'
+                'service_name', 'data_source', 'current_value', 'sys_timestamp'
             ).using(alias=machine_name)
 
             # device network info
             device_network_info = NetworkStatus.objects.filter(device_name=device_name).values(
-                'data_source', 'current_value', 'sys_timestamp'
+                'service_name', 'data_source', 'current_value', 'sys_timestamp'
             ).using(alias=machine_name)
 
             processed = {}
@@ -2350,18 +2365,13 @@ class GISPerfData(View):
                     continue
                 processed[perf['data_source']] = []
 
-                service_name = ""
-                
-                if name in ['pl','rta']:
-                    service_name = 'ping'
-                else:
-                    service_name = name
+                service_name = perf['service_name'].strip().lower()
 
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": 1,
-                    "url" : "performance/service/"+service_name+"/service_data_source/"+name+"/device/"+device_id+"?start_date=&end_date=",
+                    "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
                 device_info.append(perf_info)
@@ -2374,16 +2384,13 @@ class GISPerfData(View):
                     continue
                 processed[perf['data_source']] = []
 
-                if name in ['pl','rta']:
-                    service_name = 'ping'
-                else:
-                    service_name = name
+                service_name = perf['service_name'].strip().lower()
 
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": 1,
-                    "url" : "performance/service/"+service_name+"/service_data_source/"+name+"/device/"+device_id+"?start_date=&end_date=",
+                    "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
                 device_info.append(perf_info)
@@ -2396,16 +2403,13 @@ class GISPerfData(View):
                     continue
                 processed[perf['data_source']] = []
 
-                if name in ['pl','rta']:
-                    service_name = 'ping'
-                else:
-                    service_name = name
+                service_name = perf['service_name'].strip().lower()
 
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": 1,
-                    "url" : "performance/service/"+service_name+"/service_data_source/"+name+"/device/"+device_id+"?start_date=&end_date=",
+                    "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
                 device_info.append(perf_info)
@@ -2418,16 +2422,13 @@ class GISPerfData(View):
                     continue
                 processed[perf['data_source']] = []
 
-                if name in ['pl','rta']:
-                    service_name = 'ping'
-                else:
-                    service_name = name
+                service_name = perf['service_name'].strip().lower()
 
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": 1,
-                    "url" : "performance/service/"+service_name+"/service_data_source/"+name+"/device/"+device_id+"?start_date=&end_date=",
+                    "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
                 device_info.append(perf_info)
@@ -2649,7 +2650,7 @@ class GISPerfData(View):
         try:
             device_technology = DeviceTechnology.objects.get(id=substation_device.device_technology)
         except Exception as e:
-            logger.info("Device technology not exist. Exception: ", e.message)
+            logger.exception("Device technology not exist. Exception: ", e.message)
 
         # thematic settings for current user
         user_thematics = self.get_thematic_settings(device_technology)
@@ -2665,7 +2666,7 @@ class GISPerfData(View):
                 service = user_thematics.thematic_template.service
                 data_source = user_thematics.thematic_template.data_source
         except Exception as e:
-            logger.info("No user thematics for device {}. Exception: ".format(device_name, e.message))
+            logger.exception("No user thematics for device {}. Exception: ".format(device_name, e.message))
 
         # device frequency
         device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
@@ -2707,7 +2708,7 @@ class GISPerfData(View):
             try:
                 th_icon_settings = user_thematics.thematic_template.icon_settings
             except Exception as e:
-                logger.info("No icon settings for thematic settings. Exception: ", e.message)
+                logger.exception("No icon settings for thematic settings. Exception: ", e.message)
 
             # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
             th_ranges = ""
@@ -2719,7 +2720,7 @@ class GISPerfData(View):
                 else:
                     pass
             except Exception as e:
-                logger.info("No ranges for thematic settings. Exception: ", e.message)
+                logger.exception("No ranges for thematic settings. Exception: ", e.message)
 
             # fetch service type if 'ts_type' is "normal"
             service_type = ""
@@ -2727,7 +2728,7 @@ class GISPerfData(View):
                 if ts_type == "normal":
                     service_type = user_thematics.thematic_template.threshold_template.service_type
             except Exception as e:
-                logger.info("Service Type not exist. Exception: ", e.message)
+                logger.exception("Service Type not exist. Exception: ", e.message)
 
             # icon
             icon = ""
@@ -2738,7 +2739,7 @@ class GISPerfData(View):
             try:
                 icon = "media/" + str(device_type.device_icon)
             except Exception as e:
-                logger.info("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
+                logger.exception("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
 
             # comparing threshold values to get icon
             try:
@@ -2759,7 +2760,7 @@ class GISPerfData(View):
                     else:
                         pass
             except Exception as e:
-                logger.info("Icon not exist. Exception: ", e.message)
+                logger.exception("Icon not exist. Exception: ", e.message)
 
             substation_info['markerUrl'] = icon
 
@@ -2800,7 +2801,7 @@ class GISPerfData(View):
                 else:
                     device_frequency = ""
         except Exception as e:
-            logger.info("Device frequency not exist. Exception: ", e.message)
+            logger.exception("Device frequency not exist. Exception: ", e.message)
 
         return device_frequency
 
@@ -2841,7 +2842,7 @@ class GISPerfData(View):
                     device_pl = ""
 
         except Exception as e:
-            logger.info("Device PL not exist. Exception: ", e.message)
+            logger.exception("Device PL not exist. Exception: ", e.message)
 
         return device_pl
 
@@ -2871,7 +2872,7 @@ class GISPerfData(View):
                     if int(chek_dev_freq) > 10:
                         corrected_dev_freq = chek_dev_freq
                 except Exception as e:
-                    logger.info("Device frequency not exist. Exception: ", e.message)
+                    logger.exception("Device frequency not exist. Exception: ", e.message)
 
                 device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
                 device_frequency_color = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))\
@@ -2891,7 +2892,7 @@ class GISPerfData(View):
         except Exception as e:
             if len(device_pl) and int(ast.literal_eval(device_pl)) == 100:
                 device_link_color = 'rgb(0,0,0)'
-            logger.info("Frequency color not exist. Exception: ", e.message)
+            logger.exception("Frequency color not exist. Exception: ", e.message)
 
         return device_link_color, radius
 
@@ -2914,7 +2915,7 @@ class GISPerfData(View):
             current_user = UserProfile.objects.get(id=self.request.user.id)
         except Exception as e:
             current_user = ""
-            logger.info("User Profile not exist. Exception: ", e.message)
+            logger.exception("User Profile not exist. Exception: ", e.message)
 
         # device technology
         device_technology = device_technology
@@ -2926,13 +2927,13 @@ class GISPerfData(View):
                 user_thematics = UserThematicSettings.objects.get(user_profile=current_user,
                                                                   thematic_technology=device_technology)
             except Exception as e:
-                logger.info("User thematic settings not exist. Exception: ", e.message)
+                logger.exception("User thematic settings not exist. Exception: ", e.message)
         elif ts_type == "ping":
             try:
                 user_thematics = UserPingThematicSettings.objects.get(user_profile=current_user,
                                                                       thematic_technology=device_technology)
             except Exception as e:
-                logger.info("User thematic settings not exist. Exception: ", e.message)
+                logger.exception("User thematic settings not exist. Exception: ", e.message)
 
         return user_thematics
 
@@ -3017,7 +3018,7 @@ class GISPerfData(View):
                         performance_value = ""
         except Exception as e:
             performance_value = ""
-            logger.info("Performance value not exist. Exception: ", e.message)
+            logger.exception("Performance value not exist. Exception: ", e.message)
 
         return performance_value
 
@@ -3236,5 +3237,5 @@ def getL2Report(request, ckt_id = 'no'):
             result['success'] = 1
             result['message'] = "L2 report fetched successfully"
     except Exception, e:
-        logger.info(e.message)
+        logger.exception(e.message)
     return HttpResponse(json.dumps(result))

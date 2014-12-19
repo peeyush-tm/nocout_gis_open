@@ -51,7 +51,7 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    db = utility_module.mysql_conn(configs=configs)
+    #db = utility_module.mysql_conn(configs=configs)
     """
     start_time variable would store the latest time uptill which mysql
     table has an entry, so the data having time stamp greater than start_time
@@ -59,14 +59,16 @@ def main(**configs):
     duplicate data.
     """
     #for i in range(len(configs.get('mongo_conf'))):
-    start_time = mongo_module.get_latest_entry(
-   	    	db_type='mysql', 
-		    	db=db,
-		    	site=configs.get('mongo_conf')[0][0],
-		    	table_name=configs.get('table_name')
-    )	
+#    start_time = mongo_module.get_latest_entry(
+#   	    	db_type='mysql', 
+#		    	db=db,
+#		    	site=configs.get('mongo_conf')[0][0],
+#		    	table_name=configs.get('table_name')
+#    )	
+#    db.close()
 
     end_time = datetime.now()
+    start_time = end_time - timedelta(minutes=5)
     print start_time ,end_time
     # Get all the entries from mongodb having timestam0p greater than start_time
     docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
@@ -106,9 +108,9 @@ def read_data(start_time, end_time, **kwargs):
     if db:
 	if start_time is None:
 		start_time = end_time - timedelta(minutes=15)
-		cur = db.service_perf.find({ "check_time": { "$gt": start_time, "$lt": end_time}})
+		cur = db.service_perf.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
 	else:
-		cur = db.service_perf.find({ "check_time": { "$gt": start_time, "$lt": end_time}})
+		cur = db.service_perf.find({ "local_timestamp": { "$gt": start_time, "$lt": end_time}})
     	configs = config_module.parse_config_obj()
     	for config, options in configs.items():
 	    machine_name = options.get('machine')
@@ -212,6 +214,7 @@ def insert_data(table, data_values, **kwargs):
         raise mysql.connector.Error, err
     db.commit()
     cursor.close()
+    db.close()
 
 
 def get_machineid():

@@ -1583,6 +1583,7 @@ class WizardSectorForm(SectorForm):
         self.technology = kwargs.pop('technology')
         super(WizardSectorForm, self).__init__(*args, **kwargs)
 
+        self.fields['dr_configured_on'].widget = forms.HiddenInput()
         if self.technology == 'P2P':
             self.fields['sector_configured_on'].label = 'Near End IP'
 
@@ -1598,6 +1599,7 @@ class WizardSectorForm(SectorForm):
             self.fields.pop('sector_configured_on_port')
             self.fields.pop('dr_site')
             self.fields.pop('mrc')
+            self.fields.pop('dr_configured_on')
 
         if self.technology != 'PMP':
             self.fields.pop('rf_bandwidth')
@@ -1607,7 +1609,7 @@ class WizardSectorForm(SectorForm):
         Meta Information
         """
         model = Sector
-        fields = ('sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
+        fields = ('sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'dr_configured_on', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
 
     def clean_sector_id(self):
         """

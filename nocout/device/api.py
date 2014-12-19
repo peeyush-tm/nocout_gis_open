@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import ast, sys
+from copy import deepcopy
 import json, logging
+from pprint import pprint, pformat
 import urllib, datetime
 from multiprocessing import Process, Queue
 from django.db.models import Q, Count
@@ -802,12 +804,14 @@ class BulkFetchLPDataApi(View):
         # remove redundant machine id's from 'machine_list'
         machines = set(machine_list)
 
+        print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ machines - ", machines
+
         try:
+            responses = []
             for machine_id in machines:
                 response_dict = {
                     'value': []
                 }
-                responses = []
 
                 # live polling setting
                 if service_type != "ping":
@@ -853,6 +857,8 @@ class BulkFetchLPDataApi(View):
 
                 # remove redundant site instance id's from 'site_instances_list'
                 sites = set(site_instances_list)
+
+                print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ sites - ", sites
 
                 site_list = []
                 for site_id in sites:
@@ -958,6 +964,7 @@ class BulkFetchLPDataApi(View):
                     j.start()
                 for k in jobs:
                     k.join()
+                pformat(q)
                 while True:
                     if not q.empty():
                         responses.append(q.get())
@@ -968,6 +975,7 @@ class BulkFetchLPDataApi(View):
 
                 # if response(r) is given by post request than process it further to get success/failure messages
                 if len(response_dict):
+                    print "********************************** response_dict - ", response_dict
                     # get devices from 'response_dict'
                     devices_in_response = response_dict.get('value')
 
@@ -1106,6 +1114,9 @@ class BulkFetchLPDataApi(View):
         # default image to be loaded
         image_partial = icon
 
+        # fetch value from list
+        value = value[0]
+
         if th_ranges and th_icon_settings and len(str(value)):
             try:
                 if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
@@ -1234,6 +1245,9 @@ class BulkFetchLPDataApi(View):
         # default image to be loaded
         image_partial = icon
 
+        # fetch value from list
+        value = value[0]
+
         if th_ranges and th_icon_settings and value:
             try:
                 if str(value).lower().strip() == str(th_ranges.range1_start).lower().strip():
@@ -1344,15 +1358,20 @@ def nocout_live_polling(q, site):
                                                                  site.get('machine'),
                                                                  site.get('port'),
                                                                  site.get('site_name'))
+    print "#################################### url - ", url
 
     # encoding 'lp_data'
     encoded_data = urllib.urlencode(site.get('lp_data'))
+    print "#################################### encoded_data - ", encoded_data
 
     # sending post request to nocout device app to fetch service live polling value
     try:
         r = requests.post(url, data=encoded_data)
+        print "#################################### r.text - ", r.text
         response_dict = ast.literal_eval(r.text)
+        print "#################################### response_dict - ", response_dict
         if len(response_dict):
-            q.put(response_dict)
+            temp_dict = deepcopy(response_dict)
+            q.put(temp_dict)
     except Exception as e:
         logger.info(e.message)
