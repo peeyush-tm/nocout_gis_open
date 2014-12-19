@@ -97,17 +97,20 @@ def delete_antenna_of_sector(sender, instance=None, **kwargs):
     """
     Deletes the antenna of a sector if sector is deleted.
     """
-    instance.antenna.delete()
+    if instance.antenna:
+        instance.antenna.delete()
 
 
 def delete_antenna_of_substation(sender, instance=None, **kwargs):
     """
     Deletes the antenna of a sub-station if sub-station is deleted.
     """
-    instance.antenna.delete()
+    if instance.antenna:
+        instance.antenna.delete()
 
 def delete_customer_of_circuit(sender, instance=None, **kwargs):
     """
     Deletes the customer of a circuit if circuit is deleted.
     """
-    instance.customer.delete()
+    if instance.customer:
+        instance.customer.delete()
