@@ -51,22 +51,32 @@ project_group_role_dict_mapper={
     'viewer':'group_viewer',
 }
 
-from line_profiler import LineProfiler
+from line_profiler import LineProfiler as LLP
+from memory_profiler import LineProfiler as MLP
+from memory_profiler import show_results
 
 # #profiler
-def time_it(debug=getattr(settings, 'DEBUG')):
+def time_it(debug=getattr(settings, 'PROFILE')):
         def decorator(fn):
             def wrapper(*args, **kwargs):
                 st = datetime.datetime.now()
                 if debug:
                     log.debug("+++"*40)
                     log.debug("START     \t\t\t: { " + fn.__name__ + " } : ")
-                    profiler = LineProfiler()
-                    profiled_func = profiler(fn)
+                    profile_type = getattr(settings, 'PROFILE_TYPE')
+                    if profile_type == 'line':
+                        profiler = LLP()
+                        profiled_func = profiler(fn)
+                    else:
+                        profiler = MLP()
+                        profiled_func = profiler(fn)
                     try:
                         result = profiled_func(*args, **kwargs)
                     finally:
-                        profiler.print_stats()
+                        if profile_type == 'line':
+                            profiler.print_stats()
+                        else:
+                            show_results(profiler)
                 else:
                     result = fn(*args, **kwargs)
                 end = datetime.datetime.now()
@@ -243,7 +253,7 @@ def cache_get_key(*args, **kwargs):
 def cache_for(time):
     def decorator(fn):
         def wrapper(*args, **kwargs):
-            debug=getattr(settings, 'DEBUG')
+            debug=getattr(settings, 'PROFILE')
             st = datetime.datetime.now()
             if debug:
                 log.debug("---"*40)
@@ -253,12 +263,20 @@ def cache_for(time):
             if not result:
                 if debug:
                     log.debug("FUNCTION CALL\t: START : { " + fn.__name__ + " } : ")
-                    profiler = LineProfiler()
-                    profiled_func = profiler(fn)
+                    profile_type = getattr(settings, 'PROFILE_TYPE')
+                    if profile_type == 'line':
+                        profiler = LLP()
+                        profiled_func = profiler(fn)
+                    else:
+                        profiler = MLP()
+                        profiled_func = profiler(fn)
                     try:
                         result = profiled_func(*args, **kwargs)
                     finally:
-                        profiler.print_stats()
+                        if profile_type == 'line':
+                            profiler.print_stats()
+                        else:
+                            show_results(profiler)
                     cache.set(key, result, time)
                 else:
                     result = fn(*args, **kwargs)
