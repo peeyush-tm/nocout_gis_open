@@ -159,9 +159,9 @@ def check_device_status():
     """
     service_list = []
     service_data_source_list = []
-    device_id_list = get_today_event_list()['device_ids']
+    device_id_list = get_today_event_list()['device_ids']  #get the device list which is in downtime scheduling today.
     for org in Organization.objects.all():
-        device_list_qs = inventory_utils.organization_network_devices([org]).exclude(id__in=device_id_list)
+        device_list_qs = inventory_utils.organization_network_devices([org]).exclude(id__in=device_id_list) #exclude the devices which is in downtime scheduling today.
         machine_dict = prepare_machines(device_list_qs)
         service_list = prepare_services(device_list_qs)
         service_data_source_list = prepare_service_data_sources(service_list)
