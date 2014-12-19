@@ -19,7 +19,7 @@ from performance.models import ServiceStatus
 from alarm_escalation.models import EscalationStatus
 
 from inventory.utils import util as inventory_utils
-from scheduling_management.models import Event
+from scheduling_management.views import get_today_event_list
 
 
 @task
@@ -159,8 +159,9 @@ def check_device_status():
     """
     service_list = []
     service_data_source_list = []
+    device_id_list = get_today_event_list()['device_ids']
     for org in Organization.objects.all():
-        device_list_qs = inventory_utils.organization_network_devices([org])
+        device_list_qs = inventory_utils.organization_network_devices([org]).exclude(id__in=device_id_list)
         machine_dict = prepare_machines(device_list_qs)
         service_list = prepare_services(device_list_qs)
         service_data_source_list = prepare_service_data_sources(service_list)
