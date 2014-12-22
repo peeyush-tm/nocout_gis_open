@@ -1097,11 +1097,17 @@ class BulkFetchLPDataApi(View):
                 - icon (str) - icon location i.e "media/uploaded/icons/2014/09/18/wifi3.png"
         """
 
+        print "********************************* th_ranges - ", th_ranges
+        print "********************************* th_icon_settings - ", th_icon_settings
+        print "********************************* value - ", value
+        print "********************************* icon - ", icon
         # default image to be loaded
         image_partial = icon
 
         # fetch value from list
         value = value[0]
+
+        print "********************************** value - "
 
         if th_ranges and th_icon_settings and len(str(value)):
             try:

@@ -171,6 +171,7 @@
             $("#id_bs_sheet").empty().append('<option value="">Select</option>');
             $("#id_ss_sheet").empty().append('<option value="">Select</option>');
             $("#id_ptp_sheet").empty().append('<option value="">Select</option>');
+            $("#id_backhaul_sheet").empty().append('<option value="">Select</option>');
         });
 
         // execute this everytime after uploading file
@@ -212,10 +213,19 @@
                         ptp_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
                     }
 
+                    // preparing backhaul sheet select menu options
+                    backhaul_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('Backhaul') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        backhaul_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
                     // modifying sheet select options to current file sheet names
                     $("#id_bs_sheet").empty().append(bs_sheets_options);
                     $("#id_ss_sheet").empty().append(ss_sheets_options);
                     $("#id_ptp_sheet").empty().append(ptp_sheets_options);
+                    $("#id_backhaul_sheet").empty().append(backhaul_sheets_options);
                 });
             }
 
@@ -254,10 +264,19 @@
                         ptp_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
                     }
 
+                    // preparing backhaul sheet select menu options
+                    backhaul_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('Backhaul') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        backhaul_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
                     // modifying sheet select options to current file sheet names
                     $("#id_bs_sheet").empty().append(bs_sheets_options);
                     $("#id_ss_sheet").empty().append(ss_sheets_options);
                     $("#id_ptp_sheet").empty().append(ptp_sheets_options);
+                    $("#id_backhaul_sheet").empty().append(backhaul_sheets_options);
                 });
             }
 
@@ -276,6 +295,8 @@
                 $("#id_ss_sheet").empty().append(sheets_options);
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
                 $("#id_ptp_sheet").empty().append(sheets_options);
+                $("#s2id_id_backhaul_sheet").find(".select2-chosen").text('Select');
+                $("#id_backhaul_sheet").empty().append(sheets_options);
             }
         });
 
@@ -286,7 +307,7 @@
             reader.readAsBinaryString(file);
         }
 
-        // reset 'PTP' select menu if either of 'BS' or 'SS' has value (i.e. selected value)
+        // reset 'PTP' select menu if either of 'BS', 'SS' or 'Backhaul' has value (i.e. selected value)
         $("#id_ss_sheet").change(function () {
             if ($("#id_ss_sheet").val()) {
 
@@ -354,6 +375,10 @@
                 // reset ptp sheet select menu
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
                 $("#id_ptp_sheet").prop('selectedIndex', 0);
+
+                // reset backhaul sheet select menu
+                $("#s2id_id_backhaul_sheet").find(".select2-chosen").text('Select');
+                $("#id_backhaul_sheet").prop('selectedIndex',0);
             }
         });
         $("#id_bs_sheet").change(function () {
@@ -423,10 +448,14 @@
                 // reset ptp sheet select menu
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
                 $("#id_ptp_sheet").prop('selectedIndex', 0);
+
+                // reset backhaul sheet select menu
+                $("#s2id_id_backhaul_sheet").find(".select2-chosen").text('Select');
+                $("#id_backhaul_sheet").prop('selectedIndex',0);
             }
         });
 
-        // reset 'BS' and 'SS' select menu if 'PTP' has value (i.e. selected value)
+        // reset 'BS', 'SS' and 'Backhaul' select menu if 'PTP' has value (i.e. selected value)
         $("#id_ptp_sheet").change(function () {
             if ($("#id_ptp_sheet").val()) {
                 // get sheet name
@@ -493,6 +522,84 @@
                 // reset ss sheet select menu
                 $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
                 $("#id_ss_sheet").prop('selectedIndex',0);
+
+                // reset backhaul sheet select menu
+                $("#s2id_id_backhaul_sheet").find(".select2-chosen").text('Select');
+                $("#id_backhaul_sheet").prop('selectedIndex',0);
+            }
+        });
+
+        // reset 'BS', 'SS' and 'PTP' select menu if 'Backhaul' has value (i.e. selected value)
+        $("#id_backhaul_sheet").change(function () {
+            if ($("#id_backhaul_sheet").val()) {
+                // get sheet name
+                var sheet_name = $("#id_backhaul_sheet").val();
+
+                // array containing excel file sheetnames
+                var sheets = wb.SheetNames;
+                var ws = wb.Sheets[sheet_name];
+
+                // converting excel file to csv
+                csv_data = XLS.utils.sheet_to_csv(ws);
+
+                // creating array 'lines' form csv format
+                var lines = csv_data.split("\n"),
+                    output = [],
+                    i;
+
+                // initializing header variable
+                var header = [];
+
+                // creating html for table header
+                header.push("<tr class='headerSortable'><th>"
+                            + lines[0].slice(0, -1).split(csvRegex).join("</th><th>")
+                            + "</th></tr>");
+
+                // creating html for table body
+                for (i = 1; i < 10; i++) {
+                    if (i%2==0) {
+                    output.push("<tr class='ss_tr_even'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                    else {
+                    output.push("<tr class='ss_tr_odd'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                }
+
+                // creating a string from output array
+                output = output.join("");
+
+                // creating string from header array
+                header = header.join("");
+
+                // show table if hidden
+                if ($("#preview_table").hasClass('hide')) {
+                    $("#preview_table").removeClass('hide');
+                }
+
+                // changing content of table body
+                $("#excel_table_table").empty().html(output);
+
+                // changing content of table header
+                $("#excel_table_header").empty().html(header);
+
+                // changing content of table header
+                $("#excel_table_header_bottom").empty().html(header);
+
+                // reset bs sheet select menu
+                $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
+                $("#id_bs_sheet").prop('selectedIndex',0);
+
+                // reset ss sheet select menu
+                $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
+                $("#id_ss_sheet").prop('selectedIndex',0);
+
+                // reset ptp sheet select menu
+                $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
+                $("#id_ptp_sheet").prop('selectedIndex',0);
             }
         });
     </script>
