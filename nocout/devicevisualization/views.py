@@ -1392,15 +1392,21 @@ class GISPerfData(View):
     def get(self, request):
         # get base stations id's list
         bs_ids = eval(str(self.request.GET.get('base_stations', None)))
-        print "###################################### bs_ids - ", bs_ids
+
+        logger.info("#################### START FETCHING GIS PERFORMANCE DATA ###################")
 
         # performance data dictionary
         performance_data = list()
 
+        # base station counter
+        bs_counter = 0
+
         # loop through all base stations having id's in bs_ids list
         try:
             for bs_id in bs_ids:
-                print "################################## bs_id - ", bs_id
+                # increment base station counter
+                bs_counter += 1
+
                 # base station data dictionary
                 bs_dict = dict()
 
@@ -1408,6 +1414,9 @@ class GISPerfData(View):
                 bs = ""
                 try:
                     bs = BaseStation.objects.get(pk=bs_id)
+
+                    logger.info("Base Station {}: '{}' data fetching start.".format(bs_counter, bs.alias))
+
                     bs_dict['bs_name'] = bs.name
                     bs_dict['bs_alias'] = bs.alias
                     bs_dict['bs_id'] = bs_id
