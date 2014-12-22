@@ -1816,8 +1816,8 @@ class DeviceUtilization(View):
             chart_data.append(temp_chart_data[cd])
 
         result = {
-            'success': 0,
-            'message': 'Device Utilization Data not found',
+            'success': 1,
+            'message': 'Device Utilization Data',
             'data': {
                 'meta': {},
                 'objects': {
