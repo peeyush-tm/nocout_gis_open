@@ -7,6 +7,7 @@ and write to historical mysql table, next in aggregation
 
 Usage ::
 python events_aggregation_all.py -t 168 -f weekly -s performance_eventnetworkdaily -d performance_eventnetworkweekly
+python events_aggregation_all.py -t 168 -f weekly -s performance_eventservicedaily -d performance_eventserviceweekly
 Options ::
 t - Time frame for read operation [Hours]
 s - Source Mongodb collection
@@ -79,7 +80,7 @@ def quantify_events_data(aggregated_data_values=[]):
 		current_value = int(doc.get('current_value'))
 		site = doc.get('site_name')
 		war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
-		check_time = doc.get('check_timestamp')
+		check_time = datetime.fromtimestamp(float(doc.get('check_timestamp')))
 		original_time = doc.get('sys_timestamp') if doc.get('sys_timestamp') else doc.get('time')
 		time = datetime.fromtimestamp(original_time)
 		if time_frame == 'daily':
