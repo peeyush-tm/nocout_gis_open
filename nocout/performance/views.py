@@ -1537,14 +1537,19 @@ class Get_Service_Type_Performance_Data(View):
                 if temp_time in aggregate_data:
                     continue
                 else:
+                    aggregate_data[temp_time] = data.sys_timestamp
+
+                    #time in javascript format
+                    js_time = data.sys_timestamp * 1000
+                    #time in javascript format
 
                     sds_name = str(data.data_source).strip().lower()
-
-                    aggregate_data[temp_time] = data.sys_timestamp
-                    self.result['data']['objects']['display_name'] = \
+                    sds_display_name = \
                         SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                             if sds_name in SERVICE_DATA_SOURCE \
                             else str(data.data_source).upper()
+
+                    self.result['data']['objects']['display_name'] = sds_display_name
 
                     self.result['data']['objects']['type'] = \
                         SERVICE_DATA_SOURCE[sds_name]["type"] \
@@ -1566,19 +1571,21 @@ class Get_Service_Type_Performance_Data(View):
 
                     # data_list.append([data.sys_timestamp*1000, float(data.current_value) if data.current_value else 0])
                     if data_source not in ["availability"]:
-                        warn_data_list.append([data.sys_timestamp * 1000, float(data.warning_threshold)
-                        if data.critical_threshold else None])
+                        #only display warning if there exists a warning
+                        if data.warning_threshold:
+                            warn_data_list.append([js_time, float(data.warning_threshold)])
 
-                        crit_data_list.append([data.sys_timestamp * 1000, float(data.critical_threshold)
-                        if data.critical_threshold else None])
+                        #only display critical if there exists a critical
+                        if data.critical_threshold:
+                            crit_data_list.append([js_time, float(data.critical_threshold)])
 
                         ###to draw each data point w.r.t threshold we would need to use the following
                         if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_min"]:
-                            min_data_list.append([data.sys_timestamp * 1000, float(data.min_value)
+                            min_data_list.append([js_time, float(data.min_value)
                             if data.min_value else None])
 
                         if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_max"]:
-                            max_data_list.append([data.sys_timestamp * 1000, float(data.max_value)
+                            max_data_list.append([js_time, float(data.max_value)
                             if data.max_value else None])
 
                         compare_point = lambda p1, p2, p3: '#70AFC4' \
@@ -1596,7 +1603,7 @@ class Get_Service_Type_Performance_Data(View):
 
                         if data.current_value:
                             formatter_data_point = {
-                                "name": str(data.data_source).upper(),
+                                "name": sds_display_name,
                                 "color": compare_point(float(data.current_value) if data.current_value else 0,
                                                        float(data.warning_threshold) if data.warning_threshold else 0,
                                                        float(data.critical_threshold) if data.critical_threshold else 0
@@ -1604,14 +1611,14 @@ class Get_Service_Type_Performance_Data(View):
                                 "y": eval(str(formula) + "(" + str(data.current_value) + ")")
                                 if formula
                                 else float(data.current_value),
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
                         else:
                             formatter_data_point = {
-                                "name": str(data.data_source).upper(),
+                                "name": sds_display_name,
                                 "color": '#70AFC4',
                                 "y": None,
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
 
                         data_list.append(formatter_data_point)
@@ -1623,7 +1630,7 @@ class Get_Service_Type_Performance_Data(View):
                                       }
                         ]
                         if len(min_data_list):
-                            chart_data += [
+                            chart_data.append(
                                 {'name': str("min value").title(),
                                  'color': '#01CC14',
                                  'data': min_data_list,
@@ -1631,11 +1638,11 @@ class Get_Service_Type_Performance_Data(View):
                                  'marker': {
                                      'enabled': False
                                  }
-                                },
-                            ]
+                                }
+                            )
 
                         if len(max_data_list):
-                            chart_data += [
+                            chart_data.append(
                                 {'name': str("max value").title(),
                                  'color': '#FF8716',
                                  'data': max_data_list,
@@ -1643,51 +1650,58 @@ class Get_Service_Type_Performance_Data(View):
                                  'marker': {
                                      'enabled': False
                                  }
-                                },
-                            ]
+                                }
+                            )
 
-                        chart_data += [{'name': str("warning threshold").title(),
-                                        'color': '#FFE90D',
-                                        'data': warn_data_list,
-                                        'type': 'line',
-                                        'marker': {
-                                            'enabled': False
-                                        }
-                                       },
-                                       {'name': str("critical threshold").title(),
-                                        'color': '#FF193B',
-                                        'data': crit_data_list,
-                                        'type': 'line',
-                                        'marker': {
-                                            'enabled': False
-                                        }
-                                       }]
+                        if len(crit_data_list):
+                            chart_data.append(
+                                {'name': str("warning threshold").title(),
+                                 'color': '#FFE90D',
+                                 'data': warn_data_list,
+                                 'type': 'line',
+                                 'marker': {
+                                     'enabled': False
+                                 }
+                                }
+                            )
+
+                        if len(warn_data_list):
+                            chart_data.append(
+                                {'name': str("critical threshold").title(),
+                                 'color': '#FF193B',
+                                 'data': crit_data_list,
+                                 'type': 'line',
+                                 'marker': {
+                                     'enabled': False
+                                 }
+                                }
+                            )
                     else:
                         if data.current_value:
                             formatter_data_point = {
                                 "name": "Availability",
                                 "color": '#70AFC4',
                                 "y": float(data.current_value),
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
                             formatter_data_point_down = {
                                 "name": "UnAvailability",
                                 "color": '#FF193B',
                                 "y": 100.00 - float(data.current_value),
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
                         else:
                             formatter_data_point = {
                                 "name": str(data.data_source).upper(),
                                 "color": '#70AFC4',
                                 "y": None,
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
                             formatter_data_point_down = {
                                 "name": "UnAvailability",
                                 "color": '#FF193B',
                                 "y": None,
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
 
                         data_list.append(formatter_data_point)
