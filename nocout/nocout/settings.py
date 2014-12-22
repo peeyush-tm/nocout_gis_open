@@ -17,8 +17,10 @@ from celery.schedules import crontab
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
+PROFILE = DEBUG
+PROFILE_TYPE = 'line'
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),

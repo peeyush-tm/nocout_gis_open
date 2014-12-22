@@ -6,7 +6,7 @@ from inventory.models import IconSettings
 from service.models import Service
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
-from device.models import Device
+from device.models import Device, DeviceType
 from organization.models import Organization
 from inventory.models import Backhaul, BaseStation, Antenna, Sector, Customer, SubStation
 
@@ -370,6 +370,36 @@ def gt_critical_initial_choices(request):
                    .format(icon_setting.id, img_url, icon_setting.alias))
     dajax.assign('#id_gt_critical', 'innerHTML', ''.join(out))
     return dajax.json()
+
+
+@dajaxice_register(method='GET')
+def update_services_as_per_device_type(request, dvt_id):
+    """
+    update service according to the device type selected
+    :param request:
+    :param device_type_id:
+    """
+    dajax = Dajax()
+    out = list()
+    services = list()
+    # process if type_id is not empty
+    if dvt_id and dvt_id != "":
+        try:
+            dt = DeviceType.objects.get(id=dvt_id)
+            for svc in dt.service.all():
+                services.append(svc)
+            # some devices have same services, so here we are making list of distinct services
+            distinct_service = set(services)
+            out = ["<option value=''>Select</option>"]
+            for svc in distinct_service:
+                out.append("<option value='%d'>%s</option>" % (svc.id, svc.alias))
+        except Exception as e:
+            logger.info(e)
+    else:
+        out = ["<option value=''>Select</option>"]
+    dajax.assign('#id_service', 'innerHTML', ''.join(out))
+    return dajax.json()
+
 
 # @dajaxice_register(method='GET')
 # def load_sheet_no_select_menu(request, uploaded_file):

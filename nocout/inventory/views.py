@@ -1,65 +1,72 @@
-import re
-import ast
-import copy
-from operator import itemgetter
-import time
-from datetime import datetime
-from django.contrib.auth.models import User
-from machine.models import Machine
+"""
+Contain Gis Inventory Views.
+
+- Provide views to List, Create, Update and Delete Gis Inventory Models.
+- Provide views to Bulk Upload inventory data using Excel Sheets.
+- Provide Gis Wizard to manage inventory in easier way.
+"""
+
 import os
-from os.path import basename
-from django.views.generic.base import View
 import re
-from django.shortcuts import render, render_to_response
+import time
 import json
-from django.db.models.query import ValuesQuerySet
-from django.http import HttpResponseRedirect, HttpResponse
-from django.views.generic import ListView, DetailView, TemplateView, View
-from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
-from django.core.urlresolvers import reverse_lazy, reverse
-from django_datatables_view.base_datatable_view import BaseDatatableView
-from django.db.models import Count, Q
-from device_group.models import DeviceGroup
-from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
-
-from nocout.utils.util import DictDiffer, cache_for, cache_get_key
-
-from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
-    ThematicSettings, GISInventoryBulkImport, UserThematicSettings, CircuitL2Report, PingThematicSettings, \
-    UserPingThematicSettings
-from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
-    ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm, PingThematicSettingsForm, \
-    ServiceThematicSettingsForm, ServiceThresholdConfigurationForm, ServiceLivePollingSettingsForm, \
-    WizardBaseStationForm, WizardBackhaulForm, WizardSectorForm, WizardAntennaForm, WizardSubStationForm, \
-    WizardCustomerForm, WizardCircuitForm, WizardPTPSubStationAntennaFormSet
-from organization.models import Organization
-from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, Status
-from site_instance.models import SiteInstance
-from user_group.models import UserGroup
-from user_profile.models import UserProfile
-from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
-from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm, CircuitL2ReportForm
-from device.models import Country, State, City, Device, DeviceType
-from django.contrib.staticfiles.templatetags.staticfiles import static
-from user_profile.models import UserProfile
 import xlrd
 import xlwt
-import logging
+
+from operator import itemgetter
+from datetime import datetime
+
+from django.db.models import Count, Q
+from django.db.models.query import ValuesQuerySet
+from django.core.urlresolvers import reverse_lazy, reverse
+
+from django.views.generic import ListView, DetailView, View, TemplateView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
+
+from django.http import HttpResponseRedirect, HttpResponse
+from django.shortcuts import render, render_to_response
 from django.template import RequestContext
-from nocout.utils import logged_in_user_organizations
-from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
-    bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
-    bulk_upload_wimax_ss_inventory
+
+from django.contrib.auth.models import User
+from django.contrib.staticfiles.templatetags.staticfiles import static
+
+from django_datatables_view.base_datatable_view import BaseDatatableView
+
+from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.utils import logged_in_user_organizations
+from nocout.utils.util import DictDiffer, cache_for, cache_get_key
 
+from organization.models import Organization
+from user_profile.models import UserProfile
+from user_group.models import UserGroup
+from device_group.models import DeviceGroup
+from device.models import Country, State, City, Device, DeviceType, DeviceTechnology
+from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, Status
+
+from inventory.models import (Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, Inventory,
+        IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, GISInventoryBulkImport,
+        UserThematicSettings, CircuitL2Report, PingThematicSettings, UserPingThematicSettings)
+from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm,
+        CircuitForm, CircuitL2ReportForm, InventoryForm, IconSettingsForm, LivePollingSettingsForm,
+        ThresholdConfigurationForm, ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm,
+        PingThematicSettingsForm,  ServiceThematicSettingsForm, ServiceThresholdConfigurationForm,
+        ServiceLivePollingSettingsForm, WizardBaseStationForm, WizardBackhaulForm, WizardSectorForm, WizardAntennaForm,
+        WizardSubStationForm, WizardCustomerForm, WizardCircuitForm, WizardPTPSubStationAntennaFormSet)
+from inventory.tasks import (validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory,
+        bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory,
+        bulk_upload_wimax_ss_inventory)
+
+import logging
 logger = logging.getLogger(__name__)
 
 ##caching
 from django.core.cache import cache
 ##caching
+
 
 # **************************************** Inventory *********************************************
 def inventory(request):

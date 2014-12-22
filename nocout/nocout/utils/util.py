@@ -51,16 +51,35 @@ project_group_role_dict_mapper={
     'viewer':'group_viewer',
 }
 
+if getattr(settings, 'PROFILE'):
+    from line_profiler import LineProfiler as LLP
+    from memory_profiler import LineProfiler as MLP
+    from memory_profiler import show_results
 
 # #profiler
-def time_it(debug=getattr(settings, 'DEBUG')):
+def time_it(debug=getattr(settings, 'PROFILE')):
         def decorator(fn):
             def wrapper(*args, **kwargs):
                 st = datetime.datetime.now()
                 if debug:
                     log.debug("+++"*40)
                     log.debug("START     \t\t\t: { " + fn.__name__ + " } : ")
-                result = fn(*args, **kwargs)
+                    profile_type = getattr(settings, 'PROFILE_TYPE')
+                    if profile_type == 'line':
+                        profiler = LLP()
+                        profiled_func = profiler(fn)
+                    else:
+                        profiler = MLP()
+                        profiled_func = profiler(fn)
+                    try:
+                        result = profiled_func(*args, **kwargs)
+                    finally:
+                        if profile_type == 'line':
+                            profiler.print_stats()
+                        else:
+                            show_results(profiler)
+                else:
+                    result = fn(*args, **kwargs)
                 end = datetime.datetime.now()
                 if debug:
                     elapsed = end - st
@@ -72,7 +91,57 @@ def time_it(debug=getattr(settings, 'DEBUG')):
             return wrapper
         return decorator
 
+#http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+#defining utility to exatly choose a database to query from
+#django routers are of no use
+#we will pass in the machine name
+#we will test the connection
+#and we will return the results of the database to be used
 
+import random
+
+@time_it()
+def nocout_db_router(db='default', levels=0):
+    """
+
+    :param db: pass the name for the database
+    :param levels: number of slaves available
+    :return:the database to be queried on
+    """
+    db_slave_up = list()
+    #can choose from master db as well
+    db_slave_up.append(db)
+    db_slave = db + "_slave"
+    if levels and levels != -1:
+        for x in range(1, levels):
+            db_slave = db + "_slave_" + str(x)
+            if test_connection_to_db(db_slave):
+                db_slave_up.append(db_slave)
+    elif levels == -1:
+        return db
+    else:
+        if test_connection_to_db(db_slave):
+                db_slave_up.append(db_slave)
+
+    return random.choice(db_slave_up)
+
+@time_it()
+def nocout_query_results(query_set=None, using='default', levels=0):
+    """
+
+    :param query_set: query set to be executed
+    :param using: the db alias
+    :param levels: levels of slaves default = 0, that is one slave is present, -1 means no slave
+    :return:
+    """
+    if query_set:
+        #choose a random database : slave // master
+        if levels == -1:
+            return query_set.using(alias=using)
+        else:
+            db = nocout_db_router(db=using, levels=levels)
+            return query_set.using(alias=db)
+    return None
 
 #http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 def test_connection_to_db(database_name):
@@ -84,7 +153,7 @@ def test_connection_to_db(database_name):
     try:
         db_definition = getattr(settings, 'DATABASES')[database_name]
         #if it gets a socket connection in 2 seconds
-        s = socket.create_connection((db_definition['HOST'], db_definition['PORT']), 2)
+        s = socket.create_connection((db_definition['HOST'], db_definition['PORT']), 5)
         #if it gets a socket connection in 2 seconds
         s.close()
         return True
@@ -185,7 +254,7 @@ def cache_get_key(*args, **kwargs):
 def cache_for(time):
     def decorator(fn):
         def wrapper(*args, **kwargs):
-            debug=getattr(settings, 'DEBUG')
+            debug=getattr(settings, 'PROFILE')
             st = datetime.datetime.now()
             if debug:
                 log.debug("---"*40)
@@ -195,8 +264,25 @@ def cache_for(time):
             if not result:
                 if debug:
                     log.debug("FUNCTION CALL\t: START : { " + fn.__name__ + " } : ")
-                result = fn(*args, **kwargs)
-                cache.set(key, result, time)
+                    profile_type = getattr(settings, 'PROFILE_TYPE')
+                    if profile_type == 'line':
+                        profiler = LLP()
+                        profiled_func = profiler(fn)
+                    else:
+                        profiler = MLP()
+                        profiled_func = profiler(fn)
+                    try:
+                        result = profiled_func(*args, **kwargs)
+                    finally:
+                        if profile_type == 'line':
+                            profiler.print_stats()
+                        else:
+                            show_results(profiler)
+                    cache.set(key, result, time)
+                else:
+                    result = fn(*args, **kwargs)
+                    cache.set(key, result, time)
+
                 if debug:
                     end = datetime.datetime.now()
                     elapsed = end - st
