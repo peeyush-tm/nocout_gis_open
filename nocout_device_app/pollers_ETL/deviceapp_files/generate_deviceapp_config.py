@@ -144,7 +144,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
         # We believe that dr master/slave pair is being monitored on same site
         # Entries for master dr device
         dr_device_entry = str(entry[0][1]) + '|' + str(entry[0][2]) + '|' + str(entry[0][3]) + \
-                '| dr: ' + str(entry[1][0]) + '|dr_slave|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
+                '| dr: ' + str(entry[1][0]) + '|dr_master|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
         all_hosts.append(dr_device_entry)
         ipaddresses.update({str(entry[0][1]): str(entry[0][0])})
         host_attributes.update({str(entry[0][1]):
@@ -159,7 +159,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
         # slave dr device stands for device which got its entry as `dr_configured_on_id` in
         # inventory_sector table
         dr_device_entry = str(entry[1][0]) + '|' + str(entry[0][2]) + '|' + str(entry[1][2]) + \
-                '| dr: ' + str(entry[0][1]) + '|dr_master|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
+                '| dr: ' + str(entry[0][1]) + '|dr_slave|wan|prod|' + str(entry[0][5]) + '|site:' + str(entry[0][7]) + '|wato|//'
         all_hosts.append(dr_device_entry)
         ipaddresses.update({str(entry[1][0]): str(entry[1][1])})
         host_attributes.update({str(entry[1][0]):
@@ -193,8 +193,8 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     # Get the wimax BS devices (we need them for active checks)
     L0 = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'wimax', data))
     L1 = map(lambda e: (e[1], e[7]), dr_en_devices)
-    L2 = zip(map(lambda e: e[0], dr_configured_on_devices), map(lambda e: e[1], L1))
-    wimax_bs_devices = L0 + L1 + L2
+    #L2 = zip(map(lambda e: e[0], dr_configured_on_devices), map(lambda e: e[1], L1))
+    wimax_bs_devices = L0 + L1
     # Get the Cambium BS devices (we need them for active checks)
     # Since, as of now, we have only Cambium devices in pmp technology
     cambium_bs_devices = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'pmp', data))
@@ -336,17 +336,23 @@ def update_configuration_db():
 
 def prepare_rules(**kwargs):
     ping_levels_db, default_checks, snmp_ports_db, \
-            snmp_communities_db = get_settings()
-    wimax_pmp1_active_checks, wimax_pmp2_active_checks, cambium_active_checks = active_checks(
-            kwargs.get('wimax_bs_devices'), kwargs.get('cambium_bs_devices'))
+            snmp_communities_db, active_checks_thresholds, \
+            active_checks_thresholds_per_device = get_settings()
+    wimax_pmp1_ul_active_checks, wimax_pmp1_dl_active_checks, wimax_pmp2_ul_active_checks, \
+            wimax_pmp2_dl_active_checks, cambium_ul_active_checks, cambium_dl_active_checks= active_checks(
+            kwargs.get('wimax_bs_devices'), kwargs.get('cambium_bs_devices'),
+            active_checks_thresholds, active_checks_thresholds_per_device)
     write_rules_file(ping_levels_db, default_checks, \
-            snmp_ports_db, snmp_communities_db, wimax_pmp1_active_checks, \
-            wimax_pmp2_active_checks, cambium_active_checks)
+            snmp_ports_db, snmp_communities_db, wimax_pmp1_ul_active_checks, \
+            wimax_pmp1_dl_active_checks, wimax_pmp2_ul_active_checks, wimax_pmp2_dl_active_checks, \
+            cambium_ul_active_checks, cambium_dl_active_checks)
 
 
 def get_settings():
     data = []
-    default_checks = prepare_priority_checks()
+    # Device specific actve check thresholds, collected from service_deviceserviceconfiguration
+    default_checks, active_checks_thresholds_per_device = prepare_priority_checks()
+    active_checks_thresholds = []
     query = prepare_query()
     db = mysql_conn()
     try:
@@ -362,6 +368,10 @@ def get_settings():
         db.close()
 
     processed = []
+    # Following active checks should not be included in list of passive checks
+    exclude_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi'
+            'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi',
+            'cambium_ul_util_kpi', 'cambium_dl_util_kpi']
     for service in data:
         """
         from pprint import pprint
@@ -397,6 +407,9 @@ def get_settings():
             threshold = ()
             try:
                 threshold = get_threshold(service)
+                if str(service['service']) in exclude_services:
+                    active_checks_thresholds.append(str(service['service']), threshold[0], threshold[1])
+                    continue
             except Exception, exp:
                 logger.error('Exception in get_threshold: ' + pformat(exp))
             service_config = [service['devicetype']], ['@all'], service['service'], None, threshold
@@ -410,7 +423,8 @@ def get_settings():
             d_community = str(service['community']), [str(service['devicetype'])], ['@all']
             if d_community not in snmp_communities_db:
                 snmp_communities_db.append(d_community)
-    return ping_levels_db, default_checks, snmp_ports_db, snmp_communities_db 
+    return ping_levels_db, default_checks, snmp_ports_db, snmp_communities_db,\
+            active_checks_thresholds, active_checks_thresholds_per_device
 
 
 
@@ -527,7 +541,10 @@ def prepare_priority_checks():
     SELECT DISTINCT service_name, device_name, warning, critical
     FROM service_deviceserviceconfiguration
     """
-    logger.debug('mysql db: ' + pformat(db))
+    active_checks_thresholds_per_device = []
+    exclude_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi',
+            'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi',
+            'cambium_dl_util_kpi', 'cambium_ul_util_kpi']
     try:
         cur = db.cursor()
         cur.execute(query)
@@ -541,6 +558,12 @@ def prepare_priority_checks():
     data_values = filter(lambda d: d['warning'] or d['critical'], data_values)
     processed_values = []
     for entry in data_values:
+        # We need to store war/crit to be used for active checks,
+        # Since these would be added as normal services by user
+        if str(entry.get('service_name')) in exclude_services:
+            active_checks_thresholds_per_device.append((str(entry['device_name']), str(entry['service_name']), \
+                    entry['warning'], entry['critical']))
+            continue
         if entry.get('service_name') in wimax_mod_services:
             processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None, (
             map(str, entry['warning'].replace(' ', '').split(',')),
@@ -548,21 +571,89 @@ def prepare_priority_checks():
         else:
             processed_values.append(([str(entry.get('device_name'))], entry.get('service_name'), None,
                                      (float(entry.get('warning')), float(entry.get('critical')))))
-    #print processed_values
-    db.close()
 
-    return processed_values
+    return processed_values, active_checks_thresholds_per_device
 
 
-def active_checks(wimax_list, cambium_list, wimax_pmp1_check_list=[], 
-        wimax_pmp2_check_list=[], cambium_check_list=[]):
+def active_checks(wimax_list, cambium_list, active_checks_thresholds, 
+        active_checks_thresholds_per_device, wimax_pmp1_ul_check_list=[],
+        wimax_pmp1_dl_check_list=[],wimax_pmp2_ul_check_list=[],
+        wimax_pmp2_dl_check_list=[], cambium_ul_check_list=[], cambium_dl_check_list=[]):
+    # These values would be used if we dont find device specific entry
+    S1 = filter(lambda x: 'wimax_pmp1_ul_util_kpi' in x[0], active_checks_thresholds)
+    S2 = filter(lambda x: 'wimax_pmp1_dl_util_kpi' in x[0], active_checks_thresholds)
+    S3 = filter(lambda x: 'wimax_pmp2_ul_util_kpi' in x[0], active_checks_thresholds)
+    S4 = filter(lambda x: 'wimax_pmp2_dl_util_kpi' in x[0], active_checks_thresholds)
+    S5 = filter(lambda x: 'cambium_ul_util_kpi' in x[0], active_checks_thresholds)
+    S6 = filter(lambda x: 'cambium_dl_util_kpi' in x[0], active_checks_thresholds)
     for entry in wimax_list:
-        wimax_pmp1_check_list.append((('wimax_pmp1_util_kpi', str(entry[0]), {'site': str(entry[1])}), [], [str(entry[0])]))
-        wimax_pmp2_check_list.append((('wimax_pmp2_util_kpi', str(entry[0]), {'site': str(entry[1])}), [], [str(entry[0])]))
+        # Find device specific entry
+        wimax_pmp1_ul_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp1_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
+        wimax_pmp1_dl_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp1_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
+        wimax_pmp2_ul_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp2_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
+        wimax_pmp2_dl_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp2_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
+        if wimax_pmp1_ul_util:
+            wimax_pmp1_ul_util_war, wimax_pmp1_ul_util_crit = wimax_pmp1_ul_util[0][2], wimax_pmp1_ul_util[0][3]
+        elif S1:
+            wimax_pmp1_ul_util_war, wimax_pmp1_ul_util_crit = S1[0][2], S1[0][3]
+        else:
+            wimax_pmp1_ul_util_war, wimax_pmp1_ul_util_crit = 80, 90
+
+        if wimax_pmp1_dl_util:
+            wimax_pmp1_dl_util_war, wimax_pmp1_dl_util_crit = wimax_pmp1_dl_util[0][2], wimax_pmp1_dl_util[0][3]
+        elif S2:
+            wimax_pmp1_dl_util_war, wimax_pmp1_dl_util_crit = S2[0][2], S2[0][3]
+        else:
+            wimax_pmp1_dl_util_war, wimax_pmp1_dl_util_crit = 80, 90
+
+        if wimax_pmp2_ul_util:
+            wimax_pmp2_ul_util_war, wimax_pmp2_ul_util_crit = wimax_pmp2_ul_util[0][2], wimax_pmp2_ul_util[0][3]
+        elif S3:
+            wimax_pmp2_ul_util_war, wimax_pmp2_ul_util_crit = S3[0][2], S3[0][3]
+        else:
+            wimax_pmp2_ul_util_war, wimax_pmp2_ul_util_crit = 80, 90
+
+        if wimax_pmp2_dl_util:
+            wimax_pmp2_dl_util_war, wimax_pmp2_dl_util_crit = wimax_pmp2_dl_util[0][2], wimax_pmp2_dl_util[0][3]
+        elif S4:
+            wimax_pmp2_dl_util_war, wimax_pmp2_dl_util_crit = S4[0][2], S4[0][3]
+        else:
+            wimax_pmp2_dl_util_war, wimax_pmp2_dl_util_crit = 80, 90
+
+        wimax_pmp1_ul_check_list.append((('wimax_pmp1_ul_util_kpi', str(entry[0]), \
+                {'site': str(entry[1]), 'war': wimax_pmp1_ul_util_war, 'crit': wimax_pmp1_ul_util_crit}), [], [str(entry[0])]))
+        wimax_pmp1_dl_check_list.append((('wimax_pmp1_dl_util_kpi', str(entry[0]), \
+                {'site': str(entry[1]), 'war': wimax_pmp1_dl_util_war, 'crit': wimax_pmp1_dl_util_crit}), [], [str(entry[0])]))
+
+        wimax_pmp2_ul_check_list.append((('wimax_pmp2_ul_util_kpi', str(entry[0]), \
+                {'site': str(entry[1]), 'war': wimax_pmp2_ul_util_war, 'crit': wimax_pmp2_ul_util_crit}), [], [str(entry[0])]))
+        wimax_pmp2_dl_check_list.append((('wimax_pmp2_dl_util_kpi', str(entry[0]), \
+                {'site': str(entry[1]), 'war': wimax_pmp2_dl_util_war, 'crit': wimax_pmp2_dl_util_crit}), [], [str(entry[0])]))
     for entry in cambium_list:
-        cambium_check_list.append((('cambium_util_kpi', str(entry[0]), {'site': str(entry[1])}), [], [str(entry[0])]))
+        # Find device specific entry
+        camb_ul_util = filter(lambda x: entry[0] == x[0] and 'cambium_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
+        camb_dl_util = filter(lambda x: entry[0] == x[0] and 'cambium_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
+        if camb_ul_util:
+            camb_ul_util_war, camb_ul_util_crit = camb_ul_util[0][2], camb_ul_util[0][3]
+        elif S5:
+            camb_ul_util_war, camb_ul_util_crit = S5[0][1], S5[0][2]
+        else:
+            camb_ul_util_war, camb_ul_util_crit = 80, 90
+
+        if camb_dl_util:
+            camb_dl_util_war, camb_dl_util_crit = camb_dl_util[0][2], camb_dl_util[0][3]
+        elif S6:
+            camb_dl_util_war, camb_dl_util_crit = S6[0][1], S6[0][2]
+        else:
+            camb_dl_util_war, camb_dl_util_crit = 80, 90
+
+        cambium_ul_check_list.append((('cambium_ul_util_kpi', str(entry[0]), \
+                {'site': str(entry[1]), 'war': camb_ul_util_war, 'crit': camb_ul_util_crit}), [], [str(entry[0])]))
+        cambium_dl_check_list.append((('cambium_dl_util_kpi', str(entry[0]), \
+                {'site': str(entry[1]), 'war': camb_dl_util_war, 'crit': camb_dl_util_crit}), [], [str(entry[0])]))
     
-    return wimax_pmp1_check_list, wimax_pmp2_check_list, cambium_check_list
+    return wimax_pmp1_ul_check_list, wimax_pmp1_dl_check_list,wimax_pmp2_ul_check_list, \
+            wimax_pmp2_dl_check_list, cambium_ul_check_list, cambium_dl_check_list
 
 
 def dict_rows(cur):
@@ -574,8 +665,8 @@ def dict_rows(cur):
 
 
 def write_rules_file(ping_levels_db, default_checks, snmp_ports_db, 
-        snmp_communities_db, wimax_pmp1_active_checks, 
-        wimax_pmp2_active_checks, cambium_active_checks):
+        snmp_communities_db, wimax_pmp1_ul_active_checks, wimax_pmp1_dl_active_checks ,
+        wimax_pmp2_ul_active_checks, wimax_pmp2_dl_active_checks, cambium_ul_active_checks, cambium_dl_active_checks):
     global default_snmp_ports
     global default_snmp_communities
     if len(snmp_communities_db):
@@ -589,12 +680,18 @@ def write_rules_file(ping_levels_db, default_checks, snmp_ports_db,
         f.write("\n\n\n")
         f.write("ping_levels += %s" % pformat(ping_levels_db))
         f.write("\n\n\n")
-        f.write("active_checks.setdefault('wimax_pmp1_util_kpi', [])\n")
-        f.write("active_checks.setdefault('wimax_pmp2_util_kpi', [])\n")
-        f.write("active_checks.setdefault('cambium_util_kpi', [])\n\n")
-        f.write("active_checks['wimax_pmp1_util_kpi'] += %s\n\n" % pformat(wimax_pmp1_active_checks))
-        f.write("active_checks['wimax_pmp2_util_kpi'] += %s\n\n" % pformat(wimax_pmp2_active_checks))
-        f.write("active_checks['cambium_util_kpi'] += %s\n\n" % pformat(cambium_active_checks))
+        f.write("active_checks.setdefault('wimax_pmp1_ul_util_kpi', [])\n")
+        f.write("active_checks.setdefault('wimax_pmp1_dl_util_kpi', [])\n")
+        f.write("active_checks.setdefault('wimax_pmp2_ul_util_kpi', [])\n")
+        f.write("active_checks.setdefault('wimax_pmp2_dl_util_kpi', [])\n")
+        f.write("active_checks.setdefault('cambium_ul_util_kpi', [])\n\n")
+        f.write("active_checks.setdefault('cambium_dl_util_kpi', [])\n\n")
+        f.write("active_checks['wimax_pmp1_ul_util_kpi'] += %s\n\n" % pformat(wimax_pmp1_ul_active_checks))
+        f.write("active_checks['wimax_pmp1_dl_util_kpi'] += %s\n\n" % pformat(wimax_pmp1_dl_active_checks))
+        f.write("active_checks['wimax_pmp2_ul_util_kpi'] += %s\n\n" % pformat(wimax_pmp2_ul_active_checks))
+        f.write("active_checks['wimax_pmp2_dl_util_kpi'] += %s\n\n" % pformat(wimax_pmp2_dl_active_checks))
+        f.write("active_checks['cambium_ul_util_kpi'] += %s\n\n" % pformat(cambium_ul_active_checks))
+        f.write("active_checks['cambium_dl_util_kpi'] += %s\n\n" % pformat(cambium_dl_active_checks))
         f.write("checks += %s" % pformat(default_checks))
         f.write("\n\n\n")
         f.write("snmp_ports += %s" % pformat(default_snmp_ports))
