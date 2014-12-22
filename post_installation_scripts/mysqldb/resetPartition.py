@@ -8,20 +8,63 @@ partitionTableList = [
     "performance_eventinventory",
     "performance_eventmachine",
     "performance_eventnetwork",
+    "performance_eventnetworkdaily",
+    "performance_eventnetworkmonthly",
+    "performance_eventnetworkweekly",
+    "performance_eventnetworkyearly",
     "performance_eventservice",
+    "performance_eventservicedaily",
+    "performance_eventserviceweekly",
+    "performance_eventserviceyearly",
+    "performance_networkavailabilitydaily",
+    "performance_networkavailabilitymonthly",
+    "performance_networkavailabilityweekly",
+    "performance_networkavailabilityyearly",
+    "performance_performanceinventory",
+    "performance_performanceinventorydaily",
+    "performance_performanceinventorymonthly",
+    "performance_performanceinventoryweekly",
+    "performance_performanceinventoryyearly",
+    "performance_performancemachine",
+    "performance_performancemetric",
+    "performance_performancenetwork",
+    "performance_performancenetworkbihourly",
+    "performance_performancenetworkdaily",
+    "performance_performancenetworkhourly",
+    "performance_performancenetworkmonthly",
+    "performance_performancenetworkweekly",
+    "performance_performancenetworkyearly",
+    "performance_performanceservice",
+    "performance_performanceservicebihourly",
+    "performance_performanceservicedaily",
+    "performance_performanceservicehourly",
+    "performance_performanceservicemonthly",
+    "performance_performanceserviceweekly",
+    "performance_performanceserviceyearly",
+    "performance_performancestatus",
+    "performance_performancestatusdaily",
+    "performance_performancestatusmonthly",
+    "performance_performancestatusweekly",
+    "performance_performancestatusyearly",
+    "performance_utilization",
+    "performance_utilizationdaily",
+    "performance_utilizationmonthly",
+    "performance_utilizationweekly",
+    "performance_utilizationyearly",
+]
+
+skip_partitioning = [
     "performance_eventstatus",
     "performance_inventorystatus",
     "performance_machinestatus",
     "performance_networkstatus",
-    "performance_performanceinventory",
-    "performance_performancemachine",
-    "performance_performancemetric",
-    "performance_performancenetwork",
-    "performance_performanceservice",
-    "performance_performancestatus",
     "performance_servicestatus",
-    "performance_status"
+    "performance_status",
+    "performance_utilizationstatus",
+    "performance_topology",
+    "performance_wimaxtopology",
 ]
+
 
 now = datetime.datetime.now()
 cur_yer = now.year
@@ -36,6 +79,17 @@ table_column = "sys_timestamp"
 
 for ptable in partitionTableList:
 
+
+    if "daily" in ptable:
+        pass
+    if "weekly" in ptable:
+        pass
+    if "monthly" in ptable:
+        continue
+    if "yearly" in ptable:
+        continue
+    if ptable in skip_partitioning:
+        continue
 
     fwrite = open("resetPartition.sql", 'a')
 
