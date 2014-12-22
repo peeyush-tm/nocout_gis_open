@@ -1772,8 +1772,8 @@ class DeviceUtilization(View):
         for s in services:
             service_names.append(s['name'])
             sds_names.append(s['servicespecificdatasource__service_data_sources__name'])
-            service_data_sources[s['servicespecificdatasource__service_data_sources__name']] = \
-                s['servicespecificdatasource__service_data_sources__alias']
+            service_data_sources[s['name'], s['servicespecificdatasource__service_data_sources__name']] = \
+                s['alias'] + "[ " + s['servicespecificdatasource__service_data_sources__alias'] + " ]"
 
         performance = PerformanceService.objects.filter(
             device_name=device.device_name,
@@ -1797,16 +1797,16 @@ class DeviceUtilization(View):
         temp_chart_data = {}
         for data in performance:
             try:
-                if data.data_source not in temp_chart_data:
-                    color[data.data_source] = perf_utils.color_picker()
-                    temp_chart_data[data.data_source] = {
-                        'name': service_data_sources[data.data_source],
+                if (data.service_name, data.data_source) not in temp_chart_data:
+                    color[data.service_name, data.data_source] = perf_utils.color_picker()
+                    temp_chart_data[data.service_name, data.data_source] = {
+                        'name': service_data_sources[data.service_name, data.data_source],
                         'data': [],
-                        'color': color[data.data_source],
+                        'color': color[data.service_name, data.data_source],
                     }
                 js_time = data.sys_timestamp*1000
                 value = float(data.current_value)
-                temp_chart_data[data.data_source]['data'].append([
+                temp_chart_data[data.service_name, data.data_source]['data'].append([
                     js_time, value,
                 ])
             except:
