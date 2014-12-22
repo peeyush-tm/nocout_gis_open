@@ -2346,22 +2346,22 @@ class GISPerfData(View):
             # to update the info window with all the services
             # device performance info
             device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
-                'data_source', 'current_value', 'sys_timestamp'
+                'service_name', 'data_source', 'current_value', 'sys_timestamp'
             ).using(alias=machine_name)
 
             # device inventory info
             device_inventory_info = InventoryStatus.objects.filter(device_name=device_name).values(
-                'data_source', 'current_value', 'sys_timestamp'
+                'service_name', 'data_source', 'current_value', 'sys_timestamp'
             ).using(alias=machine_name)
 
             # device status info
             device_status_info = Status.objects.filter(device_name=device_name).values(
-                'data_source', 'current_value', 'sys_timestamp'
+                'service_name', 'data_source', 'current_value', 'sys_timestamp'
             ).using(alias=machine_name)
 
             # device network info
             device_network_info = NetworkStatus.objects.filter(device_name=device_name).values(
-                'data_source', 'current_value', 'sys_timestamp'
+                'service_name', 'data_source', 'current_value', 'sys_timestamp'
             ).using(alias=machine_name)
 
             processed = {}
@@ -2374,12 +2374,7 @@ class GISPerfData(View):
                     continue
                 processed[perf['data_source']] = []
 
-                service_name = ""
-
-                if name in ['pl', 'rta']:
-                    service_name = 'ping'
-                else:
-                    service_name = name
+                service_name = perf['service_name'].strip().lower()
 
                 perf_info = {
                     "name": name,
@@ -2398,10 +2393,7 @@ class GISPerfData(View):
                     continue
                 processed[perf['data_source']] = []
 
-                if name in ['pl', 'rta']:
-                    service_name = 'ping'
-                else:
-                    service_name = name
+                service_name = perf['service_name'].strip().lower()
 
                 perf_info = {
                     "name": name,
@@ -2420,10 +2412,7 @@ class GISPerfData(View):
                     continue
                 processed[perf['data_source']] = []
 
-                if name in ['pl', 'rta']:
-                    service_name = 'ping'
-                else:
-                    service_name = name
+                service_name = perf['service_name'].strip().lower()
 
                 perf_info = {
                     "name": name,
@@ -2442,10 +2431,7 @@ class GISPerfData(View):
                     continue
                 processed[perf['data_source']] = []
 
-                if name in ['pl', 'rta']:
-                    service_name = 'ping'
-                else:
-                    service_name = name
+                service_name = perf['service_name'].strip().lower()
 
                 perf_info = {
                     "name": name,

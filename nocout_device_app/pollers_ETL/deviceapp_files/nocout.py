@@ -17,7 +17,7 @@ import ast
 from itertools import ifilterfalse
 from nocout_logger import nocout_log
 import mysql.connector
-import make_hosts, make_rules
+import generate_deviceapp_config
 
 logger = nocout_log()
 
@@ -1048,9 +1048,8 @@ def sync():
     logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_sites))
 
     try:
-	    # Make hosts.mk and rules.mk which takes configurations from db
-	    make_hosts.main()
-	    make_rules.main()
+	    # Generate hosts n rules file, read configurations from db
+	    generate_deviceapp_config.main()
     except Exception, e:
 	    logger.error('Error in make_hosts or make_rules: ' + pprint.pformat(e))
 	    # Perform rollback

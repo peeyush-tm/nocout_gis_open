@@ -17,8 +17,10 @@ from celery.schedules import crontab
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
+PROFILE = DEBUG
+PROFILE_TYPE = 'line'
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -587,6 +589,9 @@ SERVICE_DATA_SOURCE = {
 SERVICES = {
 
 }
+
+#Date Format to be used throughout the application
+DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
 
 ###################REPORT_PATH
 

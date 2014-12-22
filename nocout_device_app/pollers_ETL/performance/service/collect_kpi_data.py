@@ -69,17 +69,24 @@ def format_kpi_data(site,output,output1,mongo_host,mongo_port,mongo_db_name):
                 age = last_state_change
 		perf_data = entry[-1]
 		if service_state == 0:
-			service_state = "OK"
+			service_state = "ok"
 		elif service_state == 1:
-			service_state = "WARNING"
+			service_state = "warning"
 		elif service_state == 2:
-			service_state = "CRITICAL"
+			service_state = "critical"
 		elif service_state == 3:
-			service_state = "UNKNOWN"
+			service_state = "unknown"
 
 		try:
-			device_sector_id = filter(lambda x: host in x,output1)
-			device_sector_id = str(device_sector_id[0][1].split('- ')[1]) 
+			if 'pmp1' in service:
+				service_for_sector = "wimax_pmp1_sector_id_invent"
+			elif 'pmp2' in service:
+				service_for_sector = "wimax_pmp2_sector_id_invent"
+			else:
+				service_for_sector = "cambium_bs_sector_id_invent"
+		
+			device_sector_id = filter(lambda x: host in x and service_for_sector in x,output1)
+			device_sector_id = str(device_sector_id[0][2].split('- ')[1]) 
 		except:
 			device_sector_id = ""
 		try:
@@ -153,13 +160,13 @@ def kpi_data_data_main():
                         " service_last_state_change service_perf_data\n"+\
                         "Filter: service_description ~ wimax_pmp1_util_kpi\n"+\
                         "Filter: service_description ~ wimax_pmp2_util_kpi\n"+\
-                        "Filter: service_description ~ cambium_dl_util_kpi\n"+\
-                        "Filter: service_description ~ cambium_ul_util_kpi\n"+\
-                        "Or: 4\nOutputFormat: python\n"
-                query1= "GET services\nColumns: host_name plugin_output\n" +\
+                        "Filter: service_description ~ cambium_util_kpi\n"+\
+                        "Or: 3\nOutputFormat: python\n"
+                query1= "GET services\nColumns: host_name service_description plugin_output\n" +\
                         "Filter: service_description ~ wimax_pmp1_sector_id_invent\n"+\
                         "Filter: service_description ~ wimax_pmp2_sector_id_invent\n"+ \
-                        "Or: 2\n" +\
+                        "Filter: service_description ~ cambium_bs_sector_id_invent\n"+ \
+                        "Or: 3\n" +\
                         "OutputFormat: python\n"
                 output = utility_module.get_from_socket(site,query)
                 output1 = utility_module.get_from_socket(site,query1)

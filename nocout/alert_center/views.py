@@ -21,7 +21,7 @@ from django.utils.dateformat import format
 from django.db.models import Q
 
 #nocout project settings
-from nocout.settings import P2P, WiMAX, PMP, DEBUG
+from nocout.settings import P2P, WiMAX, PMP, DEBUG, DATE_TIME_FORMAT
 
 #utilities core
 from nocout.utils import util as nocout_utils
@@ -1015,7 +1015,7 @@ class SingleDeviceAlertDetails(View):
             #     strftime("%I:%M %p")
             data["alert_date_time"] = datetime.datetime. \
                 fromtimestamp(float(data["sys_timestamp"])). \
-                strftime("%d/%B/%Y %I:%M %p")
+                strftime(DATE_TIME_FORMAT)
 
             del (data["sys_timestamp"])
 

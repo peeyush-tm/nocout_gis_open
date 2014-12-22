@@ -800,7 +800,7 @@ function isLatLon(e) {
                     lng = +(entered_txt.split(",")[1]),
                     lat_check = (lat >= -90 && lat < 90),
                     lon_check = (lat >= -180 && lat < 180),
-                    dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['′:]?\s?(?:(\d+(?:\.\d+)?)["″]?)?)?\s?([NSEW])?/i;
+                    dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['':]?\s?(?:(\d+(?:\.\d+)?)["?]?)?)?\s?([NSEW])?/i;
                     dms_regex = new RegExp(dms_pattern);
                 
                 if((lat_check && lon_check) || (dms_regex.exec(entered_txt.split(",")[0]) && dms_regex.exec(entered_txt.split(",")[1]))) {
@@ -1411,7 +1411,7 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
                 }
             },
             error : function(err) {
-                // console.log(err);
+                // console.log(err)max-;
             }
         });
     }
@@ -1424,17 +1424,16 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
 $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
     
     var api_url = e.currentTarget.attributes['url'] ? e.currentTarget.attributes['url'].value : "";
-    console.log(api_url);
     // If api_url exist then fetch l2 report url
     if(api_url) {
         $.ajax({
-            url: api_url,
+            url: base_url+"/"+api_url,
             type: "GET",
             dataType: "json",
             success: function (result) {
                 if (result.success === 1) {
                     var contentHtml = "";
-                    contentHtml += "<div style='width:650px;height:300px;overflow:auto;'>";
+                    contentHtml += "<div style='max-height:300px;overflow:auto;position:relative;z-index:9999;'>";
                     if (result.data.objects.table_data_header) {
 
                         contentHtml += createDataTableHtml_map(
@@ -1443,12 +1442,14 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                             result.data.objects.table_data
                         );
                         contentHtml += "</div>";
-
                         /*Call the bootbox to show the popup with datatable*/
                         bootbox.dialog({
                             message: contentHtml,
-                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Fresnel Zone'
+                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Performance    '
                         });
+
+                        // Update Modal width to 70%;
+                        $(".modal-dialog").css("width","70%");
 
                         $("#other_perf_table").DataTable({
                             bPaginate: true,
@@ -1458,7 +1459,7 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                         });
 
                     } else {
-                        contentHtml += "<div id='perf_chart'></div>";
+                        contentHtml += "<div id='perf_chart' style='width:60%;'></div>";
                         contentHtml += "<div id='perf_chart_table'></div>";
                         contentHtml += createDataTableForChart_map(
                             "perf_data_table",
@@ -1470,8 +1471,11 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                         /*Call the bootbox to show the popup with datatable*/
                         bootbox.dialog({
                             message: contentHtml,
-                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Fresnel Zone'
+                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Performance'
                         });
+
+                        // Update Modal width to 70%;
+                        $(".modal-dialog").css("width","70%");
 
                         $("#perf_data_table").DataTable({
                             bPaginate: true,
@@ -1479,25 +1483,26 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                             aaSorting : [[0,'desc']],
                             sPaginationType: "full_numbers"
                         });
-
+                        // Create Chart
                         createHighChart_map('perf_chart',result.data.objects);
                     }
                 }
             },
             error : function(err) {
-                console.log(err.statusText);
+                // console.log(err.statusText);
             }
         });
     }
 });
 
 function createHighChart_map(dom_id,config) {
-    var chart_instance = $('#' + dom_id + '_chart').highcharts({
+
+    var chart_instance = $('#' + dom_id).highcharts({
         chart: {
             events: {
                 load : function() {
                     // Hide highcharts.com link from chart when chart is loaded
-                    var highcharts_link = $("#"+service_id+"_chart svg text:last-child");
+                    var highcharts_link = $("#"+dom_id+" svg text:last-child");
                     $.grep(highcharts_link,function(val) {
                         if($.trim(val.innerHTML) == 'Highcharts.com') {
                             val.innerHTML = "";
@@ -1626,6 +1631,8 @@ function createDataTableHtml_map(table_id, headers,table_data) {
         table_string += '</tr>';
     }
     table_string += '</tbody></table>';
+
+    return table_string;
 }
 
 /**

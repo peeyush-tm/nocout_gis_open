@@ -33,6 +33,7 @@ class EscalationLevel(models.Model):
         return '%s' % (self.get_name_display())
 
     def get_phones(self):
+        phones = self.phones.replace(' ','')
         phones = self.phones.split(',')
         return phones
 
@@ -63,6 +64,7 @@ class EscalationStatus(models.Model):
     )
 
     organization = models.ForeignKey(Organization)
+    device_name = models.CharField(max_length=100, db_index=True)
     device_type = models.CharField(max_length=100, db_index=True)
     service = models.CharField(max_length=100, db_index=True)
     service_data_source =  models.CharField(max_length=100, db_index=True)
