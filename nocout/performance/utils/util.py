@@ -511,3 +511,38 @@ def get_performance_data(device_list, machine, model):
     #  device_result
 
     return device_result
+
+
+def get_time(start_date, end_date, date_format):
+
+    isSet = False
+
+    if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
+        isSet = True
+        try:
+            start_date = float(start_date)
+            end_date = float(end_date)
+        except Exception, e:
+            start_date_object = datetime.datetime.strptime(start_date, date_format)
+            end_date_object = datetime.datetime.strptime(end_date, date_format)
+            start_date = format(start_date_object, 'U')
+            end_date = format(end_date_object, 'U')
+
+    else:
+        # The end date is the end limit we need to make query till.
+        end_date_object = datetime.datetime.now()
+        # The start date is the last monday of the week we need to calculate from.
+        start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+        # Replacing the time, to start with the 00:00:00 of the last monday obtained.
+        start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+        # Converting the date to epoch time or Unix Timestamp
+        end_date = format(end_date_object, 'U')
+        start_date = format(start_date_object, 'U')
+
+    return isSet, start_date, end_date
+
+def color_picker():
+    import random
+    color = "#"
+    color += "%06x" % random.randint(0,0xFFFFFF)
+    return color.upper()

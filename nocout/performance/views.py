@@ -1220,27 +1220,7 @@ class Get_Service_Type_Performance_Data(View):
         end_date = self.request.GET.get('end_date', '')
         isSet = False
 
-        if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
-            isSet = True
-            try:
-                start_date = float(start_date)
-                end_date = float(end_date)
-            except Exception, e:
-                start_date_object = datetime.datetime.strptime(start_date, date_format)
-                end_date_object = datetime.datetime.strptime(end_date, date_format)
-                start_date = format(start_date_object, 'U')
-                end_date = format(end_date_object, 'U')
-
-        else:
-            # The end date is the end limit we need to make query till.
-            end_date_object = datetime.datetime.now()
-            # The start date is the last monday of the week we need to calculate from.
-            start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
-            # Replacing the time, to start with the 00:00:00 of the last monday obtained.
-            start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
-            # Converting the date to epoch time or Unix Timestamp
-            end_date = format(end_date_object, 'U')
-            start_date = format(start_date_object, 'U')
+        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
 
         if service_data_source_type in ['pl', 'rta']:
             if not isSet:
@@ -1734,3 +1714,121 @@ class Get_Service_Type_Performance_Data(View):
 
         return self.result
 
+
+class DeviceUtilization(View):
+    """
+    Utilization Stitching Per Technology Wise
+    url : utilization/device/<device_id>
+    get the device id and check the services associated to the device
+    stitch together the device utilization
+    """
+    def get(self, request, device_id):
+        """
+
+        :param request: request body
+        :param device_id: id of the device
+        :return: chart data for utilisation services
+        """
+        result = {
+            'success': 0,
+            'message': 'Device Utilization Data not found',
+            'data': {
+                'meta': {},
+                'objects': {
+                    'plot_type': 'charts',
+                    'display_name': 'Utilization',
+                    'valuesuffix': ' mbps ',
+                    'type': 'area',
+                    'chart_data': [],
+                    'valuetext': ' mbps '
+                }
+            }
+        }
+        date_format = "%d-%m-%Y %H:%M:%S"
+        #get the time
+        start_date = self.request.GET.get('start_date', '')
+        end_date = self.request.GET.get('end_date', '')
+        isSet = False
+        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
+        if not isSet:
+            end_date = format(datetime.datetime.now(), 'U')
+            start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
+
+        device = Device.objects.get(id=device_id)
+        device_type = DeviceType.objects.get(id=device.device_type)
+        device_type_services = device_type.service.filter(name__icontains='utilization'
+        ).prefetch_related('servicespecificdatasource_set')
+
+        services = device_type_services.values('name',
+                                               'alias',
+                                               'servicespecificdatasource__service_data_sources__name',
+                                               'servicespecificdatasource__service_data_sources__alias'
+        )
+
+        service_names = list()
+        sds_names = list()
+        service_data_sources = {}
+
+        for s in services:
+            service_names.append(s['name'])
+            sds_names.append(s['servicespecificdatasource__service_data_sources__name'])
+            service_data_sources[s['servicespecificdatasource__service_data_sources__name']] = \
+                s['servicespecificdatasource__service_data_sources__alias']
+
+        performance = PerformanceService.objects.filter(
+            device_name=device.device_name,
+            service_name__in=service_names,
+            data_source__in=sds_names,
+            sys_timestamp__gte=start_date,
+            sys_timestamp__lte=end_date).using(
+                alias=device.machine.name).order_by('sys_timestamp')
+
+        chart_data = []
+        #format for chart data
+        # {'name': str("min value").title(),
+        #  'color': '#01CC14',
+        #  'data': [js_time, value],
+        #  'type': 'line',
+        #  'marker': {
+        #      'enabled': False
+        #  }
+        # }
+        color = {}
+        temp_chart_data = {}
+        for data in performance:
+            try:
+                if data.data_source not in temp_chart_data:
+                    color[data.data_source] = perf_utils.color_picker()
+                    temp_chart_data[data.data_source] = {
+                        'name': service_data_sources[data.data_source],
+                        'data': [],
+                        'color': color[data.data_source],
+                    }
+                js_time = data.sys_timestamp*1000
+                value = float(data.current_value)
+                temp_chart_data[data.data_source]['data'].append([
+                    js_time, value,
+                ])
+            except:
+                continue
+
+        for cd in temp_chart_data:
+            chart_data.append(temp_chart_data[cd])
+
+        result = {
+            'success': 0,
+            'message': 'Device Utilization Data not found',
+            'data': {
+                'meta': {},
+                'objects': {
+                    'plot_type': 'charts',
+                    'display_name': 'Utilization',
+                    'valuesuffix': ' mbps ',
+                    'type': 'area',
+                    'chart_data': chart_data,
+                    'valuetext': ' mbps '
+                }
+            }
+        }
+
+        return HttpResponse(json.dumps(result), mimetype="application/json")
