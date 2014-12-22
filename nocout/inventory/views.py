@@ -49,7 +49,7 @@ from django.template import RequestContext
 from nocout.utils import logged_in_user_organizations
 from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
-    bulk_upload_wimax_ss_inventory
+    bulk_upload_wimax_ss_inventory, bulk_upload_backhaul_inventory
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
@@ -2686,6 +2686,7 @@ class GISInventoryBulkImportView(FormView):
         bs_sheet = ""
         ss_sheet = ""
         ptp_sheet = ""
+        backhaul_sheet = ""
         technology = ""
 
         # fetching values form POST
@@ -2693,6 +2694,7 @@ class GISInventoryBulkImportView(FormView):
             bs_sheet = self.request.POST['bs_sheet'] if self.request.POST['bs_sheet'] else ""
             ss_sheet = self.request.POST['ss_sheet'] if self.request.POST['ss_sheet'] else ""
             ptp_sheet = self.request.POST['ptp_sheet'] if self.request.POST['ptp_sheet'] else ""
+            backhaul_sheet = self.request.POST['backhaul_sheet'] if self.request.POST['backhaul_sheet'] else ""
         except Exception as e:
             logger.info(e.message)
 
@@ -2700,6 +2702,7 @@ class GISInventoryBulkImportView(FormView):
         try:
             book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read(), formatting_info=True)
         except Exception as e:
+            logger.info("Workbook not uploaded. Exception: ", e.message)
             return render_to_response('bulk_import/gis_bulk_validator.html', {'headers': "",
                                                                               'filename': uploaded_file.name,
                                                                               'sheet_name': "",
@@ -2709,7 +2712,7 @@ class GISInventoryBulkImportView(FormView):
                                       context_instance=RequestContext(self.request))
 
         # execute only if a valid sheet is selected from form
-        if bs_sheet or ss_sheet or ptp_sheet:
+        if bs_sheet or ss_sheet or ptp_sheet or backhaul_sheet:
             if bs_sheet:
                 sheet = book.sheet_by_name(bs_sheet)
                 sheet_name = bs_sheet
@@ -2719,6 +2722,9 @@ class GISInventoryBulkImportView(FormView):
             elif ptp_sheet:
                 sheet = book.sheet_by_name(ptp_sheet)
                 sheet_name = ptp_sheet
+            elif backhaul_sheet:
+                sheet = book.sheet_by_name(backhaul_sheet)
+                sheet_name = backhaul_sheet
             else:
                 sheet = ""
                 sheet_name = ""
@@ -2730,13 +2736,17 @@ class GISInventoryBulkImportView(FormView):
                 technology = "PMP"
             elif "PTP" in sheet_name:
                 technology = "PTP"
+            elif "Backhaul" in sheet_name:
+                technology = "Backhaul"
             elif "Converter" in sheet_name:
                 technology = "Converter"
             else:
                 technology = "Unknown"
 
             keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+
             keys_list = [x.encode('utf-8').strip() for x in keys]
+
             complete_d = list()
             for row_index in xrange(1, sheet.nrows):
                 d = {keys[col_index].encode('utf-8').strip(): sheet.cell(row_index, col_index).value
@@ -2762,7 +2772,8 @@ class GISInventoryBulkImportView(FormView):
             result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id, complete_d, sheet_name, keys_list, full_time, uploaded_file.name)
             return HttpResponseRedirect('/bulk_import/')
         else:
-            print "No sheet is selected."
+            logger.info("No sheet is selected.")
+
         return super(GISInventoryBulkImportView, self).get(self, form)
 
 
@@ -2844,6 +2855,8 @@ class BulkUploadValidData(View):
                     result = bulk_upload_wimax_bs_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 elif kwargs['sheetname'] == 'Wimax SS':
                     result = bulk_upload_wimax_ss_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
+                elif kwargs['sheetname'] == 'Backhaul':
+                    result = bulk_upload_backhaul_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 else:
                     result = ""
         except Exception as e:
@@ -3022,7 +3035,7 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
             dct.update(actions='<a href="/bulk_import/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                                 <a href="/bulk_import/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
             try:
-                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS']
+                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
                         dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
@@ -3649,8 +3662,6 @@ class DownloadSelectedBSInventory(View):
                     temp_list.append("")
                     logger.info(e.message)
             wimax_bs_excel_rows.append(temp_list)
-
-        print "************************ WIMAX BS ROWS - ", wimax_bs_rows
 
         # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
         ws_wimax_bs = inventory_wb.add_sheet("Wimax BS")
@@ -4501,7 +4512,6 @@ class DownloadSelectedBSInventory(View):
         # insert 'ptp bh' rows in result dictionary
         result['ptp_bh'] = ptp_bh_rows if ptp_bh_rows else ""
 
-        print "****************************** ptp (result) - ", result
         return result
 
     def get_selected_pmp_inventory(self, base_station, sector):
@@ -5149,8 +5159,6 @@ class DownloadSelectedBSInventory(View):
 
         # insert 'pmp sm' rows in result dictionary
         result['pmp_sm'] = pmp_sm_rows if pmp_sm_rows else ""
-
-        print "****************************** pmp (result) - ", result
 
         return result
 
@@ -5865,8 +5873,6 @@ class DownloadSelectedBSInventory(View):
 
         # insert 'wimax ss' rows in result dictionary
         result['wimax_ss'] = wimax_ss_rows if wimax_ss_rows else ""
-
-        print "****************************** wimax (result) - ", result
 
         return result
 

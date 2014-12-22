@@ -21,7 +21,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-#*************************************** Inventory ************************************
+# *************************************** Inventory ************************************
 class InventoryForm(forms.ModelForm):
     """
     Class Based View Inventory Model form to update and create.
@@ -1331,12 +1331,14 @@ class GISInventoryBulkImportForm(forms.Form):
         ("PMP SM", "PMP SM"),
         ("Converter", "Converter"),
         ("PTP", "PTP"),
-        ("PTP BH", "PTP BH")
+        ("PTP BH", "PTP BH"),
+        ("Backhaul", "Backhaul")
     )
     file_upload = forms.FileField(label='Inventory Excel Sheet')
     bs_sheet = forms.ChoiceField(label='Wimax/PMP BS Sheet', choices=SHEET_CHOICES, required=False)
     ss_sheet = forms.ChoiceField(label='Wimax/PMP SS Sheet', choices=SHEET_CHOICES, required=False)
     ptp_sheet = forms.ChoiceField(label='PTP Sheet', choices=SHEET_CHOICES, required=False)
+    backhaul_sheet = forms.ChoiceField(label='Backhaul Sheet', choices=SHEET_CHOICES, required=False)
     description = forms.CharField(label='Description', widget=forms.Textarea, required=False)
 
     def __init__(self, *args, **kwargs):
