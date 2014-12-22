@@ -1,18 +1,23 @@
 import json
-from django.shortcuts import render_to_response
+
+from datetime import datetime, timedelta
+
 from django.views.generic.base import View
-from django.template import RequestContext
 from django.views.generic.edit import CreateView, UpdateView
-from django.views.generic import ListView, DetailView, TemplateView, View
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.views.generic import TemplateView, View
+
 from django.http.response import HttpResponseRedirect
+from django.shortcuts import render_to_response
+
+from django.core.urlresolvers import reverse_lazy, reverse
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from datetime import datetime
 from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, YEARLY
 
-from nocout.mixins.permissions import PermissionsRequiredMixin
 from scheduling_management.models import Event, Weekdays
 from scheduling_management.forms import EventForm
+
+from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin
 from device.models import Device
@@ -38,6 +43,8 @@ class EventList(PermissionsRequiredMixin, TemplateView):
         Preparing the Context Variable required in the template rendering.
         """
         context = super(EventList, self).get_context_data(**kwargs)
+        context['event_array'] = json.dumps( get_month_event_list()['month_schedule_list'] )
+
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': '10%', 'bSortable': True},
             {'mData': 'created_at', 'sTitle': 'Created At', 'sWidth': '10%', 'bSortable': True},
@@ -199,6 +206,16 @@ def event_delete(request, pk):
 
 
 #**************************************************#
+def last_day_of_the_month(any_day):
+    """
+    Return the last day of the month.
+
+    :param day: Example: datetime.today()
+    """
+    next_month = any_day.replace(day=28) + timedelta(days=4)  # this will never fail
+    return next_month - timedelta(days=next_month.day)
+
+
 def event_today_status(event):
     """
     To check the statu of event for today date.
@@ -211,11 +228,15 @@ def event_today_status(event):
     event_ids = event.id
     status = False
     today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    execution_dates = []
+    last_day_of_month = last_day_of_the_month(today)
+
     start = event.start_on
-    event_end = today.date() # case1: end never; case2: end after particular occurence
+    event_end = last_day_of_month.date() # case1: end never; case2: end after particular occurence
     count = 0
     if event.end_on:
-        event_end = event.end_on
+        event_end = event.end_on if event.end_on <= last_day_of_month.date() else last_day_of_month.date()
     elif event.end_after:
         count = event.end_after # case2: end after particular occurence
 
@@ -223,22 +244,26 @@ def event_today_status(event):
     interval = 1 if not event.repeat_every else event.repeat_every
 
     if event.repeat == 'dai':
-        if today in list(rrule(DAILY, dtstart=start, interval=interval, count=count, until=end)):
+        execution_dates = list(rrule(DAILY, dtstart=start, interval=interval, count=count, until=end))
+        if today in execution_dates:
             status = True
 
     elif event.repeat == 'wee':
         weekday = tuple([int(x.id)-1 for x in event.repeat_on.all()])
-        if today in list(rrule(WEEKLY, dtstart=start, interval=interval, count=count, until=end, byweekday=weekday)):
+        execution_dates = list(rrule(WEEKLY, dtstart=start, interval=interval, count=count, until=end, byweekday=weekday))
+        if today in execution_dates:
             status = True
 
     elif event.repeat == 'mon':
         if event.repeat_by == 'dofm':
-            if today in list(rrule(MONTHLY, dtstart=start, interval=interval, count=count, until=end)):
+            execution_dates = list(rrule(MONTHLY, dtstart=start, interval=interval, count=count, until=end))
+            if today in execution_dates:
                 status = True
         else: # case: day of the week
             weekno = (start.day+7-1)/7
             weekday = start.isocalendar()[2] - 1
-            if today in list(rrule(MONTHLY, dtstart=start, interval=interval, count=count, until=end, bysetpos=weekno, byweekday=weekday)):
+            execution_dates = list(rrule(MONTHLY, dtstart=start, interval=interval, count=count, until=end, bysetpos=weekno, byweekday=weekday))
+            if today in execution_dates:
                 status = True
 
     elif event.repeat == 'yea':
@@ -247,20 +272,23 @@ def event_today_status(event):
 
     elif event.repeat == 'tat':
         # 1==Tuesday and 3==Thursday.
-        if today in list(rrule(DAILY, dtstart=start, count=count, until=end, byweekday=(1,3))):
+        execution_dates = list(rrule(DAILY, dtstart=start, count=count, until=end, byweekday=(1,3)))
+        if today in execution_dates:
             status = True
 
     elif event.repeat == 'mwf':
         # 0==Monday, 2==Wednesday and 4==Friday.
-        if today in list(rrule(DAILY, dtstart=start, count=count, until=end, byweekday=(0,2,4))):
+        execution_dates = list(rrule(DAILY, dtstart=start, count=count, until=end, byweekday=(0,2,4)))
+        if today in execution_dates:
             status = True
 
     elif event.repeat == 'mtf':
         # Note: 0==Monday, 1==Tuesday, 2==Wednesday, 3==Thursday and 4==Friday.
-        if today in list(rrule(DAILY, dtstart=start, count=count, until=end, byweekday=(0,1,2,3,4))):
+        execution_dates = list(rrule(DAILY, dtstart=start, count=count, until=end, byweekday=(0,1,2,3,4)))
+        if today in execution_dates:
             status = True
 
-    return {'event_ids': event_ids, 'status': status}
+    return {'event_ids': event_ids, 'status': status, 'execution_dates': execution_dates}
 
 
 def get_today_event_list():
@@ -278,3 +306,27 @@ def get_today_event_list():
     device_ids = Device.objects.filter(event__in=event_list).distinct().values_list('id', flat=True)
 
     return {'event_list': event_list, 'device_ids': device_ids}
+
+
+def get_month_event_list():
+    """
+    To get events for this month.
+    :return dictionary containing list of dictionary of event detail.
+    """
+    month_schedule_list = [] # contain the list of this month event.
+    fmt = "%a %b %d %Y %H:%M:%S"
+    today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+    first_day_of_month = today.replace(day=1)
+    last_day_of_month = last_day_of_the_month(today)
+    for event in Event.objects.all():
+        result = event_today_status(event)
+        for date in result['execution_dates']:
+            if first_day_of_month <= date and date <= last_day_of_month:
+                dic = { 'id': event.id, 'title': event.name,
+                        'start': (datetime.combine(date, event.start_on_time)).strftime(fmt),
+                        'end': datetime.combine(date, event.end_on_time).strftime(fmt)
+                        }
+                month_schedule_list.append(dic)
+
+    return {'month_schedule_list': month_schedule_list}
+
