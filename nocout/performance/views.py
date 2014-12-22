@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import csv
-import json
+#import json
+import ujson as json
 import datetime
 import time
 from django.db.models import Count, Q
@@ -36,6 +37,8 @@ from performance.utils import util as perf_utils
 from alert_center.utils import util as alert_utils
 
 from service.utils.util import service_data_sources
+
+from nocout.settings import DATE_TIME_FORMAT
 
 ##execute this globally
 SERVICE_DATA_SOURCE = service_data_sources()
@@ -558,7 +561,7 @@ class Get_Perfomance(View):
                 #     strftime("%I:%M %p")
                 data["alert_date_time"] = datetime.datetime. \
                     fromtimestamp(float(data["sys_timestamp"])). \
-                    strftime("%d/%B/%Y %I:%M %p")
+                    strftime(DATE_TIME_FORMAT)
 
                 del (data["sys_timestamp"])
 
@@ -578,7 +581,7 @@ class Get_Perfomance(View):
                 #     strftime("%I:%M %p")
                 data["alert_date_time"] = datetime.datetime. \
                     fromtimestamp(float(data["sys_timestamp"])). \
-                    strftime("%d/%B/%Y %I:%M %p")
+                    strftime(DATE_TIME_FORMAT)
 
                 del (data["sys_timestamp"])
 
@@ -671,7 +674,7 @@ class Fetch_Inventory_Devices(View):
 
         result['success'] = 1
         result['message'] = 'Substation Devices Fetched Successfully.'
-        return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(result), mimetype="application/json")
 
     def get_result(self, page_type, organizations):
         """
@@ -876,7 +879,7 @@ class Inventory_Device_Status(View):
 
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
-        return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(result), mimetype="application/json")
 
 
 class Inventory_Device_Service_Data_Source(View):
@@ -1031,7 +1034,7 @@ class Inventory_Device_Service_Data_Source(View):
 
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
-        return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(result), mimetype="application/json")
 
 
 class Get_Service_Status(View):
@@ -1080,7 +1083,7 @@ class Get_Service_Status(View):
             data = device_nms_uptime[0]
 
             age = datetime.datetime.fromtimestamp(float(data['age'])
-            ).strftime(date_format)
+            ).strftime(DATE_TIME_FORMAT)
             severity = data['severity']
 
             self.result = {
@@ -1135,7 +1138,7 @@ class Get_Service_Status(View):
                                                     service_data_source_type)
                 last_updated = datetime.datetime.fromtimestamp(
                     float(performance_data[0].sys_timestamp)
-                ).strftime(date_format)
+                ).strftime(DATE_TIME_FORMAT)
                 self.result['data']['objects']['perf'] = current_value
                 self.result['data']['objects']['last_updated'] = last_updated
             except Exception as e:
@@ -1410,15 +1413,15 @@ class Get_Service_Type_Performance_Data(View):
             else:
                 aggregate_data[temp_time] = data.sys_timestamp
                 result_data.append({
-                    'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
-                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%I:%M %p"),
+                    # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
                     'value': data.current_value,
                 })
         self.result['success'] = 1
         self.result[
             'message'] = 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
         self.result['data']['objects']['table_data'] = result_data
-        self.result['data']['objects']['table_data_header'] = ['date', 'time', 'value']
+        self.result['data']['objects']['table_data_header'] = ['time', 'value']#['date', 'time', 'value']
         return self.result
 
     def get_topology_result(self, performance_data):
@@ -1487,7 +1490,7 @@ class Get_Service_Type_Performance_Data(View):
                                     continue
                                 status_since = pdata['age']
                                 status_since = datetime.datetime.fromtimestamp(float(status_since)
-                                ).strftime("%d/%B/%Y %I:%M %p")
+                                ).strftime(DATE_TIME_FORMAT)
                             else:
                                 continue
 
@@ -1504,7 +1507,7 @@ class Get_Service_Type_Performance_Data(View):
                     'latency': latency,
                     'status_since': status_since,
                     'last_updated': datetime.datetime.fromtimestamp(float(data.sys_timestamp)
-                    ).strftime("%d/%B/%Y %I:%M %p"),
+                    ).strftime(DATE_TIME_FORMAT),
                 })
 
         self.result['success'] = 1

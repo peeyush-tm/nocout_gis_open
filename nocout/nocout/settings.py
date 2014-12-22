@@ -590,6 +590,9 @@ SERVICES = {
 
 }
 
+#Date Format to be used throughout the application
+DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
+
 ###################REPORT_PATH
 
 REPORT_PATH = '/opt/nocout/nocout_gis/nocout/media/download_center/reports'
