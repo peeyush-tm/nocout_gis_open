@@ -5911,14 +5911,14 @@ class GisWizardListView(BaseStationList):
         """
         context = super(GisWizardListView, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'BS Name', 'sWidth': 'auto', },
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
-            {'mData': 'bs_switch__id', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
-            {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bs_switch__id', 'sTitle': 'BS Switch IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'Backhaul IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
         ]
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -5926,6 +5926,8 @@ class GisWizardListView(BaseStationList):
 
 
 class GisWizardListingTable(BaseStationListingTable):
+    columns = ['alias', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address', 'building_height', 'description']
+    order_columns = ['alias', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address', 'building_height']
 
     def prepare_results(self, qs):
         """
@@ -5936,13 +5938,19 @@ class GisWizardListingTable(BaseStationListingTable):
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'bs_switch__id' in dct:
-                    bs_device_alias = Device.objects.get(id=dct['bs_switch__id']).device_alias
                     bs_device_ip = Device.objects.get(id=dct['bs_switch__id']).ip_address
-                    dct['bs_switch__id'] = "{} ({})".format(bs_device_alias, bs_device_ip)
+                    dct['bs_switch__id'] = "{}".format(bs_device_ip)
             except Exception as e:
                 logger.info("BS Switch not present. Exception: ", e.message)
 
             device_id = dct.pop('id')
+
+            sector_configured_on = Sector.objects.filter(base_station_id=device_id, sector_configured_on__isnull=False,
+                    bs_technology__in=[3, 4]).values_list('sector_configured_on__ip_address', flat=True)
+            print sector_configured_on
+            sector_configured_on = ', '.join(sector_configured_on)
+            dct.update(sector_configured_on=sector_configured_on)
+
             detail_action = '<a href="/gis-wizard/base-station/{0}/details/"><i class="fa fa-list-alt text-info"></i></a>&nbsp'.format(device_id)
             if self.request.user.has_perm('inventory.change_basestation'):
                 edit_action = '<a href="/gis-wizard/base-station/{0}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
