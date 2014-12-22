@@ -86,7 +86,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/inventory/list/device/",
+                    url: "/device/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -108,8 +108,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/inventory/select/device/" + id +"/", {
-                            dataType: "json"
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
                             });
@@ -124,7 +125,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/antenna/list/antenna/",
+                    url: "/antenna/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -146,8 +147,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/antenna/select/antenna/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/antenna/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
                             });

@@ -8,6 +8,5 @@ urlpatterns = patterns('',
   url(r'^(?P<pk>\d+)/edit/$', views.AntennaUpdate.as_view(), name='antenna_edit'),
   url(r'^(?P<pk>\d+)/delete/$', views.AntennaDelete.as_view(), name='antenna_delete'),
   url(r'^Antennalistingtable/', views.AntennaListingTable.as_view(), name='AntennaListingTable'),
-  url(r'^list/antenna/$', views.list_antenna, name='list-antenna'),
-  url(r'^select/antenna/(?P<pk>\d+)/$', views.select_antenna, name='select-antenna'),
+  url(r'^select2/elements/$', views.SelectAntennaListView.as_view(), name='select2-antenna-elements'),
 )
