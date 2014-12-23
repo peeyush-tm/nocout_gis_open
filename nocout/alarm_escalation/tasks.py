@@ -19,6 +19,7 @@ from performance.models import ServiceStatus
 from alarm_escalation.models import EscalationStatus
 
 from inventory.utils import util as inventory_utils
+from scheduling_management.views import get_today_event_list
 
 
 @task
@@ -38,14 +39,18 @@ def raise_alarms(service_status_list, org):
         device = Device.objects.get(device_name=service_status.device_name)
         device_type = DeviceType.objects.get(id=device.device_type)
         obj, created = EscalationStatus.objects.get_or_create(organization=org,
+                device_name=service_status.device_name,
                 device_type=device_type.name,
                 service=service_status.service_name,
                 service_data_source=service_status.data_source,
-                ip=service_status.ip_address,
                 defaults={'severity': service_status.severity, 'old_status': old_status, 'new_status': new_status,
-                    'status_since': (timezone.now() - timezone.timedelta(seconds=service_status.age)),
+                    'status_since': (timezone.now() - timezone.timedelta(seconds=service_status.age)), 'ip': service_status.ip_address,
                 }
         )
+
+        if not created:
+            obj.severity = service_status.severity
+            obj.ip = service_status.ip_address
 
         # Get relative levels to inform
         level_list = obj.organization.escalationlevel_set.filter(device_type__name=obj.device_type,
@@ -56,7 +61,6 @@ def raise_alarms(service_status_list, org):
             obj.new_status = 1
         else:
             obj.new_status = 0
-        obj.severity = service_status.severity
 
         # Notify for good status of device, if it has started performing good from bad.
         if obj.new_status == 1 and obj.old_status == 0:
@@ -69,6 +73,7 @@ def raise_alarms(service_status_list, org):
                 if getattr(obj, 'l%d_email_status' % level.name) == 1:
                     escalation_level_list.append(level)
                     setattr(obj, 'l%d_email_status' % level.name, 0)
+                    setattr(obj, 'l%d_phone_status' % level.name, 0)
 
             alert_emails_for_good_performance.delay(obj, escalation_level_list)
             alert_phones_for_good_performance.delay(obj, escalation_level_list)
@@ -92,6 +97,7 @@ def raise_alarms(service_status_list, org):
                 alert_emails_for_bad_performance.delay(obj, escalation_level)
                 alert_phones_for_bad_performance.delay(obj, escalation_level)
                 setattr(obj, 'l%d_email_status' % escalation_level.name, 1)
+                setattr(obj, 'l%d_phone_status' % escalation_level.name, 1)
 
         obj.save()
 
@@ -143,7 +149,7 @@ def alert_phones_for_good_performance(alarm, level_list):
     """
     Sends sms to phones for good performance.
     """
-    #phones = level.get_phones()
+    # phones = level.get_phones()
     # message = ''
     # send_sms(subject, message, settings.DEFAULT_FROM_PHONE, phones, fail_silently=False)
     pass
@@ -156,14 +162,16 @@ def check_device_status():
     """
     service_list = []
     service_data_source_list = []
+    device_id_list = get_today_event_list()['device_ids']  #get the device list which is in downtime scheduling today.
     for org in Organization.objects.all():
-        device_list_qs = inventory_utils.organization_network_devices([org])
+        device_list_qs = inventory_utils.organization_network_devices([org]).exclude(id__in=device_id_list) #exclude the devices which is in downtime scheduling today.
         machine_dict = prepare_machines(device_list_qs)
         service_list = prepare_services(device_list_qs)
         service_data_source_list = prepare_service_data_sources(service_list)
         for machine_name, device_list in machine_dict.items():
             service_status_list = ServiceStatus.objects.filter(device_name__in=device_list, service_name__in=service_list,
                     data_source__in=service_data_source_list, ip_address__isnull=False).using(machine_name)
+
             if service_status_list:
                 raise_alarms.delay(service_status_list, org)
 

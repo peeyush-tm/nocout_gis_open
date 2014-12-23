@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import ast, sys
 from copy import deepcopy
-import json, logging, ujson
+import logging
+import ujson as json
 from pprint import pprint, pformat
 import urllib, datetime
 from multiprocessing import Process, Queue
@@ -112,7 +113,7 @@ class DeviceStatsApi(View):
             self.result['data']['meta']['device_count']= len(self.result['data']['objects']['children'])
             self.result['message'] = 'Data Fetched Successfully.'
             self.result['success'] = 1
-        return HttpResponse(ujson.dumps(self.result), content_type="application/json")
+        return HttpResponse(json.dumps(self.result), content_type="application/json")
 
 
 class DeviceFilterApi(View):
@@ -132,41 +133,13 @@ class DeviceFilterApi(View):
         for device_technology in DeviceTechnology.objects.all():
             technology_data.append({ 'id':device_technology.id,
                                      'value':device_technology.name })
-            # vendors = device_technology.device_vendors.all()
-            # for vendor in vendors:
-            #     if vendor not in vendor_list:
-            #         vendor_list.append(vendor.id)
-            #         vendor_data.append({ 'id':vendor.id,
-            #                              'value':vendor.name,
-            #                              'tech_id': device_technology.id,
-            #                              'tech_name': device_technology.name
-            #         })
-        # for vendor in DeviceVendor.objects.all():
-        #     vendor_data.append({ 'id':vendor.id,
-        #                              'value':vendor.name })
-        # #
-        # for state in State.objects.all():
-        #     state_data.append({ 'id':state.id,
-        #                              'value':state.state_name })
-        # state_list = []
-        # for city in City.objects.all():
-        #     city_data.append({'id':city.id,
-        #                      'value':city.city_name,
-        #                      'state_id': city.state.id,
-        #                      'state_name': city.state.state_name }
-        #     )
-        #     if city.state.id not in state_list:
-        #         state_list.append(city.state.id)
-        #         state_data.append({ 'id':city.state.id,'value':city.state.state_name })
 
         self.result['data']['objects']['technology']={'data':technology_data}
-        # self.result['data']['objects']['vendor']={'data':vendor_data}
-        # self.result['data']['objects']['state']={'data':state_data}
-        # self.result['data']['objects']['city']={'data':city_data}
+
         self.result['message']='Data Fetched Successfully.'
         self.result['success']=1
 
-        return HttpResponse(json.dumps(self.result))
+        return HttpResponse(json.dumps(self.result), content_type="application/json")
 
 
 class LPServicesApi(View):
@@ -1097,11 +1070,17 @@ class BulkFetchLPDataApi(View):
                 - icon (str) - icon location i.e "media/uploaded/icons/2014/09/18/wifi3.png"
         """
 
+        print "********************************* th_ranges - ", th_ranges
+        print "********************************* th_icon_settings - ", th_icon_settings
+        print "********************************* value - ", value
+        print "********************************* icon - ", icon
         # default image to be loaded
         image_partial = icon
 
         # fetch value from list
         value = value[0]
+
+        print "********************************** value - "
 
         if th_ranges and th_icon_settings and len(str(value)):
             try:

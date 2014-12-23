@@ -34,6 +34,7 @@ from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin, SuperUserRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.select2 import Select2Mixin
 from django.db.models import Q
 from service.forms import DTServiceDataSourceUpdateFormSet
 from inventory.utils.util import ptp_device_circuit_backhaul, organization_customer_devices, \
@@ -48,6 +49,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ***************************************** Device Views ********************************************
+class SelectDeviceListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Device
+    obj_alias = 'device_alias'
 
 
 class DeviceList(PermissionsRequiredMixin, ListView):

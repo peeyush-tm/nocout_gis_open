@@ -8,6 +8,5 @@ urlpatterns = patterns('',
   url(r'^(?P<pk>\d+)/edit/$', views.SectorUpdate.as_view(), name='sector_edit'),
   url(r'^(?P<pk>\d+)/delete/$', views.SectorDelete.as_view(), name='sector_delete'),
   url(r'^Sectorlistingtable/', views.SectorListingTable.as_view(), name='SectorListingTable'),
-  url(r'^list/sector/$', views.list_sector, name='list-sector'),
-  url(r'^select/sector/(?P<pk>\d+)/$', views.select_sector, name='select-sector'),
+  url(r'^select2/elements/$', views.SelectSectorListView.as_view(), name='select2-sector-elements'),
 )

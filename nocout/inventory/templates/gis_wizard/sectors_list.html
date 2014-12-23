@@ -56,20 +56,22 @@
             var dataTableInstance = new ourDataTableWidget();
 
             /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            var p2p_GridHeadersObj = $.parseJSON('{{ p2p_datatable_headers|safe }}');
+            var pmp_GridHeadersObj = $.parseJSON('{{ pmp_datatable_headers|safe }}');
+            var wimax_GridHeadersObj = $.parseJSON('{{ wimax_datatable_headers|safe }}');
 
             var is_global = '{{ is_global }}';
 
-            var ajax_url_ptp = '{% url "gis-wizard-sector-list-table" bs_pk=base_station.id selected_technology=2 %}';
-            var ajax_url_pmp = '{% url "gis-wizard-sector-list-table" bs_pk=base_station.id selected_technology=4 %}';
-            var ajax_url_wimax = '{% url "gis-wizard-sector-list-table" bs_pk=base_station.id selected_technology=3 %}';
+            var ajax_url_ptp = '{% url "gis-wizard-p2p-sector-list-table" bs_pk=base_station.id selected_technology=2 %}';
+            var ajax_url_pmp = '{% url "gis-wizard-pmp-sector-list-table" bs_pk=base_station.id selected_technology=4 %}';
+            var ajax_url_wimax = '{% url "gis-wizard-wimax-sector-list-table" bs_pk=base_station.id selected_technology=3 %}';
 
             var destroy = false;
 
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("SectorListingTable_ptp", gridHeadersObj, ajax_url_ptp, destroy);
-            dataTableInstance.createDataTable("SectorListingTable_pmp", gridHeadersObj, ajax_url_pmp, destroy);
-            dataTableInstance.createDataTable("SectorListingTable_wimax", gridHeadersObj, ajax_url_wimax, destroy);
+            dataTableInstance.createDataTable("SectorListingTable_ptp", p2p_GridHeadersObj, ajax_url_ptp, destroy);
+            dataTableInstance.createDataTable("SectorListingTable_pmp", pmp_GridHeadersObj, ajax_url_pmp, destroy);
+            dataTableInstance.createDataTable("SectorListingTable_wimax", wimax_GridHeadersObj, ajax_url_wimax, destroy);
         });
     </script>
 {% endblock %}

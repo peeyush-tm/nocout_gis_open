@@ -14,6 +14,7 @@
                             <div class="box-body">
                                 <div class="col-md-8"><br/>
 
+                {% if not base_station_has_backhaul %}
                 <!-- :START: Radio Buttons to choose existing or create new -->
                 <div class="form-group">
                     <label class="control-label pull-left">Backhaul &nbsp;&nbsp;&nbsp;</label>
@@ -39,6 +40,7 @@
                 </br>
                 {% endif %}
                 <!-- :END: Radio Buttons to choose existing or create new -->
+                {% endif %}
 
             {% if form %}
 
@@ -97,15 +99,15 @@
             $("label[for=id_bh_port_name]").text('BH Port Name');
             $("label[for=id_bh_port]").text('BH Port');
             $("label[for=id_bh_type]").text('BH Type');
-            $("label[for=id_bh_switch]").text('BS Switch/Converter');
-            $("label[for=id_switch_port_name]").text('BS Device Port Name');
-            $("label[for=id_switch_port]").text('BS Device Port');
-            $("label[for=id_pop]").text('POP Switch/Converter');
-            $("label[for=id_pop_port_name]").text('POP Device Port Name');
-            $("label[for=id_pop_port]").text('POP Device Port');
-            $("label[for=id_aggregator]").text('Aggregations Switch/Converter');
-            $("label[for=id_aggregator_port_name]").text('Aggregations Device Port Name');
-            $("label[for=id_aggregator_port]").text('Aggregations Device Port');
+            $("label[for=id_bh_switch]").text('BS Converter');
+            $("label[for=id_switch_port_name]").text('BS Converter Port Name');
+            $("label[for=id_switch_port]").text('BS Converter Port Number');
+            $("label[for=id_pop]").text('POP Converter');
+            $("label[for=id_pop_port_name]").text('POP Converter Port Name');
+            $("label[for=id_pop_port]").text('POP Converter Port Number');
+            $("label[for=id_aggregator]").text('Aggregation Switch');
+            $("label[for=id_aggregator_port_name]").text('Aggregation Switch Port Name');
+            $("label[for=id_aggregator_port]").text('Aggregation Switch Port Number');
             $("label[for=id_pe_hostname]").text('PE Hostname');
             $("label[for=id_pe_ip]").text('PE IP Address');
             $("label[for=id_bh_connectivity]").text('BH Connectivity');
@@ -127,7 +129,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/inventory/list/device/",
+                    url: "/device/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -149,8 +151,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/inventory/select/device/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
                             });
@@ -165,7 +168,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/inventory/list/device/",
+                    url: "/device/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -187,8 +190,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/inventory/select/device/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
                             });
@@ -203,7 +207,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/inventory/list/device/",
+                    url: "/device/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -225,8 +229,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/inventory/select/device/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
                             });
@@ -241,7 +246,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/inventory/list/device/",
+                    url: "/device/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -263,8 +268,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/inventory/select/device/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
                             });
@@ -307,7 +313,7 @@
                             minimumInputLength: 2,
                             width: "resolve",
                             ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                                url: "/backhaul/list/backhaul/",
+                                url: "/backhaul/select2/elements/",
                                 dataType: 'json',
                                 quietMillis: 250,
                                 data: function (term, page) {
@@ -328,8 +334,9 @@
                                 // using its formatResult renderer - that way the repository name is shown preselected
                                 var id = $(element).val();
                                 if (id !== "") {
-                                    $.ajax("/backhaul/select/backhaul/" + id+"/", {
-                                        dataType: "json"
+                                    $.ajax("/backhaul/select2/elements/", {
+                                        dataType: "json",
+                                        data: {'obj_id': id}
                                     }).done(function(data) {
                                         callback({id: id, alias: data[0]});
                                         });

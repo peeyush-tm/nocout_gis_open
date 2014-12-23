@@ -99,7 +99,7 @@ def quantify_events_data(aggregated_data_values=[]):
 		severity = doc.get('severity')
 		site = doc.get('site_name')
 		war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
-		check_time = doc.get('check_timestamp')
+		check_time = datetime.fromtimestamp(float(doc.get('check_timestamp')))
 		original_time = doc.get('sys_timestamp') if doc.get('sys_timestamp') else doc.get('time')
 		time = datetime.fromtimestamp(original_time)
 		if time_frame == 'daily':
