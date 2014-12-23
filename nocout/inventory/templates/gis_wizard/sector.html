@@ -14,6 +14,7 @@
                             <div class="box-body">
                                 <div class="col-md-8"><br/>
 
+            {% if not base_station_has_sector %}
                 <!-- :START: Radio Buttons to choose technology and to choose existing or create new -->
                 <div class="form-group">
                     <label class="control-label pull-left">Technology &nbsp;:&nbsp;&nbsp;</label>
@@ -26,7 +27,6 @@
                         {% endfor %}
                     </div>
                 </div><br/>
-            {% if not base_station_has_sector %}
                 <div class="form-group">
                     <label class="control-label pull-left">{% if selected_technology == '2' %}Near End {% else %}Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
                     <div class="pull-left">
@@ -253,6 +253,9 @@
             $('#id_sector_form').attr('action', "?show=True").submit();
         });
             // Changing labels of form fields
+        {% if selected_technology == '2' %}
+            $("label[for=id_sector_configured_on]").html('<span class="mandatory">* </span>Near End IP');
+        {% endif %}
             $("label[for=id_sector_id]").text('Sector ID');
             $("label[for=id_mrc]").text('MRC');
             $("label[for=id_tx_power]").text('TX Power');
