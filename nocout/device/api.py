@@ -2,7 +2,8 @@
 import ast, sys
 from copy import deepcopy
 import logging
-import ujson as json
+import json
+import ujson
 from pprint import pprint, pformat
 import urllib, datetime
 from multiprocessing import Process, Queue
@@ -113,7 +114,7 @@ class DeviceStatsApi(View):
             self.result['data']['meta']['device_count']= len(self.result['data']['objects']['children'])
             self.result['message'] = 'Data Fetched Successfully.'
             self.result['success'] = 1
-        return HttpResponse(json.dumps(self.result), content_type="application/json")
+        return HttpResponse(ujson.dumps(self.result), content_type="application/json")
 
 
 class DeviceFilterApi(View):
@@ -139,7 +140,7 @@ class DeviceFilterApi(View):
         self.result['message']='Data Fetched Successfully.'
         self.result['success']=1
 
-        return HttpResponse(json.dumps(self.result), content_type="application/json")
+        return HttpResponse(ujson.dumps(self.result), content_type="application/json")
 
 
 class LPServicesApi(View):
