@@ -9,6 +9,8 @@ from performance.utils import util as perf_utils
 
 from service.utils.util import service_data_sources
 
+from nocout.settings import DATE_TIME_FORMAT
+
 ##execute this globally
 SERVICE_DATA_SOURCE = service_data_sources()
 ##execute this globally
@@ -201,9 +203,9 @@ def prepare_raw_alert_results(performance_data=None):
                 'max_value': data["max_value"],
                 'min_value': data["min_value"],
                 'sys_timestamp': datetime.datetime.fromtimestamp(
-                    float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                    float(data["sys_timestamp"])).strftime(DATE_TIME_FORMAT),
                 'age': datetime.datetime.fromtimestamp(
-                    float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S")
+                    float(data["age"])).strftime(DATE_TIME_FORMAT)
                 if data["age"]
                 else "",
                 'description': ''  #data['description']

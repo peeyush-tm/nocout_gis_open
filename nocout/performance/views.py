@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import csv
-import json
+#import json
+import ujson as json
 import datetime
 import time
 from django.db.models import Count, Q
@@ -36,6 +37,8 @@ from performance.utils import util as perf_utils
 from alert_center.utils import util as alert_utils
 
 from service.utils.util import service_data_sources
+
+from nocout.settings import DATE_TIME_FORMAT
 
 ##execute this globally
 SERVICE_DATA_SOURCE = service_data_sources()
@@ -558,7 +561,7 @@ class Get_Perfomance(View):
                 #     strftime("%I:%M %p")
                 data["alert_date_time"] = datetime.datetime. \
                     fromtimestamp(float(data["sys_timestamp"])). \
-                    strftime("%d/%B/%Y %I:%M %p")
+                    strftime(DATE_TIME_FORMAT)
 
                 del (data["sys_timestamp"])
 
@@ -578,7 +581,7 @@ class Get_Perfomance(View):
                 #     strftime("%I:%M %p")
                 data["alert_date_time"] = datetime.datetime. \
                     fromtimestamp(float(data["sys_timestamp"])). \
-                    strftime("%d/%B/%Y %I:%M %p")
+                    strftime(DATE_TIME_FORMAT)
 
                 del (data["sys_timestamp"])
 
@@ -671,7 +674,7 @@ class Fetch_Inventory_Devices(View):
 
         result['success'] = 1
         result['message'] = 'Substation Devices Fetched Successfully.'
-        return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(result), mimetype="application/json")
 
     def get_result(self, page_type, organizations):
         """
@@ -876,7 +879,7 @@ class Inventory_Device_Status(View):
 
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
-        return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(result), mimetype="application/json")
 
 
 class Inventory_Device_Service_Data_Source(View):
@@ -1031,7 +1034,7 @@ class Inventory_Device_Service_Data_Source(View):
 
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
-        return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(result), mimetype="application/json")
 
 
 class Get_Service_Status(View):
@@ -1080,7 +1083,7 @@ class Get_Service_Status(View):
             data = device_nms_uptime[0]
 
             age = datetime.datetime.fromtimestamp(float(data['age'])
-            ).strftime(date_format)
+            ).strftime(DATE_TIME_FORMAT)
             severity = data['severity']
 
             self.result = {
@@ -1135,7 +1138,7 @@ class Get_Service_Status(View):
                                                     service_data_source_type)
                 last_updated = datetime.datetime.fromtimestamp(
                     float(performance_data[0].sys_timestamp)
-                ).strftime(date_format)
+                ).strftime(DATE_TIME_FORMAT)
                 self.result['data']['objects']['perf'] = current_value
                 self.result['data']['objects']['last_updated'] = last_updated
             except Exception as e:
@@ -1217,27 +1220,7 @@ class Get_Service_Type_Performance_Data(View):
         end_date = self.request.GET.get('end_date', '')
         isSet = False
 
-        if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
-            isSet = True
-            try:
-                start_date = float(start_date)
-                end_date = float(end_date)
-            except Exception, e:
-                start_date_object = datetime.datetime.strptime(start_date, date_format)
-                end_date_object = datetime.datetime.strptime(end_date, date_format)
-                start_date = format(start_date_object, 'U')
-                end_date = format(end_date_object, 'U')
-
-        else:
-            # The end date is the end limit we need to make query till.
-            end_date_object = datetime.datetime.now()
-            # The start date is the last monday of the week we need to calculate from.
-            start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
-            # Replacing the time, to start with the 00:00:00 of the last monday obtained.
-            start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
-            # Converting the date to epoch time or Unix Timestamp
-            end_date = format(end_date_object, 'U')
-            start_date = format(start_date_object, 'U')
+        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
 
         if service_data_source_type in ['pl', 'rta']:
             if not isSet:
@@ -1410,15 +1393,15 @@ class Get_Service_Type_Performance_Data(View):
             else:
                 aggregate_data[temp_time] = data.sys_timestamp
                 result_data.append({
-                    'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
-                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%I:%M %p"),
+                    # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+                    'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
                     'value': data.current_value,
                 })
         self.result['success'] = 1
         self.result[
             'message'] = 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
         self.result['data']['objects']['table_data'] = result_data
-        self.result['data']['objects']['table_data_header'] = ['date', 'time', 'value']
+        self.result['data']['objects']['table_data_header'] = ['time', 'value']#['date', 'time', 'value']
         return self.result
 
     def get_topology_result(self, performance_data):
@@ -1487,7 +1470,7 @@ class Get_Service_Type_Performance_Data(View):
                                     continue
                                 status_since = pdata['age']
                                 status_since = datetime.datetime.fromtimestamp(float(status_since)
-                                ).strftime("%d/%B/%Y %I:%M %p")
+                                ).strftime(DATE_TIME_FORMAT)
                             else:
                                 continue
 
@@ -1504,7 +1487,7 @@ class Get_Service_Type_Performance_Data(View):
                     'latency': latency,
                     'status_since': status_since,
                     'last_updated': datetime.datetime.fromtimestamp(float(data.sys_timestamp)
-                    ).strftime("%d/%B/%Y %I:%M %p"),
+                    ).strftime(DATE_TIME_FORMAT),
                 })
 
         self.result['success'] = 1
@@ -1537,14 +1520,19 @@ class Get_Service_Type_Performance_Data(View):
                 if temp_time in aggregate_data:
                     continue
                 else:
+                    aggregate_data[temp_time] = data.sys_timestamp
+
+                    #time in javascript format
+                    js_time = data.sys_timestamp * 1000
+                    #time in javascript format
 
                     sds_name = str(data.data_source).strip().lower()
-
-                    aggregate_data[temp_time] = data.sys_timestamp
-                    self.result['data']['objects']['display_name'] = \
+                    sds_display_name = \
                         SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                             if sds_name in SERVICE_DATA_SOURCE \
                             else str(data.data_source).upper()
+
+                    self.result['data']['objects']['display_name'] = sds_display_name
 
                     self.result['data']['objects']['type'] = \
                         SERVICE_DATA_SOURCE[sds_name]["type"] \
@@ -1566,19 +1554,21 @@ class Get_Service_Type_Performance_Data(View):
 
                     # data_list.append([data.sys_timestamp*1000, float(data.current_value) if data.current_value else 0])
                     if data_source not in ["availability"]:
-                        warn_data_list.append([data.sys_timestamp * 1000, float(data.warning_threshold)
-                        if data.critical_threshold else None])
+                        #only display warning if there exists a warning
+                        if data.warning_threshold:
+                            warn_data_list.append([js_time, float(data.warning_threshold)])
 
-                        crit_data_list.append([data.sys_timestamp * 1000, float(data.critical_threshold)
-                        if data.critical_threshold else None])
+                        #only display critical if there exists a critical
+                        if data.critical_threshold:
+                            crit_data_list.append([js_time, float(data.critical_threshold)])
 
                         ###to draw each data point w.r.t threshold we would need to use the following
                         if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_min"]:
-                            min_data_list.append([data.sys_timestamp * 1000, float(data.min_value)
+                            min_data_list.append([js_time, float(data.min_value)
                             if data.min_value else None])
 
                         if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_max"]:
-                            max_data_list.append([data.sys_timestamp * 1000, float(data.max_value)
+                            max_data_list.append([js_time, float(data.max_value)
                             if data.max_value else None])
 
                         compare_point = lambda p1, p2, p3: '#70AFC4' \
@@ -1596,7 +1586,7 @@ class Get_Service_Type_Performance_Data(View):
 
                         if data.current_value:
                             formatter_data_point = {
-                                "name": str(data.data_source).upper(),
+                                "name": sds_display_name,
                                 "color": compare_point(float(data.current_value) if data.current_value else 0,
                                                        float(data.warning_threshold) if data.warning_threshold else 0,
                                                        float(data.critical_threshold) if data.critical_threshold else 0
@@ -1604,14 +1594,14 @@ class Get_Service_Type_Performance_Data(View):
                                 "y": eval(str(formula) + "(" + str(data.current_value) + ")")
                                 if formula
                                 else float(data.current_value),
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
                         else:
                             formatter_data_point = {
-                                "name": str(data.data_source).upper(),
+                                "name": sds_display_name,
                                 "color": '#70AFC4',
                                 "y": None,
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
 
                         data_list.append(formatter_data_point)
@@ -1623,7 +1613,7 @@ class Get_Service_Type_Performance_Data(View):
                                       }
                         ]
                         if len(min_data_list):
-                            chart_data += [
+                            chart_data.append(
                                 {'name': str("min value").title(),
                                  'color': '#01CC14',
                                  'data': min_data_list,
@@ -1631,11 +1621,11 @@ class Get_Service_Type_Performance_Data(View):
                                  'marker': {
                                      'enabled': False
                                  }
-                                },
-                            ]
+                                }
+                            )
 
                         if len(max_data_list):
-                            chart_data += [
+                            chart_data.append(
                                 {'name': str("max value").title(),
                                  'color': '#FF8716',
                                  'data': max_data_list,
@@ -1643,51 +1633,58 @@ class Get_Service_Type_Performance_Data(View):
                                  'marker': {
                                      'enabled': False
                                  }
-                                },
-                            ]
+                                }
+                            )
 
-                        chart_data += [{'name': str("warning threshold").title(),
-                                        'color': '#FFE90D',
-                                        'data': warn_data_list,
-                                        'type': 'line',
-                                        'marker': {
-                                            'enabled': False
-                                        }
-                                       },
-                                       {'name': str("critical threshold").title(),
-                                        'color': '#FF193B',
-                                        'data': crit_data_list,
-                                        'type': 'line',
-                                        'marker': {
-                                            'enabled': False
-                                        }
-                                       }]
+                        if len(crit_data_list):
+                            chart_data.append(
+                                {'name': str("warning threshold").title(),
+                                 'color': '#FFE90D',
+                                 'data': warn_data_list,
+                                 'type': 'line',
+                                 'marker': {
+                                     'enabled': False
+                                 }
+                                }
+                            )
+
+                        if len(warn_data_list):
+                            chart_data.append(
+                                {'name': str("critical threshold").title(),
+                                 'color': '#FF193B',
+                                 'data': crit_data_list,
+                                 'type': 'line',
+                                 'marker': {
+                                     'enabled': False
+                                 }
+                                }
+                            )
                     else:
                         if data.current_value:
                             formatter_data_point = {
                                 "name": "Availability",
                                 "color": '#70AFC4',
                                 "y": float(data.current_value),
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
                             formatter_data_point_down = {
                                 "name": "UnAvailability",
                                 "color": '#FF193B',
                                 "y": 100.00 - float(data.current_value),
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
                         else:
                             formatter_data_point = {
                                 "name": str(data.data_source).upper(),
                                 "color": '#70AFC4',
                                 "y": None,
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
                             formatter_data_point_down = {
                                 "name": "UnAvailability",
                                 "color": '#FF193B',
                                 "y": None,
-                                "x": data.sys_timestamp * 1000
+                                "x": js_time
                             }
 
                         data_list.append(formatter_data_point)
@@ -1717,3 +1714,121 @@ class Get_Service_Type_Performance_Data(View):
 
         return self.result
 
+
+class DeviceUtilization(View):
+    """
+    Utilization Stitching Per Technology Wise
+    url : utilization/device/<device_id>
+    get the device id and check the services associated to the device
+    stitch together the device utilization
+    """
+    def get(self, request, device_id):
+        """
+
+        :param request: request body
+        :param device_id: id of the device
+        :return: chart data for utilisation services
+        """
+        result = {
+            'success': 0,
+            'message': 'Device Utilization Data not found',
+            'data': {
+                'meta': {},
+                'objects': {
+                    'plot_type': 'charts',
+                    'display_name': 'Utilization',
+                    'valuesuffix': ' mbps ',
+                    'type': 'area',
+                    'chart_data': [],
+                    'valuetext': ' mbps '
+                }
+            }
+        }
+        date_format = "%d-%m-%Y %H:%M:%S"
+        #get the time
+        start_date = self.request.GET.get('start_date', '')
+        end_date = self.request.GET.get('end_date', '')
+        isSet = False
+        isSet, start_date, end_date = perf_utils.get_time(start_date, end_date, date_format)
+        if not isSet:
+            end_date = format(datetime.datetime.now(), 'U')
+            start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
+
+        device = Device.objects.get(id=device_id)
+        device_type = DeviceType.objects.get(id=device.device_type)
+        device_type_services = device_type.service.filter(name__icontains='utilization'
+        ).prefetch_related('servicespecificdatasource_set')
+
+        services = device_type_services.values('name',
+                                               'alias',
+                                               'servicespecificdatasource__service_data_sources__name',
+                                               'servicespecificdatasource__service_data_sources__alias'
+        )
+
+        service_names = list()
+        sds_names = list()
+        service_data_sources = {}
+
+        for s in services:
+            service_names.append(s['name'])
+            sds_names.append(s['servicespecificdatasource__service_data_sources__name'])
+            service_data_sources[s['name'], s['servicespecificdatasource__service_data_sources__name']] = \
+                s['alias'] + "[ " + s['servicespecificdatasource__service_data_sources__alias'] + " ]"
+
+        performance = PerformanceService.objects.filter(
+            device_name=device.device_name,
+            service_name__in=service_names,
+            data_source__in=sds_names,
+            sys_timestamp__gte=start_date,
+            sys_timestamp__lte=end_date).using(
+                alias=device.machine.name).order_by('sys_timestamp')
+
+        chart_data = []
+        #format for chart data
+        # {'name': str("min value").title(),
+        #  'color': '#01CC14',
+        #  'data': [js_time, value],
+        #  'type': 'line',
+        #  'marker': {
+        #      'enabled': False
+        #  }
+        # }
+        color = {}
+        temp_chart_data = {}
+        for data in performance:
+            try:
+                if (data.service_name, data.data_source) not in temp_chart_data:
+                    color[data.service_name, data.data_source] = perf_utils.color_picker()
+                    temp_chart_data[data.service_name, data.data_source] = {
+                        'name': service_data_sources[data.service_name, data.data_source],
+                        'data': [],
+                        'color': color[data.service_name, data.data_source],
+                    }
+                js_time = data.sys_timestamp*1000
+                value = float(data.current_value)
+                temp_chart_data[data.service_name, data.data_source]['data'].append([
+                    js_time, value,
+                ])
+            except:
+                continue
+
+        for cd in temp_chart_data:
+            chart_data.append(temp_chart_data[cd])
+
+        result = {
+            'success': 1,
+            'message': 'Device Utilization Data',
+            'data': {
+                'meta': {},
+                'objects': {
+                    'plot_type': 'charts',
+                    'display_name': 'Utilization',
+                    'valuesuffix': ' mbps ',
+                    'type': 'area',
+                    'chart_data': chart_data,
+                    'valuetext': ' mbps '
+                }
+            }
+        }
+
+        return HttpResponse(json.dumps(result), mimetype="application/json")
