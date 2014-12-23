@@ -2075,7 +2075,7 @@ function devicePlottingClass_gmap() {
                         	labelHtml = "";
 
                     	if(labelInfoObject) {
-                            labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                            labelHtml += $.trim(labelInfoObject['value']);
                         }
 
 				    	// If any html created then show label on ss
@@ -7841,7 +7841,7 @@ function devicePlottingClass_gmap() {
 					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
 
             	if(labelInfoObject) {
-                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                    labelHtml += $.trim(labelInfoObject['value']);
                 }
 
                 var toolTip_infobox = "";
@@ -7881,7 +7881,7 @@ function devicePlottingClass_gmap() {
 					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
 
             	if(labelInfoObject) {
-                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                    labelHtml += $.trim(labelInfoObject['value']);
                 }
 
                 if(window.location.pathname.indexOf("googleEarth") > -1) {
