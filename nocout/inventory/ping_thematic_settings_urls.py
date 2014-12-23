@@ -3,6 +3,7 @@ from inventory import views
 
 urlpatterns = patterns('',
   url(r'^$', views.PingThematicSettingsList.as_view(), name='ping_thematic_settings_list'),
+  url(r'^admin/$', views.PingThematicSettingsList.as_view(), name='ping-admin-thematic-settings-list'),
   url(r'^(?P<type>((?!new)..)[a-z]+)/$', views.PingThematicSettingsList.as_view(), name='ping_thematic_settings_list'),
   url(r'^new/$', views.PingThematicSettingsCreate.as_view(), name='ping_thematic_settings_new'),
   url(r'^edit/(?P<pk>\d+)$', views.PingThematicSettingsUpdate.as_view(), name='ping_thematic_settings_edit'),
