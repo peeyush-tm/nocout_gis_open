@@ -315,6 +315,9 @@ def prepare_gis_devices(devices, page_type):
                     "device_technology": format_value(bs_row['SECTOR_TECH'])
                 })
                 if is_ss:
+                    port = bs_row['SECTOR_PORT']
+                    if port:
+                        apnd = "( " + port + " )"
                     if bs_row['CIRCUIT_TYPE']:
                         if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
                             device.update({
