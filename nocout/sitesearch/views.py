@@ -144,6 +144,18 @@ def prepare_raw_basestation(base_station=None):
                 'title':'BS Switch',
                 'show':1,
                 'value': format_value(base_station['BSSWITCH'])
+            },
+            {
+                'name': 'latitude',
+                'title': 'Latitude',
+                'show':1,
+                'value': format_value(base_station['BSLAT'])
+            },
+            {
+                'name': 'longitude',
+                'title': 'Longitude',
+                'show':1,
+                'value': format_value(base_station['BSLONG'])
             }
         ]
         return base_station_info
@@ -318,6 +330,7 @@ def prepare_raw_sector(sectors):
     :param sector:
     :return:
     """
+
     sector_info = []
     sector_list = []
 
@@ -447,6 +460,18 @@ def prepare_raw_sector(sectors):
                               'title': 'Installation of Splitter',
                               'show': 1,
                               'value': format_value(format_this=sector['SECTOR_ANTENNA_SPLITTER']),
+                            },
+                            {
+                                'name': 'latitude',
+                                'title': 'Latitude',
+                                'show':1,
+                                'value': format_value(sector['BSLAT'])
+                            },
+                            {
+                                'name': 'longitude',
+                                'title': 'Longitude',
+                                'show':1,
+                                'value': format_value(sector['BSLONG'])
                             }
                         ],
                         'sub_station': substation
@@ -669,7 +694,6 @@ def prepare_raw_bs_result(bs_result=None):
         }
 
         sector_dict = pivot_element(bs_result, 'SECTOR_ID')
-
 
         sector_info, \
         sector_ss_vendor, \
