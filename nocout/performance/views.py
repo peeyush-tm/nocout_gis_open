@@ -1715,14 +1715,14 @@ class Get_Service_Type_Performance_Data(View):
         return self.result
 
 
-class DeviceUtilization(View):
+class DeviceServiceDetail(View):
     """
     Utilization Stitching Per Technology Wise
     url : utilization/device/<device_id>
     get the device id and check the services associated to the device
     stitch together the device utilization
     """
-    def get(self, request, device_id):
+    def get(self, request, service_name, device_id):
         """
 
         :param request: request body
@@ -1736,11 +1736,11 @@ class DeviceUtilization(View):
                 'meta': {},
                 'objects': {
                     'plot_type': 'charts',
-                    'display_name': 'Utilization',
-                    'valuesuffix': ' mbps ',
+                    'display_name': service_name.strip().title(),
+                    'valuesuffix': '  ',
                     'type': 'area',
                     'chart_data': [],
-                    'valuetext': ' mbps '
+                    'valuetext': '  '
                 }
             }
         }
@@ -1756,7 +1756,7 @@ class DeviceUtilization(View):
 
         device = Device.objects.get(id=device_id)
         device_type = DeviceType.objects.get(id=device.device_type)
-        device_type_services = device_type.service.filter(name__icontains='utilization'
+        device_type_services = device_type.service.filter(name__icontains=service_name
         ).prefetch_related('servicespecificdatasource_set')
 
         services = device_type_services.values('name',
@@ -1822,11 +1822,11 @@ class DeviceUtilization(View):
                 'meta': {},
                 'objects': {
                     'plot_type': 'charts',
-                    'display_name': 'Utilization',
-                    'valuesuffix': ' mbps ',
+                    'display_name': service_name.strip().title(),
+                    'valuesuffix': '  ',
                     'type': 'area',
                     'chart_data': chart_data,
-                    'valuetext': ' mbps '
+                    'valuetext': '  '
                 }
             }
         }
