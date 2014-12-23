@@ -2075,7 +2075,7 @@ function devicePlottingClass_gmap() {
                         	labelHtml = "";
 
                     	if(labelInfoObject) {
-                            labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                            labelHtml += $.trim(labelInfoObject['value']);
                         }
 
 				    	// If any html created then show label on ss
@@ -6117,7 +6117,8 @@ function devicePlottingClass_gmap() {
 
     this.createDistanceInfobox = function(distanceObject) {
     	var distanceInfoBox= new InfoBox({
-    		content: distanceObject.distance+" m<br />Point A: ("+distanceObject['startLat'].toFixed(4)+","+distanceObject['startLon'].toFixed(4)+")<br />Point B: ("+distanceObject['endLat'].toFixed(4)+","+distanceObject['endLon'].toFixed(4)+")",
+    		// content: distanceObject.distance+" m<br />Point A: ("+distanceObject['startLat'].toFixed(4)+","+distanceObject['startLon'].toFixed(4)+")<br />Point B: ("+distanceObject['endLat'].toFixed(4)+","+distanceObject['endLon'].toFixed(4)+")",
+    		content: distanceObject.distance+" m",
     		boxStyle: {
     			border        : "1px solid #B0AEAE",
     			background 	  : "white",
@@ -6126,10 +6127,10 @@ function devicePlottingClass_gmap() {
 		        color         : "black",
 		        padding       : '2px',
 		        borderRadius  : "5px",
-    			width 		  : "150px"
+    			width 		  : "60px"
     		},
     		disableAutoPan: true,
-    		pixelOffset: new google.maps.Size(-75, 0),
+    		pixelOffset: new google.maps.Size(-30, -10),
     		position: new google.maps.LatLng(distanceObject.lat3 * 180 / Math.PI,distanceObject.lon3 * 180 / Math.PI),
     		closeBoxURL: "",
     		isHidden: false,
@@ -7841,7 +7842,7 @@ function devicePlottingClass_gmap() {
 					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
 
             	if(labelInfoObject) {
-                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                    labelHtml += $.trim(labelInfoObject['value']);
                 }
 
                 var toolTip_infobox = "";
@@ -7881,7 +7882,7 @@ function devicePlottingClass_gmap() {
 					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
 
             	if(labelInfoObject) {
-                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                    labelHtml += $.trim(labelInfoObject['value']);
                 }
 
                 if(window.location.pathname.indexOf("googleEarth") > -1) {
