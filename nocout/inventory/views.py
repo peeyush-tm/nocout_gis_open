@@ -6544,8 +6544,9 @@ class GisWizardSectorSubStationListView(SubStationList):
         context['selected_technology'] = self.kwargs['selected_technology']
 
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device__ip_address', 'sTitle': 'SS IP', 'sWidth': 'auto', },
+            {'mData': 'circuit__customer__name', 'sTitle': 'Customer Name', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -6581,14 +6582,6 @@ class GisWizardSubStationListing(SubStationListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            # modify device name format in datatable i.e. <device alias> (<device ip>)
-            try:
-                if 'device__id' in dct:
-                    ss_device_alias = Device.objects.get(id=dct['device__id']).device_alias
-                    ss_device_ip = Device.objects.get(id=dct['device__id']).ip_address
-                    dct['device__id'] = "{} ({})".format(ss_device_alias, ss_device_ip)
-            except Exception as e:
-                logger.info("Sub Station Device not present. Exception: ", e.message)
 
             dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
             dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
