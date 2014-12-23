@@ -41,7 +41,7 @@ urlpatterns = patterns('',
                            name='GetServiceStatus'
                        ),
                        url(
-                           r'^servicedetail/(?P<service_name>\w+)/device/(?P<device_id>\d+)/$',
+                           r'^servicedetail/(?P<service_name>\w+)/device/(?P<device_id>\d+)',
                            DeviceServiceDetail.as_view(),
                            name='DeviceServiceDetail'
                        )

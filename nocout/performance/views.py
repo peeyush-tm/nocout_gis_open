@@ -112,21 +112,21 @@ class Live_Performance(ListView):
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
 
-        if page_type in ["customer"]:
+        if page_type in ["customer", "network"]:
             specific_headers = [
-                {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
-                {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
             ]
 
-        elif page_type in ["network"]:
-            specific_headers = [
-                {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-            ]
+        # elif page_type in ["network"]:
+        #     specific_headers = [
+        #         {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        #          'bSortable': True},
+        #     ]
 
         else:
             specific_headers = [
@@ -277,7 +277,9 @@ class LivePerformanceListing(BaseDatatableView):
         elif page_type == 'network':
             columns = [
                 'id',
+                'circuit_id',
                 'sector_id',
+                'customer_name',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -926,6 +928,14 @@ class Inventory_Device_Service_Data_Source(View):
                     'topology_tab': {
                         "info": [],
                         "isActive": 0
+                    },
+                    'utilization_top_tab': {
+                        "info": [],
+                        "isActive": 0
+                    },
+                    'rssi_top_tab': {
+                        "info": [],
+                        "isActive": 0
                     }
                 }
             }
@@ -1023,14 +1033,27 @@ class Inventory_Device_Service_Data_Source(View):
                 'active': 0,
             })
 
-        result['data']['objects']['topology_tab']["info"].append(
-            {
-                'name': 'topology',
-                'title': 'Topology',
-                'url': 'performance/service/topology/service_data_source/topology/device/' +
-                       str(device_id),
-                'active': 0,
-            })
+        result['data']['objects']['topology_tab']["info"].append({
+            'name': 'topology',
+            'title': 'Topology',
+            'url': 'performance/service/topology/service_data_source/topology/device/' +
+                   str(device_id),
+            'active': 0,
+        })
+
+        result['data']['objects']['utilization_top_tab']["info"].append({
+            'name': 'utilization_top',
+            'title': 'Utilization',
+            'url': 'performance/servicedetail/utilization/device/'+str(device_id),
+            'active': 0,
+        })
+
+        result['data']['objects']['rssi_top_tab']["info"].append({
+            'name': 'rssi_top',
+            'title': 'RSSI',
+            'url': 'performance/servicedetail/rssi/device/'+str(device_id),
+            'active': 0,
+        })
 
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
