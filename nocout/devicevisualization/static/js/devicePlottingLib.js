@@ -3092,7 +3092,7 @@ function devicePlottingClass_gmap() {
 			}
 
 			/*Set the lat lon of the point*/
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
+			// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
 
 			var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
 				link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
