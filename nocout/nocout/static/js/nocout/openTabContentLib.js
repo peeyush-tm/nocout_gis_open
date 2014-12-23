@@ -61,7 +61,6 @@ $(".nav-tabs li a").click(function (e, isFirst) {
     if (last_clicked_tab != e.currentTarget.id || second_condition) {
 
         if (table_id.toLowerCase().indexOf("p2p") > -1 || table_id.toLowerCase().indexOf("ptp") > -1) {
-
             for (var i = 0; i < grid_headers.length; i++) {
                 var column = grid_headers[i];
                 if (column.mData.indexOf("sector_id") > -1) {
@@ -69,6 +68,19 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                         column.sClass = "hide";
                     } else {
                         column["sClass"] = "hide";
+                    }
+                }
+            }
+        } else {
+            if(window.location.href.search("customer_live") == -1) {
+                for (var i = 0; i < grid_headers.length; i++) {
+                    var column = grid_headers[i];
+                    if (column.mData.indexOf("circuit_id") > -1 || column.mData.indexOf("customer_name") > -1) {
+                        if (column.bVisible) {
+                            column.sClass = "hide";
+                        } else {
+                            column["sClass"] = "hide";
+                        }
                     }
                 }
             }
