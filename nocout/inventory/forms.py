@@ -1584,8 +1584,6 @@ class WizardSectorForm(SectorForm):
         super(WizardSectorForm, self).__init__(*args, **kwargs)
 
         self.fields['dr_configured_on'].widget = forms.HiddenInput()
-        if self.technology == 'P2P':
-            self.fields['sector_configured_on'].label = 'Near End IP'
 
         self.fields.pop('organization')
         self.fields.pop('base_station')
