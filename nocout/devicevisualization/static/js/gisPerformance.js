@@ -628,8 +628,8 @@ function GisPerformance() {
                                 }
                             }
 
-                            // Mouseover event on sub-station marker
-                            google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
+                            // Right click event on sub-station marker
+                            google.maps.event.addListener(ss_marker, 'rightclick', function(e) {
                                 var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
                                     condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
