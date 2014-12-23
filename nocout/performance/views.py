@@ -114,9 +114,9 @@ class Live_Performance(ListView):
 
         if page_type in ["customer", "network"]:
             specific_headers = [
-                {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
-                {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
@@ -124,7 +124,7 @@ class Live_Performance(ListView):
 
         # elif page_type in ["network"]:
         #     specific_headers = [
-        #         {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        #         {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
         #          'bSortable': True},
         #     ]
 

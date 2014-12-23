@@ -538,9 +538,18 @@ class AlertCenterListing(ListView):
 
         data_tab = self.kwargs.get('data_tab')
 
-        datatable_headers = [
-            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
+        # List of headers which are used in calculation but not shown in grid
+        hidden_headers = [
+            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True}
+        ]
+
+        # List of headers which are shown first in grid for all pages
+        starting_headers = [
+            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
+        ]
+
+        # List of common headers for all pages of alerts listing
+        common_headers = [
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'auto', 'sClass': 'hidden-xs',
             #  'bSortable': True},
@@ -548,62 +557,78 @@ class AlertCenterListing(ListView):
              'bSortable': True},
             # {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
             #  'bSortable': True},
+            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
         ]
-        if data_tab == 'P2P' or data_tab is None:
-            datatable_headers += [
-                {'mData': 'circuit_id',
-                 'sTitle': 'Circuit ID',
-                 'sWidth': 'auto',
-                 'sClass': 'hidden-xs',
-                 'bSortable': True
-                },
-            ]
+
+        # Page specific & polled headers list initialization
+        specific_headers = []
+        polled_headers = []
+
+        # if data_tab == 'P2P' or data_tab is None:
+        #     specific_headers += [
+        #         {'mData': 'circuit_id',
+        #          'sTitle': 'Circuit ID',
+        #          'sWidth': 'auto',
+        #          'sClass': 'hidden-xs',
+        #          'bSortable': True
+        #         },
+        #     ]
 
         if data_tab != 'P2P' or data_tab is not None:
-            datatable_headers += [
+            specific_headers += [
                 {'mData': 'sector_id',
                  'sTitle': 'Sector ID',
                  'sWidth': 'auto',
                  'sClass': 'hidden-xs',
                  'bSortable': True
-                },
+                }
             ]
 
         if page_type == 'customer' or data_tab == 'P2P' or data_tab is None:
-            datatable_headers += [
+            specific_headers += [
+                {
+                  'mData': 'circuit_id',
+                  'sTitle': 'Circuit ID',
+                  'sWidth': 'auto',
+                  'sClass': 'hidden-xs',
+                  'bSortable': True
+                },
                 {
                     'mData': 'customer_name',
                     'sTitle': 'Customer Name',
                     'sWidth': 'auto',
                     'bSortable': True
-                },
+                }
             ]
 
         if data_source == 'service':
-            datatable_headers += [
-                {'mData': 'data_source_name',
-                 'sTitle': 'Data Source',
-                 'sWidth': 'auto',
-                 'sClass': 'hidden-xs',
-                 'bSortable': True}
+            polled_headers += [
+              {
+                'mData': 'data_source_name',
+                'sTitle': 'Data Source',
+                'sWidth': 'auto',
+                'sClass': 'hidden-xs',
+                'bSortable': True
+              }
             ]
 
-        datatable_headers += [
-            {'mData': 'current_value',
-             'sTitle': '{0}'.format(data_source_title),
-             'sWidth': 'auto',
-             'sClass': 'hidden-xs',
-             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"},
+        polled_headers += [
+            {
+              'mData': 'current_value',
+              'sTitle': '{0}'.format(data_source_title),
+              'sWidth': 'auto',
+              'sClass': 'hidden-xs',
+              'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"
+            }
         ]
 
         if data_source == "latency":
-            datatable_headers += [
+            polled_headers += [
                 {
                     'mData': 'max_value',
                     'sTitle': 'Latency Max (ms)',
@@ -623,11 +648,18 @@ class AlertCenterListing(ListView):
                     "sType": "numeric"
                 }
             ]
-        datatable_headers += [
+        other_headers = [
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
         ]
+
+        datatable_headers = hidden_headers
+        datatable_headers += starting_headers
+        datatable_headers += specific_headers
+        datatable_headers += common_headers
+        datatable_headers += polled_headers
+        datatable_headers += other_headers
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
