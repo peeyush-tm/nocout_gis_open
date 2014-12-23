@@ -3,6 +3,7 @@ from inventory import views
 
 urlpatterns = patterns('',
   url(r'^$', views.ServiceThematicSettingsList.as_view(), name='service_thematic_settings_list'),
+  url(r'^admin/$', views.ServiceThematicSettingsList.as_view(), name='service-admin-thematic-settings-list'),
   url(r'^(?P<type>p2p|pmp|wimax)/$', views.ServiceThematicSettingsList.as_view(), name='service_thematic_settings_list'),
   url(r'^new/$', views.ServiceThematicSettingsCreate.as_view(), name='service_thematic_settings_new'),
   url(r'^(?P<pk>\d+)/edit/$', views.ServiceThematicSettingsUpdate.as_view(), name='service_thematic_settings_edit'),

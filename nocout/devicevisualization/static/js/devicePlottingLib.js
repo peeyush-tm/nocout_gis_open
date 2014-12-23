@@ -1957,8 +1957,8 @@ function devicePlottingClass_gmap() {
 					/*Create Sector Marker*/
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
 
-					// Mouseover event on sector marker
-					google.maps.event.addListener(sector_Marker, 'mouseover', function(e) {
+					// Right click event on sector marker
+					google.maps.event.addListener(sector_Marker, 'rightclick', function(e) {
 						
 						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
 							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
@@ -2086,8 +2086,8 @@ function devicePlottingClass_gmap() {
 				    	}
 				    }
 
-				    // Mouseover event on sub-station marker
-					google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
+				    // Right click event on sub-station marker
+					google.maps.event.addListener(ss_marker, 'rightclick', function(e) {
 						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
 							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
