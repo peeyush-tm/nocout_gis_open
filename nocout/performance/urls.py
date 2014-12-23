@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from performance import views
 from performance.views import Get_Service_Type_Performance_Data, \
-    Get_Service_Status, DeviceUtilization
+    Get_Service_Status, DeviceServiceDetail
 
 from django.views.decorators.cache import cache_page
 
@@ -41,8 +41,8 @@ urlpatterns = patterns('',
                            name='GetServiceStatus'
                        ),
                        url(
-                           r'^utilization/device/(?P<device_id>\d+)/$',
-                           DeviceUtilization.as_view(),
-                           name='Utilization'
+                           r'^servicedetail/(?P<service_name>\w+)/device/(?P<device_id>\d+)/$',
+                           DeviceServiceDetail.as_view(),
+                           name='DeviceServiceDetail'
                        )
 )
