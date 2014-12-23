@@ -6812,11 +6812,12 @@ class GisWizardPTPListView(SectorList):
         context = super(GisWizardPTPListView, self).get_context_data(**kwargs)
 
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Near End IP', 'sWidth': 'auto', },
+            {'mData': 'circuit__sub_station__device__ip_address', 'sTitle': 'Far End IP', 'sWidth': 'auto', },
+            {'mData': 'circuit__customer__name', 'sTitle': 'Customer Name', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
+            {'mData': 'frequency', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on__country', 'sTitle': 'Country', 'sWidth': 'auto', 'bSortable': False, },
             {'mData': 'sector_configured_on__state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': False, },
             {'mData': 'sector_configured_on__city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False, },
@@ -6829,10 +6830,10 @@ class GisWizardPTPListView(SectorList):
 
 
 class GisWizardPTPListingTable(SectorListingTable):
-    columns = ['alias', 'sector_configured_on__ip_address', 'base_station__alias', 'antenna__alias', 'mrc',
-            'sector_configured_on__country', 'sector_configured_on__state',
-            'sector_configured_on__city', 'description']
-    order_columns = ['alias', 'sector_configured_on__ip_address', 'base_station__alias', 'antenna__alias', 'mrc', 'description']
+    columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__name', 'frequency',
+            'base_station__alias', 'sector_configured_on__country', 'sector_configured_on__state', 'sector_configured_on__city', 'description']
+    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__name', 'frequency',
+            'base_station__alias', 'sector_configured_on__country', 'sector_configured_on__state', 'sector_configured_on__city', 'description']
 
     def get_initial_queryset(self):
         qs=super(GisWizardPTPListingTable, self).get_initial_queryset()
