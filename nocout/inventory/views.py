@@ -6567,6 +6567,10 @@ class GisWizardSubStationListing(SubStationListingTable):
     """
     Class based View to render Sub Station Data table.
     """
+    columns = ['device__ip_address', 'circuit__customer__name', 'antenna__alias', 'version', 'serial_no', 'building_height',
+               'tower_height', 'city', 'state', 'address', 'description']
+    order_columns = ['device__ip_address', 'circuit__customer__name', 'antenna__alias', 'version', 'serial_no', 'building_height',
+                     'tower_height']
 
     def get_initial_queryset(self):
         qs = super(GisWizardSubStationListing, self).get_initial_queryset()
@@ -6674,9 +6678,9 @@ class GisWizardSubStationMixin(object):
         context['organization'] = BaseStation.objects.get(id=self.kwargs['bs_pk']).organization
         if self.object:
             form_kwargs = self.get_form_kwargs()
-            context['sub_station_antenna_id'] = self.object.antenna.id if self.object.antenna else 0
-            # context['sub_station_customer_id'] = self.object.customer.id if self.object.customer else 0
-            # context['sub_station_circuit_id'] = self.object.circuit.id if self.object.circuit else 0
+            context['sub_station_antenna_id'] = self.object.antenna.id if self.object.antenna else ''
+            # context['sub_station_customer_id'] = self.object.customer.id if self.object.customer else ''
+            # context['sub_station_circuit_id'] = self.object.circuit.id if self.object.circuit else ''
 
             ## If method is GET; Then provide antenna, circuit and customer forms in context.
             if self.request.method == 'GET':
@@ -6876,8 +6880,9 @@ class GisWizardSubStationListView(SubStationList):
         context = super(GisWizardSubStationListView, self).get_context_data(**kwargs)
 
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device__ip_address', 'sTitle': 'SS IP', 'sWidth': 'auto', },
+            {'mData': 'circuit__customer__name', 'sTitle': 'Customer Name', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -6895,6 +6900,10 @@ class GisWizardSubStationListView(SubStationList):
 
 
 class GisWizardSubStationListingTable(SubStationListingTable):
+    columns = ['device__ip_address', 'circuit__customer__name', 'antenna__alias', 'version', 'serial_no', 'building_height',
+               'tower_height', 'city', 'state', 'address', 'description']
+    order_columns = ['device__ip_address', 'circuit__customer__name', 'antenna__alias', 'version', 'serial_no', 'building_height',
+                     'tower_height']
 
     def get_initial_queryset(self):
 
