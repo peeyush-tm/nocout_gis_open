@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta
 
 from django.views.generic.base import View
-from django.views.generic.edit import CreateView, UpdateView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic import TemplateView, View
 
 from django.http.response import HttpResponseRedirect
@@ -20,6 +20,7 @@ from scheduling_management.forms import EventForm
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin
+from nocout.mixins.user_action import UserLogDeleteMixin
 from device.models import Device
 
 # Create your views here.
@@ -196,13 +197,15 @@ class EventUpdate(PermissionsRequiredMixin, UpdateView):
             self.get_context_data(form=form, ))
 
 
-def event_delete(request, pk):
+class EventDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     """
-    delete the event.
+    Class based View to delete the Event.
     """
-    event = Event.objects.get(id=pk)
-    event.delete()
-    return HttpResponseRedirect(reverse('event_list'))
+    model = Event
+    template_name = 'scheduling_management/event_delete.html'
+    success_url = reverse_lazy('event_list')
+    required_permissions = ('scheduling_management.delete_event',)
+    obj_alias = 'name'
 
 
 #**************************************************#
