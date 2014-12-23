@@ -491,8 +491,7 @@
             }
         }
 
-
-        if(page_type_val != 'network') {
+        if(page_type_val == 'other') {
             // Hide Utilization & RSSI Tabs for all network devices
             if (!$("#utilization_top").hasClass("hide")) {
                 $("#utilization_top").addClass("hide");
