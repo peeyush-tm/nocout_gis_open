@@ -181,6 +181,10 @@
     {% endblock %}
     <script>
         $(document).ready(function(){
+            var title = '{{ title|safe }}'
+            if (title != 'None'){
+                $("#id_name").val(title)
+            }
             // Initialize the select2 selectbox.
             $(".select2select").select2();
             $('.tip-focus').tooltip({
