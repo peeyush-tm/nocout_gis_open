@@ -112,7 +112,7 @@ class Live_Performance(ListView):
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
 
-        if page_type in ["customer"]:
+        if page_type in ["customer", "network"]:
             specific_headers = [
                 {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
@@ -122,11 +122,11 @@ class Live_Performance(ListView):
                  'bSortable': True},
             ]
 
-        elif page_type in ["network"]:
-            specific_headers = [
-                {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-            ]
+        # elif page_type in ["network"]:
+        #     specific_headers = [
+        #         {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        #          'bSortable': True},
+        #     ]
 
         else:
             specific_headers = [
@@ -277,7 +277,9 @@ class LivePerformanceListing(BaseDatatableView):
         elif page_type == 'network':
             columns = [
                 'id',
+                'circuit_id',
                 'sector_id',
+                'customer_name',
                 'ip_address',
                 'device_type',
                 'bs_name',
