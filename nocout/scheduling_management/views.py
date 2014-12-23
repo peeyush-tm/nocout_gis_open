@@ -44,7 +44,7 @@ class EventList(PermissionsRequiredMixin, TemplateView):
         Preparing the Context Variable required in the template rendering.
         """
         context = super(EventList, self).get_context_data(**kwargs)
-        context['event_array'] = json.dumps( get_month_event_list()['month_schedule_list'] )
+        context['event_array'] = json.dumps( get_month_event_list(self)['month_schedule_list'] )
 
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': '10%', 'bSortable': True},
@@ -80,7 +80,8 @@ class EventListingTable(PermissionsRequiredMixin,
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        qs = self.model.objects.filter()
+        org = self.request.user.userprofile.organization
+        qs = self.model.objects.filter(organization__in=[org])
         return qs.prefetch_related('device')
 
     def prepare_results(self, qs):
@@ -225,7 +226,8 @@ def event_today_status(event):
     Note: in dateutil 0==Monday, while in python datetime 0==Sunday.
 
     :param event: Event object
-    :return the dictionary containing the event id and status for today date.
+    :return the dictionary containing the event id, status for today date
+    		and the list of execution date of this month.
     """
 
     event_ids = event.id
@@ -311,17 +313,20 @@ def get_today_event_list():
     return {'event_list': event_list, 'device_ids': device_ids}
 
 
-def get_month_event_list():
+def get_month_event_list(self):
     """
     To get events for this month.
+    :param self
     :return dictionary containing list of dictionary of event detail.
     """
+    org = self.request.user.userprofile.organization
     month_schedule_list = [] # contain the list of this month event.
     fmt = "%a %b %d %Y %H:%M:%S"
     today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
     first_day_of_month = today.replace(day=1)
     last_day_of_month = last_day_of_the_month(today)
-    for event in Event.objects.all():
+
+    for event in Event.objects.filter(organization__in=[org]):
         result = event_today_status(event)
         for date in result['execution_dates']:
             if first_day_of_month <= date and date <= last_day_of_month:
