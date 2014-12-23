@@ -403,8 +403,20 @@ def prepare_raw_sector(sectors):
                             {
                               'name': 'sector_name',
                               'title': 'Sector Name',
-                              'show': 1,
+                              'show': 1 if sector['SECTOR_TECH'] != 'P2P' else 0,
                               'value': format_value(format_this=sector['SECTOR_NAME'])
+                            },
+                            {
+                              'name': 'sector_id',
+                              'title': 'Sector ID',
+                              'show': 1 if sector['SECTOR_SECTOR_ID'] else 0,
+                              'value': format_value(format_this=sector['SECTOR_SECTOR_ID'])
+                            },
+                            {
+                                'name': 'pmp_port',
+                                'title': 'PMP PORT',
+                                'show': 1 if sector['SECTOR_PORT'] else 0,
+                                'value': sector['SECTOR_PORT']
                             },
                             {
                                 'name': 'planned_frequency',
