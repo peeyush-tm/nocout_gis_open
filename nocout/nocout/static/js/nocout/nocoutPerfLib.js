@@ -664,7 +664,7 @@ function nocoutPerfLib() {
                 // Pass              
             } else {
                 var end_Date = "";
-                if(moment(ajax_start_date).date() === moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() === moment(ajax_end_date).dayOfYear()) {
+                if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
                     end_Date = moment(ajax_end_date).toDate();
                 } else {
                     end_Date = moment(ajax_start_date).endOf('day').toDate();
@@ -687,34 +687,33 @@ function nocoutPerfLib() {
                 type: "GET",
                 dataType: "json",
                 success: function (result) {
-                    if (result.success === 1) {
-                        if (result.data.objects.table_data_header != undefined) {
+                    if(result.success == 1) {
+                        if (result.data.objects.table_data_header && result.data.objects.table_data_header.length > 0) {
                             if ($("#other_perf_table").length == 0) {
                                 createDataTable('other_perf_table', result.data.objects.table_data_header);
                             }
                             addDataToDataTable(result.data.objects.table_data, result.data.objects.table_data_header, 'other_perf_table');
                         } else {
-                            if (chart_instance === "") {
-                                createHighChart(result.data.objects);
-                                createDataTableForChart("perf_data_table", result.data.objects.chart_data);
-                            } else {
-                                addPointsToHighChart(result.data.objects.chart_data);
-                            }
-                            if ($("#perf_data_table").length > 0) {
-                                addDataToDataTableForChart(result.data.objects.chart_data, 'perf_data_table')
+                            // If any data available then plot chart & table
+                            if(result.data.objects.chart_data.length > 0) {
+                                if (chart_instance == "") {
+                                    createHighChart(result.data.objects);
+                                    createDataTableForChart("perf_data_table", result.data.objects.chart_data);
+                                } else {
+                                    addPointsToHighChart(result.data.objects.chart_data);
+                                }
+                                if ($("#perf_data_table").length > 0) {
+                                    addDataToDataTableForChart(result.data.objects.chart_data, 'perf_data_table')
+                                }
                             }
                         }
                     }
 
-                    // if (result && result.success === 1 && result.data && result.data.objects && result.data.objects.table_data && result.data.objects.table_data.length === 0) {
-                    //     $('#' + service_id + '_chart').html(result.message);
-                    // }
-
                     //check condition if start date and end date is defined.
-                    if ($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
+                    if($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
 
                         //if last date
-                        if(moment(ajax_start_date).date() === moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() === moment(ajax_end_date).dayOfYear()) {
+                        if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
 
 
                             if ($('#' + service_id + '_chart').highcharts()) {
