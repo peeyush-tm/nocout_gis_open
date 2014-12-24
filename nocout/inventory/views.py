@@ -5953,7 +5953,6 @@ class GisWizardListingTable(BaseStationListingTable):
 
             sector_configured_on = Sector.objects.filter(base_station_id=device_id, sector_configured_on__isnull=False,
                     bs_technology__in=[3, 4]).values_list('sector_configured_on__ip_address', flat=True)
-            print sector_configured_on
             sector_configured_on = ', '.join(sector_configured_on)
             dct.update(sector_configured_on=sector_configured_on)
 
@@ -6129,7 +6128,7 @@ class GisWizardSectorListView(SectorList):
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'circuit__customer__name', 'sTitle': 'Customer Name', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
-            {'mData': 'frequency', 'sTitle': 'Frequency', 'sWidth': 'auto', },
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
@@ -6139,7 +6138,7 @@ class GisWizardSectorListView(SectorList):
             {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
-            {'mData': 'frequency', 'sTitle': 'Frequency', 'sWidth': 'auto', },
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -6152,7 +6151,7 @@ class GisWizardSectorListView(SectorList):
             {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on_port__alias', 'sTitle': 'PMP Port', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
-            {'mData': 'frequency', 'sTitle': 'Frequency', 'sWidth': 'auto', },
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
@@ -6200,23 +6199,23 @@ class GisWizardSectorListingMixin(object):
 
 class GisWizardP2PSectorListing(GisWizardSectorListingMixin, SectorListingTable):
     columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'bs_technology__alias',
-            'circuit__customer__name', 'frequency', 'base_station__alias', 'description']
+            'circuit__customer__name', 'frequency__value', 'base_station__alias', 'description']
     order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'bs_technology__alias',
-            'circuit__customer__name', 'frequency', 'base_station__alias', 'description']
+            'circuit__customer__name', 'frequency__value', 'base_station__alias', 'description']
 
 
 class GisWizardPMPSectorListing(GisWizardSectorListingMixin, SectorListingTable):
-    columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency', 'base_station__alias',
+    columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency__value', 'base_station__alias',
             'antenna__polarization', 'description']
-    order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency', 'base_station__alias',
+    order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency__value', 'base_station__alias',
             'antenna__polarization', 'description']
 
 
 class GisWizardWiMAXSectorListing(GisWizardSectorListingMixin, SectorListingTable):
     columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'sector_configured_on_port__alias',
-            'frequency', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
+            'frequency__value', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
     order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'sector_configured_on_port__alias',
-            'frequency', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
+            'frequency__value', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
 
 
 class GisWizardSectorDetailView(SectorDetail):
@@ -6826,7 +6825,7 @@ class GisWizardPTPListView(SectorList):
             {'mData': 'circuit__sub_station__device__ip_address', 'sTitle': 'Far End IP', 'sWidth': 'auto', },
             {'mData': 'circuit__customer__name', 'sTitle': 'Customer Name', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
-            {'mData': 'frequency', 'sTitle': 'Frequency', 'sWidth': 'auto', },
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'sector_configured_on__country', 'sTitle': 'Country', 'sWidth': 'auto', 'bSortable': False, },
             {'mData': 'sector_configured_on__state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': False, },
@@ -6840,9 +6839,9 @@ class GisWizardPTPListView(SectorList):
 
 
 class GisWizardPTPListingTable(SectorListingTable):
-    columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__name', 'frequency',
+    columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__name', 'frequency__value',
             'base_station__alias', 'sector_configured_on__country', 'sector_configured_on__state', 'sector_configured_on__city', 'description']
-    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__name', 'frequency',
+    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__name', 'frequency__value',
             'base_station__alias', 'sector_configured_on__country', 'sector_configured_on__state', 'sector_configured_on__city', 'description']
 
     def get_initial_queryset(self):
