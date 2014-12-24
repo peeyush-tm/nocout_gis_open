@@ -19,7 +19,7 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     EventService, NetworkStatus, \
     ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, \
-    Status, NetworkAvailabilityDaily, Topology, Utilization
+    Status, NetworkAvailabilityDaily, Topology, Utilization, UtilizationStatus
 
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 
@@ -1143,6 +1143,12 @@ class Get_Service_Status(View):
 
         elif '_invent' in service_name:
             performance_data_query_set = InventoryStatus.objects.filter(device_name=inventory_device_name,
+                                                              service_name=service_name,
+                                                              data_source=service_data_source_type
+            )
+
+        elif '_kpi' in service_name:
+            performance_data_query_set = UtilizationStatus.objects.filter(device_name=inventory_device_name,
                                                               service_name=service_name,
                                                               data_source=service_data_source_type
             )
