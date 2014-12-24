@@ -5922,8 +5922,8 @@ class GisWizardListView(BaseStationList):
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
             {'mData': 'bs_switch__id', 'sTitle': 'BS Switch IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'Backhaul IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
         ]
@@ -5952,7 +5952,7 @@ class GisWizardListingTable(BaseStationListingTable):
             device_id = dct.pop('id')
 
             sector_configured_on = Sector.objects.filter(base_station_id=device_id, sector_configured_on__isnull=False,
-                    bs_technology__in=[3, 4]).values_list('sector_configured_on__ip_address', flat=True)
+                    bs_technology__in=[3, 4]).distinct().values_list('sector_configured_on__ip_address', flat=True)
             sector_configured_on = ', '.join(sector_configured_on)
             dct.update(sector_configured_on=sector_configured_on)
 
