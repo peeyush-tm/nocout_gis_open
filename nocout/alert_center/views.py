@@ -44,31 +44,76 @@ def getCustomerAlertDetail(request):
     :return Http Response Object::
 
     """
-    datatable_headers = [
-        {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
+    # datatable_headers = [
+    #     {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
+    #     {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'bSortable': True},
+    #     {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"},
+    #     {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+    #     {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': False},
+    # ]
+
+    starting_headers = [
+      {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
+    ]
+
+    specific_headers = [
+      {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True}
+    ]
+
+    common_headers = [
         {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"},
-        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': False},
+         'bSortable': True}
     ]
+
+    polled_headers = [
+      {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"}
+    ]
+
+    other_headers = [
+      {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+      {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': False}
+    ]
+
+    datatable_headers = starting_headers
+    datatable_headers += specific_headers
+    datatable_headers += common_headers
+    datatable_headers += polled_headers
+    datatable_headers += other_headers
 
     context = {'datatable_headers': json.dumps(datatable_headers)}
     return render(request, 'alert_center/customer_alert_details_list.html', context)
@@ -267,28 +312,51 @@ def getNetworkAlertDetail(request):
     :params request object:
     :return Http Response Object:
     """
-    datatable_headers = [
-        {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
+
+    starting_headers = [
+      {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
+    ]
+
+    specific_headers = [
+      {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True}
+    ]
+
+    common_headers = [
         {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"},
-        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': False},
+         'bSortable': True}
     ]
+
+    polled_headers = [
+      {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"}
+    ]
+
+    other_headers = [
+      {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+      {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': False}
+    ]
+
+    datatable_headers = starting_headers
+    datatable_headers += specific_headers
+    datatable_headers += common_headers
+    datatable_headers += polled_headers
+    datatable_headers += other_headers
 
     context = {'datatable_headers': json.dumps(datatable_headers)}
     return render(request, 'alert_center/network_alert_details_list.html', context)

@@ -611,7 +611,7 @@ function GisPerformance() {
                                     labelHtml = "";
 
                                 if(labelInfoObject) {
-                                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                                    labelHtml += $.trim(labelInfoObject['value']);
                                 }
                                 // If any html created then show label on ss
                                 if(labelHtml) {
