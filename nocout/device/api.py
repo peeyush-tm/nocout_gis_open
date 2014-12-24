@@ -1022,11 +1022,15 @@ class BulkFetchLPDataApi(View):
                                                                              icon)
                                 else:
                                     pass
+                            else:
+                                icon = "media/" + str(icon) if "uploaded" in str(
+                                    icon) else "static/img/" + str(icon)
 
                         except Exception as e:
                             logger.info("Icon not exist. Exception: ", e.message)
 
                         result['data']['devices'][device_name]['icon'] = icon
+
                         # if response_dict doesn't have key 'success'
                         if device_value and (device_value != "NA"):
                             result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % \
