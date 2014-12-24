@@ -51,7 +51,7 @@ def load_file(file_path):
         pass
     return host_vars
 
-def build_export(site, network_result, service_result,mrc_hosts, db):
+def build_export(site, network_result, service_result,mrc_hosts,device_down_output, db):
 	"""
 	Function name: build_export  (function export data from the rrdtool (which stores the period data) for all services for particular host
 	and stores them in mongodb in particular structure)
@@ -199,19 +199,26 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 	value = 0
 	mrc_host = None
 	host_matched_row = None
+	dr_host_entry = []
+	original_dr_host_list = []
+	dr_flag = 0
         serv_qry_output = service_result
+	for host_row in host_var['all_hosts']:
+		if 'dr:'in host_row:
+			dr_host_entry.append(host_row)
+			original_host = host_row.split('|')[0]
+			original_dr_host_list.append(original_host)
+	s_device_down_list = set(device_down_output)
 	for entry in serv_qry_output:
                 if len(entry) < 8:
                         continue
-		for host_row in host_var['all_hosts']:
-			if re.match(str(entry[0]),host_row) and 'dr:' in host_row:
-				host_matched_row = host_row		
-				break
+		if (str(entry[2]) == 'wimax_pmp1_utilization' or str(entry[2]) == 'wimax_pmp2_utilization'):
+			if str(entry[0]) in original_dr_host_list:
+				dr_flag = 1
 		
-		if not len(entry[-1]):
+		if str(entry[0]) in s_device_down_list and not dr_flag :
 			continue
-		
-		if int(entry[6]) == 1 and  not (host_matched_row and (str(entry[2]) == 'wimax_pmp1_utilization' or str(entry[2]) == 'wimax_pmp2_utilization')):
+		if not len(entry[-1]) and not dr_flag:
 			continue
 			   	
 		threshold_values = get_threshold(entry[-1])
@@ -273,8 +280,10 @@ def build_export(site, network_result, service_result,mrc_hosts, db):
 				mrc_insert = []
 					
 			 					 
-			if host_matched_row:
-				dr_host = host_matched_row.split('|')[3].split(':')[1].strip(' ')
+			if dr_flag:
+				dr_flag= 0
+				host_matched_row=filter(lambda x: re.match(str(entry[0]),x) ,dr_host_entry)
+				dr_host = host_matched_row[0].split('|')[3].split(':')[1].strip(' ')
 				#print 'dr_host'
 				#print dr_host
 				#print (dr_host,str(entry[2]))
@@ -345,6 +354,7 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
 			mongo_module.mongo_db_update(db,service_update[index4], serv_values[index4], 'serv_perf_data')
 	except Exception ,e:
 		print e.message
+	
 	index1 = 0
 	index2 = min(1000,len(net_values))
 	try:
@@ -431,6 +441,8 @@ def get_host_services_name(site_name=None, db=None):
                             "Filter: service_description ~ wimax_pmp2_ul_util_bgp\n"+\
                             "Filter: service_description ~ cambium_util_kpi\n"+\
                             "Or: 11\nNegate:\nOutputFormat: python\n"
+	    device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
+				"And: 2\nOutputFormat: python\n"
 
             #service_perf_query = "GET services\nColumns: host_name host_address service_description service_state "+\
             #                "last_check service_last_state_change host_state service_perf_data\nFilter: service_description ~ _invent\n"+\
@@ -438,6 +450,8 @@ def get_host_services_name(site_name=None, db=None):
             nw_qry_output = eval(get_from_socket(site_name, network_perf_query))
             serv_qry_output = eval(get_from_socket(site_name, service_perf_query))
             mrc_qry_output = eval(get_from_socket(site_name, mrc_query))
+            device_down_output = eval(get_from_socket(site_name, device_down_query))
+	    device_down_list =[str(item) for sublist in device_down_output for item in sublist]
 	    for index in range(0,len(mrc_qry_output),2):
             	try:
                         if mrc_qry_output[index][0] == mrc_qry_output[index+1][0] and mrc_qry_output[index][2] != 1:
@@ -448,7 +462,7 @@ def get_host_services_name(site_name=None, db=None):
             build_export(
                        site_name,
                        nw_qry_output,
-                       serv_qry_output,mrc_hosts,
+                       serv_qry_output,mrc_hosts,device_down_list,
                        db
             )
 	    elapsed = int(time.time()) - current
