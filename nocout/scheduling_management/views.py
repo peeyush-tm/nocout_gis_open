@@ -6,7 +6,7 @@ from django.views.generic.base import View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic import TemplateView, View
 
-from django.http.response import HttpResponseRedirect
+from django.http.response import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response
 
 from django.core.urlresolvers import reverse_lazy, reverse
@@ -44,7 +44,6 @@ class EventList(PermissionsRequiredMixin, TemplateView):
         Preparing the Context Variable required in the template rendering.
         """
         context = super(EventList, self).get_context_data(**kwargs)
-        context['event_array'] = json.dumps( get_month_event_list(self)['month_schedule_list'] )
 
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': '10%', 'bSortable': True},
@@ -221,31 +220,40 @@ def last_day_of_the_month(any_day):
     return next_month - timedelta(days=next_month.day)
 
 
-def event_today_status(event):
+def event_today_status(dic):
     """
     To check the statu of event for today date.
     Note: in dateutil 0==Monday, while in python datetime 0==Sunday.
 
-    :param event: Event object
+    :param dictionary: {'event': event_object, }  Note: event is must.
     :return the dictionary containing the event id, status for today date
     		and the list of execution date of this month.
     """
-
-    event_ids = event.id
-    status = False
     today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+    status = False
+    count = 0
 
     execution_dates = []
     last_day_of_month = last_day_of_the_month(today)
 
+    event = dic['event']
+    year = dic['year'] if 'year' in dic else (today.year)
+    month = dic['month'] if 'month' in dic else (today.month)
+    month_start = today.replace(year=year, month=month, day=1)
+    month_end = last_day_of_the_month(month_start).date()
+
+    event_ids = event.id
     start = event.start_on
     event_end = last_day_of_month.date() # case1: end never; case2: end after particular occurence
-    count = 0
+    if month_end >= event_end:
+        event_end = month_end
+    elif month_end >= start:
+        event_end = month_end
+
     if event.end_on:
-        event_end = event.end_on if event.end_on <= last_day_of_month.date() else last_day_of_month.date()
+        event_end = event.end_on if event.end_on <= month_end else month_end
     elif event.end_after:
         count = event.end_after # case2: end after particular occurence
-
     end = event_end
     interval = 1 if not event.repeat_every else event.repeat_every
 
@@ -305,7 +313,7 @@ def get_today_event_list():
     event_list = []
     time = datetime.today().time()
     for event in Event.objects.all():
-        result = event_today_status(event)
+        result = event_today_status({'event': event})
         if result['status']:
             if event.start_on_time <= time and time <= event.end_on_time:
                 event_list.append(event)
@@ -314,28 +322,34 @@ def get_today_event_list():
     return {'event_list': event_list, 'device_ids': device_ids}
 
 
-def get_month_event_list(self):
+def get_month_event_list(request):
     """
     To get events for this month.
     :param self
     :return dictionary containing list of dictionary of event detail.
     """
-    org = self.request.user.userprofile.organization
-    month_schedule_list = [] # contain the list of this month event.
-    fmt = "%a %b %d %Y %H:%M:%S"
     today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
-    first_day_of_month = today.replace(day=1)
-    last_day_of_month = last_day_of_the_month(today)
+    month = int(request.GET.get('month', today.month - 1))
+    year = int(request.GET.get('year', today.year))
+
+    month_schedule_list = [] # contain the list of this month event.
+    org = request.user.userprofile.organization
+
+    fmt = "%a %b %d %Y %H:%M:%S"
+    first_day_of_month = today.replace(year=year, month=month+1, day=1)
+    last_day_of_month = last_day_of_the_month(first_day_of_month)
 
     for event in Event.objects.filter(organization__in=[org]):
-        result = event_today_status(event)
+        result = event_today_status({'event': event, 'month': month+1, 'year': year})
         for date in result['execution_dates']:
             if first_day_of_month <= date and date <= last_day_of_month:
                 dic = { 'id': event.id, 'title': event.name,
                         'start': (datetime.combine(date, event.start_on_time)).strftime(fmt),
-                        'end': datetime.combine(date, event.end_on_time).strftime(fmt)
+                        'end': datetime.combine(date, event.end_on_time).strftime(fmt),
+                        'allDay': False,
                         }
                 month_schedule_list.append(dic)
 
-    return {'month_schedule_list': month_schedule_list}
-
+    return HttpResponse ( json.dumps({
+            'month_schedule_list': month_schedule_list
+            }) )
