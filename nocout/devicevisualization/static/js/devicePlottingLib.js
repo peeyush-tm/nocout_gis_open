@@ -10,7 +10,10 @@ var mapInstance = "",
 	base_url = "",
 	defaultIconSize= 'medium',
 	state_lat_lon_db = [],
-	counter_div_style = "";
+	counter_div_style = "",
+	green_status_array = ['ok','success','up'],
+    red_status_array = ['critical','down'],
+    orange_status_array = ['warning'];
 
 /*Lazy loading API calling variables*/
 var hitCounter = 1,
@@ -2922,7 +2925,7 @@ function devicePlottingClass_gmap() {
 		/*True,if clicked on the link line*/
 		if(clickedType == "path") {
 			try {
-				var path_circuit_id = "",
+				var path_circuit_id = contentObject.ss_info ? gisPerformanceClass.getKeyValue(contentObject.ss_info,"cktid",true) : "",
 					lineWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : "BS-SS",
 					lineStartTitle = contentObject.startTitle ? contentObject.startTitle : "BS-Sector Info",
 					lineEndTitle = contentObject.endTitle ? contentObject.endTitle : "SS Info";
@@ -2967,10 +2970,6 @@ function devicePlottingClass_gmap() {
 				// console.log("ss_info length: "+ contentObject.ss_info.length);
 				/*Loop for ss info object array*/
 				for(var i=0;i<contentObject.ss_info.length;i++) {
-					if(contentObject.ss_info[i].title && $.trim(contentObject.ss_info[i].title.toLowerCase()) === 'circuit id') {
-						path_circuit_id = contentObject.ss_info[i].value;
-					}
-
 					if(contentObject.ss_info[i].show == 1) {
 						infoTable += "<tr><td>"+contentObject.ss_info[i].title+"</td><td>"+contentObject.ss_info[i].value+"</td></tr>";
 					}
@@ -3003,14 +3002,17 @@ function devicePlottingClass_gmap() {
 					isBSLeft = 1;
 				}
 
-				var sector_ss_name_obj = {
-					sector_Alias: contentObject.bs_info ? contentObject.bs_info[0].value : " ",
-					sector_name : contentObject.sectorName ? contentObject.sectorName : " ",
-					ss_name : contentObject.ssName ? contentObject.ssName : " ",
-					ss_customerName: contentObject.ss_info.length >= 18 ? contentObject.ss_info[17].value : " ",
-					ss_circuitId: contentObject.ss_info.length >= 4 ? contentObject.ss_info[3].value : " ",
-					isBSLeft : isBSLeft
-				};
+				var sect_alias = gisPerformanceClass.getKeyValue(contentObject.bs_info,"alias",true),
+					ss_custName = gisPerformanceClass.getKeyValue(contentObject.ss_info,"customer_name",true),
+					// circuit_id = gisPerformanceClass.getKeyValue(contentObject.ss_info,"cktid",true),
+					sector_ss_name_obj = {
+						sector_Alias: sect_alias ? sect_alias : "",
+						sector_name : contentObject.sectorName ? contentObject.sectorName : "",
+						ss_name : contentObject.ssName ? contentObject.ssName : " ",
+						ss_customerName: ss_custName ? ss_custName : "",
+						ss_circuitId: path_circuit_id ? path_circuit_id : "",
+						isBSLeft : isBSLeft
+					};
 
 				var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
@@ -3077,13 +3079,15 @@ function devicePlottingClass_gmap() {
 				startPtInfo = contentObject.dataset;
 			}
 
+			ss_circuit_id = gisPerformanceClass.getKeyValue(startPtInfo,"cktid",true);
+
 			for(var i=0;i<startPtInfo.length;i++) {
 				var url = "",
 					text_class = "";
 
-				if(startPtInfo[i].title && $.trim(startPtInfo[i].title.toLowerCase()) === 'circuit id') {
-					ss_circuit_id = startPtInfo[i].value;
-				}
+				// if(startPtInfo[i].title && $.trim(startPtInfo[i].title.toLowerCase()) === 'circuit id') {
+				// 	ss_circuit_id = startPtInfo[i].value;
+				// }
 				if(startPtInfo[i].show == 1) {
 					// Url
 					url = startPtInfo[i]["url"] ? startPtInfo[i]["url"] : "";
@@ -3127,12 +3131,12 @@ function devicePlottingClass_gmap() {
 			if(clickedType == "base_station" && contentObject.bhInfo) {
 				var severity_symbol = "";
 				if(contentObject.bhSeverity) {
-					var bhSeverity = $.trim(contentObject.bhSeverity.toLowerCase());
-					if(bhSeverity == 'critical') {
+					var bhSeverity = contentObject.bhSeverity ? $.trim(contentObject.bhSeverity.toLowerCase()) : "";
+					if(red_status_array.indexOf(bhSeverity)  > -1) {
 						severity_symbol = "<i class='fa fa-circle text-danger' style='margin-left:10px;'>&nbsp;</i>";
-					} else if(bhSeverity == 'ok') {
+					} else if(green_status_array.indexOf(bhSeverity)  > -1) {
 						severity_symbol = "<i class='fa fa-circle text-success' style='margin-left:10px;'>&nbsp;</i>";
-					} else if(bhSeverity == 'warning') {
+					} else if(orange_status_array.indexOf(bhSeverity)  > -1) {
 						severity_symbol = "<i class='fa fa-circle text-warning' style='margin-left:10px;'>&nbsp;</i>";
 					}
 				}
@@ -8046,7 +8050,7 @@ function devicePlottingClass_gmap() {
     	$("#exportInventoryForm").attr("action",base_url+"/inventory/export_selected_bs_inventory/")
     	$("#base_stations").val(JSON.stringify(inventory_bs_ids));
     	$("#exportInventoryForm").submit();
-    	
+
     	// window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(inventory_bs_ids),"_blank");
 
 		$.gritter.add({
