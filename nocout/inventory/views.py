@@ -6559,7 +6559,6 @@ class GisWizardSectorSubStationListView(SubStationList):
             {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
@@ -6573,7 +6572,7 @@ class GisWizardSubStationListing(SubStationListingTable):
     Class based View to render Sub Station Data table.
     """
     columns = ['device__ip_address', 'circuit__customer__alias', 'circuit__circuit_id', 'antenna__alias', 'version',
-            'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
+            'serial_no', 'building_height', 'tower_height', 'city', 'state', 'description']
     order_columns = ['device__ip_address', 'circuit__customer__alias', 'circuit__circuit_id', 'antenna__alias', 'version',
             'serial_no', 'building_height', 'tower_height']
 
@@ -6897,7 +6896,6 @@ class GisWizardSubStationListView(SubStationList):
             {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
@@ -6908,7 +6906,7 @@ class GisWizardSubStationListView(SubStationList):
 
 class GisWizardSubStationListingTable(SubStationListingTable):
     columns = ['device__ip_address', 'circuit__customer__alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
-               'tower_height', 'city', 'state', 'address', 'description']
+               'tower_height', 'city', 'state', 'description']
     order_columns = ['device__ip_address', 'circuit__customer__alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
