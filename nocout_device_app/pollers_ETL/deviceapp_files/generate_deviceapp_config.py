@@ -60,16 +60,16 @@ def prepare_hosts_file():
     open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
     #try:
     all_hosts, ipaddresses, host_attributes, wimax_bs_devices, \
-            cambium_bs_devices = make_BS_data()
+            cambium_bs_devices, radwin_bs_devices = make_BS_data()
     #except Exception, exp:
     #   logger.error('Exception in make_BS_data: ' + pformat(exp))
     #try:
-    make_SS_data(all_hosts, ipaddresses, host_attributes)
+    radwin_ss_devices = make_SS_data(all_hosts, ipaddresses, host_attributes)
     #except Exception, exp:
     #   logger.error('Exception in make_SS_data: ' + pformat(exp))
     write_hosts_file(all_hosts, ipaddresses, host_attributes)
 
-    return (wimax_bs_devices, cambium_bs_devices)
+    return (wimax_bs_devices, cambium_bs_devices, radwin_bs_devices, radwin_ss_devices)
 
 
 def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
@@ -87,15 +87,17 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     device_device.device_alias,
     inventory_sector.dr_site,
     inventory_sector.dr_configured_on_id,
-    device_devicetechnology.name
-    from device_device inner join (device_devicetechnology, device_devicemodel, device_devicetype, machine_machine, site_instance_siteinstance, inventory_sector)
+    device_devicetechnology.name as techno_name,
+    inventory_circuit.qos_bandwidth as QoS_BW
+    from device_device inner join (device_devicetechnology, device_devicemodel, device_devicetype, machine_machine, site_instance_siteinstance, inventory_sector, inventory_circuit)
     on (
     device_devicetype.id = device_device.device_type and
     device_devicetechnology.id = device_device.device_technology and
     device_devicemodel.id = device_device.device_model and
     machine_machine.id = device_device.machine_id and
     site_instance_siteinstance.id = device_device.site_instance_id and
-    inventory_sector.sector_configured_on_id = device_device.id
+    inventory_sector.sector_configured_on_id = device_device.id and
+    inventory_sector.id = inventory_circuit.sector_id
     )
     where device_device.is_deleted=0 and device_devicetechnology.name in ('WiMAX', 'P2P', 'PMP') and device_devicetype.name in ('Radwin2KBS', 'CanopyPM100AP', 'CanopySM100AP', 'StarmaxIDU');
     """
@@ -131,6 +133,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     final_dr_devices = zip(dr_en_devices, dr_configured_on_devices)
     #print '-- final_dr_devices --'
     #print len(final_dr_devices)
+
     hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
 
     for entry in final_dr_devices:
@@ -171,7 +174,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
                 }
             })
 
-    print data
+    #print data
     for device in data:
         if  str(device[1]) in processed:
             continue
@@ -191,6 +194,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
 
 
     # Get the wimax BS devices (we need them for active checks)
+    # Ex entry : ('device_1', 'ospf4_slave_1')
     L0 = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'wimax', data))
     L1 = map(lambda e: (e[1], e[7]), dr_en_devices)
     #L2 = zip(map(lambda e: e[0], dr_configured_on_devices), map(lambda e: e[1], L1))
@@ -199,7 +203,16 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     # Since, as of now, we have only Cambium devices in pmp technology
     cambium_bs_devices = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'pmp', data))
 
-    return (all_hosts, ipaddresses, host_attributes, wimax_bs_devices, cambium_bs_devices)
+    # Get the Radwin BS devices (We need them to generate active and static checks)
+    # Ex entry : ('device_1', 'ospf4_slave_1', '5120')
+    radwin_bs_devices = map(lambda e: (e[1], e[7], e[12]), filter(lambda e: e[11].lower() == 'p2p', data))
+    # Calculate the QoS, needed as input to static checks in form of warning/critical values
+    qos_values = eval_qos(map(lambda e: e[2], radwin_bs_devices))
+    radwin_bs_devices = map(lambda e: (e[0], e[1]), radwin_bs_devices)
+    radwin_bs_devices = zip(radwin_bs_devices, qos_values)
+
+    return (all_hosts, ipaddresses, host_attributes, wimax_bs_devices, cambium_bs_devices,\
+            radwin_bs_devices)
 
 
 def get_dr_configured_on_devices(device_ids=[]):
@@ -218,6 +231,19 @@ def get_dr_configured_on_devices(device_ids=[]):
         cur.close()
         db.close()
     return dr_configured_on_devices
+
+
+def eval_qos(vals, out=[]):
+    for v in vals:
+        if v and int(v) > 10:
+            v = float(v) / float(1024)
+        elif v and int(v) <= 10:
+            v = float(v)
+        else:
+            v = 1.0
+        out.append(v)
+
+    return out
 
 
 def write_hosts_file(all_hosts, ipaddresses, host_attributes):
@@ -256,8 +282,10 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
     SUBSTATION, 
     CIRCUIT,
     SECTOR,
-        original.device_alias as BSALIAS,
-        SSALIAS
+    original.device_alias as BSALIAS,
+    SSALIAS,
+    techno_name,
+    QoS_BW
     from device_device as original
     inner join (
     (select 
@@ -271,7 +299,9 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
     site_instance_siteinstance.name as SITE,
     inventory_circuit.circuit_id as CIRCUIT,
     inventory_sector.name SECTOR,
-    inventory_sector.sector_configured_on_id as matcher
+    inventory_sector.sector_configured_on_id as matcher,
+    device_devicetechnology.name as techno_name,
+    inventory_circuit.qos_bandwidth as QoS_BW
     from device_device 
     inner join (device_devicetechnology, device_devicemodel, device_devicetype, machine_machine, site_instance_siteinstance, inventory_substation, inventory_circuit, inventory_sector)
     on (
@@ -315,6 +345,15 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
     #all_hosts = list(set(all_hosts))
     hosts_only.close()
 
+    # Get Radwin SS devices, we need them for static n active checks
+    radwin_ss_devices = filter(lambda e: e[14].lower() == 'p2p', data)
+    radwin_ss_devices = map(lambda e: (e[4], e[8], e[15]), radwin_ss_devices)
+    qos_values = eval_qos(map(lambda e: e[2], radwin_ss_devices))
+    radwin_ss_devices = map(lambda e: (e[0], e[1]), radwin_ss_devices)
+    radwin_ss_devices = zip(radwin_ss_devices, qos_values)
+
+    return radwin_ss_devices
+
 
 def update_configuration_db():
     hosts = []
@@ -339,13 +378,16 @@ def prepare_rules(**kwargs):
             snmp_communities_db, active_checks_thresholds, \
             active_checks_thresholds_per_device = get_settings()
     wimax_pmp1_ul_active_checks, wimax_pmp1_dl_active_checks, wimax_pmp2_ul_active_checks, \
-            wimax_pmp2_dl_active_checks, cambium_ul_active_checks, cambium_dl_active_checks= active_checks(
+            wimax_pmp2_dl_active_checks, cambium_ul_active_checks, cambium_dl_active_checks,\
+            radwin_ul_active_checks, radwin_dl_active_checks, radwin_static_checks = active_checks(
             kwargs.get('wimax_bs_devices'), kwargs.get('cambium_bs_devices'),
+            kwargs.get('radwin_devices'),
             active_checks_thresholds, active_checks_thresholds_per_device)
     write_rules_file(ping_levels_db, default_checks, \
             snmp_ports_db, snmp_communities_db, wimax_pmp1_ul_active_checks, \
             wimax_pmp1_dl_active_checks, wimax_pmp2_ul_active_checks, wimax_pmp2_dl_active_checks, \
-            cambium_ul_active_checks, cambium_dl_active_checks)
+            cambium_ul_active_checks, cambium_dl_active_checks, radwin_ul_active_checks, \
+            radwin_dl_active_checks, radwin_static_checks)
 
 
 def get_settings():
@@ -371,7 +413,8 @@ def get_settings():
     # Following active checks should not be included in list of passive checks
     exclude_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi'
             'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi',
-            'cambium_ul_util_kpi', 'cambium_dl_util_kpi']
+            'cambium_ul_util_kpi', 'cambium_dl_util_kpi',
+            'radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'radwin_util_static']
     for service in data:
         """
         from pprint import pprint
@@ -544,7 +587,9 @@ def prepare_priority_checks():
     active_checks_thresholds_per_device = []
     exclude_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi',
             'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi',
-            'cambium_dl_util_kpi', 'cambium_ul_util_kpi']
+            'cambium_dl_util_kpi', 'cambium_ul_util_kpi',
+            'radwin_ul_util_kpi', 'radwin_dl_util_kpi',
+            'radwin_util_static']
     try:
         cur = db.cursor()
         cur.execute(query)
@@ -575,10 +620,11 @@ def prepare_priority_checks():
     return processed_values, active_checks_thresholds_per_device
 
 
-def active_checks(wimax_list, cambium_list, active_checks_thresholds, 
+def active_checks(wimax_list, cambium_list, radwin_list, active_checks_thresholds, 
         active_checks_thresholds_per_device, wimax_pmp1_ul_check_list=[],
         wimax_pmp1_dl_check_list=[],wimax_pmp2_ul_check_list=[],
-        wimax_pmp2_dl_check_list=[], cambium_ul_check_list=[], cambium_dl_check_list=[]):
+        wimax_pmp2_dl_check_list=[], cambium_ul_check_list=[], cambium_dl_check_list=[],
+        radwin_ul_check_list=[], radwin_dl_check_list=[], radwin_static_check_list=[]):
     # These values would be used if we dont find device specific entry
     S1 = filter(lambda x: 'wimax_pmp1_ul_util_kpi' in x[0], active_checks_thresholds)
     S2 = filter(lambda x: 'wimax_pmp1_dl_util_kpi' in x[0], active_checks_thresholds)
@@ -586,6 +632,8 @@ def active_checks(wimax_list, cambium_list, active_checks_thresholds,
     S4 = filter(lambda x: 'wimax_pmp2_dl_util_kpi' in x[0], active_checks_thresholds)
     S5 = filter(lambda x: 'cambium_ul_util_kpi' in x[0], active_checks_thresholds)
     S6 = filter(lambda x: 'cambium_dl_util_kpi' in x[0], active_checks_thresholds)
+    S7 = filter(lambda x: 'radwin_ul_util_kpi' in x[0], active_checks_thresholds)
+    S8 = filter(lambda x: 'radwin_dl_util_kpi' in x[0], active_checks_thresholds)
     for entry in wimax_list:
         # Find device specific entry
         wimax_pmp1_ul_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp1_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
@@ -651,9 +699,36 @@ def active_checks(wimax_list, cambium_list, active_checks_thresholds,
                 {'site': str(entry[1]), 'war': camb_ul_util_war, 'crit': camb_ul_util_crit}), [], [str(entry[0])]))
         cambium_dl_check_list.append((('cambium_dl_util_kpi', str(entry[0]), \
                 {'site': str(entry[1]), 'war': camb_dl_util_war, 'crit': camb_dl_util_crit}), [], [str(entry[0])]))
+    for entry in radwin_list:
+        # Find device specific entry
+        rad_ul_util = filter(lambda x: entry[0][0] == x[0] and 'radwin_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
+        rad_dl_util = filter(lambda x: entry[0][0] == x[0] and 'radwin_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
+        if rad_ul_util:
+            rad_ul_util_war, rad_ul_util_crit = rad_ul_util[0][2], rad_ul_util[0][3]
+        elif S7:
+            rad_ul_util_war, rad_ul_util_crit = S7[0][1], S7[0][2]
+        else:
+            rad_ul_util_war, rad_ul_util_crit = 80, 90
+
+        if rad_dl_util:
+            rad_dl_util_war, rad_dl_util_crit = rad_dl_util[0][2], rad_dl_util[0][3]
+        elif S8:
+            rad_dl_util_war, rad_dl_util_crit = S8[0][1], S8[0][2]
+        else:
+            rad_dl_util_war, rad_dl_util_crit = 80, 90
+
+        radwin_ul_check_list.append((('radwin_ul_util_kpi', str(entry[0][0]), \
+                {'site': str(entry[0][1]), 'war': rad_ul_util_war, 'crit': rad_ul_util_crit}), [], [str(entry[0][0])]))
+
+        radwin_dl_check_list.append((('radwin_dl_util_kpi', str(entry[0][0]), \
+                {'site': str(entry[0][1]), 'war': rad_dl_util_war, 'crit': rad_dl_util_crit}), [], [str(entry[0][0])]))
+
+        radwin_static_check_list.append((('radwin_util_static', str(entry[0][0]), \
+                {'site': str(entry[0][1]), 'war': entry[1], 'crit': entry[1]}), [], [str(entry[0][0])]))
     
     return wimax_pmp1_ul_check_list, wimax_pmp1_dl_check_list,wimax_pmp2_ul_check_list, \
-            wimax_pmp2_dl_check_list, cambium_ul_check_list, cambium_dl_check_list
+            wimax_pmp2_dl_check_list, cambium_ul_check_list, cambium_dl_check_list,\
+            radwin_ul_check_list, radwin_dl_check_list, radwin_static_check_list
 
 
 def dict_rows(cur):
@@ -666,7 +741,8 @@ def dict_rows(cur):
 
 def write_rules_file(ping_levels_db, default_checks, snmp_ports_db, 
         snmp_communities_db, wimax_pmp1_ul_active_checks, wimax_pmp1_dl_active_checks ,
-        wimax_pmp2_ul_active_checks, wimax_pmp2_dl_active_checks, cambium_ul_active_checks, cambium_dl_active_checks):
+        wimax_pmp2_ul_active_checks, wimax_pmp2_dl_active_checks, cambium_ul_active_checks, cambium_dl_active_checks,
+        radwin_ul_active_checks, radwin_dl_active_checks, radwin_static_checks):
     global default_snmp_ports
     global default_snmp_communities
     if len(snmp_communities_db):
@@ -686,12 +762,20 @@ def write_rules_file(ping_levels_db, default_checks, snmp_ports_db,
         f.write("active_checks.setdefault('wimax_pmp2_dl_util_kpi', [])\n")
         f.write("active_checks.setdefault('cambium_ul_util_kpi', [])\n\n")
         f.write("active_checks.setdefault('cambium_dl_util_kpi', [])\n\n")
+        f.write("active_checks.setdefault('radwin_ul_util_kpi', [])\n\n")
+        f.write("active_checks.setdefault('radwin_dl_util_kpi', [])\n\n")
+        f.write("active_checks.setdefault('radwin_util_static', [])\n\n")
+
         f.write("active_checks['wimax_pmp1_ul_util_kpi'] += %s\n\n" % pformat(wimax_pmp1_ul_active_checks))
         f.write("active_checks['wimax_pmp1_dl_util_kpi'] += %s\n\n" % pformat(wimax_pmp1_dl_active_checks))
         f.write("active_checks['wimax_pmp2_ul_util_kpi'] += %s\n\n" % pformat(wimax_pmp2_ul_active_checks))
         f.write("active_checks['wimax_pmp2_dl_util_kpi'] += %s\n\n" % pformat(wimax_pmp2_dl_active_checks))
         f.write("active_checks['cambium_ul_util_kpi'] += %s\n\n" % pformat(cambium_ul_active_checks))
         f.write("active_checks['cambium_dl_util_kpi'] += %s\n\n" % pformat(cambium_dl_active_checks))
+        f.write("active_checks['radwin_ul_util_kpi'] += %s\n\n" % pformat(radwin_ul_active_checks))
+        f.write("active_checks['radwin_dl_util_kpi'] += %s\n\n" % pformat(radwin_dl_active_checks))
+        f.write("active_checks['radwin_util_static'] += %s\n\n" % pformat(radwin_static_checks))
+
         f.write("checks += %s" % pformat(default_checks))
         f.write("\n\n\n")
         f.write("snmp_ports += %s" % pformat(default_snmp_ports))
@@ -707,10 +791,12 @@ def write_rules_file(ping_levels_db, default_checks, snmp_ports_db,
 
 
 def main():
-    wimax_bs_devices, cambium_bs_devices = prepare_hosts_file()
-    print "wimax_bs_devices, cambium_bs_devices"
-    print len(wimax_bs_devices), len(cambium_bs_devices)
-    prepare_rules(wimax_bs_devices=wimax_bs_devices, cambium_bs_devices=cambium_bs_devices)
+    wimax_bs_devices, cambium_bs_devices, radwin_bs_devices, radwin_ss_devices = prepare_hosts_file()
+    print "wimax_bs_devices, cambium_bs_devices", "radwin_bs_devices", "radwin_ss_devices"
+    print len(wimax_bs_devices), len(cambium_bs_devices), len(radwin_bs_devices), len(radwin_ss_devices)
+    radwin_devices = radwin_bs_devices + radwin_ss_devices
+    prepare_rules(wimax_bs_devices=wimax_bs_devices, cambium_bs_devices=cambium_bs_devices,
+            radwin_devices=radwin_devices)
 
 
 if __name__ == '__main__':
