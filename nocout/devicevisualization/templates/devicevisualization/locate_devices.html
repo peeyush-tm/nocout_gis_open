@@ -363,6 +363,10 @@
                         </a>
                     </div>
                     <div id="exportData_sideInfo" class="panel-collapse in">
+                        <form action="" target="_blank" method="post" id="exportInventoryForm">
+                            <input type="hidden" name="base_stations" id="base_stations" value="">
+                            {% csrf_token %}
+                        </form>
                         <div class="panel-body">
                             <div class="bs_list">
                             
