@@ -24,6 +24,16 @@ var recallPerf = "",
     },
     callsInProcess = false;
 
+if(!base_url) {
+    var base_url = "";
+    /*Set the base url of application for ajax calls*/
+    if(window.location.origin) {
+        base_url = window.location.origin;
+    } else {
+        base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+    }
+}
+
 if((window.location.pathname.indexOf("googleEarth") > -1) || (window.location.pathname.indexOf("white_background") > -1)) {
     hiddenIconObj = base_url+'/static/img/icons/1x1.png';
 } else {
@@ -154,10 +164,17 @@ function GisPerformance() {
             type: 'GET',
             dataType: 'json',
             //In success
-            success: function (result) {
+            success: function (response) {
+
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+
                 var data = result.length ? result[0] : result;
-                // perf_fetched_devices.push(perf_self.bsNamesList[counter-1]);
-                // perf_self.bsNamesList.splice(counter-1,0);
                 //If data is there
                 if(data) {
                     //Store data in gisData

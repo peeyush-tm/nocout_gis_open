@@ -940,11 +940,20 @@ function devicePlottingClass_gmap() {
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
-				success : function(result) {
+				success : function(response) {
 					if(isDebug) {
 						console.log("Ajax End Time :- "+ new Date().toLocaleString());
 						console.log("*******************************************");
 					}
+
+					var result = "";
+					// Type check of response
+					if(typeof response == 'string') {
+						result = JSON.parse(response);
+					} else {
+						result = response;
+					}
+
 					if(result.success == 1) {
 						if(result.data.objects) {
 							hitCounter = hitCounter + 1;
@@ -3777,7 +3786,16 @@ function devicePlottingClass_gmap() {
 		/*Ajax call for Live polling technology data*/
 		$.ajax({
 			url : base_url+"/"+"device/filter/",
-			success : function(result) {
+			success : function(response) {
+
+				var result = "";
+				// Type check of response
+				if(typeof response == 'string') {
+					result = JSON.parse(response);
+				} else {
+					result = response;
+				}
+
 				var techData = {};
 				if(typeof result === 'string') {
 					techData = JSON.parse(result).data.objects.technology.data;
@@ -5157,14 +5175,14 @@ function devicePlottingClass_gmap() {
     		$.ajax({
     			url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&service_type="+service_type,
     			// url : base_url+"/"+"static/livePolling.json",
-    			success : function(results) {
+    			success : function(response) {
 					
 					var result = "";
-
-    				if(typeof results == 'string') {
-    					result = JSON.parse(results);
+					// Type check for response
+    				if(typeof response == 'string') {
+    					result = JSON.parse(response);
     				} else {
-    					result = results;
+    					result = response;
     				}
     				
     				if(result.success == 1) {
@@ -5546,13 +5564,14 @@ function devicePlottingClass_gmap() {
     	$.ajax({
 			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 			// url : base_url+"/"+"static/services.json",
-			success : function(results) {
+			success : function(response) {
+				
 				var result = "";
-
-				if(typeof results == 'string') {
-					result = JSON.parse(results);
+				// Type check for response
+				if(typeof response == 'string') {
+					result = JSON.parse(response);
 				} else {
-					result = results;
+					result = response;
 				}
 				
 				if(result.success == 1) {
@@ -6701,7 +6720,16 @@ function devicePlottingClass_gmap() {
 	            	data: JSON.stringify(marker),
 	            	type: 'POST',
 	            	dataType: 'json',
-	            	success : function(result) {
+	            	success : function(response) {
+	            		
+	            		var result = "";
+						// Type check of response
+						if(typeof response == 'string') {
+							result = JSON.parse(response);
+						} else {
+							result = response;
+						}
+
 	            		if(result.success === 1) {
 	            			current_marker['point_id'] = result.data.point_id;
 	            			current_marker['is_update_req'] = result.data.point_id;
@@ -6741,7 +6769,16 @@ function devicePlottingClass_gmap() {
             	data: JSON.stringify(marker),
             	type: 'POST',
             	dataType: 'json',
-            	success : function(result) {
+            	success : function(response) {
+            		
+            		var result = "";
+					// Type check of response
+					if(typeof response == 'string') {
+						result = JSON.parse(response);
+					} else {
+						result = response;
+					}
+
             		if(result.success === 1) {
             			/*Remove point marker from google map*/
             			if(window.location.pathname.indexOf('googleEarth') > -1) {
@@ -6906,7 +6943,16 @@ function devicePlottingClass_gmap() {
         	data: JSON.stringify(request_obj),
         	type: 'POST',
         	dataType: 'json',
-        	success : function(result) {
+        	success : function(response) {
+        		
+        		var result = "";
+				// Type check of response
+				if(typeof response == 'string') {
+					result = JSON.parse(response);
+				} else {
+					result = response;
+				}
+
         		if(result.success === 1) {
         			if(result.data) {
             			point_data_obj[current_pt].point_id = result.data.point_id;
@@ -6979,9 +7025,17 @@ function devicePlottingClass_gmap() {
 	        	data: JSON.stringify(request_obj),
 	        	type: 'POST',
 	        	dataType: 'json',
-	        	success : function(result) {
+	        	success : function(response) {
+
+	        		var result = "";
+					// Type check of response
+					if(typeof response == 'string') {
+						result = JSON.parse(response);
+					} else {
+						result = response;
+					}
+
 	        		if(result.success === 1) {
-						
 						// infowindow.close();
 						$("#infoWindowContainer").addClass('hide');
 						if(window.location.pathname.indexOf("googleEarth") > -1) {
@@ -7018,6 +7072,7 @@ function devicePlottingClass_gmap() {
 			url : base_url+"/network_maps/get_tools_data/",
 			type : "GET",
 			success : function(result) {
+				
 				var resultant_data = "";
 				if(typeof result == 'string') {
 					resultant_data = JSON.parse(result);

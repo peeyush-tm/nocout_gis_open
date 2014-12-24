@@ -329,9 +329,16 @@ function WhiteMapClass() {
 				/*ajax call for services & datasource*/
 				$.ajax({
 					url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&service_type="+service_type,
-					success : function(results) {
+					success: function (response) {
 
-						result = JSON.parse(results);
+		                var result = "";
+		                // Type check of response
+		                if(typeof response == 'string') {
+		                    result = JSON.parse(response);
+		                } else {
+		                    result = response;
+		                }
+
 						if(result.success == 1) {
 							/*Make live polling template select box*/
 							var polling_templates = result.data.thematic_settings;
@@ -2210,14 +2217,21 @@ function WhiteMapClass() {
 				//Success callback
 				success: function(response) {
 
-					if(response.success == 1) {
+	                var result = "";
+	                // Type check of response
+	                if(typeof response == 'string') {
+	                    result = JSON.parse(response);
+	                } else {
+	                    result = response;
+	                }
 
-						var result = response;
+					if(result.success == 1) {
+						
 						//First Time, find how many times Ajax Request is to be sent.
 						if (i === 1) {
-							total_count = response.data.meta.total_count;
-							device_count = response.data.meta.device_count;
-							limit = response.data.meta.limit;
+							total_count = result.data.meta.total_count;
+							device_count = result.data.meta.device_count;
+							limit = result.data.meta.limit;
 
 							loop_count = Math.ceil(total_count / limit);
 						}
@@ -2231,7 +2245,7 @@ function WhiteMapClass() {
 						}
 
 						//Condition to check if we need to call Ajax Request again
-						if (i <= loop_count && response.success) {
+						if (i <= loop_count && result.success) {
 
 							//if all calls are completed
 							if (i === loop_count) {

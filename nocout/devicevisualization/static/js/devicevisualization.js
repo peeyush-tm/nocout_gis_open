@@ -743,7 +743,7 @@ function disableAdvanceButton(status) {
     var selectBoxes= ['technology', 'vendor', 'state', 'city'];
     var textBoxes= ['google_loc_search','lat_lon_search'];
     var disablingBit = false;
-    if(status=== undefined) {
+    if(!status) {
         disablingBit= true;
         for(var i=0; i< buttonEls.length; i++) {
             // $('#'+buttonEls[i]).prop('disabled', disablingBit);
@@ -874,7 +874,7 @@ if (!Object.keys) {
         dontEnumsLength = dontEnums.length;
 
     return function (obj) {
-      if (typeof obj !== 'object' && (typeof obj !== 'function' || obj === null)) {
+      if (typeof obj !== 'object' && (typeof obj !== 'function' || obj == null)) {
         throw new TypeError('Object.keys called on non-object');
       }
 
@@ -919,7 +919,7 @@ if (!Array.prototype.indexOf) {
     var len = O.length >>> 0;
 
     // 4. If len is 0, return -1.
-    if (len === 0) {
+    if (len == 0) {
       return -1;
     }
 
@@ -927,7 +927,7 @@ if (!Array.prototype.indexOf) {
     //    ToInteger(fromIndex); else let n be 0.
     var n = +fromIndex || 0;
 
-    if (Math.abs(n) === Infinity) {
+    if (Math.abs(n) == Infinity) {
       n = 0;
     }
 
@@ -956,7 +956,7 @@ if (!Array.prototype.indexOf) {
       //        Strict Equality Comparison Algorithm to
       //        searchElement and elementK.
       //  iii.  If same is true, return k.
-      if (k in O && O[k] === searchElement) {
+      if (k in O && O[k] == searchElement) {
         return k;
       }
       k++;
@@ -1284,7 +1284,7 @@ $("#show_hide_label").click(function(e) {
             if(move_listener_obj) {
                 var keys_array = Object.keys(move_listener_obj);
                 for(var z=0;z<keys_array.length;z++) {
-                    if(typeof move_listener_obj[keys_array[z]] === 'object') {
+                    if(typeof move_listener_obj[keys_array[z]] == 'object') {
                        if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
                             if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
                                 labelsArray[x].setVisible(e.currentTarget.checked);
@@ -1314,7 +1314,7 @@ $("#show_hide_label").click(function(e) {
             if(move_listener_obj) {
                 var keys_array = Object.keys(move_listener_obj);
                 for(var z=0;z<keys_array.length;z++) {
-                    if(typeof move_listener_obj[keys_array[z]] === 'object') {
+                    if(typeof move_listener_obj[keys_array[z]] == 'object') {
                        if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
                             if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
                                 tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
@@ -1391,14 +1391,16 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
             url: base_url+'/network_maps/l2_report/'+ckt_id+'/',
             type : "GET",
             success : function(response) {
+
                 var result = "";
-                if(typeof response === 'string') {
+                // Type check for response
+                if(typeof response == 'string') {
                     result = JSON.parse(response);
                 } else {
                     result = response;
                 }
-                if(result.success === 1) {
-                    if(result['data'].length === 0) {
+                if(result.success == 1) {
+                    if(result['data'].length == 0) {
                         bootbox.alert("No L2 Report Found.");
                     } else {
                         var url = base_url+"/"+result['data'][0]['url'];
@@ -1430,8 +1432,17 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
             url: base_url+"/"+api_url,
             type: "GET",
             dataType: "json",
-            success: function (result) {
-                if (result.success === 1) {
+            success: function (response) {
+
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+
+                if (result.success == 1) {
                     var contentHtml = "";
                     contentHtml += "<div style='max-height:300px;overflow:auto;position:relative;z-index:9999;'>";
                     if (result.data.objects.table_data_header) {
@@ -1495,6 +1506,12 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
     }
 });
 
+/**
+ * This function creates highchart as per given params
+ * @method createHighChart_map
+ * @param dom_id {String}, It contains the dom element id on which highchart is to be created
+ * @param config {Object}, It contains highchart configuration object
+ */
 function createHighChart_map(dom_id,config) {
 
     var chart_instance = $('#' + dom_id).highcharts({
@@ -1559,6 +1576,11 @@ function createHighChart_map(dom_id,config) {
     });
 }
 
+/**
+ * This function adds data to created highchart
+ * @method createHighChart_map
+ * @param pointArray {Array}, It contains points data for highchart
+ */
 function addPointsToHighChart_map(pointArray) {
     var highChartSeries = $('#' + service_id + '_chart').highcharts().series;
     for (var i = 0; i < highChartSeries.length; i++) {
@@ -1568,6 +1590,12 @@ function addPointsToHighChart_map(pointArray) {
     }
 }
 
+/**
+ * This function creates datatable with chart data as per given params
+ * @method createDataTableForChart_map
+ * @param table_id {String}, It contains dom element id on which table is to be created
+ * @param data_obj {Object}, It contains chart data object array.
+ */
 function createDataTableForChart_map(table_id, data_obj) {
 
     var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
@@ -1610,10 +1638,17 @@ function createDataTableForChart_map(table_id, data_obj) {
     return data_in_table;
 }
 
-function createDataTableHtml_map(table_id, headers,table_data) {
+/**
+ * This function creates datatable as per given params
+ * @method createDataTableHtml_map
+ * @param table_id {String}, It contains dom element id on which table is to be created
+ * @param table_headers {Array}, It is the grid headers array.
+ * @param table_data {Array}, It is the grid data array.
+ */
+function createDataTableHtml_map(table_id, table_headers,table_data) {
 
     var table_string = "";
-    var grid_headers = headers;
+    var grid_headers = table_headers;
 
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
@@ -1637,6 +1672,7 @@ function createDataTableHtml_map(table_id, headers,table_data) {
 
 /**
  * This event trigger when export data button is clicked
+ * @event click
  */
 $("#export_data_gmap").click(function(e) {
 
@@ -1661,6 +1697,10 @@ $("#export_data_gmap").click(function(e) {
     }
 });
 
+/**
+ * This event trigger when "Cancel Selection" button of export data is clicked
+ * @event click
+ */
 $("#clearExportDataBtn").click(function(e) {
     //disable the flag
     isExportDataActive = 0;
@@ -1668,12 +1708,22 @@ $("#clearExportDataBtn").click(function(e) {
     networkMapInstance.removeInventorySelection();
 });
 
+/**
+ * This event trigger when "Download Inventory" button on selected devices panel is clicked
+ * @event click
+ */
 $("#download_inventory").click(function(e) {
     //call function to download selected inventory.
     networkMapInstance.downloadInventory_gmap(); 
 });
 
 
+/**
+ * This function checks that the given point is in given polyon of not.
+ * @method isPointInPoly
+ * @param poly {Array}, It is the polygon data(lat-lon) array
+ * @param pt {Object}, It is point lat lon object
+ */
 function isPointInPoly(poly, pt) {
     if(poly && poly.length > 0) {
         for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
@@ -1712,30 +1762,6 @@ function showGoogleEarthInBounds(boundsArr, callback) {
     gexInstance.util.flyToObject(folder);
     isFromSearch = true;
     callback();
-    
-
-    
-
-    // 
-    // g_earth.clearOverlays();
-
-    // var totalBounds = new GLatLngBounds();
-
-    // var boundPolygonArray = [];
-
-    // for(var i=0; i< boundsArr.length; i++) {
-    //     (function(i) {
-    //         boundPolygonArray.push(new GLatLng(boundsArr[i].lat, boundsArr[i].lon));
-    //     }(i));
-    // }
-
-    // var globeBoundsPolygon = new GPolygon(boundPolygonArray, '#0000ff', 2, 1.00, '#0000ff',    0.25, { clickable: false });
-
-    // // g_earth.addOverlay(globeBoundsPolygon);
-
-    // var polyBounds = globeBoundsPolygon.getBounds();
-    // totalBounds.extend(polyBounds.getNorthEast());
-    // totalBounds.extend(polyBounds.getSouthWest());
 }
 
 function objectsAreSame(x, y) {
@@ -1751,7 +1777,7 @@ function objectsAreSame(x, y) {
 
 
 function arraysEqual(a, b) {
-  if (a === b) return true;
+  if (a == b) return true;
   if (a == null || b == null) return false;
   if (a.length != b.length) return false;
 
