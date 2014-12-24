@@ -2264,7 +2264,7 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
             user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=obj_id).user_profile.values_list('id', flat=True)
             checkbox_checked_true='checked' if user_current_thematic_setting else ''
             dct.update(
-                threshold_template=threshold_config.name,
+                threshold_template=threshold_config.alias,
                 icon_settings= full_string,
                 user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(obj_id),
                 actions=actions)
@@ -2429,10 +2429,16 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         Called if all forms are valid. Updates ThematicSettings, LivePollingSettings and IconSettings.
         """
         self.object = self.get_object()
+        name = form.instance.name
+        alias = form.instance.alias
         icon_settings_values_list = [ { key: form.data[key] }  for key in self.icon_settings_keys if form.data[key]]
         form.instance.icon_settings = icon_settings_values_list
         form.save()
+        threshold_configuration_form.instance.name = name
+        threshold_configuration_form.instance.alias = alias
         threshold_configuration_form.save()
+        live_polling_settings_form.instance.name = name
+        live_polling_settings_form.instance.alias = alias
         live_polling_settings_form.save()
         if 'admin' in self.request.path:
             return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
