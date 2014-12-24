@@ -940,11 +940,20 @@ function devicePlottingClass_gmap() {
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
-				success : function(result) {
+				success : function(response) {
 					if(isDebug) {
 						console.log("Ajax End Time :- "+ new Date().toLocaleString());
 						console.log("*******************************************");
 					}
+
+					var result = "";
+					// Type check of response
+					if(typeof response == 'string') {
+						result = JSON.parse(response);
+					} else {
+						result = response;
+					}
+
 					if(result.success == 1) {
 						if(result.data.objects) {
 							hitCounter = hitCounter + 1;
@@ -1448,7 +1457,7 @@ function devicePlottingClass_gmap() {
 				advance_filter_condition2 = city_filter.length > 0 ? city_filter.indexOf(bs_city) > -1 : true;
 
         	// If any basic filter is applied
-        	if(isBasicFilterApplied) {        		
+        	if(isBasicFilterApplied) {
     			var isCorrect = false;
         		if($.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0) {
         			// If technology filter applied then check backhaul technology
@@ -1629,10 +1638,19 @@ function devicePlottingClass_gmap() {
         cross_label_array = {};
         tooltipInfoLabel = {};
 
-        /*Clear all everything from map*/
-		$.grep(allMarkersArray_gmap,function(marker) {
-			marker.setMap(null);
-		});
+        // Clear base-stations
+        gmap_self.toggleSpecifixMarkers_gmap('base_station',null);
+        // Clear sector device
+        gmap_self.toggleSpecifixMarkers_gmap('sector_device',null);
+        // Clear sector polygon
+        gmap_self.toggleSpecifixMarkers_gmap('sector_polygon',null);
+        // Clear sub-stations
+        gmap_self.toggleSpecifixMarkers_gmap('sub_station',null);
+        // Clear link line
+        gmap_self.toggleSpecifixMarkers_gmap('path',null);
+		// $.grep(allMarkersArray_gmap,function(marker) {
+		// 	marker.setMap(null);
+		// });
 
 		// Reset Variables
 		allMarkersArray_gmap = [];
@@ -1998,7 +2016,7 @@ function devicePlottingClass_gmap() {
 
 					if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
 						sector_MarkersArray.push(sector_Marker);
-						allMarkersArray_gmap.push(sector_Marker);
+						// allMarkersArray_gmap.push(sector_Marker);
 
 						/*Push Sector marker to pollableDevices array*/
 						pollableDevices.push(sector_Marker);
@@ -2075,7 +2093,7 @@ function devicePlottingClass_gmap() {
                         	labelHtml = "";
 
                     	if(labelInfoObject) {
-                            labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                            labelHtml += $.trim(labelInfoObject['value']);
                         }
 
 				    	// If any html created then show label on ss
@@ -2134,7 +2152,7 @@ function devicePlottingClass_gmap() {
 
 			    	allMarkersObject_gmap['sub_station']['ss_'+ss_marker_obj.name] = ss_marker;
 
-			    	allMarkersArray_gmap.push(ss_marker);
+			    	// allMarkersArray_gmap.push(ss_marker);
 
 			    	/*Add parent markers to the OverlappingMarkerSpiderfier*/
 				    oms_ss.addMarker(ss_marker);
@@ -2194,7 +2212,7 @@ function devicePlottingClass_gmap() {
 
 					    	allMarkersObject_gmap['path']['line_'+ss_marker_obj.name] = ss_link_line;
 
-					    	allMarkersArray_gmap.push(ss_link_line);
+					    	// allMarkersArray_gmap.push(ss_link_line);
 		    			// }
 	    			// }
 				}
@@ -2205,7 +2223,7 @@ function devicePlottingClass_gmap() {
 
 	    	allMarkersObject_gmap['base_station']['bs_'+bs_ss_devices[i].name] = bs_marker;
 
-	    	allMarkersArray_gmap.push(bs_marker);
+	    	// allMarkersArray_gmap.push(bs_marker);
 
 	    	//Add markers to markersMasterObj with LatLong at key so it can be fetched later.
 			markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
@@ -2852,7 +2870,7 @@ function devicePlottingClass_gmap() {
 			windowTitle 	 : "Base Station Device"
         });
         // poly.setMap(mapInstance);
-        allMarkersArray_gmap.push(poly);
+        // allMarkersArray_gmap.push(poly);
 
         allMarkersObject_gmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+sectorInfo.sector_id] = poly;
 
@@ -2933,7 +2951,7 @@ function devicePlottingClass_gmap() {
 					}
 				}
 
-				infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.nearLat+", "+contentObject.nearLon+"</td></tr>";
+				// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.nearLat+", "+contentObject.nearLon+"</td></tr>";
 				infoTable += "</tbody></table>";			
 				infoTable += "</td>";
 				/*BS-Sector Info End*/
@@ -2961,7 +2979,7 @@ function devicePlottingClass_gmap() {
 				var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
 					link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
 
-				infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
+				// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
 				var report_download_btn = "";
 				if(path_circuit_id) {
 					infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
@@ -3776,8 +3794,17 @@ function devicePlottingClass_gmap() {
 
 		/*Ajax call for Live polling technology data*/
 		$.ajax({
-			url : base_url+"/"+"device/filter/",
-			success : function(result) {
+			url : base_url+"/"+"device/filter/1/",
+			success : function(response) {
+
+				var result = "";
+				// Type check of response
+				if(typeof response == 'string') {
+					result = JSON.parse(response);
+				} else {
+					result = response;
+				}
+
 				var techData = {};
 				if(typeof result === 'string') {
 					techData = JSON.parse(result).data.objects.technology.data;
@@ -5157,14 +5184,14 @@ function devicePlottingClass_gmap() {
     		$.ajax({
     			url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&service_type="+service_type,
     			// url : base_url+"/"+"static/livePolling.json",
-    			success : function(results) {
+    			success : function(response) {
 					
 					var result = "";
-
-    				if(typeof results == 'string') {
-    					result = JSON.parse(results);
+					// Type check for response
+    				if(typeof response == 'string') {
+    					result = JSON.parse(response);
     				} else {
-    					result = results;
+    					result = response;
     				}
     				
     				if(result.success == 1) {
@@ -5546,13 +5573,14 @@ function devicePlottingClass_gmap() {
     	$.ajax({
 			url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 			// url : base_url+"/"+"static/services.json",
-			success : function(results) {
+			success : function(response) {
+				
 				var result = "";
-
-				if(typeof results == 'string') {
-					result = JSON.parse(results);
+				// Type check for response
+				if(typeof response == 'string') {
+					result = JSON.parse(response);
 				} else {
-					result = results;
+					result = response;
 				}
 				
 				if(result.success == 1) {
@@ -6117,7 +6145,8 @@ function devicePlottingClass_gmap() {
 
     this.createDistanceInfobox = function(distanceObject) {
     	var distanceInfoBox= new InfoBox({
-    		content: distanceObject.distance+" m<br />Point A: ("+distanceObject['startLat'].toFixed(4)+","+distanceObject['startLon'].toFixed(4)+")<br />Point B: ("+distanceObject['endLat'].toFixed(4)+","+distanceObject['endLon'].toFixed(4)+")",
+    		// content: distanceObject.distance+" m<br />Point A: ("+distanceObject['startLat'].toFixed(4)+","+distanceObject['startLon'].toFixed(4)+")<br />Point B: ("+distanceObject['endLat'].toFixed(4)+","+distanceObject['endLon'].toFixed(4)+")",
+    		content: distanceObject.distance+" m",
     		boxStyle: {
     			border        : "1px solid #B0AEAE",
     			background 	  : "white",
@@ -6126,10 +6155,10 @@ function devicePlottingClass_gmap() {
 		        color         : "black",
 		        padding       : '2px',
 		        borderRadius  : "5px",
-    			width 		  : "150px"
+    			width 		  : "60px"
     		},
     		disableAutoPan: true,
-    		pixelOffset: new google.maps.Size(-75, 0),
+    		pixelOffset: new google.maps.Size(-30, -10),
     		position: new google.maps.LatLng(distanceObject.lat3 * 180 / Math.PI,distanceObject.lon3 * 180 / Math.PI),
     		closeBoxURL: "",
     		isHidden: false,
@@ -6700,7 +6729,16 @@ function devicePlottingClass_gmap() {
 	            	data: JSON.stringify(marker),
 	            	type: 'POST',
 	            	dataType: 'json',
-	            	success : function(result) {
+	            	success : function(response) {
+	            		
+	            		var result = "";
+						// Type check of response
+						if(typeof response == 'string') {
+							result = JSON.parse(response);
+						} else {
+							result = response;
+						}
+
 	            		if(result.success === 1) {
 	            			current_marker['point_id'] = result.data.point_id;
 	            			current_marker['is_update_req'] = result.data.point_id;
@@ -6740,7 +6778,16 @@ function devicePlottingClass_gmap() {
             	data: JSON.stringify(marker),
             	type: 'POST',
             	dataType: 'json',
-            	success : function(result) {
+            	success : function(response) {
+            		
+            		var result = "";
+					// Type check of response
+					if(typeof response == 'string') {
+						result = JSON.parse(response);
+					} else {
+						result = response;
+					}
+
             		if(result.success === 1) {
             			/*Remove point marker from google map*/
             			if(window.location.pathname.indexOf('googleEarth') > -1) {
@@ -6905,7 +6952,16 @@ function devicePlottingClass_gmap() {
         	data: JSON.stringify(request_obj),
         	type: 'POST',
         	dataType: 'json',
-        	success : function(result) {
+        	success : function(response) {
+        		
+        		var result = "";
+				// Type check of response
+				if(typeof response == 'string') {
+					result = JSON.parse(response);
+				} else {
+					result = response;
+				}
+
         		if(result.success === 1) {
         			if(result.data) {
             			point_data_obj[current_pt].point_id = result.data.point_id;
@@ -6978,9 +7034,17 @@ function devicePlottingClass_gmap() {
 	        	data: JSON.stringify(request_obj),
 	        	type: 'POST',
 	        	dataType: 'json',
-	        	success : function(result) {
+	        	success : function(response) {
+
+	        		var result = "";
+					// Type check of response
+					if(typeof response == 'string') {
+						result = JSON.parse(response);
+					} else {
+						result = response;
+					}
+
 	        		if(result.success === 1) {
-						
 						// infowindow.close();
 						$("#infoWindowContainer").addClass('hide');
 						if(window.location.pathname.indexOf("googleEarth") > -1) {
@@ -7017,6 +7081,7 @@ function devicePlottingClass_gmap() {
 			url : base_url+"/network_maps/get_tools_data/",
 			type : "GET",
 			success : function(result) {
+
 				var resultant_data = "";
 				if(typeof result == 'string') {
 					resultant_data = JSON.parse(result);
@@ -7283,11 +7348,23 @@ function devicePlottingClass_gmap() {
 	 * @method hide_all_elements_gmap
 	 */
 	this.hide_all_elements_gmap = function() {
+
+		// Clear base-stations
+        gmap_self.toggleSpecifixMarkers_gmap('base_station',null);
+        // Clear sector device
+        gmap_self.toggleSpecifixMarkers_gmap('sector_device',null);
+        // Clear sector polygon
+        gmap_self.toggleSpecifixMarkers_gmap('sector_polygon',null);
+        // Clear sub-stations
+        gmap_self.toggleSpecifixMarkers_gmap('sub_station',null);
+        // Clear link line
+        gmap_self.toggleSpecifixMarkers_gmap('path',null);
+
 		/*Clear all everything from map*/
-		$.grep(allMarkersArray_gmap,function(marker) {
-			marker.setOptions({"isActive" : 0});
-			marker.setMap(null);
-		});
+		// $.grep(allMarkersArray_gmap,function(marker) {
+		// 	marker.setOptions({"isActive" : 0});
+		// 	marker.setMap(null);
+		// });
 
 		/*Hide drawn points & lines from tools*/
 		var connected_points_array = Object.keys(point_data_obj),
@@ -7317,7 +7394,7 @@ function devicePlottingClass_gmap() {
 		if(masterClusterInstance) {
 			masterClusterInstance.clearMarkers();
 		}
-	}
+	};
 
 	/**
 	 * This function show all items from google map
@@ -7325,17 +7402,21 @@ function devicePlottingClass_gmap() {
 	 */
 	this.show_all_elements_gmap = function() {
 
+		// Clear base-stations
+        gmap_self.toggleSpecifixMarkers_gmap('base_station',mapInstance);
+        // Clear sector device
+        gmap_self.toggleSpecifixMarkers_gmap('sector_device',mapInstance);
+        // Clear sector polygon
+        gmap_self.toggleSpecifixMarkers_gmap('sector_polygon',mapInstance);
+        // Clear sub-stations
+        gmap_self.toggleSpecifixMarkers_gmap('sub_station',mapInstance);
+        // Clear link line
+        gmap_self.toggleSpecifixMarkers_gmap('path',mapInstance);
+
 		/*Show everything on map except connection line*/
-		$.grep(allMarkersArray_gmap,function(marker) {
-			marker.setOptions({"isActive" : 1});
-			// if(marker.pointType && ($.trim(marker.pointType) != 'path') && ($.trim(marker.pointType) != 'sub_station')) {
-			// 	marker.setMap(mapInstance);
-			// } else {
-			// 	if(marker.pointType && $.trim(marker.pointType) == 'sub_station') {
-			// 		marker.setOptions({"isActive" : 1});
-			// 	}
-			// }
-		});
+		// $.grep(allMarkersArray_gmap,function(marker) {
+		// 	marker.setOptions({"isActive" : 1});
+		// });
 
 		/*Show drawn points & lines from tools*/
 		var connected_points_array = Object.keys(point_data_obj),
@@ -7495,6 +7576,26 @@ function devicePlottingClass_gmap() {
 			// setTimeout(function(){
 			// },350);
 	    }
+	};
+
+	/**
+	 * This function show/hide markers or elements of given key from global object
+	 * @method toggleSpecifixMarkers_gmap
+	 * @param key {String}, It contains one of the key from global object which are to be shown or hide
+	 * @param map {null or Object}, It contains null to hide marker & map object to show markers
+	 */
+	this.toggleSpecifixMarkers_gmap = function(key,map) {
+		var markers = allMarkersObject_gmap[key];
+		if(markers) {
+			var marker_keys = Object.keys(markers);
+
+			// Loop object key to show/hide markers
+			for(var i=marker_keys.length;i--;) {
+				if(markers[marker_keys[i]]) {
+					markers[marker_keys[i]].setMap(map);
+				}
+			}
+		}
 	};
 
 	/**
@@ -7841,7 +7942,7 @@ function devicePlottingClass_gmap() {
 					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
 
             	if(labelInfoObject) {
-                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                    labelHtml += $.trim(labelInfoObject['value']);
                 }
 
                 var toolTip_infobox = "";
@@ -7881,7 +7982,7 @@ function devicePlottingClass_gmap() {
 					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
 
             	if(labelInfoObject) {
-                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                    labelHtml += $.trim(labelInfoObject['value']);
                 }
 
                 if(window.location.pathname.indexOf("googleEarth") > -1) {

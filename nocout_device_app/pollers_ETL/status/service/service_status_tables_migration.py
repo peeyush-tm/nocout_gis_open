@@ -71,7 +71,7 @@ def main(**configs):
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=5)
     # Get all the entries from mongodb having timestam0p greater than start_time
-    docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[2], db_name=configs.get('nosql_db'))
     configs1 = config_module.parse_config_obj()
     for conf, options in configs1.items():
             machine_name = options.get('machine')
@@ -196,7 +196,7 @@ def insert_data(table, data_values, **kwargs):
 	insert_dict = {'0':[],'1':[]}
 	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
-		query = "SELECT * FROM %s " % table +\
+		query = "SELECT COUNT(*) FROM %s " % table +\
                 	"WHERE `device_name`='%s' AND  `service_name`='%s' AND `data_source` ='%s'" %(str(data_values[i][0]),data_values[i][1],data_values[i][4])
 		cursor = db.cursor()
         	try:
@@ -211,15 +211,14 @@ def insert_data(table, data_values, **kwargs):
 	
 	if len(insert_dict['1']):
  		query = "UPDATE `%s` " % table
-		query += """SET `device_name`=%s,`service_name`=%s,
-		`machine_name`=%s, `site_name`=%s, `data_source`=%s, `current_value`=%s,
+		query += """SET `machine_name`=%s, `current_value`=%s,
 		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
 		`ip_address`=%s,`severity`=%s,`age`=%s
-		WHERE `device_name`=%s AND `service_name`=%s AND `data_source` = %s
+		WHERE (`device_name`=%s AND `service_name`=%s AND `data_source` = %s)
 		"""
 		try:
-			data_values = map(lambda x: x + (x[0], x[1],x[4]), insert_dict.get('1'))
+			data_values = map(lambda x: ( x[2],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14],x[15]) + (x[0],x[1],x[4]), insert_dict.get('1'))
                 	cursor.executemany(query, data_values)
 		except mysql.connector.Error as err:
         		raise mysql.connector.Error, err

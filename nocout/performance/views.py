@@ -19,7 +19,7 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     EventService, NetworkStatus, \
     ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, \
-    Status, NetworkAvailabilityDaily, Topology
+    Status, NetworkAvailabilityDaily, Topology, Utilization, UtilizationStatus
 
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 
@@ -742,7 +742,7 @@ class Inventory_Device_Status(View):
                                                         'City',
                                                         'State',
                                                         'IP Address',
-                                                        'MAC Address',
+                                                        # 'MAC Address',
                                                         'Planned Frequency',
                                                         'Frequency'
                 ]
@@ -755,7 +755,7 @@ class Inventory_Device_Status(View):
                                                         'City',
                                                         'State',
                                                         'IP Address',
-                                                        'MAC Address',
+                                                        # 'MAC Address',
                                                         'Planned Frequency',
                                                         'Frequency'
                 ]
@@ -801,7 +801,7 @@ class Inventory_Device_Status(View):
                                                                 city_name,
                                                                 state_name,
                                                                 device.ip_address,
-                                                                device.mac_address,
+                                                                # device.mac_address,
                                                                 planned_frequency,
                                                                 frequency
                     ])
@@ -814,7 +814,7 @@ class Inventory_Device_Status(View):
                                                                 city_name,
                                                                 state_name,
                                                                 device.ip_address,
-                                                                device.mac_address,
+                                                                # device.mac_address,
                                                                 planned_frequency,
                                                                 frequency
                     ])
@@ -825,13 +825,13 @@ class Inventory_Device_Status(View):
                                                     'Circuit ID',
                                                     'Customer Name',
                                                     'Technology',
-                                                    'Building Height',
-                                                    'Tower Height',
+                                                    # 'Building Height',
+                                                    # 'Tower Height',
                                                     'City',
                                                     'State',
                                                     'IP Address',
                                                     'MAC Address',
-                                                    'Planned Frequency',
+                                                    # 'Planned Frequency',
                                                     'Frequency'
             ]
             result['data']['objects']['values'] = []
@@ -869,13 +869,13 @@ class Inventory_Device_Status(View):
                                                                 circuit.circuit_id,
                                                                 customer_name[0].alias,
                                                                 technology.alias,
-                                                                substation.building_height,
-                                                                substation.tower_height,
+                                                                # substation.building_height,
+                                                                # substation.tower_height,
                                                                 city_name,
                                                                 state_name,
                                                                 device.ip_address,
                                                                 device.mac_address,
-                                                                planned_frequency,
+                                                                # planned_frequency,
                                                                 frequency
                     ])
 
@@ -1147,6 +1147,12 @@ class Get_Service_Status(View):
                                                               data_source=service_data_source_type
             )
 
+        elif '_kpi' in service_name:
+            performance_data_query_set = UtilizationStatus.objects.filter(device_name=inventory_device_name,
+                                                              service_name=service_name,
+                                                              data_source=service_data_source_type
+            )
+
         else:
             performance_data_query_set = ServiceStatus.objects.filter(device_name=inventory_device_name,
                                                             service_name=service_name,
@@ -1276,12 +1282,30 @@ class Get_Service_Type_Performance_Data(View):
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
-            performance_data = Topology.objects.filter(device_name=inventory_device_name,
-                                                       # service_name=service_name,
-                                                       data_source='topology',  #service_data_source_type,
-                                                       sys_timestamp__gte=start_date,
-                                                       sys_timestamp__lte=end_date).using(
-                alias=inventory_device_machine_name)
+            #for wimax devices there can be a case of DR
+            #we need to incorporate the DR devices as well
+            technology = DeviceTechnology.objects.get(id=device.device_technology)
+            dr_device = None
+            if technology and technology.name == 'WiMAX' and device.sector_configured_on.exists():
+                dr_devices = device.sector_configured_on.filter()
+                for dr_d in dr_devices:
+                    dr_device = dr_d.dr_configured_on
+
+            if dr_device:
+                dr_device_name = dr_device.device_name
+                performance_data = Topology.objects.filter(device_name__in=[inventory_device_name,dr_device_name],
+                                                           # service_name=service_name,
+                                                           data_source='topology',  #service_data_source_type,
+                                                           sys_timestamp__gte=start_date,
+                                                           sys_timestamp__lte=end_date).using(
+                    alias=inventory_device_machine_name)
+            else:
+                performance_data = Topology.objects.filter(device_name=inventory_device_name,
+                                                           # service_name=service_name,
+                                                           data_source='topology',  #service_data_source_type,
+                                                           sys_timestamp__gte=start_date,
+                                                           sys_timestamp__lte=end_date).using(
+                    alias=inventory_device_machine_name)
 
             result = self.get_topology_result(performance_data)
 
@@ -1311,6 +1335,24 @@ class Get_Service_Type_Performance_Data(View):
                 alias=inventory_device_machine_name)
 
             result = self.get_perf_table_result(performance_data)
+
+        elif '_kpi' in service_name:
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
+            #kpi services depends on the refer fields
+            #and not directly on the "device_name"
+            #the refer filed indicates the sector
+
+            performance_data = Utilization.objects.filter(device_name=inventory_device_name,
+                                                                   service_name=service_name,
+                                                                   data_source=service_data_source_type,
+                                                                   sys_timestamp__gte=start_date,
+                                                                   sys_timestamp__lte=end_date).using(
+                alias=inventory_device_machine_name).order_by('sys_timestamp')
+
+            result = self.get_performance_data_result(performance_data)
+
         else:
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
@@ -1498,7 +1540,7 @@ class Get_Service_Type_Performance_Data(View):
                                 continue
 
                 result_data.append({
-                    'device_name': data.device_name,
+                    #'device_name': data.device_name,
                     'ip_address': data.ip_address,
                     'mac_address': data.mac_address,
                     'sector_id': data.sector_id,
@@ -1516,7 +1558,7 @@ class Get_Service_Type_Performance_Data(View):
         self.result['success'] = 1
         self.result['message'] = 'Device Data Fetched Successfully.' if result_data else 'No Record Found.'
         self.result['data']['objects']['table_data'] = result_data
-        self.result['data']['objects']['table_data_header'] = ['device_name',
+        self.result['data']['objects']['table_data_header'] = [#'device_name',
                                                                'ip_address',
                                                                'mac_address',
                                                                'sector_id',

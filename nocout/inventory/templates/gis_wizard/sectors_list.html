@@ -1,14 +1,14 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
 
-{% block content_title %}Sector Listing{% endblock %}
-{% block content_description %}List of sectors{% endblock %}
+{% block content_title %}P2P Listing{% endblock %}
+{% block content_description %}List of P2P{% endblock %}
 {% block content %}
-    <p><a href="{% url 'gis-wizard-sector-create' bs_pk=base_station.id selected_technology=2 %}"><i class="fa fa-plus">&nbsp;</i> Create New Sector</a></p>
+<p><a href="{% url 'gis-wizard-sector-create' bs_pk=base_station.id selected_technology=2 %}"><i class="fa fa-plus">&nbsp;</i> <span id="id_create_new_sector_link">Create New P2P</span></a></p>
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>SECTOR LISTING ({{ base_station.name }})</h4>
+            <h4><i class="fa fa-table"></i>P2P LISTING ({{ base_station.name }})</h4>
         </div>
         <div id="tableContainer" class="box-body">
             <div class="tabbable header-tabs">
@@ -72,6 +72,28 @@
             dataTableInstance.createDataTable("SectorListingTable_ptp", p2p_GridHeadersObj, ajax_url_ptp, destroy);
             dataTableInstance.createDataTable("SectorListingTable_pmp", pmp_GridHeadersObj, ajax_url_pmp, destroy);
             dataTableInstance.createDataTable("SectorListingTable_wimax", wimax_GridHeadersObj, ajax_url_wimax, destroy);
+
+            $('.nav-tabs li').click(function(el){
+                //var active_tab = $('.nav-tabs li').filter('.active').find('.hidden-inline-mobile').text();
+                var active_tab = el.target.innerText;
+                if (active_tab == 'P2P') {
+                    var new_html = $('#tableContainer_div').find('h4').html().replace("SECTOR", "P2P");
+                    $('#tableContainer_div').find('h4').html(new_html);
+                    $('#id_create_new_sector_link').text('Create New P2P');
+                    $('.description').text('List of P2P');
+
+                    var new_text = $('.content-title').text().replace("Sector", "P2P");
+                    $('.content-title').text(new_text);
+                } else {
+                    var new_html = $('#tableContainer_div').find('h4').html().replace("P2P", "SECTOR");
+                    $('#tableContainer_div').find('h4').html(new_html);
+                    $('#id_create_new_sector_link').text('Create New Sector');
+                    $('.description').text('List of sectors');
+
+                    var new_text = $('.content-title').text().replace("P2P", "Sector");
+                    $('.content-title').text(new_text);
+                }
+            });
         });
     </script>
 {% endblock %}

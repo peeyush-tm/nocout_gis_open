@@ -1,7 +1,7 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block content_title %}GIS Wizard: Sector{% endblock %}
-{% block content_description %}gis wizard: sector{% endblock %}
+{% block content_title %}GIS Wizard: {% if selected_technology == '2' %}P2P{% else %}Sector{% endif %}{% endblock %}
+{% block content_description %}gis wizard: {% if selected_technology == '2' %}P2P{% else %}sector{% endif %}{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -9,7 +9,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> GIS WIZARD: SECTOR ({{ base_station.name }})</h4>
+                            <h4><i class="fa fa-bars"></i> GIS WIZARD: {% if selected_technology == '2' %}P2P{% else %}SECTOR{% endif %} ({{ base_station.name }})</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br/>
