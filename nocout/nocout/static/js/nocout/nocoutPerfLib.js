@@ -71,7 +71,15 @@ function nocoutPerfLib() {
             url: get_url,
             type: "GET",
             dataType: "json",
-            success: function (result) {
+            success: function (response) {
+
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
 
                 if (result.success == 1) {
                     allDevices = result.data.objects;
@@ -123,9 +131,17 @@ function nocoutPerfLib() {
             url: get_url,
             type: "GET",
             dataType: "json",
-            success: function (result) {
-                if (result.success == 1) {
+            success: function (response) {
 
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+
+                if (result.success == 1) {
                     device_status = result.data.objects;
                     /*Loop for table headers*/
                     var headers = "<tr>";
@@ -200,7 +216,16 @@ function nocoutPerfLib() {
             url: get_url,
             type: "GET",
             dataType: "json",
-            success: function (result) {
+            success: function (response) {
+                
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+
                 if (result.success == 1) {
 
                     var device_services_tab = Object.keys(result.data.objects);
@@ -398,6 +423,7 @@ function nocoutPerfLib() {
                     txt_color = "",
                     status_html = "";
 
+                // Type check of response
                 if(typeof response == 'string') {
                     result = JSON.parse(response);
                 } else {
@@ -686,7 +712,16 @@ function nocoutPerfLib() {
                 },
                 type: "GET",
                 dataType: "json",
-                success: function (result) {
+                success: function (response) {
+
+                    var result = "";
+                    // Type check of response
+                    if(typeof response == 'string') {
+                        result = JSON.parse(response);
+                    } else {
+                        result = response;
+                    }
+
                     if(result.success == 1) {
                         if (result.data.objects.table_data_header && result.data.objects.table_data_header.length > 0) {
                             if ($("#other_perf_table").length == 0) {
