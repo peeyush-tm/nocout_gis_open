@@ -980,6 +980,16 @@ class Inventory_Device_Service_Data_Source(View):
                 'service_type_tab': 'network_perf_tab'
             })
 
+        if device.substation_set.exists():
+            result['data']['objects']['network_perf_tab']["info"].append(
+            {
+                'name': "rf",
+                'title': "RF Latency",
+                'url': 'performance/service/rf/service_data_source/rf/device/' + str(device_id),
+                'active': 0,
+                'service_type_tab': 'network_perf_tab'
+            })
+
         device_type_services = device_type.service.filter().prefetch_related('servicespecificdatasource_set')
 
         for service in device_type_services:
@@ -1129,10 +1139,10 @@ class Get_Service_Status(View):
                                                             data_source=service_data_source_type,
             )
 
-        elif "availability" in service_name or service_data_source_type in ['availability']:
+        elif "rf" == service_name and "rf" == service_data_source_type:
             performance_data_query_set = None
 
-        elif "topology" in service_name or service_data_source_type in ['topology']:
+        elif service_name in ['topology', 'availability'] or service_data_source_type in ['availability', 'topology']:
             performance_data_query_set = None
 
         elif '_status' in service_name:
@@ -1264,6 +1274,47 @@ class Get_Service_Type_Performance_Data(View):
                 alias=inventory_device_machine_name).order_by('sys_timestamp')
 
             result = self.get_performance_data_result(performance_data)
+
+        elif service_data_source_type == 'rf':
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
+            sector_device = None
+            if device.substation_set.exists():
+                try:
+                    ss = device.substation_set.get()
+                    circuit = ss.circuit_set.get()
+                    sector_device = circuit.sector.sector_configured_on
+                except Exception as e:
+                    log.exception(e.message)
+            if sector_device:
+                performance_data_ss = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
+                                                                     service_name='ping',
+                                                                     data_source='rta',
+                                                                     sys_timestamp__gte=start_date,
+                                                                     sys_timestamp__lte=end_date).using(
+                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+
+                performance_data_bs = PerformanceNetwork.objects.filter(device_name=sector_device.device_name,
+                                                                     service_name='ping',
+                                                                     data_source='rta',
+                                                                     sys_timestamp__gte=start_date,
+                                                                     sys_timestamp__lte=end_date).using(
+                    alias=sector_device.machine.name).order_by('sys_timestamp')
+
+                result = self.rf_performance_data_result(performance_data_bs=performance_data_bs,
+                                                         performance_data_ss=performance_data_ss
+                )
+
+            else:
+                performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
+                                                                     service_name='ping',
+                                                                     data_source='rta',
+                                                                     sys_timestamp__gte=start_date,
+                                                                     sys_timestamp__lte=end_date).using(
+                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+
+                result = self.get_performance_data_result(performance_data)
 
         elif "availability" in service_name or service_data_source_type in ['availability']:
             if not isSet:
@@ -1571,6 +1622,42 @@ class Get_Service_Type_Performance_Data(View):
                                                                'status_since',
                                                                'last_updated'
         ]
+        return self.result
+
+    def rf_performance_data_result(self, performance_data_ss, performance_data_bs):
+        """
+        """
+        chart_data = list()
+        if performance_data_ss and performance_data_bs:
+            data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
+            min_data_list = list()
+            max_data_list = list()
+
+            for data in performance_data_ss:
+                js_time = data.sys_timestamp*1000
+                if data.avg_value:
+                    try:
+                        bs_lat = performance_data_bs.get(sys_timestamp=data.sys_timestamp).avg_value
+                        ss_lat = data.avg_value
+                        rf_lat = ss_lat - bs_lat
+                        data_list.append([js_time, float(rf_lat)])
+                    except Exception as e:
+                        rf_lat = data.avg_value
+                        data_list.append([js_time, float(rf_lat)])
+                        log.exception(e.message)
+
+            chart_data = [{'name': "RF Latency",
+                            'data': data_list,
+                            'type': 'area',
+                            'valuesuffix': ' ms ',
+                            'valuetext': ' ms '
+                          }
+                        ]
+
+        self.result['success'] = 1
+        self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
+        self.result['data']['objects']['chart_data'] = chart_data
+
         return self.result
 
     def get_performance_data_result(self, performance_data, data_source=None):
