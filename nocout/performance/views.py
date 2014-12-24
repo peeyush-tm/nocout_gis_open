@@ -746,7 +746,7 @@ class Inventory_Device_Status(View):
                                                         'Planned Frequency',
                                                         'Frequency'
                 ]
-            else:
+            elif technology.name.lower() in ['wimax']:
                 result['data']['objects']['headers'] = ['BS Name',
                                                         'Sector ID',
                                                         'PMP Port',
@@ -759,28 +759,52 @@ class Inventory_Device_Status(View):
                                                         'Planned Frequency',
                                                         'Frequency'
                 ]
+            else:
+                result['data']['objects']['headers'] = ['BS Name',
+                                                        'Sector ID',
+                                                        'Technology',
+                                                        'Type',
+                                                        'City',
+                                                        'State',
+                                                        'IP Address',
+                                                        # 'MAC Address',
+                                                        'Planned Frequency',
+                                                        'Frequency'
+                ]
             result['data']['objects']['values'] = []
             sector_objects = Sector.objects.filter(sector_configured_on=device.id)
-            sector_id = 'N/A'
-            pmp_port = 'N/A'
+
             for sector in sector_objects:
+
+                sector_id = 'N/A'
+                pmp_port = 'N/A'
+                dr_ip = None
+
                 base_station = sector.base_station
                 planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
                 frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                 planned_frequency = ",".join(planned_frequency)
                 frequency = ",".join(frequency)
-                if technology.name in ['P2P', 'PTP', 'ptp', 'p2p']:
+                if technology.name.lower() in ['ptp', 'p2p']:
                     try:
                         circuits = sector.circuit_set.get()
                         customer_name = circuits.customer.alias
                     except Exception as no_circuit:
                         log.exception(no_circuit)
+
                 else:
                     sector_id = sector.sector_id
-                try:
-                    pmp_port = sector.sector_configured_on_port.alias
-                except Exception as no_port:
-                    log.exception(no_port)
+                    if technology.name.lower() in ['wimax']:
+                        try:
+                            pmp_port = sector.sector_configured_on_port.alias
+                        except Exception as no_port:
+                            log.exception(no_port)
+                        try:
+                            dr_ip = sector.dr_configured_on.ip_address
+                        except Exception as no_dr:
+                            dr_ip = None
+                            log.exception(no_dr.message)
+
                 try:
                     city_name = City.objects.get(id=base_station.city).city_name \
                         if base_station.city \
@@ -793,7 +817,8 @@ class Inventory_Device_Status(View):
                         else "N/A"
                 except Exception as no_state:
                     state_name = "N/A"
-                if technology.name in ['P2P', 'PTP', 'ptp', 'p2p']:
+
+                if technology.name.lower() in ['ptp', 'p2p']:
                     result['data']['objects']['values'].append([base_station.alias,
                                                                 customer_name,
                                                                 technology.alias,
@@ -805,10 +830,38 @@ class Inventory_Device_Status(View):
                                                                 planned_frequency,
                                                                 frequency
                     ])
-                else:
+
+                elif technology.name.lower() in ['wimax']:
                     result['data']['objects']['values'].append([base_station.alias,
                                                                 sector_id,
                                                                 pmp_port,
+                                                                technology.alias,
+                                                                type.alias,
+                                                                city_name,
+                                                                state_name,
+                                                                device.ip_address,
+                                                                # device.mac_address,
+                                                                planned_frequency,
+                                                                frequency
+                    ])
+                    if dr_ip:
+                        result['data']['objects']['values'].append([base_station.alias,
+                                                                sector_id,
+                                                                pmp_port,
+                                                                technology.alias,
+                                                                type.alias,
+                                                                city_name,
+                                                                state_name,
+                                                                dr_ip,
+                                                                # device.mac_address,
+                                                                planned_frequency,
+                                                                frequency
+                    ])
+
+                else:
+                    result['data']['objects']['values'].append([base_station.alias,
+                                                                sector_id,
+                                                                # pmp_port,
                                                                 technology.alias,
                                                                 type.alias,
                                                                 city_name,
