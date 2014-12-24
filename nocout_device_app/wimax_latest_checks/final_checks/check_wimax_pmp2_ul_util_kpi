@@ -34,26 +34,26 @@ def extract_pmp2_bw_from_live(hostname,site):
                         "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_pmp_bw_invent",hostname)
 
 	try:
-        	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 		socket_path = "/omd/sites/%s/tmp/run/live" % site
+
         	#s.connect(("10.133.19.165",6562))
-        	s.connect(socket_path)
+		s.connect(socket_path)
 		s.send(query_string)
        		s.shutdown(socket.SHUT_WR)
         	query_output = s.recv(100000000)
-		s.close()
         	query_output.strip("\n")
 		query_output = eval(query_output)
         	if query_output:
 			query_output = query_output[0][0] 
 			output = [entry for entry in query_output.split('- ')[1].split()]
-                	pmp_bw=output[1].split('=')[1]
+                	pmp_bw=output[0].split('=')[1]
 	except Exception,e:
 		pmp_bw=None
 
         return pmp_bw
 
-def extract_pmp2_util_from_live(hostname,site):
+def extract_pmp2_ul_util_from_live(hostname,site):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
@@ -61,21 +61,16 @@ def extract_pmp2_util_from_live(hostname,site):
     
         """
         pmp2_ul = None
-	pmp2_dl = None
 	query = "GET services\nColumns: service_perf_data\n" + \
 		"Filter: service_description = wimax_pmp2_ul_util_bgp\n" + \
-		"Filter: service_description = wimax_pmp2_dl_util_bgp\n" + \
-		"Or: 2\n" + \
 		"Filter: host_name = %s\nOutputFormat: python\n" % (hostname)
 	try:
         	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		socket_path = "/omd/sites/%s/tmp/run/live" % site
-        	#s.connect(("10.133.19.165",6562))
-        	s.connect(socket_path)
+        	s.connect(("10.133.19.165",6562))
 		s.send(query)
        		s.shutdown(socket.SHUT_WR)
         	query_output = s.recv(100000000)
-		s.close()
         	query_output.strip("\n")
 		query_output = eval(query_output)
         	if query_output[0][0] or query_output[1][0]:
@@ -83,21 +78,15 @@ def extract_pmp2_util_from_live(hostname,site):
 				pmp2_ul = query_output[0][0].split('=')[1].split(';',1)[0]
 			except:
 				pmp2_ul = None
-			try:
-				pmp2_dl = query_output[1][0].split('=')[1].split(';',1)[0]
-			except:
-				pmp2_dl = None
 	except Exception ,e:
-		pmp2_dl=None
 		pmp2_ul = None
 
-        return pmp2_dl,pmp2_ul
+        return pmp2_ul
 
 
-def live_query_pmp2_util_kpi(hostname):
+def live_query_pmp2_ul_util_kpi(hostname,site,war,crit):
     state = 3
     status_list = [] 
-    pmp2_dl_kpi = ''
     pmp2_ul_kpi= ''
     perf = ''
     plugin_message = ''
@@ -107,45 +96,54 @@ def live_query_pmp2_util_kpi(hostname):
 	#print p
 	#paths = [path for path in p.split('/')]
 	#site = paths[paths.index('sites') + 1]
-	site = "ospf2_slave_1"
 	pmp2_bw = extract_pmp2_bw_from_live(hostname,site)
-	pmp2_dl,pmp2_ul = extract_pmp2_util_from_live(hostname,site)
-	pmp2_dl = eval(pmp2_dl)
+	pmp2_ul = extract_pmp2_ul_util_from_live(hostname,site)
 	pmp2_ul = eval(pmp2_ul)
-	pmp2_bw = eval(pmp2_bw)
-	if pmp2_bw and pmp2_dl:
-		if pmp2_bw <= 3:
-			pmp2_dl_kpi = (pmp2_dl/4) *100
-			state = 0
-			state_string = "OK"
-		elif pmp2_bw  > 3:
-			pmp2_dl_kpi = (pmp2_dl/8) *100
-			state = 0
-			state_string = "OK"
-		else:
-			pmp2_dl_kpi = ''
+
+	if pmp2_bw:
+		pmp2_bw = eval(pmp2_bw)
+	
 	if pmp2_bw and pmp2_ul:
                 if pmp2_bw <= 3:
                 	pmp2_ul_kpi = (pmp2_ul/2) *100
-			state = 0
-			state_string = "OK"
                 elif pmp2_bw > 3:
                         pmp2_ul_kpi = (pmp2_ul/4) *100
-			state = 0
-			state_string = "OK"
 		else:
 			pmp2_ul_kpi = ''
+	if pmp2_ul_kpi:
+		if pmp2_ul_kpi < war:
+                        state = 0
+                        state_string = "ok"
+                elif pmp2_ul_kpi >= crit:
+                        state = 2
+                        state_string = "critical"
+                else:
+                        state = 1
+                        state_string = "warning"
+	
+	
 	perf += 'pmp2_ul_util_kpi' + "=%s " % (pmp2_ul_kpi)
-	perf += 'pmp2_dl_util_kpi' + "=%s " % (pmp2_dl_kpi)
     except Exception ,e:
 	perf = '' 
-    plugin_message += "wimax_pmp2_util_kpi %s - %s %s|%s" % (state_string,pmp2_ul_kpi,pmp2_dl_kpi,perf)
+    plugin_message += "wimax_pmp2_ul_util_kpi %s - %s|%s" % (state_string,pmp2_ul_kpi,perf)
     sys.stdout.write(plugin_message)
     sys.exit((state))
 		
 def  main():
-    host_name = sys.argv[1]
-    live_query_pmp2_util_kpi(host_name)
+
+    state_string = "unknown"
+    pmp2_ul=''
+    try:
+        host_name = sys.argv[1]
+        site = sys.argv[2]
+        war = sys.argv[3]
+        crit = sys.argv[4]
+    except:
+        perf =''
+        plugin_message += "wimax_pmp2_ul_util_kpi %s - %s|%s" % (state_string,pmp2_ul,perf)
+        sys.exit((3))
+
+    live_query_pmp2_ul_util_kpi(host_name,site,float(war),float(crit))
 	
 
 if __name__ == '__main__':
