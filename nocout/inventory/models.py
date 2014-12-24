@@ -149,7 +149,7 @@ class BaseStation(models.Model):
         return self.name
 
     class Meta:
-        ordering = ['city','state']
+        ordering = ['city', 'state']
 
 
 # gis sector model
@@ -481,6 +481,26 @@ class UserPingThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(PingThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
+
+
+class GISExcelDownload(models.Model):
+    file_path = models.CharField('Inventory File', max_length=250, null=True, blank=True)
+    status = models.IntegerField('Status', null=True, blank=True)
+    base_stations = models.CharField('Base Stations', max_length=250, null=True, blank=True)
+    description = models.TextField('Description', null=True, blank=True)
+    uploaded_by = models.CharField('Uploaded By', max_length=100, null=True, blank=True)
+    added_on = models.DateTimeField('Added On', null=True, blank=True)
+    modified_on = models.DateTimeField('Modified On', null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        """ On save, update timestamps """
+        if not self.id:
+            self.added_on = datetime.now()
+        self.modified_on = datetime.now()
+        return super(GISExcelDownload, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        return self.file_path
 
 
 #********************* Connect Inventory Signals *******************
