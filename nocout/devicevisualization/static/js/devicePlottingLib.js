@@ -4920,6 +4920,17 @@ function devicePlottingClass_gmap() {
     		var response = data_to_plot_1 ? data_to_plot_1 : []; 
     		return response;
     	} else {
+    		// If any search is applied then reset it
+    		var selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').toLowerCase().split(',') : [],
+				selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').toLowerCase().split(',') : [],
+				selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').toLowerCase().split(',') : [],
+				selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').toLowerCase().split(',') : [],
+	  			isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0;
+	  			
+    		if(isSearchApplied) {
+    			resetAdvanceSearch();
+    		}
+
 			if(data_to_plot_1.length > 0) {
 				if(window.location.pathname.indexOf("googleEarth") > -1) {
 					data_for_filters_earth = data_to_plot_1;
