@@ -408,9 +408,20 @@ function nocoutPerfLib() {
      */
     this.getServiceStatus = function(service_status_url,callback) {
 
-        var updated_url = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url+"/" : service_status_url;
-        // Replace 'service' with 'servicestatus'
-        updated_url = updated_url.replace("/service/","/servicestatus/");
+        var updated_url = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url+"/" : service_status_url,
+            device_id = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url.split("/")[service_status_url.split("/").length -1] : service_status_url.split("/")[service_status_url.split("/").length -2];
+
+        if(updated_url.indexOf("/servicedetail/") > -1) {
+            if(updated_url.indexOf("rssi") > -1) {
+                updated_url = "/performance/servicestatus/rssi/service_data_source/rssi/device/"+device_id;
+            } else if(updated_url.indexOf("utilization") > -1) {
+                updated_url = "/performance/servicestatus/utilization/service_data_source/utilization/device/"+device_id;
+            }
+        } else {
+            // Replace 'service' with 'servicestatus'
+            updated_url = updated_url.replace("/service/","/servicestatus/");
+        }
+
         $.ajax({
             url : base_url+""+updated_url,
             type : "GET",
