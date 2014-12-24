@@ -746,7 +746,7 @@ class Inventory_Device_Status(View):
                                                         'Planned Frequency',
                                                         'Frequency'
                 ]
-            else:
+            elif technology.name.lower() in ['wimax']:
                 result['data']['objects']['headers'] = ['BS Name',
                                                         'Sector ID',
                                                         'PMP Port',
@@ -759,28 +759,52 @@ class Inventory_Device_Status(View):
                                                         'Planned Frequency',
                                                         'Frequency'
                 ]
+            else:
+                result['data']['objects']['headers'] = ['BS Name',
+                                                        'Sector ID',
+                                                        'Technology',
+                                                        'Type',
+                                                        'City',
+                                                        'State',
+                                                        'IP Address',
+                                                        # 'MAC Address',
+                                                        'Planned Frequency',
+                                                        'Frequency'
+                ]
             result['data']['objects']['values'] = []
             sector_objects = Sector.objects.filter(sector_configured_on=device.id)
-            sector_id = 'N/A'
-            pmp_port = 'N/A'
+
             for sector in sector_objects:
+
+                sector_id = 'N/A'
+                pmp_port = 'N/A'
+                dr_ip = None
+
                 base_station = sector.base_station
                 planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
                 frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                 planned_frequency = ",".join(planned_frequency)
                 frequency = ",".join(frequency)
-                if technology.name in ['P2P', 'PTP', 'ptp', 'p2p']:
+                if technology.name.lower() in ['ptp', 'p2p']:
                     try:
                         circuits = sector.circuit_set.get()
                         customer_name = circuits.customer.alias
                     except Exception as no_circuit:
                         log.exception(no_circuit)
+
                 else:
                     sector_id = sector.sector_id
-                try:
-                    pmp_port = sector.sector_configured_on_port.alias
-                except Exception as no_port:
-                    log.exception(no_port)
+                    if technology.name.lower() in ['wimax']:
+                        try:
+                            pmp_port = sector.sector_configured_on_port.alias
+                        except Exception as no_port:
+                            log.exception(no_port)
+                        try:
+                            dr_ip = sector.dr_configured_on.ip_address
+                        except Exception as no_dr:
+                            dr_ip = None
+                            log.exception(no_dr.message)
+
                 try:
                     city_name = City.objects.get(id=base_station.city).city_name \
                         if base_station.city \
@@ -793,7 +817,8 @@ class Inventory_Device_Status(View):
                         else "N/A"
                 except Exception as no_state:
                     state_name = "N/A"
-                if technology.name in ['P2P', 'PTP', 'ptp', 'p2p']:
+
+                if technology.name.lower() in ['ptp', 'p2p']:
                     result['data']['objects']['values'].append([base_station.alias,
                                                                 customer_name,
                                                                 technology.alias,
@@ -805,10 +830,38 @@ class Inventory_Device_Status(View):
                                                                 planned_frequency,
                                                                 frequency
                     ])
-                else:
+
+                elif technology.name.lower() in ['wimax']:
                     result['data']['objects']['values'].append([base_station.alias,
                                                                 sector_id,
                                                                 pmp_port,
+                                                                technology.alias,
+                                                                type.alias,
+                                                                city_name,
+                                                                state_name,
+                                                                device.ip_address,
+                                                                # device.mac_address,
+                                                                planned_frequency,
+                                                                frequency
+                    ])
+                    if dr_ip:
+                        result['data']['objects']['values'].append([base_station.alias,
+                                                                sector_id,
+                                                                pmp_port,
+                                                                technology.alias,
+                                                                type.alias,
+                                                                city_name,
+                                                                state_name,
+                                                                dr_ip,
+                                                                # device.mac_address,
+                                                                planned_frequency,
+                                                                frequency
+                    ])
+
+                else:
+                    result['data']['objects']['values'].append([base_station.alias,
+                                                                sector_id,
+                                                                # pmp_port,
                                                                 technology.alias,
                                                                 type.alias,
                                                                 city_name,
@@ -980,6 +1033,16 @@ class Inventory_Device_Service_Data_Source(View):
                 'service_type_tab': 'network_perf_tab'
             })
 
+        if device.substation_set.exists():
+            result['data']['objects']['network_perf_tab']["info"].append(
+            {
+                'name': "rf",
+                'title': "RF Latency",
+                'url': 'performance/service/rf/service_data_source/rf/device/' + str(device_id),
+                'active': 0,
+                'service_type_tab': 'network_perf_tab'
+            })
+
         device_type_services = device_type.service.filter().prefetch_related('servicespecificdatasource_set')
 
         for service in device_type_services:
@@ -1129,10 +1192,10 @@ class Get_Service_Status(View):
                                                             data_source=service_data_source_type,
             )
 
-        elif "availability" in service_name or service_data_source_type in ['availability']:
+        elif "rf" == service_name and "rf" == service_data_source_type:
             performance_data_query_set = None
 
-        elif "topology" in service_name or service_data_source_type in ['topology']:
+        elif service_name in ['topology', 'availability'] or service_data_source_type in ['availability', 'topology']:
             performance_data_query_set = None
 
         elif '_status' in service_name:
@@ -1264,6 +1327,47 @@ class Get_Service_Type_Performance_Data(View):
                 alias=inventory_device_machine_name).order_by('sys_timestamp')
 
             result = self.get_performance_data_result(performance_data)
+
+        elif service_data_source_type == 'rf':
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
+            sector_device = None
+            if device.substation_set.exists():
+                try:
+                    ss = device.substation_set.get()
+                    circuit = ss.circuit_set.get()
+                    sector_device = circuit.sector.sector_configured_on
+                except Exception as e:
+                    log.exception(e.message)
+            if sector_device:
+                performance_data_ss = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
+                                                                     service_name='ping',
+                                                                     data_source='rta',
+                                                                     sys_timestamp__gte=start_date,
+                                                                     sys_timestamp__lte=end_date).using(
+                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+
+                performance_data_bs = PerformanceNetwork.objects.filter(device_name=sector_device.device_name,
+                                                                     service_name='ping',
+                                                                     data_source='rta',
+                                                                     sys_timestamp__gte=start_date,
+                                                                     sys_timestamp__lte=end_date).using(
+                    alias=sector_device.machine.name).order_by('sys_timestamp')
+
+                result = self.rf_performance_data_result(performance_data_bs=performance_data_bs,
+                                                         performance_data_ss=performance_data_ss
+                )
+
+            else:
+                performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
+                                                                     service_name='ping',
+                                                                     data_source='rta',
+                                                                     sys_timestamp__gte=start_date,
+                                                                     sys_timestamp__lte=end_date).using(
+                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+
+                result = self.get_performance_data_result(performance_data)
 
         elif "availability" in service_name or service_data_source_type in ['availability']:
             if not isSet:
@@ -1571,6 +1675,49 @@ class Get_Service_Type_Performance_Data(View):
                                                                'status_since',
                                                                'last_updated'
         ]
+        return self.result
+
+    def rf_performance_data_result(self, performance_data_ss, performance_data_bs):
+        """
+        """
+        chart_data = list()
+        if performance_data_ss and performance_data_bs:
+            data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
+            min_data_list = list()
+            max_data_list = list()
+
+            for data in performance_data_ss:
+                js_time = data.sys_timestamp*1000
+                if data.avg_value:
+                    try:
+                        ##in between 5 minutes the bs result will come before ss result
+                        valid_end_time = data.sys_timestamp
+                        valid_start_time = data.sys_timestamp - 300
+                        ##in between 5 minutes the bs result will come before ss result
+                        bs_lat = performance_data_bs.filter(sys_timestamp__gte=valid_start_time,
+                                                            sys_timestamp__lte=valid_end_time
+                        )[0].avg_value
+
+                        ss_lat = data.avg_value
+                        rf_lat = float(ss_lat) - float(bs_lat)
+                        data_list.append([js_time, float(rf_lat)])
+                    except Exception as e:
+                        rf_lat = data.avg_value
+                        data_list.append([js_time, float(rf_lat)])
+                        log.exception(e.message)
+
+            chart_data = [{'name': "RF Latency",
+                            'data': data_list,
+                            'type': 'area',
+                            'valuesuffix': ' ms ',
+                            'valuetext': ' ms '
+                          }
+                        ]
+
+        self.result['success'] = 1
+        self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
+        self.result['data']['objects']['chart_data'] = chart_data
+
         return self.result
 
     def get_performance_data_result(self, performance_data, data_source=None):

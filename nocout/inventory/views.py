@@ -68,6 +68,9 @@ logger = logging.getLogger(__name__)
 from django.core.cache import cache
 ##caching
 
+# decorators
+from django.utils.decorators import method_decorator
+
 
 # **************************************** Inventory *********************************************
 def inventory(request):

@@ -10,7 +10,10 @@ var mapInstance = "",
 	base_url = "",
 	defaultIconSize= 'medium',
 	state_lat_lon_db = [],
-	counter_div_style = "";
+	counter_div_style = "",
+	green_status_array = ['ok','success','up'],
+    red_status_array = ['critical','down'],
+    orange_status_array = ['warning'];
 
 /*Lazy loading API calling variables*/
 var hitCounter = 1,
@@ -2308,7 +2311,7 @@ function devicePlottingClass_gmap() {
 			ss_height = 40;
 
 		if(ss_info != undefined || ss_info == "") {
-			ss_info_obj = ss_info.info;
+			ss_info_obj = ss_info.info ? ss_info.info : ss_info;
 			ss_height = ss_info.antenna_height;
 		} else {
 			ss_info_obj = "";
@@ -2318,7 +2321,7 @@ function devicePlottingClass_gmap() {
 		var bs_info_obj = "",
 			bs_height = 40;
 		if(bs_info != undefined || bs_info == "") {
-			bs_info_obj = bs_info.info;
+			bs_info_obj = bs_info.info ? bs_info.info : bs_info;
 			bs_height = bs_info.antenna_height;
 		} else {
 			bs_info_obj = "";
@@ -2922,7 +2925,7 @@ function devicePlottingClass_gmap() {
 		/*True,if clicked on the link line*/
 		if(clickedType == "path") {
 			try {
-				var path_circuit_id = "",
+				var path_circuit_id = contentObject.ss_info ? gisPerformanceClass.getKeyValue(contentObject.ss_info,"cktid",true) : "",
 					lineWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : "BS-SS",
 					lineStartTitle = contentObject.startTitle ? contentObject.startTitle : "BS-Sector Info",
 					lineEndTitle = contentObject.endTitle ? contentObject.endTitle : "SS Info";
@@ -2967,10 +2970,6 @@ function devicePlottingClass_gmap() {
 				// console.log("ss_info length: "+ contentObject.ss_info.length);
 				/*Loop for ss info object array*/
 				for(var i=0;i<contentObject.ss_info.length;i++) {
-					if(contentObject.ss_info[i].title && $.trim(contentObject.ss_info[i].title.toLowerCase()) === 'circuit id') {
-						path_circuit_id = contentObject.ss_info[i].value;
-					}
-
 					if(contentObject.ss_info[i].show == 1) {
 						infoTable += "<tr><td>"+contentObject.ss_info[i].title+"</td><td>"+contentObject.ss_info[i].value+"</td></tr>";
 					}
@@ -3003,14 +3002,17 @@ function devicePlottingClass_gmap() {
 					isBSLeft = 1;
 				}
 
-				var sector_ss_name_obj = {
-					sector_Alias: contentObject.bs_info ? contentObject.bs_info[0].value : " ",
-					sector_name : contentObject.sectorName ? contentObject.sectorName : " ",
-					ss_name : contentObject.ssName ? contentObject.ssName : " ",
-					ss_customerName: contentObject.ss_info.length >= 18 ? contentObject.ss_info[17].value : " ",
-					ss_circuitId: contentObject.ss_info.length >= 4 ? contentObject.ss_info[3].value : " ",
-					isBSLeft : isBSLeft
-				};
+				var sect_alias = gisPerformanceClass.getKeyValue(contentObject.bs_info,"alias",true),
+					ss_custName = gisPerformanceClass.getKeyValue(contentObject.ss_info,"customer_name",true),
+					// circuit_id = gisPerformanceClass.getKeyValue(contentObject.ss_info,"cktid",true),
+					sector_ss_name_obj = {
+						sector_Alias: sect_alias ? sect_alias : "",
+						sector_name : contentObject.sectorName ? contentObject.sectorName : "",
+						ss_name : contentObject.ssName ? contentObject.ssName : " ",
+						ss_customerName: ss_custName ? ss_custName : "",
+						ss_circuitId: path_circuit_id ? path_circuit_id : "",
+						isBSLeft : isBSLeft
+					};
 
 				var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
@@ -3077,13 +3079,15 @@ function devicePlottingClass_gmap() {
 				startPtInfo = contentObject.dataset;
 			}
 
+			ss_circuit_id = gisPerformanceClass.getKeyValue(startPtInfo,"cktid",true);
+
 			for(var i=0;i<startPtInfo.length;i++) {
 				var url = "",
 					text_class = "";
 
-				if(startPtInfo[i].title && $.trim(startPtInfo[i].title.toLowerCase()) === 'circuit id') {
-					ss_circuit_id = startPtInfo[i].value;
-				}
+				// if(startPtInfo[i].title && $.trim(startPtInfo[i].title.toLowerCase()) === 'circuit id') {
+				// 	ss_circuit_id = startPtInfo[i].value;
+				// }
 				if(startPtInfo[i].show == 1) {
 					// Url
 					url = startPtInfo[i]["url"] ? startPtInfo[i]["url"] : "";
@@ -3127,12 +3131,12 @@ function devicePlottingClass_gmap() {
 			if(clickedType == "base_station" && contentObject.bhInfo) {
 				var severity_symbol = "";
 				if(contentObject.bhSeverity) {
-					var bhSeverity = $.trim(contentObject.bhSeverity.toLowerCase());
-					if(bhSeverity == 'critical') {
+					var bhSeverity = contentObject.bhSeverity ? $.trim(contentObject.bhSeverity.toLowerCase()) : "";
+					if(red_status_array.indexOf(bhSeverity)  > -1) {
 						severity_symbol = "<i class='fa fa-circle text-danger' style='margin-left:10px;'>&nbsp;</i>";
-					} else if(bhSeverity == 'ok') {
+					} else if(green_status_array.indexOf(bhSeverity)  > -1) {
 						severity_symbol = "<i class='fa fa-circle text-success' style='margin-left:10px;'>&nbsp;</i>";
-					} else if(bhSeverity == 'warning') {
+					} else if(orange_status_array.indexOf(bhSeverity)  > -1) {
 						severity_symbol = "<i class='fa fa-circle text-warning' style='margin-left:10px;'>&nbsp;</i>";
 					}
 				}
@@ -4920,6 +4924,17 @@ function devicePlottingClass_gmap() {
     		var response = data_to_plot_1 ? data_to_plot_1 : []; 
     		return response;
     	} else {
+    		// If any search is applied then reset it
+    		var selected_bs_alias = $("#search_name").select2('val').length > 0 ? $("#search_name").select2('val').join(',').toLowerCase().split(',') : [],
+				selected_ip_address = $("#search_sector_configured_on").select2('val').length > 0 ? $("#search_sector_configured_on").select2('val').join(',').toLowerCase().split(',') : [],
+				selected_circuit_id = $("#search_circuit_ids").select2('val').length > 0 ? $("#search_circuit_ids").select2('val').join(',').toLowerCase().split(',') : [],
+				selected_bs_city = $("#search_city").select2('val').length > 0 ? $("#search_city").select2('val').join(',').toLowerCase().split(',') : [],
+	  			isSearchApplied = selected_bs_alias.length > 0 || selected_ip_address.length > 0 || selected_circuit_id.length > 0 || selected_bs_city.length > 0;
+
+    		if(isSearchApplied) {
+    			resetAdvanceSearch();
+    		}
+
 			if(data_to_plot_1.length > 0) {
 				if(window.location.pathname.indexOf("googleEarth") > -1) {
 					data_for_filters_earth = data_to_plot_1;
@@ -6242,8 +6257,38 @@ function devicePlottingClass_gmap() {
     				map: mapInstance
     			});
     			ruler_array.push(second_point);
+    			// Base station info
+    			var bs_info = [
+					{
+			            "title": "Latitude",
+			            "name": "latitude",
+			            "value": ruler_Obj["startLat"],
+			            "show": 1
+			        },
+			        {
+			            "title": "Longitude",
+			            "name": "longitude",
+			            "value": ruler_Obj["startLon"],
+			            "show": 1
+			        }
+				];
+				// Sub station info
+    			var ss_info = [
+					{
+			            "title": "Latitude",
+			            "name": "latitude",
+			            "value": ruler_Obj["startLat"],
+			            "show": 1
+			        },
+			        {
+			            "title": "Longitude",
+			            "name": "longitude",
+			            "value": ruler_Obj["startLon"],
+			            "show": 1
+			        }
+				];
 
-    			var current_line =  gmap_self.createLink_gmaps(ruler_Obj,ruler_line_color);
+    			var current_line =  gmap_self.createLink_gmaps(ruler_Obj,ruler_line_color,bs_info,ss_info);
     			// Show line on map
     			current_line.setMap(mapInstance);
 
@@ -6318,7 +6363,38 @@ function devicePlottingClass_gmap() {
 		    		"endTitle" : "Point B"
 				};
 				
-				var ruler_line = gmap_self.createLink_gmaps(latLonObj,ruler_line_color);
+				// Base station info
+    			var bs_info = [
+					{
+			            "title": "Latitude",
+			            "name": "latitude",
+			            "value": ruler_array[0].getPosition().lat(),
+			            "show": 1
+			        },
+			        {
+			            "title": "Longitude",
+			            "name": "longitude",
+			            "value": ruler_array[0].getPosition().lng(),
+			            "show": 1
+			        }
+				];
+				// Sub station info
+    			var ss_info = [
+					{
+			            "title": "Latitude",
+			            "name": "latitude",
+			            "value": ruler_array[1].getPosition().lat(),
+			            "show": 1
+			        },
+			        {
+			            "title": "Longitude",
+			            "name": "longitude",
+			            "value": ruler_array[1].getPosition().lng(),
+			            "show": 1
+			        }
+				];
+
+				var ruler_line = gmap_self.createLink_gmaps(latLonObj,ruler_line_color,bs_info,ss_info);
 				/*Show Line on Map*/
 				ruler_line.setMap(mapInstance);
 
@@ -6395,7 +6471,38 @@ function devicePlottingClass_gmap() {
     			var second_point = new google.maps.Marker({position: new google.maps.LatLng(line_obj["endLat"], line_obj["endLon"]), map: mapInstance});
     			tools_line_marker_array.push(second_point);
 
-    			var current_line =  gmap_self.createLink_gmaps(line_obj);
+    			// Base station info
+				var bs_info = [
+					{
+			            "title": "Latitude",
+			            "name": "latitude",
+			            "value": line_obj["startLat"],
+			            "show": 1
+			        },
+			        {
+			            "title": "Longitude",
+			            "name": "longitude",
+			            "value": line_obj["startLon"],
+			            "show": 1
+			        }
+				];
+				// Sub station info
+				var ss_info = [
+					{
+			            "title": "Latitude",
+			            "name": "latitude",
+			            "value": line_obj["endLat"],
+			            "show": 1
+			        },
+			        {
+			            "title": "Longitude",
+			            "name": "longitude",
+			            "value": line_obj["endLon"],
+			            "show": 1
+			        }
+				];
+
+    			var current_line =  gmap_self.createLink_gmaps(line_obj,ruler_line_color,bs_info,ss_info);
     			tools_line_array.push(current_line);
 
     			$.cookie('tools_line',JSON.stringify(line_obj),{path: '/', secure : true});
@@ -6450,7 +6557,38 @@ function devicePlottingClass_gmap() {
 		    		"endTitle" : "Point B"
 				};
 
-				var ruler_line = gmap_self.createLink_gmaps(latLonObj,ruler_line_color);
+				// Base station info
+    			var bs_info = [
+					{
+			            "title": "Latitude",
+			            "name": "latitude",
+			            "value": tools_line_marker_array[0].getPosition().lat(),
+			            "show": 1
+			        },
+			        {
+			            "title": "Longitude",
+			            "name": "longitude",
+			            "value": tools_line_marker_array[0].getPosition().lng(),
+			            "show": 1
+			        }
+				];
+				// Sub station info
+    			var ss_info = [
+					{
+			            "title": "Latitude",
+			            "name": "latitude",
+			            "value": tools_line_marker_array[1].getPosition().lat(),
+			            "show": 1
+			        },
+			        {
+			            "title": "Longitude",
+			            "name": "longitude",
+			            "value": tools_line_marker_array[1].getPosition().lng(),
+			            "show": 1
+			        }
+				];
+
+				var ruler_line = gmap_self.createLink_gmaps(latLonObj,ruler_line_color,bs_info,ss_info);
 
 				tools_line_array.push(ruler_line);
 
@@ -6906,11 +7044,41 @@ function devicePlottingClass_gmap() {
 		};
 
 		var current_line;
+		// Base station info
+		var bs_info = [
+			{
+	            "title": "Latitude",
+	            "name": "latitude",
+	            "value": point_data_obj[current_pt].lat,
+	            "show": 1
+	        },
+	        {
+	            "title": "Longitude",
+	            "name": "longitude",
+	            "value": point_data_obj[current_pt].lon,
+	            "show": 1
+	        }
+		];
+		// Sub station info
+		var ss_info = [
+			{
+	            "title": "Latitude",
+	            "name": "latitude",
+	            "value": connected_end_obj.lat,
+	            "show": 1
+	        },
+	        {
+	            "title": "Longitude",
+	            "name": "longitude",
+	            "value": connected_end_obj.lon,
+	            "show": 1
+	        }
+		];
 		/*Create line between the point & device*/
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
 			current_line = earth_instance.createLink_earth(line_obj);		
 		} else {
-			current_line =  gmap_self.createLink_gmaps(line_obj);
+			current_line =  gmap_self.createLink_gmaps(line_obj,ruler_line_color,bs_info,ss_info);
 		}
 		/*Show Line on Map*/
 		if(window.location.pathname.indexOf("googleEarth") > -1) {
@@ -7129,12 +7297,43 @@ function devicePlottingClass_gmap() {
 				    		"endTitle" : "Point B"
 						};
 
+						// Base station info
+						var bs_info = [
+							{
+					            "title": "Latitude",
+					            "name": "latitude",
+					            "value": current_point.lat,
+					            "show": 1
+					        },
+					        {
+					            "title": "Longitude",
+					            "name": "longitude",
+					            "value": current_point.lon,
+					            "show": 1
+					        }
+						];
+						// Sub station info
+						var ss_info = [
+							{
+					            "title": "Latitude",
+					            "name": "latitude",
+					            "value": current_point.connected_lat,
+					            "show": 1
+					        },
+					        {
+					            "title": "Longitude",
+					            "name": "longitude",
+					            "value": current_point.connected_lon,
+					            "show": 1
+					        }
+						];
+
 						/*Create line between the point & device*/
 						var current_line = "";
 						if(window.location.pathname.indexOf('googleEarth') > -1) {
 							current_line =  earth_self.createLink_earth(line_obj);
 						} else {
-							current_line =  gmap_self.createLink_gmaps(line_obj);
+							current_line =  gmap_self.createLink_gmaps(line_obj,ruler_line_color,bs_info,ss_info);
 						}
 						
 						if(window.location.pathname.indexOf("googleEarth") > -1) {
@@ -7657,6 +7856,7 @@ function devicePlottingClass_gmap() {
 		            	}
 	            	}
 				}
+				
 				// If any bs exists
 				if(selected_bs_ids.length > 0) {
 
@@ -7673,9 +7873,10 @@ function devicePlottingClass_gmap() {
 					if($("#exportDeviceContainerBlock").hasClass('hide')) {
 						$("#exportDeviceContainerBlock").removeClass('hide');
 					}
-
+				} else if(bs_id_array.length > 200) {
+					gmap_self.removeInventorySelection();
+					bootbox.alert("Selected BS exceeds maximum limit i.e 200.");
 				} else {
-
 					gmap_self.removeInventorySelection();
 
 					bootbox.alert("No BS found in the selected area.");
@@ -7805,7 +8006,7 @@ function devicePlottingClass_gmap() {
 					}
 
 					// If any bs exists
-					if(bs_id_array.length > 0) {
+					if(bs_id_array.length > 0 && bs_id_array.length < 200) {
 
 						inventory_bs_ids = bs_id_array;
 
@@ -7822,10 +8023,11 @@ function devicePlottingClass_gmap() {
 						}
 
 						// gmap_self.downloadInventory_gmap(bs_id_array);
-
+					} else if(bs_id_array.length > 200) {
+						gmap_self.removeInventorySelection();
+						bootbox.alert("Selected BS exceeds maximum limit i.e 200.");
 					} else {
 						gmap_self.removeInventorySelection();
-
 						bootbox.alert("No BS found in the selected area.");	
 					}
 
@@ -7845,7 +8047,11 @@ function devicePlottingClass_gmap() {
     this.downloadInventory_gmap = function() {
 
     	// Open API url in new tab to download inventory report
-    	window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(inventory_bs_ids),"_blank");
+    	$("#exportInventoryForm").attr("action",base_url+"/inventory/export_selected_bs_inventory/")
+    	$("#base_stations").val(JSON.stringify(inventory_bs_ids));
+    	$("#exportInventoryForm").submit();
+
+    	// window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(inventory_bs_ids),"_blank");
 
 		$.gritter.add({
             title: "Export Inventory Devices",
