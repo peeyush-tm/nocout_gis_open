@@ -30,7 +30,13 @@
                     <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span
                             class="hidden-inline-mobile">PMP</span></a></li>
                     <li class="active"><a href="#network_ptp_block" id="network_ptp_tab" data-toggle="tab"><span
-                            class="hidden-inline-mobile">PTP</span></a></li>
+                            class="hidden-inline-mobile">
+                        {% if page_type == 'customer' %}
+                            PTP
+                        {% else %}
+                            PTP BH
+                        {% endif %}
+                    </span></a></li>
                 </ul>
                 <div class="tab-content Tbl_FixHeight" style="overflow:auto;">
                     <!-- network_ptp_block Start -->

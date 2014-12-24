@@ -435,10 +435,12 @@ function GisPerformance() {
 
                     // Loop to plot new sub-stations
                     for(var j=0;j<sub_station.length;j++) {
+
                         var ss_marker_data = sub_station[j],
                             ss_perf_info = ss_marker_data.data.param.sub_station,
                             ss_pl = perf_self.getKeyValue(ss_perf_info,"pl",true),
-                            ss_rta = perf_self.getKeyValue(ss_perf_info,"rta",true);
+                            ss_rta = perf_self.getKeyValue(ss_perf_info,"rta",true),
+                            ckt_id_val = perf_self.getKeyValue(ss_perf_info,"cktid",true);
 
                         // var ss_marker_object = {};
                         var ss_marker_object = {
@@ -459,6 +461,7 @@ function GisPerformance() {
                             device_name      :  ss_marker_data.device_name,
                             ss_ip            :  ss_marker_data.data.substation_device_ip_address,
                             sector_ip        :  sector_ip,
+                            cktId            :  ckt_id_val,
                             zIndex           :  200,
                             optimized        :  false,
                             isActive         :  1,
@@ -608,7 +611,7 @@ function GisPerformance() {
                                     labelHtml = "";
 
                                 if(labelInfoObject) {
-                                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                                    labelHtml += $.trim(labelInfoObject['value']);
                                 }
                                 // If any html created then show label on ss
                                 if(labelHtml) {
@@ -625,8 +628,8 @@ function GisPerformance() {
                                 }
                             }
 
-                            // Mouseover event on sub-station marker
-                            google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
+                            // Right click event on sub-station marker
+                            google.maps.event.addListener(ss_marker, 'rightclick', function(e) {
                                 var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
                                     condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 

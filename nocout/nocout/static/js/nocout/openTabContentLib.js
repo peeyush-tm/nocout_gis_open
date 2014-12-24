@@ -5,7 +5,11 @@
  */
 
 var last_clicked_tab = "",
-    timeOutId = "";
+    timeOutId = "",
+    ptp_list = ['ptp','p2p'],
+    pmp_list = ['pmp'],
+    wimax_list = ['wimax','wifi','temp','ulIssue','sectorUtil'],
+    other_list = ['temp','p2p'];
 
 $(".nav-tabs li a").click(function (e, isFirst) {
 
@@ -59,12 +63,53 @@ $(".nav-tabs li a").click(function (e, isFirst) {
     // }
 
     if (last_clicked_tab != e.currentTarget.id || second_condition) {
+        var tab_id = table_id ? table_id.toLowerCase() : "";
 
-        if (table_id.toLowerCase().indexOf("p2p") > -1 || table_id.toLowerCase().indexOf("ptp") > -1) {
+        var isPtp = ptp_list.filter(function(list_val) {
+                return tab_id.search(list_val) > -1
+            }).length,
+            pmpLength = pmp_list.filter(function(list_val) {
+                return tab_id.search(list_val) > -1
+            }).length,
+            wimaxLength = wimax_list.filter(function(list_val) {
+                return tab_id.search(list_val) > -1
+            }).length,
+            isPmpWimax = pmpLength + wimaxLength;
 
+        // If tab is ptp
+        if(isPtp > 0) {
             for (var i = 0; i < grid_headers.length; i++) {
                 var column = grid_headers[i];
                 if (column.mData.indexOf("sector_id") > -1) {
+                    if (column.bVisible) {
+                        column.sClass = "hide";
+                    } else {
+                        column["sClass"] = "hide";
+                    }
+                }
+            }
+        // If tab is PMP or Wimax
+        } else if(isPmpWimax > 0) {
+            if(window.location.href.search("customer_live") == -1 && window.location.href.search("customer_detail") == -1) {
+                for (var i = 0; i < grid_headers.length; i++) {
+                    var column = grid_headers[i];
+                    if (column.mData.indexOf("circuit_id") > -1 || column.mData.indexOf("customer_name") > -1) {
+                        if (column.bVisible) {
+                            column.sClass = "hide";
+                        } else {
+                            column["sClass"] = "hide";
+                        }
+                    }
+                }
+            }
+        } else {
+            // For other case
+            for (var i = 0; i < grid_headers.length; i++) {
+                var column = grid_headers[i],
+                    condition1 = column.mData.indexOf("sector_id") > -1,
+                    condition2 = column.mData.indexOf("circuit_id") > -1,
+                    condition3 = column.mData.indexOf("customer_name") > -1;
+                if(condition1 || condition2 || condition3) {
                     if (column.bVisible) {
                         column.sClass = "hide";
                     } else {

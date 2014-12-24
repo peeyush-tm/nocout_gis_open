@@ -78,6 +78,14 @@
 	        App.setPage("");  //Set current page
 	        App.init(); //Initialise plugins and elements
 	    });
+
+        var arr = {{ event_array|safe }};
+        for ( var i = 0, l = arr.length; i < l; i++ ) {
+            var events = {  id: arr[i]['id'], title: arr[i]['title'],
+                            start: arr[i]['start'], end: arr[i]['end'], allDay: false
+                        }
+            $('#scheduling_calendar').fullCalendar( 'renderEvent', events , 'stick');
+        }
 	</script>
 {% endblock %}
 

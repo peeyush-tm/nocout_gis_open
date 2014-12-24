@@ -14,6 +14,7 @@
                             <div class="box-body">
                                 <div class="col-md-8"><br/>
 
+            {% if not sector_has_sub_station %}
                 <!-- :START: Radio Buttons to choose technology and to choose existing or create new -->
                 <div class="form-group">
                     <label class="control-label pull-left">Technology &nbsp;:&nbsp;&nbsp;</label>
@@ -25,7 +26,6 @@
                         {% endfor %}
                     </div>
                 </div><br/>
-            {% if not sector_has_sub_station %}
                 <div class="form-group">
                     <label class="control-label pull-left">SubStation &nbsp;&nbsp;:&nbsp;&nbsp;</label>
                     <div class="pull-left">

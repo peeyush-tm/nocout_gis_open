@@ -112,21 +112,21 @@ class Live_Performance(ListView):
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
 
-        if page_type in ["customer"]:
+        if page_type in ["customer", "network"]:
             specific_headers = [
-                {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
-                {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
                 {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
             ]
 
-        elif page_type in ["network"]:
-            specific_headers = [
-                {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-                 'bSortable': True},
-            ]
+        # elif page_type in ["network"]:
+        #     specific_headers = [
+        #         {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        #          'bSortable': True},
+        #     ]
 
         else:
             specific_headers = [
@@ -277,7 +277,9 @@ class LivePerformanceListing(BaseDatatableView):
         elif page_type == 'network':
             columns = [
                 'id',
+                'circuit_id',
                 'sector_id',
+                'customer_name',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -926,6 +928,14 @@ class Inventory_Device_Service_Data_Source(View):
                     'topology_tab': {
                         "info": [],
                         "isActive": 0
+                    },
+                    'utilization_top_tab': {
+                        "info": [],
+                        "isActive": 0
+                    },
+                    'rssi_top_tab': {
+                        "info": [],
+                        "isActive": 0
                     }
                 }
             }
@@ -1023,14 +1033,27 @@ class Inventory_Device_Service_Data_Source(View):
                 'active': 0,
             })
 
-        result['data']['objects']['topology_tab']["info"].append(
-            {
-                'name': 'topology',
-                'title': 'Topology',
-                'url': 'performance/service/topology/service_data_source/topology/device/' +
-                       str(device_id),
-                'active': 0,
-            })
+        result['data']['objects']['topology_tab']["info"].append({
+            'name': 'topology',
+            'title': 'Topology',
+            'url': 'performance/service/topology/service_data_source/topology/device/' +
+                   str(device_id),
+            'active': 0,
+        })
+
+        result['data']['objects']['utilization_top_tab']["info"].append({
+            'name': 'utilization_top',
+            'title': 'Utilization',
+            'url': 'performance/servicedetail/utilization/device/'+str(device_id),
+            'active': 0,
+        })
+
+        result['data']['objects']['rssi_top_tab']["info"].append({
+            'name': 'rssi_top',
+            'title': 'RSSI',
+            'url': 'performance/servicedetail/rssi/device/'+str(device_id),
+            'active': 0,
+        })
 
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
@@ -1715,14 +1738,14 @@ class Get_Service_Type_Performance_Data(View):
         return self.result
 
 
-class DeviceUtilization(View):
+class DeviceServiceDetail(View):
     """
     Utilization Stitching Per Technology Wise
     url : utilization/device/<device_id>
     get the device id and check the services associated to the device
     stitch together the device utilization
     """
-    def get(self, request, device_id):
+    def get(self, request, service_name, device_id):
         """
 
         :param request: request body
@@ -1736,11 +1759,11 @@ class DeviceUtilization(View):
                 'meta': {},
                 'objects': {
                     'plot_type': 'charts',
-                    'display_name': 'Utilization',
-                    'valuesuffix': ' mbps ',
+                    'display_name': service_name.strip().title(),
+                    'valuesuffix': '  ',
                     'type': 'area',
                     'chart_data': [],
-                    'valuetext': ' mbps '
+                    'valuetext': '  '
                 }
             }
         }
@@ -1756,7 +1779,7 @@ class DeviceUtilization(View):
 
         device = Device.objects.get(id=device_id)
         device_type = DeviceType.objects.get(id=device.device_type)
-        device_type_services = device_type.service.filter(name__icontains='utilization'
+        device_type_services = device_type.service.filter(name__icontains=service_name
         ).prefetch_related('servicespecificdatasource_set')
 
         services = device_type_services.values('name',
@@ -1772,8 +1795,8 @@ class DeviceUtilization(View):
         for s in services:
             service_names.append(s['name'])
             sds_names.append(s['servicespecificdatasource__service_data_sources__name'])
-            service_data_sources[s['servicespecificdatasource__service_data_sources__name']] = \
-                s['servicespecificdatasource__service_data_sources__alias']
+            service_data_sources[s['name'], s['servicespecificdatasource__service_data_sources__name']] = \
+                s['alias'] + "[ " + s['servicespecificdatasource__service_data_sources__alias'] + " ]"
 
         performance = PerformanceService.objects.filter(
             device_name=device.device_name,
@@ -1797,16 +1820,16 @@ class DeviceUtilization(View):
         temp_chart_data = {}
         for data in performance:
             try:
-                if data.data_source not in temp_chart_data:
-                    color[data.data_source] = perf_utils.color_picker()
-                    temp_chart_data[data.data_source] = {
-                        'name': service_data_sources[data.data_source],
+                if (data.service_name, data.data_source) not in temp_chart_data:
+                    color[data.service_name, data.data_source] = perf_utils.color_picker()
+                    temp_chart_data[data.service_name, data.data_source] = {
+                        'name': service_data_sources[data.service_name, data.data_source],
                         'data': [],
-                        'color': color[data.data_source],
+                        'color': color[data.service_name, data.data_source],
                     }
                 js_time = data.sys_timestamp*1000
                 value = float(data.current_value)
-                temp_chart_data[data.data_source]['data'].append([
+                temp_chart_data[data.service_name, data.data_source]['data'].append([
                     js_time, value,
                 ])
             except:
@@ -1816,17 +1839,17 @@ class DeviceUtilization(View):
             chart_data.append(temp_chart_data[cd])
 
         result = {
-            'success': 0,
-            'message': 'Device Utilization Data not found',
+            'success': 1,
+            'message': 'Device Utilization Data',
             'data': {
                 'meta': {},
                 'objects': {
                     'plot_type': 'charts',
-                    'display_name': 'Utilization',
-                    'valuesuffix': ' mbps ',
+                    'display_name': service_name.strip().title(),
+                    'valuesuffix': '  ',
                     'type': 'area',
                     'chart_data': chart_data,
-                    'valuetext': ' mbps '
+                    'valuetext': '  '
                 }
             }
         }

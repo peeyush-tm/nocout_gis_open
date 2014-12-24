@@ -1860,6 +1860,7 @@ function devicePlottingClass_gmap() {
 						"technology" : sector_array[j].technology,
 						"vendor" : sector_array[j].vendor
 					},
+					sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
 					orientation = $.trim(sector_array[j].orientation),
 					sector_child = sector_array[j].sub_station,
 					rad = 4,
@@ -1874,7 +1875,7 @@ function devicePlottingClass_gmap() {
 
 				var startEndObj = {};
 
-				if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
+				if(sector_tech != "ptp" && sector_tech != "p2p") {
 					// if(zoom_level > 9) {
 						/*Call createSectorData function to get the points array to plot the sector on google maps.*/
 						gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
@@ -1916,11 +1917,10 @@ function devicePlottingClass_gmap() {
 					startEndObj["sectorLon"] = bs_ss_devices[i].data.lon;
 				}
 
-				if($.trim(sector_array[j].technology.toLowerCase()) == "ptp" || $.trim(sector_array[j].technology.toLowerCase()) == "p2p") {
+				if(sector_tech == "ptp" || sector_tech == "p2p") {
+
 					if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
-
 						var sector_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+sector_array[j].markerUrl,"other");
-
 						var sectors_Markers_Obj = {
 							position 		 	: new google.maps.LatLng(lat, lon),
 							// map 				: mapInstance,
@@ -1943,6 +1943,7 @@ function devicePlottingClass_gmap() {
 							filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "bs_id" : bs_ss_devices[i].originalId, "sector_id" : sector_array[j].sector_id},
 							sector_lat  		: startEndObj["startLat"],
 							sector_lon  		: startEndObj["startLon"],
+							cktId 				: "",
 							zIndex 				: 200,
 							optimized 			: false,
 	                        antenna_height 		: sector_array[j].antenna_height,
@@ -1956,8 +1957,8 @@ function devicePlottingClass_gmap() {
 					/*Create Sector Marker*/
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
 
-					// Mouseover event on sector marker
-					google.maps.event.addListener(sector_Marker, 'mouseover', function(e) {
+					// Right click event on sector marker
+					google.maps.event.addListener(sector_Marker, 'rightclick', function(e) {
 						
 						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
 							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
@@ -2024,8 +2025,17 @@ function devicePlottingClass_gmap() {
 				/*Plot Sub-Station*/
 				for(var k=sector_child.length;k--;) {
 
-					var ss_marker_obj = sector_child[k];
-					var ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other");
+					var ss_marker_obj = sector_child[k],
+						ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other"),
+						ckt_id_val = gisPerformanceClass.getKeyValue(ss_marker_obj.data.param.sub_station,"cktid",true);
+
+					// Set the ckt id to sector marker object (only in case of PTP)
+					if(sector_tech == "ptp" || sector_tech == "p2p") {
+						sector_Marker.setOptions({
+							"cktId" : ckt_id_val
+						});
+					}
+
 					/*Create SS Marker Object*/
 					var ss_marker_object = {
 						position 		 : 	new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
@@ -2050,6 +2060,7 @@ function devicePlottingClass_gmap() {
 				    	device_name 	 : 	ss_marker_obj.device_name,
 				    	ss_ip 	 		 : 	ss_marker_obj.data.substation_device_ip_address,
 				    	sector_ip 		 :  sector_array[j].sector_configured_on,
+				    	cktId 			 :  ckt_id_val,
 				    	zIndex 			 : 	200,
 				    	optimized 		 : 	false,
 				    	isActive 		 :  1,
@@ -2064,7 +2075,7 @@ function devicePlottingClass_gmap() {
                         	labelHtml = "";
 
                     	if(labelInfoObject) {
-                            labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                            labelHtml += $.trim(labelInfoObject['value']);
                         }
 
 				    	// If any html created then show label on ss
@@ -2075,8 +2086,8 @@ function devicePlottingClass_gmap() {
 				    	}
 				    }
 
-				    // Mouseover event on sub-station marker
-					google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
+				    // Right click event on sub-station marker
+					google.maps.event.addListener(ss_marker, 'rightclick', function(e) {
 						var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
 							condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
@@ -3081,7 +3092,7 @@ function devicePlottingClass_gmap() {
 			}
 
 			/*Set the lat lon of the point*/
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
+			// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
 
 			var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
 				link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
@@ -5329,8 +5340,6 @@ function devicePlottingClass_gmap() {
 										}
 									}
 
-
-
 									if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i].pointType == 'sub_station') {
 
 										if(polygonSelectedDevices[i].bs_sector_device.indexOf(".") != -1) {
@@ -5341,15 +5350,16 @@ function devicePlottingClass_gmap() {
 										}
 
 										if(polled_device_count[devices_counter] <= 1) {
+											var display_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].sector_ip;
 											num_counter++;
-											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End  - '+polygonSelectedDevices[i].sector_ip+'</h5>';
+											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>'+num_counter+'.) Near End -'+display_name+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
 											devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
 											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
 										}
-
+										var ss_display_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].ss_ip;
 										num_counter++;
-										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End  - '+polygonSelectedDevices[i].ss_ip+'</h5>';
+										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) Far End -'+ss_display_name+'</h5>';
 										devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 										devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
@@ -5362,23 +5372,22 @@ function devicePlottingClass_gmap() {
 	                                        if(polled_device_count[devices_counter] <= 1) {
 												if(polygonSelectedDevices[i].pointType == 'sub_station') {
 													device_end_txt = "Far End";
-													point_name = polygonSelectedDevices[i].ss_ip
+													point_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].ss_ip;
 												} else {
 													device_end_txt = "Near End";
-													point_name = polygonSelectedDevices[i].sectorName
+													point_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].sectorName;
 												}
 												num_counter++;
-												devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+' - '+point_name+'</h5>';
+												devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) '+device_end_txt+' - '+point_name+'</h5>';
 												devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 												devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 												devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
 											}
 										} else {
 
-											device_end_txt = "Far End";
-											point_name = polygonSelectedDevices[i].ss_ip
+											point_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].ss_ip;
 											num_counter++;
-											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+' - '+point_name+'</h5>';
+											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+num_counter+'.) '+point_name+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 											devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
@@ -5540,7 +5549,7 @@ function devicePlottingClass_gmap() {
 			success : function(results) {
 				var result = "";
 
-				if(typeof results === 'string') {
+				if(typeof results == 'string') {
 					result = JSON.parse(results);
 				} else {
 					result = results;
@@ -5685,7 +5694,7 @@ function devicePlottingClass_gmap() {
 										"icon" : ss_live_polled_icon
 									});
 								}
-								marker_polling_obj.ip = ss_marker.ss_ip;
+								marker_polling_obj.ip = ss_marker.cktId+" - "+ss_marker.ss_ip;
 							}
 
 							if(sector_marker) {
@@ -5709,7 +5718,7 @@ function devicePlottingClass_gmap() {
 										// "oldIcon" : new google.maps.MarkerImage(newIcon,null,null,null,new google.maps.Size(32, 37))
 									});
 								}
-								marker_polling_obj.ip = sector_marker.sectorName;
+								marker_polling_obj.ip = sector_marker.cktId+" - "+sector_marker.sectorName;
 							}
 
 							complete_polled_devices_data.push(marker_polling_obj);
@@ -6108,7 +6117,8 @@ function devicePlottingClass_gmap() {
 
     this.createDistanceInfobox = function(distanceObject) {
     	var distanceInfoBox= new InfoBox({
-    		content: distanceObject.distance+" m<br />Point A: ("+distanceObject['startLat'].toFixed(4)+","+distanceObject['startLon'].toFixed(4)+")<br />Point B: ("+distanceObject['endLat'].toFixed(4)+","+distanceObject['endLon'].toFixed(4)+")",
+    		// content: distanceObject.distance+" m<br />Point A: ("+distanceObject['startLat'].toFixed(4)+","+distanceObject['startLon'].toFixed(4)+")<br />Point B: ("+distanceObject['endLat'].toFixed(4)+","+distanceObject['endLon'].toFixed(4)+")",
+    		content: distanceObject.distance+" m",
     		boxStyle: {
     			border        : "1px solid #B0AEAE",
     			background 	  : "white",
@@ -6117,10 +6127,10 @@ function devicePlottingClass_gmap() {
 		        color         : "black",
 		        padding       : '2px',
 		        borderRadius  : "5px",
-    			width 		  : "150px"
+    			width 		  : "60px"
     		},
     		disableAutoPan: true,
-    		pixelOffset: new google.maps.Size(-75, 0),
+    		pixelOffset: new google.maps.Size(-30, -10),
     		position: new google.maps.LatLng(distanceObject.lat3 * 180 / Math.PI,distanceObject.lon3 * 180 / Math.PI),
     		closeBoxURL: "",
     		isHidden: false,
@@ -7832,7 +7842,7 @@ function devicePlottingClass_gmap() {
 					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
 
             	if(labelInfoObject) {
-                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                    labelHtml += $.trim(labelInfoObject['value']);
                 }
 
                 var toolTip_infobox = "";
@@ -7872,7 +7882,7 @@ function devicePlottingClass_gmap() {
 					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
 
             	if(labelInfoObject) {
-                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
+                    labelHtml += $.trim(labelInfoObject['value']);
                 }
 
                 if(window.location.pathname.indexOf("googleEarth") > -1) {

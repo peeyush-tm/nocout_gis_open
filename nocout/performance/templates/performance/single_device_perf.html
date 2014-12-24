@@ -124,21 +124,56 @@
     <div id="tableContainer" class="box-body">
     <div class="tabbable header-tabs">
         <ul class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
-            <li><a href="#errors_tab" id="errors" data-toggle="tab"><span class="hidden-inline-mobile">Errors</span></a>
+            <li>
+                <a href="#rssi_top_tab" id="rssi_top" data-toggle="tab">
+                    <span class="hidden-inline-mobile">RSSI</span>
+                </a>
             </li>
-            <li><a href="#sia_tab" id="sia" data-toggle="tab"><span class="hidden-inline-mobile">SIA</span></a></li>
-            <li><a href="#topology_tab" id="topology" class="hide" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a>
+            <li>
+                <a href="#utilization_top_tab" id="utilization_top" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Utilization</span>
+                </a>
             </li>
-            <li><a href="#availability_tab" id="availability" data-toggle="tab"><span class="hidden-inline-mobile">Availability</span></a>
+            <li>
+                <a href="#errors_tab" id="errors" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Ping Detail</span>
+                </a>
             </li>
-            <li><a href="#inventory_status_tab" id="inventory_status" data-toggle="tab"><span
-                    class="hidden-inline-mobile">Inventory Status</span></a></li>
-            <li><a href="#service_status_tab" id="service_status" data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a>
+            <li>
+                <a href="#sia_tab" id="sia" data-toggle="tab">
+                    <span class="hidden-inline-mobile">SIA</span>
+                </a>
             </li>
-            <li><a href="#service_perf_tab" id="service_perf" data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a>
+            <li>
+                <a href="#topology_tab" id="topology" class="hide" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Topology</span>
+                </a>
             </li>
-            <li class="active"><a href="#network_perf_tab" id="network_perf" data-toggle="tab"><span
-                    class="hidden-inline-mobile">Network Performance</span></a></li>
+            <li>
+                <a href="#availability_tab" id="availability" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Availability</span>
+                </a>
+            </li>
+            <li>
+                <a href="#inventory_status_tab" id="inventory_status" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Inventory Status</span>
+                </a>
+            </li>
+            <li>
+                <a href="#service_status_tab" id="service_status" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Service Status</span>
+                </a>
+            </li>
+            <li>
+                <a href="#service_perf_tab" id="service_perf" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Service Performance</span>
+                </a>
+            </li>
+            <li class="active">
+                <a href="#network_perf_tab" id="network_perf" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Network Performance</span>
+                </a>
+            </li>
         </ul>
 
         <div class="clearfix"></div>
@@ -172,6 +207,7 @@
                     </div>
                 </div>
             </div>
+            
             <div class="tab-pane" id="inventory_status_tab">
                 <div class="panel panel-default inner_tab_container">
                     <div class="panel-body">
@@ -191,6 +227,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="tab-pane hide" id="topology_tab">
                 <div class="panel panel-default inner_tab_container">
                     <div class="panel-body">
@@ -200,6 +237,7 @@
                     </div>
                 </div>
             </div>
+            
             <div class="tab-pane" id="sia_tab">
                 <div class="panel panel-default">
                     <div class="panel-body" style="overflow-x: auto;">
@@ -272,6 +310,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="tab-pane" id="errors_tab">
                 <div class="panel panel-default">
                     <div class="panel-body">
@@ -349,6 +388,25 @@
                     </div>
                 </div>
             </div>
+
+            <div class="tab-pane" id="rssi_top_tab">
+                <div class="panel panel-default inner_tab_container">
+                    <div class="panel-body">
+                        <div class="tabbable tabs-left">
+                            <div class="col-md-12"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="utilization_top_tab">
+                <div class="panel panel-default inner_tab_container">
+                    <div class="panel-body">
+                        <div class="tabbable tabs-left"></div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
     </div>
@@ -369,18 +427,7 @@
     <script type="text/javascript">
     /*Global Variables*/
     var perfInstance = "",
-            current_device = "";
-
-    var desired_url_string = "https";
-    // if (window.location.protocol == "https:") {
-    //     desired_url_string = "https://";
-    // }
-
-    // if (window.location.protocol == "https:") {
-    //     if(window.location.origin) {
-    //         window.location.origin = "https:" + window.location.origin.substring(window.location.protocol.length);
-    //     }
-    // }
+        current_device = "";
 
 
     $(document).ready(function (e) {
@@ -406,7 +453,7 @@
         var device_technology = '{{ device_technology }}';
 
         // Hide Topology tab for PTP
-        if (page_type_val == 'customer' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
+        if(page_type_val == 'customer' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
             if (!$("#topology").hasClass("hide")) {
                 $("#topology").addClass("hide");
             }
@@ -414,7 +461,9 @@
             if (!$("#topology_tab").hasClass("hide")) {
                 $("#topology_tab").addClass("hide");
             }
+
         } else {
+            
             if ($("#topology").hasClass("hide")) {
                 $("#topology").removeClass("hide");
             }
@@ -439,6 +488,42 @@
 
             if ($("#sia_tab").hasClass("hide")) {
                 $("#sia_tab").removeClass("hide");
+            }
+        }
+
+        if(page_type_val == 'other') {
+            // Hide Utilization & RSSI Tabs for all network devices
+            if (!$("#utilization_top").hasClass("hide")) {
+                $("#utilization_top").addClass("hide");
+            }
+
+            if (!$("#utilization_top_tab").hasClass("hide")) {
+                $("#utilization_top_tab").addClass("hide");
+            }
+
+            if (!$("#rssi_top").hasClass("hide")) {
+                $("#rssi_top").addClass("hide");
+            }
+
+            if (!$("#rssi_top_tab").hasClass("hide")) {
+                $("#rssi_top_tab").addClass("hide");
+            }
+        } else {
+            // Hide Utilization & RSSI Tabs for all network devices
+            if ($("#utilization_top").hasClass("hide")) {
+                $("#utilization_top").removeClass("hide");
+            }
+
+            if ($("#utilization_top_tab").hasClass("hide")) {
+                $("#utilization_top_tab").removeClass("hide");
+            }
+
+            if ($("#rssi_top").hasClass("hide")) {
+                $("#rssi_top").removeClass("hide");
+            }
+
+            if ($("#rssi_top_tab").hasClass("hide")) {
+                $("#rssi_top_tab").removeClass("hide");
             }
         }
 
@@ -675,6 +760,19 @@
     /*Load first inner tab of inventory status*/
     $("#topology").click(function (e) {
         fetchFirstTabContent(e);
+        $.cookie('parent_tab_id', 'topology', {path: '/', secure: true});
+    });
+
+    /*Load first inner tab of RSSI tab*/
+    $("#rssi_top").click(function (e) {
+        fetchFirstTabContent(e);
+        $.cookie('parent_tab_id', 'rssi_top', {path: '/', secure: true});
+    });
+
+    /*Load first inner tab of Utilization tab*/
+    $("#utilization_top").click(function (e) {
+        fetchFirstTabContent(e);
+        $.cookie('parent_tab_id', 'utilization_top', {path: '/', secure: true});
     });
 
     /**
