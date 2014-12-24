@@ -2186,10 +2186,13 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
 
         is_global = False
+        is_admin = False
         if 'admin' in self.request.path:
             is_global = True
+            is_admin = True
 
         context['is_global'] = json.dumps(is_global)
+        context['is_admin'] = is_admin
 
         return context
 
@@ -2228,6 +2231,13 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
+            obj_id = dct.pop('id')
+            if self.request.GET.get('admin'):
+                actions='<a href="/serv_thematic_settings/admin/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/admin/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj_id)
+            else:
+                actions='<a href="/serv_thematic_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj_id)
             threshold_config = ThresholdConfiguration.objects.get(id=int(dct['threshold_template']))
             image_string, range_text, full_string='','',''
             if dct['icon_settings'] and dct['icon_settings'] !='NULL':
@@ -2251,14 +2261,13 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
                     full_string += image_string + range_text + "(" + range_start_value + ", " + range_end_value + ")" + "</br>"
             else:
                 full_string='N/A'
-            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user_profile.values_list('id', flat=True)
+            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=obj_id).user_profile.values_list('id', flat=True)
             checkbox_checked_true='checked' if user_current_thematic_setting else ''
             dct.update(
                 threshold_template=threshold_config.name,
                 icon_settings= full_string,
-                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
-                actions='<a href="/serv_thematic_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/serv_thematic_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(obj_id),
+                actions=actions)
         return json_data
 
 
@@ -2290,16 +2299,20 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         and its inline formsets.
         """
         self.object = None
+        is_admin = False
         form_class = self.get_form_class()
         form = ServiceThematicSettingsForm()
         icon_settings = IconSettings.objects.all()
         threshold_configuration_form = ServiceThresholdConfigurationForm()
         live_polling_settings_form = ServiceLivePollingSettingsForm()
+        if 'admin' in self.request.path:
+            is_admin = True
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
-                                  icon_settings=icon_settings))
+                                  icon_settings=icon_settings,
+                                  is_admin=is_admin))
 
     def post(self, request, *args, **kwargs):
         """
@@ -2335,6 +2348,9 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         form.instance.icon_settings = icon_settings_values_list
         self.object = form.save()
 
+        if 'admin' in self.request.path:
+            return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
+
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, threshold_configuration_form, live_polling_settings_form):
@@ -2369,12 +2385,15 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         and its inline formsets.
         """
         self.object = self.get_object()
+        is_admin = False
         form_class = self.get_form_class()
         form = ServiceThematicSettingsForm(instance=self.object)
         icon_settings = IconSettings.objects.all()
         threshold_configuration_form = ServiceThresholdConfigurationForm(instance=self.object.threshold_template)
         icon_details = list()
         icon_details_selected = dict()
+        if 'admin' in self.request.path:
+            is_admin = True
         if form.instance.icon_settings!='NULL':
             form.instance.icon_settings
             form.instance.icon_settings = eval(form.instance.icon_settings)
@@ -2386,7 +2405,8 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
                                   icon_settings=icon_settings,
-                                  icon_details_selected=icon_details_selected,))
+                                  icon_details_selected=icon_details_selected,
+                                  is_admin=is_admin))
 
     def post(self, request, *args, **kwargs):
         """
@@ -2414,6 +2434,8 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         form.save()
         threshold_configuration_form.save()
         live_polling_settings_form.save()
+        if 'admin' in self.request.path:
+            return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, threshold_configuration_form, live_polling_settings_form):
@@ -2444,6 +2466,18 @@ class ServiceThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin
     template_name = 'service_thematic_settings/service_thematic_settings_delete.html'
     success_url = reverse_lazy('service_thematic_settings_list')
     required_permissions = ('inventory.delete_thematicsettings',)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Calls the delete() method on the fetched object and then
+        redirects to the success URL.
+        """
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.delete()
+        if 'admin' in self.request.path:
+            return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
+        return HttpResponseRedirect(success_url)
 
 
 #************************************ GIS Inventory Bulk Upload ******************************************
