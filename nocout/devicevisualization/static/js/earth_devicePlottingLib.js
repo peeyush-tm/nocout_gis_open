@@ -572,7 +572,15 @@ function googleEarthClass() {
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
-				success : function(result) {
+				success: function (response) {
+
+	                var result = "";
+	                // Type check of response
+	                if(typeof response == 'string') {
+	                    result = JSON.parse(response);
+	                } else {
+	                    result = response;
+	                }
 
 					if(result.success == 1) {
 
@@ -2267,14 +2275,14 @@ var state_wise_device_label_text= {};
     		$.ajax({
     			url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&service_type="+service_type,
     			// url : base_url+"/"+"static/livePolling.json",
-    			success : function(results) {
+    			success : function(response) {
 
     				var result = "";
-
-    				if(typeof results == 'string') {
-    					result = JSON.parse(results);
+    				// Type check for response
+    				if(typeof response == 'string') {
+    					result = JSON.parse(response);
     				} else {
-    					result = results;
+    					result = response;
     				}
     				
     				if(result.success == 1) {
@@ -2652,16 +2660,16 @@ var state_wise_device_label_text= {};
 	    	$.ajax({
 				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 				// url : base_url+"/"+"static/services.json",
-				success : function(results) {
+				success : function(response) {
+					
 					var result = "";
-
-					if(typeof results == 'string') {
-						result = JSON.parse(results);
+					// Type check for response
+					if(typeof response == 'string') {
+						result = JSON.parse(response);
 					} else {
-						result = results;
+						result = response;
 					}
 
-					
 					if(result.success == 1) {
 						$("#getDevicesPollingData").button("complete");
 

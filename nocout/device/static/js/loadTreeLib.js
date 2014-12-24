@@ -69,7 +69,7 @@ function loadDeviceTreeLib() {
 	 */
 	this.getDevices = function(infoObject) {
 		// alert();
-		var this_of_this= this;
+		var this_of_this = this;
 
 		// var username = infoObject.username;
 
@@ -86,7 +86,16 @@ function loadDeviceTreeLib() {
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
-				success : function(result) {
+				success : function(response) {
+
+					var result = "";
+					//  Type check for api response
+					if(typeof response == 'string') {
+						result = JSON.parse(response); 
+					} else {
+						result = response;
+					}
+
 					if(result.success == 1) {
 
 						if(result.data.objects != null) {
@@ -166,9 +175,18 @@ function loadDeviceTreeLib() {
 		var citiesObject= {};
 		/*Ajax call for filters data*/
 		$.ajax({
-			url : base_url+"/"+"device/filter/",
-			success : function(result) {				
-				var filtersData = JSON.parse(result);
+			url : base_url+"/"+"device/filter/0/",
+			success : function(result) {
+
+				var filtersData = "";
+				//  Type check for api response
+				if(typeof result == 'string') {
+					filtersData = JSON.parse(result); 
+				} else {
+					filtersData = result;
+				}
+
+				// var filtersData = JSON.parse(result);
 				
 				var cityData = filtersData.data.objects.city.data;
 				var stateData = filtersData.data.objects.state.data;
