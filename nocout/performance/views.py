@@ -1637,9 +1637,16 @@ class Get_Service_Type_Performance_Data(View):
                 js_time = data.sys_timestamp*1000
                 if data.avg_value:
                     try:
-                        bs_lat = performance_data_bs.get(sys_timestamp=data.sys_timestamp).avg_value
+                        ##in between 5 minutes the bs result will come before ss result
+                        valid_end_time = data.sys_timestamp
+                        valid_start_time = data.sys_timestamp - 300
+                        ##in between 5 minutes the bs result will come before ss result
+                        bs_lat = performance_data_bs.filter(sys_timestamp__gte=valid_start_time,
+                                                            sys_timestamp__lte=valid_end_time
+                        )[0].avg_value
+
                         ss_lat = data.avg_value
-                        rf_lat = ss_lat - bs_lat
+                        rf_lat = float(ss_lat) - float(bs_lat)
                         data_list.append([js_time, float(rf_lat)])
                     except Exception as e:
                         rf_lat = data.avg_value
