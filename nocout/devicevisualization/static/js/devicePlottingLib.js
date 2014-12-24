@@ -3785,7 +3785,7 @@ function devicePlottingClass_gmap() {
 
 		/*Ajax call for Live polling technology data*/
 		$.ajax({
-			url : base_url+"/"+"device/filter/",
+			url : base_url+"/"+"device/filter/1/",
 			success : function(response) {
 
 				var result = "";
@@ -7072,7 +7072,7 @@ function devicePlottingClass_gmap() {
 			url : base_url+"/network_maps/get_tools_data/",
 			type : "GET",
 			success : function(result) {
-				
+
 				var resultant_data = "";
 				if(typeof result == 'string') {
 					resultant_data = JSON.parse(result);
