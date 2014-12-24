@@ -2186,10 +2186,13 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
 
         is_global = False
+        is_admin = False
         if 'admin' in self.request.path:
             is_global = True
+            is_admin = True
 
         context['is_global'] = json.dumps(is_global)
+        context['is_admin'] = is_admin
 
         return context
 
@@ -2228,6 +2231,13 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
+            obj_id = dct.pop('id')
+            if self.request.GET.get('admin'):
+                actions='<a href="/serv_thematic_settings/admin/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/admin/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj_id)
+            else:
+                actions='<a href="/serv_thematic_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj_id)
             threshold_config = ThresholdConfiguration.objects.get(id=int(dct['threshold_template']))
             image_string, range_text, full_string='','',''
             if dct['icon_settings'] and dct['icon_settings'] !='NULL':
@@ -2251,14 +2261,13 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
                     full_string += image_string + range_text + "(" + range_start_value + ", " + range_end_value + ")" + "</br>"
             else:
                 full_string='N/A'
-            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user_profile.values_list('id', flat=True)
+            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=obj_id).user_profile.values_list('id', flat=True)
             checkbox_checked_true='checked' if user_current_thematic_setting else ''
             dct.update(
-                threshold_template=threshold_config.name,
+                threshold_template=threshold_config.alias,
                 icon_settings= full_string,
-                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
-                actions='<a href="/serv_thematic_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/serv_thematic_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(obj_id),
+                actions=actions)
         return json_data
 
 
@@ -2290,16 +2299,20 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         and its inline formsets.
         """
         self.object = None
+        is_admin = False
         form_class = self.get_form_class()
         form = ServiceThematicSettingsForm()
         icon_settings = IconSettings.objects.all()
         threshold_configuration_form = ServiceThresholdConfigurationForm()
         live_polling_settings_form = ServiceLivePollingSettingsForm()
+        if 'admin' in self.request.path:
+            is_admin = True
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
-                                  icon_settings=icon_settings))
+                                  icon_settings=icon_settings,
+                                  is_admin=is_admin))
 
     def post(self, request, *args, **kwargs):
         """
@@ -2335,6 +2348,9 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         form.instance.icon_settings = icon_settings_values_list
         self.object = form.save()
 
+        if 'admin' in self.request.path:
+            return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
+
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, threshold_configuration_form, live_polling_settings_form):
@@ -2369,12 +2385,15 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         and its inline formsets.
         """
         self.object = self.get_object()
+        is_admin = False
         form_class = self.get_form_class()
         form = ServiceThematicSettingsForm(instance=self.object)
         icon_settings = IconSettings.objects.all()
         threshold_configuration_form = ServiceThresholdConfigurationForm(instance=self.object.threshold_template)
         icon_details = list()
         icon_details_selected = dict()
+        if 'admin' in self.request.path:
+            is_admin = True
         if form.instance.icon_settings!='NULL':
             form.instance.icon_settings
             form.instance.icon_settings = eval(form.instance.icon_settings)
@@ -2386,7 +2405,8 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
                                   icon_settings=icon_settings,
-                                  icon_details_selected=icon_details_selected,))
+                                  icon_details_selected=icon_details_selected,
+                                  is_admin=is_admin))
 
     def post(self, request, *args, **kwargs):
         """
@@ -2409,11 +2429,19 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         Called if all forms are valid. Updates ThematicSettings, LivePollingSettings and IconSettings.
         """
         self.object = self.get_object()
+        name = form.instance.name
+        alias = form.instance.alias
         icon_settings_values_list = [ { key: form.data[key] }  for key in self.icon_settings_keys if form.data[key]]
         form.instance.icon_settings = icon_settings_values_list
         form.save()
+        threshold_configuration_form.instance.name = name
+        threshold_configuration_form.instance.alias = alias
         threshold_configuration_form.save()
+        live_polling_settings_form.instance.name = name
+        live_polling_settings_form.instance.alias = alias
         live_polling_settings_form.save()
+        if 'admin' in self.request.path:
+            return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, threshold_configuration_form, live_polling_settings_form):
@@ -2444,6 +2472,18 @@ class ServiceThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin
     template_name = 'service_thematic_settings/service_thematic_settings_delete.html'
     success_url = reverse_lazy('service_thematic_settings_list')
     required_permissions = ('inventory.delete_thematicsettings',)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Calls the delete() method on the fetched object and then
+        redirects to the success URL.
+        """
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.delete()
+        if 'admin' in self.request.path:
+            return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
+        return HttpResponseRedirect(success_url)
 
 
 #************************************ GIS Inventory Bulk Upload ******************************************
@@ -5922,8 +5962,8 @@ class GisWizardListView(BaseStationList):
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
             {'mData': 'bs_switch__id', 'sTitle': 'BS Switch IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'Backhaul IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
         ]
@@ -5952,8 +5992,7 @@ class GisWizardListingTable(BaseStationListingTable):
             device_id = dct.pop('id')
 
             sector_configured_on = Sector.objects.filter(base_station_id=device_id, sector_configured_on__isnull=False,
-                    bs_technology__in=[3, 4]).values_list('sector_configured_on__ip_address', flat=True)
-            print sector_configured_on
+                    bs_technology__in=[3, 4]).distinct().values_list('sector_configured_on__ip_address', flat=True)
             sector_configured_on = ', '.join(sector_configured_on)
             dct.update(sector_configured_on=sector_configured_on)
 
@@ -6127,9 +6166,9 @@ class GisWizardSectorListView(SectorList):
             {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Near End', 'sWidth': 'auto', },
             {'mData': 'circuit__sub_station__device__ip_address', 'sTitle': 'Far End', 'sWidth': 'auto', },
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
-            {'mData': 'circuit__customer__name', 'sTitle': 'Customer Name', 'sWidth': 'auto',
-             'sClass': 'hidden-xs'},
-            {'mData': 'frequency', 'sTitle': 'Frequency', 'sWidth': 'auto', },
+            {'mData': 'circuit__customer__alias', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
@@ -6139,7 +6178,7 @@ class GisWizardSectorListView(SectorList):
             {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
-            {'mData': 'frequency', 'sTitle': 'Frequency', 'sWidth': 'auto', },
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -6152,7 +6191,7 @@ class GisWizardSectorListView(SectorList):
             {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on_port__alias', 'sTitle': 'PMP Port', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
-            {'mData': 'frequency', 'sTitle': 'Frequency', 'sWidth': 'auto', },
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
@@ -6200,23 +6239,23 @@ class GisWizardSectorListingMixin(object):
 
 class GisWizardP2PSectorListing(GisWizardSectorListingMixin, SectorListingTable):
     columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'bs_technology__alias',
-            'circuit__customer__name', 'frequency', 'base_station__alias', 'description']
+            'circuit__customer__alias', 'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'description']
     order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'bs_technology__alias',
-            'circuit__customer__name', 'frequency', 'base_station__alias', 'description']
+            'circuit__customer__alias', 'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'description']
 
 
 class GisWizardPMPSectorListing(GisWizardSectorListingMixin, SectorListingTable):
-    columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency', 'base_station__alias',
+    columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency__value', 'base_station__alias',
             'antenna__polarization', 'description']
-    order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency', 'base_station__alias',
+    order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency__value', 'base_station__alias',
             'antenna__polarization', 'description']
 
 
 class GisWizardWiMAXSectorListing(GisWizardSectorListingMixin, SectorListingTable):
     columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'sector_configured_on_port__alias',
-            'frequency', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
+            'frequency__value', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
     order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'sector_configured_on_port__alias',
-            'frequency', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
+            'frequency__value', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
 
 
 class GisWizardSectorDetailView(SectorDetail):
@@ -6551,8 +6590,8 @@ class GisWizardSectorSubStationListView(SubStationList):
 
         datatable_headers = [
             {'mData': 'device__ip_address', 'sTitle': 'SS IP', 'sWidth': 'auto', },
-            {'mData': 'circuit__customer__name', 'sTitle': 'Customer Name', 'sWidth': 'auto',
-             'sClass': 'hidden-xs'},
+            {'mData': 'circuit__customer__alias', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -6560,7 +6599,6 @@ class GisWizardSectorSubStationListView(SubStationList):
             {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
@@ -6573,10 +6611,10 @@ class GisWizardSubStationListing(SubStationListingTable):
     """
     Class based View to render Sub Station Data table.
     """
-    columns = ['device__ip_address', 'circuit__customer__name', 'antenna__alias', 'version', 'serial_no', 'building_height',
-               'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['device__ip_address', 'circuit__customer__name', 'antenna__alias', 'version', 'serial_no', 'building_height',
-                     'tower_height']
+    columns = ['device__ip_address', 'circuit__customer__alias', 'circuit__circuit_id', 'antenna__alias', 'version',
+            'serial_no', 'building_height', 'tower_height', 'city', 'state', 'description']
+    order_columns = ['device__ip_address', 'circuit__customer__alias', 'circuit__circuit_id', 'antenna__alias', 'version',
+            'serial_no', 'building_height', 'tower_height']
 
     def get_initial_queryset(self):
         qs = super(GisWizardSubStationListing, self).get_initial_queryset()
@@ -6824,9 +6862,9 @@ class GisWizardPTPListView(SectorList):
         datatable_headers = [
             {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Near End IP', 'sWidth': 'auto', },
             {'mData': 'circuit__sub_station__device__ip_address', 'sTitle': 'Far End IP', 'sWidth': 'auto', },
-            {'mData': 'circuit__customer__name', 'sTitle': 'Customer Name', 'sWidth': 'auto',
-             'sClass': 'hidden-xs'},
-            {'mData': 'frequency', 'sTitle': 'Frequency', 'sWidth': 'auto', },
+            {'mData': 'circuit__customer__alias', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'sector_configured_on__country', 'sTitle': 'Country', 'sWidth': 'auto', 'bSortable': False, },
             {'mData': 'sector_configured_on__state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': False, },
@@ -6840,10 +6878,12 @@ class GisWizardPTPListView(SectorList):
 
 
 class GisWizardPTPListingTable(SectorListingTable):
-    columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__name', 'frequency',
-            'base_station__alias', 'sector_configured_on__country', 'sector_configured_on__state', 'sector_configured_on__city', 'description']
-    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__name', 'frequency',
-            'base_station__alias', 'sector_configured_on__country', 'sector_configured_on__state', 'sector_configured_on__city', 'description']
+    columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',
+            'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country',
+            'sector_configured_on__state', 'sector_configured_on__city', 'description']
+    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',
+            'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country',
+            'sector_configured_on__state', 'sector_configured_on__city', 'description']
 
     def get_initial_queryset(self):
         qs=super(GisWizardPTPListingTable, self).get_initial_queryset()
@@ -6887,7 +6927,7 @@ class GisWizardSubStationListView(SubStationList):
 
         datatable_headers = [
             {'mData': 'device__ip_address', 'sTitle': 'SS IP', 'sWidth': 'auto', },
-            {'mData': 'circuit__customer__name', 'sTitle': 'Customer Name', 'sWidth': 'auto',
+            {'mData': 'circuit__customer__alias', 'sTitle': 'Customer Name', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
@@ -6896,7 +6936,6 @@ class GisWizardSubStationListView(SubStationList):
             {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
@@ -6906,9 +6945,9 @@ class GisWizardSubStationListView(SubStationList):
 
 
 class GisWizardSubStationListingTable(SubStationListingTable):
-    columns = ['device__ip_address', 'circuit__customer__name', 'antenna__alias', 'version', 'serial_no', 'building_height',
-               'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['device__ip_address', 'circuit__customer__name', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    columns = ['device__ip_address', 'circuit__customer__alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
+               'tower_height', 'city', 'state', 'description']
+    order_columns = ['device__ip_address', 'circuit__customer__alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
     def get_initial_queryset(self):

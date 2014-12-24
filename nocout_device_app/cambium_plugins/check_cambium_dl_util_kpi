@@ -21,7 +21,7 @@ downlink utilization information is sent to device application
 ##################################################################
 
 
-def extract_cam_util_from_live(hostname,site):
+def extract_cam_dl_util_from_live(hostname,site):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
@@ -29,11 +29,8 @@ def extract_cam_util_from_live(hostname,site):
     
         """
         cam_dl = ''
-	cam_ul = ''
         query_string = "GET services\nColumns: service_perf_data\nFilter: host_name = %s\n" % (hostname) +\
 		       "Filter: service_description = cambium_dl_utilization\n"+\
-                       "Filter: service_description = cambium_ul_utilization\n"+\
-		       "Or: 2\n" +\
 		       "OutputFormat: python\n"
 
         try:
@@ -49,23 +46,18 @@ def extract_cam_util_from_live(hostname,site):
 			err=e.args[0]
 			if err == 'timed out':
 				cam_dl=''
-				cam_ul=''
                 if query_output[0][0]:
                         cam_dl = query_output[0][0].split('=')[1].split(';')[0]
-                if query_output[1][0]:
-                        cam_ul = query_output[1][0].split('=')[1].split(';')[0]
         except:
                 cam_dl=''
-		cam_ul=''
 
-        return cam_dl,cam_ul
-
+        return cam_dl
 
 
-def live_query_cam_util_kpi(host_name):
+
+def live_query_cam_dl_util_kpi(host_name,site,war,crit):
     perf = ''
     cam_dl =''
-    cam_ul = ''
     state = 3
     plugin_message = ''
     state_string = "unknown"
@@ -75,22 +67,23 @@ def live_query_cam_util_kpi(host_name):
         #paths = [path for path in p.split('/')]
         #site = paths[paths.index('sites') + 1]
 	#print host_name,site
-	site = "ospf1_slave_1"
-	cam_dl,cam_ul =extract_cam_util_from_live(host_name,site)
+	cam_dl =extract_cam_dl_util_from_live(host_name,site)
 	if cam_dl:
 		cam_dl = (float(cam_dl)/4.76 ) * 100
-                state = 0
-		state_string = "OK"
-	if cam_ul:
-		cam_ul = (float(cam_ul)/2.24 ) * 100
-                state = 0
-		state_string = "OK"
-	perf += 'cam_ul_util_kpi' + "=%s " %(cam_ul)
+		if cam_dl < war:
+                	state = 0
+			state_string = "ok"
+		elif cam_dl >= crit:
+			state = 2
+			state_string = "critical"
+		else:
+			state = 1
+			state_string = "warning"
 	perf += 'cam_dl_util_kpi' + "=%s " %(cam_dl)
    
     except:
         perf = ''
-    plugin_message += "cambium_util_kpi %s - %s %s|%s" % (state_string,cam_ul,cam_dl,perf)
+    plugin_message += "cambium_util_kpi %s - %s|%s" % (state_string,cam_dl,perf)
     sys.stdout.write(plugin_message)
     sys.exit((state))
 
@@ -99,8 +92,18 @@ def live_query_cam_util_kpi(host_name):
 
 
 def  main():
-    host_name = sys.argv[1]
-    live_query_cam_util_kpi(host_name)
+    state_string = "unknown"
+    cam_dl=''
+    try:
+    	host_name = sys.argv[1]
+    	site = sys.argv[2]
+    	war = sys.argv[3]
+    	crit = sys.argv[4]
+    except:
+	perf =''
+    	plugin_message += "cambium_dl_util_kpi %s - %s|%s" % (state_string,cam_dl,perf)
+	sys.exit((3))	
+    live_query_cam_dl_util_kpi(host_name,site,float(war),float(crit))
 
 
 if __name__ == '__main__':

@@ -5,7 +5,11 @@
 {% block content_description %}List of thematic settings{% endblock %}
 {% block content %}
         {% if user.is_superuser %}
-            <p><a href="/serv_thematic_settings/new"><i class="fa fa-plus">&nbsp;</i> Create Service Thematic Settings</a></p>
+           {% if is_admin %}
+               <p><a href="/serv_thematic_settings/admin/new"><i class="fa fa-plus">&nbsp;</i> Create Admin Service Thematic Settings</a></p>
+            {% else %}
+                <p><a href="/serv_thematic_settings/new"><i class="fa fa-plus">&nbsp;</i> Create Service Thematic Settings</a></p>
+            {% endif %}
         {% endif %}
 
     <div class="box border lite">
