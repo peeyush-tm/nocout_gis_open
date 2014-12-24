@@ -1747,8 +1747,8 @@ class Get_Service_Type_Performance_Data(View):
         sector_performance_data = performance_data.filter(device_name=sector_device.device_name)
         dr_performance_data = performance_data.filter(device_name=dr_device.device_name)
 
-        sector_result = self.get_performance_data_result(performance_data=sector_performance_data)
-        dr_result = self.get_performance_data_result(performance_data=dr_performance_data)
+        sector_result = self.performance_data_result(performance_data=sector_performance_data)
+        dr_result = self.performance_data_result(performance_data=dr_performance_data)
 
         sector_result['data']['objects']['chart_data'][0]['name'] += " ( {0} )".format(sector_device.ip_address)
         dr_result['data']['objects']['chart_data'][0]['name'] += " ( {0} )".format(dr_device.ip_address)
@@ -1762,6 +1762,226 @@ class Get_Service_Type_Performance_Data(View):
 
         return self.result
 
+    def performance_data_result(self, performance_data, data_source=None):
+        chart_data = list()
+        result = {
+            'success': 0,
+            'message': 'Device Utilization Data not found',
+            'data': {
+                'meta': {},
+                'objects': {
+                    'plot_type': '',
+                    'display_name': '',
+                    'valuesuffix': '',
+                    'type': '',
+                    'chart_data': [],
+                    'valuetext': ''
+                }
+            }
+        }
+        if performance_data:
+            data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
+            min_data_list = list()
+            max_data_list = list()
+            for data in performance_data:
+                temp_time = data.sys_timestamp
+
+                if temp_time in aggregate_data:
+                    continue
+                else:
+                    aggregate_data[temp_time] = data.sys_timestamp
+
+                    #time in javascript format
+                    js_time = data.sys_timestamp * 1000
+                    #time in javascript format
+
+                    sds_name = str(data.data_source).strip().lower()
+                    sds_display_name = \
+                        SERVICE_DATA_SOURCE[sds_name]["display_name"] \
+                            if sds_name in SERVICE_DATA_SOURCE \
+                            else str(data.data_source).upper()
+
+                    result['data']['objects']['display_name'] = sds_display_name
+
+                    result['data']['objects']['type'] = \
+                        SERVICE_DATA_SOURCE[sds_name]["type"] \
+                            if sds_name in SERVICE_DATA_SOURCE \
+                            else "area"
+
+                    result['data']['objects']['valuesuffix'] = \
+                        SERVICE_DATA_SOURCE[sds_name]["valuesuffix"] \
+                            if sds_name in SERVICE_DATA_SOURCE \
+                            else ""
+
+                    result['data']['objects']['valuetext'] = \
+                        SERVICE_DATA_SOURCE[sds_name]["valuetext"] \
+                            if sds_name in SERVICE_DATA_SOURCE \
+                            else str(data.data_source).upper()
+
+                    result['data']['objects']['plot_type'] = 'charts'
+                    # data_list.append([data.sys_timestamp, data.current_value ])
+
+                    # data_list.append([data.sys_timestamp*1000, float(data.current_value) if data.current_value else 0])
+                    if data_source not in ["availability"]:
+                        #only display warning if there exists a warning
+                        if data.warning_threshold:
+                            warn_data_list.append([js_time, float(data.warning_threshold)])
+
+                        #only display critical if there exists a critical
+                        if data.critical_threshold:
+                            crit_data_list.append([js_time, float(data.critical_threshold)])
+
+                        ###to draw each data point w.r.t threshold we would need to use the following
+                        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_min"]:
+                            min_data_list.append([js_time, float(data.min_value)
+                            if data.min_value else None])
+
+                        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["show_max"]:
+                            max_data_list.append([js_time, float(data.max_value)
+                            if data.max_value else None])
+
+                        compare_point = lambda p1, p2, p3: '#70AFC4' \
+                            if abs(p1) < abs(p2) \
+                            else ('#FFE90D'
+                                  if abs(p2) < abs(p1) < abs(p3)
+                                  else ('#FF193B' if abs(p3) < abs(p1)
+                                        else "#70AFC4"
+                        )
+                        )
+
+                        formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
+                            if sds_name in SERVICE_DATA_SOURCE \
+                            else None
+
+                        if data.current_value:
+                            formatter_data_point = {
+                                "name": sds_display_name,
+                                "color": compare_point(float(data.current_value) if data.current_value else 0,
+                                                       float(data.warning_threshold) if data.warning_threshold else 0,
+                                                       float(data.critical_threshold) if data.critical_threshold else 0
+                                ),
+                                "y": eval(str(formula) + "(" + str(data.current_value) + ")")
+                                if formula
+                                else float(data.current_value),
+                                "x": js_time
+                            }
+                        else:
+                            formatter_data_point = {
+                                "name": sds_display_name,
+                                "color": '#70AFC4',
+                                "y": None,
+                                "x": js_time
+                            }
+
+                        data_list.append(formatter_data_point)
+                        chart_data = [{'name': result['data']['objects']['display_name'],
+                                       'data': data_list,
+                                       'type': result['data']['objects']['type'],
+                                       'valuesuffix': result['data']['objects']['valuesuffix'],
+                                       'valuetext': result['data']['objects']['valuetext']
+                                      }
+                        ]
+                        if len(min_data_list):
+                            chart_data.append(
+                                {'name': str("min value").title(),
+                                 'color': '#01CC14',
+                                 'data': min_data_list,
+                                 'type': 'line',
+                                 'marker': {
+                                     'enabled': False
+                                 }
+                                }
+                            )
+
+                        if len(max_data_list):
+                            chart_data.append(
+                                {'name': str("max value").title(),
+                                 'color': '#FF8716',
+                                 'data': max_data_list,
+                                 'type': 'line',
+                                 'marker': {
+                                     'enabled': False
+                                 }
+                                }
+                            )
+
+                        if len(crit_data_list):
+                            chart_data.append(
+                                {'name': str("warning threshold").title(),
+                                 'color': '#FFE90D',
+                                 'data': warn_data_list,
+                                 'type': 'line',
+                                 'marker': {
+                                     'enabled': False
+                                 }
+                                }
+                            )
+
+                        if len(warn_data_list):
+                            chart_data.append(
+                                {'name': str("critical threshold").title(),
+                                 'color': '#FF193B',
+                                 'data': crit_data_list,
+                                 'type': 'line',
+                                 'marker': {
+                                     'enabled': False
+                                 }
+                                }
+                            )
+                    else:
+                        if data.current_value:
+                            formatter_data_point = {
+                                "name": "Availability",
+                                "color": '#70AFC4',
+                                "y": float(data.current_value),
+                                "x": js_time
+                            }
+                            formatter_data_point_down = {
+                                "name": "UnAvailability",
+                                "color": '#FF193B',
+                                "y": 100.00 - float(data.current_value),
+                                "x": js_time
+                            }
+                        else:
+                            formatter_data_point = {
+                                "name": str(data.data_source).upper(),
+                                "color": '#70AFC4',
+                                "y": None,
+                                "x": js_time
+                            }
+                            formatter_data_point_down = {
+                                "name": "UnAvailability",
+                                "color": '#FF193B',
+                                "y": None,
+                                "x": js_time
+                            }
+
+                        data_list.append(formatter_data_point)
+                        warn_data_list.append(formatter_data_point_down)
+
+                        chart_data = [{'name': 'Availability',
+                                       'data': data_list,
+                                       'type': result['data']['objects']['type'],
+                                       'valuesuffix': result['data']['objects']['valuesuffix'],
+                                       'valuetext': result['data']['objects']['valuetext']
+                                      },
+                                      {'name': 'UnAvailability',
+                                       'color': '#FF193B',
+                                       'data': warn_data_list,
+                                       'type': 'column',
+                                       'marker': {
+                                           'enabled': False
+                                       }}
+                        ]
+
+
+            #this ensures a further good presentation of data w.r.t thresholds
+
+            result['success'] = 1
+            result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
+            result['data']['objects']['chart_data'] = chart_data
+
+        return result
 
     def get_performance_data_result(self, performance_data, data_source=None):
         chart_data = list()
