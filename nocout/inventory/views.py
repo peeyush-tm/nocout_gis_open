@@ -68,6 +68,9 @@ logger = logging.getLogger(__name__)
 from django.core.cache import cache
 ##caching
 
+# decorators
+from django.utils.decorators import method_decorator
+
 
 # **************************************** Inventory *********************************************
 def inventory(request):
@@ -3220,9 +3223,12 @@ class DownloadSelectedBSInventory(View):
         :Returns:
            - 'file' (file) - inventory excel sheet
     """
-    def get(self, request):
+    # def dispatch(self, request, *args, **kwargs):
+    #     return super(DownloadSelectedBSInventory, self).dispatch(*args, **kwargs)
+
+    def post(self, request):
         # get base stations id's list
-        bs_ids = eval(str(self.request.GET.get('base_stations', None)))
+        bs_ids = eval(str(self.request.POST.get('base_stations', None)))
 
         # list of ptp rows
         ptp_rows = []
