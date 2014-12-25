@@ -3228,6 +3228,12 @@ class DownloadSelectedBSInventory(View):
         # get base stations id's as js array
         base_stations = self.request.POST.get('base_stations', None)
 
+        # result
+        result = {
+            'success': 0,
+            'message': "Something wrong with inventory download."
+        }
+
         # convert base stations id's string to a python list
         bs_ids = eval(str(base_stations))
         timestamp = time.time()
@@ -3247,9 +3253,15 @@ class DownloadSelectedBSInventory(View):
         # gis excel download id
         gis_excel_download_id = gis_excel_download.id
 
-        result = generate_gis_inventory_excel.delay(bs_ids, username, fulltime, gis_excel_download_id)
+        try:
+            task = generate_gis_inventory_excel.delay(bs_ids, username, fulltime, gis_excel_download_id)
+            result['success'] = 1
+            result['message'] = "Inventory download started. Please check status \
+                                 <a href='/gis_downloaded_inventories/'>here</a>."
+        except Exception as e:
+            logger.info("Something wrong with inventory download. Exception: ", e.message)
 
-        return HttpResponse(json.dumps({'message': "Start processing."}))
+        return HttpResponse(json.dumps(result))
 
 
 class DownloadSelectedBSInventoryList(ListView):
