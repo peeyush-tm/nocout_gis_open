@@ -9236,10 +9236,12 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
         try:
             inventory_wb.save(MEDIA_ROOT + filename)
             gis_excel_download_obj.file_path = filename
+            gis_excel_download_obj.description = "Successfully download inventory on {}.".format(fulltime)
             gis_excel_download_obj.status = 1
             gis_excel_download_obj.save()
         except Exception as e:
             gis_excel_download_obj.status = 2
+            gis_excel_download_obj.description = "Failed to download inventory on {}.".format(fulltime)
             gis_excel_download_obj.save()
             logger.info(e.message)
     # ****************************** Saving Excel (End) *******************************

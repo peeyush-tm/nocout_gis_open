@@ -56,7 +56,8 @@ from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorF
         ThresholdConfigurationForm, ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm,
         PingThematicSettingsForm,  ServiceThematicSettingsForm, ServiceThresholdConfigurationForm,
         ServiceLivePollingSettingsForm, WizardBaseStationForm, WizardBackhaulForm, WizardSectorForm, WizardAntennaForm,
-        WizardSubStationForm, WizardCustomerForm, WizardCircuitForm, WizardPTPSubStationAntennaFormSet)
+        WizardSubStationForm, WizardCustomerForm, WizardCircuitForm, WizardPTPSubStationAntennaFormSet,
+        DownloadSelectedBSInventoryEditForm)
 from inventory.tasks import (validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory,
         bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory,
         bulk_upload_wimax_ss_inventory, bulk_upload_backhaul_inventory, generate_gis_inventory_excel)
@@ -3223,15 +3224,16 @@ class DownloadSelectedBSInventory(View):
            - 'file' (file) - inventory excel sheet
     """
 
-    def get(self, request):
+    def post(self, request):
         # get base stations id's as js array
-        base_stations = self.request.GET.get('base_stations', None)
+        base_stations = self.request.POST.get('base_stations', None)
+
+        print "************************* base_stations - ", base_stations
 
         # convert base stations id's string to a python list
         bs_ids = eval(str(base_stations))
-        print "**************************** base_stations - ", bs_ids
         timestamp = time.time()
-        full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+        fulltime = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
 
         # current user's username
         username = self.request.user.username
@@ -3239,14 +3241,15 @@ class DownloadSelectedBSInventory(View):
         # create 'GISExcelDownload' object
         gis_excel_download = GISExcelDownload()
         gis_excel_download.status = 0
+        gis_excel_download.base_stations = base_stations
+        gis_excel_download.description = "Started downloading inventory on {}.".format(fulltime)
         gis_excel_download.uploaded_by = username
         gis_excel_download.save()
 
         # gis excel download id
         gis_excel_download_id = gis_excel_download.id
 
-        result = generate_gis_inventory_excel.delay(bs_ids, username, full_time, gis_excel_download_id)
-        print "***************************** result - ", result
+        result = generate_gis_inventory_excel.delay(bs_ids, username, fulltime, gis_excel_download_id)
 
         return HttpResponse(json.dumps({'message': "Start processing."}))
 
@@ -3289,6 +3292,16 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
     columns = ['file_path', 'status', 'description', 'uploaded_by', 'added_on', 'modified_on']
     order_columns = ['file_path', 'status', 'description', 'uploaded_by', 'added_on', 'modified_on']
     search_columns = ['file_path', 'status', 'description', 'uploaded_by']
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
+
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return GISExcelDownload.objects.filter(uploaded_by=self.request.user.username).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         """
@@ -3390,7 +3403,7 @@ class DownloadSelectedBSInventoryUpdate(UpdateView):
     """
     template_name = 'gis_inventory_download/gis_inventory_download_update.html'
     model = GISExcelDownload
-    form_class = GISInventoryBulkImportEditForm
+    form_class = DownloadSelectedBSInventoryEditForm
     success_url = reverse_lazy('gis_selected_bs_inventories_list')
 
 
