@@ -655,13 +655,13 @@ function nocoutPerfLib() {
                         if(inner_data.constructor == Array) {
                             if(inner_data[0]) {
                                 row_val.push(new Date(inner_data[0]).toLocaleString());
-                                var chart_val = inner_data[1] ? inner_data[1] : "";
+                                var chart_val = inner_data[1];
                                 row_val.push(chart_val);
                             }
                         } else if(inner_data.constructor == Object) {
                             if(inner_data.x) {
                                 row_val.push(new Date(inner_data.x).toLocaleString());
-                                var chart_val = inner_data.y ? inner_data.y : "";
+                                var chart_val = inner_data.y;
                                 row_val.push(chart_val);
                             }
                         }
