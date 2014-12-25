@@ -1522,7 +1522,7 @@ class Get_Service_Type_Performance_Data(View):
                 for dr_d in dr_devices:
                     dr_device = dr_d.dr_configured_on
             if dr_device:
-                performance_data = Utilization.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
+                performance_data = PerformanceService.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
                                                                      service_name=service_name,
                                                                      data_source=service_data_source_type,
                                                                      sys_timestamp__gte=start_date,
@@ -1813,12 +1813,14 @@ class Get_Service_Type_Performance_Data(View):
 
         sector_result = self.performance_data_result(performance_data=sector_performance_data)
         dr_result = self.performance_data_result(performance_data=dr_performance_data)
+        try:
+            sector_result['data']['objects']['chart_data'][0]['name'] += " ( {0} )".format(sector_device.ip_address)
+            dr_result['data']['objects']['chart_data'][0]['name'] += " DR: ( {0} )".format(dr_device.ip_address)
 
-        sector_result['data']['objects']['chart_data'][0]['name'] += " ( {0} )".format(sector_device.ip_address)
-        dr_result['data']['objects']['chart_data'][0]['name'] += " DR: ( {0} )".format(dr_device.ip_address)
-
-        chart_data = sector_result['data']['objects']['chart_data']
-        chart_data.append(dr_result['data']['objects']['chart_data'][0])
+            chart_data = sector_result['data']['objects']['chart_data']
+            chart_data.append(dr_result['data']['objects']['chart_data'][0])
+        except:
+            chart_data = sector_result['data']['objects']['chart_data']
 
         self.result['success'] = 1
         self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
