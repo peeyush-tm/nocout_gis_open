@@ -8055,7 +8055,9 @@ function devicePlottingClass_gmap() {
     	$.ajax({
     		url : base_url+"/inventory/export_selected_bs_inventory/",
     		type : "POST",
-    		data : {"base_stations" : JSON.stringify(inventory_bs_ids)},
+    		data : {
+    			"base_stations" : JSON.stringify(inventory_bs_ids)
+    		},
     		success : function(response) {
     			
     			var result = "";
