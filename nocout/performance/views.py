@@ -1440,6 +1440,7 @@ class Get_Service_Type_Performance_Data(View):
                                                            sys_timestamp__gte=start_date,
                                                            sys_timestamp__lte=end_date).using(
                     alias=inventory_device_machine_name)
+                result = self.get_topology_result(performance_data, dr_ip=dr_device.ip_address)
             else:
                 performance_data = Topology.objects.filter(device_name=inventory_device_name,
                                                            # service_name=service_name,
@@ -1448,7 +1449,7 @@ class Get_Service_Type_Performance_Data(View):
                                                            sys_timestamp__lte=end_date).using(
                     alias=inventory_device_machine_name)
 
-            result = self.get_topology_result(performance_data)
+                result = self.get_topology_result(performance_data)
 
 
         elif '_status' in service_name:
@@ -1655,7 +1656,7 @@ class Get_Service_Type_Performance_Data(View):
         self.result['data']['objects']['table_data_header'] = ['ip_address','time', 'value']#['date', 'time', 'value']
         return self.result
 
-    def get_topology_result(self, performance_data):
+    def get_topology_result(self, performance_data, dr_ip=None):
         """
         Getting the current topology of any elements of the network
         """
@@ -1725,9 +1726,12 @@ class Get_Service_Type_Performance_Data(View):
                             else:
                                 continue
 
+                show_ip_address = data.ip_address
+                if dr_ip:
+                    show_ip_address += " (DR)"
                 result_data.append({
                     #'device_name': data.device_name,
-                    'ip_address': data.ip_address,
+                    'ip_address': show_ip_address,
                     'mac_address': data.mac_address,
                     'sector_id': data.sector_id,
                     'connected_device_ip': data.connected_device_ip,
