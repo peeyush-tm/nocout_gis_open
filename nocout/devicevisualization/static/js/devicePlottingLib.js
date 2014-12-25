@@ -1696,13 +1696,26 @@ function devicePlottingClass_gmap() {
 		for(var i=dataset.length;i--;) {
 
 			var current_device_set = dataset[i],
-				isDeviceInBound = "";
+				isBsDeviceInBound = "";
 			if(window.location.pathname.indexOf("white_background")> -1) {
-				isDeviceInBound = whiteMapClass.checkIfPointLiesInside({lon: current_device_set.data.lon, lat: current_device_set.data.lat});
+				isBsDeviceInBound = whiteMapClass.checkIfPointLiesInside({lon: current_device_set.data.lon, lat: current_device_set.data.lat});
 			} else {
-				isDeviceInBound = mapInstance.getBounds().contains(new google.maps.LatLng(current_device_set.data.lat,current_device_set.data.lon));
+				isBsDeviceInBound = mapInstance.getBounds().contains(
+					new google.maps.LatLng(
+						current_device_set.data.lat,
+						current_device_set.data.lon
+					)
+				);
+				// Loop to check is any SS device in current bounds
+				// var sector = current_device_set.data,param.sector;
+				// for(var j=0;j<sector.length;j++) {
+				// 	var sub_station = sector[j].sub_station;
+				// 	for(var k=0;k<sub_station.length;k++) {
+
+				// 	}
+				// }
 			}
-			if(isDeviceInBound) {
+			if(isBsDeviceInBound) {
 				inBoundDevices.push(current_device_set);
 				plottedBsIds.push(current_device_set.originalId);
 			}
@@ -4585,37 +4598,12 @@ function devicePlottingClass_gmap() {
 			    				var ss_ip = sub_stations[k].data.substation_device_ip_address ? sub_stations[k].data.substation_device_ip_address : "",
 			    					ss_circuit_id = sub_stations[k].data.param.sub_station[3].value ? sub_stations[k].data.param.sub_station[3].value.toLowerCase() : "";
 
-			    				// If any IP address is searched
-			    				if(selected_ip_address.length > 0) {
-					    			var ss_ip_condition = selected_ip_address.indexOf(ss_ip) > -1 ? true : false;
-					    			if(ss_ip_condition) {
-					    				if(window.location.pathname.indexOf("googleEarth") > -1) {
-					    					folderBoundArray.push({lat: sub_stations[k].data.lat, lon: sub_stations[k].data.lon});
-					    				} else if (window.location.pathname.indexOf("white_background") > -1) {
-					    					bounds_lat_lon.extend(new OpenLayers.LonLat(sub_stations[k].data.lon, sub_stations[k].data.lat));
-					    				} else {
-					    					bounds_lat_lon.extend(new google.maps.LatLng(sub_stations[k].data.lat,sub_stations[k].data.lon));	
-					    				}
-					    				// Hide State Counter Label(If Visible)
-					    				if(state_wise_device_labels[data_to_plot[i].data.state] && !state_wise_device_labels[data_to_plot[i].data.state].isHidden_) {
-											if(window.location.pathname.indexOf("googleEarth") > -1) {
-					    						state_wise_device_labels[data_to_plot[i].data.state].setVisibility(false);
-					    					} else if (window.location.pathname.indexOf("white_background") > -1) {
-					    						hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].data.state]);
-					    					} else {
-					    						state_wise_device_labels[data_to_plot[i].data.state].hide();	
-					    					}
-					    				}
-					    				advJustSearch.applyIconToSearchedResult(sub_stations[k].data.lat, sub_stations[k].data.lon,advJustSearch.constants.search_ss_icon);
-					    			} else {
-					    				// pass
-					    			}
-			    				}
+			    				// If any IP address or Circuit ID is searched
+			    				if(selected_ip_address.length > 0 || selected_circuit_id.length > 0) {
+					    			var ss_ip_condition = selected_ip_address.indexOf(ss_ip) > -1,
+					    				ss_circuit_condition = selected_circuit_id.indexOf(ss_circuit_id) > -1;
 
-			    				// If any circuit id is searched
-			    				if(selected_circuit_id.length > 0) {
-					    			var ss_circuit_condition = selected_circuit_id.indexOf(ss_circuit_id) > -1 ? true : false;
-					    			if(ss_circuit_condition) {
+					    			if(ss_ip_condition || ss_circuit_condition) {
 					    				if(window.location.pathname.indexOf("googleEarth") > -1) {
 					    					folderBoundArray.push({lat: data_to_plot[k].data.lat, lon: data_to_plot[k].data.lon});
 					    					folderBoundArray.push({lat: data_to_plot[k].data.lat, lon: sub_stations[k].data.lon});
@@ -4636,12 +4624,45 @@ function devicePlottingClass_gmap() {
 					    						state_wise_device_labels[data_to_plot[i].data.state].hide();	
 					    					}
 					    				}
-					    				advJustSearch.applyIconToSearchedResult(data_to_plot[i].data.lat, data_to_plot[i].data.lon);
 					    				advJustSearch.applyIconToSearchedResult(sub_stations[k].data.lat, sub_stations[k].data.lon,advJustSearch.constants.search_ss_icon);
+					    				if(ss_circuit_condition) {
+					    					advJustSearch.applyIconToSearchedResult(data_to_plot[i].data.lat, data_to_plot[i].data.lon);	
+					    				}
 					    			} else {
 					    				// pass
 					    			}
 			    				}
+
+			    				// If any circuit id is searched
+			    				// if(selected_circuit_id.length > 0) {
+					    		// 	var ss_circuit_condition = selected_circuit_id.indexOf(ss_circuit_id) > -1 ? true : false;
+					    		// 	if(ss_circuit_condition) {
+					    		// 		if(window.location.pathname.indexOf("googleEarth") > -1) {
+					    		// 			folderBoundArray.push({lat: data_to_plot[k].data.lat, lon: data_to_plot[k].data.lon});
+					    		// 			folderBoundArray.push({lat: data_to_plot[k].data.lat, lon: sub_stations[k].data.lon});
+					    		// 		} else if (window.location.pathname.indexOf("white_background") > -1) {
+					    		// 			bounds_lat_lon.extend(new OpenLayers.LonLat(data_to_plot[i].data.lon, data_to_plot[i].data.lat));
+					    		// 			bounds_lat_lon.extend(new OpenLayers.LonLat(sub_stations[k].data.lon, sub_stations[k].data.lat));
+					    		// 		} else {
+					    		// 			bounds_lat_lon.extend(new google.maps.LatLng(data_to_plot[i].data.lat,data_to_plot[i].data.lon));
+					    		// 			bounds_lat_lon.extend(new google.maps.LatLng(sub_stations[k].data.lat,sub_stations[k].data.lon));
+					    		// 		}
+					    		// 		// Hide State Counter Label(If Visible)
+					    		// 		if(state_wise_device_labels[data_to_plot[i].data.state] && !state_wise_device_labels[data_to_plot[i].data.state].isHidden_) {
+											// if(window.location.pathname.indexOf("googleEarth") > -1) {
+					    		// 				state_wise_device_labels[data_to_plot[i].data.state].setVisibility(false);
+					    		// 			} else if (window.location.pathname.indexOf("white_background") > -1) {
+					    		// 				hideOpenLayerFeature(state_wise_device_labels[data_to_plot[i].data.state]);
+					    		// 			} else {
+					    		// 				state_wise_device_labels[data_to_plot[i].data.state].hide();
+					    		// 			}
+					    		// 		}
+					    		// 		advJustSearch.applyIconToSearchedResult(data_to_plot[i].data.lat, data_to_plot[i].data.lon);
+					    		// 		advJustSearch.applyIconToSearchedResult(sub_stations[k].data.lat, sub_stations[k].data.lon,advJustSearch.constants.search_ss_icon);
+					    		// 	} else {
+					    		// 		// pass
+					    		// 	}
+			    				// }
 			    			}
 			    		}
 			    	}
@@ -8071,16 +8092,14 @@ function devicePlottingClass_gmap() {
     			$.gritter.add({
 		            title: "Export Inventory Devices",
 		            text: result.message,
-		            sticky: false,
-		            time : 1500
+		            sticky: true
 		        });
     		},
     		error : function(err) {
     			$.gritter.add({
 		            title: "Export Inventory Devices",
 		            text: err.statusText,
-		            sticky: false,
-		            time : 1500
+		            sticky: true
 		        });
     		}
     	});
