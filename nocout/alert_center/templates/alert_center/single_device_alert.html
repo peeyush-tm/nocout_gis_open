@@ -267,7 +267,7 @@
         var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date') * 1000) : new Date();
 
         $("#device_alert").DataTable({
-            sPaginationType: "bs_full",
+            sPaginationType: "full_numbers",
             aaSorting: [
                 [7, 'desc']
             ],
