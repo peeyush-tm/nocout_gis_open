@@ -7,7 +7,7 @@ from django.core.validators import RegexValidator, MaxValueValidator, MinValueVa
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
 from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, \
-    GISInventoryBulkImport, PingThematicSettings
+    GISInventoryBulkImport, PingThematicSettings, GISExcelDownload
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
@@ -1373,7 +1373,7 @@ class GISInventoryBulkImportForm(forms.Form):
         return description
 
 
-#*********************************** LivePollingSettings ***************************************
+# ****************************** GIS Inventory Bulk Import Update ********************************
 class GISInventoryBulkImportEditForm(forms.ModelForm):
 
     """
@@ -1407,7 +1407,39 @@ class GISInventoryBulkImportEditForm(forms.ModelForm):
         exclude = ['status', 'uploaded_by', 'added_on', 'modified_on', 'upload_status']
 
 
-#************************************** Ping Thematic Settings **********************************
+# **************************** GIS Inventory Excel Download Update ******************************
+class DownloadSelectedBSInventoryEditForm(forms.ModelForm):
+    """
+    Class Based View GISInventoryBulkImport Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(DownloadSelectedBSInventoryEditForm, self).__init__(*args, **kwargs)
+        self.fields['file_path'].widget.attrs['readonly'] = True
+        self.fields['downloaded_by'].widget.attrs['readonly'] = True
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = GISExcelDownload
+        fields = ['file_path', 'downloaded_by', 'description']
+
+
+# ************************************** Ping Thematic Settings **********************************
 class PingThematicSettingsForm(forms.ModelForm):
     """
         Ping thematic settings form
