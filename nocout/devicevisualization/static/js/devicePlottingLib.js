@@ -6069,10 +6069,12 @@ function devicePlottingClass_gmap() {
     	table_html += "<div class='polling_table_container'><table style='z-index:9999;' id='polling_data_table' class='datatable table table-striped table-bordered table-hover'><thead><tr><th>Device Name</th><th>Time</th><th>Value</th></tr><thead><tbody>";
 
     	for(var i=0;i<complete_polled_devices_data.length;i++) {
+    		var poll_val = complete_polled_devices_data[i].polling_value;
+    			// shown_val = poll_val == "" ? "-" : poll_val;
     		table_html += '<tr>';
     		table_html += '<td>'+complete_polled_devices_data[i].ip+'</td>';
     		table_html += '<td>'+complete_polled_devices_data[i].polling_time+'</td>';
-    		table_html += '<td>'+complete_polled_devices_data[i].polling_value+'</td>';
+    		table_html += '<td>'+poll_val+'</td>';
     		table_html += '</tr>';
     	}
 
@@ -7873,9 +7875,9 @@ function devicePlottingClass_gmap() {
 					if($("#exportDeviceContainerBlock").hasClass('hide')) {
 						$("#exportDeviceContainerBlock").removeClass('hide');
 					}
-				} else if(bs_id_array.length > 200) {
-					gmap_self.removeInventorySelection();
-					bootbox.alert("Selected BS exceeds maximum limit i.e 200.");
+				// } else if(bs_id_array.length > 200) {
+				// 	gmap_self.removeInventorySelection();
+				// 	bootbox.alert("Selected BS exceeds maximum limit i.e 200.");
 				} else {
 					gmap_self.removeInventorySelection();
 
@@ -8006,7 +8008,8 @@ function devicePlottingClass_gmap() {
 					}
 
 					// If any bs exists
-					if(bs_id_array.length > 0 && bs_id_array.length < 200) {
+					// if(bs_id_array.length > 0 && bs_id_array.length < 200) {
+					if(bs_id_array.length > 0) {
 
 						inventory_bs_ids = bs_id_array;
 
@@ -8022,10 +8025,9 @@ function devicePlottingClass_gmap() {
 							$("#exportDeviceContainerBlock").removeClass('hide');
 						}
 
-						// gmap_self.downloadInventory_gmap(bs_id_array);
-					} else if(bs_id_array.length > 200) {
-						gmap_self.removeInventorySelection();
-						bootbox.alert("Selected BS exceeds maximum limit i.e 200.");
+					// } else if(bs_id_array.length > 200) {
+					// 	gmap_self.removeInventorySelection();
+					// 	bootbox.alert("Selected BS exceeds maximum limit i.e 200.");
 					} else {
 						gmap_self.removeInventorySelection();
 						bootbox.alert("No BS found in the selected area.");	
@@ -8053,7 +8055,9 @@ function devicePlottingClass_gmap() {
     	$.ajax({
     		url : base_url+"/inventory/export_selected_bs_inventory/",
     		type : "POST",
-    		data : {"base_stations" : JSON.stringify(inventory_bs_ids)},
+    		data : {
+    			"base_stations" : JSON.stringify(inventory_bs_ids)
+    		},
     		success : function(response) {
     			
     			var result = "";
