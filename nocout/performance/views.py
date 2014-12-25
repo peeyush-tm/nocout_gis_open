@@ -797,6 +797,7 @@ class Inventory_Device_Status(View):
                     if technology.name.lower() in ['wimax']:
                         try:
                             pmp_port = sector.sector_configured_on_port.alias
+                            pmp_port = pmp_port.upper()
                         except Exception as no_port:
                             log.exception(no_port)
                         try:
@@ -818,8 +819,12 @@ class Inventory_Device_Status(View):
                 except Exception as no_state:
                     state_name = "N/A"
 
+                display_bs_name = base_station.alias
+                if display_bs_name:
+                    display_bs_name = display_bs_name.upper()
+
                 if technology.name.lower() in ['ptp', 'p2p']:
-                    result['data']['objects']['values'].append([base_station.alias,
+                    result['data']['objects']['values'].append([display_bs_name,
                                                                 customer_name,
                                                                 technology.alias,
                                                                 type.alias,
@@ -832,7 +837,7 @@ class Inventory_Device_Status(View):
                     ])
 
                 elif technology.name.lower() in ['wimax']:
-                    result['data']['objects']['values'].append([base_station.alias,
+                    result['data']['objects']['values'].append([display_bs_name,
                                                                 sector_id,
                                                                 pmp_port,
                                                                 technology.alias,
@@ -846,7 +851,7 @@ class Inventory_Device_Status(View):
                     ])
                     if dr_ip:
                         dr_ip += " (DR) "
-                        result['data']['objects']['values'].append([base_station.alias,
+                        result['data']['objects']['values'].append([display_bs_name,
                                                                 sector_id,
                                                                 pmp_port,
                                                                 technology.alias,
@@ -860,7 +865,7 @@ class Inventory_Device_Status(View):
                     ])
 
                 else:
-                    result['data']['objects']['values'].append([base_station.alias,
+                    result['data']['objects']['values'].append([display_bs_name,
                                                                 sector_id,
                                                                 # pmp_port,
                                                                 technology.alias,
@@ -918,7 +923,16 @@ class Inventory_Device_Status(View):
                             else "N/A"
                     except Exception as no_state:
                         state_name = "N/A"
-                    result['data']['objects']['values'].append([base_station.alias,
+
+                    display_mac_address = device.mac_address
+                    if display_mac_address:
+                        display_mac_address = display_mac_address.upper()
+
+                    display_bs_name = base_station.alias
+                    if display_bs_name:
+                        display_bs_name = display_bs_name.upper()
+
+                    result['data']['objects']['values'].append([display_bs_name,
                                                                 substation.alias,
                                                                 circuit.circuit_id,
                                                                 customer_name[0].alias,
@@ -928,7 +942,7 @@ class Inventory_Device_Status(View):
                                                                 city_name,
                                                                 state_name,
                                                                 device.ip_address,
-                                                                device.mac_address,
+                                                                display_mac_address,
                                                                 # planned_frequency,
                                                                 frequency
                     ])

@@ -312,7 +312,7 @@ def prepare_gis_devices(devices, page_type):
                     "sector_id": ", ".join(sector_details),
                     "circuit_id": format_value(bs_row['CCID']),
                     "customer_name": format_value(bs_row['CUST']),
-                    "bs_name": format_value(bs_row['BSALIAS']),
+                    "bs_name": format_value(bs_row['BSALIAS']).upper(),
                     "city": format_value(bs_row['BSCITY']),
                     "state": format_value(bs_row['BSSTATE']),
                     "device_type": format_value(bs_row['SECTOR_TYPE']),
@@ -330,7 +330,7 @@ def prepare_gis_devices(devices, page_type):
                     if bs_row['CIRCUIT_TYPE']:
                         if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
                             device.update({
-                                "bs_name": format_value(bs_row['CUST']),
+                                "bs_name": format_value(bs_row['CUST']).upper(),
                             })
 
                     device.update({
