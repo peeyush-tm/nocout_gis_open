@@ -488,7 +488,7 @@ class GISExcelDownload(models.Model):
     status = models.IntegerField('Status', null=True, blank=True)
     base_stations = models.CharField('Base Stations', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-    uploaded_by = models.CharField('Uploaded By', max_length=100, null=True, blank=True)
+    downloaded_by = models.CharField('Downloaded By', max_length=100, null=True, blank=True)
     added_on = models.DateTimeField('Added On', null=True, blank=True)
     modified_on = models.DateTimeField('Modified On', null=True, blank=True)
 

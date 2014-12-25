@@ -3228,8 +3228,6 @@ class DownloadSelectedBSInventory(View):
         # get base stations id's as js array
         base_stations = self.request.POST.get('base_stations', None)
 
-        print "************************* base_stations - ", base_stations
-
         # convert base stations id's string to a python list
         bs_ids = eval(str(base_stations))
         timestamp = time.time()
@@ -3243,7 +3241,7 @@ class DownloadSelectedBSInventory(View):
         gis_excel_download.status = 0
         gis_excel_download.base_stations = base_stations
         gis_excel_download.description = "Started downloading inventory on {}.".format(fulltime)
-        gis_excel_download.uploaded_by = username
+        gis_excel_download.downloaded_by = username
         gis_excel_download.save()
 
         # gis excel download id
@@ -3272,7 +3270,7 @@ class DownloadSelectedBSInventoryList(ListView):
             {'mData': 'file_path', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto', },
             {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },
-            {'mData': 'uploaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'auto', },
+            {'mData': 'downloaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'auto', },
             {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'auto', },
             {'mData': 'modified_on', 'sTitle': 'Modified On', 'sWidth': 'auto', },
         ]
@@ -3289,9 +3287,9 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
 
     """
     model = GISExcelDownload
-    columns = ['file_path', 'status', 'description', 'uploaded_by', 'added_on', 'modified_on']
-    order_columns = ['file_path', 'status', 'description', 'uploaded_by', 'added_on', 'modified_on']
-    search_columns = ['file_path', 'status', 'description', 'uploaded_by']
+    columns = ['file_path', 'status', 'description', 'downloaded_by', 'added_on', 'modified_on']
+    order_columns = ['file_path', 'status', 'description', 'downloaded_by', 'added_on', 'modified_on']
+    search_columns = ['file_path', 'status', 'description', 'downloaded_by']
 
     def get_initial_queryset(self):
         """
@@ -3301,7 +3299,7 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
 
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return GISExcelDownload.objects.filter(uploaded_by=self.request.user.username).values(*self.columns+['id'])
+        return GISExcelDownload.objects.filter(downloaded_by=self.request.user.username).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         """
@@ -3358,9 +3356,9 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
 
                 # show user full name in uploded by field
                 try:
-                    if dct.get('uploaded_by'):
-                        user = User.objects.get(username=dct.get('uploaded_by'))
-                        dct.update(uploaded_by='{} {}'.format(user.first_name, user.last_name))
+                    if dct.get('downloaded_by'):
+                        user = User.objects.get(username=dct.get('downloaded_by'))
+                        dct.update(downloaded_by='{} {}'.format(user.first_name, user.last_name))
                 except Exception as e:
                     logger.info(e.message)
 

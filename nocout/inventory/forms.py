@@ -1416,7 +1416,7 @@ class DownloadSelectedBSInventoryEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DownloadSelectedBSInventoryEditForm, self).__init__(*args, **kwargs)
         self.fields['file_path'].widget.attrs['readonly'] = True
-        self.fields['uploaded_by'].widget.attrs['readonly'] = True
+        self.fields['downloaded_by'].widget.attrs['readonly'] = True
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -1436,7 +1436,7 @@ class DownloadSelectedBSInventoryEditForm(forms.ModelForm):
         Meta Information
         """
         model = GISExcelDownload
-        fields = ['file_path', 'uploaded_by', 'description']
+        fields = ['file_path', 'downloaded_by', 'description']
 
 
 # ************************************** Ping Thematic Settings **********************************
