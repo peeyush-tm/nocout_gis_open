@@ -293,13 +293,17 @@ def prepare_gis_devices(devices, page_type):
 
         if is_sector:
             for bs_row in raw_result:
-                port = bs_row['SECTOR_PORT']
-                if port:
-                    apnd = "( " + port + " )"
-                if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
-                        and bs_row['SECTOR_SECTOR_ID'] is not None:
-                    sector_id.append(bs_row['SECTOR_SECTOR_ID'])
-                    sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd)
+                mrc = bs_row['SECTOR_MRC']
+                if mrc and mrc.strip().lower() == 'yes':
+                    apnd = " MRC: (PMP 1, PMP 2) "
+                else:
+                    port = bs_row['SECTOR_PORT']
+                    if port:
+                        apnd = "( " + port + " )"
+                    if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
+                            and bs_row['SECTOR_SECTOR_ID'] is not None:
+                        sector_id.append(bs_row['SECTOR_SECTOR_ID'])
+                        sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd.upper())
 
         for bs_row in raw_result:
             if device_name is not None:
@@ -315,9 +319,14 @@ def prepare_gis_devices(devices, page_type):
                     "device_technology": format_value(bs_row['SECTOR_TECH'])
                 })
                 if is_ss:
+                    mrc = bs_row['SECTOR_MRC']
                     port = bs_row['SECTOR_PORT']
-                    if port:
-                        apnd = "( " + port + " )"
+                    if mrc and mrc.strip().lower() == 'yes':
+                        apnd = " MRC: (PMP 1, PMP 2) "
+                    else:
+                        if port:
+                            apnd = "( " + port + " )"
+
                     if bs_row['CIRCUIT_TYPE']:
                         if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
                             device.update({
@@ -325,7 +334,7 @@ def prepare_gis_devices(devices, page_type):
                             })
 
                     device.update({
-                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']) + apnd,
+                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']) + apnd.upper(),
                         "device_type": format_value(bs_row['SS_TYPE']),
                         "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
