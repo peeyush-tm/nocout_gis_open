@@ -1727,7 +1727,7 @@ class Get_Service_Type_Performance_Data(View):
                                 continue
 
                 show_ip_address = data.ip_address
-                if dr_ip:
+                if dr_ip and dr_ip == show_ip_address:
                     show_ip_address += " (DR)"
                 result_data.append({
                     #'device_name': data.device_name,
