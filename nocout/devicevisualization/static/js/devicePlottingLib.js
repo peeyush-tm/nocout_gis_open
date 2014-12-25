@@ -8092,16 +8092,14 @@ function devicePlottingClass_gmap() {
     			$.gritter.add({
 		            title: "Export Inventory Devices",
 		            text: result.message,
-		            sticky: false,
-		            time : 1500
+		            sticky: true
 		        });
     		},
     		error : function(err) {
     			$.gritter.add({
 		            title: "Export Inventory Devices",
 		            text: err.statusText,
-		            sticky: false,
-		            time : 1500
+		            sticky: true
 		        });
     		}
     	});
