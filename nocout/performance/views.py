@@ -1484,34 +1484,78 @@ class Get_Service_Type_Performance_Data(View):
             #kpi services depends on the refer fields
             #and not directly on the "device_name"
             #the refer filed indicates the sector
-
-            performance_data = Utilization.objects.filter(device_name=inventory_device_name,
+            technology = DeviceTechnology.objects.get(id=device.device_technology)
+            dr_device = None
+            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
+                dr_devices = device.sector_configured_on.filter()
+                for dr_d in dr_devices:
+                    dr_device = dr_d.dr_configured_on
+            if dr_device:
+                performance_data = Utilization.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
+                                                                     service_name=service_name,
+                                                                     data_source=service_data_source_type,
+                                                                     sys_timestamp__gte=start_date,
+                                                                     sys_timestamp__lte=end_date).using(
+                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+                result = self.dr_performance_data_result(performance_data=performance_data,
+                                                         sector_device=device,
+                                                         dr_device=dr_device
+                                                         )
+            else:
+                performance_data = Utilization.objects.filter(device_name=inventory_device_name,
                                                                    service_name=service_name,
                                                                    data_source=service_data_source_type,
                                                                    sys_timestamp__gte=start_date,
                                                                    sys_timestamp__lte=end_date).using(
                 alias=inventory_device_machine_name).order_by('sys_timestamp')
 
-            result = self.get_performance_data_result(performance_data)
+                result = self.get_performance_data_result(performance_data)
 
         else:
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
-            performance_data = PerformanceService.objects.filter(device_name=inventory_device_name,
+            technology = DeviceTechnology.objects.get(id=device.device_technology)
+            dr_device = None
+            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
+                dr_devices = device.sector_configured_on.filter()
+                for dr_d in dr_devices:
+                    dr_device = dr_d.dr_configured_on
+            if dr_device:
+                performance_data = Utilization.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
+                                                                     service_name=service_name,
+                                                                     data_source=service_data_source_type,
+                                                                     sys_timestamp__gte=start_date,
+                                                                     sys_timestamp__lte=end_date).using(
+                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+
+                #to check of string based dashboards
+                #need to return a table
+                if service_data_source_type.lower() in SERVICE_DATA_SOURCE \
+                        and SERVICE_DATA_SOURCE[service_data_source_type.lower()]['type'] == 'table':
+                    result = self.get_perf_table_result(performance_data)
+
+                else:
+                    result = self.dr_performance_data_result(performance_data=performance_data,
+                                                         sector_device=device,
+                                                         dr_device=dr_device
+                                                         )
+
+            else:
+                performance_data = PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
                                                                  data_source=service_data_source_type,
                                                                  sys_timestamp__gte=start_date,
                                                                  sys_timestamp__lte=end_date).using(
                 alias=inventory_device_machine_name).order_by('sys_timestamp')
-            #to check of string based dashboards
-            #need to return a table
-            if service_data_source_type.lower() in SERVICE_DATA_SOURCE \
-                    and SERVICE_DATA_SOURCE[service_data_source_type.lower()]['type'] == 'table':
-                result = self.get_perf_table_result(performance_data)
+                #to check of string based dashboards
+                #need to return a table
+                if service_data_source_type.lower() in SERVICE_DATA_SOURCE \
+                        and SERVICE_DATA_SOURCE[service_data_source_type.lower()]['type'] == 'table':
+                    result = self.get_perf_table_result(performance_data)
 
-            else:
-                result = self.get_performance_data_result(performance_data)
+                else:
+                    result = self.get_performance_data_result(performance_data)
 
         download_excel = self.request.GET.get('download_excel', '')
         download_csv = self.request.GET.get('download_csv', '')
@@ -1600,6 +1644,7 @@ class Get_Service_Type_Performance_Data(View):
                 aggregate_data[temp_time] = data.sys_timestamp
                 result_data.append({
                     # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+                    'ip_address': data.ip_address,
                     'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
                     'value': data.current_value,
                 })
@@ -1607,7 +1652,7 @@ class Get_Service_Type_Performance_Data(View):
         self.result[
             'message'] = 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
         self.result['data']['objects']['table_data'] = result_data
-        self.result['data']['objects']['table_data_header'] = ['time', 'value']#['date', 'time', 'value']
+        self.result['data']['objects']['table_data_header'] = ['ip_address','time', 'value']#['date', 'time', 'value']
         return self.result
 
     def get_topology_result(self, performance_data):
