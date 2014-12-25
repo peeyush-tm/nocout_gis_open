@@ -18,6 +18,25 @@ from django.conf import settings
 import socket
 #http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 
+#https://github.com/benjamin-croker/loggy/blob/master/loggy.py
+import inspect
+import functools
+# def log(fn):
+#     @functools.wraps(fn)
+#     def decorated(*args, **kwargs):
+#         # get the names of all the args
+#         arguments = inspect.getcallargs(fn, *args, **kwargs)
+#
+#         logging.debug("function '{}' called by '{}' with arguments:\n{}".format(
+#                       fn.__name__,
+#                       inspect.stack()[1][3],
+#                       arguments))
+#         result = fn(*args, **kwargs)
+#         logging.debug("result: {}\n".format(result))
+#
+#     return decorated
+#https://github.com/benjamin-croker/loggy/blob/master/loggy.py
+
 #logging the performance of function
 import logging
 log = logging.getLogger(__name__)
@@ -64,6 +83,14 @@ def time_it(debug=getattr(settings, 'PROFILE')):
                 if debug:
                     log.debug("+++"*40)
                     log.debug("START     \t\t\t: { " + fn.__name__ + " } : ")
+                    #check the module calling the function
+                    log.debug("          \t\t\t: function '{}' called by '{}' : '{}'".format(
+                                  fn.__name__,
+                                  inspect.stack()[1][3],
+                                  inspect.stack()[1][1],
+                                  )
+                    )
+                    #check the module calling the function
                     profile_type = getattr(settings, 'PROFILE_TYPE')
                     if profile_type == 'line':
                         profiler = LLP()
@@ -264,6 +291,13 @@ def cache_for(time):
             if not result:
                 if debug:
                     log.debug("FUNCTION CALL\t: START : { " + fn.__name__ + " } : ")
+                    #check the module calling the function
+                    log.debug("             \t: function '{}' called by '{}' : '{}'".format(
+                                  fn.__name__,
+                                  inspect.stack()[1][3],
+                                  inspect.stack()[1][1],
+                                  )
+                    )
                     profile_type = getattr(settings, 'PROFILE_TYPE')
                     if profile_type == 'line':
                         profiler = LLP()
