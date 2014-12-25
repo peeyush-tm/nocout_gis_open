@@ -1,7 +1,8 @@
 /**
- * This library is used to show live performance of particular device & its functionality
+ * This library is used to show performance data of particular device in charts & tables
  * @class nocout.perf.lib
- * @uses Hi
+ * @uses Highcharts
+ * @uses jquery Datatables
  * Coded By :- Yogender Purohit
  */
 
@@ -413,9 +414,9 @@ function nocoutPerfLib() {
 
         if(updated_url.indexOf("/servicedetail/") > -1) {
             if(updated_url.indexOf("rssi") > -1) {
-                updated_url = "/performance/servicestatus/rssi/service_data_source/rssi/device/"+device_id;
+                updated_url = "/performance/servicestatus/rssi/service_data_source/rssi/device/"+device_id+"/";
             } else if(updated_url.indexOf("utilization") > -1) {
-                updated_url = "/performance/servicestatus/utilization/service_data_source/utilization/device/"+device_id;
+                updated_url = "/performance/servicestatus/utilization/service_data_source/utilization/device/"+device_id+"/";
             }
         } else {
             // Replace 'service' with 'servicestatus'
@@ -642,22 +643,40 @@ function nocoutPerfLib() {
         }
 
         function addDataToDataTableForChart(table_obj, table_id) {
+            var data = table_obj[0].data,
+                total_columns = table_obj.length * 2;
 
-            var data = table_obj[0].data;
-
-            for (var j = 0; j < data.length; j++) {
+            for (var i = 0; i < data.length; i++) {
                 var row_val = [];
-                for (var i = 0; i < table_obj.length; i++) {
-                    var inner_data = table_obj[i].data[j];
-                    if (inner_data instanceof Array) {
-                        row_val.push(new Date(inner_data[0]).toLocaleString());
-                        row_val.push(inner_data[1]);
-                    } else {
-                        row_val.push(new Date(inner_data.x).toLocaleString());
-                        row_val.push(inner_data.y);
+                for (var j = 0; j < table_obj.length; j++) {
+                    var inner_data = table_obj[j].data[i];
+
+                    if(inner_data) {
+                        if(inner_data.constructor == Array) {
+                            if(inner_data[0]) {
+                                row_val.push(new Date(inner_data[0]).toLocaleString());
+                                var chart_val = inner_data[1] ? inner_data[1] : "";
+                                row_val.push(chart_val);
+                            }
+                        } else if(inner_data.constructor == Object) {
+                            if(inner_data.x) {
+                                row_val.push(new Date(inner_data.x).toLocaleString());
+                                var chart_val = inner_data.y ? inner_data.y : "";
+                                row_val.push(chart_val);
+                            }
+                        }
                     }
                 }
-                $('#' + table_id).dataTable().fnAddData(row_val);
+                // If row are less than total columns then add blank fields
+                if(row_val.length < total_columns) {
+                    var val_diff = total_columns - row_val.length;
+                    for(var x=0;x<val_diff;x++) {
+                        row_val.push(" ");
+                    }
+                    $('#' + table_id).dataTable().fnAddData(row_val);
+                } else {
+                    $('#' + table_id).dataTable().fnAddData(row_val);
+                }
             }
         }
 
@@ -688,7 +707,8 @@ function nocoutPerfLib() {
             for (var j = 0; j < table_data.length; j++) {
                 var row_val = [];
                 for (var i = 0; i < table_headers.length; i++) {
-                    row_val.push(table_data[j][table_headers[i]]);
+                    var insert_val = table_data[j][table_headers[i]] ? table_data[j][table_headers[i]] : "";
+                    row_val.push(insert_val);
                 }
                 $('#' + table_id).dataTable().fnAddData(row_val);
             }
@@ -785,9 +805,7 @@ function nocoutPerfLib() {
                         hideSpinner();
                     }
                 }
-            })
-            
-
+            });
         }
     };
 }

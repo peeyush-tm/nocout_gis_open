@@ -8041,24 +8041,47 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
-     * This function download select bs inventory report
+     * This function request the server to download select bs inventory report
      * @method downloadInventory_gmap
      */
     this.downloadInventory_gmap = function() {
 
     	// Open API url in new tab to download inventory report
-    	$("#exportInventoryForm").attr("action",base_url+"/inventory/export_selected_bs_inventory/")
-    	$("#base_stations").val(JSON.stringify(inventory_bs_ids));
-    	$("#exportInventoryForm").submit();
+    	// $("#exportInventoryForm").attr("action",base_url+"/inventory/export_selected_bs_inventory/")
+    	// $("#base_stations").val(JSON.stringify(inventory_bs_ids));
+    	// $("#exportInventoryForm").submit();
+    	$.ajax({
+    		url : base_url+"/inventory/export_selected_bs_inventory/",
+    		type : "POST",
+    		data : {"base_stations" : JSON.stringify(inventory_bs_ids)},
+    		success : function(response) {
+    			
+    			var result = "";
+    			// Type check for API response
+    			if(typeof response == 'string') {
+    				result = JSON.parse(response);
+    			} else {
+    				result = response;
+    			}
+
+    			$.gritter.add({
+		            title: "Export Inventory Devices",
+		            text: result.message,
+		            sticky: false,
+		            time : 1500
+		        });
+    		},
+    		error : function(err) {
+    			$.gritter.add({
+		            title: "Export Inventory Devices",
+		            text: err.statusText,
+		            sticky: false,
+		            time : 1500
+		        });
+    		}
+    	});
 
     	// window.open(base_url+"/inventory/export_selected_bs_inventory/?base_stations="+JSON.stringify(inventory_bs_ids),"_blank");
-
-		$.gritter.add({
-            title: "Export Inventory Devices",
-            text: "Selected inventory successfully downloaded.",
-            sticky: false,
-            time : 1500
-        });    	
 	};
 
 	/**
