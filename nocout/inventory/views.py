@@ -5,7 +5,6 @@ Contain Gis Inventory Views.
 - Provide views to Bulk Upload inventory data using Excel Sheets.
 - Provide Gis Wizard to manage inventory in easier way.
 """
-
 import os
 import re
 import time
@@ -69,8 +68,7 @@ logger = logging.getLogger(__name__)
 from django.core.cache import cache
 ##caching
 
-# decorators
-from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 
 # **************************************** Inventory *********************************************
@@ -3263,6 +3261,10 @@ class DownloadSelectedBSInventory(View):
 
         return HttpResponse(json.dumps(result))
 
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(DownloadSelectedBSInventory, self).dispatch(*args, **kwargs)
+
 
 class DownloadSelectedBSInventoryList(ListView):
     """
@@ -3282,9 +3284,9 @@ class DownloadSelectedBSInventoryList(ListView):
             {'mData': 'file_path', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto', },
             {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },
-            {'mData': 'downloaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'auto', },
-            {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'auto', },
-            {'mData': 'modified_on', 'sTitle': 'Modified On', 'sWidth': 'auto', },
+            {'mData': 'downloaded_by', 'sTitle': 'Requested By', 'sWidth': 'auto', },
+            {'mData': 'added_on', 'sTitle': 'Requested On Timestamp', 'sWidth': 'auto', },
+            {'mData': 'modified_on', 'sTitle': 'Request Completion Timestamp', 'sWidth': 'auto', },
         ]
 
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -3311,7 +3313,12 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
 
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return GISExcelDownload.objects.filter(downloaded_by=self.request.user.username).values(*self.columns+['id'])
+        # queryset
+        queryset = GISExcelDownload.objects.filter(downloaded_by=self.request.user.username).values(*self.columns+['id'])
+
+        # if self.request.user.is_superuser:
+        #     queryset = GISExcelDownload.objects.filter().values(*self.columns+['id'])
+        return queryset
 
     def prepare_results(self, qs):
         """
