@@ -3255,13 +3255,13 @@ class DownloadSelectedBSInventory(View):
 
         try:
             task = generate_gis_inventory_excel.delay(bs_ids, username, fulltime, gis_excel_download_id)
-        except Exception as e:
             result['success'] = 1
             result['message'] = "Inventory download started. Please check status \
-                                 <a href='/gis_inventory_download/'>here</a>."
+                                 <a href='/gis_downloaded_inventories/'>here</a>."
+        except Exception as e:
             logger.info("Something wrong with inventory download. Exception: ", e.message)
 
-        return HttpResponse(json.dumps({'message': "Start processing."}))
+        return HttpResponse(json.dumps(result))
 
 
 class DownloadSelectedBSInventoryList(ListView):
