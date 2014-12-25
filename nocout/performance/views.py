@@ -845,6 +845,7 @@ class Inventory_Device_Status(View):
                                                                 frequency
                     ])
                     if dr_ip:
+                        dr_ip += " (DR) "
                         result['data']['objects']['values'].append([base_station.alias,
                                                                 sector_id,
                                                                 pmp_port,
@@ -1391,14 +1392,32 @@ class Get_Service_Type_Performance_Data(View):
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
-            performance_data = NetworkAvailabilityDaily.objects.filter(device_name=inventory_device_name,
+            technology = DeviceTechnology.objects.get(id=device.device_technology)
+            dr_device = None
+            if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
+                dr_devices = device.sector_configured_on.filter()
+                for dr_d in dr_devices:
+                    dr_device = dr_d.dr_configured_on
+            if dr_device:
+                performance_data = NetworkAvailabilityDaily.objects.filter(device_name__in=[inventory_device_name, dr_device.device_name],
+                                                                     service_name=service_name,
+                                                                     data_source=service_data_source_type,
+                                                                     sys_timestamp__gte=start_date,
+                                                                     sys_timestamp__lte=end_date).using(
+                    alias=inventory_device_machine_name).order_by('sys_timestamp')
+                result = self.dr_performance_data_result(performance_data=performance_data,
+                                                         sector_device=device,
+                                                         dr_device=dr_device
+                                                         )
+            else:
+                performance_data = NetworkAvailabilityDaily.objects.filter(device_name=inventory_device_name,
                                                                        service_name=service_name,
                                                                        data_source=service_data_source_type,
                                                                        sys_timestamp__gte=start_date,
                                                                        sys_timestamp__lte=end_date).using(
                 alias=inventory_device_machine_name).order_by('sys_timestamp')
 
-            result = self.get_performance_data_result(performance_data, data_source="availability")
+                result = self.get_performance_data_result(performance_data, data_source="availability")
 
         elif "topology" in service_name or service_data_source_type in ['topology']:
             if not isSet:
@@ -1751,7 +1770,7 @@ class Get_Service_Type_Performance_Data(View):
         dr_result = self.performance_data_result(performance_data=dr_performance_data)
 
         sector_result['data']['objects']['chart_data'][0]['name'] += " ( {0} )".format(sector_device.ip_address)
-        dr_result['data']['objects']['chart_data'][0]['name'] += " ( {0} )".format(dr_device.ip_address)
+        dr_result['data']['objects']['chart_data'][0]['name'] += " DR: ( {0} )".format(dr_device.ip_address)
 
         chart_data = sector_result['data']['objects']['chart_data']
         chart_data.append(dr_result['data']['objects']['chart_data'][0])
