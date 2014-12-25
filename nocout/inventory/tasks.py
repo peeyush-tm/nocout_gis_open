@@ -3982,7 +3982,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                                       row['Sector Name'] if 'Sector Name' in row.keys() else "")
 
                 # sector alias
-                alias = '{}'.format(circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else "")
+                alias = row['Sector Name'].upper() if 'Sector Name' in row.keys() else ""
 
                 # sector data
                 sector_data = {
@@ -4994,7 +4994,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     row['Sector Name'] if 'Sector Name' in row.keys() else "", pmp)
 
                 # sector alias
-                alias = '{}'.format(row['Sector ID'].strip() if 'Sector ID' in row.keys() else "")
+                alias = row['Sector Name'].upper() if 'Sector Name' in row.keys() else ""
 
                 # dr site
                 dr_site = row['DR Site'] if 'DR Site' in row.keys() else ""
