@@ -1779,56 +1779,60 @@ class GISPerfData(View):
             except Exception as e:
                 logger.error("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
 
-            # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
-            th_icon_settings = ""
-            try:
-                th_icon_settings = user_thematics.thematic_template.icon_settings
-            except Exception as e:
-                logger.error("No icon settings for thematic settings. Exception: ", e.message)
+            if device_pl != "100":
+                # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
+                th_icon_settings = ""
+                try:
+                    th_icon_settings = user_thematics.thematic_template.icon_settings
+                except Exception as e:
+                    logger.error("No icon settings for thematic settings. Exception: ", e.message)
 
-            # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
-            th_ranges = ""
-            try:
-                if ts_type == "ping":
-                    th_ranges = user_thematics.thematic_template
-                elif ts_type == "normal":
-                    th_ranges = user_thematics.thematic_template.threshold_template
-                else:
-                    pass
-            except Exception as e:
-                logger.error("No ranges for thematic settings. Exception: ", e.message)
-
-            # fetch service type if 'ts_type' is "normal"
-            service_type = ""
-            try:
-                if ts_type == "normal":
-                    service_type = user_thematics.thematic_template.threshold_template.service_type
-            except Exception as e:
-                logger.error("Service Type not exist. Exception: ", e.message)
-
-            # comparing threshold values to get icon
-            try:
-                if len(performance_value):
-                    # live polled value of device service
-                    value = ast.literal_eval(str(performance_value))
-
-                    # get appropriate icon
-                    if ts_type == "normal":
-                        if service_type == "INT":
-                            icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
-                        elif service_type == "STR":
-                            icon = self.get_icon_for_string_service(th_ranges, th_icon_settings, value)
-                        else:
-                            pass
-                    elif ts_type == "ping":
-                        icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
+                # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
+                th_ranges = ""
+                try:
+                    if ts_type == "ping":
+                        th_ranges = user_thematics.thematic_template
+                    elif ts_type == "normal":
+                        th_ranges = user_thematics.thematic_template.threshold_template
                     else:
                         pass
-            except Exception as e:
-                logger.error("Icon not exist. Exception: ", e.message)
+                except Exception as e:
+                    logger.error("No ranges for thematic settings. Exception: ", e.message)
+
+                # fetch service type if 'ts_type' is "normal"
+                service_type = ""
+                try:
+                    if ts_type == "normal":
+                        service_type = user_thematics.thematic_template.threshold_template.service_type
+                except Exception as e:
+                    logger.error("Service Type not exist. Exception: ", e.message)
+
+                # comparing threshold values to get icon
+                try:
+                    if len(performance_value):
+                        # live polled value of device service
+                        value = ast.literal_eval(str(performance_value))
+
+                        # get appropriate icon
+                        if ts_type == "normal":
+                            if service_type == "INT":
+                                icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
+                            elif service_type == "STR":
+                                icon = self.get_icon_for_string_service(th_ranges, th_icon_settings, value)
+                            else:
+                                pass
+                        elif ts_type == "ping":
+                            icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
+                        else:
+                            pass
+                except Exception as e:
+                    logger.error("Icon not exist. Exception: ", e.message)
 
             # update performance value
-            performance_data['perf_value'] = performance_value
+            if device_pl != "100":
+                performance_data['perf_value'] = performance_value
+            else:
+                performance_data['perf_value'] = ""
 
             # update performance icon
             performance_data['icon'] = icon
@@ -2727,7 +2731,6 @@ class GISPerfData(View):
         substation_info['antenna_height'] = substation.antenna.height
         substation_info['lat'] = substation.latitude
         substation_info['lon'] = substation.longitude
-        substation_info['perf_value'] = performance_value
         substation_info['link_color'] = device_link_color
         substation_info['param'] = dict()
         substation_info['param']['sub_station'] = self.get_device_info(substation_device,
@@ -2735,34 +2738,12 @@ class GISPerfData(View):
                                                                        device_pl,
                                                                        substation)
 
+        if device_pl != "100":
+            substation_info['perf_value'] = performance_value
+        else:
+            substation_info['perf_value'] = ""
+
         if user_thematics:
-            # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
-            th_icon_settings = ""
-            try:
-                th_icon_settings = user_thematics.thematic_template.icon_settings
-            except Exception as e:
-                logger.error("No icon settings for thematic settings. Exception: ", e.message)
-
-            # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
-            th_ranges = ""
-            try:
-                if ts_type == "ping":
-                    th_ranges = user_thematics.thematic_template
-                elif ts_type == "normal":
-                    th_ranges = user_thematics.thematic_template.threshold_template
-                else:
-                    pass
-            except Exception as e:
-                logger.error("No ranges for thematic settings. Exception: ", e.message)
-
-            # fetch service type if 'ts_type' is "normal"
-            service_type = ""
-            try:
-                if ts_type == "normal":
-                    service_type = user_thematics.thematic_template.threshold_template.service_type
-            except Exception as e:
-                logger.error("Service Type not exist. Exception: ", e.message)
-
             # icon
             icon = ""
 
@@ -2774,26 +2755,54 @@ class GISPerfData(View):
             except Exception as e:
                 logger.error("No icon for device type ({}). Exception: {}".format(device_type.alias, e.message))
 
-            # comparing threshold values to get icon
-            try:
-                if len(performance_value):
-                    # live polled value of device service
-                    value = ast.literal_eval(str(performance_value))
+            if device_pl != "100":
+                # fetch icon settings for thematics as per thematic type selected i.e. 'ping' or 'normal'
+                th_icon_settings = ""
+                try:
+                    th_icon_settings = user_thematics.thematic_template.icon_settings
+                except Exception as e:
+                    logger.error("No icon settings for thematic settings. Exception: ", e.message)
 
-                    # get appropriate icon
-                    if ts_type == "normal":
-                        if service_type == "INT":
-                            icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
-                        elif service_type == "STR":
-                            icon = self.get_icon_for_string_service(th_ranges, th_icon_settings, value)
-                        else:
-                            pass
-                    elif ts_type == "ping":
-                        icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
+                # fetch thematic ranges as per thematic type selected i.e. 'ping' or 'normal'
+                th_ranges = ""
+                try:
+                    if ts_type == "ping":
+                        th_ranges = user_thematics.thematic_template
+                    elif ts_type == "normal":
+                        th_ranges = user_thematics.thematic_template.threshold_template
                     else:
                         pass
-            except Exception as e:
-                logger.error("Icon not exist. Exception: ", e.message)
+                except Exception as e:
+                    logger.error("No ranges for thematic settings. Exception: ", e.message)
+
+                # fetch service type if 'ts_type' is "normal"
+                service_type = ""
+                try:
+                    if ts_type == "normal":
+                        service_type = user_thematics.thematic_template.threshold_template.service_type
+                except Exception as e:
+                    logger.error("Service Type not exist. Exception: ", e.message)
+
+                # comparing threshold values to get icon
+                try:
+                    if len(performance_value):
+                        # live polled value of device service
+                        value = ast.literal_eval(str(performance_value))
+
+                        # get appropriate icon
+                        if ts_type == "normal":
+                            if service_type == "INT":
+                                icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
+                            elif service_type == "STR":
+                                icon = self.get_icon_for_string_service(th_ranges, th_icon_settings, value)
+                            else:
+                                pass
+                        elif ts_type == "ping":
+                            icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
+                        else:
+                            pass
+                except Exception as e:
+                    logger.error("Icon not exist. Exception: ", e.message)
 
             substation_info['markerUrl'] = icon
 
