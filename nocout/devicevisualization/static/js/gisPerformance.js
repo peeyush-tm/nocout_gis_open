@@ -458,7 +458,8 @@ function GisPerformance() {
                                 ss_perf_info = ss_marker_data.data.param.sub_station,
                                 ss_pl = perf_self.getKeyValue(ss_perf_info,"pl",true),
                                 ss_rta = perf_self.getKeyValue(ss_perf_info,"rta",true),
-                                ckt_id_val = perf_self.getKeyValue(ss_perf_info,"cktid",true);
+                                ckt_id_val = perf_self.getKeyValue(ss_perf_info,"cktid",true),
+                                ss_perf_url = ss_marker_data.data.perf_page_url ? ss_marker_data.data.perf_page_url : "";
 
                             // var ss_marker_object = {};
                             var ss_marker_object = {
@@ -473,6 +474,7 @@ function GisPerformance() {
                                 antenna_height   :  ss_marker_data.data.antenna_height,
                                 name             :  ss_marker_data.name,
                                 technology       :  sector_tech,
+                                perf_url         :  ss_perf_url,
                                 bs_name          :  apiResponse.bs_name,
                                 bs_sector_device :  sector_device,
                                 filter_data      :  {"bs_name" : apiResponse.bs_name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.bs_id, "sector_id" : sector_id},

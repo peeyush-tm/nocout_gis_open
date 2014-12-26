@@ -9,7 +9,6 @@ from nocout.utils.util import format_value, cache_for
 
 logger = logging.getLogger(__name__)
 
-
 def tech_marker_url(device_type, techno, ms=True):
     """
 
@@ -369,6 +368,11 @@ def prepare_raw_sector(sectors):
                                                                  format_this=sector['SECTOR_FREQUENCY']
                                                              )
                 )
+                near_end_perf_url = ""
+                # Check for technology to make perf page url
+                if sector['SECTOR_TECH'].lower() in ['pmp','wimax']:
+                    near_end_perf_url = '/performance/network_live/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
+
                 circuit_ids += circuit_id
                 sector_configured_on_devices += substation_ip
                 sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_FREQUENCY']))
@@ -386,6 +390,8 @@ def prepare_raw_sector(sectors):
                         'vendor': format_value(format_this=sector['SECTOR_VENDOR']),
                         'sector_configured_on': format_value(format_this=sector['SECTOR_CONF_ON_IP']),
                         'sector_configured_on_device': format_value(format_this=sector['SECTOR_CONF_ON']),
+                        # 'sector_device_id' : format_value(format_this=sector['SECTOR_CONF_ON_ID']),
+                        'perf_page_url' : near_end_perf_url,
                         'circuit_id':None,
                         'sector_id' : format_value(format_this=sector['SECTOR_ID']),
                         'antenna_height': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'], type_of='random'),
@@ -512,15 +518,23 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                     if circuit_id not in circuit_ids:
                         circuit_ids.append(circuit_id)
                     if circuit['SSIP'] and circuit['SSIP'] not in substation_ip:
+
+                        far_end_perf_url = ""
+                        # Check for technology to make perf page url
+                        if circuit['SS_TECH'].lower() in ['pmp','wimax']:
+                            far_end_perf_url = '/performance/customer_live/'+str(circuit['SS_DEVICE_ID'])+'/'
+
                         substation_ip.append(circuit['SSIP'])
                     substation_info.append(
                         {
                             'id': circuit['SSID'],
                             'name': circuit['SS_NAME'],
                             'device_name': circuit['SSDEVICENAME'],
+                            # 'device_id' : circuit['SS_DEVICE_ID'],
                             'data': {
                                 "lat": circuit['SS_LATITUDE'],
                                 "lon": circuit['SS_LONGITUDE'],
+                                "perf_page_url" : far_end_perf_url,
                                 "antenna_height": format_value(circuit['SSHGT'], type_of='random'),
                                 "substation_device_ip_address": circuit['SSIP'],
                                 "technology": circuit['SS_TECH'],
