@@ -61,6 +61,7 @@ class ServiceDataSource(models.Model):
     name = models.CharField('Name', max_length=100)
     alias = models.CharField('Alias', max_length=250)
     chart_type = models.CharField(choices=CHART_TYPE_CHOICES, max_length=50)
+    formula = models.CharField('Formula', max_length=100, null=True, blank=True)
     valuesuffix = models.CharField('Value Suffix', max_length=100)
     valuetext = models.CharField('Value Text', max_length=100)
     show_min = models.BooleanField('Show Min')
