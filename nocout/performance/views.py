@@ -1814,7 +1814,7 @@ class Get_Service_Type_Performance_Data(View):
                     # data_list.append([data.sys_timestamp, data.current_value ])
 
                     # data_list.append([data.sys_timestamp*1000, float(data.current_value) if data.current_value else 0])
-                    if data_source not in ["availability"]:
+                    if sds_name not in ["availability"]:
                         #only display warning if there exists a warning
                         if data.warning_threshold:
                             warn_data_list.append([js_time, float(data.warning_threshold)])
@@ -2020,7 +2020,7 @@ class Get_Service_Type_Performance_Data(View):
                     # data_list.append([data.sys_timestamp, data.current_value ])
 
                     # data_list.append([data.sys_timestamp*1000, float(data.current_value) if data.current_value else 0])
-                    if data_source not in ["availability"]:
+                    if sds_name not in ["availability"]:
                         #only display warning if there exists a warning
                         if data.warning_threshold:
                             warn_data_list.append([js_time, float(data.warning_threshold)])
