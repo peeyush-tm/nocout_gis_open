@@ -1885,6 +1885,7 @@ function devicePlottingClass_gmap() {
 				var azimuth = sector_array[j].azimuth_angle,
 					beam_width = sector_array[j].beam_width,
 					sector_color = sector_array[j].color,
+					sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
 					sectorInfo = {
 						"info" : sector_array[j].info,
 						"bs_name" : bs_ss_devices[i].name,
@@ -1892,7 +1893,8 @@ function devicePlottingClass_gmap() {
 						"sector_id" : sector_array[j].sector_id,
 						"device_info" : sector_array[j].device_info,
 						"technology" : sector_array[j].technology,
-						"vendor" : sector_array[j].vendor
+						"vendor" : sector_array[j].vendor,
+						"sector_perf_url" : sector_perf_url
 					},
 					sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
 					orientation = $.trim(sector_array[j].orientation),
@@ -1971,6 +1973,7 @@ function devicePlottingClass_gmap() {
 							poll_info 			: [],
 							pl 					: "",
 							rta					: "",
+							perf_url 			: sector_perf_url,
 							sectorName  		: sector_array[j].sector_configured_on,
 							device_name  		: sector_array[j].sector_configured_on_device,
 							name  				: sector_array[j].sector_configured_on_device,
@@ -2061,7 +2064,8 @@ function devicePlottingClass_gmap() {
 
 					var ss_marker_obj = sector_child[k],
 						ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other"),
-						ckt_id_val = gisPerformanceClass.getKeyValue(ss_marker_obj.data.param.sub_station,"cktid",true);
+						ckt_id_val = gisPerformanceClass.getKeyValue(ss_marker_obj.data.param.sub_station,"cktid",true),
+						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "";
 
 					// Set the ckt id to sector marker object (only in case of PTP)
 					if(sector_tech == "ptp" || sector_tech == "p2p") {
@@ -2086,6 +2090,7 @@ function devicePlottingClass_gmap() {
 				    	poll_info 		 :  [],
 				    	pl 				 :  "",
 						rta				 :  "",
+						perf_url 		 :  ss_perf_url,
 				    	antenna_height   : 	ss_marker_obj.data.antenna_height,
 				    	name 		 	 : 	ss_marker_obj.name,
 				    	bs_name 		 :  bs_ss_devices[i].name,
@@ -2875,6 +2880,7 @@ function devicePlottingClass_gmap() {
 			vendor 			 : sectorInfo.vendor,
 			deviceExtraInfo  : sectorInfo.info,
 			deviceInfo 		 : sectorInfo.device_info,
+			perf_url 		 : sectorInfo.sector_perf_url,
 			startLat 	     : startLat,
 			startLon 	     : startLon,
 			filter_data 	 : {"bs_name" : sectorInfo.bs_name, "sector_name" : sectorInfo.sector_name, "sector_id" : sectorInfo.sector_id},
@@ -3031,10 +3037,10 @@ function devicePlottingClass_gmap() {
 
 				if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
 					/*Concat infowindow content*/
-					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
+					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
 				} else {
 					/*Concat infowindow content*/
-					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
+					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
 				}
 
 			} catch(e) {
@@ -3043,7 +3049,13 @@ function devicePlottingClass_gmap() {
 
 		} else if (clickedType == 'sector_Marker' || clickedType == 'sector') {
 
-			var sectorWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : "Base Station Device";
+			var sectorWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : "Base Station Device",
+				nearend_perf_url = contentObject.perf_url ? base_url+""+contentObject.perf_url : "",
+				tools_html = "";
+
+			if(nearend_perf_url) {
+				tools_html += "<a href='"+nearend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>"
+			}
 
 			infoTable += "<table class='table table-bordered'><tbody>";
 			for(var i=0; i< contentObject['deviceInfo'].length; i++) {
@@ -3078,13 +3090,19 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>"+sectorWindowTitle+"</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div></div></div>";
+			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
+			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>"+sectorWindowTitle+"</h4><div class='tools'>"+tools_html+"<a class='close_info_window'><i class='fa fa-times text-danger' title='Close'></i></a></div></div>";
+			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
+			windowContent += "</div></div>";
 		} else {
 
 			infoTable += "<table class='table table-bordered'><tbody>";
+			
 			var startPtInfo = [],
 				ss_circuit_id = "",
-				BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase();
+				BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase(),
+				farend_perf_url = contentObject.perf_url ? base_url+""+contentObject.perf_url : "",
+				tools_html = "";
 
 			if(contentObject.bsInfo != undefined) {
 				startPtInfo = contentObject.bsInfo;
@@ -3139,6 +3157,10 @@ function devicePlottingClass_gmap() {
 					infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
 					infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
 				}
+
+				if(farend_perf_url) {
+					tools_html += "<a href='"+farend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>"
+				}
 			}
 
 			if(clickedType == "base_station" && contentObject.bhInfo) {
@@ -3169,9 +3191,12 @@ function devicePlottingClass_gmap() {
 			}
 
 			infoTable += "</tbody></table>";
-
+			tools_html
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times'></i></a></div></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div></div></div>";
+			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
+			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4><div class='tools'>"+tools_html+"<a class='close_info_window' title='Close'><i class='fa fa-times text-danger'></i></a></div></div>";
+			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
+			windowContent += "</div></div>";
 		}
 		if(isDebug) {
 			console.log("Make Info Window HTML End Time :- "+ new Date().toLocaleString());
@@ -6211,6 +6236,14 @@ function devicePlottingClass_gmap() {
     Here we clear All The Variables and Point related to Rulers in tools
      */
     this.clearRulerTool_gmap = function() {
+
+    	// clear temporary line if exists
+    	if(temp_line) {
+    		if(temp_line.map) {
+    			temp_line.setMap(null);
+    		}
+    		temp_line = "";
+    	}
 
     	//Remove Ruler markers
     	for(var i=0;i<ruler_array.length;i++) {
