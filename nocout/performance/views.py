@@ -1088,7 +1088,7 @@ class Get_Service_Status(View):
         # ).
         device_nms_uptime = nocout_utils.nocout_query_results(query_set=device_nms_uptime_query_set,
                                                               using=inventory_device_machine_name)
-        if len(device_nms_uptime):
+        if device_nms_uptime and len(device_nms_uptime):
             data = device_nms_uptime[0]
 
             age = datetime.datetime.fromtimestamp(float(data['age'])
