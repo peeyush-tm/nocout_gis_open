@@ -6212,6 +6212,14 @@ function devicePlottingClass_gmap() {
      */
     this.clearRulerTool_gmap = function() {
 
+    	// clear temporary line if exists
+    	if(temp_line) {
+    		if(temp_line.map) {
+    			temp_line.setMap(null);
+    		}
+    		temp_line = "";
+    	}
+
     	//Remove Ruler markers
     	for(var i=0;i<ruler_array.length;i++) {
     		if(window.location.pathname.indexOf('googleEarth') > -1) {
