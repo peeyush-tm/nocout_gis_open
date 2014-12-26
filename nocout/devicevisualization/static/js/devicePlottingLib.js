@@ -2947,7 +2947,9 @@ function devicePlottingClass_gmap() {
 				var path_circuit_id = contentObject.ss_info ? gisPerformanceClass.getKeyValue(contentObject.ss_info,"cktid",true) : "",
 					lineWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : "BS-SS",
 					lineStartTitle = contentObject.startTitle ? contentObject.startTitle : "BS-Sector Info",
-					lineEndTitle = contentObject.endTitle ? contentObject.endTitle : "SS Info";
+					lineEndTitle = contentObject.endTitle ? contentObject.endTitle : "SS Info",
+					sector_title = lineStartTitle.toLowerCase().indexOf("point") > -1 ? lineStartTitle : "BS",
+					ss_title = lineEndTitle.toLowerCase().indexOf("point") > -1 ? lineEndTitle : "SS";
 				/*Tabbale Start*/
 				infoTable += '<div class="tabbable">';
 				/*Tabs Creation Start*/
@@ -2964,7 +2966,6 @@ function devicePlottingClass_gmap() {
 				infoTable += '<div class="tab-pane fade active in" id="near_end_block"><div class="divide-10"></div>';
 
 				infoTable += "<table class='table table-bordered'><tbody>";
-				// console.log("bs_info length: "+ contentObject.bs_info.length);
 				/*Loop for BS or Sector info object array*/
 				for(var i=0;i<contentObject.bs_info.length;i++) {
 
@@ -2986,7 +2987,6 @@ function devicePlottingClass_gmap() {
 				/*SS Info Start*/
 				infoTable += "<td>";			
 				infoTable += "<table class='table table-bordered'><tbody>";
-				// console.log("ss_info length: "+ contentObject.ss_info.length);
 				/*Loop for ss info object array*/
 				for(var i=0;i<contentObject.ss_info.length;i++) {
 					if(contentObject.ss_info[i].show == 1) {
@@ -3020,16 +3020,18 @@ function devicePlottingClass_gmap() {
 				if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
 					isBSLeft = 1;
 				}
-
+				
 				var sect_alias = gisPerformanceClass.getKeyValue(contentObject.bs_info,"alias",true),
 					ss_custName = gisPerformanceClass.getKeyValue(contentObject.ss_info,"customer_name",true),
 					// circuit_id = gisPerformanceClass.getKeyValue(contentObject.ss_info,"cktid",true),
 					sector_ss_name_obj = {
-						sector_Alias: sect_alias ? sect_alias : "",
+						sector_title : sector_title,
+						sector_Alias : sect_alias ? sect_alias : "",
 						sector_name : contentObject.sectorName ? contentObject.sectorName : "",
+						ss_title : ss_title,
 						ss_name : contentObject.ssName ? contentObject.ssName : " ",
-						ss_customerName: ss_custName ? ss_custName : "",
-						ss_circuitId: path_circuit_id ? path_circuit_id : "",
+						ss_customerName : ss_custName ? ss_custName : "",
+						ss_circuitId : path_circuit_id ? path_circuit_id : "",
 						isBSLeft : isBSLeft
 					};
 
@@ -3037,10 +3039,10 @@ function devicePlottingClass_gmap() {
 
 				if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
 					/*Concat infowindow content*/
-					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
+					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'><i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
 				} else {
 					/*Concat infowindow content*/
-					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a style='cursor:pointer;' class='close_info_window'><i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
+					windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> "+lineWindowTitle+"</h4><div class='tools'><a title='Close' class='close_info_window'><i class='fa fa-times text-danger'></i></a></div></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li>"+report_download_btn+"</ul></div></div></div>";
 				}
 
 			} catch(e) {
@@ -3261,9 +3263,11 @@ function devicePlottingClass_gmap() {
 		bts1_name = sector_ss_obj.sector_name;
 		bts2_name = sector_ss_obj.ss_name;
 
-		fresnelData.bts1_alias= sector_ss_obj.sector_Alias;
-		fresnelData.bts2_customerName= sector_ss_obj.ss_customerName;
-		fresnelData.bts2_circuitId= sector_ss_obj.ss_circuitId;
+		fresnelData['bts1_title'] = sector_ss_obj.sector_title ? sector_ss_obj.sector_title : "BS";
+		fresnelData['bts2_title'] = sector_ss_obj.ss_title ? sector_ss_obj.ss_title : "SS";
+		fresnelData['bts1_alias'] = sector_ss_obj.sector_Alias;
+		fresnelData['bts2_customerName'] = sector_ss_obj.ss_customerName;
+		fresnelData['bts2_circuitId'] = sector_ss_obj.ss_circuitId;
 		fresnel_isBSLeft = sector_ss_obj.isBSLeft;
 
 		/** Converts numeric degrees to radians */
@@ -3533,12 +3537,12 @@ function devicePlottingClass_gmap() {
 
 		if(isDialogOpen) {
 			
-			var left_str = '<div class="col-md-12"><b>BS</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>',
-				right_str = '<div class="col-md-12"><b>SS</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
+			var left_str = '<div class="col-md-12"><b>'+fresnelData.bts1_title+'</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>',
+				right_str = '<div class="col-md-12"><b>'+fresnelData.bts2_title+'</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
 			
 			if(fresnel_isBSLeft == 0) {
-				left_str = '<div class="col-md-12"><b>SS</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
-				right_str = '<div class="col-md-12"><b>BS</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>';
+				left_str = '<div class="col-md-12"><b>'+fresnelData.bts2_title+'</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
+				right_str = '<div class="col-md-12"><b>'+fresnelData.bts1_title+'</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>';
 			}
 
 			/*Fresnel template String*/
