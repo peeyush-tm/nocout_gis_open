@@ -375,6 +375,8 @@ def prepare_raw_sector(sectors):
                 # Check for technology to make perf page url
                 if techno_to_append.lower() in ['pmp', 'wimax', 'ptp bh']:
                     near_end_perf_url = '/performance/network_live/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
+                else:
+                    near_end_perf_url = '/performance/customer_live/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
 
                 circuit_ids += circuit_id
                 sector_configured_on_devices += substation_ip
@@ -536,7 +538,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
 
                     if circuit['SSIP'] and circuit['SSIP'] not in substation_ip:
                         # Check for technology to make perf page url
-                        if techno_to_append.lower() in ['pmp', 'wimax']:
+                        if techno_to_append.lower() in ['pmp', 'wimax', 'ptp', 'p2p']:
                             far_end_perf_url = '/performance/customer_live/'+str(circuit['SS_DEVICE_ID'])+'/'
                         elif techno_to_append.lower() in ['ptp bh']:
                             far_end_perf_url = '/performance/network_live/'+str(circuit['SS_DEVICE_ID'])+'/'
