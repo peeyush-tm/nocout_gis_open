@@ -2141,6 +2141,13 @@ class GISPerfData(View):
             except Exception as e:
                 logger.error("Sub Station device not exist. Exception: ", e.message)
 
+            # connected bs ip
+            connected_bs_ip = ""
+            try:
+                connected_bs_ip = Circuit.objects.get(sub_station=substation).sector.sector_configured_on.ip_address
+            except Exception as e:
+                logger.error("Sub station is not connected to any Base Station.", e.message)
+
             # substation technology
             substation_technology = ""
             try:
@@ -2162,6 +2169,13 @@ class GISPerfData(View):
             except Exception as e:
                 logger.error("QOS not exist. Exception: ", e.message)
 
+            # customer alias
+            customer_alias = ""
+            try:
+                customer_alias = substation.circuit_set.all()[0].customer.alias
+            except Exception as e:
+                logger.error("Customer Alias not exist. Exception: ", e.message)
+
             # customer address
             customer_address = ""
             try:
@@ -2182,6 +2196,13 @@ class GISPerfData(View):
                 dl_rssi_during_acceptance = substation.circuit_set.all()[0].dl_rssi_during_acceptance
             except Exception as e:
                 logger.error("DL RSSI During Acceptance not exist. Exception: ", e.message)
+
+            # dl cinr during acceptance
+            dl_cinr_during_acceptance = ""
+            try:
+                dl_cinr_during_acceptance = substation.circuit_set.all()[0].dl_cinr_during_acceptance
+            except Exception as e:
+                logger.error("DL CINR During Acceptance not exist. Exception: ", e.message)
 
             # ss sector frequency
             ss_sector_frequency = ""
@@ -2241,6 +2262,12 @@ class GISPerfData(View):
                     'value': substation.name
                 },
                 {
+                    'name': 'connected_bs_ip',
+                    'title': 'Connected BS IP',
+                    'show': 1,
+                    'value': connected_bs_ip
+                },
+                {
                     'name': 'cktid',
                     'title': 'Circuit ID',
                     'show': 1,
@@ -2272,7 +2299,7 @@ class GISPerfData(View):
                 },
                 {
                     'name': 'polarisation',
-                    'title': 'Polarisation',
+                    'title': 'Antenna Polarisation',
                     'show': 1,
                     'value': antenna_polarization
                 },
@@ -2290,7 +2317,7 @@ class GISPerfData(View):
                 },
                 {
                     'name': 'tower_height',
-                    'title': 'tower_height',
+                    'title': 'Tower Height',
                     'show': 1,
                     'value': substation.tower_height
                 },
@@ -2331,6 +2358,12 @@ class GISPerfData(View):
                     'value': substation.cable_length
                 },
                 {
+                    'name': 'customer_name',
+                    'title': 'Customer Name',
+                    'show': 1,
+                    'value': customer_alias
+                },
+                {
                     'name': 'customer_address',
                     'title': 'Customer Address',
                     'show': 1,
@@ -2347,6 +2380,12 @@ class GISPerfData(View):
                     'title': 'RSSI During Acceptance',
                     'show': 1,
                     'value': dl_rssi_during_acceptance
+                },
+                {
+                    'name': 'dl_cinr_during_acceptance',
+                    'title': 'CINR During Acceptance',
+                    'show': 1,
+                    'value': dl_cinr_during_acceptance
                 },
                 {
                     'name': 'planned_frequency',
@@ -2732,16 +2771,23 @@ class GISPerfData(View):
         substation_info = dict()
 
         far_end_perf_url = ""
+        far_end_inventory_url = ""
         
         # Check for technology to make perf page url
         if device_technology.name:
-            if device_technology.name.lower() in ['pmp','wimax']:
+            if device_technology.name.lower() in ['pmp', 'wimax', 'ptp', 'p2p']:
                 far_end_perf_url = '/performance/customer_live/'+str(ss_device_id)+'/'
+            elif techno_to_append.lower() in ['ptp bh']:
+                far_end_perf_url = '/performance/network_live/'+str(ss_device_id)+'/'
+
+        # SS Device Inventory URL
+        far_end_inventory_url = '/device/'+str(ss_device_id)+'/'
 
         substation_info['antenna_height'] = substation.antenna.height
         substation_info['lat'] = substation.latitude
         substation_info['lon'] = substation.longitude
         substation_info['perf_page_url'] = far_end_perf_url
+        substation_info['inventory_url'] = far_end_inventory_url
         substation_info['technology'] = device_technology.name
         substation_info['link_color'] = device_link_color
         substation_info['show_link'] = 1

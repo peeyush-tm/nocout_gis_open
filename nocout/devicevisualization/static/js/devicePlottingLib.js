@@ -1887,6 +1887,7 @@ function devicePlottingClass_gmap() {
 					beam_width = sector_array[j].beam_width,
 					sector_color = sector_array[j].color,
 					sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
+					sector_inventory_url = sector_array[j].inventory_url ? sector_array[j].inventory_url : "",
 					sectorInfo = {
 						"info" : sector_array[j].info,
 						"bs_name" : bs_ss_devices[i].name,
@@ -1895,7 +1896,8 @@ function devicePlottingClass_gmap() {
 						"device_info" : sector_array[j].device_info,
 						"technology" : sector_array[j].technology,
 						"vendor" : sector_array[j].vendor,
-						"sector_perf_url" : sector_perf_url
+						"sector_perf_url" : sector_perf_url,
+						"inventory_url" : sector_inventory_url
 					},
 					sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
 					orientation = $.trim(sector_array[j].orientation),
@@ -1975,6 +1977,7 @@ function devicePlottingClass_gmap() {
 							pl 					: "",
 							rta					: "",
 							perf_url 			: sector_perf_url,
+							inventory_url 		: sector_inventory_url,
 							sectorName  		: sector_array[j].sector_configured_on,
 							device_name  		: sector_array[j].sector_configured_on_device,
 							name  				: sector_array[j].sector_configured_on_device,
@@ -2066,7 +2069,8 @@ function devicePlottingClass_gmap() {
 					var ss_marker_obj = sector_child[k],
 						ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other"),
 						ckt_id_val = gisPerformanceClass.getKeyValue(ss_marker_obj.data.param.sub_station,"cktid",true),
-						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "";
+						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
+						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
 
 					// Set the ckt id to sector marker object (only in case of PTP)
 					if(ptp_tech_list.indexOf(sector_tech) > -1) {
@@ -2092,6 +2096,7 @@ function devicePlottingClass_gmap() {
 				    	pl 				 :  "",
 						rta				 :  "",
 						perf_url 		 :  ss_perf_url,
+						inventory_url 	 :  ss_inventory_url,
 				    	antenna_height   : 	ss_marker_obj.data.antenna_height,
 				    	name 		 	 : 	ss_marker_obj.name,
 				    	bs_name 		 :  bs_ss_devices[i].name,
@@ -2882,6 +2887,7 @@ function devicePlottingClass_gmap() {
 			deviceExtraInfo  : sectorInfo.info,
 			deviceInfo 		 : sectorInfo.device_info,
 			perf_url 		 : sectorInfo.sector_perf_url,
+			inventory_url 	 : sectorInfo.inventory_url,
 			startLat 	     : startLat,
 			startLon 	     : startLon,
 			filter_data 	 : {"bs_name" : sectorInfo.bs_name, "sector_name" : sectorInfo.sector_name, "sector_id" : sectorInfo.sector_id},
@@ -3054,10 +3060,15 @@ function devicePlottingClass_gmap() {
 
 			var sectorWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : "Base Station Device",
 				nearend_perf_url = contentObject.perf_url ? base_url+""+contentObject.perf_url : "",
+				nearend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
 				tools_html = "";
 
 			if(nearend_perf_url) {
-				tools_html += "<a href='"+nearend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>"
+				tools_html += "<a href='"+nearend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>";
+			}
+
+			if(nearend_inventory_url) {
+				tools_html += "<a href='"+nearend_inventory_url+"' target='_blank' title='Inventory'><i class='fa fa-dropbox text-info'> </i></a>";
 			}
 
 			infoTable += "<table class='table table-bordered'><tbody>";
@@ -3105,6 +3116,7 @@ function devicePlottingClass_gmap() {
 				ss_circuit_id = "",
 				BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase(),
 				farend_perf_url = contentObject.perf_url ? base_url+""+contentObject.perf_url : "",
+				farend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
 				tools_html = "";
 
 			if(contentObject.bsInfo != undefined) {
@@ -3163,6 +3175,9 @@ function devicePlottingClass_gmap() {
 
 				if(farend_perf_url) {
 					tools_html += "<a href='"+farend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>"
+				}
+				if(farend_inventory_url) {
+					tools_html += "<a href='"+farend_inventory_url+"' target='_blank' title='Inventory'><i class='fa fa-dropbox text-info'> </i></a>";
 				}
 			}
 

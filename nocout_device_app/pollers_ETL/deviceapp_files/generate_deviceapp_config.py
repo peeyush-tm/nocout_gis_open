@@ -2,6 +2,7 @@ from mysql_connection import mysql_conn
 from pprint import pformat
 from operator import itemgetter
 from nocout_logger import nocout_log
+from collections import namedtuple
 
 logger = nocout_log()
 
@@ -54,22 +55,30 @@ wimax_mod_services = ['wimax_modulation_dl_fec', 'wimax_modulation_ul_fec']
 
 
 def prepare_hosts_file():
+    T = namedtuple('devices', 
+            ['wimax_bs_devices', 'cambium_bs_devices',
+                'radwin_bs_devices', 'wimax_ss_devices', 
+                'radwin_ss_devices', 'total_radwin_devices'])
     all_hosts, ipaddresses, host_attributes = [], {}, {}
     wimax_bs_devices, cambium_bs_devices = [], []
     # This file contains device names, to be updated in configuration db
     open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'w').close()
     #try:
-    all_hosts, ipaddresses, host_attributes, wimax_bs_devices, \
-            cambium_bs_devices, radwin_bs_devices = make_BS_data()
+    bs_devices = make_BS_data()
     #except Exception, exp:
     #   logger.error('Exception in make_BS_data: ' + pformat(exp))
     #try:
-    radwin_ss_devices = make_SS_data(all_hosts, ipaddresses, host_attributes)
+    ss_devices = make_SS_data(bs_devices.all_hosts, bs_devices.ipaddresses, bs_devices.host_attributes)
     #except Exception, exp:
     #   logger.error('Exception in make_SS_data: ' + pformat(exp))
-    write_hosts_file(all_hosts, ipaddresses, host_attributes)
+    T.wimax_bs_devices, T.cambium_bs_devices = bs_devices.wimax_bs_devices, bs_devices.cambium_bs_devices
+    T.radwin_bs_devices, T.radwin_ss_devices = bs_devices.radwin_bs_devices, ss_devices.radwin_ss_devices
+    T.total_radwin_devices = bs_devices.radwin_bs_devices + ss_devices.radwin_ss_devices
+    T.wimax_ss_devices = ss_devices.wimax_ss_devices
 
-    return (wimax_bs_devices, cambium_bs_devices, radwin_bs_devices, radwin_ss_devices)
+    write_hosts_file(ss_devices.all_hosts, ss_devices.ipaddresses, ss_devices.host_attributes)
+
+    return T
 
 
 def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
@@ -118,6 +127,9 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     data = unq_device_data
     cur.close() 
     db.close()
+    T = namedtuple('bs_devices', [
+        'all_hosts', 'ipaddresses', 'host_attributes',
+        'wimax_bs_devices', 'cambium_bs_devices', 'radwin_bs_devices'])
     processed = []
     dr_en_devices = sorted(filter(lambda e: e[9] and e[9].lower() == 'yes' and e[10], data), key=itemgetter(10))
     #print 'dr_en_devices --'
@@ -192,6 +204,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
             }})
     hosts_only.close()
 
+    T.all_hosts, T.ipaddresses, T.host_attributes = all_hosts, ipaddresses, host_attributes
 
     # Get the wimax BS devices (we need them for active checks)
     # Ex entry : ('device_1', 'ospf4_slave_1')
@@ -202,6 +215,7 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     # Get the Cambium BS devices (we need them for active checks)
     # Since, as of now, we have only Cambium devices in pmp technology
     cambium_bs_devices = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'pmp', data))
+    T.wimax_bs_devices, T.cambium_bs_devices = wimax_bs_devices, cambium_bs_devices
 
     # Get the Radwin BS devices (We need them to generate active and static checks)
     # Ex entry : ('device_1', 'ospf4_slave_1', '5120')
@@ -210,9 +224,9 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     qos_values = eval_qos(map(lambda e: e[2], radwin_bs_devices))
     radwin_bs_devices = map(lambda e: (e[0], e[1]), radwin_bs_devices)
     radwin_bs_devices = zip(radwin_bs_devices, qos_values)
+    T.radwin_bs_devices = radwin_bs_devices
 
-    return (all_hosts, ipaddresses, host_attributes, wimax_bs_devices, cambium_bs_devices,\
-            radwin_bs_devices)
+    return T
 
 
 def get_dr_configured_on_devices(device_ids=[]):
@@ -325,6 +339,9 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
     data = cur.fetchall()
     cur.close()
     db.close()
+    T = namedtuple('ss_devices', [
+        'all_hosts', 'ipaddresses', 'host_attributes',
+        'radwin_ss_devices', 'wimax_ss_devices'])
     processed = []
     hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
@@ -351,8 +368,15 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
     qos_values = eval_qos(map(lambda e: e[2], radwin_ss_devices))
     radwin_ss_devices = map(lambda e: (e[0], e[1]), radwin_ss_devices)
     radwin_ss_devices = zip(radwin_ss_devices, qos_values)
+    # Get Wimax SS devices, for active checks
+    wimax_ss_devices = filter(lambda e: e[14].lower() == 'wimax', data)
+    wimax_ss_devices = map(lambda e: (e[4], e[8]), wimax_ss_devices)
+    #print wimax_ss_devices[0:10]
 
-    return radwin_ss_devices
+    T.all_hosts, T.ipaddresses, T.host_attributes = all_hosts, ipaddresses, host_attributes
+    T.radwin_ss_devices, T.wimax_ss_devices = radwin_ss_devices, wimax_ss_devices
+
+    return T
 
 
 def update_configuration_db():
@@ -373,25 +397,33 @@ def update_configuration_db():
 ##############################
 
 
-def prepare_rules(**kwargs):
-    ping_levels_db, default_checks, snmp_ports_db, \
-            snmp_communities_db, active_checks_thresholds, \
-            active_checks_thresholds_per_device = get_settings()
-    wimax_pmp1_ul_active_checks, wimax_pmp1_dl_active_checks, wimax_pmp2_ul_active_checks, \
-            wimax_pmp2_dl_active_checks, cambium_ul_active_checks, cambium_dl_active_checks,\
-            radwin_ul_active_checks, radwin_dl_active_checks, radwin_static_checks = active_checks(
-            kwargs.get('wimax_bs_devices'), kwargs.get('cambium_bs_devices'),
-            kwargs.get('radwin_devices'),
-            active_checks_thresholds, active_checks_thresholds_per_device)
-    write_rules_file(ping_levels_db, default_checks, \
-            snmp_ports_db, snmp_communities_db, wimax_pmp1_ul_active_checks, \
-            wimax_pmp1_dl_active_checks, wimax_pmp2_ul_active_checks, wimax_pmp2_dl_active_checks, \
-            cambium_ul_active_checks, cambium_dl_active_checks, radwin_ul_active_checks, \
-            radwin_dl_active_checks, radwin_static_checks)
+def prepare_rules(devices):
+    #ping_levels_db, default_checks, snmp_ports_db, \
+    #        snmp_communities_db, active_checks_thresholds, \
+    #        active_checks_thresholds_per_device = get_settings()
+    settings_out = get_settings()
+
+    #print settings_out.active_checks_thresholds
+    ac_chks1 = util_active_checks(
+            devices, 
+            settings_out.active_checks_thresholds, 
+            settings_out.active_checks_thresholds_per_device)
+    ac_chks2 = ss_active_checks(
+            devices, 
+            settings_out.active_checks_thresholds,
+            settings_out.active_checks_thresholds_per_device)
+    ac_chks1.update(ac_chks2)
+
+    write_rules_file(settings_out, ac_chks1)
 
 
 def get_settings():
     data = []
+    T = namedtuple('host_rules', [
+        'ping_levels_db', 'default_checks', 'snmp_ports_db',
+        'snmp_communities_db', 'active_checks_thresholds',
+        'active_checks_thresholds_per_device'
+        ])
     # Device specific actve check thresholds, collected from service_deviceserviceconfiguration
     default_checks, active_checks_thresholds_per_device = prepare_priority_checks()
     active_checks_thresholds = []
@@ -410,11 +442,16 @@ def get_settings():
         db.close()
 
     processed = []
-    # Following active checks should not be included in list of passive checks
-    exclude_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi'
+    # Following utilization active checks should not be included in list of passive checks
+    exclude_util_active_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi',
             'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi',
             'cambium_ul_util_kpi', 'cambium_dl_util_kpi',
             'radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'radwin_util_static']
+    # Following dependent SS checks should not be included in list of passive checks
+    # As they are treated as active checks (Dependent in sense they get data from their BS)
+    exclude_ss_active_services = ['wimax_ul_rssi', 'wimax_dl_rssi', 'wimax_ul_cinr',
+            'wimax_dl_cinr', 'wimax_ul_intrf', 'wimax_dl_intrf',
+            'wimax_modulation_ul_fec', 'wimax_modulation_dl_fec']
     for service in data:
         """
         from pprint import pprint
@@ -449,10 +486,13 @@ def get_settings():
         if service['service']:
             threshold = ()
             try:
-                threshold = get_threshold(service)
-                if str(service['service']) in exclude_services:
-                    active_checks_thresholds.append(str(service['service']), threshold[0], threshold[1])
-                    continue
+            	threshold = get_threshold(service)
+            	if str(service['service']) in exclude_util_active_services:
+                	active_checks_thresholds.append((str(service['service']), threshold[0], threshold[1]))
+                	continue
+            	if str(service['service']) in exclude_ss_active_services:
+                	active_checks_thresholds.append((str(service['service']), threshold[0], threshold[1]))
+                	continue
             except Exception, exp:
                 logger.error('Exception in get_threshold: ' + pformat(exp))
             service_config = [service['devicetype']], ['@all'], service['service'], None, threshold
@@ -466,9 +506,11 @@ def get_settings():
             d_community = str(service['community']), [str(service['devicetype'])], ['@all']
             if d_community not in snmp_communities_db:
                 snmp_communities_db.append(d_community)
-    return ping_levels_db, default_checks, snmp_ports_db, snmp_communities_db,\
-            active_checks_thresholds, active_checks_thresholds_per_device
+    T.ping_levels_db, T.default_checks, T.snmp_ports_db = ping_levels_db, default_checks, snmp_ports_db
+    T.snmp_communities_db, T.active_checks_thresholds = snmp_communities_db, active_checks_thresholds
+    T.active_checks_thresholds_per_device = active_checks_thresholds_per_device
 
+    return T
 
 
 def prepare_query():
@@ -538,20 +580,21 @@ def get_threshold(service):
     serv = service.get('service')
     warn = None
     crit = None
-    try:
-        if service.get('dtype_ds_warning') or service.get('dtype_ds_critical'):
-            warn = service.get('dtype_ds_warning')
-            crit = service.get('dtype_ds_critical')
+    #print service
+    #try:
+    if service.get('dtype_ds_warning') or service.get('dtype_ds_critical'):
+        warn = service.get('dtype_ds_warning')
+        crit = service.get('dtype_ds_critical')
 
-        elif service.get('service_warning') or service.get('service_critical'):
-            warn = service.get('service_warning')
-            crit = service.get('service_critical')
+    elif service.get('service_warning') or service.get('service_critical'):
+        warn = service.get('service_warning')
+        crit = service.get('service_critical')
 
-        elif service.get('warning') or service.get('critical'):
-            warn = service.get('warning')
-            crit = service.get('critical')
-    except Exception:
-        return result
+    elif service.get('warning') or service.get('critical'):
+        warn = service.get('warning')
+        crit = service.get('critical')
+    #except Exception:
+        #return result
 
     result = format_threshold(warn, crit, serv)
 
@@ -585,11 +628,16 @@ def prepare_priority_checks():
     FROM service_deviceserviceconfiguration
     """
     active_checks_thresholds_per_device = []
-    exclude_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi',
+    # Following utilization active checks should not be included in list of passive checks
+    exclude_util_active_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi',
             'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi',
-            'cambium_dl_util_kpi', 'cambium_ul_util_kpi',
-            'radwin_ul_util_kpi', 'radwin_dl_util_kpi',
-            'radwin_util_static']
+            'cambium_ul_util_kpi', 'cambium_dl_util_kpi',
+            'radwin_ul_util_kpi', 'radwin_dl_util_kpi', 'radwin_util_static']
+    # Following dependent SS checks should not be included in list of passive checks
+    # As they are treated as active checks (Dependent in sense they get data from their BS)
+    exclude_ss_active_services = ['wimax_ul_rssi', 'wimax_dl_rssi', 'wimax_ul_cinr',
+            'wimax_dl_cinr', 'wimax_ul_intrf', 'wimax_dl_intrf',
+            'wimax_modulation_ul_fec', 'wimax_modulation_dl_fec']
     try:
         cur = db.cursor()
         cur.execute(query)
@@ -605,7 +653,11 @@ def prepare_priority_checks():
     for entry in data_values:
         # We need to store war/crit to be used for active checks,
         # Since these would be added as normal services by user
-        if str(entry.get('service_name')) in exclude_services:
+        if str(entry.get('service_name')) in exclude_util_active_services:
+            active_checks_thresholds_per_device.append((str(entry['device_name']), str(entry['service_name']), \
+                    entry['warning'], entry['critical']))
+            continue
+        if str(entry.get('service_name')) in exclude_ss_active_services:
             active_checks_thresholds_per_device.append((str(entry['device_name']), str(entry['service_name']), \
                     entry['warning'], entry['critical']))
             continue
@@ -620,115 +672,173 @@ def prepare_priority_checks():
     return processed_values, active_checks_thresholds_per_device
 
 
-def active_checks(wimax_list, cambium_list, radwin_list, active_checks_thresholds, 
-        active_checks_thresholds_per_device, wimax_pmp1_ul_check_list=[],
-        wimax_pmp1_dl_check_list=[],wimax_pmp2_ul_check_list=[],
-        wimax_pmp2_dl_check_list=[], cambium_ul_check_list=[], cambium_dl_check_list=[],
-        radwin_ul_check_list=[], radwin_dl_check_list=[], radwin_static_check_list=[]):
+def ss_active_checks(devices, active_checks_thresholds, active_checks_thresholds_per_device):
+    wimax_ss_services = ['wimax_ul_rssi', 'wimax_dl_rssi', 'wimax_ul_cinr',
+        'wimax_dl_cinr', 'wimax_ul_intrf', 'wimax_dl_intrf', 
+        'wimax_modulation_ul_fec', 'wimax_modulation_dl_fec']
+    check_dict = {}
+    check_dict = make_active_check_rows(check_dict, devices.wimax_ss_devices, wimax_ss_services, 
+            active_checks_thresholds, active_checks_thresholds_per_device)
+
+    return check_dict
+
+
+def make_active_check_rows(container, devices, services, active_checks_thresholds, 
+        active_checks_thresholds_per_device, def_war=None, def_crit=None):
+
+    for service in services:
+        container[service] = []
+        # These thresholds would be used if we dont find entry in below filter func
+        serv_specific_entry = filter(lambda e: service in e[0], active_checks_thresholds)
+        for host_tuple in devices:
+            #print host_tuple
+            host_specific_entry = filter(lambda e: host_tuple[0] == e[0] and service == e[1], active_checks_thresholds_per_device)
+            if host_specific_entry:
+                war, crit = host_specific_entry[0][2], host_specific_entry[0][3]
+            elif serv_specific_entry:
+                war, crit = serv_specific_entry[0][1], serv_specific_entry[0][2]
+            else:
+                war, crit = def_war, def_crit
+            container[service].append(((str(service), {'host': str(host_tuple[0]), 'site': str(host_tuple[1]), 'war': war, 'crit': crit}), [], [str(host_tuple[0])]))
+
+    return container
+
+
+def util_active_checks(devices, active_checks_thresholds, active_checks_thresholds_per_device):
+    wimax_util_services = ['wimax_pmp1_ul_util_kpi', 'wimax_pmp1_dl_util_kpi',
+            'wimax_pmp2_ul_util_kpi', 'wimax_pmp2_dl_util_kpi']
+    cambium_util_services = ['cambium_ul_util_kpi', 'cambium_dl_util_kpi']
+    radwin_util_services = ['radwin_ul_util_kpi', 'radwin_dl_util_kpi']
+    check_dict = {}
+    check_dict = make_active_check_rows(check_dict, devices.wimax_bs_devices,
+            wimax_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            def_war=80, def_crit=90)
+    check_dict = make_active_check_rows(check_dict, devices.cambium_bs_devices,
+            cambium_util_services, active_checks_thresholds, active_checks_thresholds_per_device,
+            def_war=80, def_crit=90)
+    check_dict = make_active_check_rows(check_dict, devices.total_radwin_devices,
+            radwin_util_services, active_checks_thresholds, active_checks_thresholds_per_device)
+    ########################################################################################
     # These values would be used if we dont find device specific entry
-    S1 = filter(lambda x: 'wimax_pmp1_ul_util_kpi' in x[0], active_checks_thresholds)
-    S2 = filter(lambda x: 'wimax_pmp1_dl_util_kpi' in x[0], active_checks_thresholds)
-    S3 = filter(lambda x: 'wimax_pmp2_ul_util_kpi' in x[0], active_checks_thresholds)
-    S4 = filter(lambda x: 'wimax_pmp2_dl_util_kpi' in x[0], active_checks_thresholds)
-    S5 = filter(lambda x: 'cambium_ul_util_kpi' in x[0], active_checks_thresholds)
-    S6 = filter(lambda x: 'cambium_dl_util_kpi' in x[0], active_checks_thresholds)
-    S7 = filter(lambda x: 'radwin_ul_util_kpi' in x[0], active_checks_thresholds)
-    S8 = filter(lambda x: 'radwin_dl_util_kpi' in x[0], active_checks_thresholds)
-    for entry in wimax_list:
-        # Find device specific entry
-        wimax_pmp1_ul_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp1_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
-        wimax_pmp1_dl_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp1_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
-        wimax_pmp2_ul_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp2_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
-        wimax_pmp2_dl_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp2_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
-        if wimax_pmp1_ul_util:
-            wimax_pmp1_ul_util_war, wimax_pmp1_ul_util_crit = wimax_pmp1_ul_util[0][2], wimax_pmp1_ul_util[0][3]
-        elif S1:
-            wimax_pmp1_ul_util_war, wimax_pmp1_ul_util_crit = S1[0][2], S1[0][3]
-        else:
-            wimax_pmp1_ul_util_war, wimax_pmp1_ul_util_crit = 80, 90
+    #S1 = filter(lambda x: 'wimax_pmp1_ul_util_kpi' in x[0], active_checks_thresholds)
+    #S2 = filter(lambda x: 'wimax_pmp1_dl_util_kpi' in x[0], active_checks_thresholds)
+    #S3 = filter(lambda x: 'wimax_pmp2_ul_util_kpi' in x[0], active_checks_thresholds)
+    #S4 = filter(lambda x: 'wimax_pmp2_dl_util_kpi' in x[0], active_checks_thresholds)
+    #S5 = filter(lambda x: 'cambium_ul_util_kpi' in x[0], active_checks_thresholds)
+    #S6 = filter(lambda x: 'cambium_dl_util_kpi' in x[0], active_checks_thresholds)
+    #S7 = filter(lambda x: 'radwin_ul_util_kpi' in x[0], active_checks_thresholds)
+    #S8 = filter(lambda x: 'radwin_dl_util_kpi' in x[0], active_checks_thresholds)
+    #for entry in devices.wimax_bs_devices:
+    #    # Find device specific entry
+    #    wimax_pmp1_ul_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp1_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
+    #    wimax_pmp1_dl_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp1_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
+    #    wimax_pmp2_ul_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp2_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
+    #    wimax_pmp2_dl_util = filter(lambda x: entry[0] == x[0] and 'wimax_pmp2_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
+    #    try:
+    #            if wimax_pmp1_ul_util:
+    #                    wimax_pmp1_ul_util_war, wimax_pmp1_ul_util_crit = wimax_pmp1_ul_util[0][2], wimax_pmp1_ul_util[0][3]
+    #            elif S1:
+    #                    wimax_pmp1_ul_util_war, wimax_pmp1_ul_util_crit = S1[0][2], S1[0][3]
+    #            else:
+    #                    wimax_pmp1_ul_util_war, wimax_pmp1_ul_util_crit = 80, 90
+    #    except Exception:
+    #        wimax_pmp1_ul_util_war, wimax_pmp1_ul_util_crit = 80, 90
 
-        if wimax_pmp1_dl_util:
-            wimax_pmp1_dl_util_war, wimax_pmp1_dl_util_crit = wimax_pmp1_dl_util[0][2], wimax_pmp1_dl_util[0][3]
-        elif S2:
-            wimax_pmp1_dl_util_war, wimax_pmp1_dl_util_crit = S2[0][2], S2[0][3]
-        else:
-            wimax_pmp1_dl_util_war, wimax_pmp1_dl_util_crit = 80, 90
+    #    try:
+    #            if wimax_pmp1_dl_util:
+    #                    wimax_pmp1_dl_util_war, wimax_pmp1_dl_util_crit = wimax_pmp1_dl_util[0][2], wimax_pmp1_dl_util[0][3]
+    #            elif S2:
+    #                    wimax_pmp1_dl_util_war, wimax_pmp1_dl_util_crit = S2[0][2], S2[0][3]
+    #            else:
+    #                    wimax_pmp1_dl_util_war, wimax_pmp1_dl_util_crit = 80, 90
+    #    except Exception:
+    #        wimax_pmp1_dl_util_war, wimax_pmp1_dl_util_crit = 80, 90
 
-        if wimax_pmp2_ul_util:
-            wimax_pmp2_ul_util_war, wimax_pmp2_ul_util_crit = wimax_pmp2_ul_util[0][2], wimax_pmp2_ul_util[0][3]
-        elif S3:
-            wimax_pmp2_ul_util_war, wimax_pmp2_ul_util_crit = S3[0][2], S3[0][3]
-        else:
-            wimax_pmp2_ul_util_war, wimax_pmp2_ul_util_crit = 80, 90
+    #    try:
+    #            if wimax_pmp2_ul_util:
+    #                    wimax_pmp2_ul_util_war, wimax_pmp2_ul_util_crit = wimax_pmp2_ul_util[0][2], wimax_pmp2_ul_util[0][3]
+    #            elif S3:
+    #                    wimax_pmp2_ul_util_war, wimax_pmp2_ul_util_crit = S3[0][2], S3[0][3]
+    #            else:
+    #                    wimax_pmp2_ul_util_war, wimax_pmp2_ul_util_crit = 80, 90
+    #    except Exception:
+    #        wimax_pmp2_ul_util_war, wimax_pmp2_ul_util_crit = 80, 90
 
-        if wimax_pmp2_dl_util:
-            wimax_pmp2_dl_util_war, wimax_pmp2_dl_util_crit = wimax_pmp2_dl_util[0][2], wimax_pmp2_dl_util[0][3]
-        elif S4:
-            wimax_pmp2_dl_util_war, wimax_pmp2_dl_util_crit = S4[0][2], S4[0][3]
-        else:
-            wimax_pmp2_dl_util_war, wimax_pmp2_dl_util_crit = 80, 90
+    #    try:
+    #            if wimax_pmp2_dl_util:
+    #                    wimax_pmp2_dl_util_war, wimax_pmp2_dl_util_crit = wimax_pmp2_dl_util[0][2], wimax_pmp2_dl_util[0][3]
+    #            elif S4:
+    #                    wimax_pmp2_dl_util_war, wimax_pmp2_dl_util_crit = S4[0][2], S4[0][3]
+    #            else:
+    #                    wimax_pmp2_dl_util_war, wimax_pmp2_dl_util_crit = 80, 90
+    #    except Exception:
+    #        wimax_pmp2_dl_util_war, wimax_pmp2_dl_util_crit = 80, 90
 
-        wimax_pmp1_ul_check_list.append((('wimax_pmp1_ul_util_kpi', str(entry[0]), \
-                {'site': str(entry[1]), 'war': wimax_pmp1_ul_util_war, 'crit': wimax_pmp1_ul_util_crit}), [], [str(entry[0])]))
-        wimax_pmp1_dl_check_list.append((('wimax_pmp1_dl_util_kpi', str(entry[0]), \
-                {'site': str(entry[1]), 'war': wimax_pmp1_dl_util_war, 'crit': wimax_pmp1_dl_util_crit}), [], [str(entry[0])]))
+    #    wimax_pmp1_ul_check_list.append((('wimax_pmp1_ul_util_kpi', str(entry[0]), \
+    #            {'site': str(entry[1]), 'war': wimax_pmp1_ul_util_war, 'crit': wimax_pmp1_ul_util_crit}), [], [str(entry[0])]))
+    #    wimax_pmp1_dl_check_list.append((('wimax_pmp1_dl_util_kpi', str(entry[0]), \
+    #            {'site': str(entry[1]), 'war': wimax_pmp1_dl_util_war, 'crit': wimax_pmp1_dl_util_crit}), [], [str(entry[0])]))
 
-        wimax_pmp2_ul_check_list.append((('wimax_pmp2_ul_util_kpi', str(entry[0]), \
-                {'site': str(entry[1]), 'war': wimax_pmp2_ul_util_war, 'crit': wimax_pmp2_ul_util_crit}), [], [str(entry[0])]))
-        wimax_pmp2_dl_check_list.append((('wimax_pmp2_dl_util_kpi', str(entry[0]), \
-                {'site': str(entry[1]), 'war': wimax_pmp2_dl_util_war, 'crit': wimax_pmp2_dl_util_crit}), [], [str(entry[0])]))
-    for entry in cambium_list:
-        # Find device specific entry
-        camb_ul_util = filter(lambda x: entry[0] == x[0] and 'cambium_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
-        camb_dl_util = filter(lambda x: entry[0] == x[0] and 'cambium_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
-        if camb_ul_util:
-            camb_ul_util_war, camb_ul_util_crit = camb_ul_util[0][2], camb_ul_util[0][3]
-        elif S5:
-            camb_ul_util_war, camb_ul_util_crit = S5[0][1], S5[0][2]
-        else:
-            camb_ul_util_war, camb_ul_util_crit = 80, 90
+    #    wimax_pmp2_ul_check_list.append((('wimax_pmp2_ul_util_kpi', str(entry[0]), \
+    #            {'site': str(entry[1]), 'war': wimax_pmp2_ul_util_war, 'crit': wimax_pmp2_ul_util_crit}), [], [str(entry[0])]))
+    #    wimax_pmp2_dl_check_list.append((('wimax_pmp2_dl_util_kpi', str(entry[0]), \
+    #            {'site': str(entry[1]), 'war': wimax_pmp2_dl_util_war, 'crit': wimax_pmp2_dl_util_crit}), [], [str(entry[0])]))
+    #for entry in devices.cambium_bs_devices:
+    #    # Find device specific entry
+    #    camb_ul_util = filter(lambda x: entry[0] == x[0] and 'cambium_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
+    #    camb_dl_util = filter(lambda x: entry[0] == x[0] and 'cambium_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
+    #    if camb_ul_util:
+    #        camb_ul_util_war, camb_ul_util_crit = camb_ul_util[0][2], camb_ul_util[0][3]
+    #    elif S5:
+    #        camb_ul_util_war, camb_ul_util_crit = S5[0][1], S5[0][2]
+    #    else:
+    #        camb_ul_util_war, camb_ul_util_crit = 80, 90
 
-        if camb_dl_util:
-            camb_dl_util_war, camb_dl_util_crit = camb_dl_util[0][2], camb_dl_util[0][3]
-        elif S6:
-            camb_dl_util_war, camb_dl_util_crit = S6[0][1], S6[0][2]
-        else:
-            camb_dl_util_war, camb_dl_util_crit = 80, 90
+    #    if camb_dl_util:
+    #        camb_dl_util_war, camb_dl_util_crit = camb_dl_util[0][2], camb_dl_util[0][3]
+    #    elif S6:
+    #        camb_dl_util_war, camb_dl_util_crit = S6[0][1], S6[0][2]
+    #    else:
+    #        camb_dl_util_war, camb_dl_util_crit = 80, 90
 
-        cambium_ul_check_list.append((('cambium_ul_util_kpi', str(entry[0]), \
-                {'site': str(entry[1]), 'war': camb_ul_util_war, 'crit': camb_ul_util_crit}), [], [str(entry[0])]))
-        cambium_dl_check_list.append((('cambium_dl_util_kpi', str(entry[0]), \
-                {'site': str(entry[1]), 'war': camb_dl_util_war, 'crit': camb_dl_util_crit}), [], [str(entry[0])]))
-    for entry in radwin_list:
-        # Find device specific entry
-        rad_ul_util = filter(lambda x: entry[0][0] == x[0] and 'radwin_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
-        rad_dl_util = filter(lambda x: entry[0][0] == x[0] and 'radwin_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
-        if rad_ul_util:
-            rad_ul_util_war, rad_ul_util_crit = rad_ul_util[0][2], rad_ul_util[0][3]
-        elif S7:
-            rad_ul_util_war, rad_ul_util_crit = S7[0][1], S7[0][2]
-        else:
-            rad_ul_util_war, rad_ul_util_crit = 80, 90
+    #    cambium_ul_check_list.append((('cambium_ul_util_kpi', str(entry[0]), \
+    #            {'site': str(entry[1]), 'war': camb_ul_util_war, 'crit': camb_ul_util_crit}), [], [str(entry[0])]))
+    #    cambium_dl_check_list.append((('cambium_dl_util_kpi', str(entry[0]), \
+    #            {'site': str(entry[1]), 'war': camb_dl_util_war, 'crit': camb_dl_util_crit}), [], [str(entry[0])]))
+    #for entry in devices.total_radwin_devices:
+    #    # Find device specific entry
+    #    rad_ul_util = filter(lambda x: entry[0][0] == x[0] and 'radwin_ul_util_kpi' == x[1], active_checks_thresholds_per_device)
+    #    rad_dl_util = filter(lambda x: entry[0][0] == x[0] and 'radwin_dl_util_kpi' == x[1], active_checks_thresholds_per_device)
+    #    if rad_ul_util:
+    #        rad_ul_util_war, rad_ul_util_crit = rad_ul_util[0][2], rad_ul_util[0][3]
+    #    elif S7:
+    #        rad_ul_util_war, rad_ul_util_crit = S7[0][1], S7[0][2]
+    #    else:
+    #        rad_ul_util_war, rad_ul_util_crit = 80, 90
 
-        if rad_dl_util:
-            rad_dl_util_war, rad_dl_util_crit = rad_dl_util[0][2], rad_dl_util[0][3]
-        elif S8:
-            rad_dl_util_war, rad_dl_util_crit = S8[0][1], S8[0][2]
-        else:
-            rad_dl_util_war, rad_dl_util_crit = 80, 90
+    #    if rad_dl_util:
+    #        rad_dl_util_war, rad_dl_util_crit = rad_dl_util[0][2], rad_dl_util[0][3]
+    #    elif S8:
+    #        rad_dl_util_war, rad_dl_util_crit = S8[0][1], S8[0][2]
+    #    else:
+    #        rad_dl_util_war, rad_dl_util_crit = 80, 90
 
-        radwin_ul_check_list.append((('radwin_ul_util_kpi', str(entry[0][0]), \
-                {'site': str(entry[0][1]), 'war': rad_ul_util_war, 'crit': rad_ul_util_crit}), [], [str(entry[0][0])]))
+    #    radwin_ul_check_list.append((('radwin_ul_util_kpi', str(entry[0][0]), \
+    #            {'site': str(entry[0][1]), 'war': rad_ul_util_war, 'crit': rad_ul_util_crit}), [], [str(entry[0][0])]))
 
-        radwin_dl_check_list.append((('radwin_dl_util_kpi', str(entry[0][0]), \
-                {'site': str(entry[0][1]), 'war': rad_dl_util_war, 'crit': rad_dl_util_crit}), [], [str(entry[0][0])]))
+    #    radwin_dl_check_list.append((('radwin_dl_util_kpi', str(entry[0][0]), \
+    #            {'site': str(entry[0][1]), 'war': rad_dl_util_war, 'crit': rad_dl_util_crit}), [], [str(entry[0][0])]))
 
-        radwin_static_check_list.append((('radwin_util_static', str(entry[0][0]), \
-                {'site': str(entry[0][1]), 'war': entry[1], 'crit': entry[1]}), [], [str(entry[0][0])]))
+    #    radwin_static_check_list.append((('radwin_util_static', str(entry[0][0]), \
+    #            {'site': str(entry[0][1]), 'war': entry[1], 'crit': entry[1]}), [], [str(entry[0][0])]))
+
+    #T.wimax_pmp1_ul_check_list, T.wimax_pmp1_dl_check_list = wimax_pmp1_ul_check_list, wimax_pmp1_dl_check_list
+    #T.wimax_pmp2_ul_check_list, T.wimax_pmp2_dl_check_list = wimax_pmp2_ul_check_list, wimax_pmp2_dl_check_list
+    #T.cambium_ul_check_list, T.cambium_dl_check_list = cambium_ul_check_list, cambium_dl_check_list
+    #T.radwin_ul_check_list, T.radwin_dl_check_list = radwin_ul_check_list, radwin_dl_check_list
+    #T.radwin_static_check_list = radwin_static_check_list
     
-    return wimax_pmp1_ul_check_list, wimax_pmp1_dl_check_list,wimax_pmp2_ul_check_list, \
-            wimax_pmp2_dl_check_list, cambium_ul_check_list, cambium_dl_check_list,\
-            radwin_ul_check_list, radwin_dl_check_list, radwin_static_check_list
+    return check_dict
 
 
 def dict_rows(cur):
@@ -739,44 +849,62 @@ def dict_rows(cur):
     ]
 
 
-def write_rules_file(ping_levels_db, default_checks, snmp_ports_db, 
-        snmp_communities_db, wimax_pmp1_ul_active_checks, wimax_pmp1_dl_active_checks ,
-        wimax_pmp2_ul_active_checks, wimax_pmp2_dl_active_checks, cambium_ul_active_checks, cambium_dl_active_checks,
-        radwin_ul_active_checks, radwin_dl_active_checks, radwin_static_checks):
+def write_rules_file(settings_out, final_active_checks):
     global default_snmp_ports
     global default_snmp_communities
-    if len(snmp_communities_db):
-        default_snmp_communities = snmp_communities_db
-    if len(snmp_ports_db):
-        default_snmp_ports = snmp_ports_db
+    if len(settings_out.snmp_communities_db):
+        default_snmp_communities = settings_out.snmp_communities_db
+    if len(settings_out.snmp_ports_db):
+        default_snmp_ports = settings_out.snmp_ports_db
     with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/rules.mk', 'w') as f:
         f.write("# encoding: utf-8")
         f.write("\n\n\n")
         f.write("bulkwalk_hosts += %s" % pformat(bulkwalk_hosts))
         f.write("\n\n\n")
-        f.write("ping_levels += %s" % pformat(ping_levels_db))
+        f.write("ping_levels += %s" % pformat(settings_out.ping_levels_db))
         f.write("\n\n\n")
-        f.write("active_checks.setdefault('wimax_pmp1_ul_util_kpi', [])\n")
-        f.write("active_checks.setdefault('wimax_pmp1_dl_util_kpi', [])\n")
-        f.write("active_checks.setdefault('wimax_pmp2_ul_util_kpi', [])\n")
-        f.write("active_checks.setdefault('wimax_pmp2_dl_util_kpi', [])\n")
-        f.write("active_checks.setdefault('cambium_ul_util_kpi', [])\n\n")
-        f.write("active_checks.setdefault('cambium_dl_util_kpi', [])\n\n")
-        f.write("active_checks.setdefault('radwin_ul_util_kpi', [])\n\n")
-        f.write("active_checks.setdefault('radwin_dl_util_kpi', [])\n\n")
-        f.write("active_checks.setdefault('radwin_util_static', [])\n\n")
 
-        f.write("active_checks['wimax_pmp1_ul_util_kpi'] += %s\n\n" % pformat(wimax_pmp1_ul_active_checks))
-        f.write("active_checks['wimax_pmp1_dl_util_kpi'] += %s\n\n" % pformat(wimax_pmp1_dl_active_checks))
-        f.write("active_checks['wimax_pmp2_ul_util_kpi'] += %s\n\n" % pformat(wimax_pmp2_ul_active_checks))
-        f.write("active_checks['wimax_pmp2_dl_util_kpi'] += %s\n\n" % pformat(wimax_pmp2_dl_active_checks))
-        f.write("active_checks['cambium_ul_util_kpi'] += %s\n\n" % pformat(cambium_ul_active_checks))
-        f.write("active_checks['cambium_dl_util_kpi'] += %s\n\n" % pformat(cambium_dl_active_checks))
-        f.write("active_checks['radwin_ul_util_kpi'] += %s\n\n" % pformat(radwin_ul_active_checks))
-        f.write("active_checks['radwin_dl_util_kpi'] += %s\n\n" % pformat(radwin_dl_active_checks))
-        f.write("active_checks['radwin_util_static'] += %s\n\n" % pformat(radwin_static_checks))
+        #f.write("active_checks.setdefault('wimax_pmp1_ul_util_kpi', [])\n")
+        #f.write("active_checks.setdefault('wimax_pmp1_dl_util_kpi', [])\n")
+        #f.write("active_checks.setdefault('wimax_pmp2_ul_util_kpi', [])\n")
+        #f.write("active_checks.setdefault('wimax_pmp2_dl_util_kpi', [])\n")
+        #f.write("active_checks.setdefault('cambium_ul_util_kpi', [])\n")
+        #f.write("active_checks.setdefault('cambium_dl_util_kpi', [])\n")
+        #f.write("active_checks.setdefault('radwin_ul_util_kpi', [])\n")
+        #f.write("active_checks.setdefault('radwin_dl_util_kpi', [])\n")
+        #f.write("active_checks.setdefault('radwin_util_static', [])\n")
 
-        f.write("checks += %s" % pformat(default_checks))
+        #f.write("active_checks['wimax_pmp1_ul_util_kpi'] += %s\n\n" % pformat(ac_chks1.wimax_pmp1_ul_check_list))
+        #f.write("active_checks['wimax_pmp1_dl_util_kpi'] += %s\n\n" % pformat(ac_chks1.wimax_pmp1_dl_check_list))
+        #f.write("active_checks['wimax_pmp2_ul_util_kpi'] += %s\n\n" % pformat(ac_chks1.wimax_pmp2_ul_check_list))
+        #f.write("active_checks['wimax_pmp2_dl_util_kpi'] += %s\n\n" % pformat(ac_chks1.wimax_pmp2_dl_check_list))
+        #f.write("active_checks['cambium_ul_util_kpi'] += %s\n\n" % pformat(ac_chks1.cambium_ul_check_list))
+        #f.write("active_checks['cambium_dl_util_kpi'] += %s\n\n" % pformat(ac_chks1.cambium_dl_check_list))
+        #f.write("active_checks['radwin_ul_util_kpi'] += %s\n\n" % pformat(ac_chks1.radwin_ul_check_list))
+        #f.write("active_checks['radwin_dl_util_kpi'] += %s\n\n" % pformat(ac_chks1.radwin_dl_check_list))
+        #f.write("active_checks['radwin_util_static'] += %s\n\n" % pformat(ac_chks1.radwin_static_check_list))
+
+        #for check_name in ac_chks1._fields:
+        #    f.write("active_checks.setdefault('" + check_name + "', [])\n")
+        #for check_name in ac_chks1._fields:
+        #    if isinstance(getattr(ac_chks1, check_name), list):
+        #        f.write("active_checks['" + check_name + "'] += %s\n\n" % pformat(list(getattr(ac_chks1, check_name))))
+
+        f.write("\n")
+        #for check_name in ac_chks2._fields:
+        #    f.write("active_checks.setdefault('" + check_name + "', [])\n")
+        #f.write("\n")
+        #for check_name in ac_chks2._fields:
+        #    if isinstance(getattr(ac_chks2, check_name), list):
+        #        f.write("active_checks['" + check_name + "'] += %s\n\n" % pformat(list(getattr(ac_chks2, check_name))))
+
+        for service in final_active_checks.keys():
+            f.write("active_checks.setdefault('" + service + "', [])\n")
+
+        for service, check_list in final_active_checks.iteritems():
+            f.write("active_checks['" + service + "'] += %s\n\n" % pformat(check_list))
+
+        f.write("checks += %s" % pformat(settings_out.default_checks))
         f.write("\n\n\n")
         f.write("snmp_ports += %s" % pformat(default_snmp_ports))
         f.write("\n\n\n")
@@ -791,12 +919,11 @@ def write_rules_file(ping_levels_db, default_checks, snmp_ports_db,
 
 
 def main():
-    wimax_bs_devices, cambium_bs_devices, radwin_bs_devices, radwin_ss_devices = prepare_hosts_file()
-    print "wimax_bs_devices, cambium_bs_devices", "radwin_bs_devices", "radwin_ss_devices"
-    print len(wimax_bs_devices), len(cambium_bs_devices), len(radwin_bs_devices), len(radwin_ss_devices)
-    radwin_devices = radwin_bs_devices + radwin_ss_devices
-    prepare_rules(wimax_bs_devices=wimax_bs_devices, cambium_bs_devices=cambium_bs_devices,
-            radwin_devices=radwin_devices)
+    hosts_out = prepare_hosts_file()
+    print "wimax_bs_devices, wimax_ss_devices, cambium_bs_devices", "radwin_bs_devices", "radwin_ss_devices"
+    print len(hosts_out.wimax_bs_devices), len(hosts_out.wimax_ss_devices), len(hosts_out.cambium_bs_devices), \
+            len(hosts_out.radwin_bs_devices), len(hosts_out.radwin_ss_devices)
+    prepare_rules(hosts_out)
 
 
 if __name__ == '__main__':
