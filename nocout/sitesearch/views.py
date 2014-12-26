@@ -662,6 +662,12 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                                             'value': format_value(circuit['SS_CABLE_LENGTH'])
                                         },
                                         {
+                                            'name': 'customer_alias',
+                                            'title': 'Customer Name',
+                                            'show': 1,
+                                            'value': format_value(circuit['CUST'])
+                                        },
+                                        {
                                             'name': 'customer_address',
                                             'title': 'Customer Address',
                                             'show': 1,

@@ -1,17 +1,12 @@
 import datetime
 
-#Used for JsonDatetime Encoding #example# ::json.dumps( json_object, default=date_handler )
-from django.contrib.auth.models import User
-from device.models import Device
-from device_group.models import DeviceGroup
-from organization.models import Organization
-from user_group.models import UserGroup
-from user_profile.models import UserProfile
-from random import randint, uniform
+from random import randint
 
 from django.db import connections
 
-date_handler = lambda obj: obj.strftime('%Y-%m-%d %H:%M:%S') if isinstance(obj, datetime.datetime) else None
+from nocout.settings import DATE_TIME_FORMAT
+
+date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
 #for managing the slave-master connections
 from django.conf import settings
@@ -20,7 +15,7 @@ import socket
 
 #https://github.com/benjamin-croker/loggy/blob/master/loggy.py
 import inspect
-import functools
+# import functools
 # def log(fn):
 #     @functools.wraps(fn)
 #     def decorated(*args, **kwargs):
@@ -259,6 +254,10 @@ def format_value(format_this, type_of=None):
                 return "static/img/icons/mobilephonetower10.png"
         elif type_of == 'mac':
             return format_this.upper() if format_this else 'NA'
+        elif type_of == 'date':
+            return str(format_this)
+        elif type_of == 'epoch':
+            return date_handler(format_this)
     except:
         return 'NA'
     return 'NA'
