@@ -13,23 +13,27 @@ def service_data_sources():
 
     :return: dictionary of data sources
     """
-    ds = ServiceDataSource.objects.all()
+    required_columns = ['name', 'alias', 'chart_type', 'valuesuffix', 'valuetext', 'show_min', 'show_max', 'formula', 'data_source_type', 'warning', 'critical', 'chart_color']
+    ds = ServiceDataSource.objects.all().values(*required_columns)
     SDS = SERVICE_DATA_SOURCE
     for sds in ds:
-        sds_name = sds.name.strip().lower()
-        sds_alias = sds.alias.strip().title()
-        if sds_name in SDS:
-            SDS[sds_name]["display_name"] = sds_alias
-
-        else:
-            ds_to_append = {
-                "display_name": sds_alias,
-                "type": "table",
-                "valuesuffix": " ",
-                "valuetext": "",
-                "formula": None,
-                "show_min": False,
-                "show_max": False
-            }
-            SDS.update({sds_name: ds_to_append})
+        formula = None
+        if sds['formula'] and len(sds['formula'].strip()):
+            formula = sds['formula']
+        sds_name = sds['name'].strip().lower()
+        sds_alias = sds['alias']
+        ds_to_append = {
+            'display_name': sds_alias,
+            'type': sds['chart_type'],
+            'valuesuffix': sds['valuesuffix'],
+            'valuetext': sds['valuetext'],
+            'formula': formula,
+            'show_min': sds['show_min'],
+            'show_max': sds['show_max'],
+            'data_source_type': 'String' if sds['data_source_type'] else 'Numeric',
+            'warning': sds['warning'],
+            'critical': sds['critical'],
+            'chart_color': sds['chart_color']
+        }
+        SDS.update({sds_name: ds_to_append})
     return SDS
