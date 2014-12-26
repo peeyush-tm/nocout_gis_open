@@ -9,6 +9,7 @@ from django.views.generic.edit import DeleteView
 from models import ProcessedReportDetails, ReportSettings
 from django.db.models import Q
 from django.conf import settings
+from nocout.utils.util import convert_utc_to_local_timezone
 
 import os
 import logging
@@ -137,6 +138,19 @@ class DownloadCenterListing(BaseDatatableView):
                 report_path = report_link
             except Exception as e:
                 logger.info(e.message)
+
+            # 'created on' field timezone conversion from 'utc' to 'local'
+            try:
+                dct['created_on'] = convert_utc_to_local_timezone(dct['created_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            #  field timezone conversion from 'utc' to 'local'
+            try:
+                dct['report_date'] = convert_utc_to_local_timezone(dct['report_date'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
             dct.update(
                 path='<a href="{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
                     report_path, excel_green))
