@@ -145,7 +145,7 @@ class DownloadCenterListing(BaseDatatableView):
             except Exception as e:
                 logger.error("Timezone conversion not possible. Exception: ", e.message)
 
-            #  field timezone conversion from 'utc' to 'local'
+            # 'report date' field timezone conversion from 'utc' to 'local'
             try:
                 dct['report_date'] = convert_utc_to_local_timezone(dct['report_date'])
             except Exception as e:
