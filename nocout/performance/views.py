@@ -991,7 +991,7 @@ class Inventory_Device_Service_Data_Source(View):
 
                 elif '_invent' in service_name:
                     result['data']['objects']['inventory_status_tab']["info"].append(sds_info)
-                elif '_bgp' in service_name or 'topology' in service_name:
+                elif 'topology' in service_name:
                     continue
                 else:
                     result['data']['objects']['service_perf_tab']["info"].append(sds_info)
