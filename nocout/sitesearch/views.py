@@ -707,11 +707,17 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                                             'value': format_value(circuit['RSSI'])
                                         },
                                         {
-                                            'name': 'planned_frequency',
+                                            'name': 'frequency',
                                             'title': 'Planned Frequency',
                                             'show': 1,
-                                            'value': frequency
-                                        }
+                                            'value': format_value(format_this=circuit['SECTOR_PLANNED_FREQUENCY']),
+                                        },
+                                        {
+                                            'name': 'planned_frequency',
+                                            'title': 'Frequency',
+                                            'show': 1,
+                                            'value': format_value(format_this=frequency),
+                                        },
                                     ]
                                 }
                             }
