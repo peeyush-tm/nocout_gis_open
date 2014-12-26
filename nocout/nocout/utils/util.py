@@ -988,7 +988,7 @@ def convert_utc_to_local_timezone(datetime_obj=None):
     # get 'local' timezone
     to_zone = tz.tzlocal()
 
-    # datetime objects
+    # output timestamp
     output = datetime_obj
 
     if output:

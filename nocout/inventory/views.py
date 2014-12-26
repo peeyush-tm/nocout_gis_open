@@ -2914,6 +2914,18 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
             except Exception as e:
                 logger.info(e)
 
+            # added on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            # modified on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['modified_on'] = convert_utc_to_local_timezone(dct['modified_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
             dct.update(actions='<a href="/bulk_import/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                                 <a href="/bulk_import/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
             try:
