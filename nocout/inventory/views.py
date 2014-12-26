@@ -31,14 +31,14 @@ from django.contrib.staticfiles.templatetags.staticfiles import static
 
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
+from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_TIME_FORMAT
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
 from nocout.mixins.select2 import Select2Mixin
 from nocout.utils import logged_in_user_organizations
-from nocout.utils.util import DictDiffer, cache_for, cache_get_key
+from nocout.utils.util import DictDiffer, cache_for, cache_get_key, convert_utc_to_local_timezone
 
 from organization.models import Organization
 from user_profile.models import UserProfile
@@ -3383,6 +3383,18 @@ class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQueryS
 
             except Exception as e:
                 logger.info(e)
+
+            # added on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            # modified on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['modified_on'] = convert_utc_to_local_timezone(dct['modified_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
 
             dct.update(actions='<a href="/gis_downloaded_inventories/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                                 <a href="/gis_downloaded_inventories/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
