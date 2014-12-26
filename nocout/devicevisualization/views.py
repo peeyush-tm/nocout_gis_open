@@ -2732,16 +2732,23 @@ class GISPerfData(View):
         substation_info = dict()
 
         far_end_perf_url = ""
+        far_end_inventory_url = ""
         
         # Check for technology to make perf page url
         if device_technology.name:
-            if device_technology.name.lower() in ['pmp','wimax']:
+            if device_technology.name.lower() in ['pmp', 'wimax', 'ptp', 'p2p']:
                 far_end_perf_url = '/performance/customer_live/'+str(ss_device_id)+'/'
+            elif techno_to_append.lower() in ['ptp bh']:
+                far_end_perf_url = '/performance/network_live/'+str(ss_device_id)+'/'
+
+        # SS Device Inventory URL
+        far_end_inventory_url = '/device/'+str(ss_device_id)+'/'
 
         substation_info['antenna_height'] = substation.antenna.height
         substation_info['lat'] = substation.latitude
         substation_info['lon'] = substation.longitude
         substation_info['perf_page_url'] = far_end_perf_url
+        substation_info['inventory_url'] = far_end_inventory_url
         substation_info['technology'] = device_technology.name
         substation_info['link_color'] = device_link_color
         substation_info['show_link'] = 1
