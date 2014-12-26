@@ -8,12 +8,13 @@ var mapInstance = "",
 	drawingManager = "",
 	masterClusterInstance = "",
 	base_url = "",
-	defaultIconSize= 'medium',
+	defaultIconSize = 'medium',
 	state_lat_lon_db = [],
 	counter_div_style = "",
 	green_status_array = ['ok','success','up'],
     red_status_array = ['critical','down'],
-    orange_status_array = ['warning'];
+    orange_status_array = ['warning'],
+    ptp_tech_list = ['ptp','p2p','ptp bh'];
 
 /*Lazy loading API calling variables*/
 var hitCounter = 1,
@@ -1910,8 +1911,8 @@ function devicePlottingClass_gmap() {
 				}
 
 				var startEndObj = {};
-
-				if(sector_tech != "ptp" && sector_tech != "p2p") {
+				// if(sector_tech != "ptp" && sector_tech != "p2p") {
+				if(ptp_tech_list.indexOf(sector_tech)  == -1) {
 					// if(zoom_level > 9) {
 						/*Call createSectorData function to get the points array to plot the sector on google maps.*/
 						gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
@@ -1953,7 +1954,7 @@ function devicePlottingClass_gmap() {
 					startEndObj["sectorLon"] = bs_ss_devices[i].data.lon;
 				}
 
-				if(sector_tech == "ptp" || sector_tech == "p2p") {
+				if(ptp_tech_list.indexOf(sector_tech) > -1) {
 
 					if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
 						var sector_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+sector_array[j].markerUrl,"other");
@@ -2068,7 +2069,7 @@ function devicePlottingClass_gmap() {
 						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "";
 
 					// Set the ckt id to sector marker object (only in case of PTP)
-					if(sector_tech == "ptp" || sector_tech == "p2p") {
+					if(ptp_tech_list.indexOf(sector_tech) > -1) {
 						sector_Marker.setOptions({
 							"cktId" : ckt_id_val
 						});
@@ -2214,7 +2215,7 @@ function devicePlottingClass_gmap() {
 	    			// base_info["info"] = bs_ss_devices[i].data.param.base_station;
 	    			// base_info["antenna_height"] = bs_ss_devices[i].data.antenna_height;
 	    			// if(zoom_level > 9) {
-		    			// if(ss_marker_obj.data.show_link == 1) {
+		    			if(ss_marker_obj.data.show_link == 1) {
 		    				/*Create the link between BS & SS or Sector & SS*/
 					    	var ss_link_line = gmap_self.createLink_gmaps(
 					    		startEndObj,
@@ -2234,7 +2235,7 @@ function devicePlottingClass_gmap() {
 					    	allMarkersObject_gmap['path']['line_'+ss_marker_obj.name] = ss_link_line;
 
 					    	// allMarkersArray_gmap.push(ss_link_line);
-		    			// }
+		    			}
 	    			// }
 				}
     		}
@@ -3020,7 +3021,7 @@ function devicePlottingClass_gmap() {
 				if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
 					isBSLeft = 1;
 				}
-				
+
 				var sect_alias = gisPerformanceClass.getKeyValue(contentObject.bs_info,"alias",true),
 					ss_custName = gisPerformanceClass.getKeyValue(contentObject.ss_info,"customer_name",true),
 					// circuit_id = gisPerformanceClass.getKeyValue(contentObject.ss_info,"cktid",true),
@@ -5332,12 +5333,14 @@ function devicePlottingClass_gmap() {
 							var selected_polling_technology = $("#polling_tech option:selected").text();
 
 							for(var k=allSS.length;k--;) {
-								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
+								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon),
+									point_tech = allSS[k].technology ? $.trim(allSS[k].technology.toLowerCase()) : "";
+
 								if(point) {
 									if(google.maps.geometry.poly.containsLocation(point, polygon)) {
 										if(allSS[k].technology) {
 											if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-												if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
+												if(ptp_tech_list.indexOf(point_tech) > -1) {
 													if(allSSIds.indexOf(allSS[k].device_name) < 0) {
 														if(allSS[k].pointType == 'sub_station') {
 															if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
@@ -5418,7 +5421,7 @@ function devicePlottingClass_gmap() {
 
 									var devices_counter = "";
 									
-									if($.trim(polygonSelectedDevices[i].technology.toLowerCase()) == "ptp" || $.trim(polygonSelectedDevices[i].technology.toLowerCase()) == "p2p") {
+									if(ptp_tech_list.indexOf(current_technology) > -1) {
 										if(polygonSelectedDevices[i].pointType == 'sub_station') {
 											devices_counter = polygonSelectedDevices[i].bs_sector_device;
 										} else {
@@ -5432,7 +5435,8 @@ function devicePlottingClass_gmap() {
 										}
 									}
 
-									if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i].pointType == 'sub_station') {
+									if((ptp_tech_list.indexOf(current_technology) > -1) && polygonSelectedDevices[i].pointType == 'sub_station') {
+									// if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i].pointType == 'sub_station') {
 
 										if(polygonSelectedDevices[i].bs_sector_device.indexOf(".") != -1) {
 											var new_device_name2 = polygonSelectedDevices[i].bs_sector_device.split(".");
@@ -5460,7 +5464,7 @@ function devicePlottingClass_gmap() {
 										var device_end_txt = "",
 											point_name = "";
 
-										if($.trim(polygonSelectedDevices[i].technology.toLowerCase()) == "ptp" || $.trim(polygonSelectedDevices[i].technology.toLowerCase()) == "p2p") {
+										if(ptp_tech_list.indexOf(current_technology) > -1) {
 	                                        if(polled_device_count[devices_counter] <= 1) {
 												if(polygonSelectedDevices[i].pointType == 'sub_station') {
 													device_end_txt = "Far End";
