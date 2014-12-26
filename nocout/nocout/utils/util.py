@@ -1,4 +1,5 @@
 import datetime
+from dateutil import tz
 
 #Used for JsonDatetime Encoding #example# ::json.dumps( json_object, default=date_handler )
 from django.contrib.auth.models import User
@@ -10,6 +11,7 @@ from user_profile.models import UserProfile
 from random import randint, uniform
 
 from django.db import connections
+from nocout.settings import DATE_TIME_FORMAT
 
 date_handler = lambda obj: obj.strftime('%Y-%m-%d %H:%M:%S') if isinstance(obj, datetime.datetime) else None
 
@@ -920,3 +922,39 @@ on
         ;
         '''.format(added_device)
     return gis
+
+
+def convert_utc_to_local_timezone(datetime_obj=None):
+    """ Convert datetime object timezone from 'utc' to 'local'
+
+        Parameters:
+            - datetime_obj ('datetime.datetime') - timestamp as datetime object for e.g. 2014-12-25 12:26:00+00:00
+
+        Returns:
+           - output (str) - output as a timestamp string for e.g. 12/25/14 (Dec) 17:56:03 (05:56 PM)
+
+    """
+
+    # get 'utc' timezone
+    from_zone = tz.tzutc()
+
+    # get 'local' timezone
+    to_zone = tz.tzlocal()
+
+    # datetime objects
+    output = datetime_obj
+
+    if output:
+        try:
+            # modify timezone info in datetime object to 'utc'
+            output = output.replace(tzinfo=from_zone)
+
+            # convert timezone from 'utc' to 'local'
+            output = output.astimezone(to_zone)
+
+            # format datetime string
+            output = output.strftime(DATE_TIME_FORMAT)
+        except Exception as e:
+            log.error("Timezone conversion not possible. Exception: ", e.message)
+
+    return output
