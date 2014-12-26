@@ -22,7 +22,8 @@ urlpatterns = patterns('',
                            views.Sector_Dashboard.as_view()
                        ),
                        url(r'^get_inventory_devices/(?P<page_type>\w+)$',
-                           cache_page(60 * 60)(views.Fetch_Inventory_Devices.as_view())
+                           cache_page(60 * 60)(views.Fetch_Inventory_Devices.as_view()),
+                           name='GetInventoryDevices'
                        ),
                        url(r'^get_inventory_device_status/(?P<page_type>\w+)/device/(?P<device_id>\d+)/$',
                            cache_page(60 * 60)(views.Inventory_Device_Status.as_view())

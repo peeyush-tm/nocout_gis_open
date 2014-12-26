@@ -1,24 +1,38 @@
 import datetime
 from dateutil import tz
 
-#Used for JsonDatetime Encoding #example# ::json.dumps( json_object, default=date_handler )
-from django.contrib.auth.models import User
-from device.models import Device
-from device_group.models import DeviceGroup
-from organization.models import Organization
-from user_group.models import UserGroup
-from user_profile.models import UserProfile
-from random import randint, uniform
+from random import randint
 
 from django.db import connections
 from nocout.settings import DATE_TIME_FORMAT
 
-date_handler = lambda obj: obj.strftime('%Y-%m-%d %H:%M:%S') if isinstance(obj, datetime.datetime) else None
+from nocout.settings import DATE_TIME_FORMAT
+
+date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
 #for managing the slave-master connections
 from django.conf import settings
 import socket
 #http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+
+#https://github.com/benjamin-croker/loggy/blob/master/loggy.py
+import inspect
+# import functools
+# def log(fn):
+#     @functools.wraps(fn)
+#     def decorated(*args, **kwargs):
+#         # get the names of all the args
+#         arguments = inspect.getcallargs(fn, *args, **kwargs)
+#
+#         logging.debug("function '{}' called by '{}' with arguments:\n{}".format(
+#                       fn.__name__,
+#                       inspect.stack()[1][3],
+#                       arguments))
+#         result = fn(*args, **kwargs)
+#         logging.debug("result: {}\n".format(result))
+#
+#     return decorated
+#https://github.com/benjamin-croker/loggy/blob/master/loggy.py
 
 #logging the performance of function
 import logging
@@ -66,6 +80,17 @@ def time_it(debug=getattr(settings, 'PROFILE')):
                 if debug:
                     log.debug("+++"*40)
                     log.debug("START     \t\t\t: { " + fn.__name__ + " } : ")
+                    try:
+                        #check the module calling the function
+                        log.debug("          \t\t\t: function '{}' called by '{}' : '{}'".format(
+                                      fn.__name__,
+                                      inspect.stack()[1][3],
+                                      inspect.stack()[1][1],
+                                      )
+                        )
+                    except:
+                        pass
+                    #check the module calling the function
                     profile_type = getattr(settings, 'PROFILE_TYPE')
                     if profile_type == 'line':
                         profiler = LLP()
@@ -231,6 +256,10 @@ def format_value(format_this, type_of=None):
                 return "static/img/icons/mobilephonetower10.png"
         elif type_of == 'mac':
             return format_this.upper() if format_this else 'NA'
+        elif type_of == 'date':
+            return str(format_this)
+        elif type_of == 'epoch':
+            return date_handler(format_this)
     except:
         return 'NA'
     return 'NA'
@@ -266,6 +295,18 @@ def cache_for(time):
             if not result:
                 if debug:
                     log.debug("FUNCTION CALL\t: START : { " + fn.__name__ + " } : ")
+                    #check the module calling the function
+                    try:
+                        #check the module calling the function
+                        log.debug("          \t\t\t: function '{}' called by '{}' : '{}'".format(
+                                      fn.__name__,
+                                      inspect.stack()[1][3],
+                                      inspect.stack()[1][1],
+                                      )
+                        )
+                    except:
+                        pass
+                    #check the module calling the function
                     profile_type = getattr(settings, 'PROFILE_TYPE')
                     if profile_type == 'line':
                         profiler = LLP()
@@ -337,6 +378,8 @@ def query_all_gis_inventory_improved(monitored_only=False):
                         basestation.gps_type as BSGPSTYPE,
                         basestation.building_height as BSBUILDINGHGT,
                         basestation.tower_height as BSTOWERHEIGHT,
+                        basestation.tag1 as BSTAG1,
+			            basestation.tag2 as BSTAG2,
 
                         city.city_name as BSCITY,
                         state.state_name as BSSTATE,
@@ -377,6 +420,7 @@ left join (
         sector.frame_length as SECTOR_FRAME_LENGTH,
         sector.cell_radius as SECTOR_CELL_RADIUS,
         sector.modulation as SECTOR_MODULATION,
+        sector.planned_frequency as SECTOR_PLANNED_FREQUENCY,
 
         technology.name as SECTOR_TECH,
         vendor.name as SECTOR_VENDOR,
@@ -643,6 +687,8 @@ def query_all_gis_inventory(monitored_only=False):
                         basestation.gps_type as BSGPSTYPE,
                         basestation.building_height as BSBUILDINGHGT,
                         basestation.tower_height as BSTOWERHEIGHT,
+                        basestation.tag1 as BSTAG1,
+			            basestation.tag2 as BSTAG2,
 
                         city.city_name as BSCITY,
                         state.state_name as BSSTATE,
@@ -682,6 +728,7 @@ left join (
         sector.frame_length as SECTOR_FRAME_LENGTH,
         sector.cell_radius as SECTOR_CELL_RADIUS,
         sector.modulation as SECTOR_MODULATION,
+        sector.planned_frequency as SECTOR_PLANNED_FREQUENCY,
 
         technology.name as SECTOR_TECH,
         vendor.name as SECTOR_VENDOR,

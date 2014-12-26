@@ -501,96 +501,6 @@ class Get_Perfomance(View):
         device_technology = DeviceTechnology.objects.get(id=device.device_technology).name
         realdevice = device
 
-        """
-            TODO START :- Replace below code by calling alert_center's 'SingleDeviceAlertDetails' class
-        """
-        start_date = self.request.GET.get('start_date', '')
-        end_date = self.request.GET.get('end_date', '')
-        isSet = False
-
-        date_format = "%d-%m-%Y %H:%M:%S"
-
-        if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
-            try:
-                start_date = float(start_date)
-                end_date = float(end_date)
-            except Exception, e:
-                start_date_object = datetime.datetime.strptime(start_date, date_format)
-                end_date_object = datetime.datetime.strptime(end_date, date_format)
-                start_date = format(start_date_object, 'U')
-                end_date = format(end_date_object, 'U')
-        else:
-            # The end date is the end limit we need to make query till.
-            end_date_object = datetime.datetime.now()
-            # The start date is the last monday of the week we need to calculate from.
-            start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
-            # Replacing the time, to start with the 00:00:00 of the last monday obtained.
-            start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
-            # Converting the date to epoch time or Unix Timestamp
-            end_date = format(end_date_object, 'U')
-            start_date = format(start_date_object, 'U')
-            isSet = True
-
-        sia_data_list = None
-        error_data_list = None
-
-        required_columns = ["device_name",
-                            "ip_address",
-                            "service_name",
-                            "data_source",
-                            "severity",
-                            "current_value",
-                            "sys_timestamp",
-                            "description"
-        ]
-
-        sia_query_set = EventService.objects. \
-            filter(device_name=device.device_name,
-                   sys_timestamp__gte=start_date,
-                   sys_timestamp__lte=end_date). \
-            order_by("-sys_timestamp"). \
-            values(*required_columns)
-            #.using(alias=device.machine.name)
-
-        sia_data_list = nocout_utils.nocout_query_results(query_set=sia_query_set, using=device.machine.name)
-        if sia_data_list:
-            for data in sia_data_list:
-                # data["alert_date"] = datetime.datetime. \
-                #     fromtimestamp(float(data["sys_timestamp"])). \
-                #     strftime("%d/%B/%Y")
-                # data["alert_time"] = datetime.datetime. \
-                #     fromtimestamp(float(data["sys_timestamp"])). \
-                #     strftime("%I:%M %p")
-                data["alert_date_time"] = datetime.datetime. \
-                    fromtimestamp(float(data["sys_timestamp"])). \
-                    strftime(DATE_TIME_FORMAT)
-
-                del (data["sys_timestamp"])
-
-        in_string = lambda x: "'" + str(x) + "'"
-        col_string = lambda x: "`" + str(x) + "`"
-        is_ping = True
-        # raw query is required here so as to get data
-        query = alert_utils.ping_service_query(device.device_name, start_date, end_date)
-        error_data_list = nocout_utils.fetch_raw_result(query, device.machine.name)
-        if error_data_list:
-            for data in error_data_list:
-                # data["alert_date"] = datetime.datetime. \
-                #     fromtimestamp(float(data["sys_timestamp"])). \
-                #     strftime("%d/%B/%Y")
-                # data["alert_time"] = datetime.datetime. \
-                #     fromtimestamp(float(data["sys_timestamp"])). \
-                #     strftime("%I:%M %p")
-                data["alert_date_time"] = datetime.datetime. \
-                    fromtimestamp(float(data["sys_timestamp"])). \
-                    strftime(DATE_TIME_FORMAT)
-
-                del (data["sys_timestamp"])
-
-        """
-            TODO END
-        """
-
         page_data = {
             'page_title': page_type.capitalize(),
             'device_technology': device_technology,
@@ -600,9 +510,7 @@ class Get_Perfomance(View):
             'get_status_url': 'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
             'get_services_url': 'performance/get_inventory_service_data_sources/device/' + str(
                 device_id),
-            'page_type': page_type,
-            'error_data': error_data_list,
-            'sia_data': sia_data_list
+            'page_type': page_type
         }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -1180,7 +1088,7 @@ class Get_Service_Status(View):
         # ).
         device_nms_uptime = nocout_utils.nocout_query_results(query_set=device_nms_uptime_query_set,
                                                               using=inventory_device_machine_name)
-        if len(device_nms_uptime):
+        if device_nms_uptime and len(device_nms_uptime):
             data = device_nms_uptime[0]
 
             age = datetime.datetime.fromtimestamp(float(data['age'])
@@ -1906,7 +1814,7 @@ class Get_Service_Type_Performance_Data(View):
                     # data_list.append([data.sys_timestamp, data.current_value ])
 
                     # data_list.append([data.sys_timestamp*1000, float(data.current_value) if data.current_value else 0])
-                    if data_source not in ["availability"]:
+                    if sds_name not in ["availability"]:
                         #only display warning if there exists a warning
                         if data.warning_threshold:
                             warn_data_list.append([js_time, float(data.warning_threshold)])
@@ -2112,7 +2020,7 @@ class Get_Service_Type_Performance_Data(View):
                     # data_list.append([data.sys_timestamp, data.current_value ])
 
                     # data_list.append([data.sys_timestamp*1000, float(data.current_value) if data.current_value else 0])
-                    if data_source not in ["availability"]:
+                    if sds_name not in ["availability"]:
                         #only display warning if there exists a warning
                         if data.warning_threshold:
                             warn_data_list.append([js_time, float(data.warning_threshold)])
