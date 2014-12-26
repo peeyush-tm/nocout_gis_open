@@ -2742,6 +2742,7 @@ class GISPerfData(View):
         substation_info['lat'] = substation.latitude
         substation_info['lon'] = substation.longitude
         substation_info['perf_page_url'] = far_end_perf_url
+        substation_info['technology'] = device_technology.name
         substation_info['link_color'] = device_link_color
         substation_info['param'] = dict()
         substation_info['param']['sub_station'] = self.get_device_info(substation_device,
