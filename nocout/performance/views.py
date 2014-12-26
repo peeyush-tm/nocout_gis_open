@@ -21,8 +21,6 @@ from performance.models import PerformanceService, PerformanceNetwork, \
     PerformanceStatus, PerformanceInventory, \
     Status, NetworkAvailabilityDaily, Topology, Utilization, UtilizationStatus
 
-from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
-
 from django.utils.dateformat import format
 
 from operator import itemgetter
@@ -33,8 +31,6 @@ from nocout.utils import util as nocout_utils
 from inventory.utils import util as inventory_utils
 
 from performance.utils import util as perf_utils
-
-from alert_center.utils import util as alert_utils
 
 from service.utils.util import service_data_sources
 
@@ -47,7 +43,6 @@ SERVICE_DATA_SOURCE = service_data_sources()
 import logging
 
 log = logging.getLogger(__name__)
-
 
 # def uptime_to_days(uptime=0):
 #     if uptime:
@@ -996,20 +991,7 @@ class Inventory_Device_Service_Data_Source(View):
                 else:
                     result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
-                if sds_name in SERVICE_DATA_SOURCE:
-                    SERVICE_DATA_SOURCE[sds_name]["display_name"] = service_data_source.alias.strip().title()
-                else:
-                    ds_to_append = {
-                        "display_name": service_data_source.alias.strip().title(),
-                        "type": "table",
-                        "valuesuffix": " ",
-                        "valuetext": "",
-                        "formula": None,
-                        "show_min": False,
-                        "show_max": False
-                    }
-                    SERVICE_DATA_SOURCE.update({sds_name: ds_to_append})
-
+                
         result['data']['objects']['availability_tab']["info"].append(
             {
                 'name': 'availability',
@@ -1118,7 +1100,7 @@ class Get_Service_Status(View):
         elif "rf" == service_name and "rf" == service_data_source_type:
             performance_data_query_set = None
 
-        elif service_name in ['topology', 'availability'] or service_data_source_type in ['availability', 'topology']:
+        elif service_name in ['util', 'topology', 'availability'] or service_data_source_type in ['util', 'availability', 'topology']:
             performance_data_query_set = None
 
         elif '_status' in service_name:
@@ -1811,9 +1793,12 @@ class Get_Service_Type_Performance_Data(View):
                             else str(data.data_source).upper()
 
                     result['data']['objects']['plot_type'] = 'charts'
-                    # data_list.append([data.sys_timestamp, data.current_value ])
 
-                    # data_list.append([data.sys_timestamp*1000, float(data.current_value) if data.current_value else 0])
+                    chart_color = \
+                        SERVICE_DATA_SOURCE[sds_name]["chart_color"] \
+                            if sds_name in SERVICE_DATA_SOURCE \
+                            else '#70AFC4'
+
                     if sds_name not in ["availability"]:
                         #only display warning if there exists a warning
                         if data.warning_threshold:
@@ -1832,12 +1817,12 @@ class Get_Service_Type_Performance_Data(View):
                             max_data_list.append([js_time, float(data.max_value)
                             if data.max_value else None])
 
-                        compare_point = lambda p1, p2, p3: '#70AFC4' \
+                        compare_point = lambda p1, p2, p3: chart_color \
                             if abs(p1) < abs(p2) \
                             else ('#FFE90D'
                                   if abs(p2) < abs(p1) < abs(p3)
                                   else ('#FF193B' if abs(p3) < abs(p1)
-                                        else "#70AFC4"
+                                        else chart_color
                         )
                         )
 
@@ -1846,12 +1831,13 @@ class Get_Service_Type_Performance_Data(View):
                             else None
 
                         if data.current_value:
+                            val = float(data.current_value) if data.current_value else 0
+                            warn_val = float(data.warning_threshold) if data.warning_threshold else val
+                            crit_val = float(data.critical_threshold) if data.critical_threshold else val
+
                             formatter_data_point = {
                                 "name": sds_display_name,
-                                "color": compare_point(float(data.current_value) if data.current_value else 0,
-                                                       float(data.warning_threshold) if data.warning_threshold else 0,
-                                                       float(data.critical_threshold) if data.critical_threshold else 0
-                                ),
+                                "color": compare_point(val, warn_val, crit_val),
                                 "y": eval(str(formula) + "(" + str(data.current_value) + ")")
                                 if formula
                                 else float(data.current_value),
@@ -1860,7 +1846,7 @@ class Get_Service_Type_Performance_Data(View):
                         else:
                             formatter_data_point = {
                                 "name": sds_display_name,
-                                "color": '#70AFC4',
+                                "color": chart_color,
                                 "y": None,
                                 "x": js_time
                             }
@@ -1994,6 +1980,7 @@ class Get_Service_Type_Performance_Data(View):
                     #time in javascript format
 
                     sds_name = str(data.data_source).strip().lower()
+
                     sds_display_name = \
                         SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                             if sds_name in SERVICE_DATA_SOURCE \
@@ -2017,9 +2004,12 @@ class Get_Service_Type_Performance_Data(View):
                             else str(data.data_source).upper()
 
                     self.result['data']['objects']['plot_type'] = 'charts'
-                    # data_list.append([data.sys_timestamp, data.current_value ])
 
-                    # data_list.append([data.sys_timestamp*1000, float(data.current_value) if data.current_value else 0])
+                    chart_color = \
+                        SERVICE_DATA_SOURCE[sds_name]["chart_color"] \
+                            if sds_name in SERVICE_DATA_SOURCE \
+                            else '#70AFC4'
+
                     if sds_name not in ["availability"]:
                         #only display warning if there exists a warning
                         if data.warning_threshold:
@@ -2038,12 +2028,12 @@ class Get_Service_Type_Performance_Data(View):
                             max_data_list.append([js_time, float(data.max_value)
                             if data.max_value else None])
 
-                        compare_point = lambda p1, p2, p3: '#70AFC4' \
+                        compare_point = lambda p1, p2, p3: chart_color \
                             if abs(p1) < abs(p2) \
                             else ('#FFE90D'
                                   if abs(p2) < abs(p1) < abs(p3)
                                   else ('#FF193B' if abs(p3) < abs(p1)
-                                        else "#70AFC4"
+                                        else chart_color
                         )
                         )
 
@@ -2052,12 +2042,13 @@ class Get_Service_Type_Performance_Data(View):
                             else None
 
                         if data.current_value:
+                            val = float(data.current_value) if data.current_value else 0
+                            warn_val = float(data.warning_threshold) if data.warning_threshold else val
+                            crit_val = float(data.critical_threshold) if data.critical_threshold else val
+
                             formatter_data_point = {
                                 "name": sds_display_name,
-                                "color": compare_point(float(data.current_value) if data.current_value else 0,
-                                                       float(data.warning_threshold) if data.warning_threshold else 0,
-                                                       float(data.critical_threshold) if data.critical_threshold else 0
-                                ),
+                                "color": compare_point(val, warn_val, crit_val),
                                 "y": eval(str(formula) + "(" + str(data.current_value) + ")")
                                 if formula
                                 else float(data.current_value),
@@ -2248,8 +2239,10 @@ class DeviceServiceDetail(View):
 
         for s in services:
             service_names.append(s['name'])
-            sds_names.append(s['servicespecificdatasource__service_data_sources__name'])
-            service_data_sources[s['name'], s['servicespecificdatasource__service_data_sources__name']] = \
+            temp_sds_name = s['servicespecificdatasource__service_data_sources__name']
+            temp_s_name = s['name']
+            sds_names.append(temp_sds_name)
+            service_data_sources[temp_s_name, temp_sds_name] = \
                 s['alias'] + "[ " + s['servicespecificdatasource__service_data_sources__alias'] + " ]"
 
         if dr_device:
@@ -2293,11 +2286,13 @@ class DeviceServiceDetail(View):
 
                 if dr_device and dr_device.ip_address == data.ip_address:
                     if (data.ip_address, data.service_name, data.data_source) not in temp_chart_data:
-                        color[data.ip_address, data.service_name, data.data_source] = perf_utils.color_picker()
+
                         temp_chart_data[data.ip_address, data.service_name, data.data_source] = {
                             'name': service_data_sources[data.service_name, data.data_source] + append_ip_address,
                             'data': [],
-                            'color': color[data.service_name, data.data_source],
+                            'color': SERVICE_DATA_SOURCE[
+                                        data.data_source.strip().lower()
+                                    ]['chart_color'],
                         }
                     js_time = data.sys_timestamp*1000
                     value = float(data.current_value)
@@ -2310,14 +2305,17 @@ class DeviceServiceDetail(View):
                         temp_chart_data[data.service_name, data.data_source] = {
                             'name': service_data_sources[data.service_name, data.data_source],
                             'data': [],
-                            'color': color[data.service_name, data.data_source],
+                            'color': SERVICE_DATA_SOURCE[
+                                        data.data_source.strip().lower()
+                                    ]['chart_color'],
                         }
                     js_time = data.sys_timestamp*1000
                     value = float(data.current_value)
                     temp_chart_data[data.service_name, data.data_source]['data'].append([
                         js_time, value,
                     ])
-            except:
+            except Exception as e:
+                log.exception(e.message)
                 continue
 
         for cd in temp_chart_data:

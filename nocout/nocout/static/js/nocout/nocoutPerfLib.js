@@ -415,7 +415,7 @@ function nocoutPerfLib() {
         if(updated_url.indexOf("/servicedetail/") > -1) {
             if(updated_url.indexOf("rssi") > -1) {
                 updated_url = "/performance/servicestatus/rssi/service_data_source/rssi/device/"+device_id+"/";
-            } else if(updated_url.indexOf("utilization") > -1) {
+            } else if(updated_url.indexOf("util") > -1) {
                 updated_url = "/performance/servicestatus/utilization/service_data_source/utilization/device/"+device_id+"/";
             }
         } else {
