@@ -387,6 +387,7 @@ def prepare_raw_sector(sectors):
                         'azimuth_angle': format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE'],type_of='integer'),
                         'beam_width': format_value(format_this=sector['SECTOR_BEAM_WIDTH'],type_of='integer'),
                         'planned_frequency': format_value(format_this=sector['SECTOR_FREQUENCY']),
+                        'frequency': format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']),
                         # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
                         'orientation': format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'],type_of='antenna'),
                         'technology': techno_to_append,
@@ -442,9 +443,15 @@ def prepare_raw_sector(sectors):
                             },
                             {
                                 'name': 'planned_frequency',
-                                'title': 'Planned Frequency',
+                                'title': 'Polled Frequency',
                                 'show': 1,
                                 'value': format_value(format_this=sector['SECTOR_FREQUENCY']),
+                            },
+                            {
+                                'name': 'frequency',
+                                'title': 'Planned Frequency',
+                                'show': 1,
+                                'value': format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']),
                             },
                             {
                               'name': 'type_of_antenna',

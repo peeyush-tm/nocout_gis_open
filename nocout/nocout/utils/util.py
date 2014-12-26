@@ -376,6 +376,8 @@ def query_all_gis_inventory_improved(monitored_only=False):
                         basestation.gps_type as BSGPSTYPE,
                         basestation.building_height as BSBUILDINGHGT,
                         basestation.tower_height as BSTOWERHEIGHT,
+                        basestation.tag1 as BSTAG1,
+			            basestation.tag2 as BSTAG2,
 
                         city.city_name as BSCITY,
                         state.state_name as BSSTATE,
@@ -416,6 +418,7 @@ left join (
         sector.frame_length as SECTOR_FRAME_LENGTH,
         sector.cell_radius as SECTOR_CELL_RADIUS,
         sector.modulation as SECTOR_MODULATION,
+        sector.planned_frequency as SECTOR_PLANNED_FREQUENCY,
 
         technology.name as SECTOR_TECH,
         vendor.name as SECTOR_VENDOR,
@@ -682,6 +685,8 @@ def query_all_gis_inventory(monitored_only=False):
                         basestation.gps_type as BSGPSTYPE,
                         basestation.building_height as BSBUILDINGHGT,
                         basestation.tower_height as BSTOWERHEIGHT,
+                        basestation.tag1 as BSTAG1,
+			            basestation.tag2 as BSTAG2,
 
                         city.city_name as BSCITY,
                         state.state_name as BSSTATE,
@@ -721,6 +726,7 @@ left join (
         sector.frame_length as SECTOR_FRAME_LENGTH,
         sector.cell_radius as SECTOR_CELL_RADIUS,
         sector.modulation as SECTOR_MODULATION,
+        sector.planned_frequency as SECTOR_PLANNED_FREQUENCY,
 
         technology.name as SECTOR_TECH,
         vendor.name as SECTOR_VENDOR,
