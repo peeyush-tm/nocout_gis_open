@@ -118,6 +118,8 @@ class ServiceDataSourceForm(forms.ModelForm):
 
         super(ServiceDataSourceForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
+            self.fields['chart_color'].widget.attrs.update({'class':'colorpicker',\
+                                                            'data-color-format':'rgba' })
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs['class'] += ' col-md-12'
