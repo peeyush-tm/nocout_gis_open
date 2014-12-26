@@ -665,6 +665,8 @@ WhiteMapClass.prototype.plotSector_wmap = function(lat,lon,pointsArray,sectorInf
 		beam_width 		 : beam_width,
 		technology 		 : sectorInfo.technology,
 		vendor 			 : sectorInfo.vendor,
+		perf_url 		 : sectorInfo.sector_perf_url,
+		inventory_url    : sectorInfo.inventory_url,
 		deviceExtraInfo  : sectorInfo.info,
 		deviceInfo 		 : sectorInfo.device_info,
 		startLat 	     : startLat,

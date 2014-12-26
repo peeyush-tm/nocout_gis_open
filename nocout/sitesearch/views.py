@@ -371,12 +371,17 @@ def prepare_raw_sector(sectors):
                                                                  format_this=sector['SECTOR_FREQUENCY']
                                                              )
                 )
+
                 near_end_perf_url = ""
+                near_end_inventory_url = ""
                 # Check for technology to make perf page url
                 if techno_to_append.lower() in ['pmp', 'wimax', 'ptp bh']:
                     near_end_perf_url = '/performance/network_live/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
                 else:
                     near_end_perf_url = '/performance/customer_live/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
+
+                # Sector Device Inventory URL
+                near_end_inventory_url = '/device/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
 
                 circuit_ids += circuit_id
                 sector_configured_on_devices += substation_ip
@@ -398,6 +403,7 @@ def prepare_raw_sector(sectors):
                         'sector_configured_on_device': format_value(format_this=sector['SECTOR_CONF_ON']),
                         # 'sector_device_id' : format_value(format_this=sector['SECTOR_CONF_ON_ID']),
                         'perf_page_url' : near_end_perf_url,
+                        "inventory_url" : near_end_inventory_url,
                         'circuit_id':None,
                         'sector_id' : format_value(format_this=sector['SECTOR_ID']),
                         'antenna_height': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'], type_of='random'),
@@ -528,6 +534,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                 circuit = circuits[circuit_id][0]
                 if circuit['SID'] and circuit['SID'] == sector_id:
                     far_end_perf_url = ""
+                    far_end_inventory_url = ""
 
                     if circuit_id not in circuit_ids:
                         circuit_ids.append(circuit_id)
@@ -542,6 +549,10 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                             far_end_perf_url = '/performance/customer_live/'+str(circuit['SS_DEVICE_ID'])+'/'
                         elif techno_to_append.lower() in ['ptp bh']:
                             far_end_perf_url = '/performance/network_live/'+str(circuit['SS_DEVICE_ID'])+'/'
+
+                        # Sector Device Inventory URL
+                        far_end_inventory_url = '/device/'+str(circuit['SS_DEVICE_ID'])+'/'
+
                         substation_ip.append(circuit['SSIP'])
 
                     substation_info.append(
@@ -554,6 +565,7 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                                 "lat": circuit['SS_LATITUDE'],
                                 "lon": circuit['SS_LONGITUDE'],
                                 "perf_page_url" : far_end_perf_url,
+                                "inventory_url" : far_end_inventory_url,
                                 "antenna_height": format_value(circuit['SSHGT'], type_of='random'),
                                 "substation_device_ip_address": circuit['SSIP'],
                                 "technology": techno_to_append,

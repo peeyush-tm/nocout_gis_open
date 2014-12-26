@@ -1173,6 +1173,7 @@ var state_wise_device_label_text= {};
 					beam_width = sectorsArray[j].beam_width,
 					sector_color = earth_self.makeRgbaObject(sectorsArray[j].color),
 					sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
+					sector_inventory_url = sector_array[j].inventory_url ? sector_array[j].inventory_url : "",
 					sectorInfo = {
 						"map": 'current',
 						"info" : sectorsArray[j].info,
@@ -1182,7 +1183,8 @@ var state_wise_device_label_text= {};
 						"device_info" : sectorsArray[j].device_info,
 						"technology" : sectorsArray[j].technology,
 						"vendor" : sectorsArray[j].vendor,
-						"sector_perf_url" : sector_perf_url
+						"sector_perf_url" : sector_perf_url,
+						"inventory_url" : sector_inventory_url
 					},
 					orientation = $.trim(sectorsArray[j].orientation),
 					sector_child = sectorsArray[j].sub_station,
@@ -1246,6 +1248,7 @@ var state_wise_device_label_text= {};
 							pl: "",
 							rta : "",
 							perf_url : sector_perf_url,
+							inventory_url : sector_inventory_url,
 							sectorName: sectorsArray[j].sector_configured_on,
 							device_name: sectorsArray[j].sector_configured_on_device,
 							name: sectorsArray[j].sector_configured_on_device,
@@ -1336,7 +1339,8 @@ var state_wise_device_label_text= {};
 					
 					var ssDataObj = sectorsArray[j].sub_station[k],
 						ckt_id_val = gisPerformanceClass.getKeyValue(ssDataObj.data.param.sub_station,"cktid",true),
-						ss_perf_url = ssDataObj.data.perf_page_url ? ssDataObj.data.perf_page_url : "";
+						ss_perf_url = ssDataObj.data.perf_page_url ? ssDataObj.data.perf_page_url : "",
+						ss_inventory_url = ssDataObj.data.inventory_url ? ssDataObj.data.inventory_url : "";
 					
 					// var ssMarkerIcon = base_url+"/"+ssDataObj.markerUrl;
 					var ssMarkerIcon = base_url+"/"+ssDataObj.data.markerUrl;
@@ -1356,6 +1360,7 @@ var state_wise_device_label_text= {};
 						pl: "",
 						rta: "",
 						perf_url : ss_perf_url,
+						inventory_url : ss_inventory_url,
 						antenna_height: ssDataObj.data.antenna_height,
 						name: ssDataObj.name,
 						bs_name: resultantMarkers[i].name,
@@ -2062,6 +2067,7 @@ var state_wise_device_label_text= {};
 			beam_width 		 : beam_width,
 			technology 		 : sectorInfo.technology,
 			perf_url 		 : sectorInfo.sector_perf_url,
+			inventory_url    : sectorInfo.inventory_url,
 			vendor 			 : sectorInfo.vendor,
 			deviceExtraInfo  : sectorInfo.info,
 			deviceInfo 		 : sectorInfo.device_info,

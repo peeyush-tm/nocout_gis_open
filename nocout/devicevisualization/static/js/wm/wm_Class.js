@@ -1921,6 +1921,8 @@ function WhiteMapClass() {
 					var azimuth = sector_array[j].azimuth_angle,
 						beam_width = sector_array[j].beam_width,
 						sector_color = sector_array[j].color,
+						sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
+						sector_inventory_url = sector_array[j].inventory_url ? sector_array[j].inventory_url : "",
 						sectorInfo = {
 							"info" : sector_array[j].info,
 							"bs_name" : bs_ss_devices[i].name,
@@ -1928,7 +1930,9 @@ function WhiteMapClass() {
 							"sector_id" : sector_array[j].sector_id,
 							"device_info" : sector_array[j].device_info,
 							"technology" : sector_array[j].technology,
-							"vendor" : sector_array[j].vendor
+							"vendor" : sector_array[j].vendor,
+							"sector_perf_url" : sector_perf_url,
+							"inventory_url" : sector_inventory_url
 						},
 						orientation = $.trim(sector_array[j].orientation),
 						sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
@@ -1991,6 +1995,8 @@ function WhiteMapClass() {
 								poll_info 			: [],
 								pl 					: "",
 								rta					: "",
+								perf_url 		 	: sector_perf_url,
+								inventory_url    	: sector_inventory_url,
 								sectorName  		: sector_array[j].sector_configured_on,
 								device_name  		: sector_array[j].sector_configured_on_device,
 								name  				: sector_array[j].sector_configured_on_device,
@@ -2044,7 +2050,10 @@ function WhiteMapClass() {
 					for(var k=sector_child.length;k--;) {
 
 					
-						var ss_marker_obj = sector_child[k];
+						var ss_marker_obj = sector_child[k],
+							ckt_id_val = gisPerformanceClass.getKeyValue(ss_marker_obj.data.param.sub_station,"cktid",true),
+							ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
+							ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
 
 						/*Create SS Marker Object*/
 						var ss_marker_object = {
@@ -2062,6 +2071,8 @@ function WhiteMapClass() {
 					    	poll_info 		 :  [],
 					    	pl 				 :  "",
 							rta				 :  "",
+							perf_url 		 :  ss_perf_url,
+							inventory_url 	 :  ss_inventory_url,
 					    	antenna_height   : 	ss_marker_obj.data.antenna_height,
 					    	name 		 	 : 	ss_marker_obj.name,
 					    	bs_name 		 :  bs_ss_devices[i].name,
