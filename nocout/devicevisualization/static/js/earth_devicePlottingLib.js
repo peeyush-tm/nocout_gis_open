@@ -8,6 +8,10 @@ var g_earth = "",
 	isFirstTime = 1,
 	isFromSearch = false,
 	current_zoom = "",
+	green_status_array = ['ok','success','up'],
+    red_status_array = ['critical','down'],
+    orange_status_array = ['warning'],
+    ptp_tech_list = ['ptp','p2p','ptp bh']
 	ge = "",
 	plotted_bs_earth = [],
 	plotted_sector_earth = [],
@@ -24,8 +28,9 @@ var g_earth = "",
 	devicesCount = 0,
 	counter = -999,
 	marker_count = 0,
-	place_markers= [];
-var markersMasterObj;
+	place_markers= [],
+	markersMasterObj;
+
 var allMarkersObject_earth= {
 	'base_station': {},
 	'path': {},
@@ -1167,6 +1172,7 @@ var state_wise_device_label_text= {};
 					azimuth = sectorsArray[j].azimuth_angle,
 					beam_width = sectorsArray[j].beam_width,
 					sector_color = earth_self.makeRgbaObject(sectorsArray[j].color),
+					sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
 					sectorInfo = {
 						"map": 'current',
 						"info" : sectorsArray[j].info,
@@ -1175,12 +1181,13 @@ var state_wise_device_label_text= {};
 						"sector_id" : sectorsArray[j].sector_id,
 						"device_info" : sectorsArray[j].device_info,
 						"technology" : sectorsArray[j].technology,
-						"vendor" : sectorsArray[j].vendor
+						"vendor" : sectorsArray[j].vendor,
+						"sector_perf_url" : sector_perf_url
 					},
 					orientation = $.trim(sectorsArray[j].orientation),
 					sector_child = sectorsArray[j].sub_station,
 					childSS = JSON.stringify(sectorsArray[j].sub_station),
-					device_technology = $.trim(sectorsArray[j].technology),
+					sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
 					orientation = $.trim(sectorsArray[j].orientation),
 					sectorRadius = (+sectorsArray[j].radius),
 					startEndObj = {},
@@ -1198,7 +1205,8 @@ var state_wise_device_label_text= {};
 					var halfPt = Math.floor(pointsArray.length / (+2));
 
 					/*In case of PMP & WIMAX*/
-					if($.trim(sectorsArray[j].technology) != "PTP" && $.trim(sectorsArray[j].technology) != "P2P") {
+					// if($.trim(sectorsArray[j].technology) != "PTP" && $.trim(sectorsArray[j].technology) != "P2P") {
+					if(ptp_tech_list.indexOf(sector_tech)  == -1) {
 
 						/*Plot sector on google earth with the retrived points*/
 						earth_self.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color,childSS,$.trim(sectorsArray[j].technology),orientation,rad,azimuth,beam_width);
@@ -1217,7 +1225,8 @@ var state_wise_device_label_text= {};
 					}
 				});
 
-				if($.trim(sectorsArray[j].technology.toLowerCase()) == "ptp" || $.trim(sectorsArray[j].technology.toLowerCase()) == "p2p") {
+				// if($.trim(sectorsArray[j].technology.toLowerCase()) == "ptp" || $.trim(sectorsArray[j].technology.toLowerCase()) == "p2p") {
+				if(ptp_tech_list.indexOf(sector_tech)  > -1) {
 
 					if(deviceIDArray.indexOf(sectorsArray[j]['device_info'][1]['value']) == -1) {
 						var sectorMarkerIcon = base_url+"/"+sectorsArray[j].markerUrl;
@@ -1235,7 +1244,8 @@ var state_wise_device_label_text= {};
 							deviceInfo: sectorsArray[j].device_info,
 							poll_info: [],
 							pl: "",
-							rta: "",
+							rta : "",
+							perf_url : sector_perf_url,
 							sectorName: sectorsArray[j].sector_configured_on,
 							device_name: sectorsArray[j].sector_configured_on_device,
 							name: sectorsArray[j].sector_configured_on_device,
@@ -1324,10 +1334,13 @@ var state_wise_device_label_text= {};
 
 				for(var k=0;k<sectorsArray[j].sub_station.length;k++) {
 					
-					var ssDataObj = sectorsArray[j].sub_station[k];
+					var ssDataObj = sectorsArray[j].sub_station[k],
+						ckt_id_val = gisPerformanceClass.getKeyValue(ssDataObj.data.param.sub_station,"cktid",true),
+						ss_perf_url = ssDataObj.data.perf_page_url ? ssDataObj.data.perf_page_url : "";
 					
 					// var ssMarkerIcon = base_url+"/"+ssDataObj.markerUrl;
 					var ssMarkerIcon = base_url+"/"+ssDataObj.data.markerUrl;
+
 					var ssInfo= {
 						map: 'current',
 						ptLat: ssDataObj.data.lat,
@@ -1342,6 +1355,7 @@ var state_wise_device_label_text= {};
 						poll_info: [],
 						pl: "",
 						rta: "",
+						perf_url : ss_perf_url,
 						antenna_height: ssDataObj.data.antenna_height,
 						name: ssDataObj.name,
 						bs_name: resultantMarkers[i].name,
@@ -2047,6 +2061,7 @@ var state_wise_device_label_text= {};
 			azimuth 		 : azimuth,
 			beam_width 		 : beam_width,
 			technology 		 : sectorInfo.technology,
+			perf_url 		 : sectorInfo.sector_perf_url,
 			vendor 			 : sectorInfo.vendor,
 			deviceExtraInfo  : sectorInfo.info,
 			deviceInfo 		 : sectorInfo.device_info,
@@ -2352,11 +2367,13 @@ var state_wise_device_label_text= {};
 
 									for(var k=allSS.length;k--;) {
 										if(allSS[k]['ptLat'] && allSS[k]['ptLon']) {
-											var point = {lat: allSS[k]['ptLat'], lon: allSS[k]['ptLon']};
+											var point = {lat: allSS[k]['ptLat'], lon: allSS[k]['ptLon']},
+												point_tech = allSS[k]['technology'] ? $.trim(allSS[k]['technology'].toLowerCase()) : "";
+
 											if (isPointInPoly(pollingPolygonLatLngArr, point)) {
-												if(allSS[k]['technology']) {
-													if($.trim(allSS[k]['technology'].toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-														if($.trim(allSS[k]['technology'].toLowerCase()) == "ptp" || $.trim(allSS[k]['technology'].toLowerCase()) == "p2p") {
+												if(point_tech) {
+													if(point_tech == $.trim(selected_polling_technology.toLowerCase())) {
+														if(ptp_tech_list.indexOf(sector_tech)  > -1) {
 															if(allSSIds.indexOf(allSS[k]['device_name']) < 0) {
 																if(allSS[k]['pointType'] == 'sub_station') {
 																	if(allSSIds.indexOf(allSS[k]['bs_sector_device']) < 0) {
@@ -2425,7 +2442,7 @@ var state_wise_device_label_text= {};
 										for(var i=0;i<polygonSelectedDevices.length;i++) {
 											
 											var new_device_name = "";
-											var current_technology = $.trim(polygonSelectedDevices[i]['technology'].toLowerCase());
+											var current_technology = polygonSelectedDevices[i]['technology'] ? $.trim(polygonSelectedDevices[i]['technology'].toLowerCase()) : "";
 											
 											if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
 												new_device_name = polygonSelectedDevices[i]['device_name'].split(".");
@@ -2448,8 +2465,7 @@ var state_wise_device_label_text= {};
 												polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
 											}
 
-
-											if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i]['pointType'] == 'sub_station') {
+											if((ptp_tech_list.indexOf(current_technology)  > -1) && polygonSelectedDevices[i]['pointType'] == 'sub_station') {
 
 												if(polygonSelectedDevices[i].bs_sector_device.indexOf(".") != -1) {
 													var new_device_name2 = polygonSelectedDevices[i]['bs_sector_device'].split(".");
@@ -2475,7 +2491,7 @@ var state_wise_device_label_text= {};
 												var device_end_txt = "",
 													point_name = "";
 
-												if($.trim(polygonSelectedDevices[i]['technology'].toLowerCase()) == "ptp" || $.trim(polygonSelectedDevices[i]['technology'].toLowerCase()) == "p2p") {
+												if(ptp_tech_list.indexOf(current_technology)  > -1) {
 			                                        if(polled_device_count[devices_counter] <= 1) {
 														if(polygonSelectedDevices[i]['pointType'] == 'sub_station') {
 															device_end_txt = "Far End";
