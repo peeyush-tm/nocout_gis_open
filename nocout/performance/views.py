@@ -991,7 +991,7 @@ class Inventory_Device_Service_Data_Source(View):
 
                 elif '_invent' in service_name:
                     result['data']['objects']['inventory_status_tab']["info"].append(sds_info)
-                elif '_bgp' in service_name or 'topology' in service_name:
+                elif 'topology' in service_name:
                     continue
                 else:
                     result['data']['objects']['service_perf_tab']["info"].append(sds_info)
@@ -1030,16 +1030,16 @@ class Inventory_Device_Service_Data_Source(View):
         result['data']['objects']['utilization_top_tab']["info"].append({
             'name': 'utilization_top',
             'title': 'Utilization',
-            'url': 'performance/servicedetail/utilization/device/'+str(device_id),
+            'url': 'performance/servicedetail/util/device/'+str(device_id),
             'active': 0,
         })
 
-        result['data']['objects']['rssi_top_tab']["info"].append({
-            'name': 'rssi_top',
-            'title': 'RSSI',
-            'url': 'performance/servicedetail/rssi/device/'+str(device_id),
-            'active': 0,
-        })
+        # result['data']['objects']['rssi_top_tab']["info"].append({
+        #     'name': 'rssi_top',
+        #     'title': 'RSSI',
+        #     'url': 'performance/servicedetail/rssi/device/'+str(device_id),
+        #     'active': 0,
+        # })
 
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
