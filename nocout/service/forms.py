@@ -1,11 +1,17 @@
-from django import forms
-from django.core.exceptions import ValidationError
-from models import Service, ServiceParameters, ServiceDataSource, Protocol, ServiceSpecificDataSource
+import inspect
 import re
-from django.forms.util import ErrorList
+
+from django import forms
 from django.forms.models import inlineformset_factory,  BaseInlineFormSet
-import logging
+from django.forms.util import ErrorList
+from django.core.exceptions import ValidationError
+
+from service.models import Service, ServiceParameters, ServiceDataSource, Protocol, ServiceSpecificDataSource
 from device.forms import BaseDeviceTypeServiceFormset
+
+from performance import formulae
+
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -117,6 +123,11 @@ class ServiceDataSourceForm(forms.ModelForm):
             logger.info(e.message)
 
         super(ServiceDataSourceForm, self).__init__(*args, **kwargs)
+
+        FORMULA_CHOICES = [('', 'No Formula')]
+        FORMULA_CHOICES += [(function_tuple[0], function_tuple[0]) for function_tuple in inspect.getmembers(formulae, inspect.isfunction)]
+        self.fields['formula'] = forms.ChoiceField(choices=FORMULA_CHOICES, required=False)
+
         for name, field in self.fields.items():
             self.fields['chart_color'].widget.attrs.update({'class':'colorpicker',\
                                                             'data-color-format':'rgba' })
