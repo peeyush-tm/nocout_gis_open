@@ -196,6 +196,8 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	mrc_insert = []
         indexed_insert_entry = {}
         indexed_update_entry = {}
+	indexed_mrc_insert ={}
+	indexed_mrc_update ={}
 	value = 0
 	mrc_host = None
 	host_matched_row = None
@@ -209,14 +211,20 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 			original_host = host_row.split('|')[0]
 			original_dr_host_list.append(original_host)
 	s_device_down_list = set(device_down_output)
+	dr_services= ['wimax_pmp1_utilization','wimax_pmp2_utilization','wimax_pmp1_ul_util_bgp','wimax_pmp1_dl_util_bgp',
+			'wimax_pmp2_ul_util_bgp','wimax_pmp2_dl_util_bgp']
+	pmp1_mrc_services = ['wimax_pmp1_utilization','wimax_pmp1_ul_util_bgp','wimax_pmp1_dl_util_bgp']
+	pmp2_mrc_services = ['wimax_pmp2_utilization','wimax_pmp2_ul_util_bgp','wimax_pmp2_dl_util_bgp']
+	exceptional_serv = ['wimax_dl_cinr','wimax_ul_cinr','wimax_dl_intrf','wimax_ul_intrf','wimax_modulation_dl_fec','wimax_modulation_ul_fec',
+                                'wimax_dl_rssi','wimax_ul_rssi']
 	for entry in serv_qry_output:
                 if len(entry) < 8:
                         continue
-		if (str(entry[2]) == 'wimax_pmp1_utilization' or str(entry[2]) == 'wimax_pmp2_utilization'):
+		if str(entry[2]) in dr_services:
 			if str(entry[0]) in original_dr_host_list:
 				dr_flag = 1
 		
-		if str(entry[0]) in s_device_down_list and not dr_flag :
+		if str(entry[0]) in s_device_down_list and (str(entry[2]) not in exceptional_serv) and not dr_flag :
 			continue
 		if not len(entry[-1]) and not dr_flag:
 			continue
@@ -255,29 +263,37 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 				'service': str(entry[2]),
 				'ds': str(ds)
 				})
-			if (str(entry[2]) == 'wimax_pmp1_utilization' ) and str(entry[0]) in mrc_hosts:
-				mrc_insert.append(data_dict)
-			        mrc_update.append(matching_criteria)	
-				mrc_host =  str(entry[0])
+			if str(entry[2]) in pmp1_mrc_services and str(entry[0]) in mrc_hosts:
+				indexed_mrc_insert[(str(entry[0]),str(entry[2]))]=data_dict
+				indexed_mrc_update[(str(entry[0]),str(entry[2]))]=matching_criteria
+				#mrc_insert.append(data_dict)
+			        #mrc_update.append(matching_criteria)	
+				#mrc_host =  str(entry[0])
 				matching_criteria = {}
 				data_dict = {}
-				if ds_values.get('cur'):
-					value = ds_values.get('cur')
-				else:
-					value = 0
 				continue
-			if (str(entry[2]) == 'wimax_pmp2_utilization') and str(entry[0]) in mrc_hosts and mrc_host == str(entry[0]):
-				if ds_values.get('cur'):
-					updated_value = eval(ds_values.get('cur')) + eval(value)
-					if mrc_insert:
-			 			mrc_insert[0].get('data')[0]['value'] = updated_value
-				if mrc_insert:
-					service_update_list.append(mrc_update[0])
-					service_data_values.append(mrc_insert[0])
-				mrc_host = None	
-				value = 0
-				mrc_update = []
-				mrc_insert = []
+			if str(entry[2]) in pmp2_mrc_services and str(entry[0]) in mrc_hosts:
+				changed_mrc_service = str(entry[2]).replace('pmp2','pmp1')
+				if (str(entry[0]),changed_mrc_service) in indexed_mrc_insert:
+					if ds_values.get('cur') and indexed_mrc_insert[(str(entry[0]),changed_mrc_service)].get('data')[0]['value']:
+						updated_value = eval(ds_values.get('cur')) +  \
+								eval(indexed_mrc_insert[(str(entry[0]),changed_mrc_service)].get('data')[0]['value'])
+						indexed_mrc_insert[(str(entry[0]),changed_mrc_service)].get('data')[0]['value']= updated_value
+					elif ds_values.get('cur'):
+						indexed_mrc_insert[(str(entry[0]),changed_mrc_service)].get('data')[0]['value']= ds_values.get('cur')
+					
+					if indexed_mrc_insert[(str(entry[0]),changed_mrc_service)]:
+						service_update_list.append(indexed_mrc_update[(str(entry[0]),changed_mrc_service)])
+						service_data_values.append(indexed_mrc_insert[(str(entry[0]),changed_mrc_service)])
+						del indexed_mrc_insert[(str(entry[0]),changed_mrc_service)]
+						del indexed_mrc_update[(str(entry[0]),changed_mrc_service)]
+						
+				
+				else:
+					changed_ds = ds.replace('pmp2','pmp1')
+					data_dict['service']=changed_mrc_service
+					data_dict['ds']=changed_ds	
+						
 					
 			 					 
 			if dr_flag:
@@ -288,7 +304,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 				#print dr_host
 				#print (dr_host,str(entry[2]))
 				if (dr_host,str(entry[2])) in indexed_insert_entry:
-					if (str(entry[2]) == 'wimax_pmp1_utilization' or str(entry[2]) == 'wimax_pmp2_utilization'):
+					if str(entry[2]) in dr_services :
 						if ds_values.get('cur') and indexed_insert_entry[(dr_host,str(entry[2]))].get('data')[0]['value']:
 							total_val = eval(ds_values.get('cur')) + eval(indexed_insert_entry[(dr_host,str(entry[2]))].get('data')[0]['value'])
 							indexed_insert_entry[(dr_host,str(entry[2]))].get('data')[0]['value']= total_val
@@ -304,7 +320,7 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 							service_data_values.append(indexed_insert_entry[(dr_host,str(entry[2]))])
 							del indexed_insert_entry[(dr_host,str(entry[2]))]
 							del indexed_update_entry[(dr_host,str(entry[2]))]
-				elif str(entry[2]) == 'wimax_pmp1_utilization' or str(entry[2]) == 'wimax_pmp2_utilization':
+				elif str(entry[2]) in dr_services:
 					indexed_insert_entry[(str(entry[0]),str(entry[2]))]=data_dict
 					indexed_update_entry[(str(entry[0]),str(entry[2]))]=matching_criteria
 					#print 'indexed_entry'
@@ -326,6 +342,12 @@ def build_export(site, network_result, service_result,mrc_hosts,device_down_outp
 	for key,values in indexed_insert_entry.items():
 		try:
 			service_update_list.append(indexed_update_entry[key])
+			service_data_values.append(values)
+		except:
+			continue
+	for key,values in indexed_mrc_insert.items():
+		try:
+			service_update_list.append(indexed_mrc_update[key])
 			service_data_values.append(values)
 		except:
 			continue
@@ -354,7 +376,6 @@ def insert_bulk_perf(net_values, serv_values,net_update,service_update ,db):
 			mongo_module.mongo_db_update(db,service_update[index4], serv_values[index4], 'serv_perf_data')
 	except Exception ,e:
 		print e.message
-	
 	index1 = 0
 	index2 = min(1000,len(net_values))
 	try:
@@ -433,14 +454,13 @@ def get_host_services_name(site_name=None, db=None):
                             "Filter: service_description ~ _status\n"+\
                             "Filter: service_description ~ Check_MK\n"+\
                             "Filter: service_description ~ PING\n"+\
-                            "Filter: service_description ~ wimax_pmp1_util_kpi\n"+\
-                            "Filter: service_description ~ wimax_pmp2_util_kpi\n"+\
-                            "Filter: service_description ~ wimax_pmp1_ul_util_bgp\n"+\
-                            "Filter: service_description ~ wimax_pmp1_dl_util_bgp\n"+\
-                            "Filter: service_description ~ wimax_pmp2_dl_util_bgp\n"+\
-                            "Filter: service_description ~ wimax_pmp2_ul_util_bgp\n"+\
-                            "Filter: service_description ~ cambium_util_kpi\n"+\
-                            "Or: 11\nNegate:\nOutputFormat: python\n"
+                            "Filter: service_description ~ wimax_pmp1_dl_util_kpi\n"+\
+                            "Filter: service_description ~ wimax_pmp1_ul_util_kpi\n"+\
+                            "Filter: service_description ~ wimax_pmp2_dl_util_kpi\n"+\
+                            "Filter: service_description ~ wimax_pmp2_ul_util_kpi\n"+\
+                            "Filter: service_description ~ cambium_ul_util_kpi\n"+\
+                            "Filter: service_description ~ cambium_dl_util_kpi\n"+\
+                            "Or: 10\nNegate:\nOutputFormat: python\n"
 	    device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
 				"And: 2\nOutputFormat: python\n"
 
@@ -670,15 +690,15 @@ def get_threshold(perf_data):
 	if param.partition('=')[2]:
         	if ';' in param.split("=")[1]:
             		threshold_values[param.split("=")[0]] = {
-                	"war": re.sub('[ms]', '', param.split("=")[1].split(";")[1]),
-                	"cric": re.sub('[ms]', '', param.split("=")[1].split(";")[2]),
-                	"cur": re.sub('[ms]', '', param.split("=")[1].split(";")[0])
+                	"war": re.sub('ms', '', param.split("=")[1].split(";")[1]),
+                	"cric": re.sub('ms', '', param.split("=")[1].split(";")[2]),
+                	"cur": re.sub('ms', '', param.split("=")[1].split(";")[0])
             		}
         	else:
             		threshold_values[param.split("=")[0]] = {
                 	"war": None,
                 	"cric": None,
-                	"cur": re.sub('[ms]', '', param.split("=")[1].strip("\n"))
+                	"cur": re.sub('ms', '', param.split("=")[1].strip("\n"))
             		}
 	else:
 		threshold_values[param.split("=")[0]] = {
