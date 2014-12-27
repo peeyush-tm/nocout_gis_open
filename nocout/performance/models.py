@@ -1631,12 +1631,12 @@ class UtilizationStatus(models.Model):
     Per device, per sector, per port
     Age here will be calculated of the STATUS AGE while NORMAL, MAJOR, CRITICAL
     """
-    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -1654,3 +1654,6 @@ class UtilizationStatus(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+        index_together = [
+            ["device_name", "service_name", "data_source"],
+        ]
