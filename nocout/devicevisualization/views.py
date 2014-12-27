@@ -1464,87 +1464,95 @@ class GISPerfData(View):
                         # sector configured on device
                         sector_device = sector.sector_configured_on
 
-                        logger.info("Call to 'get_sector_performance_info' for sector device '{}'.".format(
-                            sector_device.device_alias))
+                        if sector_device.is_added_to_nms == 1:
+                            logger.info("Sector {}: '{}' data fetching start.".format(sectors_counter, sector.alias))
+                            logger.info("Call to 'get_sector_performance_info' for sector device '{}'.".format(
+                                sector_device.device_alias))
 
-                        # get performance data
-                        sector_performance_data = self.get_sector_performance_info(sector_device)
+                            # get performance data
+                            sector_performance_data = self.get_sector_performance_info(sector_device)
 
-                        # sector dictionary
-                        sector_dict = dict()
-                        sector_dict['device_name'] = sector_device.device_name
-                        sector_dict['sector_id'] = sector.id
-                        sector_dict['ip_address'] = sector_device.ip_address
-                        sector_dict['azimuth_angle'] = sector_performance_data['azimuth_angle']
-                        sector_dict['beam_width'] = sector_performance_data['beam_width']
-                        sector_dict['radius'] = sector_performance_data['radius']
-                        sector_dict['color'] = sector_performance_data['color']
-                        sector_dict['polled_frequency'] = sector_performance_data['polled_frequency']
-                        sector_dict['pl'] = sector_performance_data['pl']
-                        sector_dict['perf_value'] = sector_performance_data['perf_value']
-                        sector_dict['icon'] = sector_performance_data['icon']
-                        sector_dict['perf_info'] = sector_performance_data['perf_info']
-                        sector_dict['sub_station'] = list()
+                            # sector dictionary
+                            sector_dict = dict()
+                            sector_dict['device_name'] = sector_device.device_name
+                            sector_dict['sector_id'] = sector.id
+                            sector_dict['ip_address'] = sector_device.ip_address
+                            sector_dict['azimuth_angle'] = sector_performance_data['azimuth_angle']
+                            sector_dict['beam_width'] = sector_performance_data['beam_width']
+                            sector_dict['radius'] = sector_performance_data['radius']
+                            sector_dict['color'] = sector_performance_data['color']
+                            sector_dict['polled_frequency'] = sector_performance_data['polled_frequency']
+                            sector_dict['pl'] = sector_performance_data['pl']
+                            sector_dict['perf_value'] = sector_performance_data['perf_value']
+                            sector_dict['icon'] = sector_performance_data['icon']
+                            sector_dict['perf_info'] = sector_performance_data['perf_info']
+                            sector_dict['sub_station'] = list()
 
-                        # get all substations associated with sector from 'Topology' model in performance
-                        # replaceing topology code
-                        # as the topology is auto-updated
-                        # using celery beat
-                        logger.info("####################### START FETCHING SUB STATION DATA #######################")
-                        subs = SubStation.objects.filter(id__in=sector.circuit_set.values_list('sub_station',
-                                                                                               flat=True))
-                        # topolopies_for_ss = Topology.objects.filter(sector_id=sector.id)
+                            # get all substations associated with sector from 'Topology' model in performance
+                            # replaceing topology code
+                            # as the topology is auto-updated
+                            # using celery beat
+                            logger.info("###################### START FETCHING SUB STATION DATA ######################")
+                            subs = SubStation.objects.filter(id__in=sector.circuit_set.values_list('sub_station',
+                                                                                                   flat=True))
+                            # topolopies_for_ss = Topology.objects.filter(sector_id=sector.id)
 
-                        # list of all associated substations ip's
-                        # substations_ips_list = list()
-                        # for topology in topolopies_for_ss:
-                        #     substations_ips_list.append(topology.connected_device_ip)
+                            # list of all associated substations ip's
+                            # substations_ips_list = list()
+                            # for topology in topolopies_for_ss:
+                            #     substations_ips_list.append(topology.connected_device_ip)
 
-                        # substations counter
-                        substation_counter = 0
+                            # substations counter
+                            substation_counter = 0
 
-                        # loop through all substations using ips in 'substations_ips_list'
-                        for ss in subs:
-                            # increment substation counter by 1
-                            substation_counter += 1
+                            # loop through all substations using ips in 'substations_ips_list'
+                            for ss in subs:
+                                # increment substation counter by 1
+                                substation_counter += 1
 
-                            # substation
-                            substation = ss
+                                # substation
+                                substation = ss
 
-                            logger.info("Sub Station {}: '{}' data fetching start.".format(substation_counter,
-                                                                                           substation.alias))
+                                # try:
+                                #     substation = SubStation.objects.get(device__ip_address=ss_ip)
+                                # except Exception as e:
+                                #     logger.error("Sub Station not exist. Exception: ", e.message)
 
-                            # try:
-                            #     substation = SubStation.objects.get(device__ip_address=ss_ip)
-                            # except Exception as e:
-                            #     logger.error("Sub Station not exist. Exception: ", e.message)
+                                # substation device
+                                substation_device = None
+                                try:
+                                    substation_device = ss.device
+                                    # Device.objects.get(ip_address=ss_ip)
+                                except Exception as e:
+                                    logger.error("Sub Station device not exist. Exception: ", e.message)
 
-                            # substation device
-                            substation_device = None
-                            try:
-                                substation_device = ss.device
-                                # Device.objects.get(ip_address=ss_ip)
-                            except Exception as e:
-                                logger.error("Sub Station device not exist. Exception: ", e.message)
+                                ss_dict = dict()
+                                if substation and (substation_device.is_added_to_nms == 1):
+                                    logger.info("Sub Station {}: '{}' data fetching start.".format(substation_counter,
+                                                                                                   substation.alias))
+                                    logger.info("Call to 'get_substation_info' for substation device '{}'.".format(
+                                        substation_device.device_alias))
+                                    # substation default line color
+                                    ss_default_link_color = sector_performance_data['color']
+                                    ss_dict['device_name'] = substation_device.device_name
+                                    ss_dict['id'] = substation_device.id
+                                    ss_dict['name'] = substation.name
+                                    ss_dict['data'] = self.get_substation_info(substation,
+                                                                               substation_device,
+                                                                               ss_default_link_color)
 
-                            ss_dict = dict()
-                            if substation and substation_device:
-                                logger.info("Call to 'get_substation_info' for substation device '{}'.".format(
-                                    substation_device.device_alias))
-                                # substation default line color
-                                ss_default_link_color = sector_performance_data['color']
-                                ss_dict['device_name'] = substation_device.device_name
-                                ss_dict['id'] = substation_device.id
-                                ss_dict['name'] = substation.name
-                                ss_dict['data'] = self.get_substation_info(substation,
-                                                                           substation_device,
-                                                                           ss_default_link_color)
+                                    # append substation dictionary to 'sub_station' list
+                                    sector_dict['sub_station'].append(ss_dict)
+                                else:
+                                    logger.info("Sub Station {}: '{}' data not fetched because ss device is not \
+                                    added to nms.".format(substation_counter, substation.alias))
 
-                            # append substation dictionary to 'sub_station' list
-                            sector_dict['sub_station'].append(ss_dict)
+                            # append 'sector_dict' to 'sector' list
+                            bs_dict['param']['sector'].append(sector_dict)
+                        else:
+                            logger.info("Sector {}: '{}' data not fetched because sector device is not added to nms."
+                                        .format(sectors_counter, sector.alias))
 
-                        # append 'sector_dict' to 'sector' list
-                        bs_dict['param']['sector'].append(sector_dict)
                 if bs_dict:
                     bs_dict['message'] = "Successfully fetched performance data."
                     performance_data.append(bs_dict)
@@ -2408,7 +2416,7 @@ class GISPerfData(View):
         ).using(alias=machine_name)
 
         for perf in device_network_info:
-            res, name, title = self.sanatize_datasource(perf['data_source'])
+            res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
             if not res:
                 continue
             if perf['data_source'] in processed:
@@ -2420,7 +2428,7 @@ class GISPerfData(View):
             perf_info = {
                 "name": name,
                 "title": title,
-                "show": 1,
+                "show": show_gis,
                 "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(
                     device_id) + "?start_date=&end_date=",
                 "value": perf['current_value'],
@@ -2447,7 +2455,7 @@ class GISPerfData(View):
             ).using(alias=machine_name)
 
             for perf in device_performance_info:
-                res, name, title = self.sanatize_datasource(perf['data_source'])
+                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
                 if not res:
                     continue
                 if perf['data_source'] in processed:
@@ -2459,7 +2467,7 @@ class GISPerfData(View):
                 perf_info = {
                     "name": name,
                     "title": title,
-                    "show": 1,
+                    "show": show_gis,
                     "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(
                         device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
@@ -2467,7 +2475,7 @@ class GISPerfData(View):
                 device_info.append(perf_info)
 
             for perf in device_inventory_info:
-                res, name, title = self.sanatize_datasource(perf['data_source'])
+                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
                 if not res:
                     continue
                 if perf['data_source'] in processed:
@@ -2479,7 +2487,7 @@ class GISPerfData(View):
                 perf_info = {
                     "name": name,
                     "title": title,
-                    "show": 1,
+                    "show": show_gis,
                     "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(
                         device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
@@ -2487,7 +2495,7 @@ class GISPerfData(View):
                 device_info.append(perf_info)
 
             for perf in device_status_info:
-                res, name, title = self.sanatize_datasource(perf['data_source'])
+                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
                 if not res:
                     continue
                 if perf['data_source'] in processed:
@@ -2499,7 +2507,7 @@ class GISPerfData(View):
                 perf_info = {
                     "name": name,
                     "title": title,
-                    "show": 1,
+                    "show": show_gis,
                     "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(
                         device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
@@ -2519,12 +2527,14 @@ class GISPerfData(View):
         if data_source and data_source[:1].isalpha():
             title = " ".join(data_source.split("_")).title()
             name = data_source.strip().lower()
+            show_gis = 0
             try:
                 title = SERVICE_DATA_SOURCE[name]['display_name']
+                show_gis = SERVICE_DATA_SOURCE[name]['show_gis']
             except:
                 pass
-            return True, name, title
-        return False, False, False
+            return True, name, title, show_gis
+        return False, False, False, 0
 
     def get_substation_info(self, substation, substation_device, ss_default_link_color):
         """ Get Sub Station information

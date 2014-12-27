@@ -13,7 +13,20 @@ def service_data_sources():
 
     :return: dictionary of data sources
     """
-    required_columns = ['name', 'alias', 'chart_type', 'valuesuffix', 'valuetext', 'show_min', 'show_max', 'formula', 'data_source_type', 'warning', 'critical', 'chart_color']
+    required_columns = ['name',
+                        'alias',
+                        'chart_type',
+                        'valuesuffix',
+                        'valuetext',
+                        'show_min',
+                        'show_max',
+                        'show_gis',
+                        'formula',
+                        'data_source_type',
+                        'warning',
+                        'critical',
+                        'chart_color'
+    ]
     ds = ServiceDataSource.objects.all().values(*required_columns)
     SDS = SERVICE_DATA_SOURCE
     for sds in ds:
@@ -30,6 +43,7 @@ def service_data_sources():
             'formula': formula,
             'show_min': sds['show_min'],
             'show_max': sds['show_max'],
+            'show_gis': sds['show_gis'],
             'data_source_type': 'String' if sds['data_source_type'] else 'Numeric',
             'warning': sds['warning'],
             'critical': sds['critical'],
