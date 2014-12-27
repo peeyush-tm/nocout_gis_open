@@ -1,0 +1,34 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+
+def check_wimax_modulation_dl_fec_arguments(params):
+    description,settings = params
+    args =''
+    war_string = ''
+    crit_string = ''
+    if "host" in settings:
+        args += '%s ' % quote_shell_string(settings['host'])
+    if "site" in settings:
+        args += '%s ' % quote_shell_string(settings['site'])
+
+    if "war" in settings:
+	for a in settings['war']:
+		war_string += '%s ' % a
+	if war_string:
+        	args += '%s ' % war_string
+    if "crit" in settings:
+	for a in settings['crit']:
+		crit_string += '%s ' % a
+	if crit_string:
+        	args += '%s ' % crit_string
+
+
+    return args
+
+active_check_info['wimax_modulation_dl_fec'] = {
+    "command_line"        : '$USER1$/check_wimax_modulation_dl_fec $ARG1$',
+    "argument_function"   : check_wimax_modulation_dl_fec_arguments,
+    "service_description" : lambda params: "%s" % params[0],
+    "has_perfdata"        :True,
+}
+
