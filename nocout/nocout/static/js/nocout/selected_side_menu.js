@@ -9,7 +9,9 @@ var currentRouterString = "",
     routerArray = window.location.href.split("/"),
     checkValue = $.trim(routerArray[routerArray.length-2]),
     typeCheck = (+checkValue) + 1,
-    isForm = false;
+    isForm = false,
+    technology_list = ['p2p','ptp','pmp','ptp_bh','wimax'],
+    device_technology = "";
 
 if(checkValue == "create" || checkValue == "add" || checkValue == "new" || checkValue == "update" || checkValue == "treeview" || checkValue == "edit" || checkValue == "delete") {
     if($.trim(typeCheck) != "NaN") {        
@@ -28,7 +30,25 @@ if(checkValue == "create" || checkValue == "add" || checkValue == "new" || check
     currentRouterString = $.trim(window.location.href.split("/").slice(3,-1));
 }
 
-var currentRouter = $.trim(currentRouterString.replace(/,/g,"/"));
+var currentRouter = $.trim(currentRouterString.replace(/,/g,"/")),
+    router_splitted_list = currentRouter.split("/"),
+    router_last_val = router_splitted_list[router_splitted_list.length - 1];
+
+// If router's last val is any tech then remove it from url
+if(technology_list.indexOf(router_last_val.toLowerCase()) > -1) {
+    var new_url_splitted_list = router_splitted_list;
+    new_url_splitted_list.splice(new_url_splitted_list.length-1,1);
+    currentRouter = new_url_splitted_list.join("/");
+}
+
+// case of single device alert page
+if(router_splitted_list.length >= 6) {
+    var condition1 = router_splitted_list[router_splitted_list.length-2].indexOf('service_tab') > -1,
+        condition2 = router_splitted_list[0].indexOf('alert_center') > -1;
+    if(condition1 && condition2) {
+        currentRouter = router_splitted_list[0]+"/"+router_splitted_list[1]+"/down/"
+    }
+}
 
 /*By default all the sub-sub menu panel will be collapsed*/
 $(".has-sub-sub > ul.sub-sub").hide();
@@ -38,9 +58,11 @@ for(var i = 0; i < sideMenu.length; i++) {
     if($.trim(sideMenu[i].href) !== 'javascript:;' && $.trim(sideMenu[i].href) != "") {
         
         /*Anchor tags hiperlink text*/
-        var slashCount = sideMenu[i].href.split("/").length;
-        var menuLinkString = $.trim(sideMenu[i].href.split("/").slice(3,-1));
-        var menuLink = $.trim(menuLinkString.replace(/,/g,"/"));        
+        var slashCount = sideMenu[i].href.split("/").length,
+            menuLinkString = $.trim(sideMenu[i].href.split("/").slice(3,-1)),
+            menuLink = $.trim(menuLinkString.replace(/,/g,"/")),
+            menu_link_last_text = menuLink.split("/")[menuLink.split("/").length-1];
+
         /*Parent Element(li) Classname*/
         var activeClass = $.trim(sideMenu[i].parentElement.className);
         
@@ -49,15 +71,13 @@ for(var i = 0; i < sideMenu.length; i++) {
             sideMenu[i].parentElement.className = "";
         }
 
-        /*If the routertext matches the hiperlink text then add the active & current classes at the desired element*/
-        // if(currentRouter.indexOf('alert_center/customer/') > -1 && menuLink.indexOf('alert_center/customer/') > -1 && currentRouter != menuLink) {
-        //     var sub_tag = currentRouter.split("/");
-        //     if(menuLink.indexOf(sub_tag[sub_tag.length-1]) > -1) {
-        //         applySelectedClasses(sideMenu[i]);
-        //     }
-        // } else if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
-        //     applySelectedClasses(sideMenu[i]);
-        // }
+        // If router's last val is any tech then remove it from url
+        if(technology_list.indexOf(menu_link_last_text.toLowerCase()) > -1) {
+            var new_url_splitted_list = menuLink.split("/");
+            new_url_splitted_list.splice(new_url_splitted_list.length-1,1);
+            menuLink = new_url_splitted_list.join("/");
+        }
+
         if(currentRouter.indexOf(menuLink) == 0 && menuLink!="") {
             applySelectedClasses(sideMenu[i]);
         }
@@ -73,18 +93,21 @@ function applySelectedClasses(menuTag) {
         closest_sub_sub = $(menuTag).closest(".sub-sub"),
         closest_arrow = $(menuTag).closest("span.arrow"),
         breadcrumb_txt = '<li><a href="/home/"><i class="fa fa-home"></i> Home</a></li>',
-        isTab = $('.nav li.active .hidden-inline-mobile');
+        isTab = $('.nav li.active .hidden-inline-mobile'),
+        isTabCase2 = $('.nav li .hidden-inline-mobile');
 
     if(closest_has_sub.length > 0 && closest_has_sub_sub.length > 0) {
-        
+
         closest_has_sub.addClass("active");            
-        var main_child_length = closest_has_sub.children().first()[0].children.length;
-        var top_arrow = closest_has_sub.children().first()[0].children[main_child_length - 1];
+        var main_child_length = closest_has_sub.children().first()[0].children.length,
+            top_arrow = closest_has_sub.children().first()[0].children[main_child_length - 1];
+
         top_arrow.className = top_arrow.className+" open";
 
         closest_has_sub_sub.addClass("active");
-        var main_child_length = closest_has_sub_sub.children().first()[0].children.length;
-        var top_arrow = closest_has_sub_sub.children().first()[0].children[main_child_length - 1];
+        var main_child_length = closest_has_sub_sub.children().first()[0].children.length,
+            top_arrow = closest_has_sub_sub.children().first()[0].children[main_child_length - 1];
+
         top_arrow.className = top_arrow.className+" open";
 
         /*Add current class to parent element*/
@@ -94,14 +117,20 @@ function applySelectedClasses(menuTag) {
         breadcrumb_txt += closest_li[0].outerHTML;
 
         $(".breadcrumb").html(breadcrumb_txt);
-            
+
         // If any tab Exists
-        if(isTab.length > 0) {
+        if(isTab.length > 0 || isTabCase2.length > 0) {
+            var tab_breadcrumb = "";
             setTimeout(function() {
                 if($(".lite > .box-title > h4").text().indexOf("(") > -1) {
-                    var tab_breadcrumb = '<li><a href="'+window.location.href.split("#")[0]+'">'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</a></li>';
+                    if(device_technology) {
+                        // Add Device Technology to breadcrumb
+                        tab_breadcrumb = '<li><a style="cursor:pointer;" url="'+currentRouter+'" class="perf_tech_breadcrumb">'+device_technology.toUpperCase()+'</a></li>';
+                    }
+                    // Add Device IP to breadcrumb
+                    tab_breadcrumb += '<li><a href="'+window.location.href.split("#")[0]+'"><b>'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</b></a></li>';
                 } else {
-                    var tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
+                    tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
                 }
                 $(".breadcrumb").append(tab_breadcrumb);
             },150);
@@ -121,21 +150,28 @@ function applySelectedClasses(menuTag) {
         var main_child_length = closest_has_sub.children().first()[0].children.length;
         var top_arrow = closest_has_sub.children().first()[0].children[main_child_length - 1];
         top_arrow.className = top_arrow.className+" open";
-        // console.log((window.location.pathname.indexOf('performance') || window.location.pathname.indexOf('alert_center')))
         /*Add current class to parent element*/
         closest_li.addClass("current");
         breadcrumb_txt += "<li>"+closest_has_sub[0].children[0].outerHTML+"</li>";
         breadcrumb_txt += closest_li[0].outerHTML;
+
         $(".breadcrumb").html(breadcrumb_txt);
 
         // If any tab Exists
-        if(isTab.length > 0) {
+        if(isTab.length > 0 || isTabCase2.length > 0) {
+            var tab_breadcrumb = "";
             setTimeout(function() {
                 if($(".lite > .box-title > h4").text().indexOf("(") > -1) {
-                    var tab_breadcrumb = '<li><a href="'+window.location.href.split("#")[0]+'">'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</a></li>';
+                    if(device_technology) {
+                        // Add Device Technology to breadcrumb
+                        tab_breadcrumb = '<li><a style="cursor:pointer;" url="'+currentRouter+'" class="perf_tech_breadcrumb">'+device_technology.toUpperCase()+'</a></li>';
+                    }
+                    // Add Device IP to breadcrumb
+                    tab_breadcrumb += '<li><a href="'+window.location.href.split("#")[0]+'"><b>'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</b></a></li>';
                 } else {
-                    var tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
+                    tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
                 }
+
                 $(".breadcrumb").append(tab_breadcrumb);
             },150);
         }
@@ -158,12 +194,18 @@ function applySelectedClasses(menuTag) {
         $(".breadcrumb").html(breadcrumb_text);
         
         // If any tab Exists
-        if(isTab.length > 0) {
+        if(isTab.length > 0 || isTabCase2.length > 0) {
+            var tab_breadcrumb = "";
             setTimeout(function() {
                 if($(".lite > .box-title > h4").text().indexOf("(") > -1) {
-                    var tab_breadcrumb = '<li><a href="'+window.location.href.split("#")[0]+'">'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</a></li>';
+                    if(device_technology) {
+                        // Add Device Technology to breadcrumb
+                        tab_breadcrumb = '<li><a style="cursor:pointer;" url="'+currentRouter+'" class="perf_tech_breadcrumb">'+device_technology.toUpperCase()+'</a></li>';
+                    }
+                    // Add Device IP to breadcrumb
+                    tab_breadcrumb += '<li><a href="'+window.location.href.split("#")[0]+'"><b>'+$(".lite > .box-title > h4").text().split("(")[1].split(")")[0]+'</b></a></li>';
                 } else {
-                    var tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
+                    tab_breadcrumb = '<li><a href="javascript:;"><strong>'+$('.nav li.active .hidden-inline-mobile').text()+'</strong></a></li>';
                 }
                 $(".breadcrumb").append(tab_breadcrumb);
             },150);

@@ -1442,7 +1442,8 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
  * @event delegaate
  */
 $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
-    
+    // Show the loader
+    showSpinner();
     var api_url = e.currentTarget.attributes['url'] ? e.currentTarget.attributes['url'].value : "";
     // If api_url exist then fetch l2 report url
     if(api_url) {
@@ -1519,6 +1520,10 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
             },
             error : function(err) {
                 // console.log(err.statusText);
+            },
+            complete : function() {
+                // hide the loader
+                hideSpinner();
             }
         });
     }
