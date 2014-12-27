@@ -24,6 +24,31 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
+
+
+try:
+    import nocout_settings
+    from nocout_settings import _DATABASES, _LIVESTATUS
+except Exception as exp:
+    print exp
+
+
+
+def mysql_conn():
+        db = None
+        try:
+            db = mysql.connector.connect(
+                        user=_DATABASES['user'],
+                        host=_DATABASES['host'],
+                        password=_DATABASES['password'],
+                        database=_DATABASES['database'],
+                        port=_DATABASES['port']
+                        )
+        except Exception as exp:
+            print exp
+        return db
+
+
 def extract_hostip_from_wimax_topology(ss_host_mac):
         query = """
         select connected_device_ip from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
@@ -93,8 +118,8 @@ def check_wimax_dl_modulation_change_invent(item, params, info):
 """
     state = 3
     infotext = "unknown_value"
-    warn ,crit = params
     dl_modulation_change= None
+    warn ,crit =params
     try:
 	if info[1]:
                 ss_mac = info[1][0]
@@ -106,12 +131,13 @@ def check_wimax_dl_modulation_change_invent(item, params, info):
 			if host_ip[0][0]:
                 		dl_modulation_change =connection_telnet_dl_mod_change(host_ip[0][0], 23)
 				if dl_modulation_change:
-					if int(dl_modulation_change) > crit:
-						state = 2
-					elif int(dl_modulation_change) >= warn:
-						state =1
-					else:
-						state =0
+                                        if int(dl_modulation_change) > crit:
+                                                state = 2
+                                        elif int(dl_modulation_change) >= warn:
+                                                state =1
+                                        else:
+                                                state =0
+
 					infotext = "%s" % dl_modulation_change
     except ValueError:
         infotext = "type_mismatch_value"

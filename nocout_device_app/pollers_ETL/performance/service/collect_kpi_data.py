@@ -95,7 +95,7 @@ def format_kpi_data(site,output,output1,mongo_host,mongo_port,mongo_db_name):
 				check_time =datetime.fromtimestamp(entry[5])
 				local_timestamp = utility_module.pivot_timestamp_fwd(check_time)
 				if ds_values.get('cur'):
-					utilization_ds = ds
+					utilization_ds = str(ds)
 					kpi_data_dict.update({
 						'sys_timestamp':local_timestamp,
 						'check_timestamp':check_time,
@@ -107,6 +107,8 @@ def format_kpi_data(site,output,output1,mongo_host,mongo_port,mongo_db_name):
 						'site_name':site,
 						'ip_address':host_ip,
 						'age':age,
+						'warning_threshold': ds_values.get('war'),
+						'critical_threshold': ds_values.get('cric'),
 						'refer':device_sector_id})
 					matching_criteria.update({'device_name':host,'service_name':service,'data_source':utilization_ds})
 					kpi_update.append(matching_criteria)
@@ -158,10 +160,13 @@ def kpi_data_data_main():
                 mongo_db_name = desired_config.get('nosql_db')
 		query = "GET services\nColumns: host_name host_address host_state service_description service_state last_check"+\
                         " service_last_state_change service_perf_data\n"+\
-                        "Filter: service_description ~ wimax_pmp1_util_kpi\n"+\
-                        "Filter: service_description ~ wimax_pmp2_util_kpi\n"+\
-                        "Filter: service_description ~ cambium_util_kpi\n"+\
-                        "Or: 3\nOutputFormat: python\n"
+                        "Filter: service_description ~ wimax_pmp1_dl_util_kpi\n"+\
+                        "Filter: service_description ~ wimax_pmp1_ul_util_kpi\n"+\
+                        "Filter: service_description ~ wimax_pmp2_dl_util_kpi\n"+\
+                        "Filter: service_description ~ wimax_pmp2_ul_util_kpi\n"+\
+                        "Filter: service_description ~ cambium_dl_util_kpi\n"+\
+                        "Filter: service_description ~ cambium_ul_util_kpi\n"+\
+                        "Or: 6\nOutputFormat: python\n"
                 query1= "GET services\nColumns: host_name service_description plugin_output\n" +\
                         "Filter: service_description ~ wimax_pmp1_sector_id_invent\n"+\
                         "Filter: service_description ~ wimax_pmp2_sector_id_invent\n"+ \

@@ -88,7 +88,7 @@ def read_data(start_time, end_time, **kwargs):
     	for config, options in configs1.items():
             machine_name = options.get('machine')
         for doc in cur:
-		local_timestamp = utility_module.get_epoch_time(doc.get('local_timestamp'))
+		local_timestamp = utility_module.get_epoch_time(doc.get('sys_timestamp'))
 		check_timestamp = utility_module.get_epoch_time(doc.get('check_timestamp'))
         	t = (
         		doc.get('device_name'),

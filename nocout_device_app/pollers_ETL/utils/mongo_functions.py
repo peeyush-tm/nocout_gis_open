@@ -122,7 +122,7 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
                         elif flag == "wimax_topology":
                                 db.wimax_topology_data.update(matching_criteria,event_dict,upsert=True)
                         elif flag == "kpi_services":
-                                db.kpi_data.update(matching_criteria,event_dict,upsert=True)
+                                db.device_kpi_status.update(matching_criteria,event_dict,upsert=True)
                 	return success
 		except Exception, ReferenceError:
         		print "Mongodb updation failed"
@@ -158,13 +158,13 @@ def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None
 		except IndexError, e:
 			return latest_time
     elif db_type == 'mysql':
-        query = "SELECT `check_timestamp` FROM `%s` WHERE" % table_name +\
-            " `site_name` = '%s' ORDER BY `id` DESC LIMIT 1" % (site)
+        query = "SELECT MAX(id), check_timestamp FROM `%s` WHERE" % table_name +\
+            " `site_name` = '%s'" % (site)
         cursor = db.cursor()
         cursor.execute(query)
         entry = cursor.fetchone()
         try:
-            latest_time = entry[0]
+            latest_time = entry[1]
             latest_time = datetime.fromtimestamp(latest_time)
         except TypeError, e:
             cursor.close()

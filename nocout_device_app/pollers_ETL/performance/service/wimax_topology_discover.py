@@ -51,10 +51,15 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output\n" + \
                 "Filter: service_description = wimax_topology\nOutputFormat: json\n" 
 
+
+	device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
+                                "And: 2\nOutputFormat: python\n"
 	query_output = json.loads(utility_module.get_from_socket(site,query).strip())
+	query_output1 = eval(utility_module.get_from_socket(site,device_down_query).strip())
+	device_down_list =[str(item) for sublist in query_output1 for item in sublist]
 	for entry in query_output:
 		try:
-			if int(entry[2]) == 1:
+			if str(entry[0]) in device_down_list:
                         	continue
 			service_state = entry[4]
                 	host = entry[0]

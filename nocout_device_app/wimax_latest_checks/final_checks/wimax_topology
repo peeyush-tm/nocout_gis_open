@@ -33,7 +33,7 @@ def connection_telnet_bs_for_topology(hostname, port,pmp1_sec_id,pmp2_sec_id):
     
         """
         try:
-                tn = Telnet(hostname,port,timeout=3)
+                tn = Telnet(hostname,port,timeout=30)
         except socket.timeout:
 		plugin_message = ""
 		return plugin_message	
