@@ -42,8 +42,14 @@
 
 ## Utilization
 
+# Bi-hourly
+*/30 * * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mongodb -t 0.5 -f half_hourly -s kpi_data -d performance_utilizationbihourly
+
+# Hourly
+0 * * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 1 -f hourly -s performance_utilizationbihourly -d performance_utilizationhourly
+
 # Daily
-5 23 * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mongodb -t 24 -f daily -s kpi_data -d performance_utilizationdaily
+5 23 * * * /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 24 -f daily -s performance_utilizationhourly -d performance_utilizationdaily
 
 # Weekly
 5 23 * * 0 /usr/bin/python nocout/performance/service/utilization_aggregation.py -r mysql -t 168 -f weekly -s performance_utilizationdaily -d performance_utilizationweekly

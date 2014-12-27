@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from pprint import pprint
 from operator import itemgetter
 import optparse
+from itertools import groupby
 
 
 config_mod = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
@@ -55,7 +56,7 @@ else:
 
 
 
-def quantify_events_data(aggregated_data_values=[]):
+def prepare_data(aggregated_data_values=[]):
 	"""
 	Events aggregation
 	"""
@@ -68,10 +69,21 @@ def quantify_events_data(aggregated_data_values=[]):
 	db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
 	if db:
 		# Read data from mysql, events historical data
-		data_values = sorted(mysql_migration_mod.read_data(source_perf_table, db, start_time, end_time), key=itemgetter('sys_timestamp'))
-	print '## Docs len ##'
+		data_values = mysql_migration_mod.read_data(source_perf_table, db, start_time, end_time)
+	data_values = sorted(data_values, key=itemgetter('device_name'))
+	print 'Totoal Len'
 	print len(data_values)
-	for index, doc in enumerate(data_values):
+	for host, host_values in groupby(data_values, key=itemgetter('device_name')):
+		aggregated_data_values.extend(quantify_events_data(list(host_values)))
+
+	return aggregated_data_values
+
+
+def quantify_events_data(host_specific_data):
+	host_specific_aggregated_data = []
+	#print '## Docs len ##'
+	#print len(data_values)
+	for index, doc in enumerate(host_specific_data):
 		aggr_data = {}
 		find_query = {}
 		host, ip_address = doc.get('device_name'), doc.get('ip_address')
@@ -110,7 +122,7 @@ def quantify_events_data(aggregated_data_values=[]):
 				'current_value': current_value
 				}
 		# Find the entry for next state change of the host service
-		state_change_entry = find_next_state_change(aggr_data, data_values[index+1:]) 
+		state_change_entry = find_next_state_change(aggr_data, host_specific_data[index+1:]) 
 		if not state_change_entry or str(state_change_entry[0]['severity']) == str(severity):
 			continue
 		age_of_state = state_change_entry[0].get('sys_timestamp') - original_time 
@@ -122,13 +134,13 @@ def quantify_events_data(aggregated_data_values=[]):
 
 		# Find the existing doc to update
 		find_query = {
-				'host': aggr_data.get('host'),
+				#'host': aggr_data.get('host'),
 				'service': aggr_data.get('service'),
 				'ds': aggr_data.get('ds'),
 				'severity': aggr_data.get('severity'),
-				'time': aggr_data.get('time')
+				#'time': aggr_data.get('time')
 				}
-		existing_doc, existing_doc_index = find_existing_entry(find_query, aggregated_data_values)
+		existing_doc, existing_doc_index = find_existing_entry(find_query, host_specific_aggregated_data)
 		#print 'existing_doc'
 		#print existing_doc
 		if existing_doc:
@@ -145,25 +157,23 @@ def quantify_events_data(aggregated_data_values=[]):
 				'current_value': current_value
 				})
 			# First remove the existing entry from aggregated_data_values
-			#aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
-			# First remove the existing entry from aggregated_data_values
-			aggregated_data_values.pop(existing_doc_index)
+			host_specific_aggregated_data.pop(existing_doc_index)
 		# Add the new aggregated doc to final values
-		aggregated_data_values.append(aggr_data)
+		host_specific_aggregated_data.append(aggr_data)
 	
-	return aggregated_data_values
+	return host_specific_aggregated_data
 
 
-def find_next_state_change(aggr_data, data_values):
+def find_next_state_change(aggr_data, host_specific_data):
 	intermediate_result = []
-	for i in xrange(len(data_values)):
-		if set([aggr_data['host'], aggr_data['service'], aggr_data['ds']]) <= set(data_values[i].values()):
-			intermediate_result = data_values[i:i+1]
+	for i in xrange(len(host_specific_data)):
+		if set([aggr_data['service'], aggr_data['ds']]) <= set(host_specific_data[i].values()):
+			intermediate_result = host_specific_data[i:i+1]
 			break
 	return intermediate_result
 	
 
-def find_existing_entry(find_query, aggregated_data_values):
+def find_existing_entry(find_query, host_specific_aggregated_data):
 	"""
 	Find the doc to upadte
 	"""
@@ -171,9 +181,9 @@ def find_existing_entry(find_query, aggregated_data_values):
 	existing_doc = []
 	existing_doc_index = None
 	find_values = set(find_query.values())
-	for i in xrange(len(aggregated_data_values)):
-		if find_values <= set(aggregated_data_values[i].values()):
-			existing_doc = aggregated_data_values[i:i+1]
+	for i in xrange(len(host_specific_aggregated_data)):
+		if find_values <= set(host_specific_aggregated_data[i].values()):
+			existing_doc = host_specific_aggregated_data[i:i+1]
 			existing_doc_index = i
 			break
         #existing = filter(lambda d: set(find_query.values()) <= set(d.values()), aggregated_data_values)
@@ -185,7 +195,7 @@ def usage():
 
 
 if __name__ == '__main__':
-	final_data_values = quantify_events_data()
+	final_data_values = prepare_data()
 	print '--final_data_values--'
 	print len(final_data_values)
 	if final_data_values:

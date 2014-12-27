@@ -17,9 +17,9 @@ import imp
 import sys
 from datetime import datetime, timedelta
 from pprint import pprint
-import collections
 from operator import itemgetter
 import optparse
+from itertools import groupby
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_mod = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
@@ -63,7 +63,7 @@ else:
 
 
 
-def quantify_utilization_data(aggregated_data_values=[]):
+def prepare_data(aggregated_data_values=[]):
 	"""
 	Quantifies (int, float) utilization data using `min`, `max` and `sum` funcs
 	"""
@@ -77,18 +77,26 @@ def quantify_utilization_data(aggregated_data_values=[]):
 		db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
 		if db:
 			# Read data from mysqldb, performance historical data
-			data_values = sorted(mysql_migration_mod.read_data(source_perf_table, db, start_time, end_time), 
-					key=itemgetter('sys_timestamp'))
+			data_values = mysql_migration_mod.read_data(source_perf_table, db, start_time, end_time)
 	elif read_from == 'mongodb':
 		end_time = datetime.now()
 		start_time = end_time - timedelta(hours=hours)
 		start_time, end_time = start_time - timedelta(minutes=1), end_time + timedelta(minutes=1)
 		# Read data from mongodb, performance live data
-		data_values = sorted(mysql_migration_mod.read_data_from_mongo(source_perf_table, start_time, end_time, mongo_configs), 
-				key=itemgetter('local_timestamp'))
-	print '## Docs len ##'
-	print len(data_values)
-	for doc in data_values:
+		data_values = mysql_migration_mod.read_data_from_mongo(source_perf_table, start_time, end_time, mongo_configs, kpi=True)
+
+	data_values = sorted(data_values, key=itemgetter('device_name'))
+	for host, host_values in groupby(data_values, key=itemgetter('device_name')):
+		aggregated_data_values.extend(quantify_utilization_data(list(host_values)))
+	
+	return aggregated_data_values
+
+
+def quantify_utilization_data(host_specific_data):
+	host_specific_aggregated_data = []
+	#print '## Docs len ##'
+	#print len(data_values)
+	for doc in host_specific_data:
 		aggr_data = {}
 		find_query = {}
 
@@ -98,18 +106,19 @@ def quantify_utilization_data(aggregated_data_values=[]):
 		severity = doc.get('severity')
 		service = doc.get('service_name') if doc.get('service_name') else doc.get('service')
 		site = doc.get('site_name') if doc.get('site_name') else doc.get('site')
+		check_time = doc.get('check_timestamp') if doc.get('check_timestamp') else doc.get('check_time')
 		if read_from == 'mysql':
 			time = float(doc.get('sys_timestamp'))
+		        check_time = datetime.fromtimestamp(check_time)
 			original_time, time = time, datetime.fromtimestamp(time)
 		elif read_from == 'mongodb':
 			time = doc.get('local_timestamp') if doc.get('local_timestamp') else doc.get('sys_timestamp')
 		current_value = doc.get('current_value')
-		check_time = doc.get('check_timestamp') if doc.get('check_timestamp') else doc.get('check_time')
 		war, cric = doc.get('warning_threshold'), doc.get('critical_threshold')
 		# `refer` field to store Ckt-id for current device
 		refer = doc.get('refer')
 
-                if time_frame == 'half_hourly':
+		if time_frame == 'half_hourly':
 			if time.minute < 30:
 				# Pivot the time to second half of the hour
 				time = time.replace(minute=30, second=0, microsecond=0)
@@ -153,13 +162,13 @@ def quantify_utilization_data(aggregated_data_values=[]):
 
 		# Find the existing doc to update
 		find_query = {
-				'host': doc.get('host'),
+				#'host': doc.get('host'),
 				'service': doc.get('service'),
 				'ds': aggr_data.get('ds'),
 				'refer': refer,
-				'time': time
+				#'time': time
 				}
-		existing_doc, existing_doc_index = find_existing_entry(find_query, aggregated_data_values)
+		existing_doc, existing_doc_index = find_existing_entry(find_query, host_specific_aggregated_data)
 		#print 'existing_doc'
 		#print existing_doc
 		if existing_doc:
@@ -169,7 +178,7 @@ def quantify_utilization_data(aggregated_data_values=[]):
 			min_val = min(values_list) 
 			max_val = max(values_list) 
 			if aggr_data.get('avg'):
-				avg_val = (existing_doc.get('avg') + aggr_data.get('avg'))/ 2
+				avg_val = float(str((existing_doc.get('avg')))) + float(str((aggr_data.get('avg'))))/ 2.0
 			else:
 				avg_val = existing_doc.get('avg')
 			aggr_data.update({
@@ -178,16 +187,14 @@ def quantify_utilization_data(aggregated_data_values=[]):
 				'avg': avg_val
 				})
 			# First remove the existing entry from aggregated_data_values
-			#aggregated_data_values = filter(lambda d: not (set(find_query.values()) <= set(d.values())), aggregated_data_values)
-			# First remove the existing entry from aggregated_data_values
-			aggregated_data_values.pop(existing_doc_index)
+			host_specific_aggregated_data.pop(existing_doc_index)
 		#upsert_aggregated_data(find_query, aggr_data)
-		aggregated_data_values.append(aggr_data)
+		host_specific_aggregated_data.append(aggr_data)
 	
-	return aggregated_data_values
+	return host_specific_aggregated_data
 
 
-def find_existing_entry(find_query, aggregated_data_values):
+def find_existing_entry(find_query, host_specific_aggregated_data):
 	"""
 	Find the doc for update query
 	"""
@@ -195,9 +202,9 @@ def find_existing_entry(find_query, aggregated_data_values):
 	existing_doc = []
 	existing_doc_index = None
 	find_values = set(find_query.values())
-	for i in xrange(len(aggregated_data_values)):
-		if find_values <= set(aggregated_data_values[i].values()):
-			existing_doc = aggregated_data_values[i:i+1]
+	for i in xrange(len(host_specific_aggregated_data)):
+		if find_values <= set(host_specific_aggregated_data[i].values()):
+			existing_doc = host_specific_aggregated_data[i:i+1]
 			existing_doc_index = i
 			break
 	#docs = filter(lambda d: set(find_query.values()) <= set(d.values()), aggregated_data_values)
@@ -209,7 +216,9 @@ def usage():
 
 
 if __name__ == '__main__':
-	final_data_values = quantify_utilization_data()
+	final_data_values = prepare_data()
+	print 'Final Data Values'
+	print len(final_data_values)
 	if final_data_values:
 		db = mysql_migration_mod.mysql_conn(mysql_configs=mysql_configs)
 		mysql_migration_mod.mysql_export(destination_perf_table, db, final_data_values)
