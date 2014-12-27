@@ -419,6 +419,7 @@ SERVICE_DATA_SOURCE = {
         "formula": "rta_null",
         "show_min": True,
         "show_max": True,
+        "show_gis": True,
         "chart_color": "#70AFC4"
     },
     "pl": {
@@ -429,6 +430,7 @@ SERVICE_DATA_SOURCE = {
         "formula": None,
         "show_min": False,
         "show_max": False,
+        "show_gis": True,
         "chart_color": "#70AFC4"
     },
     "availability": {
@@ -439,6 +441,7 @@ SERVICE_DATA_SOURCE = {
         "formula": None,
         "show_min": False,
         "show_max": False,
+        "show_gis": True,
         "chart_color": "#70AFC4"
     },
 
