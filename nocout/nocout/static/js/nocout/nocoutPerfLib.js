@@ -11,6 +11,7 @@ var perf_that = "",
     allDevices = "",
     device_status = "",
     device_services = "",
+    tabs_click_counter = -1,
     single_service_data = "",
     getServiceDataUrl = "",
     chart_instance = "",
@@ -488,6 +489,9 @@ function nocoutPerfLib() {
      * @param device_id "INT", It contains the ID of current device.
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
+
+        // Decrement the tabs click on evert click counter
+        tabs_click_counter--;
 
         $.cookie('activeTabId', service_id+"_tab", {path: '/', secure: true});
 
