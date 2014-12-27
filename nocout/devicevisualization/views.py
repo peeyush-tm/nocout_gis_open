@@ -27,14 +27,14 @@ from django.core.urlresolvers import reverse_lazy
 import re, ast
 from activity_stream.models import UserAction
 
-#update the service data sources
+# update the service data sources
 from service.utils.util import service_data_sources
 
-logger=logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-##execute this globally
+# execute this globally
+# fetch all data sources
 SERVICE_DATA_SOURCE = service_data_sources()
-##execute this globally
 
 
 def locate_devices(request , device_name = "default_device_name"):
@@ -2417,6 +2417,10 @@ class GISPerfData(View):
 
         for perf in device_network_info:
             res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
+            print "***************************** res - ", type(res), res
+            print "***************************** name - ", type(name), name
+            print "***************************** title - ", type(title), title
+            print "***************************** show_gis - ", type(show_gis), show_gis
             if not res:
                 continue
             if perf['data_source'] in processed:
@@ -2456,6 +2460,10 @@ class GISPerfData(View):
 
             for perf in device_performance_info:
                 res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
+                print "***************************** res1 - ", type(res), res
+                print "***************************** name1 - ", type(name), name
+                print "***************************** title1 - ", type(title), title
+                print "***************************** show_gis1 - ", type(show_gis), show_gis
                 if not res:
                     continue
                 if perf['data_source'] in processed:
@@ -2520,10 +2528,17 @@ class GISPerfData(View):
         return device_info
 
     def sanatize_datasource(self, data_source):
+        """ Get Sector performance info
+
+            Parameters:
+                - data_source (unicode) - data source name for e.g. 'rta'
+
+            Returns:
+                - name (unicode) - data source name for e.g. 'rta'
+                - title (str) - data source name to display for e.g. 'Latency'
+                - show_gis (int) - 1 to show data source; 0 for not to show
         """
 
-        :return: False is condition does not match else return name,title
-        """
         if data_source and data_source[:1].isalpha():
             title = " ".join(data_source.split("_")).title()
             name = data_source.strip().lower()
@@ -2531,8 +2546,9 @@ class GISPerfData(View):
             try:
                 title = SERVICE_DATA_SOURCE[name]['display_name']
                 show_gis = SERVICE_DATA_SOURCE[name]['show_gis']
-            except:
-                pass
+            except Exception as e:
+                logger.info("Something wrong with fetching data sources information. Exception: ", e.message)
+
             return True, name, title, show_gis
         return False, False, False, 0
 
