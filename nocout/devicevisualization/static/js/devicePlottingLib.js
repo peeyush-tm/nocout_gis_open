@@ -8402,15 +8402,15 @@ function devicePlottingClass_gmap() {
 	 */
 	this.getMarkerImageBySize = function(markerUrl,marker_type) {
 
-		var largeur = 32,
-			hauteur = 37,
+		var largeur = 32/1.4,
+			hauteur = 37/1.4,
 			divideBy = 0.8,
 			anchorX = -0.2,
 			markerImageObj = "";
 
 		if(marker_type == 'base_station') {
-			largeur = 20;
-			hauteur = 40;
+			largeur = 20/1.4;
+			hauteur = 40/1.4;
 		}
 
 		if(current_icon_size == 'small') {
@@ -8438,17 +8438,22 @@ function devicePlottingClass_gmap() {
 	//This function updates the Marker Icon with the new Size.
 	this.updateAllMarkersWithNewIcon_gmap= function(iconSize) {
 
-		var largeur= 32, hauteur= 37,largeur_bs = 32, hauteur_bs= 37, divideBy;
+		var largeur = 32/1.4,
+			hauteur = 37/1.4,
+			largeur_bs = 32/1.4,
+			hauteur_bs = 37/1.4,
+			divideBy;
+
 		var anchorX, i, markerImage, markerImage2, icon;
-		if(iconSize=== 'small') {
-			divideBy= 1.4;
-			anchorX= 0.4;
-		} else if(iconSize=== 'medium') {
-			divideBy= 1;
-			anchorX= 0;
+		if(iconSize == 'small') {
+			divideBy = 1.4;
+			anchorX = 0.4;
+		} else if(iconSize == 'medium') {
+			divideBy = 1;
+			anchorX = 0;
 		} else {
-			divideBy= 0.8;
-			anchorX= -0.2;
+			divideBy = 0.8;
+			anchorX = -0.2;
 		}
 
 		//Loop through the sector markers
