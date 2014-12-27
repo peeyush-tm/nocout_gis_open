@@ -122,7 +122,7 @@ def live_query_pmp2_ul_util_kpi(hostname,site,war,crit):
                         state_string = "warning"
 	
 	
-	perf += 'pmp2_ul_util_kpi' + "=%s " % (pmp2_ul_kpi)
+	perf += 'pmp2_ul_util_kpi' + "=%s;%s;%s" % (pmp2_ul_kpi,war,crit)
     except Exception ,e:
 	perf = '' 
     plugin_message += "wimax_pmp2_ul_util_kpi %s - %s|%s" % (state_string,pmp2_ul_kpi,perf)

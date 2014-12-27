@@ -24,6 +24,27 @@ Device on which Frequency operating is sent to device application
 # Output: service state ,plugin output
 # ######################################################################
 
+def get_from_socket(socket_ip,socket_port, query):
+    """
+    Function_name : get_from_socket (collect the query data from the socket)
+
+    Args: site_name (poller on which monitoring data is to be collected)
+
+    Kwargs: query (query for which data to be collectes from nagios.)
+
+    Return : None
+
+    raise
+         Exception: SyntaxError,socket error
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((socket_ip,socket_port))
+    s.send(query)
+    s.shutdown(socket.SHUT_WR)
+    output = s.recv(100000000)
+    output.strip("\n")
+    return output
+
 
 
 def extract_bsinfo_from_wimax_topology(ss_host_mac):
