@@ -2395,6 +2395,27 @@ function devicePlottingClass_gmap() {
 			/*Call the function to create info window content*/
 			var content = gmap_self.makeWindowContent(this);
 			$("#infoWindowContainer").html(content);
+			
+			// Reduce infowindow size in case of point & ruler line
+			if(this.startTitle && $.trim(this.startTitle.toLowerCase()) == 'point a') {
+
+				if($("#infoWindowContainer").hasClass("col-md-5")) {
+					$("#infoWindowContainer").removeClass("col-md-5")
+				}
+
+				if($("#infoWindowContainer").hasClass("col-md-offset-7")) {
+					$("#infoWindowContainer").removeClass("col-md-offset-7")
+				}
+
+				if(!$("#infoWindowContainer").hasClass("col-md-4")) {
+					$("#infoWindowContainer").addClass("col-md-4")
+				}
+
+				if(!$("#infoWindowContainer").hasClass("col-md-offset-8")) {
+					$("#infoWindowContainer").addClass("col-md-offset-8")
+				}
+			}
+
 			$("#infoWindowContainer").removeClass('hide');
 
 			/*Show only 5 rows, hide others*/
