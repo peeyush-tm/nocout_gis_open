@@ -1673,8 +1673,10 @@ class Get_Service_Type_Performance_Data(View):
         chart_data = list()
         if performance_data_ss and performance_data_bs:
             data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
-            min_data_list = list()
-            max_data_list = list()
+            bs_data_list = list()
+            ss_data_list = list()
+
+            rf_prop = SERVICE_DATA_SOURCE['rf']
 
             for data in performance_data_ss:
                 js_time = data.sys_timestamp*1000
@@ -1690,9 +1692,17 @@ class Get_Service_Type_Performance_Data(View):
 
                         ss_lat = data.avg_value
                         rf_lat = float(ss_lat) - float(bs_lat)
+
+                        if rf_prop['show_bs']:
+                            bs_data_list.append([js_time, float(bs_lat)])
+                        if rf_prop['show_ss']:
+                            ss_data_list.append([js_time, float(ss_lat)])
+
                         data_list.append([js_time, float(rf_lat)])
                     except Exception as e:
                         rf_lat = data.avg_value
+                        if rf_prop['show_ss']:
+                            ss_data_list.append([js_time, float(rf_lat)])
                         data_list.append([js_time, float(rf_lat)])
                         log.exception(e.message)
 
@@ -1703,6 +1713,25 @@ class Get_Service_Type_Performance_Data(View):
                             'valuetext': ' ms '
                           }
                         ]
+            if rf_prop['show_ss']:
+                chart_data.append(
+                    {'name': "SS Latency",
+                        'data': ss_data_list,
+                        'type': 'spline',
+                        'valuesuffix': ' ms ',
+                        'valuetext': ' ms '
+                    }
+                )
+            if rf_prop['show_bs']:
+                chart_data.append(
+                    {'name': "BS Latency",
+                        'data': bs_data_list,
+                        'type': 'spline',
+                        'valuesuffix': ' ms ',
+                        'valuetext': ' ms '
+                    }
+                )
+
 
         self.result['success'] = 1
         self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'

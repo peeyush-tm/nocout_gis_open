@@ -46,9 +46,25 @@ def update_sector_frequency_per_day():
             logger.info("Sector configured on machine not found. Exception: ", e.message)
 
         # polled frequency
-        polled_frequency = ""
+        polled_frequency = None
+        port_based_frequency = False
+        service_name = 'wimax_pmp1_frequency_invent'
         try:
-            polled_frequency = InventoryStatus.objects.filter(device_name=sector_configured_on.device_name,
+            if sector.sector_configured_on_port and sector.sector_configured_on_port.name:
+                port_based_frequency = True
+            if 'pmp1' in sector.sector_configured_on_port.name.strip().lower():
+                service_name = 'wimax_pmp1_frequency_invent'
+            elif 'pmp2' in sector.sector_configured_on_port.name.strip().lower():
+                service_name = 'wimax_pmp2_frequency_invent'
+            else:
+                port_based_frequency = False
+            if port_based_frequency:
+                polled_frequency = InventoryStatus.objects.filter(device_name=sector_configured_on.device_name,
+                                                              service_name=service_name,
+                                                              data_source='frequency').using(
+                                                              alias=machine_name)[0].current_value
+            else:
+                polled_frequency = InventoryStatus.objects.filter(device_name=sector_configured_on.device_name,
                                                               data_source='frequency').using(
                                                               alias=machine_name)[0].current_value
         except Exception as e:
@@ -57,16 +73,19 @@ def update_sector_frequency_per_day():
             continue
 
         frequency_obj = None
-        try:
-            # get frequency object
-            frequency_obj = DeviceFrequency.objects.filter(value=str(polled_frequency))[0]
+        if polled_frequency:
+            try:
+                # get frequency object
+                frequency_obj = DeviceFrequency.objects.filter(value=str(polled_frequency))[0]
 
-            # update sector frequency
-            if frequency_obj:
-                sector.frequency = frequency_obj
-                sector.save()
-        except:
-            logger.exception("No Frequency Found ({})".format(frequency_obj))
+                # update sector frequency
+                if frequency_obj:
+                    sector.frequency = frequency_obj
+                    sector.save()
+            except:
+                logger.exception("No Frequency Found ({})".format(frequency_obj))
+                continue
+        else:
             continue
 
     return True

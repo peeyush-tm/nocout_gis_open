@@ -1470,7 +1470,7 @@ class GISPerfData(View):
                                 sector_device.device_alias))
 
                             # get performance data
-                            sector_performance_data = self.get_sector_performance_info(sector_device)
+                            sector_performance_data = self.get_sector_performance_info(sector_device, sector_obj)
 
                             # sector dictionary
                             sector_dict = dict()
@@ -1642,7 +1642,7 @@ class GISPerfData(View):
 
         return backhaul_data
 
-    def get_sector_performance_info(self, device):
+    def get_sector_performance_info(self, device, sector=None):
         """ Get Sector performance info
 
             Parameters:
@@ -1717,7 +1717,7 @@ class GISPerfData(View):
             logger.error("No thematic setting for device {}. Exception: ".format(device_name, e.message))
 
         # device frequency
-        device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
+        device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time, sector)
 
         # update device frequency
         performance_data['polled_frequency'] = device_frequency
@@ -1746,7 +1746,7 @@ class GISPerfData(View):
                 device_sector_objects = device.sector_configured_on.filter()
 
                 if len(device_sector_objects):
-                    sector = device_sector_objects[0]
+                    # sector = device_sector_objects[0]
                     # sector antenna
                     antenna = sector.antenna
                     # azimuth angle
@@ -2798,10 +2798,15 @@ class GISPerfData(View):
 
         far_end_perf_url = ""
         far_end_inventory_url = ""
-        
+
+        techno_to_append = device_technology.name
+        if substation.circuit_set.exists():
+            c = substation.circuit_set.filter()[0]
+            if c.circuit_type and c.circuit_type.strip().lower() in ['bh','backhaul']:
+                techno_to_append = "PTP BH"
         # Check for technology to make perf page url
-        if device_technology.name:
-            if device_technology.name.lower() in ['pmp', 'wimax', 'ptp', 'p2p']:
+        if techno_to_append:
+            if techno_to_append.lower() in ['pmp', 'wimax', 'ptp', 'p2p']:
                 far_end_perf_url = '/performance/customer_live/'+str(ss_device_id)+'/'
             elif techno_to_append.lower() in ['ptp bh']:
                 far_end_perf_url = '/performance/network_live/'+str(ss_device_id)+'/'
@@ -2814,7 +2819,7 @@ class GISPerfData(View):
         substation_info['lon'] = substation.longitude
         substation_info['perf_page_url'] = far_end_perf_url
         substation_info['inventory_url'] = far_end_inventory_url
-        substation_info['technology'] = device_technology.name
+        substation_info['technology'] = techno_to_append
         substation_info['link_color'] = device_link_color
         substation_info['show_link'] = 1
         substation_info['param'] = dict()
@@ -2895,7 +2900,7 @@ class GISPerfData(View):
 
         return substation_info
 
-    def get_device_polled_frequency(self, device_name, machine_name, freeze_time):
+    def get_device_polled_frequency(self, device_name, machine_name, freeze_time, sector=None):
         """ Get device polled frequency
 
             Parameters:
@@ -2910,23 +2915,42 @@ class GISPerfData(View):
         # device frequency
         device_frequency = ""
         try:
-            if int(freeze_time):
-                device_frequency = PerformanceInventory.objects.filter(device_name=device_name, data_source='frequency',
-                                                                       sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                       .using(alias=machine_name)\
-                                                                       .order_by('-sys_timestamp')[:1]
-                if len(device_frequency):
-                    device_frequency = device_frequency[0].current_value
-                else:
-                    device_frequency = ""
+            # if int(freeze_time):
+            #     device_frequency = PerformanceInventory.objects.filter(device_name=device_name, data_source='frequency',
+            #                                                            sys_timestamp__lte=int(freeze_time) / 1000)\
+            #                                                            .using(alias=machine_name)\
+            #                                                            .order_by('-sys_timestamp')[:1]
+            #     if len(device_frequency):
+            #         device_frequency = device_frequency[0].current_value
+            #     else:
+            #         device_frequency = ""
+            # else:
+
+            port_based_frequency = False
+            service_name = 'wimax_pmp1_frequency_invent'
+            if sector:
+                if sector.sector_configured_on_port and sector.sector_configured_on_port.name:
+                    port_based_frequency = True
+                    if 'pmp1' in sector.sector_configured_on_port.name.strip().lower():
+                        service_name = 'wimax_pmp1_frequency_invent'
+                    elif 'pmp2' in sector.sector_configured_on_port.name.strip().lower():
+                        service_name = 'wimax_pmp2_frequency_invent'
+                    else:
+                        port_based_frequency = False
+            if port_based_frequency:
+                device_frequency = InventoryStatus.objects.filter(device_name=device_name,
+                                                                  service_name=service_name,
+                                                                  data_source='frequency')\
+                                                              .using(alias=machine_name)\
+                                                              .order_by('-sys_timestamp')[:1]
             else:
                 device_frequency = InventoryStatus.objects.filter(device_name=device_name, data_source='frequency')\
-                                                                  .using(alias=machine_name)\
-                                                                  .order_by('-sys_timestamp')[:1]
-                if len(device_frequency):
-                    device_frequency = device_frequency[0].current_value
-                else:
-                    device_frequency = ""
+                                                              .using(alias=machine_name)\
+                                                              .order_by('-sys_timestamp')[:1]
+            if len(device_frequency):
+                device_frequency = device_frequency[0].current_value
+            else:
+                device_frequency = ""
         except Exception as e:
             logger.error("Device frequency not exist. Exception: ", e.message)
 
