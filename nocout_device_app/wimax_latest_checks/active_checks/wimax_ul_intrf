@@ -1,0 +1,25 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+
+def check_wimax_ul_intrf_arguments(params):
+    description,settings = params
+    args =''
+    if "host" in settings:
+        args += '%s ' % quote_shell_string(settings['host'])
+    if "site" in settings:
+        args += '%s ' % quote_shell_string(settings['site'])
+
+    if "war" in settings:
+        args += '%s ' % quote_shell_string(settings['war'])
+    if "crit" in settings:
+        args += '%s ' % quote_shell_string(settings['crit'])
+
+    return args
+
+active_check_info['wimax_ul_intrf'] = {
+    "command_line"        : '$USER1$/check_wimax_ul_intrf $ARG1$',
+    "argument_function"   : check_wimax_ul_intrf_arguments,
+    "service_description" : lambda params: "%s" % params[0],
+    "has_perfdata"        :True,
+}
+

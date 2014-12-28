@@ -251,7 +251,8 @@
     <script type="text/javascript">
     /*Global Variables*/
     var perfInstance = "",
-        current_device = "";
+        current_device = "",
+        device_technology = "";
 
 
     $(document).ready(function (e) {
@@ -274,7 +275,7 @@
         }
 
         /*Show SIA tab only for network devices*/
-        var device_technology = '{{ device_technology }}';
+        device_technology = '{{ device_technology }}';
 
         // Hide Topology tab for PTP
         if(page_type_val == 'customer' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
@@ -607,6 +608,12 @@
             //         $('#'+$.cookie('activeTabId')).trigger('click');
             //     }
             // }, 100);
+        });
+
+        // Add click event to technology on breadcrumb
+        $("body").delegate(".perf_tech_breadcrumb",'click',function(e) {
+            // Go back to last tab
+            window.history.go(tabs_click_counter);
         });
     </script>
 {% endblock %}

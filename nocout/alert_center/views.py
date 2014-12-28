@@ -1024,6 +1024,9 @@ class SingleDeviceAlertDetails(View):
         device_id = device_id
         machine_name = device_obj.machine.name
 
+        device_technology_name = DeviceTechnology.objects.get(id=device_obj.device_technology).name
+
+
         data_list = None
         required_columns = [
             # "device_name",
@@ -1190,7 +1193,8 @@ class SingleDeviceAlertDetails(View):
                            table_header=required_columns,
                            service_name=service_name,
                            start_date_object=start_date_object,
-                           end_date_object=end_date_object
+                           end_date_object=end_date_object,
+                           device_technology_name=device_technology_name
             )
 
             return render(request, 'alert_center/single_device_alert.html', context)

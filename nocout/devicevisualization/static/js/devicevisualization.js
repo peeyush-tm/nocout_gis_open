@@ -1377,6 +1377,24 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
         $('#infoWindowContainer').addClass("hide");
     }
 
+    // Set actual infowindow size -- START
+    if(!$("#infoWindowContainer").hasClass("col-md-5")) {
+        $("#infoWindowContainer").addClass("col-md-5")
+    }
+
+    if(!$("#infoWindowContainer").hasClass("col-md-offset-7")) {
+        $("#infoWindowContainer").addClass("col-md-offset-7")
+    }
+
+    if($("#infoWindowContainer").hasClass("col-md-4")) {
+        $("#infoWindowContainer").removeClass("col-md-4")
+    }
+
+    if($("#infoWindowContainer").hasClass("col-md-offset-8")) {
+        $("#infoWindowContainer").removeClass("col-md-offset-8")
+    }
+    // Set actual infowindow size -- END
+
     if($(".windowIFrame").length) {
         $(".windowIFrame").remove();
     }
@@ -1424,7 +1442,8 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
  * @event delegaate
  */
 $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
-    
+    // Show the loader
+    showSpinner();
     var api_url = e.currentTarget.attributes['url'] ? e.currentTarget.attributes['url'].value : "";
     // If api_url exist then fetch l2 report url
     if(api_url) {
@@ -1501,6 +1520,10 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
             },
             error : function(err) {
                 // console.log(err.statusText);
+            },
+            complete : function() {
+                // hide the loader
+                hideSpinner();
             }
         });
     }
