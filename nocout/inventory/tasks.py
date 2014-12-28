@@ -2316,42 +2316,50 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # sanitize bs name
                 name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
 
-                try:
-                    if all(k in row for k in ("City", "State")):
-                        # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
-                except Exception as e:
-                    logger.info(e.message)
+                # bs city
+                bs_city = row['City'] if 'City' in row.keys() else ""
 
-                # bs alias
-                alias = row['BS Name'] if 'BS Name' in row.keys() else ""
+                # bs state
+                bs_state = row['State'] if 'State' in row.keys() else ""
 
-                # base station data
-                basestation_data = {
-                    'name': name,
-                    'alias': alias,
-                    'bs_switch': bs_switch,
-                    'backhaul': backhaul,
-                    'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
-                    'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
-                    'bh_port': 0,
-                    'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
-                    'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
-                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
-                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
-                    'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
-                    'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
-                    'state': row['State'] if 'State' in row.keys() else "",
-                    'city': row['City'] if 'City' in row.keys() else "",
-                    'address': row['BS Address'] if 'BS Address' in row.keys() else "",
-                    'description': 'Base Station created on {}.'.format(full_time)
-                }
+                if name and bs_city and bs_state:
+                    try:
+                        if all(k in row for k in ("City", "State")):
+                            # concatinate city and state in bs name
+                            name = "{}_{}_{}".format(name, bs_city[:3].lower(), bs_state[:3].lower())
+                    except Exception as e:
+                        logger.info(e.message)
 
-                # base station object
-                basestation = ""
-                if name and alias:
-                    basestation = create_basestation(basestation_data)
+                    # bs alias
+                    alias = row['BS Name'] if 'BS Name' in row.keys() else ""
+
+                    # base station data
+                    basestation_data = {
+                        'name': name,
+                        'alias': alias,
+                        'bs_switch': bs_switch,
+                        'backhaul': backhaul,
+                        'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
+                        'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                        'bh_port': 0,
+                        'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
+                        'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
+                        'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'Base Station created on {}.'.format(full_time)
+                    }
+
+                    # base station object
+                    basestation = ""
+                    if name and alias:
+                        basestation = create_basestation(basestation_data)
+                else:
+                    basestation = ""
             except Exception as e:
                 basestation = ""
 
@@ -2426,29 +2434,31 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # initialize alias
                 alias = ""
 
-                # sanitize customer name
-                name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""),
-                                      special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""))
-                alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
+                # customer name
+                customer_name = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
 
-                try:
-                    if 'SS Circuit ID' in row.keys():
-                        # concatinate city and state in bs name
-                        name = "{}_{}".format(name, special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']))
-                except Exception as e:
-                    logger.info(e.message)
+                # ss circuit id
+                ss_circuit_id = row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""
 
-                # customer data
-                customer_data = {
-                    'name': name,
-                    'alias': alias,
-                    'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
-                    'description': 'SS Customer created on {}.'.format(full_time)
-                }
-                # customer object
-                customer = ""
-                if name:
-                    customer = create_customer(customer_data)
+                if customer_name and ss_circuit_id:
+                    # sanitize customer name
+                    name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(customer_name),
+                                          special_chars_name_sanitizer_with_lower_case(ss_circuit_id))
+                    alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
+
+                    # customer data
+                    customer_data = {
+                        'name': name,
+                        'alias': alias,
+                        'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
+                        'description': 'SS Customer created on {}.'.format(full_time)
+                    }
+                    # customer object
+                    customer = ""
+                    if name:
+                        customer = create_customer(customer_data)
+                else:
+                    customer = ""
             except Exception as e:
                 customer = ""
 
@@ -2798,7 +2808,6 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
                 # device name
                 name = device_latest_id
-                # name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['SS IP']):
                     # sub station data
@@ -3210,35 +3219,43 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 # sanitize bs name
                 name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
 
-                try:
-                    if all(k in row for k in ("City", "State")):
-                        # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
-                except Exception as e:
-                    logger.info(e.message)
+                # bs city
+                bs_city = row['City'] if 'City' in row.keys() else ""
 
-                alias = row['BS Name'] if 'BS Name' in row.keys() else ""
-                basestation_data = {
-                    'name': name,
-                    'alias': alias,
-                    'bs_switch': bs_switch,
-                    'backhaul': backhaul,
-                    'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
-                    'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
-                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
-                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
-                    'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
-                    'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
-                    'state': row['State'] if 'State' in row.keys() else "",
-                    'city': row['City'] if 'City' in row.keys() else "",
-                    'address': row['BS Address'] if 'BS Address' in row.keys() else "",
-                    'description': 'Base Station created on {}.'.format(full_time)
-                }
-                # base station object
-                basestation = ""
-                if name and alias:
-                    basestation = create_basestation(basestation_data)
+                # bs state
+                bs_state = row['State'] if 'State' in row.keys() else ""
+
+                if name and bs_city and bs_state:
+                    try:
+                        if all(k in row for k in ("City", "State")):
+                            # concatinate city and state in bs name
+                            name = "{}_{}_{}".format(name, bs_city[:3].lower(), bs_state[:3].lower())
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    alias = row['BS Name'] if 'BS Name' in row.keys() else ""
+                    basestation_data = {
+                        'name': name,
+                        'alias': alias,
+                        'bs_switch': bs_switch,
+                        'backhaul': backhaul,
+                        'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
+                        'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
+                        'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'Base Station created on {}.'.format(full_time)
+                    }
+                    # base station object
+                    basestation = ""
+                    if name and alias:
+                        basestation = create_basestation(basestation_data)
+                else:
+                    basestation = ""
             except Exception as e:
                 basestation = ""
 
@@ -3316,29 +3333,31 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 # initialize alias
                 alias = ""
 
-                # customer data
-                # sanitize customer name
-                name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""),
-                                      special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""))
-                alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
+                # customer name
+                customer_name = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
 
-                try:
-                    if 'SS Circuit ID' in row.keys():
-                        # concatinate city and state in bs name
-                        name = "{}_{}".format(name, special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']))
-                except Exception as e:
-                    logger.info(e.message)
+                # ss circuit id
+                ss_circuit_id = row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""
 
-                customer_data = {
-                    'name': name,
-                    'alias': alias,
-                    'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
-                    'description': 'SS Customer created on {}.'.format(full_time)
-                }
-                # customer object
-                customer = ""
-                if name:
-                    customer = create_customer(customer_data)
+                if customer_name and ss_circuit_id:
+                    # customer data
+                    # sanitize customer name
+                    name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(customer_name),
+                                          special_chars_name_sanitizer_with_lower_case(ss_circuit_id))
+                    alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
+
+                    customer_data = {
+                        'name': name,
+                        'alias': alias,
+                        'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
+                        'description': 'SS Customer created on {}.'.format(full_time)
+                    }
+                    # customer object
+                    customer = ""
+                    if name:
+                        customer = create_customer(customer_data)
+                else:
+                    customer = ""
             except Exception as e:
                 customer = ""
 
@@ -3517,7 +3536,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     try:
                         machine_and_site = get_machine_and_site(machine_and_site_info)
                     except Exception as e:
-                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:",
+                                    e.message)
 
                     if machine_and_site:
                         # get machine
@@ -3547,7 +3567,6 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
                     # device name
                     name = device_latest_id
-                    # name = special_chars_name_sanitizer_with_lower_case(row['Sector ID'] if 'Sector ID' in row.keys() else "")
 
                     # device alias
                     alias = circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else ""
@@ -3925,47 +3944,55 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 # sanitize bs name
                 name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
 
+                # bs city
+                bs_city = row['City'] if 'City' in row.keys() else ""
+
+                # bs state
+                bs_state = row['State'] if 'State' in row.keys() else ""
+
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, bs_city[:3].lower(), bs_state[:3].lower())
                 except Exception as e:
                     logger.info(e.message)
 
-                # bs name
-                alias = row['BS Name'] if 'BS Name' in row.keys() else ""
+                if name and bs_city and bs_state:
+                    # bs name
+                    alias = row['BS Name'] if 'BS Name' in row.keys() else ""
 
-                # base station data
-                basestation_data = {
-                    'name': name,
-                    'alias': alias,
-                    'bs_switch': bs_switch,
-                    'bs_site_id': row['Site ID'] if 'Site ID' in row.keys() else "",
-                    'bs_site_type': row['Site Type'] if 'Site Type' in row.keys() else "",
-                    'bs_type': row['Type Of BS (Technology)'] if 'Type Of BS (Technology)' in row.keys() else "",
-                    'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
-                    'bh_port': 0,
-                    'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
-                    'infra_provider': row['Infra Provider'] if 'Infra Provider' in row.keys() else "",
-                    'gps_type': row['Type Of GPS'] if 'Type Of GPS' in row.keys() else "",
-                    'backhaul': backhaul,
-                    'bh_bso': "",
-                    'hssu_used': "",
-                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
-                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
-                    'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
-                    'tower_height': row['Tower Height'] if 'Tower Height' in row.keys() else "",
-                    'state': row['State'] if 'State' in row.keys() else "",
-                    'city': row['City'] if 'City' in row.keys() else "",
-                    'address': row['Address'] if 'Address' in row.keys() else "",
-                    'description': 'Base Station created on {}.'.format(full_time)
-                }
+                    # base station data
+                    basestation_data = {
+                        'name': name,
+                        'alias': alias,
+                        'bs_switch': bs_switch,
+                        'bs_site_id': row['Site ID'] if 'Site ID' in row.keys() else "",
+                        'bs_site_type': row['Site Type'] if 'Site Type' in row.keys() else "",
+                        'bs_type': row['Type Of BS (Technology)'] if 'Type Of BS (Technology)' in row.keys() else "",
+                        'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                        'bh_port': 0,
+                        'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
+                        'infra_provider': row['Infra Provider'] if 'Infra Provider' in row.keys() else "",
+                        'gps_type': row['Type Of GPS'] if 'Type Of GPS' in row.keys() else "",
+                        'backhaul': backhaul,
+                        'bh_bso': "",
+                        'hssu_used': "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
+                        'tower_height': row['Tower Height'] if 'Tower Height' in row.keys() else "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'address': row['Address'] if 'Address' in row.keys() else "",
+                        'description': 'Base Station created on {}.'.format(full_time)
+                    }
 
-                # base station object
-                basestation = ""
-                if name and alias:
-                    basestation = create_basestation(basestation_data)
+                    # base station object
+                    basestation = ""
+                    if name and alias:
+                        basestation = create_basestation(basestation_data)
+                else:
+                    basestation = ""
             except Exception as e:
                 basestation = ""
 
@@ -3978,29 +4005,36 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 alias = ""
 
                 # sector name
-                name = '{}_{}'.format(special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
-                                      row['Sector Name'] if 'Sector Name' in row.keys() else "")
+                sector_name = row['Sector Name'] if 'Sector Name' in row.keys() else ""
 
-                # sector alias
-                alias = row['Sector Name'].upper() if 'Sector Name' in row.keys() else ""
+                # sector id
+                sector_id = row['Sector ID'] if 'Sector ID' in row.keys() else ""
 
-                # sector data
-                sector_data = {
-                    'name': name,
-                    'alias': alias,
-                    'base_station': basestation,
-                    'sector_id': row['Sector ID'].strip().lower() if 'Sector ID' in row.keys() else "",
-                    'bs_technology': 4,
-                    'sector_configured_on': base_station,
-                    'antenna': sector_antenna,
-                    'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
-                    'description': 'Sector created on {}.'.format(full_time)
-                }
+                if sector_id and sector_name:
+                    # sector name
+                    name = '{}_{}'.format(special_chars_name_sanitizer_with_lower_case(sector_id), sector_name)
 
-                # sector object
-                sector = create_sector(sector_data)
+                    # sector alias
+                    alias = row['Sector Name'].upper() if 'Sector Name' in row.keys() else ""
+
+                    # sector data
+                    sector_data = {
+                        'name': name,
+                        'alias': alias,
+                        'base_station': basestation,
+                        'sector_id': row['Sector ID'].strip().lower() if 'Sector ID' in row.keys() else "",
+                        'bs_technology': 4,
+                        'sector_configured_on': base_station,
+                        'antenna': sector_antenna,
+                        'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
+                        'description': 'Sector created on {}.'.format(full_time)
+                    }
+
+                    # sector object
+                    sector = create_sector(sector_data)
             except Exception as e:
                 sector = ""
+
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
@@ -4024,6 +4058,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
         Returns:
            - Nothing
     """
+
     # gis bulk upload id
     gis_id = gis_id
 
@@ -4159,7 +4194,6 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
                     # device name
                     name = device_latest_id
-                    # name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else ""
 
                     # device alias
                     alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
@@ -4269,23 +4303,32 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 # initialize alias
                 alias = ""
 
-                # customer data
-                # sanitize customer name
-                name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(row['Customer Name'] if 'Customer Name' in row.keys() else ""),
-                                      special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else ""))
-                alias = row['Customer Name'] if 'Customer Name' in row.keys() else ""
+                # customer name
+                customer_name = row['Customer Name'] if 'Customer Name' in row.keys() else ""
 
-                customer_data = {
-                    'name': name,
-                    'alias': alias,
-                    'address': row['Customer Address'] if 'Customer Address' in row.keys() else "",
-                    'description': 'Customer created on {}.'.format(full_time)
-                }
+                # ss circuit id
+                ss_circuit_id = row['Circuit ID'] if 'Circuit ID' in row.keys() else ""
 
-                # customer object
-                customer = ""
-                if name:
-                    customer = create_customer(customer_data)
+                if customer_name and ss_circuit_id:
+                    # customer data
+                    # sanitize customer name
+                    name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(customer_name),
+                                          special_chars_name_sanitizer_with_lower_case(ss_circuit_id))
+                    alias = row['Customer Name'] if 'Customer Name' in row.keys() else ""
+
+                    customer_data = {
+                        'name': name,
+                        'alias': alias,
+                        'address': row['Customer Address'] if 'Customer Address' in row.keys() else "",
+                        'description': 'Customer created on {}.'.format(full_time)
+                    }
+
+                    # customer object
+                    customer = ""
+                    if name:
+                        customer = create_customer(customer_data)
+                else:
+                    customer = ""
             except Exception as e:
                 customer = ""
 
@@ -4916,47 +4959,55 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 # sanitize bs name
                 name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
 
+                # bs city
+                bs_city = row['City'] if 'City' in row.keys() else ""
+
+                # bs state
+                bs_state = row['State'] if 'State' in row.keys() else ""
+
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, bs_city[:3].lower(), bs_state[:3].lower())
                 except Exception as e:
                     logger.info(e.message)
 
-                # bs name
-                alias = row['BS Name'] if 'BS Name' in row.keys() else ""
+                if name and bs_city and bs_state:
+                    # bs name
+                    alias = row['BS Name'] if 'BS Name' in row.keys() else ""
 
-                # base station data
-                basestation_data = {
-                    'name': name,
-                    'alias': alias,
-                    'bs_switch': bs_switch,
-                    'bs_site_id': row['Site ID'] if 'Site ID' in row.keys() else "",
-                    'bs_site_type': row['Site Type'] if 'Site Type' in row.keys() else "",
-                    'bs_type': row['Type Of BS (Technology)'] if 'Type Of BS (Technology)' in row.keys() else "",
-                    'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
-                    'bh_port': 0,
-                    'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
-                    'infra_provider': row['Infra Provider'] if 'Infra Provider' in row.keys() else "",
-                    'gps_type': row['Type Of GPS'] if 'Type Of GPS' in row.keys() else "",
-                    'backhaul': backhaul,
-                    'bh_bso': "",
-                    'hssu_used': "",
-                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
-                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
-                    'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
-                    'tower_height': row['Tower Height'] if 'Tower Height' in row.keys() else "",
-                    'state': row['State'] if 'State' in row.keys() else "",
-                    'city': row['City'] if 'City' in row.keys() else "",
-                    'address': row['Address'] if 'Address' in row.keys() else "",
-                    'description': 'Base Station created on {}.'.format(full_time)
-                }
+                    # base station data
+                    basestation_data = {
+                        'name': name,
+                        'alias': alias,
+                        'bs_switch': bs_switch,
+                        'bs_site_id': row['Site ID'] if 'Site ID' in row.keys() else "",
+                        'bs_site_type': row['Site Type'] if 'Site Type' in row.keys() else "",
+                        'bs_type': row['Type Of BS (Technology)'] if 'Type Of BS (Technology)' in row.keys() else "",
+                        'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                        'bh_port': 0,
+                        'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
+                        'infra_provider': row['Infra Provider'] if 'Infra Provider' in row.keys() else "",
+                        'gps_type': row['Type Of GPS'] if 'Type Of GPS' in row.keys() else "",
+                        'backhaul': backhaul,
+                        'bh_bso': "",
+                        'hssu_used': "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
+                        'tower_height': row['Tower Height'] if 'Tower Height' in row.keys() else "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'address': row['Address'] if 'Address' in row.keys() else "",
+                        'description': 'Base Station created on {}.'.format(full_time)
+                    }
 
-                # base station object
-                basestation = ""
-                if name and alias:
-                    basestation = create_basestation(basestation_data)
+                    # base station object
+                    basestation = ""
+                    if name and alias:
+                        basestation = create_basestation(basestation_data)
+                else:
+                    basestation = ""
             except Exception as e:
                 basestation = ""
 
@@ -4967,6 +5018,12 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
                 # initialize alias
                 alias = ""
+
+                # sector name
+                sector_name = row['Sector Name'] if 'Sector Name' in row.keys() else ""
+
+                # sector id
+                sector_id = row['Sector ID'] if 'Sector ID' in row.keys() else ""
 
                 # pmp name
                 pmp = ""
@@ -4988,76 +5045,105 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 except Exception as e:
                     logger.info("Sector Configured On port not present. Exception: ", e.message)
 
-                # sector name
-                name = '{}_{}_{}'.format(
-                    special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
-                    row['Sector Name'] if 'Sector Name' in row.keys() else "", pmp)
+                if sector_name and sector_id and pmp:
 
-                # sector alias
-                alias = row['Sector Name'].upper() if 'Sector Name' in row.keys() else ""
+                    # sector name
+                    name = '{}_{}_{}'.format(special_chars_name_sanitizer_with_lower_case(sector_id), sector_name, pmp)
 
-                # dr site
-                dr_site = row['DR Site'] if 'DR Site' in row.keys() else ""
+                    # sector alias
+                    alias = row['Sector Name'].upper() if 'Sector Name' in row.keys() else ""
 
-                # idu ip
-                idu_ip = row['IDU IP'] if 'IDU IP' in row.keys() else ""
+                    # dr site
+                    dr_site = row['DR Site'] if 'DR Site' in row.keys() else ""
 
-                # master device
-                master_device = base_station
+                    # idu ip
+                    idu_ip = row['IDU IP'] if 'IDU IP' in row.keys() else ""
 
-                # slave device
-                slave_device = ""
+                    # master device
+                    master_device = base_station
 
-                # *********************************************************************************************
-                # ************************ DR handling according to ip address (Start) ************************
-                # *********************************************************************************************
+                    # slave device
+                    slave_device = ""
 
-                # Rule for identifying master/slave device:
-                # Master device ip address is just previous to ip address of slave device.
-                # For e.g. if master device ip is '10.156.4.2' than slave device ip is '10.156.4.3'
+                    # *********************************************************************************************
+                    # ************************ DR handling according to ip address (Start) ************************
+                    # *********************************************************************************************
 
-                # identify whether device is master/slave if 'dr site' is 'yes' and current sector is already present
-                if dr_site.lower() == "yes":
-                    if idu_ip:
-                        # master/slave identifier from workbook
-                        ms_identifier = row['DR Master/Slave'] if 'DR Master/Slave' in row.keys() else ""
-                        # current sector
-                        current_sector = ""
+                    # Rule for identifying master/slave device:
+                    # Master device ip address is just previous to ip address of slave device.
+                    # For e.g. if master device ip is '10.156.4.2' than slave device ip is '10.156.4.3'
 
-                        # current sector 'sector_configured_on' device
-                        sector_device = ""
+                    # identify whether device is master/slave if 'dr site' is 'yes' and current sector is already present
+                    if dr_site.lower() == "yes":
+                        if idu_ip:
+                            # master/slave identifier from workbook
+                            ms_identifier = row['DR Master/Slave'] if 'DR Master/Slave' in row.keys() else ""
+                            # current sector
+                            current_sector = ""
 
-                        try:
-                            # get current sector only if it's 'dr_site' is 'Yes'
-                            current_sector = Sector.objects.get(name=name, dr_site="Yes")
-                        except Exception as e:
-                            logger.info("Sector with sector id - {} not exist. Exception: {} ".format(alias, e.message))
+                            # current sector 'sector_configured_on' device
+                            sector_device = ""
 
-                        if current_sector:
-                            # sector configured on device
-                            sector_device = current_sector.sector_configured_on
+                            try:
+                                # get current sector only if it's 'dr_site' is 'Yes'
+                                current_sector = Sector.objects.get(name=name, dr_site="Yes")
+                            except Exception as e:
+                                logger.info("Sector with sector id - {} not exist. Exception: {} ".format(alias, e.message))
 
-                            # dr configured on device
-                            dr_device = current_sector.dr_configured_on
-                            if sector_device or dr_device:
-                                # sector device previous ip (decrement idu ip by 1)
-                                sd_prev_ip = ""
-                                try:
-                                    sd_prev_ip = ipaddr.IPAddress(sector_device.ip_address) - 1
-                                except Exception as e:
-                                    logger.info("No ip address for sector device. Exception: {}".format(e.message))
+                            if current_sector:
+                                # sector configured on device
+                                sector_device = current_sector.sector_configured_on
 
-                                # next ip (increment idu ip by 1)
-                                sd_next_ip = ""
-                                try:
-                                    sd_next_ip = ipaddr.IPAddress(sector_device.ip_address) + 1
-                                except Exception as e:
-                                    logger.info("No ip address for sector device. Exception: {}".format(e.message))
+                                # dr configured on device
+                                dr_device = current_sector.dr_configured_on
+                                if sector_device or dr_device:
+                                    # sector device previous ip (decrement idu ip by 1)
+                                    sd_prev_ip = ""
+                                    try:
+                                        sd_prev_ip = ipaddr.IPAddress(sector_device.ip_address) - 1
+                                    except Exception as e:
+                                        logger.info("No ip address for sector device. Exception: {}".format(e.message))
 
-                                # idu ip address 'ipaddr' object
-                                idu_ip_address = ipaddr.IPAddress(idu_ip)
+                                    # next ip (increment idu ip by 1)
+                                    sd_next_ip = ""
+                                    try:
+                                        sd_next_ip = ipaddr.IPAddress(sector_device.ip_address) + 1
+                                    except Exception as e:
+                                        logger.info("No ip address for sector device. Exception: {}".format(e.message))
 
-                                # identify master/slave device corresponding to master/slave bit
+                                    # idu ip address 'ipaddr' object
+                                    idu_ip_address = ipaddr.IPAddress(idu_ip)
+
+                                    # identify master/slave device corresponding to master/slave bit
+                                    if ms_identifier:
+                                        if ms_identifier == "Master":
+                                            master_device = base_station
+                                            slave_device = ""
+                                        elif ms_identifier == "Slave":
+                                            master_device = ""
+                                            slave_device = base_station
+                                        else:
+                                            pass
+                                    else:
+                                        # if 'idu_ip_address' is ip address just previous to 'sector_configured_on'
+                                        # device
+                                        # than make current 'sector_configured_on' device to 'dr_configured_on' device
+                                        # and make 'base_station' device new 'sector_configured_on' device
+                                        if idu_ip_address == sd_prev_ip:
+                                            master_device = base_station
+                                            slave_device = sector_device
+                                        # if 'idu_ip_address' is ip address just next to 'sector_configured_on' device
+                                        # than just 'base_station' device new 'dr_configured_on' device
+                                        # and 'sector_configured_on' device remains the same
+                                        elif idu_ip_address == sd_next_ip:
+                                            master_device = sector_device
+                                            slave_device = base_station
+                                        else:
+                                            pass
+                            else:
+                                # if current sector not exist in database and needs to be created
+                                # than if master/slave bit 'ms_identifier' exist than assign sector devices according
+                                # to the corresponding bit else continue with the normal flow
                                 if ms_identifier:
                                     if ms_identifier == "Master":
                                         master_device = base_station
@@ -5067,57 +5153,28 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                                         slave_device = base_station
                                     else:
                                         pass
-                                else:
-                                    # if 'idu_ip_address' is ip address just previous to 'sector_configured_on'
-                                    # device
-                                    # than make current 'sector_configured_on' device to 'dr_configured_on' device
-                                    # and make 'base_station' device new 'sector_configured_on' device
-                                    if idu_ip_address == sd_prev_ip:
-                                        master_device = base_station
-                                        slave_device = sector_device
-                                    # if 'idu_ip_address' is ip address just next to 'sector_configured_on' device
-                                    # than just 'base_station' device new 'dr_configured_on' device
-                                    # and 'sector_configured_on' device remains the same
-                                    elif idu_ip_address == sd_next_ip:
-                                        master_device = sector_device
-                                        slave_device = base_station
-                                    else:
-                                        pass
-                        else:
-                            # if current sector not exist in database and needs to be created
-                            # than if master/slave bit 'ms_identifier' exist than assign sector devices according
-                            # to the corresponding bit else continue with the normal flow
-                            if ms_identifier:
-                                if ms_identifier == "Master":
-                                    master_device = base_station
-                                    slave_device = ""
-                                elif ms_identifier == "Slave":
-                                    master_device = ""
-                                    slave_device = base_station
-                                else:
-                                    pass
 
-                # *********************************************************************************************
-                # ************************ DR handling according to ip address (End) **************************
-                # *********************************************************************************************
+                    # *********************************************************************************************
+                    # ************************ DR handling according to ip address (End) **************************
+                    # *********************************************************************************************
 
-                # sector data
-                sector_data = {
-                    'name': name,
-                    'alias': alias,
-                    'sector_id': row['Sector ID'].strip().lower() if 'Sector ID' in row.keys() else "",
-                    'base_station': basestation,
-                    'bs_technology': 3,
-                    'sector_configured_on': master_device,
-                    'sector_configured_on_port': port,
-                    'antenna': sector_antenna,
-                    'dr_site': dr_site,
-                    'dr_configured_on': slave_device,
-                    'description': 'Sector created on {}.'.format(full_time)
-                }
+                    # sector data
+                    sector_data = {
+                        'name': name,
+                        'alias': alias,
+                        'sector_id': row['Sector ID'].strip().lower() if 'Sector ID' in row.keys() else "",
+                        'base_station': basestation,
+                        'bs_technology': 3,
+                        'sector_configured_on': master_device,
+                        'sector_configured_on_port': port,
+                        'antenna': sector_antenna,
+                        'dr_site': dr_site,
+                        'dr_configured_on': slave_device,
+                        'description': 'Sector created on {}.'.format(full_time)
+                    }
 
-                # sector object
-                sector = create_sector(sector_data)
+                    # sector object
+                    sector = create_sector(sector_data)
             except Exception as e:
                 sector = ""
                 logger.info("Sector Exception: ", e.message)
@@ -5279,7 +5336,6 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
 
                     # device name
                     name = device_latest_id
-                    # name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else ""
 
                     # device alias
                     alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
@@ -5388,23 +5444,33 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
                 # initialize alias
                 alias = ""
 
-                # customer data
-                # sanitize customer name
-                name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(row['Customer Name'] if 'Customer Name' in row.keys() else ""),
-                                      special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else ""))
-                alias = row['Customer Name'] if 'Customer Name' in row.keys() else ""
+                # customer name
+                customer_name = row['Customer Name'] if 'Customer Name' in row.keys() else ""
 
-                customer_data = {
-                    'name': name,
-                    'alias': alias,
-                    'address': row['Customer Address'] if 'Customer Address' in row.keys() else "",
-                    'description': 'Customer created on {}.'.format(full_time)
-                }
+                # ss circuit id
+                ss_circuit_id = row['Circuit ID'] if 'Circuit ID' in row.keys() else ""
 
-                # customer object
-                customer = ""
-                if name:
-                    customer = create_customer(customer_data)
+
+                if customer_name and ss_circuit_id:
+                    # customer data
+                    # sanitize customer name
+                    name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(customer_name),
+                                          special_chars_name_sanitizer_with_lower_case(ss_circuit_id))
+                    alias = row['Customer Name'] if 'Customer Name' in row.keys() else ""
+
+                    customer_data = {
+                        'name': name,
+                        'alias': alias,
+                        'address': row['Customer Address'] if 'Customer Address' in row.keys() else "",
+                        'description': 'Customer created on {}.'.format(full_time)
+                    }
+
+                    # customer object
+                    customer = ""
+                    if name:
+                        customer = create_customer(customer_data)
+                else:
+                    customer = ""
             except Exception as e:
                 customer = ""
 
@@ -5950,35 +6016,43 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                 # sanitize bs name
                 name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
 
-                try:
-                    if all(k in row for k in ("City", "State")):
-                        # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
-                except Exception as e:
-                    logger.info(e.message)
+                # bs city
+                bs_city = row['City'] if 'City' in row.keys() else ""
 
-                alias = row['BS Name'] if 'BS Name' in row.keys() else ""
-                basestation_data = {
-                    'name': name,
-                    'alias': alias,
-                    'bs_switch': bs_switch,
-                    'backhaul': backhaul,
-                    'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
-                    'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
-                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
-                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
-                    'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
-                    'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
-                    'state': row['State'] if 'State' in row.keys() else "",
-                    'city': row['City'] if 'City' in row.keys() else "",
-                    'address': row['BS Address'] if 'BS Address' in row.keys() else "",
-                    'description': 'Base Station created on {}.'.format(full_time)
-                }
-                # base station object
-                basestation = ""
-                if name and alias:
-                    basestation = create_basestation(basestation_data)
+                # bs state
+                bs_state = row['State'] if 'State' in row.keys() else ""
+
+                if name and bs_city and bs_state:
+                    try:
+                        if all(k in row for k in ("City", "State")):
+                            # concatinate city and state in bs name
+                            name = "{}_{}_{}".format(name, bs_city[:3].lower(), bs_state[:3].lower())
+                    except Exception as e:
+                        logger.info(e.message)
+
+                    alias = row['BS Name'] if 'BS Name' in row.keys() else ""
+                    basestation_data = {
+                        'name': name,
+                        'alias': alias,
+                        'bs_switch': bs_switch,
+                        'backhaul': backhaul,
+                        'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
+                        'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
+                        'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'Base Station created on {}.'.format(full_time)
+                    }
+                    # base station object
+                    basestation = ""
+                    if name and alias:
+                        basestation = create_basestation(basestation_data)
+                else:
+                    basestation = ""
             except Exception as e:
                 basestation = ""
 
