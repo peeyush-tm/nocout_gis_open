@@ -116,7 +116,7 @@ def check_wimax_ss_mac(item, params, info):
 		index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
 		mac =index[0]
 		state = 0
-        infotext = "%s" % ss_mac
+	infotext = "%s" % ss_mac
     except ValueError:
         infotext = "type_mismatch_value"
     except:
