@@ -7,8 +7,8 @@ import datetime
 from multiprocessing import Process, Queue
 
 #nocout utilities
-from nocout.utils.util import fetch_raw_result, dict_fetchall, \
-    format_value, cache_for, time_it, \
+from nocout.utils.util import fetch_raw_result, \
+    format_value, cache_for, \
     cached_all_gis_inventory, query_all_gis_inventory, query_all_gis_inventory_improved
 #nocout utilities
 
@@ -554,6 +554,7 @@ def get_time(start_date, end_date, date_format):
         start_date = format(start_date_object, 'U')
 
     return isSet, start_date, end_date
+
 
 def color_picker():
     import random
