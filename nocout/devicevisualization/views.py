@@ -2747,6 +2747,12 @@ class GISPerfData(View):
         # type of thematic settings needs to be fetched
         ts_type = self.request.GET.get('ts', 'normal')
 
+        device_type = None
+        try:
+            device_type = DeviceType.objects.get(id=substation_device.device_type)
+        except Exception as e:
+            logger.exception(e.message)
+
         # device technology
         device_technology = ""
         try:
@@ -2771,7 +2777,10 @@ class GISPerfData(View):
             logger.error("No user thematics for device {}. Exception: ".format(device_name, e.message))
 
         # device frequency
-        device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
+        device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time,
+                                                            sector=None,
+                                                            device_type=device_type
+        )
 
         # device pl
         device_pl = self.get_device_pl(device_name, machine_name, freeze_time)
@@ -2900,7 +2909,7 @@ class GISPerfData(View):
 
         return substation_info
 
-    def get_device_polled_frequency(self, device_name, machine_name, freeze_time, sector=None):
+    def get_device_polled_frequency(self, device_name, machine_name, freeze_time, sector=None, device_type=None):
         """ Get device polled frequency
 
             Parameters:
@@ -2937,10 +2946,28 @@ class GISPerfData(View):
                         service_name = 'wimax_pmp2_frequency_invent'
                     else:
                         port_based_frequency = False
+
+            #for SS services
+            frequency_service = None
+            if device_type:
+                frequency_service = device_type.service.filter(name__icontains='frequency')
+
             if port_based_frequency:
                 device_frequency = InventoryStatus.objects.filter(device_name=device_name,
                                                                   service_name=service_name,
                                                                   data_source='frequency')\
+                                                              .using(alias=machine_name)\
+                                                              .order_by('-sys_timestamp')[:1]
+            elif frequency_service:
+                service_name = frequency_service[0]
+                if "_invent" in service_name:
+                    device_frequency = InventoryStatus.objects.filter(device_name=device_name, data_source='frequency')\
+                                                              .using(alias=machine_name)\
+                                                              .order_by('-sys_timestamp')[:1]
+                else:
+                    device_frequency = PerformanceStatus.objects.filter(device_name=device_name,
+                                                                        service_name=service_name,
+                                                                        data_source='frequency')\
                                                               .using(alias=machine_name)\
                                                               .order_by('-sys_timestamp')[:1]
             else:
