@@ -9025,6 +9025,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
     inventory_wb = xlwt.Workbook()
 
     # ***************************** PTP *******************************
+    # remove duplicate dictionaries from ptp list
+    ptp_rows = remove_duplicate_dict_from_list(ptp_rows)
+
     # ptp bs excel rows
     ptp_excel_rows = []
     for val in ptp_rows:
@@ -9060,6 +9063,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
         logger.info("Problem in creating excel rows. Exception: ", e.message)
 
     # ***************************** PTP BH *******************************
+    # remove duplicate dictionaries from ptp bh list
+    ptp_bh_rows = remove_duplicate_dict_from_list(ptp_bh_rows)
+
     # ptp bh bs excel rows
     ptp_bh_excel_rows = []
     for val in ptp_bh_rows:
@@ -9095,6 +9101,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
         logger.info("Problem in creating excel rows. Exception: ", e.message)
 
     # ***************************** PMP BS *******************************
+    # remove duplicate dictionaries from pmp bs list
+    pmp_bs_rows = remove_duplicate_dict_from_list(pmp_bs_rows)
+
     # pmp bs excel rows
     pmp_bs_excel_rows = []
     for val in pmp_bs_rows:
@@ -9130,6 +9139,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
         logger.info("Problem in creating excel rows. Exception: ", e.message)
 
     # ***************************** PMP SM *******************************
+    # remove duplicate dictionaries from pmp sm list
+    pmp_sm_rows = remove_duplicate_dict_from_list(pmp_sm_rows)
+
     # pmp sm excel rows
     pmp_sm_excel_rows = []
     for val in pmp_sm_rows:
@@ -9203,6 +9215,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
         logger.info("Problem in creating excel rows. Exception: ", e.message)
 
     # ***************************** Wimax SS *******************************
+    # remove duplicate dictionaries from wimax ss list
+    wimax_ss_rows = remove_duplicate_dict_from_list(wimax_ss_rows)
+
     # wimax ss excel rows
     wimax_ss_excel_rows = []
     for val in wimax_ss_rows:
