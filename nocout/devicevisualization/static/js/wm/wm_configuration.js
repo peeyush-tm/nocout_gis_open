@@ -16,7 +16,8 @@ var whiteMapSettings = {
 	zoomLevelAfterLineAppears: 10,
 	zoomLevelAtClusterUpdates: 10,
 	latLngPrefixLabel: 'Longitude, Latitude: ',
-	mapCenter: [82.9165, 21.713],
+	// mapCenter: [82.9165, 21.713],
+	mapCenter: [79.0900, 21.1500],
 	zoomLevelAtWhichStateClusterExpands: 4,
 	zoomLevelAtWhichPerformanceStarts: 7
 }

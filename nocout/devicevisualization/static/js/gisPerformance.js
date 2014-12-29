@@ -497,6 +497,10 @@ function GisPerformance() {
                                     ss_marker_object['oldIcon'] = base_url+"/"+ss_marker_data.data.markerUrl;
                                     ss_marker_object['clusterIcon'] = base_url+"/"+ss_marker_data.data.markerUrl;
 
+                                    if(show_ss_len > 0) {
+                                        ss_marker_object['map'] = '';
+                                    }
+
                                     var ss_marker = earth_self.makePlacemark(base_url+"/"+ss_marker_data.data.markerUrl, ss_marker_data.data.lat, ss_marker_data.data.lon,'ss_'+ss_marker_data.id, ss_marker_object);
 
                                     (function(ss_marker) {
@@ -549,6 +553,10 @@ function GisPerformance() {
                                     ss_marker_object['oldIcon'] = ss_marker_icon;
                                     ss_marker_object['clusterIcon'] = ss_marker_icon;
                                     ss_marker_object['layerReference'] = ccpl_map.getLayersByName("Markers")[0];
+
+                                    if(show_ss_len > 0) {
+                                        ss_marker_object['map'] = '';
+                                    }
 
                                     var size = new OpenLayers.Size(32, 37);
                                     /*Create SS Marker*/
@@ -725,15 +733,20 @@ function GisPerformance() {
 
                                 /*Link color object*/
                                 linkColor = ss_marker_data.data.link_color ? ss_marker_data.data.link_color : 'rgba(74,72,94,0.58)';
-
+                                var isLineChecked = $("#showConnLines:checked").length;
                                 if(window.location.pathname.indexOf("googleEarth") > -1) {
                                     /*Create the link between BS & SS or Sector & SS*/
                                     var ss_link_line = earth_self.createLink_earth(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
                                     ssLinkArray.push(ss_link_line);
                                     ssLinkArray_filtered = ssLinkArray;
                                     try {
-                                        ss_link_line.setVisibility(true);
-                                        ss_link_line.map = 'current';
+                                        if(isLineChecked > 0) {
+                                            ss_link_line.setVisibility(true);
+                                            ss_link_line.map = 'current';
+                                        } else {
+                                            ss_link_line.setVisibility(false);
+                                            ss_link_line.map = '';
+                                        }
                                     } catch(e) {
                                         // console.log(e);
                                     }
@@ -773,7 +786,12 @@ function GisPerformance() {
                                     );
                                     ssLinkArray.push(ss_link_line);
                                     ssLinkArray_filtered = ssLinkArray;
-                                    ss_link_line.setMap(mapInstance);
+
+                                    if(isLineChecked > 0) {
+                                        ss_link_line.setMap(mapInstance);
+                                    } else {
+                                        ss_link_line.setMap(null);
+                                    }
                                     // ss_marker['pl'] = '100';
                                     // This is to show "X"(Cross) on line if pl is 100%
                                     if(ss_marker['pl'] && (ss_marker['pl'] == '100' || ss_marker['pl'] == '100%')) {
@@ -901,10 +919,10 @@ function GisPerformance() {
 
                             if (window.location.pathname.indexOf("white_background") > -1) {
                                 ccpl_map.getLayersByName("Markers")[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
-                                ccpl_map.getLayersByName("Markers")[0].strategies[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
+                                // ccpl_map.getLayersByName("Markers")[0].strategies[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
 
                                 ccpl_map.getLayersByName("Markers")[0].redraw();
-                                ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+                                // ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
                             }
                         }// If sector child are plottable of not condition end-----
                     } else if(sector_polygon) {
