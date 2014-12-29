@@ -19,7 +19,7 @@ from django.db.models import Q
 from inventory.models import ThematicSettings, UserThematicSettings, BaseStation, SubStation, UserPingThematicSettings, \
     PingThematicSettings, Circuit, CircuitL2Report
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
-    PerformanceNetwork, PerformanceService, Status, Topology
+    PerformanceNetwork, PerformanceService, Status, Topology, Utilization, UtilizationStatus
 from user_profile.models import UserProfile
 from devicevisualization.models import GISPointTool, KMZReport
 from django.views.decorators.csrf import csrf_exempt
@@ -31,10 +31,6 @@ from activity_stream.models import UserAction
 from service.utils.util import service_data_sources
 
 logger = logging.getLogger(__name__)
-
-# execute this globally
-# fetch all data sources
-SERVICE_DATA_SOURCE = service_data_sources()
 
 
 def locate_devices(request , device_name = "default_device_name"):
@@ -2539,6 +2535,10 @@ class GISPerfData(View):
                 - show_gis (int) - 1 to show data source; 0 for not to show
         """
 
+        # execute this globally
+        # fetch all data sources
+        SERVICE_DATA_SOURCE = service_data_sources()
+
         if data_source and data_source[:1].isalpha():
             title = " ".join(data_source.split("_")).title()
             name = data_source.strip().lower()
@@ -3152,27 +3152,95 @@ class GISPerfData(View):
         performance_value = ""
         try:
             if ts_type == "normal":
-                if int(freeze_time):
-                    performance_value = PerformanceService.objects.filter(device_name=device_name,
-                                                                          service_name=device_service_name,
-                                                                          data_source=device_service_data_source,
-                                                                          sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                          .using(alias=machine_name)\
-                                                                          .order_by('-sys_timestamp')[:1]
-                    if len(performance_value):
-                        performance_value = performance_value[0].current_value
+                if "_invent" in device_service_name:
+                    if int(freeze_time):
+                        performance_value = PerformanceInventory.objects.filter(device_name=device_name,
+                                                                              service_name=device_service_name,
+                                                                              data_source=device_service_data_source,
+                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                              .using(alias=machine_name)\
+                                                                              .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
                     else:
-                        performance_value = ""
+                        performance_value = InventoryStatus.objects.filter(device_name=device_name,
+                                                                         service_name=device_service_name,
+                                                                         data_source=device_service_data_source)\
+                                                                         .using(alias=machine_name)\
+                                                                         .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
+
+                elif "_status" in device_service_name:
+                    if int(freeze_time):
+                        performance_value = PerformanceStatus.objects.filter(device_name=device_name,
+                                                                              service_name=device_service_name,
+                                                                              data_source=device_service_data_source,
+                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                              .using(alias=machine_name)\
+                                                                              .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
+                    else:
+                        performance_value = Status.objects.filter(device_name=device_name,
+                                                                         service_name=device_service_name,
+                                                                         data_source=device_service_data_source)\
+                                                                         .using(alias=machine_name)\
+                                                                         .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
+                elif "_kpi" in device_service_name:
+                    if int(freeze_time):
+                        performance_value = Utilization.objects.filter(device_name=device_name,
+                                                                              service_name=device_service_name,
+                                                                              data_source=device_service_data_source,
+                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                              .using(alias=machine_name)\
+                                                                              .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
+                    else:
+                        performance_value = UtilizationStatus.objects.filter(device_name=device_name,
+                                                                         service_name=device_service_name,
+                                                                         data_source=device_service_data_source)\
+                                                                         .using(alias=machine_name)\
+                                                                         .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
                 else:
-                    performance_value = ServiceStatus.objects.filter(device_name=device_name,
-                                                                     service_name=device_service_name,
-                                                                     data_source=device_service_data_source)\
-                                                                     .using(alias=machine_name)\
-                                                                     .order_by('-sys_timestamp')[:1]
-                    if len(performance_value):
-                        performance_value = performance_value[0].current_value
+                    if int(freeze_time):
+                        performance_value = PerformanceService.objects.filter(device_name=device_name,
+                                                                              service_name=device_service_name,
+                                                                              data_source=device_service_data_source,
+                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                              .using(alias=machine_name)\
+                                                                              .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
                     else:
-                        performance_value = ""
+                        performance_value = ServiceStatus.objects.filter(device_name=device_name,
+                                                                         service_name=device_service_name,
+                                                                         data_source=device_service_data_source)\
+                                                                         .using(alias=machine_name)\
+                                                                         .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
             elif ts_type == "ping":
                 if int(freeze_time):
                     performance_value = PerformanceNetwork.objects.filter(device_name=device_name,
