@@ -61,18 +61,18 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 		try:
 			if str(entry[0]) in s_device_down_list:
 				continue
-                        service_state = entry[4]
-                        host = entry[0]
-                        if service_state == 0:
-                                service_state = "ok"
-                        elif service_state == 1:
-                                service_state = "warning"
-                        elif service_state == 2:
-                                service_state = "critical"
-                        elif service_state == 3:
-                                service_state = "unknown"
-                        host_ip = entry[1]
-                        service = entry[3]
+			service_state = entry[4]
+			host = entry[0]
+			if service_state == 0:
+				service_state = "ok"
+			elif service_state == 1:
+				service_state = "warning"
+			elif service_state == 2:
+				service_state = "critical"
+			elif service_state == 3:
+				service_state = "unknown"
+			host_ip = entry[1]
+			service = entry[3]
 			perf_data_output = entry[5]
 			if perf_data_output:
 				plugin_output = str(perf_data_output.split('- ')[1])
