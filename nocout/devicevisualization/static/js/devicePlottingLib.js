@@ -259,8 +259,13 @@ function prepare_oms_object(oms_instance) {
 		for(var i=0;i<e.length;i++) {
 
 			if(isPollingActive) {
-				/*Change the icon of marker*/
-				e[i].setOptions({"icon":e[i].icon});
+				if(e[i].icon.url.indexOf('1x1.png') == -1) {
+					/*Change the icon of marker*/
+					e[i].setOptions({"icon":e[i].icon});
+				} else {
+					/*Change the icon of marker*/
+					e[i].setOptions({"icon":e[i].oldIcon});
+				}
 			} else {
 				/*Change the icon of marker*/
 				e[i].setOptions({"icon":e[i].oldIcon});
@@ -490,6 +495,7 @@ function devicePlottingClass_gmap() {
 			state_lat_lon_db.insert({"name" : "Bihar","lat" : 25.37,"lon" : 85.13});
 			state_lat_lon_db.insert({"name" : "Chhattisgarh","lat" : 21.27,"lon" : 81.60});
 			state_lat_lon_db.insert({"name" : "Delhi","lat" : 28.61,"lon" : 77.23});
+			state_lat_lon_db.insert({"name" : "NCR","lat" : 28.67,"lon" : 77.21});
 			state_lat_lon_db.insert({"name" : "Goa","lat" : 15.4989,"lon" : 73.8278});
 			state_lat_lon_db.insert({"name" : "Gujrat","lat" : 23.2167,"lon" : 72.6833});
 			state_lat_lon_db.insert({"name" : "Haryana","lat" : 30.73,"lon" : 76.78});
@@ -1060,6 +1066,7 @@ function devicePlottingClass_gmap() {
 			console.log("State Wise Clusters Function")
 			console.log("State Cluster Plotting Start Time :- "+ new Date().toLocaleString());
 		}
+
 		//Loop For Base Station
 		for(var i=dataset.length;i--;) {
 
