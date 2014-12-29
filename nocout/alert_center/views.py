@@ -211,6 +211,8 @@ class GetCustomerAlertDetail(BaseDatatableView):
         after creating static inventory first
         """
 
+        device_tab_technology = self.request.GET.get('data_tab')
+
         search_table = "performance_servicestatus"
 
         data_sources_list = list()
@@ -235,6 +237,25 @@ class GetCustomerAlertDetail(BaseDatatableView):
             device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
 
             sorted_device_list += device_list
+
+        if device_tab_technology.strip().lower() in ['wimax']:
+            search_table = "performance_inventorystatus"
+            extra_query_condition = ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
+            for machine, machine_device_list in machine_dict.items():
+                device_list = list()
+                performance_data = list()
+                performance_data = alert_utils.raw_prepare_result(performance_data=performance_data,
+                                                                  machine=machine,
+                                                                  table_name=search_table,
+                                                                  devices=machine_device_list,
+                                                                  data_sources=data_sources_list,
+                                                                  columns=self.polled_columns,
+                                                                  condition=extra_query_condition if extra_query_condition else None
+                )
+
+                device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
+
+                sorted_device_list += device_list
 
         return sorted_device_list
 
