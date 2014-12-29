@@ -14,7 +14,9 @@ var mapInstance = "",
 	green_status_array = ['ok','success','up'],
     red_status_array = ['critical','down'],
     orange_status_array = ['warning'],
-    ptp_tech_list = ['ptp','p2p','ptp bh'];
+    ptp_tech_list = ['ptp','p2p','ptp bh'],
+    india_center_lon = 79.0900,
+    india_center_lat = 21.1500;
 
 /*Lazy loading API calling variables*/
 var hitCounter = 1,
@@ -446,7 +448,7 @@ function devicePlottingClass_gmap() {
 			var mapObject = {};
 			if(window.location.pathname.indexOf("google_earth") > -1) {
 				mapObject = {
-					center    : new google.maps.LatLng(21.1500,79.0900),
+					center    : new google.maps.LatLng(india_center_lat,india_center_lon),
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.HYBRID/*google.maps.MapTypeId.SATELLITE*/,
 					mapTypeControl : true,
@@ -457,7 +459,7 @@ function devicePlottingClass_gmap() {
 				};
 			} else {
 				mapObject = {
-					center    : new google.maps.LatLng(21.1500,79.0900),
+					center    : new google.maps.LatLng(india_center_lat,india_center_lon),
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
 					mapTypeControl : true,
@@ -1291,11 +1293,11 @@ function devicePlottingClass_gmap() {
 
 				} else if(window.location.pathname.indexOf("white_background") > -1) {
 					ccpl_map.setCenter(
-						new OpenLayers.LonLat(79.0900, 21.1500), // Center Lon-Lat 
+						new OpenLayers.LonLat(india_center_lon, india_center_lat), // Center Lon-Lat 
 						1 // Zoom Level
 					);
 				} else {
-					mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
+					mapInstance.setCenter(new google.maps.LatLng(india_center_lat,india_center_lon));
 					mapInstance.setZoom(5);
 				}
 			} else {
@@ -1306,7 +1308,10 @@ function devicePlottingClass_gmap() {
 					if(window.location.pathname.indexOf("googleEarth") > -1) {
 				        // Pass
 				    } else if(window.location.pathname.indexOf("white_background") > -1) {
-						ccpl_map.setCenter(new OpenLayers.LonLat(state_obj.lon, state_obj.lat), whiteMapSettings.zoomLevelAtWhichStateClusterExpands);
+						ccpl_map.setCenter(
+							new OpenLayers.LonLat(state_obj.lon, state_obj.lat),
+							whiteMapSettings.zoomLevelAtWhichStateClusterExpands
+						);
 					} else {
 						mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(state_obj.lat,state_obj.lon)));
 						mapInstance.setZoom(8);
@@ -4163,7 +4168,7 @@ function devicePlottingClass_gmap() {
     	} else {
             /*Clear Existing Labels & Reset Counters*/
             gmap_self.clearStateCounters();
-            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
             mapInstance.setZoom(5);
             // data_for_filters = data_to_plot;
             isApiResponse = 0;
@@ -4896,7 +4901,7 @@ function devicePlottingClass_gmap() {
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
 				
-				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
 				// mapInstance.setZoom(5);
 				data_for_filters_earth = JSON.parse(JSON.stringify(all_devices_loki_db.data));
 
@@ -4928,7 +4933,7 @@ function devicePlottingClass_gmap() {
 					}
 
 					isCallCompleted = 1;
-					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
 					mapInstance.setZoom(5);
 					data_for_filters = JSON.parse(JSON.stringify(all_devices_loki_db.data));
 					isApiResponse = 0;
@@ -4967,7 +4972,7 @@ function devicePlottingClass_gmap() {
 				// gmap_self.clearStateCounters();
 
 				// isCallCompleted = 1;
-				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
 				// mapInstance.setZoom(5);
 				// data_for_filters = all_devices_loki_db.data;
 				// isApiResponse = 0;
@@ -5079,7 +5084,7 @@ function devicePlottingClass_gmap() {
 
 
 					isCallCompleted = 1;
-					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
 					mapInstance.setZoom(5);
 					isApiResponse = 0;
 					gmap_self.showStateWiseData_gmap(data_to_plot_1);
