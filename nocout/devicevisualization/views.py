@@ -1815,6 +1815,8 @@ class GISPerfData(View):
                 try:
                     if len(performance_value):
                         # live polled value of device service
+                        #value = ast.literal_eval(str(performance_value))
+
                         # get appropriate icon
                         if ts_type == "normal":
                             if service_type == "INT":
@@ -1871,95 +1873,21 @@ class GISPerfData(View):
         image_partial = "icons/mobilephonetower10.png"
 
         if th_ranges and th_icon_settings and len(str(value)):
-            try:
-                if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
+            compare_this = float(value)
+            for i in range(1, 11):
+                try:
+                    compare_to_start = float(eval("th_ranges.range%d_start" %i))
+                    compare_to_end = float(eval("th_ranges.range%d_end" %i))
                     icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings1' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings1'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range2_start)) <= (float(value)) <= (float(th_ranges.range2_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings2' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings2'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range3_start)) <= (float(value)) <= (float(th_ranges.range3_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings3' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings3'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range4_start)) <= (float(value)) <= (float(th_ranges.range4_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings4' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings4'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range5_start)) <= (float(value)) <= (float(th_ranges.range5_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings5' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings5'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range6_start)) <= (float(value)) <= (float(th_ranges.range6_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings6' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings6'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range7_start)) <= (float(value)) <= (float(th_ranges.range7_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings7' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings7'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range8_start)) <= (float(value)) <= (float(th_ranges.range8_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings8' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings8'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range9_start)) <= (float(value)) <= (float(th_ranges.range9_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings9' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings9'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range10_start)) <= (float(value)) <= (float(th_ranges.range10_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings10' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings10'])
-            except Exception as e:
-                logger.error(e.message)
+                    if compare_to_start <= compare_this <= compare_to_end:
+                        icon_key = "icon_settings{0}".format(i)
+                        for icon_setting in icon_settings:
+                            if icon_key in icon_setting.keys():
+                                image_partial = str(icon_setting[icon_key])
+                                break
+                except Exception as e:
+                    logger.exception(e.message)
+                    continue
 
         # image url
         img_url = "media/" + str(image_partial) if "uploaded" in str(
@@ -1996,7 +1924,6 @@ class GISPerfData(View):
 
         # default image to be loaded
         image_partial = "icons/mobilephonetower10.png"
-
         if th_ranges and th_icon_settings and value:
             compare_this = ''.join(e for e in value if e.isalnum())
             for i in range(1, 11):
@@ -2009,6 +1936,7 @@ class GISPerfData(View):
                         for icon_setting in icon_settings:
                             if icon_key in icon_setting.keys():
                                 image_partial = str(icon_setting[icon_key])
+                                break
                 except Exception as e:
                     logger.exception(e.message)
                     continue
@@ -2339,10 +2267,6 @@ class GISPerfData(View):
 
         for perf in device_network_info:
             res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
-            print "***************************** res - ", type(res), res
-            print "***************************** name - ", type(name), name
-            print "***************************** title - ", type(title), title
-            print "***************************** show_gis - ", type(show_gis), show_gis
             if not res:
                 continue
             if perf['data_source'] in processed:
@@ -2382,10 +2306,6 @@ class GISPerfData(View):
 
             for perf in device_performance_info:
                 res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
-                print "***************************** res1 - ", type(res), res
-                print "***************************** name1 - ", type(name), name
-                print "***************************** title1 - ", type(title), title
-                print "***************************** show_gis1 - ", type(show_gis), show_gis
                 if not res:
                     continue
                 if perf['data_source'] in processed:
@@ -2812,6 +2732,8 @@ class GISPerfData(View):
                 try:
                     if len(performance_value):
                         # live polled value of device service
+                        #value = ast.literal_eval(str(performance_value))
+
                         # get appropriate icon
                         if ts_type == "normal":
                             if service_type == "INT":
