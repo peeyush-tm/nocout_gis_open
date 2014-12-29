@@ -87,8 +87,14 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
                             "Filter: service_description ~ _invent\n"+\
                             "OutputFormat: json\n" 
 	query_output = json.loads(get_from_socket(site,query).strip())
+	device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
+                                "And: 2\nOutputFormat: python\n"
+        device_down_output = eval(get_from_socket(site, device_down_query))
+        device_down_list =[str(item) for sublist in device_down_output for item in sublist]
+        s_device_down_list = set(device_down_list)
+
 	for entry in query_output:
-		if int(entry[2]) == 1:
+		if str(entry[0]) in s_device_down_list:
 			continue
 		service_state = entry[4]
 		host = entry[0]
