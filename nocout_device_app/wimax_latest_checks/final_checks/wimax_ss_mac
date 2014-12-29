@@ -71,6 +71,15 @@ def connection_telnet_ss_mac(host_name, port,mac):
 		ss_mac = None
 	return ss_mac
 
+
+def convert(x):
+	mac_in_hex=binascii.b2a_hex(x)
+	n=2
+	mac=(':').join([mac_in_hex[i:i+2] for i in range(0, len(mac_in_hex), n)])
+	mac=mac.lower()
+	return mac
+
+
 def check_wimax_ss_mac(item, params, info):
     """
             check_wimax_ss_mac function calcdlates the operating ptx
@@ -98,14 +107,16 @@ def check_wimax_ss_mac(item, params, info):
     infotext = "unknown_value"
     ss_mac =None
     try:
-	if info[1]:
-                ss_mac = info[1][0]
-		a=binascii.b2a_hex(ss_mac)
-		n = 2
-		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-		ss_mac = ss_mac.lower()
-        	infotext = "%s" % ss_mac
+	mac_info = sum(info,[])
+	mac_list=map(lambda x: convert(x),mac_info)
+	if mac_list[1] != '00:00:00:00:00:00':
+		mac= mac_list[1]
 		state = 0
+	else:
+		index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
+		mac =index[0]
+		state = 0
+        infotext = "%s" % ss_mac
     except ValueError:
         infotext = "type_mismatch_value"
     except:
