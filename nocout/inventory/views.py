@@ -952,7 +952,8 @@ class SubStationList(PermissionsRequiredMixin, TemplateView):
         context = super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device__id', 'sTitle': 'Device Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device__ip_address', 'sTitle': 'Device IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -983,9 +984,9 @@ class SubStationListingTable(PermissionsRequiredMixin,
     """
     model = SubStation
     required_permissions = ('inventory.view_substation',)
-    columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    columns = ['alias', 'device__id', 'device__ip_address', 'antenna__alias', 'version', 'serial_no', 'building_height',
                'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    order_columns = ['alias', 'device__id', 'device__ip_address', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
     def get_initial_queryset(self):
@@ -1013,8 +1014,7 @@ class SubStationListingTable(PermissionsRequiredMixin,
             try:
                 if 'device__id' in dct:
                     ss_device_alias = Device.objects.get(id=dct['device__id']).device_alias
-                    ss_device_ip = Device.objects.get(id=dct['device__id']).ip_address
-                    dct['device__id'] = "{} ({})".format(ss_device_alias, ss_device_ip)
+                    dct['device__id'] = "{}".format(ss_device_alias)
             except Exception as e:
                 logger.info("Sub Station Device not present. Exception: ", e.message)
 
@@ -1106,8 +1106,10 @@ class CircuitList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
             {'mData': 'sector__base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto'},
             {'mData': 'sector__alias', 'sTitle': 'Sector', 'sWidth': 'auto', },
+            {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
             {'mData': 'customer__alias', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'sub_station__alias', 'sTitle': 'Sub Station', 'sWidth': 'auto', },
+            {'mData': 'sub_station__device__ip_address', 'sTitle': 'Sub Station Configured On', 'sWidth': 'auto', },
             {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto',  'sClass': 'hidden-xs'}
         ]
@@ -1130,12 +1132,15 @@ class CircuitListingTable(PermissionsRequiredMixin,
     """
     model = Circuit
     required_permissions = ('inventory.view_circuit',)
-    columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
-               'sub_station__alias', 'date_of_acceptance', 'description']
-    order_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
-                     'sub_station__alias', 'date_of_acceptance', 'description']
-    search_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
-               'sub_station__alias']
+    columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
+               'sector__sector_configured_on__ip_address', 'customer__alias',
+               'sub_station__alias', 'sub_station__device__ip_address', 'date_of_acceptance', 'description']
+    order_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
+                     'sector__sector_configured_on__ip_address', 'customer__alias',
+                     'sub_station__alias', 'sub_station__device__ip_address', 'date_of_acceptance', 'description']
+    search_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
+                      'sector__sector_configured_on__ip_address', 'customer__alias',
+               'sub_station__alias', 'sub_station__device__ip_address']
 
     def get_initial_queryset(self):
         qs = super(CircuitListingTable, self).get_initial_queryset()
