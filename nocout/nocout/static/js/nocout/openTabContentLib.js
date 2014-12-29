@@ -105,6 +105,7 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                     }
                 }
             }
+        // If tab is other devices
         } else if(isOther > 0) {
             // For other case
             for (var i = 0; i < grid_headers.length; i++) {
