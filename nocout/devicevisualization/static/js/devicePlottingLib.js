@@ -1287,15 +1287,24 @@ function devicePlottingClass_gmap() {
 		}
 		if(isExportDataActive == 0) {
 			if(state_obj == 0) {
-				mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
-				mapInstance.setZoom(5);
+				if(window.location.pathname.indexOf("googleEarth") > -1) {
+
+				} else if(window.location.pathname.indexOf("white_background") > -1) {
+					ccpl_map.setCenter(
+						new OpenLayers.LonLat(79.0900, 21.1500), // Center Lon-Lat 
+						1 // Zoom Level
+					);
+				} else {
+					mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
+					mapInstance.setZoom(5);
+				}
 			} else {
 				var clicked_state = state_obj ? state_obj.name : "",
 					selected_state_devices = [];
 				if(clicked_state) {
 					//Zoom in to selected state
 					if(window.location.pathname.indexOf("googleEarth") > -1) {
-				        
+				        // Pass
 				    } else if(window.location.pathname.indexOf("white_background") > -1) {
 						ccpl_map.setCenter(new OpenLayers.LonLat(state_obj.lon, state_obj.lat), whiteMapSettings.zoomLevelAtWhichStateClusterExpands);
 					} else {
