@@ -5366,16 +5366,27 @@ function devicePlottingClass_gmap() {
 							var allSS = pollableDevices;
 							allSSIds = [];
 
-							var selected_polling_technology = $("#polling_tech option:selected").text();
+							var selected_polling_technology = $("#polling_tech option:selected").text(),
+								polling_technology_condition = $.trim(selected_polling_technology.toLowerCase());
 
 							for(var k=allSS.length;k--;) {
 								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon),
 									point_tech = allSS[k].technology ? $.trim(allSS[k].technology.toLowerCase()) : "";
 
+								// if point technology is PTP BH then use it as PTP
+								if(ptp_tech_list.indexOf(point_tech) > -1) {
+									point_tech = 'ptp';
+								}
+
+								// PTP, P2P & PTP BH are same
+								if(ptp_tech_list.indexOf(polling_technology_condition) > -1) {
+									polling_technology_condition = 'ptp';
+								}
+
 								if(point) {
 									if(google.maps.geometry.poly.containsLocation(point, polygon)) {
 										if(allSS[k].technology) {
-											if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
+											if(point_tech == polling_technology_condition) {
 												if(ptp_tech_list.indexOf(point_tech) > -1) {
 													if(allSSIds.indexOf(allSS[k].device_name) < 0) {
 														if(allSS[k].pointType == 'sub_station') {
