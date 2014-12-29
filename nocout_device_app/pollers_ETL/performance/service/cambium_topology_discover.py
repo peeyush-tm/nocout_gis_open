@@ -51,23 +51,28 @@ def topology_discovery_data(site,mongo_host,mongo_port,mongo_db_name):
 	query = "GET services\nColumns: host_name host_address host_state service_description service_state plugin_output\n" + \
                 "Filter: service_description = cambium_topology_discover\nOutputFormat: json\n"
 	query_output = json.loads(utility_module.get_from_socket(site,query).strip())
-
+	
+	device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
+		"And: 2\nOutputFormat: python\n"
+	device_down_output = eval(get_from_socket(site, device_down_query))
+	device_down_list =[str(item) for sublist in device_down_output for item in sublist]
+	s_device_down_list = set(device_down_output)
 	for entry in query_output:
 		try:
-			if int(entry[2]) == 1:
-                                continue
-                        service_state = entry[4]
-                        host = entry[0]
-                        if service_state == 0:
-                                service_state = "OK"
-                        elif service_state == 1:
-                                service_state = "WARNING"
-                        elif service_state == 2:
-                                service_state = "CRITICAL"
-                        elif service_state == 3:
-                                service_state = "UNKNOWN"
-                        host_ip = entry[1]
-                        service = entry[3]
+			if str(entry[0]) in s_device_down_list:
+				continue
+			service_state = entry[4]
+			host = entry[0]
+			if service_state == 0:
+				service_state = "ok"
+			elif service_state == 1:
+				service_state = "warning"
+			elif service_state == 2:
+				service_state = "critical"
+			elif service_state == 3:
+				service_state = "unknown"
+			host_ip = entry[1]
+			service = entry[3]
 			perf_data_output = entry[5]
 			if perf_data_output:
 				plugin_output = str(perf_data_output.split('- ')[1])
