@@ -9,7 +9,7 @@ var last_clicked_tab = "",
     ptp_list = ['ptp','p2p'],
     pmp_list = ['pmp'],
     wimax_list = ['wimax','wifi','temp','ulIssue','sectorUtil'],
-    other_list = ['temp','p2p'];
+    other_list = ['converter','bh','backhaul','bhutil'];
 
 $(".nav-tabs li a").click(function (e, isFirst) {
 
@@ -74,7 +74,10 @@ $(".nav-tabs li a").click(function (e, isFirst) {
             wimaxLength = wimax_list.filter(function(list_val) {
                 return tab_id.search(list_val) > -1
             }).length,
-            isPmpWimax = pmpLength + wimaxLength;
+            isPmpWimax = pmpLength + wimaxLength,
+            isOther = other_list.filter(function(list_val) {
+                return tab_id.search(list_val) > -1
+            }).length;
 
         // If tab is ptp
         if(isPtp > 0) {
@@ -102,15 +105,17 @@ $(".nav-tabs li a").click(function (e, isFirst) {
                     }
                 }
             }
-        } else {
+        // If tab is other devices
+        } else if(isOther > 0) {
             // For other case
             for (var i = 0; i < grid_headers.length; i++) {
                 var column = grid_headers[i],
                     condition1 = column.mData.indexOf("sector_id") > -1,
                     condition2 = column.mData.indexOf("circuit_id") > -1,
                     condition3 = column.mData.indexOf("customer_name") > -1;
+
                 if(condition1 || condition2 || condition3) {
-                    if (column.bVisible) {
+                    if(column.bVisible) {
                         column.sClass = "hide";
                     } else {
                         column["sClass"] = "hide";

@@ -44,7 +44,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     	/* When zoom level is greater than 8 show lines */
     	if(ccpl_map.getZoom() >= whiteMapSettings.zoomLevelAtWhichStateClusterExpands) {
 
-    		if(ccpl_map.getZoom() > 6) {
+    		if(ccpl_map.getZoom() > 8) {
         		// Reset Perf calling Flag
     			isPerfCallStopped = 0;
 			} else {
@@ -53,7 +53,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     			isPerfCallStarted = 0;
 			}
 
-    		if(ccpl_map.getZoom() < 8 || searchResultData.length > 0) {
+    		if(ccpl_map.getZoom() < 9 || searchResultData.length > 0) {
 
     			var states_with_bounds = state_lat_lon_db.where(function(obj) {
     				return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
@@ -99,7 +99,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 					 * If anything searched n user is on zoom level 8 then reset 
 					   currentlyPlottedDevices array for removing duplicacy.
         			 */
-        			if(ccpl_map.getZoom() == 11 && searchResultData.length > 0) {
+        			if(ccpl_map.getZoom() == 8 && searchResultData.length > 0) {
         				// Reset currentlyPlottedDevices array
         				currentlyPlottedDevices = [];
     				}
@@ -149,7 +149,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 					// ccpl_map.getLayersByName('Markers')[0].refresh({forces:true});
 					// ccpl_map.getLayersByName('Markers')[0].strategies[0].recluster();
 
-					if(searchResultData.length == 0 || ccpl_map.getZoom() <= 8) {
+					if(ccpl_map.getZoom() <= 8) {
 						var polylines = allMarkersObject_wmap['path'],
 							polygons = allMarkersObject_wmap['sector_polygon'];
 
@@ -171,7 +171,7 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 							}
 						}
 					} else {
-						if(ccpl_map.getZoom() > 8) {
+						if(ccpl_map.getZoom() > 7) {
 							whiteMapClass.showSubStaionsInBounds();
 							whiteMapClass.showBaseStaionsInBounds();
 							whiteMapClass.showSectorDevicesInBounds();
@@ -220,93 +220,145 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
     			}
     		}
         } else {
-        	// Clear performance calling timeout
-			if(recallPerf != "") {
-    			clearTimeout(recallPerf);
-    			recallPerf = "";
-    		}
-			// Set Flag
-			isPerfCallStopped = 1;
-			isPerfCallStarted = 0;
 
-			// Reset Performance variables
-			gisPerformanceClass.resetVariable();
+        	if(ccpl_map.getZoom() < 1) {
+        		// Hide State Labels which are in current bounds
+        		var country_click_event = "onClick='gmap_self.state_label_clicked(0)'",
+        			total_devices_count = gmap_self.getCountryWiseCount();
 
-			// Hide perf info label
-		    for (var x = 0; x < labelsArray.length; x++) {
-		        labelsArray[x].destroy();
-		    }
-
-		    // Hide tooltip info label
-		    for (key in tooltipInfoLabel) {
-		        tooltipInfoLabel[key].destroy();
-		    }
-
-            // Reset labels array 
-            labelsArray = [];
-            tooltipInfoLabel = {};
-
-
-            /*Clear master marker cluster objects*/
-            // Deactivate Marker Clustering Strategy
-            ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
-
-            /*Clear all everything from map*/
-			$.grep(allMarkersArray_wmap,function(marker) {
-				var markerLayer = marker.layer ? marker.layer : marker.layerReference;
-				marker.isActive = 0;
-				marker.style.display = 'none';
-				markerLayer.redraw();
-			});
-
-			ccpl_map.getLayersByName('Markers')[0].destroyFeatures(ccpl_map.getLayersByName('Markers')[0].features);
-			ccpl_map.getLayersByName('Markers')[0].redraw();
-
-			// Reset Variables
-			allMarkersArray_wmap = [];
-			bs_ss_markers= [];
-			main_devices_data_wmap = [];
-			plottedBsIds = [];
-			pollableDevices = [];
-			deviceIDArray = [];
-			sectorMarkerConfiguredOn = [];
-			sectorMarkersMasterObj = {};
-			sector_MarkersArray = [];
-			currentlyPlottedDevices = [];
-			allMarkersObject_wmap= {
-				'base_station': {},
-				'path': {},
-				'sub_station': {},
-				'sector_device': {},
-				'sector_polygon': {},
-				'backhaul': {}
-			};
-
-			var states_with_bounds = state_lat_lon_db.where(function(obj) {
-    			return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
-    		});
-
-			for(var i=states_with_bounds.length;i--;) {
-				if(state_wise_device_labels[states_with_bounds[i].name]) {
-					state_wise_device_labels[states_with_bounds[i].name].attributes.display = '';
-					ccpl_map.getLayersByName("States")[0].redraw();
+    			// Hide State Counters Label
+    			for(key in state_wise_device_labels) {
+					if(state_wise_device_labels[key]) {
+						state_wise_device_labels[key].attributes.display = 'none';
+        				ccpl_map.getLayersByName("States")[0].redraw();
+					}
 				}
-			}
 
-			state_lat_lon_db.where(function(obj) {
-				if(state_wise_device_labels[obj.name]) {
-					state_wise_device_labels[obj.name].attributes.display = '';
-					ccpl_map.getLayersByName("States")[0].redraw();
-					return ;
+    			var country_point = new OpenLayers.Geometry.Point(77.7832, 24.2870),
+    				country_counter_label = new OpenLayers.Feature.Vector(country_point);
+
+	            country_counter_label.attributes = {
+	                label 		: total_devices_count,
+	                state_param : 0,
+	                cursor		: "pointer",
+	                title 		: "Load India Data",
+	                display 	: ''
+	            };
+	            country_counter_label.map = 'current';
+	            
+	            ccpl_map.getLayersByName('States')[0].addFeatures([country_counter_label]);
+
+		        if(country_label["india"] != "") {
+		        	country_label["india"].destroy();
+		        	country_label["india"] = "";
+		        }
+
+	        	country_label["india"] = country_counter_label;
+
+    		} else {
+
+    			// Hide State Counters Label
+    			for(key in state_wise_device_labels) {
+					if(state_wise_device_labels[key]) {
+						state_wise_device_labels[key].attributes.display = 'none';
+        				ccpl_map.getLayersByName("States")[0].redraw();
+					}
 				}
-			});
+    			if(country_label["india"] != "") {
+    				country_label["india"].attributes.display = 'none';
+    				ccpl_map.getLayersByName("States")[0].redraw();
+		        	country_label["india"].destroy();
+		        	country_label["india"] = "";
+		        }
 
-			// Hide points line if exist
-    		for(key in line_data_obj) {
-    			if(line_data_obj[key].map) {
-    				hideOpenLayerFeature(line_data_obj[key]);
-    			}
-    		}
+	        	// Clear performance calling timeout
+				if(recallPerf != "") {
+	    			clearTimeout(recallPerf);
+	    			recallPerf = "";
+	    		}
+				// Set Flag
+				isPerfCallStopped = 1;
+				isPerfCallStarted = 0;
+
+				// Reset Performance variables
+				gisPerformanceClass.resetVariable();
+
+				// Hide perf info label
+			    for (var x = 0; x < labelsArray.length; x++) {
+			        labelsArray[x].destroy();
+			    }
+
+			    // Hide tooltip info label
+			    for (key in tooltipInfoLabel) {
+			        tooltipInfoLabel[key].destroy();
+			    }
+
+	            // Reset labels array 
+	            labelsArray = [];
+	            tooltipInfoLabel = {};
+
+
+	            /*Clear master marker cluster objects*/
+	            // Deactivate Marker Clustering Strategy
+	            ccpl_map.getLayersByName('Markers')[0].strategies[0].deactivate();
+
+	            /*Clear all everything from map*/
+				$.grep(allMarkersArray_wmap,function(marker) {
+					var markerLayer = marker.layer ? marker.layer : marker.layerReference;
+					marker.isActive = 0;
+					marker.style.display = 'none';
+					markerLayer.redraw();
+				});
+
+				ccpl_map.getLayersByName('Markers')[0].destroyFeatures(ccpl_map.getLayersByName('Markers')[0].features);
+				ccpl_map.getLayersByName('Markers')[0].redraw();
+
+				// Reset Variables
+				allMarkersArray_wmap = [];
+				bs_ss_markers= [];
+				main_devices_data_wmap = [];
+				plottedBsIds = [];
+				pollableDevices = [];
+				deviceIDArray = [];
+				sectorMarkerConfiguredOn = [];
+				sectorMarkersMasterObj = {};
+				sector_MarkersArray = [];
+				currentlyPlottedDevices = [];
+				allMarkersObject_wmap= {
+					'base_station': {},
+					'path': {},
+					'sub_station': {},
+					'sector_device': {},
+					'sector_polygon': {},
+					'backhaul': {}
+				};
+
+				var states_with_bounds = state_lat_lon_db.where(function(obj) {
+	    			return whiteMapClass.checkIfPointLiesInside({lat: obj.lat, lon: obj.lon});
+	    		});
+
+				for(var i=states_with_bounds.length;i--;) {
+					if(state_wise_device_labels[states_with_bounds[i].name]) {
+						state_wise_device_labels[states_with_bounds[i].name].attributes.display = '';
+						ccpl_map.getLayersByName("States")[0].redraw();
+					}
+				}
+
+				state_lat_lon_db.where(function(obj) {
+					if(state_wise_device_labels[obj.name]) {
+						state_wise_device_labels[obj.name].attributes.display = '';
+						ccpl_map.getLayersByName("States")[0].redraw();
+						return ;
+					}
+				});
+
+				// Hide points line if exist
+	    		for(key in line_data_obj) {
+	    			if(line_data_obj[key].map) {
+	    				hideOpenLayerFeature(line_data_obj[key]);
+	    			}
+	    		}
+	        }
         }
 
         // Save last Zoom Value

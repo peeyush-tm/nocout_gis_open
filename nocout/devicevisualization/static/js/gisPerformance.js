@@ -919,10 +919,10 @@ function GisPerformance() {
 
                             if (window.location.pathname.indexOf("white_background") > -1) {
                                 ccpl_map.getLayersByName("Markers")[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
-                                ccpl_map.getLayersByName("Markers")[0].strategies[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
+                                // ccpl_map.getLayersByName("Markers")[0].strategies[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
 
                                 ccpl_map.getLayersByName("Markers")[0].redraw();
-                                ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+                                // ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
                             }
                         }// If sector child are plottable of not condition end-----
                     } else if(sector_polygon) {
