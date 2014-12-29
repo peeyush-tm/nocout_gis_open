@@ -84,6 +84,8 @@ def getCustomerAlertDetail(request):
     ]
 
     common_headers = [
+        {'mData': 'near_end_ip', 'sTitle': 'Near End IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+         'bSortable': True},
         {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
@@ -672,6 +674,17 @@ class AlertCenterListing(ListView):
                     'sWidth': 'auto',
                     'bSortable': True
                 }
+            ]
+
+        if page_type == 'customer':
+            specific_headers += [
+                {
+                  'mData': 'near_end_ip',
+                  'sTitle': 'Near End IP',
+                  'sWidth': 'auto',
+                  'sClass': 'hidden-xs',
+                  'bSortable': True
+                },
             ]
 
         if data_source == 'service':

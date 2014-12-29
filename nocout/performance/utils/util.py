@@ -255,6 +255,7 @@ def prepare_gis_devices(devices, page_type):
     for device in devices:
 
         device.update({
+            "near_end_ip": "",
             "sector_id": "",
             "circuit_id": "",
             "customer_name": "",
@@ -309,6 +310,7 @@ def prepare_gis_devices(devices, page_type):
             if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
+                    "near_end_ip": format_value(bs_row['SECTOR_CONF_ON_IP']),
                     "sector_id": ", ".join(sector_details),
                     "circuit_id": format_value(bs_row['CCID']),
                     "customer_name": format_value(bs_row['CUST']),
