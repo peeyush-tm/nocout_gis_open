@@ -65,7 +65,7 @@ def check_radwin_uas(item, params, info):
         infotext = "type mismatch on value"
     except:
         infotext = "unknown value"
-    return (state, infotext, [("uas", uas)])
+    return (state, infotext, [("uas", uas,warn,crit)])
 
 
 check_info["radwin_uas"] = {
