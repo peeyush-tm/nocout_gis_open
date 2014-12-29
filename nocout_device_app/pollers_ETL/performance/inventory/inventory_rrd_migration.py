@@ -99,13 +99,13 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 		service_state = entry[4]
 		host = entry[0]
 		if service_state == 0:
-			service_state = "OK"
+			service_state = "ok"
 		elif service_state == 1:
-			service_state = "WARNING"
+			service_state = "warning"
 		elif service_state == 2:
-			service_state = "CRITICAL"
+			service_state = "critical"
 		elif service_state == 3:
-			service_state = "UNKNOWN"
+			service_state = "unknown"
 		host_ip = entry[1] 
 		service = entry[3]
 		try:				
