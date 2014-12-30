@@ -496,8 +496,8 @@ function devicePlottingClass_gmap() {
 			state_lat_lon_db.insert({"name" : "Assam","lat" : 26.14,"lon" : 91.77});
 			state_lat_lon_db.insert({"name" : "Bihar","lat" : 25.37,"lon" : 85.13});
 			state_lat_lon_db.insert({"name" : "Chhattisgarh","lat" : 21.27,"lon" : 81.60});
-			state_lat_lon_db.insert({"name" : "Delhi","lat" : 28.61,"lon" : 77.23});
-			state_lat_lon_db.insert({"name" : "NCR","lat" : 28.67,"lon" : 77.21});
+			state_lat_lon_db.insert({"name" : "Delhi","lat" : 28.65,"lon" : 77.73});
+			state_lat_lon_db.insert({"name" : "NCR","lat" : 28.57,"lon" : 76.42});
 			state_lat_lon_db.insert({"name" : "Goa","lat" : 15.4989,"lon" : 73.8278});
 			state_lat_lon_db.insert({"name" : "Gujrat","lat" : 23.2167,"lon" : 72.6833});
 			state_lat_lon_db.insert({"name" : "Haryana","lat" : 30.73,"lon" : 76.78});
