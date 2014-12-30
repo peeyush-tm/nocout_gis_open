@@ -7,8 +7,8 @@ import datetime
 from multiprocessing import Process, Queue
 
 #nocout utilities
-from nocout.utils.util import fetch_raw_result, dict_fetchall, \
-    format_value, cache_for, time_it, \
+from nocout.utils.util import fetch_raw_result, \
+    format_value, cache_for, \
     cached_all_gis_inventory, query_all_gis_inventory, query_all_gis_inventory_improved
 #nocout utilities
 
@@ -255,6 +255,7 @@ def prepare_gis_devices(devices, page_type):
     for device in devices:
 
         device.update({
+            "near_end_ip": "",
             "sector_id": "",
             "circuit_id": "",
             "customer_name": "",
@@ -309,6 +310,7 @@ def prepare_gis_devices(devices, page_type):
             if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
+                    "near_end_ip": format_value(bs_row['SECTOR_CONF_ON_IP']),
                     "sector_id": ", ".join(sector_details),
                     "circuit_id": format_value(bs_row['CCID']),
                     "customer_name": format_value(bs_row['CUST']),
@@ -552,6 +554,7 @@ def get_time(start_date, end_date, date_format):
         start_date = format(start_date_object, 'U')
 
     return isSet, start_date, end_date
+
 
 def color_picker():
     import random

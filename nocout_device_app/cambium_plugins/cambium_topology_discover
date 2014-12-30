@@ -57,7 +57,7 @@ def check_cambium_topology_discover(item, params, info):
 				ap_color_code = int(info[i][2])
 			except:
 				ap_color_code = None
-			infotext += "%s %s:%s " %(ap_mac,ap_ip,ap_color_code)
+			infotext += "%s %s_%s " %(ap_mac,ap_ip,ap_color_code)
 		else:
 			connected_ss_mac = info[i][3]
 			connected_ss_ip = info[i][4]

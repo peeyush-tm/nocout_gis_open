@@ -14,7 +14,9 @@ var mapInstance = "",
 	green_status_array = ['ok','success','up'],
     red_status_array = ['critical','down'],
     orange_status_array = ['warning'],
-    ptp_tech_list = ['ptp','p2p','ptp bh'];
+    ptp_tech_list = ['ptp','p2p','ptp bh'],
+    india_center_lon = 79.0900,
+    india_center_lat = 21.1500;
 
 /*Lazy loading API calling variables*/
 var hitCounter = 1,
@@ -259,8 +261,13 @@ function prepare_oms_object(oms_instance) {
 		for(var i=0;i<e.length;i++) {
 
 			if(isPollingActive) {
-				/*Change the icon of marker*/
-				e[i].setOptions({"icon":e[i].icon});
+				if(e[i].icon.url.indexOf('1x1.png') == -1) {
+					/*Change the icon of marker*/
+					e[i].setOptions({"icon":e[i].icon});
+				} else {
+					/*Change the icon of marker*/
+					e[i].setOptions({"icon":e[i].oldIcon});
+				}
 			} else {
 				/*Change the icon of marker*/
 				e[i].setOptions({"icon":e[i].oldIcon});
@@ -441,7 +448,7 @@ function devicePlottingClass_gmap() {
 			var mapObject = {};
 			if(window.location.pathname.indexOf("google_earth") > -1) {
 				mapObject = {
-					center    : new google.maps.LatLng(21.1500,79.0900),
+					center    : new google.maps.LatLng(india_center_lat,india_center_lon),
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.HYBRID/*google.maps.MapTypeId.SATELLITE*/,
 					mapTypeControl : true,
@@ -452,7 +459,7 @@ function devicePlottingClass_gmap() {
 				};
 			} else {
 				mapObject = {
-					center    : new google.maps.LatLng(21.1500,79.0900),
+					center    : new google.maps.LatLng(india_center_lat,india_center_lon),
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
 					mapTypeControl : true,
@@ -490,6 +497,7 @@ function devicePlottingClass_gmap() {
 			state_lat_lon_db.insert({"name" : "Bihar","lat" : 25.37,"lon" : 85.13});
 			state_lat_lon_db.insert({"name" : "Chhattisgarh","lat" : 21.27,"lon" : 81.60});
 			state_lat_lon_db.insert({"name" : "Delhi","lat" : 28.61,"lon" : 77.23});
+			state_lat_lon_db.insert({"name" : "NCR","lat" : 28.67,"lon" : 77.21});
 			state_lat_lon_db.insert({"name" : "Goa","lat" : 15.4989,"lon" : 73.8278});
 			state_lat_lon_db.insert({"name" : "Gujrat","lat" : 23.2167,"lon" : 72.6833});
 			state_lat_lon_db.insert({"name" : "Haryana","lat" : 30.73,"lon" : 76.78});
@@ -1060,6 +1068,7 @@ function devicePlottingClass_gmap() {
 			console.log("State Wise Clusters Function")
 			console.log("State Cluster Plotting Start Time :- "+ new Date().toLocaleString());
 		}
+
 		//Loop For Base Station
 		for(var i=dataset.length;i--;) {
 
@@ -1280,17 +1289,29 @@ function devicePlottingClass_gmap() {
 		}
 		if(isExportDataActive == 0) {
 			if(state_obj == 0) {
-				mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
-				mapInstance.setZoom(5);
+				if(window.location.pathname.indexOf("googleEarth") > -1) {
+
+				} else if(window.location.pathname.indexOf("white_background") > -1) {
+					ccpl_map.setCenter(
+						new OpenLayers.LonLat(india_center_lon, india_center_lat), // Center Lon-Lat 
+						1 // Zoom Level
+					);
+				} else {
+					mapInstance.setCenter(new google.maps.LatLng(india_center_lat,india_center_lon));
+					mapInstance.setZoom(5);
+				}
 			} else {
 				var clicked_state = state_obj ? state_obj.name : "",
 					selected_state_devices = [];
 				if(clicked_state) {
 					//Zoom in to selected state
 					if(window.location.pathname.indexOf("googleEarth") > -1) {
-				        
+				        // Pass
 				    } else if(window.location.pathname.indexOf("white_background") > -1) {
-						ccpl_map.setCenter(new OpenLayers.LonLat(state_obj.lon, state_obj.lat), whiteMapSettings.zoomLevelAtWhichStateClusterExpands);
+						ccpl_map.setCenter(
+							new OpenLayers.LonLat(state_obj.lon, state_obj.lat),
+							whiteMapSettings.zoomLevelAtWhichStateClusterExpands
+						);
 					} else {
 						mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(state_obj.lat,state_obj.lon)));
 						mapInstance.setZoom(8);
@@ -4147,7 +4168,7 @@ function devicePlottingClass_gmap() {
     	} else {
             /*Clear Existing Labels & Reset Counters*/
             gmap_self.clearStateCounters();
-            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+            mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
             mapInstance.setZoom(5);
             // data_for_filters = data_to_plot;
             isApiResponse = 0;
@@ -4880,7 +4901,7 @@ function devicePlottingClass_gmap() {
 				// Update the view in Google Earth 
 				ge.getView().setAbstractView(lookAt); 
 				
-				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
 				// mapInstance.setZoom(5);
 				data_for_filters_earth = JSON.parse(JSON.stringify(all_devices_loki_db.data));
 
@@ -4912,7 +4933,7 @@ function devicePlottingClass_gmap() {
 					}
 
 					isCallCompleted = 1;
-					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
 					mapInstance.setZoom(5);
 					data_for_filters = JSON.parse(JSON.stringify(all_devices_loki_db.data));
 					isApiResponse = 0;
@@ -4951,7 +4972,7 @@ function devicePlottingClass_gmap() {
 				// gmap_self.clearStateCounters();
 
 				// isCallCompleted = 1;
-				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+				// mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
 				// mapInstance.setZoom(5);
 				// data_for_filters = all_devices_loki_db.data;
 				// isApiResponse = 0;
@@ -5063,7 +5084,7 @@ function devicePlottingClass_gmap() {
 
 
 					isCallCompleted = 1;
-					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(21.1500,79.0900)));
+					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
 					mapInstance.setZoom(5);
 					isApiResponse = 0;
 					gmap_self.showStateWiseData_gmap(data_to_plot_1);
@@ -5366,16 +5387,27 @@ function devicePlottingClass_gmap() {
 							var allSS = pollableDevices;
 							allSSIds = [];
 
-							var selected_polling_technology = $("#polling_tech option:selected").text();
+							var selected_polling_technology = $("#polling_tech option:selected").text(),
+								polling_technology_condition = $.trim(selected_polling_technology.toLowerCase());
 
 							for(var k=allSS.length;k--;) {
 								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon),
 									point_tech = allSS[k].technology ? $.trim(allSS[k].technology.toLowerCase()) : "";
 
+								// if point technology is PTP BH then use it as PTP
+								if(ptp_tech_list.indexOf(point_tech) > -1) {
+									point_tech = 'ptp';
+								}
+
+								// PTP, P2P & PTP BH are same
+								if(ptp_tech_list.indexOf(polling_technology_condition) > -1) {
+									polling_technology_condition = 'ptp';
+								}
+
 								if(point) {
 									if(google.maps.geometry.poly.containsLocation(point, polygon)) {
 										if(allSS[k].technology) {
-											if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
+											if(point_tech == polling_technology_condition) {
 												if(ptp_tech_list.indexOf(point_tech) > -1) {
 													if(allSSIds.indexOf(allSS[k].device_name) < 0) {
 														if(allSS[k].pointType == 'sub_station') {

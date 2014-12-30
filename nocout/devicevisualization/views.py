@@ -19,7 +19,7 @@ from django.db.models import Q
 from inventory.models import ThematicSettings, UserThematicSettings, BaseStation, SubStation, UserPingThematicSettings, \
     PingThematicSettings, Circuit, CircuitL2Report
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
-    PerformanceNetwork, PerformanceService, Status, Topology
+    PerformanceNetwork, PerformanceService, Status, Topology, Utilization, UtilizationStatus
 from user_profile.models import UserProfile
 from devicevisualization.models import GISPointTool, KMZReport
 from django.views.decorators.csrf import csrf_exempt
@@ -31,10 +31,6 @@ from activity_stream.models import UserAction
 from service.utils.util import service_data_sources
 
 logger = logging.getLogger(__name__)
-
-# execute this globally
-# fetch all data sources
-SERVICE_DATA_SOURCE = service_data_sources()
 
 
 def locate_devices(request , device_name = "default_device_name"):
@@ -1819,17 +1815,20 @@ class GISPerfData(View):
                 try:
                     if len(performance_value):
                         # live polled value of device service
-                        value = ast.literal_eval(str(performance_value))
+                        #value = ast.literal_eval(str(performance_value))
 
                         # get appropriate icon
                         if ts_type == "normal":
                             if service_type == "INT":
+                                value = ast.literal_eval(str(performance_value))
                                 icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
                             elif service_type == "STR":
+                                value = str(performance_value)
                                 icon = self.get_icon_for_string_service(th_ranges, th_icon_settings, value)
                             else:
                                 pass
                         elif ts_type == "ping":
+                            value = ast.literal_eval(str(performance_value))
                             icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
                         else:
                             pass
@@ -1874,95 +1873,21 @@ class GISPerfData(View):
         image_partial = "icons/mobilephonetower10.png"
 
         if th_ranges and th_icon_settings and len(str(value)):
-            try:
-                if (float(th_ranges.range1_start)) <= (float(value)) <= (float(th_ranges.range1_end)):
+            compare_this = float(value)
+            for i in range(1, 11):
+                try:
+                    compare_to_start = float(eval("th_ranges.range%d_start" %i))
+                    compare_to_end = float(eval("th_ranges.range%d_end" %i))
                     icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings1' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings1'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range2_start)) <= (float(value)) <= (float(th_ranges.range2_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings2' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings2'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range3_start)) <= (float(value)) <= (float(th_ranges.range3_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings3' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings3'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range4_start)) <= (float(value)) <= (float(th_ranges.range4_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings4' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings4'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range5_start)) <= (float(value)) <= (float(th_ranges.range5_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings5' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings5'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range6_start)) <= (float(value)) <= (float(th_ranges.range6_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings6' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings6'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range7_start)) <= (float(value)) <= (float(th_ranges.range7_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings7' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings7'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range8_start)) <= (float(value)) <= (float(th_ranges.range8_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings8' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings8'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range9_start)) <= (float(value)) <= (float(th_ranges.range9_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings9' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings9'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if (float(th_ranges.range10_start)) <= (float(value)) <= (float(th_ranges.range10_end)):
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings10' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings10'])
-            except Exception as e:
-                logger.error(e.message)
+                    if compare_to_start <= compare_this <= compare_to_end:
+                        icon_key = "icon_settings{0}".format(i)
+                        for icon_setting in icon_settings:
+                            if icon_key in icon_setting.keys():
+                                image_partial = str(icon_setting[icon_key])
+                                break
+                except Exception as e:
+                    logger.exception(e.message)
+                    continue
 
         # image url
         img_url = "media/" + str(image_partial) if "uploaded" in str(
@@ -1999,97 +1924,22 @@ class GISPerfData(View):
 
         # default image to be loaded
         image_partial = "icons/mobilephonetower10.png"
-
         if th_ranges and th_icon_settings and value:
-            try:
-                if str(value).lower().strip() == str(th_ranges.range1_start).lower().strip():
+            compare_this = ''.join(e for e in value if e.isalnum())
+            for i in range(1, 11):
+                try:
+                    eval_this = eval("th_ranges.range%d_start" %i)
+                    compare_to = ''.join(e for e in eval_this if e.isalnum())
                     icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings1' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings1'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if str(value).lower().strip() == str(th_ranges.range2_start).lower().strip():
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings2' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings2'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if str(value).lower().strip() == str(th_ranges.range3_start).lower().strip():
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings3' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings3'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if str(value).lower().strip() == str(th_ranges.range4_start).lower().strip():
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings4' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings4'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if str(value).lower().strip() == str(th_ranges.range5_start).lower().strip():
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings5' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings5'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if str(value).lower().strip() == str(th_ranges.range6_start).lower().strip():
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings6' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings6'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if str(value).lower().strip() == str(th_ranges.range7_start).lower().strip():
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings7' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings7'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if str(value).lower().strip() == str(th_ranges.range8_start).lower().strip():
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings8' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings8'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if str(value).lower().strip() == str(th_ranges.range9_start).lower().strip():
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings9' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings9'])
-            except Exception as e:
-                logger.error(e.message)
-
-            try:
-                if str(value).lower().strip() == str(th_ranges.range10_start).lower().strip():
-                    icon_settings = eval(th_icon_settings)
-                    for icon_setting in icon_settings:
-                        if 'icon_settings10' in icon_setting.keys():
-                            image_partial = str(icon_setting['icon_settings10'])
-            except Exception as e:
-                logger.error(e.message)
+                    if compare_this.strip().lower() == compare_to.strip().lower():
+                        icon_key = "icon_settings{0}".format(i)
+                        for icon_setting in icon_settings:
+                            if icon_key in icon_setting.keys():
+                                image_partial = str(icon_setting[icon_key])
+                                break
+                except Exception as e:
+                    logger.exception(e.message)
+                    continue
 
         # image url
         img_url = "media/" + str(image_partial) if "uploaded" in str(
@@ -2417,10 +2267,6 @@ class GISPerfData(View):
 
         for perf in device_network_info:
             res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
-            print "***************************** res - ", type(res), res
-            print "***************************** name - ", type(name), name
-            print "***************************** title - ", type(title), title
-            print "***************************** show_gis - ", type(show_gis), show_gis
             if not res:
                 continue
             if perf['data_source'] in processed:
@@ -2460,10 +2306,6 @@ class GISPerfData(View):
 
             for perf in device_performance_info:
                 res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
-                print "***************************** res1 - ", type(res), res
-                print "***************************** name1 - ", type(name), name
-                print "***************************** title1 - ", type(title), title
-                print "***************************** show_gis1 - ", type(show_gis), show_gis
                 if not res:
                     continue
                 if perf['data_source'] in processed:
@@ -2538,6 +2380,10 @@ class GISPerfData(View):
                 - title (str) - data source name to display for e.g. 'Latency'
                 - show_gis (int) - 1 to show data source; 0 for not to show
         """
+
+        # execute this globally
+        # fetch all data sources
+        SERVICE_DATA_SOURCE = service_data_sources()
 
         if data_source and data_source[:1].isalpha():
             title = " ".join(data_source.split("_")).title()
@@ -2747,6 +2593,12 @@ class GISPerfData(View):
         # type of thematic settings needs to be fetched
         ts_type = self.request.GET.get('ts', 'normal')
 
+        device_type = None
+        try:
+            device_type = DeviceType.objects.get(id=substation_device.device_type)
+        except Exception as e:
+            logger.exception(e.message)
+
         # device technology
         device_technology = ""
         try:
@@ -2771,7 +2623,10 @@ class GISPerfData(View):
             logger.error("No user thematics for device {}. Exception: ".format(device_name, e.message))
 
         # device frequency
-        device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time)
+        device_frequency = self.get_device_polled_frequency(device_name, machine_name, freeze_time,
+                                                            sector=None,
+                                                            device_type=device_type
+        )
 
         # device pl
         device_pl = self.get_device_pl(device_name, machine_name, freeze_time)
@@ -2877,17 +2732,20 @@ class GISPerfData(View):
                 try:
                     if len(performance_value):
                         # live polled value of device service
-                        value = ast.literal_eval(str(performance_value))
+                        #value = ast.literal_eval(str(performance_value))
 
                         # get appropriate icon
                         if ts_type == "normal":
                             if service_type == "INT":
+                                value = ast.literal_eval(str(performance_value))
                                 icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
                             elif service_type == "STR":
+                                value = str(performance_value)
                                 icon = self.get_icon_for_string_service(th_ranges, th_icon_settings, value)
                             else:
                                 pass
                         elif ts_type == "ping":
+                            value = ast.literal_eval(str(performance_value))
                             icon = self.get_icon_for_numeric_service(th_ranges, th_icon_settings, value)
                         else:
                             pass
@@ -2900,7 +2758,7 @@ class GISPerfData(View):
 
         return substation_info
 
-    def get_device_polled_frequency(self, device_name, machine_name, freeze_time, sector=None):
+    def get_device_polled_frequency(self, device_name, machine_name, freeze_time, sector=None, device_type=None):
         """ Get device polled frequency
 
             Parameters:
@@ -2937,10 +2795,28 @@ class GISPerfData(View):
                         service_name = 'wimax_pmp2_frequency_invent'
                     else:
                         port_based_frequency = False
+
+            #for SS services
+            frequency_service = None
+            if device_type:
+                frequency_service = device_type.service.filter(name__icontains='frequency')
+
             if port_based_frequency:
                 device_frequency = InventoryStatus.objects.filter(device_name=device_name,
                                                                   service_name=service_name,
                                                                   data_source='frequency')\
+                                                              .using(alias=machine_name)\
+                                                              .order_by('-sys_timestamp')[:1]
+            elif frequency_service:
+                service_name = frequency_service[0]
+                if "_invent" in service_name:
+                    device_frequency = InventoryStatus.objects.filter(device_name=device_name, data_source='frequency')\
+                                                              .using(alias=machine_name)\
+                                                              .order_by('-sys_timestamp')[:1]
+                else:
+                    device_frequency = PerformanceStatus.objects.filter(device_name=device_name,
+                                                                        service_name=service_name,
+                                                                        data_source='frequency')\
                                                               .using(alias=machine_name)\
                                                               .order_by('-sys_timestamp')[:1]
             else:
@@ -3125,27 +3001,95 @@ class GISPerfData(View):
         performance_value = ""
         try:
             if ts_type == "normal":
-                if int(freeze_time):
-                    performance_value = PerformanceService.objects.filter(device_name=device_name,
-                                                                          service_name=device_service_name,
-                                                                          data_source=device_service_data_source,
-                                                                          sys_timestamp__lte=int(freeze_time) / 1000)\
-                                                                          .using(alias=machine_name)\
-                                                                          .order_by('-sys_timestamp')[:1]
-                    if len(performance_value):
-                        performance_value = performance_value[0].current_value
+                if "_invent" in device_service_name:
+                    if int(freeze_time):
+                        performance_value = PerformanceInventory.objects.filter(device_name=device_name,
+                                                                              service_name=device_service_name,
+                                                                              data_source=device_service_data_source,
+                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                              .using(alias=machine_name)\
+                                                                              .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
                     else:
-                        performance_value = ""
+                        performance_value = InventoryStatus.objects.filter(device_name=device_name,
+                                                                         service_name=device_service_name,
+                                                                         data_source=device_service_data_source)\
+                                                                         .using(alias=machine_name)\
+                                                                         .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
+
+                elif "_status" in device_service_name:
+                    if int(freeze_time):
+                        performance_value = PerformanceStatus.objects.filter(device_name=device_name,
+                                                                              service_name=device_service_name,
+                                                                              data_source=device_service_data_source,
+                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                              .using(alias=machine_name)\
+                                                                              .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
+                    else:
+                        performance_value = Status.objects.filter(device_name=device_name,
+                                                                         service_name=device_service_name,
+                                                                         data_source=device_service_data_source)\
+                                                                         .using(alias=machine_name)\
+                                                                         .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
+                elif "_kpi" in device_service_name:
+                    if int(freeze_time):
+                        performance_value = Utilization.objects.filter(device_name=device_name,
+                                                                              service_name=device_service_name,
+                                                                              data_source=device_service_data_source,
+                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                              .using(alias=machine_name)\
+                                                                              .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
+                    else:
+                        performance_value = UtilizationStatus.objects.filter(device_name=device_name,
+                                                                         service_name=device_service_name,
+                                                                         data_source=device_service_data_source)\
+                                                                         .using(alias=machine_name)\
+                                                                         .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
                 else:
-                    performance_value = ServiceStatus.objects.filter(device_name=device_name,
-                                                                     service_name=device_service_name,
-                                                                     data_source=device_service_data_source)\
-                                                                     .using(alias=machine_name)\
-                                                                     .order_by('-sys_timestamp')[:1]
-                    if len(performance_value):
-                        performance_value = performance_value[0].current_value
+                    if int(freeze_time):
+                        performance_value = PerformanceService.objects.filter(device_name=device_name,
+                                                                              service_name=device_service_name,
+                                                                              data_source=device_service_data_source,
+                                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                                              .using(alias=machine_name)\
+                                                                              .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
                     else:
-                        performance_value = ""
+                        performance_value = ServiceStatus.objects.filter(device_name=device_name,
+                                                                         service_name=device_service_name,
+                                                                         data_source=device_service_data_source)\
+                                                                         .using(alias=machine_name)\
+                                                                         .order_by('-sys_timestamp')[:1]
+                        if len(performance_value):
+                            performance_value = performance_value[0].current_value
+                        else:
+                            performance_value = ""
             elif ts_type == "ping":
                 if int(freeze_time):
                     performance_value = PerformanceNetwork.objects.filter(device_name=device_name,
