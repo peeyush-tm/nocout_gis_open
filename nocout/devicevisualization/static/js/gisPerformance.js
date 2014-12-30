@@ -1136,13 +1136,15 @@ function GisPerformance() {
     this.getKeyValue = function(objArray,key,returnOnlyVal) {
         var val = "";
         for(var y=objArray.length;y--;) {
-            if($.trim(objArray[y].name) == key) {
-                if(returnOnlyVal) {
-                    val = objArray[y].value;
-                } else {
-                    val = objArray[y];
+            if(objArray[y]) {
+                if($.trim(objArray[y].name) == key) {
+                    if(returnOnlyVal) {
+                        val = objArray[y].value;
+                    } else {
+                        val = objArray[y];
+                    }
+                    break;
                 }
-                break;
             }
         }
 

@@ -450,6 +450,12 @@ def prepare_raw_sector(sectors):
                               'value': format_value(format_this=sector['BSBUILDINGHGT'])
                             },
                             {
+                              'name': 'technology',
+                              'title': 'Technology',
+                              'show': 1,
+                              'value': techno_to_append
+                            },
+                            {
                               'name': 'tower_height',
                               'title': 'Tower Height',
                               'show': 1,

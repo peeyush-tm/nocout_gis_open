@@ -16,7 +16,9 @@ var mapInstance = "",
     orange_status_array = ['warning'],
     ptp_tech_list = ['ptp','p2p','ptp bh'],
     india_center_lon = 79.0900,
-    india_center_lat = 21.1500;
+    india_center_lat = 21.1500,
+    posLink1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
+	posLink2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
 
 /*Lazy loading API calling variables*/
 var hitCounter = 1,
@@ -3046,36 +3048,37 @@ function devicePlottingClass_gmap() {
 				var tech = gisPerformanceClass.getKeyValue(contentObject.ss_info,"ss_technology",true),
 					ss_tech = tech ? $.trim(tech.toLowerCase()) : "",
 					ss_tooltip_backend_data = contentObject.ss_info ? contentObject.ss_info : [],
-					actual_sequence_array = ptp_ss_toolTip_static;
-
-				if(ss_tech) {
-					// if(ptp_tech_list.indexOf(ss_tech) > -1) {
-					// 	actual_sequence_array = ptp_ss_toolTip_static;
-					// } else 
-					if(ss_tech == 'pmp') {
-						actual_sequence_array = pmp_ss_toolTip_static;
-					} else if(ss_tech == 'wimax') {
-						actual_sequence_array = wimax_ss_toolTip_static;
-					}
-				}
+					actual_sequence_array = ss_toolTip_static;
 
 				var ss_actual_data = rearrangeTooltipArray(actual_sequence_array,ss_tooltip_backend_data);
 
+				var pos1 = "",
+					pos2 = "";
+
+				if(path_circuit_id) {
+					pos1 = "<a href='"+posLink1+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a>";
+					pos2 = "<a href='"+posLink2+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a>";
+				}
+
 				/*Loop for ss info object array*/
 				for(var i=0;i<ss_actual_data.length;i++) {
+					if(ss_actual_data[i].name == 'pos_link1') {
+						ss_actual_data[i].value = pos1;
+					}
+
+					if(ss_actual_data[i].name == 'pos_link2') {
+						ss_actual_data[i].value = pos2;
+					}
 					if(ss_actual_data[i].show == 1) {
 						infoTable += "<tr><td>"+ss_actual_data[i].title+"</td><td>"+ss_actual_data[i].value+"</td></tr>";
 					}
 				}
 
-				var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
-					link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
-
 				// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
 				var report_download_btn = "";
 				if(path_circuit_id) {
-					infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
-					infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
+					// infoTable += "<tr><td>POSLink1</td><td><a href='"+posLink1+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
+					// infoTable += "<tr><td>POSLink2</td><td><a href='"+posLink2+"="+path_circuit_id+"' class='text-warning' target='_blank'>"+path_circuit_id+"</a></td></tr>";
 					report_download_btn = '<li><button class="btn btn-sm btn-info download_report_btn" ckt_id="'+path_circuit_id+'">Download L2 Report</button></li>';
 				}
 				infoTable += "</tbody></table>";
@@ -3130,7 +3133,7 @@ function devicePlottingClass_gmap() {
 				nearend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
 				tools_html = "",
 				nearEndInfo = contentObject['deviceInfo'].concat(contentObject['deviceExtraInfo']),
-				static_info = !contentObject["tooltip_info"] ? nearEndInfo : rearrangeTooltipArray(ptp_ss_toolTip_static,contentObject["tooltip_info"]);
+				static_info = !contentObject["tooltip_info"] ? nearEndInfo : rearrangeTooltipArray(ptp_sector_toolTip_static,contentObject["tooltip_info"]);
 
 			if(nearend_perf_url) {
 				tools_html += "<a href='"+nearend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>";
@@ -3158,21 +3161,34 @@ function devicePlottingClass_gmap() {
 				}
 			}
 
-			infoTable += "<tr><td>Technology</td><td>"+contentObject.technology+"</td></tr>";
-			infoTable += "<tr><td>Vendor</td><td>"+contentObject.vendor+"</td></tr>";
+			// infoTable += "<tr><td>Technology</td><td>"+contentObject.technology+"</td></tr>";
+			// infoTable += "<tr><td>Vendor</td><td>"+contentObject.vendor+"</td></tr>";
 			
 
-			if(contentObject['poll_info']) {
+			if(contentObject['poll_info'] && contentObject['poll_info'].length > 0) {
+				var backend_polled_info = contentObject['poll_info'],
+					actual_polled_info = backend_polled_info;
+
+				if(ptp_tech_list.indexOf(sector_tech) > -1) {
+					actual_polled_info = rearrangeTooltipArray(ptp_sector_toolTip_polled,backend_polled_info);
+				} else if(sector_tech == 'wimax') {
+					actual_polled_info = rearrangeTooltipArray(wimax_sector_toolTip_polled,backend_polled_info);
+				} else if(sector_tech == 'pmp') {
+					actual_polled_info = rearrangeTooltipArray(pmp_sector_toolTip_polled,backend_polled_info);
+				} else {
+					// pass
+				}
+
 				/*Poll Parameter Info*/
-				for(var i=0; i< contentObject['poll_info'].length; i++) {
+				for(var i=0; i< actual_polled_info.length; i++) {
 					var url = "",
 						text_class = "";
-					if(contentObject['poll_info'][i]["show"]) {
+					if(actual_polled_info[i]["show"]) {
 						// Url
-						url = contentObject['poll_info'][i]["url"] ? contentObject['poll_info'][i]["url"] : "";
+						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
 						text_class = url ? "text-primary" : "";
 
-						infoTable += "<tr><td class='"+text_class+"' url='"+url+"'>"+contentObject['poll_info'][i]['title']+"</td><td>"+contentObject['poll_info'][i]['value']+"</td></tr>";
+						infoTable += "<tr><td class='"+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td><td>"+actual_polled_info[i]['value']+"</td></tr>";
 					}
 				}
 			}
@@ -3201,18 +3217,8 @@ function devicePlottingClass_gmap() {
 				startPtInfo = bs_actual_data ? bs_actual_data : [];
 			} else {
 				if(clickedType == 'sub_station') {
-					var actual_sequence_array = ptp_ss_toolTip_static,
+					var actual_sequence_array = ss_toolTip_static,
 						tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
-					if(tech) {
-						// if(ptp_tech_list.indexOf(tech) > -1) {
-						// 	actual_sequence_array = ptp_ss_toolTip_static;
-						// } else 
-						if(tech == 'pmp') {
-							actual_sequence_array = pmp_ss_toolTip_static;
-						} else if(tech == 'wimax') {
-							actual_sequence_array = wimax_ss_toolTip_static;
-						}
-					}
 
 					if(actual_sequence_array) {
 						var ss_actual_data = rearrangeTooltipArray(actual_sequence_array,contentObject.dataset);
@@ -3224,33 +3230,16 @@ function devicePlottingClass_gmap() {
 					startPtInfo = contentObject.dataset;
 				}
 			}
-
-			ss_circuit_id = gisPerformanceClass.getKeyValue(startPtInfo,"cktid",true);
-
-			for(var i=0;i<startPtInfo.length;i++) {
-				var url = "",
-					text_class = "";
-
-				// if(startPtInfo[i].title && $.trim(startPtInfo[i].title.toLowerCase()) === 'circuit id') {
-				// 	ss_circuit_id = startPtInfo[i].value;
-				// }
-				if(startPtInfo[i].show == 1) {
-					// Url
-					url = startPtInfo[i]["url"] ? startPtInfo[i]["url"] : "";
-					text_class = url ? "text-primary" : "";
-
-					infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+startPtInfo[i]['title']+"</td><td>"+startPtInfo[i]['value']+"</td></tr>";
-					// infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
-				}
-			}
-
-			var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
-				link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
 			
+			ss_circuit_id = gisPerformanceClass.getKeyValue(startPtInfo,"cktid",true);	
+
 			if(clickedType == "sub_station") {
+				var pos1 = "",
+					pos2 = "";
+
 				if(ss_circuit_id) {
-					infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
-					infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
+					pos1 = "<a href='"+posLink1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a>";
+					pos2 = "<a href='"+posLink2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a>";
 				}
 
 				if(farend_perf_url) {
@@ -3261,17 +3250,54 @@ function devicePlottingClass_gmap() {
 				}
 			}
 
-			if(contentObject['poll_info']) {
-				/*Poll Parameter Info*/
-				for(var i=0; i< contentObject['poll_info'].length; i++) {
-					var url = "",
-						text_class = "";
-					if(contentObject['poll_info'][i]["show"]) {
+			for(var i=0;i<startPtInfo.length;i++) {
+				var url = "",
+					text_class = "";
+				if(startPtInfo[i]) {
+					if(startPtInfo[i].name == 'pos_link1') {
+						startPtInfo[i].value = pos1;
+					}
+
+					if(startPtInfo[i].name == 'pos_link2') {
+						startPtInfo[i].value = pos2;
+					}
+
+					if(startPtInfo[i].show == 1) {
 						// Url
-						url = contentObject['poll_info'][i]["url"] ? contentObject['poll_info'][i]["url"] : "";
+						url = startPtInfo[i]["url"] ? startPtInfo[i]["url"] : "";
 						text_class = url ? "text-primary" : "";
 
-						infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+contentObject['poll_info'][i]['title']+"</td><td>"+contentObject['poll_info'][i]['value']+"</td></tr>";
+						infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+startPtInfo[i]['title']+"</td><td>"+startPtInfo[i]['value']+"</td></tr>";
+						// infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
+					}
+				}
+			}
+
+			if(contentObject['poll_info'] && contentObject['poll_info'].length > 0) {
+
+				var backend_polled_info = contentObject['poll_info'],
+					actual_polled_info = backend_polled_info;
+
+				if(ptp_tech_list.indexOf(sector_tech) > -1) {
+					actual_polled_info = rearrangeTooltipArray(ptp_ss_toolTip_polled,backend_polled_info);
+				} else if(sector_tech == 'wimax') {
+					actual_polled_info = rearrangeTooltipArray(wimax_ss_toolTip_polled,backend_polled_info);
+				} else if(sector_tech == 'pmp') {
+					actual_polled_info = rearrangeTooltipArray(pmp_ss_toolTip_polled,backend_polled_info);
+				} else {
+					// pass
+				}
+
+				/*Poll Parameter Info*/
+				for(var i=0; i< actual_polled_info.length; i++) {
+					var url = "",
+						text_class = "";
+					if(actual_polled_info[i]["show"]) {
+						// Url
+						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
+						text_class = url ? "text-primary" : "";
+
+						infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td><td>"+actual_polled_info[i]['value']+"</td></tr>";
 					}
 				}
 			}
