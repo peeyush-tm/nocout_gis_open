@@ -1145,6 +1145,9 @@ class EventInventory(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+##################################################################
+########################STATUS TABLES#############################
+##################################################################
 
 class NetworkStatus(models.Model):
     """
@@ -1173,6 +1176,9 @@ class NetworkStatus(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+        index_together = [
+            ["device_name", "service_name", "data_source"],
+        ]
 
 
 class ServiceStatus(models.Model):
@@ -1202,6 +1208,9 @@ class ServiceStatus(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+        index_together = [
+            ["device_name", "service_name", "data_source"],
+        ]
 
 
 class MachineStatus(models.Model):
@@ -1231,6 +1240,9 @@ class MachineStatus(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+        index_together = [
+            ["device_name", "service_name", "data_source"],
+        ]
 
 
 class InventoryStatus(models.Model):
@@ -1260,6 +1272,9 @@ class InventoryStatus(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+        index_together = [
+            ["device_name", "service_name", "data_source"],
+        ]
 
 
 class Status(models.Model):
@@ -1289,6 +1304,13 @@ class Status(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+        index_together = [
+            ["device_name", "service_name", "data_source"],
+        ]
+
+##################################################################
+########################STATUS TABLES#############################
+##################################################################
 
 
 ############################################################################################################
