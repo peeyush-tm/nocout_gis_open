@@ -946,8 +946,10 @@ function rearrangeTooltipArray(correct_info_list,backend_info_list) {
 				backend_info_name = backend_info.name ? $.trim(backend_info.name) : "";
 			// if info name's are same
 			if(correct_info_name == backend_info_name) {
+				var url = backend_info["url"] ? backend_info["url"] : "";
 				current_info_obj["value"] = backend_info["value"];
 				current_info_obj["show"] = backend_info["show"];
+				current_info_obj["url"] = url;
 
 				break backend_info_loop;
 			}
