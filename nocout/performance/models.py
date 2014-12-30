@@ -1153,12 +1153,12 @@ class NetworkStatus(models.Model):
     """
     Network Status Table columns declared
     """
-    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -1185,12 +1185,12 @@ class ServiceStatus(models.Model):
     """
     Service Status Table columns declared
     """
-    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -1217,12 +1217,12 @@ class MachineStatus(models.Model):
     """
     Machine Status Table columns declared
     """
-    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -1249,12 +1249,12 @@ class InventoryStatus(models.Model):
     """
     Inventory Status Table columns declared
     """
-    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -1281,12 +1281,12 @@ class Status(models.Model):
     """
     Status Table columns declared
     """
-    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
