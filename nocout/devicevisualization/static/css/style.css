@@ -457,3 +457,7 @@ iframe {
 .close_info_window {
     cursor: pointer;
 }
+
+#infoWindowContainer table > tbody > tr > td:first-child {
+    width: 35%;
+}
