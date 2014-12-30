@@ -90,6 +90,8 @@ def check_wimax_pmp_bw_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    pmp1_bw=None
+    pmp2_bw = None
     try:
 	if info[0][0]:
                 bs_ip = info[0][0]
@@ -103,12 +105,13 @@ def check_wimax_pmp_bw_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext)
+    return (state, infotext,[("pmp1_bw",pmp1_bw),("pmp2_bw",pmp2_bw)])
 
 
 check_info["wimax_pmp_bw_invent"] = {
     'check_function': check_wimax_pmp_bw_invent,
     'service_description': 'wimax_pmp_bw_invent',
+    'has_perfdata':True,
 }
 
 #########################################################################

@@ -63,7 +63,7 @@ def check_wimax_bs_temperature_acb(item, params, info):
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
-    return (state, infotext, [("acb_temp",acb_temp )])
+    return (state, infotext, [("acb_temp",acb_temp,warn,crit )])
 
 
 check_info["wimax_bs_temperature_acb"] = {

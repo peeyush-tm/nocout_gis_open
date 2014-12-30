@@ -81,6 +81,7 @@ def check_wimax_p2_cmd_rx_pwr_invent(item, params, info):
     infotext = "unknown_value"
     duplex_value= None
     warn,crit =params
+    p2_rx_pwr = None
     try:
 	if info[0][0]:
                 bs_ip = info[0][0]
@@ -100,12 +101,13 @@ def check_wimax_p2_cmd_rx_pwr_invent(item, params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext)
+    return (state, infotext,[("p2_cmd_rx_pwr",p2_rx_pwr,warn,crit)])
 
 
 check_info["wimax_p2_cmd_rx_pwr_invent"] = {
     'check_function': check_wimax_p2_cmd_rx_pwr_invent,
     'service_description': 'wimax_p2_cmd_rx_pwr_invent',
+    'has_perfdata':True,
 }
 
 #########################################################################

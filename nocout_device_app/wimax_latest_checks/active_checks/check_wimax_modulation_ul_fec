@@ -90,7 +90,7 @@ def live_query_modulation_ul_fec(ss_host,site,war,crit):
 	modulation_ul_fec_state = "unknown"
 	modulation_ul_fec = ''
 	perf = ''
-	ul_fec_normal = ["qam16-1/2", "qam16-3/4", "qam64-2/3","qam64-3/4"]
+	ul_fec_normal = ["qam1612", "qam1634", "qam6423","qam6434"]
 	mac = None
         host = None
         mac_query = "GET services\nColumns: service_perf_data\nFilter: " + \
@@ -122,13 +122,14 @@ def live_query_modulation_ul_fec(ss_host,site,war,crit):
 				modulation_ul_fec = entry[0].split('=')[1].split(',')[7]
 				if modulation_ul_fec:
 					perf += 'modulation_ul_fec' + "=%s" %(modulation_ul_fec)
-					if modulation_ul_fec in crit:
+					mod_ul_fec = "".join(e for e in modulation_ul_fec if e.isalnum())
+					if modu_ul_fec in crit:
 						modulation_ul_fec_state = "critical"
                                         	exit_value = 2
-                               	 	elif modulation_ul_fec in war:
+                               	 	elif mod_ul_fec in war:
 						modulation_ul_fec_state = "war"
                                         	exit_value=1
-                                	elif modulation_ul_fec in ul_fec_normal:
+                                	elif mod_ul_fec in ul_fec_normal:
 						modulation_ul_fec_state = "ok"
                                         	exit_value = 0
  
