@@ -2096,7 +2096,8 @@ function devicePlottingClass_gmap() {
 					// Set the ckt id to sector marker object (only in case of PTP)
 					if(ptp_tech_list.indexOf(sector_tech) > -1) {
 						sector_Marker.setOptions({
-							"cktId" : ckt_id_val
+							"cktId" : ckt_id_val,
+							"tooltip_info" : ss_marker_obj.data.param.sub_station
 						});
 					}
 
@@ -2989,7 +2990,7 @@ function devicePlottingClass_gmap() {
 		var windowContent = "",
 			infoTable =  "",
 			perfContent = "",
-			clickedType = $.trim(contentObject.pointType);
+			clickedType = contentObject.pointType ? $.trim(contentObject.pointType) : "";
 		/*True,if clicked on the link line*/
 		if(clickedType == "path") {
 			try {
@@ -2999,6 +3000,7 @@ function devicePlottingClass_gmap() {
 					lineEndTitle = contentObject.endTitle ? contentObject.endTitle : "SS Info",
 					sector_title = lineStartTitle.toLowerCase().indexOf("point") > -1 ? lineStartTitle : "BS",
 					ss_title = lineEndTitle.toLowerCase().indexOf("point") > -1 ? lineEndTitle : "SS";
+
 				/*Tabbale Start*/
 				infoTable += '<div class="tabbable">';
 				/*Tabs Creation Start*/
@@ -3014,12 +3016,13 @@ function devicePlottingClass_gmap() {
 				/*First Tab Content Start*/
 				infoTable += '<div class="tab-pane fade active in" id="near_end_block"><div class="divide-10"></div>';
 
-				infoTable += "<table class='table table-bordered'><tbody>";
+				infoTable += "<table class='table table-bordered table-hover'><tbody>";
+				var bs_info = contentObject.bs_info ?  rearrangeTooltipArray(bs_toolTip_static,contentObject.bs_info) : [];
 				/*Loop for BS or Sector info object array*/
-				for(var i=0;i<contentObject.bs_info.length;i++) {
+				for(var i=0;i<bs_info.length;i++) {
 
-					if(contentObject.bs_info[i].show == 1) {
-						infoTable += "<tr><td>"+contentObject.bs_info[i].title+"</td><td>"+contentObject.bs_info[i].value+"</td></tr>";
+					if(bs_info[i].show == 1) {
+						infoTable += "<tr><td>"+bs_info[i].title+"</td><td>"+bs_info[i].value+"</td></tr>";
 					}
 				}
 
@@ -3035,11 +3038,33 @@ function devicePlottingClass_gmap() {
 				infoTable += '<div class="tab-pane fade" id="far_end_block"><div class="divide-10"></div>';
 				/*SS Info Start*/
 				infoTable += "<td>";			
-				infoTable += "<table class='table table-bordered'><tbody>";
+				infoTable += "<table class='table table-bordered table-hover'><tbody>";
+
+
+
+				// var ss_info = contentObject.bs_info ?  rearrangeTooltipArray(bs_toolTip_static,contentObject.bs_info) : [];
+				var tech = gisPerformanceClass.getKeyValue(contentObject.ss_info,"ss_technology",true),
+					ss_tech = tech ? $.trim(tech.toLowerCase()) : "",
+					ss_tooltip_backend_data = contentObject.ss_info ? contentObject.ss_info : [],
+					actual_sequence_array = ptp_ss_toolTip_static;
+
+				if(ss_tech) {
+					// if(ptp_tech_list.indexOf(ss_tech) > -1) {
+					// 	actual_sequence_array = ptp_ss_toolTip_static;
+					// } else 
+					if(ss_tech == 'pmp') {
+						actual_sequence_array = pmp_ss_toolTip_static;
+					} else if(ss_tech == 'wimax') {
+						actual_sequence_array = wimax_ss_toolTip_static;
+					}
+				}
+
+				var ss_actual_data = rearrangeTooltipArray(actual_sequence_array,ss_tooltip_backend_data);
+
 				/*Loop for ss info object array*/
-				for(var i=0;i<contentObject.ss_info.length;i++) {
-					if(contentObject.ss_info[i].show == 1) {
-						infoTable += "<tr><td>"+contentObject.ss_info[i].title+"</td><td>"+contentObject.ss_info[i].value+"</td></tr>";
+				for(var i=0;i<ss_actual_data.length;i++) {
+					if(ss_actual_data[i].show == 1) {
+						infoTable += "<tr><td>"+ss_actual_data[i].title+"</td><td>"+ss_actual_data[i].value+"</td></tr>";
 					}
 				}
 
@@ -3103,7 +3128,9 @@ function devicePlottingClass_gmap() {
 			var sectorWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : "Base Station Device",
 				nearend_perf_url = contentObject.perf_url ? base_url+""+contentObject.perf_url : "",
 				nearend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
-				tools_html = "";
+				tools_html = "",
+				nearEndInfo = contentObject['deviceInfo'].concat(contentObject['deviceExtraInfo']),
+				static_info = !contentObject["tooltip_info"] ? nearEndInfo : rearrangeTooltipArray(ptp_ss_toolTip_static,contentObject["tooltip_info"]);
 
 			if(nearend_perf_url) {
 				tools_html += "<a href='"+nearend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>";
@@ -3113,20 +3140,27 @@ function devicePlottingClass_gmap() {
 				tools_html += "<a href='"+nearend_inventory_url+"' target='_blank' title='Inventory'><i class='fa fa-dropbox text-info'> </i></a>";
 			}
 
-			infoTable += "<table class='table table-bordered'><tbody>";
-			for(var i=0; i< contentObject['deviceInfo'].length; i++) {
-				if(contentObject['deviceInfo'][i].show) {
-					infoTable += "<tr><td>"+contentObject['deviceInfo'][i]['title']+"</td><td>"+contentObject['deviceInfo'][i]['value']+"</td></tr>";		
+			infoTable += "<table class='table table-bordered table-hover'><tbody>";
+			var sector_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
+			if(!contentObject["tooltip_info"]) {
+				if(sector_tech == 'wimax') {
+					static_info = rearrangeTooltipArray(wimax_sector_toolTip_static,nearEndInfo);
+				} else if(sector_tech == 'pmp') {
+					static_info = rearrangeTooltipArray(pmp_sector_toolTip_static,nearEndInfo);
+				} else {
+					// pass
 				}
 			}
+			
+			for(var i=0; i< static_info.length; i++) {
+				if(static_info[i].show) {
+					infoTable += "<tr><td>"+static_info[i]['title']+"</td><td>"+static_info[i]['value']+"</td></tr>";		
+				}
+			}
+
 			infoTable += "<tr><td>Technology</td><td>"+contentObject.technology+"</td></tr>";
 			infoTable += "<tr><td>Vendor</td><td>"+contentObject.vendor+"</td></tr>";
 			
-			for(var i=0; i< contentObject['deviceExtraInfo'].length; i++) {
-				if(contentObject['deviceExtraInfo'][i].show) {
-					infoTable += "<tr><td>"+contentObject['deviceExtraInfo'][i]['title']+"</td><td>"+contentObject['deviceExtraInfo'][i]['value']+"</td></tr>";		
-				}
-			}
 
 			if(contentObject['poll_info']) {
 				/*Poll Parameter Info*/
@@ -3152,7 +3186,7 @@ function devicePlottingClass_gmap() {
 			windowContent += "</div></div>";
 		} else {
 
-			infoTable += "<table class='table table-bordered'><tbody>";
+			infoTable += "<table class='table table-bordered table-hover'><tbody>";
 			
 			var startPtInfo = [],
 				ss_circuit_id = "",
@@ -3161,10 +3195,34 @@ function devicePlottingClass_gmap() {
 				farend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
 				tools_html = "";
 
-			if(contentObject.bsInfo != undefined) {
-				startPtInfo = contentObject.bsInfo;
+			if(contentObject.bsInfo) {
+				// Rearrange BS tootip info as per actual sequence
+				var bs_actual_data = rearrangeTooltipArray(bs_toolTip_static,contentObject.bsInfo);
+				startPtInfo = bs_actual_data ? bs_actual_data : [];
 			} else {
-				startPtInfo = contentObject.dataset;
+				if(clickedType == 'sub_station') {
+					var actual_sequence_array = ptp_ss_toolTip_static,
+						tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
+					if(tech) {
+						// if(ptp_tech_list.indexOf(tech) > -1) {
+						// 	actual_sequence_array = ptp_ss_toolTip_static;
+						// } else 
+						if(tech == 'pmp') {
+							actual_sequence_array = pmp_ss_toolTip_static;
+						} else if(tech == 'wimax') {
+							actual_sequence_array = wimax_ss_toolTip_static;
+						}
+					}
+
+					if(actual_sequence_array) {
+						var ss_actual_data = rearrangeTooltipArray(actual_sequence_array,contentObject.dataset);
+						startPtInfo = ss_actual_data;
+					} else {
+						startPtInfo = contentObject.dataset;
+					}
+				} else {
+					startPtInfo = contentObject.dataset;
+				}
 			}
 
 			ss_circuit_id = gisPerformanceClass.getKeyValue(startPtInfo,"cktid",true);
@@ -3186,6 +3244,23 @@ function devicePlottingClass_gmap() {
 				}
 			}
 
+			var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
+				link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
+			
+			if(clickedType == "sub_station") {
+				if(ss_circuit_id) {
+					infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
+					infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
+				}
+
+				if(farend_perf_url) {
+					tools_html += "<a href='"+farend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>"
+				}
+				if(farend_inventory_url) {
+					tools_html += "<a href='"+farend_inventory_url+"' target='_blank' title='Inventory'><i class='fa fa-dropbox text-info'> </i></a>";
+				}
+			}
+
 			if(contentObject['poll_info']) {
 				/*Poll Parameter Info*/
 				for(var i=0; i< contentObject['poll_info'].length; i++) {
@@ -3204,25 +3279,6 @@ function devicePlottingClass_gmap() {
 			/*Set the lat lon of the point*/
 			// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
 
-			var link1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
-				link2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
-
-			// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
-			
-			if(clickedType == "sub_station") {
-				if(ss_circuit_id) {
-					infoTable += "<tr><td>POSLink1</td><td><a href='"+link1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
-					infoTable += "<tr><td>POSLink2</td><td><a href='"+link2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a></td></tr>";
-				}
-
-				if(farend_perf_url) {
-					tools_html += "<a href='"+farend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>"
-				}
-				if(farend_inventory_url) {
-					tools_html += "<a href='"+farend_inventory_url+"' target='_blank' title='Inventory'><i class='fa fa-dropbox text-info'> </i></a>";
-				}
-			}
-
 			if(clickedType == "base_station" && contentObject.bhInfo) {
 				var severity_symbol = "";
 				if(contentObject.bhSeverity) {
@@ -3236,9 +3292,13 @@ function devicePlottingClass_gmap() {
 					}
 				}
 				infoTable += "<tr><td colspan='2'><b>Backhaul Info "+severity_symbol+"</b></td></tr>";
-				for(var i=0;i<contentObject.bhInfo.length;i++) {
-					if(contentObject.bhInfo[i].show == 1) {
-						infoTable += "<tr><td>"+contentObject.bhInfo[i].title+"</td><td>"+contentObject.bhInfo[i].value+"</td></tr>";
+
+				// Rearrange BS tootip info as per actual sequence
+				var bh_actual_data = rearrangeTooltipArray(bh_toolTip_static,contentObject.bhInfo);
+
+				for(var i=0;i<bh_actual_data.length;i++) {
+					if(bh_actual_data[i].show == 1) {
+						infoTable += "<tr><td>"+bh_actual_data[i].title+"</td><td>"+bh_actual_data[i].value+"</td></tr>";
 					}
 				}
 				if(contentObject.bhInfo_polled) {

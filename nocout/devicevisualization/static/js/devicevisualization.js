@@ -1463,7 +1463,7 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
 
                 if (result.success == 1) {
                     var contentHtml = "";
-                    contentHtml += "<div style='max-height:300px;overflow:auto;position:relative;z-index:9999;'>";
+                    contentHtml += "<div style='max-height:600px;overflow:auto;position:relative;z-index:9999;'>";
                     if (result.data.objects.table_data_header) {
 
                         contentHtml += createDataTableHtml_map(
@@ -1478,8 +1478,8 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                             title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Performance    '
                         });
 
-                        // Update Modal width to 70%;
-                        $(".modal-dialog").css("width","70%");
+                        // Update Modal width to 90%;
+                        $(".modal-dialog").css("width","90%");
 
                         $("#other_perf_table").DataTable({
                             bPaginate: true,
