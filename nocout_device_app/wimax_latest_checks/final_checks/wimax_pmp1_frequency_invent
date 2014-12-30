@@ -43,6 +43,7 @@ def check_wimax_pmp1_frequency_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
+    frequency = None
     try:
         if info:
             if info[0][0]:
@@ -58,12 +59,13 @@ def check_wimax_pmp1_frequency_invent(item, _no_params, info):
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[("frequency",frequency)])
 
 
 check_info["wimax_pmp1_frequency_invent"] = {
     'check_function': check_wimax_pmp1_frequency_invent,
     'service_description': 'wimax_pmp1_frequency_invent',
+    'has_perfdata':True,
 }
 
 #########################################################################

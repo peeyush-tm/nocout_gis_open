@@ -40,6 +40,7 @@ def check_radwin_cbw_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    cbw=None
     try:
         if info[0][0]:
             cbw = int(info[0][0])
@@ -49,12 +50,13 @@ def check_radwin_cbw_invent(item, _no_params, info):
         infotext = "type_mismatch_value"
     except:
         infotext = "unkown_value"
-    return (state, infotext)
+    return (state, infotext,[("cbw",cbw)])
 
 
 check_info["radwin_cbw_invent"] = {
     'check_function': check_radwin_cbw_invent,
     'service_description': 'radwin_cbw_invent',
+    'has_perfdata': True
 }
 
 ############################################################################
