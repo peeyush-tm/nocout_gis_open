@@ -126,7 +126,7 @@ def live_query_modulation_ul_fec(ss_host,site,war,crit):
 					if modu_ul_fec in crit:
 						modulation_ul_fec_state = "critical"
                                         	exit_value = 2
-                               	 	elif mod_ul_fec in war:
+					elif mod_ul_fec in war:
 						modulation_ul_fec_state = "war"
                                         	exit_value=1
                                 	elif mod_ul_fec in ul_fec_normal:
