@@ -1469,56 +1469,56 @@ var wimax_sector_toolTip_polled = [
 	{
         'name'  : 'wimax_pmp1_frequency_invent_frequency',
         'title' : 'Polled Frequency[PMP1]',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
         'name'  : 'wimax_pmp2_frequency_invent_frequency',
         'title' : 'Polled Frequency [PMP2]',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
         'name'  : 'wimax_transmit_power_pmp1_invent_transmit_power_pmp1',
         'title' : 'Tx Power Polled [PMP1]',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
         'name'  : 'wimax_transmit_power_pmp2_invent_transmit_power_pmp2',
         'title' : 'Tx Power Polled [PMP2]',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
         'name'  : 'wimax_p1_cmd_rx_pwr_invent_p1_cmd_rx_pwr',
         'title' : 'Rx Power Polled [PMP1]',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
         'name'  : 'wimax_p2_cmd_rx_pwr_invent_p2_cmd_rx_pwr',
         'title' : 'Rx Power Polled [PMP2]',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
 		'name'  : 'wimax_pmp1_utilization_pmp1_utilization',
 		'title' : 'Sector Utilization [PMP1]',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
     {
         'name'  : 'wimax_pmp2_utilization_pmp2_utilization',
         'title' : 'Sector Utilization [PMP2]',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
     },
