@@ -1489,7 +1489,8 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                         });
 
                     } else {
-                        contentHtml += "<div id='perf_chart' style='width:60%;'></div>";
+                        contentHtml += "<div id='perf_chart' style='width:83%;'></div>";
+                        contentHtml += "<div class='divide-20'></div>";
                         contentHtml += "<div id='perf_chart_table'></div>";
                         contentHtml += createDataTableForChart_map(
                             "perf_data_table",
@@ -1504,8 +1505,8 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                             title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Performance'
                         });
 
-                        // Update Modal width to 70%;
-                        $(".modal-dialog").css("width","70%");
+                        // Update Modal width to 90%;
+                        $(".modal-dialog").css("width","90%");
 
                         $("#perf_data_table").DataTable({
                             bPaginate: true,
