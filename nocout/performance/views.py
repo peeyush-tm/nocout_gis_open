@@ -1063,35 +1063,26 @@ class Get_Service_Status(View):
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
-        device_nms_uptime_query_set = NetworkStatus.objects.filter(
-            device_name=inventory_device_name,
-            data_source='pl',
-        ).values('age', 'severity')
-        # using(
-        #     alias=inventory_device_machine_name
-        # ).
-        device_nms_uptime = nocout_utils.nocout_query_results(query_set=device_nms_uptime_query_set,
-                                                              using=inventory_device_machine_name)
-        if device_nms_uptime and len(device_nms_uptime):
-            data = device_nms_uptime[0]
+        #get the current status
+        #if the current status is OK
+        #check when was the element last down
 
-            age = datetime.datetime.fromtimestamp(float(data['age'])
-            ).strftime(DATE_TIME_FORMAT)
-            severity = data['severity']
 
-            self.result = {
-                'success': 1,
-                'message': 'Service Status Fetched Successfully',
-                'data': {
-                    'meta': {},
-                    'objects': {
-                        'perf': None,
-                        'last_updated': None,
-                        'status': severity.lower().strip() if severity else None,
-                        'age': age
-                    }
+        age, severity, pl_value = device_uptime_data_result(device_object=device)
+
+        self.result = {
+            'success': 1,
+            'message': 'Service Status Fetched Successfully',
+            'data': {
+                'meta': {},
+                'objects': {
+                    'perf': None,
+                    'last_updated': None,
+                    'status': severity.lower().strip() if severity else None,
+                    'age': age
                 }
             }
+        }
 
         if service_data_source_type in ['pl', 'rta']:
             performance_data_query_set = NetworkStatus.objects.filter(device_name=inventory_device_name,
@@ -1153,7 +1144,7 @@ class Get_Service_Status(View):
         """
         if service_data_source_type == 'uptime':
             if current_value:
-                tt_sec = float(current_value) / 100
+                tt_sec = float(current_value)
                 return display_time(tt_sec)
         else:
             return current_value
@@ -1310,8 +1301,14 @@ class Get_Service_Type_Performance_Data(View):
             #we need to incorporate the DR devices as well
             technology = DeviceTechnology.objects.get(id=device.device_technology)
             dr_device = None
+
+            sector_object = None
+
             if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
                 dr_devices = device.sector_configured_on.filter()
+
+                sector_object = device.sector_configured_on.filter()
+
                 for dr_d in dr_devices:
                     dr_device = dr_d.dr_configured_on
 
@@ -1323,7 +1320,11 @@ class Get_Service_Type_Performance_Data(View):
                                                            sys_timestamp__gte=start_date,
                                                            sys_timestamp__lte=end_date).using(
                     alias=inventory_device_machine_name)
-                result = self.get_topology_result(performance_data, dr_ip=dr_device.ip_address, technology=technology)
+                result = self.get_topology_result(performance_data,
+                                                  dr_ip=dr_device.ip_address,
+                                                  technology=technology,
+                                                  sectors=sector_object
+                )
             else:
                 performance_data = Topology.objects.filter(device_name=inventory_device_name,
                                                            # service_name=service_name,
@@ -1332,7 +1333,10 @@ class Get_Service_Type_Performance_Data(View):
                                                            sys_timestamp__lte=end_date).using(
                     alias=inventory_device_machine_name)
 
-                result = self.get_topology_result(performance_data, technology=technology)
+                result = self.get_topology_result(performance_data,
+                                                  technology=technology,
+                                                  sectors=sector_object
+                )
 
 
         elif '_status' in service_name:
@@ -1506,12 +1510,25 @@ class Get_Service_Type_Performance_Data(View):
         self.result['data']['objects']['table_data_header'] = ['time', 'ip_address', 'value']
         return self.result
 
-    def get_topology_result(self, performance_data, dr_ip=None, technology=None):
+    def get_topology_result(self, performance_data, dr_ip=None, technology=None, sectors=None):
         """
         Getting the current topology of any elements of the network
         """
 
-        result_data, aggregate_data = list(), dict()
+        result_data, aggregate_data, connected_ss_ip = list(), dict(), list()
+
+        #topology last updated
+        last_updated = None
+        #topology last updated
+
+        #we need to get all the connected
+        #sector--> circuits --> SS
+        #we need to append those SS here as well
+        #to note : the SS might be currently connected one
+        #or the SS might be the one disconnected
+        #if it is connected, then it will be present in topology
+        #else it will be present in the SECTOR --> CIRCUIT --> SS
+
         for data in performance_data:
             temp_time = data.sys_timestamp
             connected_mac = data.connected_device_mac
@@ -1519,6 +1536,11 @@ class Get_Service_Type_Performance_Data(View):
                 continue
             else:
                 aggregate_data[connected_mac] = data.connected_device_mac
+
+                #check the connected SS
+                connected_ss_ip.append(data.connected_device_ip)
+                #check the connected SS
+
                 connected_ip = data.connected_device_ip
                 #check if the devices connected exists in the database
                 #we will loop through the set of connected device
@@ -1553,49 +1575,20 @@ class Get_Service_Type_Performance_Data(View):
                         #is it added?
                         #only then query the performance network database
                         #for getting latest status
-                        if technology and technology.name.lower() in ['wimax']:
-                            service_name = 'wimax_ss_vlan_invent'
-                            data_source = 'ss_vlan'
-                        elif technology and technology.name.lower() in ['pmp']:
-                            service_name = 'cambium_vlan_invent'
-                            data_source = 'vlan'
-                        else:
-                            service_name = None
-                            data_source = None
-                        if service_name and data_source:
-                            try:
-                                vs = InventoryStatus.objects.filter(
-                                    device_name=connected_device.device_name,
-                                    service_name=service_name,
-                                    data_source=data_source
-                                ).using(alias=machine)
-                                vlan = vs[0].current_value
-                            except Exception as e:
-                                log.exception(e.message)
-                                vlan = "NA"
-                        perf_data = NetworkStatus.objects.filter(device_name=connected_device.device_name
-                        ).annotate(dcount=Count('data_source')
-                        ).values('data_source', 'current_value', 'age', 'sys_timestamp').using(alias=machine)
-                        processed = []
-                        for pdata in perf_data:
-                            if pdata['data_source'] not in processed:
-                                if pdata['data_source'] == 'pl':
-                                    packet_loss = pdata['current_value']
-                                elif pdata['data_source'] == 'rta':
 
-                                    try:
-                                        latency = float(pdata['current_value'])
-                                        if int(latency) == 0:
-                                            latency = "DOWN"
-                                    except:
-                                        latency = pdata['current_value']
-                                else:
-                                    continue
-                                status_since = pdata['age']
-                                status_since = datetime.datetime.fromtimestamp(float(status_since)
+                        vlan = self.ss_vlan_performance_data_result(technology=technology,
+                                                                    ss_device_object=connected_device,
+                                                                    machine=machine
+                        )
+
+                        packet_loss, latency, status_since = self.ss_network_performance_data_result(
+                            ss_device_object=connected_device,
+                            machine=machine
+                        )
+
+                last_updated = datetime.datetime.fromtimestamp(
+                                float(data.sys_timestamp)
                                 ).strftime(DATE_TIME_FORMAT)
-                            else:
-                                continue
 
                 show_ip_address = data.ip_address
                 if dr_ip and dr_ip == show_ip_address:
@@ -1613,9 +1606,61 @@ class Get_Service_Type_Performance_Data(View):
                     'packet_loss': packet_loss,
                     'latency': latency,
                     'status_since': status_since,
-                    'last_updated': datetime.datetime.fromtimestamp(float(data.sys_timestamp)
-                    ).strftime(DATE_TIME_FORMAT),
+                    'last_updated': last_updated,
                 })
+
+        #here we will append the rest of the SS
+        #which are not in topology now
+        #but are connected to the sector
+        if sectors:
+            not_connected_ss = SubStation.objects.filter(circuit__sector__in=sectors
+            ).exclude(device__ip_address__in=connected_ss_ip).prefetch_related('circuit_set')
+
+            circuit_id = 'NA'
+            customer_name = 'NA'
+            sector_ip = 'NA'
+            sector_mac = 'NA'
+            sector_id = None
+
+            for ss in not_connected_ss:
+                vlan = self.ss_vlan_performance_data_result(technology=technology,
+                                                                    ss_device_object=ss.device,
+                                                                    machine=ss.device.machine.name
+                        )
+                packet_loss, latency, status_since = self.ss_network_performance_data_result(
+                            ss_device_object=ss.device,
+                            machine=ss.device.machine.name
+                        )
+                try:
+                    circuit_object = ss.circuit_set.filter().prefetch_related('sector').get()
+                    circuit_id = circuit_object.circuit_id
+                    customer_name = circuit_object.customer.alias
+                    device_mac = ss.device.mac_address
+                    device_ip = ss.device.ip_address
+                    sector_ip = circuit_object.sector.sector_configured_on.ip_address
+                    sector_mac = circuit_object.sector.sector_configured_on.mac_address
+                    sector_id = circuit_object.sector.sector_id
+
+                except:
+                    continue
+
+                if sector_id:
+                    result_data.append({
+                        #'device_name': data.device_name,
+                        'ip_address': sector_ip,
+                        'mac_address': sector_mac,
+                        'sector_id': sector_id,
+                        'vlan': vlan,
+                        'connected_device_ip': device_ip,
+                        'connected_device_mac': device_mac,
+                        'circuit_id': circuit_id,
+                        'customer_name': customer_name,
+                        'packet_loss': packet_loss,
+                        'latency': latency,
+                        'status_since': status_since,
+                        'last_updated': last_updated,
+                    })
+
 
         self.result['success'] = 1
         self.result['message'] = 'Device Data Fetched Successfully.' if result_data else 'No Record Found.'
@@ -1635,6 +1680,77 @@ class Get_Service_Type_Performance_Data(View):
                                                                'last_updated'
         ]
         return self.result
+
+    def ss_vlan_performance_data_result(self, technology, ss_device_object, machine):
+        """
+        provide the SS vlan data
+        """
+        vlan = "NA"
+
+        if technology and technology.name.lower() in ['wimax']:
+            service_name = 'wimax_ss_vlan_invent'
+            data_source = 'ss_vlan'
+        elif technology and technology.name.lower() in ['pmp']:
+            service_name = 'cambium_vlan_invent'
+            data_source = 'vlan'
+        else:
+            service_name = None
+            data_source = None
+        if service_name and data_source:
+            try:
+                vs = InventoryStatus.objects.filter(
+                    device_name=ss_device_object.device_name,
+                    service_name=service_name,
+                    data_source=data_source
+                ).using(alias=machine)
+                vlan = vs[0].current_value
+            except Exception as e:
+                log.exception(e.message)
+                vlan = "NA"
+
+        return vlan
+
+    def ss_network_performance_data_result(self, ss_device_object, machine):
+        """
+        provide the pl and latency
+        """
+        packet_loss = None
+        latency = None
+        status_since = None
+
+        perf_data = NetworkStatus.objects.filter(device_name=ss_device_object.device_name
+                        ).annotate(dcount=Count('data_source')
+                        ).values('data_source', 'current_value', 'age', 'sys_timestamp').using(alias=machine)
+        processed = []
+        for pdata in perf_data:
+            if pdata['data_source'] not in processed:
+                if pdata['data_source'] == 'pl':
+                    packet_loss = pdata['current_value']
+                elif pdata['data_source'] == 'rta':
+
+                    try:
+                        latency = float(pdata['current_value'])
+                        if int(latency) == 0:
+                            latency = "DOWN"
+                    except:
+                        latency = pdata['current_value']
+                else:
+                    continue
+                status_since = pdata['age']
+                status_since = datetime.datetime.fromtimestamp(float(status_since)
+                ).strftime(DATE_TIME_FORMAT)
+            else:
+                continue
+
+        #last time down results
+        age, severity, current_value = device_uptime_data_result(device_object=ss_device_object)
+        #last time pl = 100 results
+        if 'age' == 'NA':
+            pass
+        else:
+            status_since = age
+
+        return packet_loss, latency, status_since
 
     def rf_performance_data_result(self, performance_data_ss, performance_data_bs):
         """
@@ -2340,3 +2456,71 @@ class DeviceServiceDetail(View):
         }
 
         return HttpResponse(json.dumps(result), content_type="application/json")
+
+
+#TODO: Move to performance utils
+def device_uptime_data_result(device_object):
+    """
+    Device UP Status
+    """
+    #get the current status
+    #if the current status is OK
+    #check when was the element last down
+    inventory_device_name = device_object.device_name
+    inventory_device_machine_name = device_object.machine.name
+
+    age = "NA"
+    severity = "NA"
+    current_value = "NA"
+
+    device_nms_uptime_query_set = NetworkStatus.objects.filter(
+        device_name=inventory_device_name,
+        data_source='pl',
+    ).values('age', 'severity', 'current_value', 'sys_timestamp')
+    # using(
+    #     alias=inventory_device_machine_name
+    # ).
+
+    device_nms_uptime = nocout_utils.nocout_query_results(
+        query_set=device_nms_uptime_query_set,
+        using=inventory_device_machine_name
+    )
+
+    if device_nms_uptime and len(device_nms_uptime):
+        data = device_nms_uptime[0]
+
+        if data['severity'].lower() in ['up', 'ok']:
+            #severity is ok
+            #lets check the last time it was down
+            device_last_down_query_set = PerformanceNetwork.objects.filter(
+                device_name=inventory_device_name,
+                service_name='ping',
+                data_source='pl',
+                current_value=100,
+                severity__in=['down']
+            ).values('age', 'severity', 'current_value', 'sys_timestamp')
+
+            device_last_down = nocout_utils.nocout_query_results(
+                query_set=device_last_down_query_set,
+                using=inventory_device_machine_name
+            )
+
+            if device_last_down and device_last_down.count():
+                last_down_data = device_last_down[0]
+                age = datetime.datetime.fromtimestamp(
+                    float(last_down_data['sys_timestamp'])
+                    ).strftime(DATE_TIME_FORMAT)
+
+            else:
+                age = datetime.datetime.fromtimestamp(
+                    float(data['age'])
+                    ).strftime(DATE_TIME_FORMAT)
+        else:
+            age = datetime.datetime.fromtimestamp(
+                    float(data['age'])
+                    ).strftime(DATE_TIME_FORMAT)
+
+        current_value = data['current_value']
+        severity = data['severity']
+
+    return age, severity, current_value
