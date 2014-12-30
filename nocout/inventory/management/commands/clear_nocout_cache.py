@@ -11,14 +11,13 @@ class Command(BaseCommand):
             cache._cache.flush_all()
             #nocout cache clear
             #mysql cache clear
-            reset_query = "RESET QUERY CACHE;"
-            flush_query = "FLUSH QUERY CACHE;"
+            query = "RESET QUERY CACHE; "
+            query += "FLUSH QUERY CACHE; "
             #mysql cache clear
             machines = Machine.objects.filter().values_list('name',flat=True)
             for machine in machines:
                 cursor = connections[machine].cursor()
-                cursor.execute(reset_query)
-                cursor.execute(flush_query)
+                cursor.execute(query)
             #mysql cache clear #only for primary machines
             #to do check for slaves reset as well? or would it happen automatically ?
         except:
