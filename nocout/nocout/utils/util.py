@@ -621,7 +621,7 @@ left join
             and
             devicetype.id = device.device_type
         )
-{0}
+
         ) as bh_info left join (
                 select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
                 left join (
@@ -929,7 +929,7 @@ left join
             and
             devicetype.id = device.device_type
         )
-{0}
+        
         ) as bh_info left join (
                 select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
                 left join (
