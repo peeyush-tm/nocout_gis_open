@@ -965,7 +965,7 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
         for check, check_vals in g_service_vars['static_checks'].items():
             g_service_vars['static_checks'][check] = filter(lambda t: hostname not in t[2], check_vals)
         for check, check_vals in g_service_vars['active_checks'].items():
-            g_service_vars['static_checks'][check] = filter(lambda t: hostname not in t[2], check_vals)
+            g_service_vars['active_checks'][check] = filter(lambda t: hostname not in t[2], check_vals)
     else:
         if servicename.strip().lower() == 'ping':
             g_service_vars['ping_levels'] = filter(lambda t: hostname not in t[2], g_service_vars['ping_levels'])
