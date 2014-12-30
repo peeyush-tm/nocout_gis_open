@@ -1950,7 +1950,7 @@ class GISPerfData(View):
 
         return icon
 
-    def get_device_info(self, device_obj, machine_name, device_pl="", substation=False):
+    def get_device_info(self, device_obj, machine_name, device_pl="", substation=False, isStatic=False):
         """ Get Sector/Sub Station device information
 
             Parameters:
@@ -1985,273 +1985,274 @@ class GISPerfData(View):
         device_info = list()
         # is device is a substation device than add static inventory parameters in list
         if substation:
-            # substation
-            substation = ""
-            try:
-                substation = SubStation.objects.get(device=device_obj)
-            except Exception as e:
-                logger.error("Sub Station not exist. Exception: ", e.message)
+            if isStatic:
+                # substation
+                substation = ""
+                try:
+                    substation = SubStation.objects.get(device=device_obj)
+                except Exception as e:
+                    logger.error("Sub Station not exist. Exception: ", e.message)
 
-            # substation device
-            substation_device = ""
-            try:
-                substation_device = device_obj
-            except Exception as e:
-                logger.error("Sub Station device not exist. Exception: ", e.message)
+                # substation device
+                substation_device = ""
+                try:
+                    substation_device = device_obj
+                except Exception as e:
+                    logger.error("Sub Station device not exist. Exception: ", e.message)
 
-            # connected bs ip
-            connected_bs_ip = ""
-            try:
-                connected_bs_ip = Circuit.objects.get(sub_station=substation).sector.sector_configured_on.ip_address
-            except Exception as e:
-                logger.error("Sub station is not connected to any Base Station.", e.message)
+                # connected bs ip
+                connected_bs_ip = ""
+                try:
+                    connected_bs_ip = Circuit.objects.get(sub_station=substation).sector.sector_configured_on.ip_address
+                except Exception as e:
+                    logger.error("Sub station is not connected to any Base Station.", e.message)
 
-            # substation technology
-            substation_technology = ""
-            try:
-                substation_technology = DeviceTechnology.objects.get(id=substation_device.device_technology).name
-            except Exception as e:
-                logger.error("Sub Station has no technology. Exception: ", e.message)
+                # substation technology
+                substation_technology = ""
+                try:
+                    substation_technology = DeviceTechnology.objects.get(id=substation_device.device_technology).name
+                except Exception as e:
+                    logger.error("Sub Station has no technology. Exception: ", e.message)
 
-            # circuit id
-            circuit_id = ""
-            try:
-                circuit_id = substation.circuit_set.all()[0].circuit_id
-            except Exception as e:
-                logger.error("Circuit ID not exist. Exception: ", e.message)
+                # circuit id
+                circuit_id = ""
+                try:
+                    circuit_id = substation.circuit_set.all()[0].circuit_id
+                except Exception as e:
+                    logger.error("Circuit ID not exist. Exception: ", e.message)
 
-            # qos bandwidth
-            qos = ""
-            try:
-                qos = substation.circuit_set.all()[0].qos_bandwidth
-            except Exception as e:
-                logger.error("QOS not exist. Exception: ", e.message)
+                # qos bandwidth
+                qos = ""
+                try:
+                    qos = substation.circuit_set.all()[0].qos_bandwidth
+                except Exception as e:
+                    logger.error("QOS not exist. Exception: ", e.message)
 
-            # customer alias
-            customer_alias = ""
-            try:
-                customer_alias = substation.circuit_set.all()[0].customer.alias
-            except Exception as e:
-                logger.error("Customer Alias not exist. Exception: ", e.message)
+                # customer alias
+                customer_alias = ""
+                try:
+                    customer_alias = substation.circuit_set.all()[0].customer.alias
+                except Exception as e:
+                    logger.error("Customer Alias not exist. Exception: ", e.message)
 
-            # customer address
-            customer_address = ""
-            try:
-                customer_address = substation.circuit_set.all()[0].customer.address
-            except Exception as e:
-                logger.error("Customer Address not exist. Exception: ", e.message)
+                # customer address
+                customer_address = ""
+                try:
+                    customer_address = substation.circuit_set.all()[0].customer.address
+                except Exception as e:
+                    logger.error("Customer Address not exist. Exception: ", e.message)
 
-            # date of acceptance
-            date_of_acceptance = ""
-            try:
-                date_of_acceptance = str(substation.circuit_set.all()[0].date_of_acceptance)
-            except Exception as e:
-                logger.error("Date Of Acceptance not exist. Exception: ", e.message)
+                # date of acceptance
+                date_of_acceptance = ""
+                try:
+                    date_of_acceptance = str(substation.circuit_set.all()[0].date_of_acceptance)
+                except Exception as e:
+                    logger.error("Date Of Acceptance not exist. Exception: ", e.message)
 
-            # dl rssi during acceptance
-            dl_rssi_during_acceptance = ""
-            try:
-                dl_rssi_during_acceptance = substation.circuit_set.all()[0].dl_rssi_during_acceptance
-            except Exception as e:
-                logger.error("DL RSSI During Acceptance not exist. Exception: ", e.message)
+                # dl rssi during acceptance
+                dl_rssi_during_acceptance = ""
+                try:
+                    dl_rssi_during_acceptance = substation.circuit_set.all()[0].dl_rssi_during_acceptance
+                except Exception as e:
+                    logger.error("DL RSSI During Acceptance not exist. Exception: ", e.message)
 
-            # dl cinr during acceptance
-            dl_cinr_during_acceptance = ""
-            try:
-                dl_cinr_during_acceptance = substation.circuit_set.all()[0].dl_cinr_during_acceptance
-            except Exception as e:
-                logger.error("DL CINR During Acceptance not exist. Exception: ", e.message)
+                # dl cinr during acceptance
+                dl_cinr_during_acceptance = ""
+                try:
+                    dl_cinr_during_acceptance = substation.circuit_set.all()[0].dl_cinr_during_acceptance
+                except Exception as e:
+                    logger.error("DL CINR During Acceptance not exist. Exception: ", e.message)
 
-            # ss sector frequency
-            ss_sector_frequency = ""
-            try:
-                ss_sector_frequency = substation.circuit_set.all()[0].sector.frequency.value
-            except Exception as e:
-                logger.error("SS Sector Frequency not exist. Exception: ", e.message)
+                # ss sector frequency
+                ss_sector_frequency = ""
+                try:
+                    ss_sector_frequency = substation.circuit_set.all()[0].sector.frequency.value
+                except Exception as e:
+                    logger.error("SS Sector Frequency not exist. Exception: ", e.message)
 
-            # antenna height
-            antenna_height = ""
-            try:
-                antenna_height = substation.antenna.height
-            except Exception as e:
-                logger.error("Antenna Height not exist. Exception: ", e.message)
+                # antenna height
+                antenna_height = ""
+                try:
+                    antenna_height = substation.antenna.height
+                except Exception as e:
+                    logger.error("Antenna Height not exist. Exception: ", e.message)
 
-            # antenna polarization
-            antenna_polarization = ""
-            try:
-                antenna_polarization = substation.antenna.polarization
-            except Exception as e:
-                logger.error("Antenna Polarization not exist. Exception: ", e.message)
+                # antenna polarization
+                antenna_polarization = ""
+                try:
+                    antenna_polarization = substation.antenna.polarization
+                except Exception as e:
+                    logger.error("Antenna Polarization not exist. Exception: ", e.message)
 
-            # antenna mount type
-            antenna_mount_type = ""
-            try:
-                antenna_mount_type = substation.antenna.mount_type
+                # antenna mount type
+                antenna_mount_type = ""
+                try:
+                    antenna_mount_type = substation.antenna.mount_type
 
-            except Exception as e:
-                logger.error("Antenna Type not exist. Exception: ", e.message)
+                except Exception as e:
+                    logger.error("Antenna Type not exist. Exception: ", e.message)
 
-            # antenna type
-            antenna_type = ""
-            try:
-                antenna_type = substation.antenna.antenna_type
+                # antenna type
+                antenna_type = ""
+                try:
+                    antenna_type = substation.antenna.antenna_type
 
-            except Exception as e:
-                logger.error("Antenna Type not exist. Exception: ", e.message)
+                except Exception as e:
+                    logger.error("Antenna Type not exist. Exception: ", e.message)
 
-            # adding gis inventory static parameters to device info
-            device_info = [
-                {
-                    'name': 'ss_ip',
-                    'title': 'SS IP',
-                    'show': 1,
-                    'value': substation_device.ip_address
-                },
-                {
-                    'name': 'ss_mac',
-                    'title': 'SS MAC',
-                    'show': 0,
-                    'value': substation_device.mac_address
-                },
-                {
-                    'name': 'name',
-                    'title': 'SS Name',
-                    'show': 0,
-                    'value': substation.name
-                },
-                {
-                    'name': 'connected_bs_ip',
-                    'title': 'Connected BS IP',
-                    'show': 1,
-                    'value': connected_bs_ip
-                },
-                {
-                    'name': 'cktid',
-                    'title': 'Circuit ID',
-                    'show': 1,
-                    'value': circuit_id
-                },
-                {
-                    'name': 'qos_bandwidth',
-                    'title': 'QOS(BW)',
-                    'show': 1,
-                    'value': qos
-                },
-                {
-                    'name': 'latitude',
-                    'title': 'Latitude',
-                    'show': 1,
-                    'value': substation.latitude
-                },
-                {
-                    'name': 'longitude',
-                    'title': 'Longitude',
-                    'show': 1,
-                    'value': substation.longitude
-                },
-                {
-                    'name': 'antenna_height',
-                    'title': 'Antenna Height',
-                    'show': 1,
-                    'value': antenna_height
-                },
-                {
-                    'name': 'polarisation',
-                    'title': 'Antenna Polarisation',
-                    'show': 1,
-                    'value': antenna_polarization
-                },
-                {
-                    'name': 'ss_technology',
-                    'title': 'Technology',
-                    'show': 1,
-                    'value': substation_technology
-                },
-                {
-                    'name': 'building_height',
-                    'title': 'Building Height',
-                    'show': 1,
-                    'value': substation.building_height
-                },
-                {
-                    'name': 'tower_height',
-                    'title': 'Tower Height',
-                    'show': 1,
-                    'value': substation.tower_height
-                },
-                {
-                    'name': 'mount_type',
-                    'title': 'SS MountType',
-                    'show': 1,
-                    'value': antenna_mount_type
-                },
-                {
-                    'name': 'alias',
-                    'title': 'Alias',
-                    'show': 1,
-                    'value': substation.alias
-                },
-                {
-                    'name': 'ss_device_id',
-                    'title': 'SS Device ID',
-                    'show': 0,
-                    'value': substation_device.id
-                },
-                {
-                    'name': 'antenna_type',
-                    'title': 'Antenna Type',
-                    'show': 1,
-                    'value': antenna_type
-                },
-                {
-                    'name': 'ethernet_extender',
-                    'title': 'Ethernet Extender',
-                    'show': 1,
-                    'value': substation.ethernet_extender
-                },
-                {
-                    'name': 'cable_length',
-                    'title': 'Cable Length',
-                    'show': 1,
-                    'value': substation.cable_length
-                },
-                {
-                    'name': 'customer_name',
-                    'title': 'Customer Name',
-                    'show': 1,
-                    'value': customer_alias
-                },
-                {
-                    'name': 'customer_address',
-                    'title': 'Customer Address',
-                    'show': 1,
-                    'value': customer_address
-                },
-                {
-                    'name': 'date_of_acceptance',
-                    'title': 'Date of Acceptance',
-                    'show': 1,
-                    'value': date_of_acceptance
-                },
-                {
-                    'name': 'dl_rssi_during_acceptance',
-                    'title': 'RSSI During Acceptance',
-                    'show': 1,
-                    'value': dl_rssi_during_acceptance
-                },
-                {
-                    'name': 'dl_cinr_during_acceptance',
-                    'title': 'CINR During Acceptance',
-                    'show': 1,
-                    'value': dl_cinr_during_acceptance
-                },
-                {
-                    'name': 'planned_frequency',
-                    'title': 'Planned Frequency',
-                    'show': 1,
-                    'value': ss_sector_frequency
-                }
-            ]
+                # adding gis inventory static parameters to device info
+                device_info = [
+                    {
+                        'name': 'ss_ip',
+                        'title': 'SS IP',
+                        'show': 1,
+                        'value': substation_device.ip_address
+                    },
+                    {
+                        'name': 'ss_mac',
+                        'title': 'SS MAC',
+                        'show': 0,
+                        'value': substation_device.mac_address
+                    },
+                    {
+                        'name': 'name',
+                        'title': 'SS Name',
+                        'show': 0,
+                        'value': substation.name
+                    },
+                    {
+                        'name': 'connected_bs_ip',
+                        'title': 'Connected BS IP',
+                        'show': 1,
+                        'value': connected_bs_ip
+                    },
+                    {
+                        'name': 'cktid',
+                        'title': 'Circuit ID',
+                        'show': 1,
+                        'value': circuit_id
+                    },
+                    {
+                        'name': 'qos_bandwidth',
+                        'title': 'QOS(BW)',
+                        'show': 1,
+                        'value': qos
+                    },
+                    {
+                        'name': 'latitude',
+                        'title': 'Latitude',
+                        'show': 1,
+                        'value': substation.latitude
+                    },
+                    {
+                        'name': 'longitude',
+                        'title': 'Longitude',
+                        'show': 1,
+                        'value': substation.longitude
+                    },
+                    {
+                        'name': 'antenna_height',
+                        'title': 'Antenna Height',
+                        'show': 1,
+                        'value': antenna_height
+                    },
+                    {
+                        'name': 'polarisation',
+                        'title': 'Antenna Polarisation',
+                        'show': 1,
+                        'value': antenna_polarization
+                    },
+                    {
+                        'name': 'ss_technology',
+                        'title': 'Technology',
+                        'show': 1,
+                        'value': substation_technology
+                    },
+                    {
+                        'name': 'building_height',
+                        'title': 'Building Height',
+                        'show': 1,
+                        'value': substation.building_height
+                    },
+                    {
+                        'name': 'tower_height',
+                        'title': 'Tower Height',
+                        'show': 1,
+                        'value': substation.tower_height
+                    },
+                    {
+                        'name': 'mount_type',
+                        'title': 'SS MountType',
+                        'show': 1,
+                        'value': antenna_mount_type
+                    },
+                    {
+                        'name': 'alias',
+                        'title': 'Alias',
+                        'show': 1,
+                        'value': substation.alias
+                    },
+                    {
+                        'name': 'ss_device_id',
+                        'title': 'SS Device ID',
+                        'show': 0,
+                        'value': substation_device.id
+                    },
+                    {
+                        'name': 'antenna_type',
+                        'title': 'Antenna Type',
+                        'show': 1,
+                        'value': antenna_type
+                    },
+                    {
+                        'name': 'ethernet_extender',
+                        'title': 'Ethernet Extender',
+                        'show': 1,
+                        'value': substation.ethernet_extender
+                    },
+                    {
+                        'name': 'cable_length',
+                        'title': 'Cable Length',
+                        'show': 1,
+                        'value': substation.cable_length
+                    },
+                    {
+                        'name': 'customer_alias',
+                        'title': 'Customer Name',
+                        'show': 1,
+                        'value': customer_alias
+                    },
+                    {
+                        'name': 'customer_address',
+                        'title': 'Customer Address',
+                        'show': 1,
+                        'value': customer_address
+                    },
+                    {
+                        'name': 'date_of_acceptance',
+                        'title': 'Date of Acceptance',
+                        'show': 1,
+                        'value': date_of_acceptance
+                    },
+                    {
+                        'name': 'dl_rssi_during_acceptance',
+                        'title': 'RSSI During Acceptance',
+                        'show': 1,
+                        'value': dl_rssi_during_acceptance
+                    },
+                    {
+                        'name': 'dl_cinr_during_acceptance',
+                        'title': 'CINR During Acceptance',
+                        'show': 1,
+                        'value': dl_cinr_during_acceptance
+                    },
+                    {
+                        'name': 'planned_frequency',
+                        'title': 'Planned Frequency',
+                        'show': 1,
+                        'value': ss_sector_frequency
+                    }
+                ]
         # get device name
         device_name = device_obj.device_name
 
@@ -2683,7 +2684,13 @@ class GISPerfData(View):
         substation_info['link_color'] = device_link_color
         substation_info['show_link'] = 1
         substation_info['param'] = dict()
+        # Fetch sub station static info
         substation_info['param']['sub_station'] = self.get_device_info(substation_device,
+                                                                       machine_name,
+                                                                       device_pl,
+                                                                       substation,True)
+        # Fetch sub station polled info
+        substation_info['param']['polled_info'] = self.get_device_info(substation_device,
                                                                        machine_name,
                                                                        device_pl,
                                                                        substation)
