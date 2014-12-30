@@ -21,6 +21,8 @@ class PerformanceMetric(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -50,6 +52,8 @@ class PerformanceNetwork(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -79,6 +83,8 @@ class PerformanceNetworkBiHourly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -108,6 +114,8 @@ class PerformanceNetworkHourly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -137,6 +145,8 @@ class PerformanceNetworkDaily(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -166,6 +176,8 @@ class PerformanceNetworkWeekly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -195,6 +207,8 @@ class PerformanceNetworkMonthly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -224,6 +238,8 @@ class PerformanceNetworkYearly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -255,6 +271,8 @@ class PerformanceService(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -284,6 +302,8 @@ class PerformanceServiceBiHourly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -313,6 +333,8 @@ class PerformanceServiceHourly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -342,6 +364,8 @@ class PerformanceServiceDaily(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -371,6 +395,8 @@ class PerformanceServiceWeekly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -400,6 +426,8 @@ class PerformanceServiceMonthly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -429,6 +457,8 @@ class PerformanceServiceYearly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -460,6 +490,8 @@ class PerformanceStatus(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -489,6 +521,8 @@ class PerformanceStatusDaily(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -518,6 +552,8 @@ class PerformanceStatusWeekly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -547,6 +583,8 @@ class PerformanceStatusMonthly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -576,6 +614,8 @@ class PerformanceStatusYearly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -605,6 +645,8 @@ class PerformanceMachine(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -634,6 +676,8 @@ class PerformanceInventory(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -663,6 +707,8 @@ class PerformanceInventoryDaily(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -690,6 +736,8 @@ class PerformanceInventoryWeekly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -717,6 +765,8 @@ class PerformanceInventoryMonthly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -744,6 +794,8 @@ class PerformanceInventoryYearly(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -1114,6 +1166,7 @@ class NetworkStatus(models.Model):
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -1142,6 +1195,7 @@ class ServiceStatus(models.Model):
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -1169,6 +1223,8 @@ class MachineStatus(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -1196,6 +1252,8 @@ class InventoryStatus(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -1223,6 +1281,8 @@ class Status(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
@@ -1371,6 +1431,8 @@ class Topology(models.Model):
                                             blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
+    refer = models.CharField('Reference Variable', max_length=32, null=True, db_index=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
