@@ -11907,6 +11907,7 @@ def update_sector_devices(sectors=None,polled_sectors=None):
             continue
     return bool(count)
 
+
 @task()
 def update_substation_devices(polled_ss=None, connected_ip=None):
     """
@@ -11927,6 +11928,7 @@ def update_substation_devices(polled_ss=None, connected_ip=None):
             continue
 
     return bool(count)
+
 
 @task()
 def get_topology_with_substations(technology):
