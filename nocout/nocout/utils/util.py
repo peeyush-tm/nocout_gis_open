@@ -344,7 +344,7 @@ def cache_for(time):
     return decorator
 
 ## TODO: remove the duplicate code for GIS inventory data
-@cache_for(3600)  #caching GIS inventory
+@cache_for(600)  #caching GIS inventory
 def cached_all_gis_inventory(query):
     """
 
@@ -929,7 +929,7 @@ left join
             and
             devicetype.id = device.device_type
         )
-        
+
         ) as bh_info left join (
                 select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
                 left join (
