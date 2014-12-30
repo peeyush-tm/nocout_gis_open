@@ -11634,8 +11634,10 @@ def remove_duplicate_dict_from_list(input_list=None):
 #################################################################################################
 ## TOPOLOGY UPDATE ##
 #################################################################################################
-from performance.models import Topology
-from inventory.utils.util import organization_network_devices, prepare_machines
+from performance.models import Topology, InventoryStatus, ServiceStatus
+from inventory.utils.util import organization_network_devices, \
+    organization_customer_devices\
+    , prepare_machines
 from organization.models import Organization
 from device.models import DeviceTechnology
 from inventory.models import Sector, Circuit, SubStation
@@ -11657,7 +11659,7 @@ def get_organizations():
     return orgs
 
 
-def get_devices(technology='WiMAX'):
+def get_devices(technology='WiMAX', type=None):
     """
 
     :param technology:
@@ -11666,14 +11668,23 @@ def get_devices(technology='WiMAX'):
     organizations = get_organizations()
     #organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all')
     technology = DeviceTechnology.objects.get(name__icontains=technology).id
-    network_devices = organization_network_devices(organizations=organizations,
-                                                   technology=technology
-    ).values(
-            'id',
-            'device_name',
-            'machine__name'
+
+    required_columns = ['id',
+                    'device_name',
+                    'machine__name'
+    ]
+
+    if type and type == 'customer':
+        network_devices = organization_customer_devices(organizations=organizations,
+                                                       technology=technology
         )
-    return network_devices
+
+    else:
+        network_devices = organization_network_devices(organizations=organizations,
+                                                       technology=technology
+        )
+
+    return network_devices.values(*required_columns)
 
 
 def get_sectors(sectors=None):
@@ -11914,5 +11925,116 @@ def update_substation_devices(polled_ss=None, connected_ip=None):
         except Exception as e:
             logger.exception(e)
             continue
+
+    return bool(count)
+
+@task()
+def get_topology_with_substations(technology):
+    """
+    the update topology is not working, needs to be debugged, but we have our
+    substations telling the sector id to which it is connected
+    this needs to be done per technology wise
+    :param technology: PMP or WiMAX
+    :return:
+    """
+    customer_devices = get_devices(technology=technology, type='customer')
+    device_list = []
+    for device in customer_devices:
+        device_list.append(
+            {
+                'id': device['id'],
+                'device_name': device['device_name'],
+                'device_machine': device['machine__name']
+            }
+        )
+    machine_dict = {}
+    # prepare_machines(device_list)
+    machine_dict = prepare_machines(device_list)
+
+    connected_sectors = None
+    connected_circuits = None
+
+    if technology and technology.strip().lower() in ['pmp']:
+        for machine in machine_dict:
+            #this is complete topology for the device set
+            data_source = 'ss_sector_id'
+            service_name = 'cambium_ss_sector_id_invent'
+
+            connected_sectors = InventoryStatus.objects.filter(
+                device_name__in=machine_dict[machine],
+                service_name=service_name,
+                data_source=data_source).using(alias=machine)
+
+            connected_circuits = Circuit.objects.filter(
+                sub_station__device__device_name__in=machine_dict[machine]
+            )
+
+            if connected_sectors and connected_circuits:
+                return update_topology_with_substations.delay(
+                    polled_sectors=connected_sectors,
+                    polled_circuits=connected_circuits
+                )
+
+    elif technology and technology.strip().lower() in ['wimax']:
+        for machine in machine_dict:
+            #this is complete topology for the device set
+            data_source = 'wimax_ss_sector_id'
+            service_name = 'ss_sector_id'
+
+            connected_sectors = ServiceStatus.objects.filter(
+                device_name__in=machine_dict[machine],
+                service_name=service_name,
+                data_source=data_source).using(alias=machine)
+
+            connected_circuits = Circuit.objects.filter(
+                sub_station__device__device_name__in=machine_dict[machine]
+            )
+
+            if connected_sectors and connected_circuits:
+                return update_topology_with_substations.delay(
+                    polled_sectors=connected_sectors,
+                    polled_circuits=connected_circuits
+                )
+
+    else:
+        return False
+
+    return True
+
+
+@task()
+def update_topology_with_substations(polled_sectors, polled_circuits):
+    """
+
+    :param polled_sectors:
+    :param technology:
+    :param polled_circuits:
+    :param sub_stations:
+    :return:
+    """
+    count = 0
+    for circuit in polled_circuits:
+        try:
+            device_name = circuit.sub_station.device.device_name
+            sector = polled_sectors.filter(device_name=device_name)[0]
+            sector_sector_id = sector.current_value
+            sector_object = Sector.objects.filter(sector_id__icontains = sector_sector_id)[0]
+            if circuit.sector_id != sector_object.id:
+                circuit.sector_id = sector_object.id
+                circuit.save()
+                count += 1
+            else:
+                continue
+        except Exception as e:
+            logger.exception(e.message)
+            continue
+
+    if bool(count):
+        from django.core.cache import cache
+        try:
+            cache.clear()
+            cache._cache.flush_all()
+        except Exception as e:
+            logger.exception(e.message)
 
     return bool(count)
