@@ -3253,22 +3253,23 @@ function devicePlottingClass_gmap() {
 			for(var i=0;i<startPtInfo.length;i++) {
 				var url = "",
 					text_class = "";
+				if(startPtInfo[i]) {
+					if(startPtInfo[i].name == 'pos_link1') {
+						startPtInfo[i].value = pos1;
+					}
 
-				if(startPtInfo[i].name == 'pos_link1') {
-					startPtInfo[i].value = pos1;
-				}
+					if(startPtInfo[i].name == 'pos_link2') {
+						startPtInfo[i].value = pos2;
+					}
 
-				if(startPtInfo[i].name == 'pos_link2') {
-					startPtInfo[i].value = pos2;
-				}
+					if(startPtInfo[i].show == 1) {
+						// Url
+						url = startPtInfo[i]["url"] ? startPtInfo[i]["url"] : "";
+						text_class = url ? "text-primary" : "";
 
-				if(startPtInfo[i].show == 1) {
-					// Url
-					url = startPtInfo[i]["url"] ? startPtInfo[i]["url"] : "";
-					text_class = url ? "text-primary" : "";
-
-					infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+startPtInfo[i]['title']+"</td><td>"+startPtInfo[i]['value']+"</td></tr>";
-					// infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
+						infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+startPtInfo[i]['title']+"</td><td>"+startPtInfo[i]['value']+"</td></tr>";
+						// infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
+					}
 				}
 			}
 

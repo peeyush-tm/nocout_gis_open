@@ -1574,7 +1574,8 @@ var wimax_sector_toolTip_polled = [
  * @return updated_info_list {Array}, It contains the updated sequence of backend response as per actual sequence of tooltip.
  */
 function rearrangeTooltipArray(correct_info_list,backend_info_list) {
-	var updated_info_list = [];
+	var updated_info_list = [],
+		extra_info_list = [];
 	// Loop actual info object array
 	correct_info_loop:
 	for(var i=0;i<correct_info_list.length;i++) {
@@ -1599,9 +1600,46 @@ function rearrangeTooltipArray(correct_info_list,backend_info_list) {
 				break backend_info_loop;
 			}
 		}
+
 		// Push info object to array
 		updated_info_list.push(current_info_obj);
 	}
 
+	// Get extra info come from backend
+	var extra_info = getUncommonData(correct_info_list,backend_info_list);
+	updated_info_list = updated_info_list.concat(extra_info);
+
 	return updated_info_list;
+}
+
+
+/**
+ * This function returns the unmatched dict items between given two
+ * @method getUncommonData.
+ * @param array1 {Array}, It contains the actual sequence of tooltip info.
+ * @param array2 {Array}, It contains the backend response array object of tooltip info.
+ * @return uncommon_info_list {Array}, It contains the updated sequence of backend response as per actual sequence of tooltip.
+ */
+function getUncommonData(array1,array2) {
+	var uncommon_info_list = [];
+
+	array2_loop:
+	for(var i=0;i<array2.length;i++) {
+		var current_array2_val = array2[i],
+			isPresent = false;
+		array1_loop:
+		for(var j=0;j<array1.length;j++) {
+			var current_array1_val = array1[j];
+			if(current_array2_val["name"] == current_array1_val["name"]) {
+				isPresent = true;
+				break array1_loop;
+			}
+		}
+
+		if(!isPresent) {
+			uncommon_info_list.push(current_array2_val);
+		}
+	}
+
+	return uncommon_info_list;
 }
