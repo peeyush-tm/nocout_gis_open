@@ -803,9 +803,12 @@ class PerformanceInventoryYearly(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
-
 #### Inventory Service Perfomance
 
+########################HIGH PRIORITY#############################
+##################################################################
+########################EVENTS TABLES#############################
+##################################################################
 # events tables
 class EventNetwork(models.Model):
     """
@@ -944,9 +947,16 @@ class EventNetworkYearly(models.Model):
         ordering = ['-sys_timestamp']
 
 
-#### Event Network
 
-#### Event Service
+########################HIGH PRIORITY#############################
+##################################################################
+########################EVENTS TABLES#############################
+##################################################################
+
+########################HIGH PRIORITY#############################
+##################################################################
+########################EVENTS TABLES#############################
+##################################################################
 
 class EventService(models.Model):
     """
@@ -1059,8 +1069,16 @@ class EventServiceYearly(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+########################HIGH PRIORITY#############################
+##################################################################
+########################EVENTS TABLES#############################
+##################################################################
 
-#### Events Service
+
+##################################################################
+########################EVENTS TABLES#############################
+##################################################################
+########################LOW PRIORITY#############################
 
 class EventStatus(models.Model):
     """
@@ -1145,9 +1163,170 @@ class EventInventory(models.Model):
     class Meta:
         ordering = ['-sys_timestamp']
 
+######################## LOW PRIORITY#############################
 ##################################################################
-########################STATUS TABLES#############################
+########################EVENTS TABLES#############################
 ##################################################################
+
+#==============================================================================================================#
+
+##################################################################
+##################EVENT STATUS TABLES#############################
+##################################################################
+########################HIGH PRIORITY#############################
+
+
+class EventNetworkStatus(models.Model):
+    """
+    Event Network Table columns declared
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    description = models.CharField('Event Description', max_length=255, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
+class EventServiceStatus(models.Model):
+    """
+    Event Service Table columns declared
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    description = models.CharField('Event Description', max_length=255, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
+class EventStatusStatus(models.Model):
+    """
+    Event Status Table columns declared
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    description = models.CharField('Event Description', max_length=255, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
+class EventMachineStatus(models.Model):
+    """
+    Event Machine Table columns declared
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    description = models.CharField('Event Description', max_length=255, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
+class EventInventoryStatus(models.Model):
+    """
+    Event Inventory Table columns declared
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    description = models.CharField('Event Description', max_length=255, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+    class Meta:
+        ordering = ['-sys_timestamp']
+
+
+########################HIGH PRIORITY#############################
+##################################################################
+##################EVENT STATUS TABLES#############################
+##################################################################
+
+#==============================================================================================================#
+
+##################################################################
+############PERFORMANCE STATUS TABLES#############################
+##################################################################
+
 
 class NetworkStatus(models.Model):
     """
@@ -1309,15 +1488,16 @@ class Status(models.Model):
         ]
 
 ##################################################################
-########################STATUS TABLES#############################
+############PERFORMANCE STATUS TABLES#############################
 ##################################################################
 
+#==============================================================================================================#
 
-############################################################################################################
-############################################################################################################
-##############################Network Availability##########################################################
-############################################################################################################
-############################################################################################################
+##################################################################
+##################################################################
+##############################Network Availability################
+##################################################################
+##################################################################
 
 
 class NetworkAvailabilityDaily(models.Model):
@@ -1428,11 +1608,13 @@ class NetworkAvailabilityYearly(models.Model):
         ordering = ['-sys_timestamp']
 
 
-############################################################################################################
-############################################################################################################
-#####################             Network Topology                 #########################################
-############################################################################################################
-############################################################################################################
+#==============================================================================================================#
+
+#####################################################################
+#####################################################################
+#####################Network Topology################################
+#####################################################################
+#####################################################################
 
 
 class Topology(models.Model):
@@ -1463,11 +1645,13 @@ class Topology(models.Model):
         ordering = ['-sys_timestamp']
 
 
-############################################################################################################
-############################################################################################################
-#####################      Sector//Backhaul Utilization            #########################################
-############################################################################################################
-############################################################################################################
+#==============================================================================================================#
+
+#####################################################################
+#####################################################################
+##################### Sector//Backhaul Utilization ##################
+#####################################################################
+#####################################################################
 
 ## Creating Separate Tables because these are KPI reports
 ## which does not instantly affect the system
