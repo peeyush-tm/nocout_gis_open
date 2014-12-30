@@ -1240,9 +1240,9 @@ class MachineStatus(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
-        index_together = [
-            ["device_name", "service_name", "data_source"],
-        ]
+        unique_together = (
+            ("device_name", "service_name", "data_source")
+        )
 
 
 class InventoryStatus(models.Model):
