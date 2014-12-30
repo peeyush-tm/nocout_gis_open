@@ -2313,13 +2313,13 @@ class GISPerfData(View):
                     continue
                 processed[perf['service_name']] = []
 
-                service_name = perf['service_name'].strip().lower()
+                service_name = perf['service_name'].strip()
 
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": show_gis,
-                    "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(
+                    "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
                         device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
@@ -2333,13 +2333,13 @@ class GISPerfData(View):
                     continue
                 processed[perf['service_name']] = []
 
-                service_name = perf['service_name'].strip().lower()
+                service_name = perf['service_name'].strip()
 
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": show_gis,
-                    "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(
+                    "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
                         device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
@@ -2353,13 +2353,13 @@ class GISPerfData(View):
                     continue
                 processed[perf['service_name']] = []
 
-                service_name = perf['service_name'].strip().lower()
+                service_name = perf['service_name']
 
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": show_gis,
-                    "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(
+                    "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
                         device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
@@ -2388,16 +2388,16 @@ class GISPerfData(View):
 
         if data_source and data_source[:1].isalpha():
             title = " ".join(data_source.split("_")).title()
-
+            key_name = data_source.strip().lower()
             if data_source.strip().lower() not in ['pl', 'rta']:
                 name = service_name.strip().lower() + "_" + data_source.strip().lower()
             else:
-                name = data_source.strip().lower()
+                name = key_name
                 
             show_gis = 0
             try:
-                title = SERVICE_DATA_SOURCE[name]['display_name']
-                show_gis = SERVICE_DATA_SOURCE[name]['show_gis']
+                title = SERVICE_DATA_SOURCE[key_name]['display_name']
+                show_gis = SERVICE_DATA_SOURCE[key_name]['show_gis']
             except Exception as e:
                 logger.info("Something wrong with fetching data sources information. Exception: ", e.message)
 
