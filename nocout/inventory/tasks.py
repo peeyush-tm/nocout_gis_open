@@ -18,6 +18,7 @@ import xlrd
 import xlwt
 import datetime
 import logging
+import copy
 
 logger = logging.getLogger(__name__)
 
@@ -8948,7 +8949,7 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
                        'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
                        'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port',
                        'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname',
-                       'PE IP', 'DR Site', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Sector Utilization',
+                       'PE IP', 'DR Site', 'DR Master/Slave', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Sector Utilization',
                        'Frequency', 'MRC', 'IDU Type', 'System Uptime', 'Latency', 'PD']
 
     # wimax ss dictionary
@@ -8963,8 +8964,6 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
 
     # get base stations id's
     bs_ids = base_stations
-
-    print "******************************* bs_ids - ", bs_ids
 
     # loop on base stations by using bs_ids list conatining base stations id's
     try:
@@ -8993,7 +8992,6 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
                     pmp_sm_rows.extend(rows['pmp_sm'])
                 elif technology == "WiMAX":
                     rows = get_selected_wimax_inventory(base_station, sector)
-                    print "************************ rows - ", rows
                     # insert 'wimax bs' data dictionary in 'wimax_bs_rows' list
                     wimax_bs_rows.extend(rows['wimax_bs'])
                     # insert 'wimax_ss' data dictionary in 'wimax_ss_rows' list
@@ -11017,6 +11015,12 @@ def get_selected_wimax_inventory(base_station, sector):
             except Exception as e:
                 logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
 
+            # dr site master/slave
+            if sector.dr_site.lower() == "yes":
+                wimax_bs_row['DR Master/Slave'] = "Master"
+            else:
+                wimax_bs_row['DR Master/Slave'] = ""
+
             # ************************************* BS Perf Parameters **********************************
             # sector utilization
             try:
@@ -11411,6 +11415,16 @@ def get_selected_wimax_inventory(base_station, sector):
 
             # append 'wimax_bs_row' dictionary in 'wimax_bs_rows'
             wimax_bs_rows.append(wimax_bs_row)
+
+            # *********************************** DR Site Handling ************************************
+            if (sector.dr_site.lower() == "yes") and sector.dr_configured_on:
+                try:
+                    copy_bs_row = copy.deepcopy(wimax_bs_row)
+                    copy_bs_row['IDU IP'] = sector.dr_configured_on.ip_address
+                    copy_bs_row['DR Master/Slave'] = "Slave"
+                    wimax_bs_rows.append(copy_bs_row)
+                except Exception as e:
+                    logger.info("DR Device not exist. Exception: ", e.message)
 
             # append 'wimax_ss_row' dictionary in 'wimax_ss_rows'
             wimax_ss_rows.append(wimax_ss_row)
