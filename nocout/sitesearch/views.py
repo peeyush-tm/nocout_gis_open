@@ -438,6 +438,36 @@ def prepare_raw_sector(sectors):
                               'value': format_value(format_this=sector['SECTOR_NAME'])
                             },
                             {
+                              'name': 'city',
+                              'title': 'City',
+                              'show': 1,
+                              'value': format_value(format_this=sector['BSCITY'])
+                            },
+                            {
+                              'name': 'building_height',
+                              'title': 'Building Height',
+                              'show': 1,
+                              'value': format_value(format_this=sector['BSBUILDINGHGT'])
+                            },
+                            {
+                              'name': 'tower_height',
+                              'title': 'Tower Height',
+                              'show': 1,
+                              'value': format_value(format_this=sector['BSTOWERHEIGHT'])
+                            },
+                            {
+                              'name': 'antenna_height',
+                              'title': 'Antenna Height',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'])
+                            },
+                            {
+                              'name': 'antenna_polarization',
+                              'title': 'Antenna Polarization',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'])
+                            },
+                            {
                               'name': 'sector_id',
                               'title': 'Sector ID',
                               'show': 1 if sector['SECTOR_SECTOR_ID'] else 0,
