@@ -226,7 +226,14 @@ var bh_toolTip_static = [
 var bh_toolTip_polled = [];
 
 // PTP SS Tooltip static info object
-var ptp_ss_toolTip_static = [
+var ss_toolTip_static = [
+	{
+		'name'  : 'cktid',
+        'title' : 'Circuit ID',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
 	{
 		'name'  : 'customer_alias',
         'title' : 'Customer Name',
@@ -235,8 +242,15 @@ var ptp_ss_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'cktid',
-        'title' : 'CKT ID',
+		'name': 'ss_ip',
+		'title': 'SS IP',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'pe_ip',
+		'title': 'PE IP',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -244,6 +258,62 @@ var ptp_ss_toolTip_static = [
 	{
 		'name'  : 'qos_bandwidth',
         'title' : 'QOS(BW)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'antenna_height',
+		'title': 'Antenna Height',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'polarisation',
+		'title': 'Polarisation',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'mount_type',
+		'title': 'SS Mount Type',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'cable_length',
+		'title': 'Cable Length',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'ethernet_extender',
+		'title': 'Ethernet Extender',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'building_height',
+		'title': 'Building Height',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'tower_height',
+		'title': 'Tower/Pole Height',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'ss_technology',
+		'title': 'Technology',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -263,57 +333,15 @@ var ptp_ss_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'antenna_height',
-		'title': 'Antenna Height',
+		'name': 'customer_address',
+		'title': 'Customer Address',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name': 'polarisation',
-		'title': 'Polarisation',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'antenna_type',
-		'title': 'Antenna Type',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'mount_type',
-		'title': 'Antena Mount Type',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'ethernet_extender',
-		'title': 'Ethernet Extender',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'building_height',
-		'title': 'Building Height',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'tower_height',
-		'title': 'Tower/Pole Height',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'cable_length',
-		'title': 'Cable Length',
+		'name': 'alias',
+		'title': 'Alias',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -326,20 +354,6 @@ var ptp_ss_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'customer_address',
-		'title': 'Customer Address',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'throughput_during_acceptance',
-		'title': 'Throughput During Acceptance',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
 		'name': 'date_of_acceptance',
 		'title': 'Date of Acceptance',
         'show'  : 1,
@@ -347,15 +361,29 @@ var ptp_ss_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'bh_bso',
-		'title': 'BH BSO',
+		'name': 'pos_link1',
+		'title': 'POS Link1',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name': 'ss_ip',
-		'title': 'SS IP',
+		'name': 'pos_link2',
+		'title': 'POS Link2',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'tag1',
+		'title': 'Tag1',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'tag2',
+		'title': 'Tag2',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -365,71 +393,127 @@ var ptp_ss_toolTip_static = [
 // PTP SS Tooltip polled info object
 var ptp_ss_toolTip_polled = [
 	{
-		'name'  : 'producttype',
+		'name'  : 'radwin_producttype_invent_producttype',
         'title' : 'Product Type',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'frequency',
+		'name'  : 'radwin_frequency_invent_frequency',
         'title' : 'Frequency',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'uas',
+		'name'  : 'radwin_cbw_invent_cbw',
+        'title' : 'Channel Bandwidth',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_uas_uas',
         'title' : 'UAS',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'rssi',
+		'name'  : 'radwin_rssi_rssi',
         'title' : 'RSSI',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'service_throughput',
+		'name'  : 'radwin_service_throughput_service_throughput',
         'title' : 'Estimated Throughput',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'utilization',
-        'title' : 'Utilization',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'uptime',
-        'title' : 'Uptime',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'link_distance',
+		'name'  : 'radwin_link_distance_invent_link_distance',
         'title' : 'Link Distance',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'cbw',
-        'title' : 'CBW',
+		'name'  : 'radwin_ul_utilization_Management_Port_on_Odu',
+        'title' : 'Uplink Utilization',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'rta',
-        'title' : 'Latency',
+		'name'  : 'radwin_dl_utilization_Management_Port_on_Odu',
+        'title' : 'Downlink Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_uptime_uptime',
+        'title' : 'Uptime',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_autonegotiation_status_1',
+        'title' : 'Auto Negotiation',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_port_mode_status_1',
+        'title' : 'Duplex',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_port_speed_status_1',
+        'title' : 'Speed',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_link_ethernet_status_Management_Port_on_Odu',
+        'title' : 'Link Ethernet Status',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_mimo_diversity_invent_mimo_diversity',
+        'title' : 'Mimo Diversity',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_ssid_invent_ssid',
+        'title' : 'SSID',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_idu_sn_invent_idu_sn',
+        'title' : 'IDU S/N',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_odu_sn_invent_odu_sn',
+        'title' : 'ODU S/N',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -442,104 +526,70 @@ var ptp_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'ul_utilization',
-        'title' : 'UL Utilization',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'dl_utilization',
-        'title' : 'DL Utilization',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : '',
-        'title' : 'Auto Negotiation',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'duplex',
-        'title' : 'Duplex',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'ss_speed',
-        'title' : 'Speed',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : '',
-        'title' : 'Link',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : '',
-        'title' : 'HSSU',
+		'name'  : 'rta',
+        'title' : 'Latency',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	}
 ];
 
-/*************************** PTP SECTOR TOOLTIP IS EQUIVALENT TO PTP SS TOOLTIP ***************************/
 // PTP Sector Tooltip static info object
 var ptp_sector_toolTip_static = [
 	{
-		'name'  : '',
-        'title' : '',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	}
-];
-
-
-// PMP SS Tooltip static info object
-var pmp_ss_toolTip_static = [
-	{
-		'name': 'alias',
-		'title': 'SS Name',
+		'name'  : 'cktid',
+        'title' : 'Circuit ID',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name': 'cktid',
-		'title': 'CKT ID',
+		'name'  : 'customer_alias',
+        'title' : 'Customer Name',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name': 'qos_bandwidth',
-		'title': 'QOS(BW)',
+		'name': 'ss_ip',
+		'title': 'SS IP',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name': 'latitude',
-		'title': 'Latitude',
+		'name': 'pe_ip',
+		'title': 'PE IP',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name': 'longitude',
-		'title': 'Longitude',
+		'name'  : 'qos_bandwidth',
+        'title' : 'QOS(BW)',
         'show'  : 1,
         'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'hssu_used',
+        'title' : 'HSSU Used',
+        'show'  : 1,
+        'value' : 'NA',
+        'url'   : ''
+	},
+	{
+		'name'  : 'hssu_port',
+        'title' : 'HSSU Port',
+        'show'  : 1,
+        'value' : 'NA',
+        'url'   : ''
+	},
+	{
+		'name'  : 'bh_bso',
+        'title' : 'BH BSO',
+        'show'  : 1,
+        'value' : 'NA',
         'url'   : ''
 	},
 	{
@@ -557,15 +607,15 @@ var pmp_ss_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'antenna_type',
-		'title': 'Antenna Type',
+		'name': 'mount_type',
+		'title': 'SS Mount Type',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name': 'mount_type',
-		'title': 'SS MountType',
+		'name': 'cable_length',
+		'title': 'Cable Length',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -592,22 +642,22 @@ var pmp_ss_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'cable_length',
-		'title': 'Cable Length',
+		'name': 'ss_technology',
+		'title': 'Technology',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name': 'dl_rssi_during_acceptance',
-		'title': 'DL RSSI During Acceptance',
+		'name': 'latitude',
+        'title': 'Latitude',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name': 'jitter_value_during_acceptance',
-		'title': 'Jitter Value During Acceptance',
+		'name': 'longitude',
+		'title': 'Longitude',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -620,6 +670,20 @@ var pmp_ss_toolTip_static = [
         'url'   : ''
 	},
 	{
+		'name': 'alias',
+		'title': 'Alias',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'dl_rssi_during_acceptance',
+		'title': 'RSSI During Acceptance',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
 		'name': 'date_of_acceptance',
 		'title': 'Date of Acceptance',
         'show'  : 1,
@@ -627,8 +691,327 @@ var pmp_ss_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'ss_ip',
-		'title': 'SS IP',
+		'name': 'pos_link1',
+		'title': 'POS Link1',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'pos_link2',
+		'title': 'POS Link2',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'tag1',
+		'title': 'Tag1',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name': 'tag2',
+		'title': 'Tag2',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	}
+];
+
+// PTP Sector Tooltip polled info object
+var ptp_sector_toolTip_polled = [
+	{
+		'name'  : 'radwin_producttype_invent_producttype',
+        'title' : 'Product Type',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_frequency_invent_frequency',
+        'title' : 'Frequency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_cbw_invent_cbw',
+        'title' : 'Channel Bandwidth',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_uas_uas',
+        'title' : 'UAS',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_rssi_rssi',
+        'title' : 'RSSI',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_service_throughput_service_throughput',
+        'title' : 'Estimated Throughput',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_link_distance_invent_link_distance',
+        'title' : 'Link Distance',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_ul_utilization_Management_Port_on_Odu',
+        'title' : 'Uplink Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_dl_utilization_Management_Port_on_Odu',
+        'title' : 'Downlink Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_uptime_uptime',
+        'title' : 'Uptime',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_autonegotiation_status_1',
+        'title' : 'Auto Negotiation',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_port_mode_status_1',
+        'title' : 'Duplex',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_port_speed_status_1',
+        'title' : 'Speed',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_link_ethernet_status_Management_Port_on_Odu',
+        'title' : 'Link Ethernet Status',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_sync_state_status_site_sync_state',
+        'title' : 'Sync State',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_mimo_diversity_invent_mimo_diversity',
+        'title' : 'Mimo Diversity',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_ssid_invent_ssid',
+        'title' : 'SSID',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_idu_sn_invent_idu_sn',
+        'title' : 'IDU S/N',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_odu_sn_invent_odu_sn',
+        'title' : 'ODU S/N',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'pl',
+        'title' : 'Packet Loss',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'rta',
+        'title' : 'Latency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	}
+];
+
+// PMP SS Tooltip static info object
+var pmp_ss_toolTip_static = [];
+
+// PMP SS Tooltip polled info object
+var pmp_ss_toolTip_polled = [
+	{
+		'name'  : 'cambium_ul_utilization_ul_utilization',
+        'title' : 'Uplink Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_dl_utilization_dl_utilization',
+        'title' : 'Downlink Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_vlan_invent_vlan',
+        'title' : 'VLAN',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_qos_invent_qos',
+        'title' : 'QOS(Polled)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_uptime_uptime',
+        'title' : 'Uptime',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_link_ethernet_status_link_state',
+        'title' : 'Link Ethernet Status',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'radwin_sync_state_status_site_sync_state',
+        'title' : 'Sync State',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_dl_rssi_dl_rssi',
+        'title' : 'RSSI DL',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_dl_jitter_dl_jitter',
+        'title' : 'Jitter DL',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_ul_rssi_ul_rssi',
+        'title' : 'RSSI UL',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_ul_jitter_ul_jitter',
+        'title' : 'Jitter UL',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_rereg_count_rereg_count',
+        'title' : 'Rereg Count',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_reg_count_reg_count',
+        'title' : 'Reg Count',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_transmit_power_invent_transmit_power',
+        'title' : 'SM Transmit Power',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_ss_mac_invent_ss_mac',
+        'title' : 'SS MAC',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_bs_sector_id_invent_bs_sector_id',
+        'title' : 'Sector ID',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_bs_ip_invent_bs_ip',
+        'title' : 'Connected BS IP',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_bs_frequency_invent_frequency',
+        'title' : 'Frequency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'pl',
+        'title' : 'Packet Loss',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'rta',
+        'title' : 'Latency',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -638,36 +1021,29 @@ var pmp_ss_toolTip_static = [
 // PMP Sector Tooltip static info object
 var pmp_sector_toolTip_static = [
 	{
-		'name'  : 'site_name',
-        'title' : 'Site Name',
+		'name'  : 'technology',
+        'title' : 'Technology',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'city',
-        'title' : 'City',
+		'name'  : 'sector_id',
+        'title' : 'Sector ID',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'site_type',
-        'title' : 'Site Type',
+		'name'  : 'idu_ip',
+        'title' : 'IDU IP',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'building_height',
-        'title' : 'Building Height',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'tower_height',
-        'title' : 'Tower Height',
+		'name'  : 'planned_frequency',
+        'title' : 'Planned Frequency',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -680,198 +1056,22 @@ var pmp_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'antenna_azimuth',
-        'title' : 'Antenna Azimuth',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'antenna_tilt',
-		'title' : 'Antenna Tilt',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
 		'name'  : 'antenna_polarization',
 		'title' : 'Antenna Polarization',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-	}
-];
-
-// Wimax SS Tooltip static info object
-var wimax_ss_toolTip_static = [
+	},
 	{
-		'name': 'alias',
-		'title': 'SS Name',
+		'name'  : 'tx_power_planned',
+        'title' : 'Tx Power Planned',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name': 'cktid',
-		'title': 'CKT ID',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'qos_bandwidth',
-		'title': 'QOS(BW)',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'latitude',
-		'title': 'Latitude',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'longitude',
-		'title': 'Longitude',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'antenna_height',
-		'title': 'Antenna Height',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'polarisation',
-		'title': 'Polarisation',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'antenna_type',
-		'title': 'Antenna Type',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'mount_type',
-		'title': 'SS MountType',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'ethernet_extender',
-		'title': 'Ethernet Extender',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'building_height',
-		'title': 'Building Height',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'tower_height',
-		'title': 'Tower/Pole Height',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'cable_length',
-		'title': 'Cable Length',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'dl_rssi_during_acceptance',
-		'title': 'DL RSSI During Acceptance',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'dl_cinr_during_acceptance',
-		'title': 'DL CINR During Acceptance',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'customer_address',
-		'title': 'Customer Address',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'date_of_acceptance',
-		'title': 'Date of Acceptance',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'ss_ip',
-		'title': 'SS IP',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	}
-];
-
-// Wimax Sector Tooltip static info object
-var wimax_sector_toolTip_static = [
-	{
-		'name'  : 'site_name',
-        'title' : 'Site Name',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'city',
-        'title' : 'City',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'site_type',
-        'title' : 'Site Type',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'building_height',
-        'title' : 'Building Height',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'tower_height',
-        'title' : 'Tower Height',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'antenna_height',
-        'title' : 'Antenna Height',
+		'name'  : 'rx_power_planned',
+        'title' : 'rx Power Planned',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -879,20 +1079,6 @@ var wimax_sector_toolTip_static = [
 	{
 		'name'  : 'antenna_azimuth',
         'title' : 'Antenna Azimuth',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'antenna_tilt',
-		'title' : 'Antenna Tilt',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'antenna_polarization',
-		'title' : 'Antenna Polarization',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -905,21 +1091,480 @@ var wimax_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'antenna_splitter_installed',
-        'title' : 'Installation Of Splitter',
+		'name'  : 'sync_splitter',
+		'title' : 'Sync Splitter Installed',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'dr_site',
-        'title' : 'DR Site',
+		'name'  : 'tag1',
+		'title' : 'Tag1',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'tag2',
+		'title' : 'Tag2',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	}
 ];
 
+// PMP Sector Tooltip polled info object
+var pmp_sector_toolTip_polled = [
+	{
+		'name'  : 'cambium_bs_utilization_utilization',
+		'title' : 'Sector Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_uptime_uptime',
+		'title' : 'Sector Uptime',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : '',
+		'title' : 'Interface eth Error',
+        'show'  : 0,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_sync_state_invent_sync_state',
+		'title' : 'Sync State',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_data_rate_modulation_invent_data_rate_modulation',
+		'title' : 'Data Rate',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : '',
+		'title' : 'TDD Split',
+        'show'  : 0,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : '',
+		'title' : 'Last GPS Alert Time',
+        'show'  : 0,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_cell_radius_invent_cell_radius',
+		'title' : 'Cell Radius',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'rta',
+		'title' : 'Latency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'pl',
+		'title' : 'Packet Loss',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	}
+];
+
+// Wimax SS Tooltip static info object
+var wimax_ss_toolTip_static = [];
+
+// Wimax SS Tooltip Polled Info Object
+var wimax_ss_toolTip_polled = [
+	{
+		'name'  : 'wimax_ss_ul_utilization_ul_utilization',
+        'title' : 'Uplink Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ss_dl_utilization_dl_utilization',
+        'title' : 'Downlink Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ss_vlan_invent_ss_vlan',
+        'title' : 'VLAN',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_qos_invent_qos',
+        'title' : 'QOS(Polled)',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ss_session_uptime_session_uptime',
+        'title' : 'Session Uptime',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_bs_uptime_uptime',
+        'title' : 'Device Uptime',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ss_link_status_link_state',
+        'title' : 'Link Ethernet Status',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_dl_rssi_dl_rssi',
+        'title' : 'RSSI DL',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_dl_intrf_dl_intrf',
+        'title' : 'INTRF DL',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_dl_cinr_dl_cinr',
+        'title' : 'CINR DL',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ul_rssi_ul_rssi',
+        'title' : 'RSSI UL',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ul_intrf_ul_intrf',
+        'title' : 'INTRF UL',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ul_cinr_ul_cinr',
+        'title' : 'CINR UL',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_modulation_ul_fec_modulation_ul_fec',
+        'title' : 'Modulation UL FEC',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_modulation_dl_fec_modulation_dl_fec',
+        'title' : 'Modulation DL FEC',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ss_ptx_invent_ss_ptx',
+        'title' : 'PTX',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ss_mac_ss_mac',
+        'title' : 'SS MAC',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ss_sector_id_ss_sector_id',
+        'title' : 'Sector ID',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_bs_ip_invent_bs_ip',
+        'title' : 'Connected BS IP',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ss_errors_status_ifout_errors',
+        'title' : 'If Out Error',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_ss_errors_status_ifin_errors',
+        'title' : 'If In Error',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'cambium_bs_frequency_invent_frequency',
+        'title' : 'Frequency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_dl_modulation_change_invent_dl_modulation_change',
+        'title' : 'Downlink Modulation Change',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'pl',
+        'title' : 'Packet Loss',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'rta',
+        'title' : 'Latency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	}
+];
+
+// Wimax Sector Tooltip static info object
+var wimax_sector_toolTip_static = [
+	{
+		'name'  : 'technology',
+        'title' : 'Technology',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'sector_id',
+        'title' : 'Sector ID',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'idu_ip',
+        'title' : 'IDU IP',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'pmp_port',
+        'title' : 'PMP Port',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'planned_frequency',
+        'title' : 'Planned Frequency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'antenna_height',
+        'title' : 'Antenna Height',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'antenna_polarization',
+		'title' : 'Antenna Polarization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'dr_status',
+		'title' : 'DR Status',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'mrc_status',
+		'title' : 'MRC Status',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'tx_power_planned',
+        'title' : 'Tx Power Planned',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'rx_power_planned',
+        'title' : 'rx Power Planned',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'antenna_azimuth',
+        'title' : 'Antenna Azimuth',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'antenna_make',
+        'title' : 'Antenna Make',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'antenna_tilt',
+        'title' : 'Antenna Tilt',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'sync_splitter',
+		'title' : 'Splitter Installed',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'frame_length',
+		'title' : 'Frame Length',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'tdd_split',
+		'title' : 'TDD Split',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'tag1',
+		'title' : 'Tag1',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'tag2',
+		'title' : 'Tag2',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	}
+];
+
+// Wimax Sector Tooltip polled info object
+var wimax_sector_toolTip_polled = [
+	{
+		'name'  : '',
+		'title' : 'Sector Utilization',
+        'show'  : 0,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_bs_uptime_uptime',
+		'title' : 'Sector Uptime',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : '',
+		'title' : 'RF BW Polled',
+        'show'  : 0,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : '',
+		'title' : 'Last GPS Alert Time',
+        'show'  : 0,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_bs_temperature_acb_acb_temp',
+		'title' : 'Temperature ACB',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'wimax_bs_temperature_fan_fan_temp',
+		'title' : 'Temperature Fan',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'rta',
+		'title' : 'Latency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	},
+	{
+		'name'  : 'pl',
+		'title' : 'Packet Loss',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+	}
+];
 
 /**
  * This function return array of object in desired sequence as per given param.
