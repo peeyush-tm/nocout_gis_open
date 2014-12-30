@@ -110,11 +110,12 @@ def check_wimax_ss_mac(item, params, info):
 	mac_info = sum(info,[])
 	mac_list=map(lambda x: convert(x),mac_info)
 	if mac_list[1] != '00:00:00:00:00:00':
-		mac= mac_list[1]
+		ss_mac= mac_list[1]
 		state = 0
 	else:
 		index =[i for i, e in enumerate(mac_list) if e != '00:00:00:00:00:00']
-		mac =index[0]
+		index =index[0]
+		ss_mac = mac_list[index]
 		state = 0
 	infotext = "%s" % ss_mac
     except ValueError:

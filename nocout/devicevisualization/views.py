@@ -2267,7 +2267,7 @@ class GISPerfData(View):
         ).using(alias=machine_name)
 
         for perf in device_network_info:
-            res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
+            res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
             if not res:
                 continue
             if perf['data_source'] in processed:
@@ -2306,12 +2306,12 @@ class GISPerfData(View):
             ).using(alias=machine_name)
 
             for perf in device_performance_info:
-                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
+                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
                 if not res:
                     continue
-                if perf['data_source'] in processed:
+                if perf['service_name'] in processed:
                     continue
-                processed[perf['data_source']] = []
+                processed[perf['service_name']] = []
 
                 service_name = perf['service_name'].strip().lower()
 
@@ -2326,12 +2326,12 @@ class GISPerfData(View):
                 device_info.append(perf_info)
 
             for perf in device_inventory_info:
-                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
+                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
                 if not res:
                     continue
-                if perf['data_source'] in processed:
+                if perf['service_name'] in processed:
                     continue
-                processed[perf['data_source']] = []
+                processed[perf['service_name']] = []
 
                 service_name = perf['service_name'].strip().lower()
 
@@ -2346,12 +2346,12 @@ class GISPerfData(View):
                 device_info.append(perf_info)
 
             for perf in device_status_info:
-                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'])
+                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
                 if not res:
                     continue
-                if perf['data_source'] in processed:
+                if perf['service_name'] in processed:
                     continue
-                processed[perf['data_source']] = []
+                processed[perf['service_name']] = []
 
                 service_name = perf['service_name'].strip().lower()
 
@@ -2370,7 +2370,7 @@ class GISPerfData(View):
 
         return device_info
 
-    def sanatize_datasource(self, data_source):
+    def sanatize_datasource(self, data_source, service_name):
         """ Get Sector performance info
 
             Parameters:
@@ -2388,7 +2388,12 @@ class GISPerfData(View):
 
         if data_source and data_source[:1].isalpha():
             title = " ".join(data_source.split("_")).title()
-            name = data_source.strip().lower()
+
+            if data_source.strip().lower() not in ['pl', 'rta']:
+                name = service_name.strip().lower() + "_" + data_source.strip().lower()
+            else:
+                name = data_source.strip().lower()
+                
             show_gis = 0
             try:
                 title = SERVICE_DATA_SOURCE[name]['display_name']

@@ -92,6 +92,8 @@ def check_wimax_pmp_frame_length_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
+    pmp1_fr_len = None
+    pmp2_fr_len = None
     try:
 	if info[0][0]:
                 bs_ip = info[0][0]
@@ -105,12 +107,13 @@ def check_wimax_pmp_frame_length_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext)
+    return (state, infotext,[("pmp1_fr_len",pmp1_fr_len),("pmp2_fr_len",pmp2_fr_len)])
 
 
 check_info["wimax_pmp_frame_length_invent"] = {
     'check_function': check_wimax_pmp_frame_length_invent,
     'service_description': 'wimax_pmp_frame_length_invent',
+    'has_perfdata':True,
 }
 
 #########################################################################

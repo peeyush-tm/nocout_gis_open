@@ -85,7 +85,7 @@ def live_query_modulation_dl_fec(ss_host,site,war,crit):
 	modulation_dl_fec_state = "unknown"
 	modulation_dl_fec = ''
 	perf = ''
-	dl_fec_normal =  ["qam16-3/4", "qam64-2/3","qam64-3/4"]
+	dl_fec_normal =  ["qam1634", "qam6423","qam6434"]
 	mac_query = "GET services\nColumns: service_perf_data\nFilter: " + \
                                 "service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("wimax_ss_mac",ss_host)
         mac_output = eval(get_from_socket(query=mac_query,site=site).strip())
@@ -114,13 +114,14 @@ def live_query_modulation_dl_fec(ss_host,site,war,crit):
 				modulation_dl_fec = entry[0].split('=')[1].split(',')[6]
 				if modulation_dl_fec:
 					perf += 'modulation_dl_fec' + "=%s" %(modulation_dl_fec)
-					if modulation_dl_fec in crit:
+					mod_dl_fec = "".join(e for e in modulation_dl_fec if e.isalnum())
+					if mod_dl_fec in crit:
 						modulation_dl_fec_state = "ok"
                                         	exit_value = 2
-                                	elif modulation_dl_fec in war:
+                                	elif mod_dl_fec in war:
 						modulation_dl_fec_state = "warning"
                                         	exit_value=1
-                                	elif modulation_dl_fec in dl_fec_normal:
+                                	elif mod_dl_fec in dl_fec_normal:
 						modulation_dl_fec_state = "ok"
                                         	exit_value = 0
 					else:

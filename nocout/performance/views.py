@@ -1344,7 +1344,7 @@ class Get_Service_Type_Performance_Data(View):
                                                            sys_timestamp__gte=start_date,
                                                            sys_timestamp__lte=end_date).using(
                     alias=inventory_device_machine_name)
-                result = self.get_topology_result(performance_data, dr_ip=dr_device.ip_address)
+                result = self.get_topology_result(performance_data, dr_ip=dr_device.ip_address, technology=technology)
             else:
                 performance_data = Topology.objects.filter(device_name=inventory_device_name,
                                                            # service_name=service_name,
@@ -1353,7 +1353,7 @@ class Get_Service_Type_Performance_Data(View):
                                                            sys_timestamp__lte=end_date).using(
                     alias=inventory_device_machine_name)
 
-                result = self.get_topology_result(performance_data)
+                result = self.get_topology_result(performance_data, technology=technology)
 
 
         elif '_status' in service_name:
@@ -1560,7 +1560,7 @@ class Get_Service_Type_Performance_Data(View):
         self.result['data']['objects']['table_data_header'] = ['time', 'ip_address', 'value']
         return self.result
 
-    def get_topology_result(self, performance_data, dr_ip=None):
+    def get_topology_result(self, performance_data, dr_ip=None, technology=None):
         """
         Getting the current topology of any elements of the network
         """
@@ -1587,6 +1587,7 @@ class Get_Service_Type_Performance_Data(View):
                 latency = 'NA'
                 status_since = 'NA'
                 machine = 'default'
+                vlan = 'NA'
                 #now lets check if SS exists for a device
                 #and that the customer and circuit are present for that SS
 
@@ -1606,6 +1607,26 @@ class Get_Service_Type_Performance_Data(View):
                         #is it added?
                         #only then query the performance network database
                         #for getting latest status
+                        if technology and technology.name.lower() in ['wimax']:
+                            service_name = 'wimax_ss_vlan_invent'
+                            data_source = 'ss_vlan'
+                        elif technology and technology.name.lower() in ['pmp']:
+                            service_name = 'cambium_vlan_invent'
+                            data_source = 'vlan'
+                        else:
+                            service_name = None
+                            data_source = None
+                        if service_name and data_source:
+                            try:
+                                vs = InventoryStatus.objects.filter(
+                                    device_name=connected_device.device_name,
+                                    service_name=service_name,
+                                    data_source=data_source
+                                ).using(alias=machine)
+                                vlan = vs[0].current_value
+                            except Exception as e:
+                                log.exception(e.message)
+                                vlan = "NA"
                         perf_data = NetworkStatus.objects.filter(device_name=connected_device.device_name
                         ).annotate(dcount=Count('data_source')
                         ).values('data_source', 'current_value', 'age', 'sys_timestamp').using(alias=machine)
@@ -1638,6 +1659,7 @@ class Get_Service_Type_Performance_Data(View):
                     'ip_address': show_ip_address,
                     'mac_address': data.mac_address,
                     'sector_id': data.sector_id,
+                    'vlan': vlan,
                     'connected_device_ip': data.connected_device_ip,
                     'connected_device_mac': data.connected_device_mac,
                     'circuit_id': circuit_id,
@@ -1656,6 +1678,7 @@ class Get_Service_Type_Performance_Data(View):
                                                                'ip_address',
                                                                'mac_address',
                                                                'sector_id',
+                                                               'vlan',
                                                                'connected_device_ip',
                                                                'connected_device_mac',
                                                                'circuit_id',

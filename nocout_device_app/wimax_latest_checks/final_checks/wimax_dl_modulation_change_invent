@@ -144,12 +144,13 @@ def check_wimax_dl_modulation_change_invent(item, params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext)
+    return (state, infotext,[("dl_modulation_change",dl_modulation_change,warn,crit)])
 
 
 check_info["wimax_dl_modulation_change_invent"] = {
     'check_function': check_wimax_dl_modulation_change_invent,
     'service_description': 'wimax_dl_modulation_change_invent',
+    'has_perfdata':True,
 }
 
 #########################################################################
