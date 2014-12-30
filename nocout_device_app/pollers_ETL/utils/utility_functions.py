@@ -45,8 +45,8 @@ def pivot_timestamp_fwd(timestamp):
            None
     """
     t_stmp = timestamp + timedelta(minutes=-(timestamp.minute % 5))
-    if (timestamp.minute %5) != 0:
-        t_stmp = t_stmp + timedelta(minutes=5)
+    #if (timestamp.minute %5) != 0:
+    t_stmp = t_stmp + timedelta(minutes=5)
 
 
     return t_stmp

@@ -18,6 +18,7 @@ import xlrd
 import xlwt
 import datetime
 import logging
+import copy
 
 logger = logging.getLogger(__name__)
 
@@ -8948,7 +8949,7 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
                        'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
                        'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port',
                        'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname',
-                       'PE IP', 'DR Site', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Sector Utilization',
+                       'PE IP', 'DR Site', 'DR Master/Slave', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Sector Utilization',
                        'Frequency', 'MRC', 'IDU Type', 'System Uptime', 'Latency', 'PD']
 
     # wimax ss dictionary
@@ -8963,8 +8964,6 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
 
     # get base stations id's
     bs_ids = base_stations
-
-    print "******************************* bs_ids - ", bs_ids
 
     # loop on base stations by using bs_ids list conatining base stations id's
     try:
@@ -8993,7 +8992,6 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
                     pmp_sm_rows.extend(rows['pmp_sm'])
                 elif technology == "WiMAX":
                     rows = get_selected_wimax_inventory(base_station, sector)
-                    print "************************ rows - ", rows
                     # insert 'wimax bs' data dictionary in 'wimax_bs_rows' list
                     wimax_bs_rows.extend(rows['wimax_bs'])
                     # insert 'wimax_ss' data dictionary in 'wimax_ss_rows' list
@@ -9025,6 +9023,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
     inventory_wb = xlwt.Workbook()
 
     # ***************************** PTP *******************************
+    # remove duplicate dictionaries from ptp list
+    ptp_rows = remove_duplicate_dict_from_list(ptp_rows)
+
     # ptp bs excel rows
     ptp_excel_rows = []
     for val in ptp_rows:
@@ -9060,6 +9061,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
         logger.info("Problem in creating excel rows. Exception: ", e.message)
 
     # ***************************** PTP BH *******************************
+    # remove duplicate dictionaries from ptp bh list
+    ptp_bh_rows = remove_duplicate_dict_from_list(ptp_bh_rows)
+
     # ptp bh bs excel rows
     ptp_bh_excel_rows = []
     for val in ptp_bh_rows:
@@ -9095,6 +9099,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
         logger.info("Problem in creating excel rows. Exception: ", e.message)
 
     # ***************************** PMP BS *******************************
+    # remove duplicate dictionaries from pmp bs list
+    pmp_bs_rows = remove_duplicate_dict_from_list(pmp_bs_rows)
+
     # pmp bs excel rows
     pmp_bs_excel_rows = []
     for val in pmp_bs_rows:
@@ -9130,6 +9137,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
         logger.info("Problem in creating excel rows. Exception: ", e.message)
 
     # ***************************** PMP SM *******************************
+    # remove duplicate dictionaries from pmp sm list
+    pmp_sm_rows = remove_duplicate_dict_from_list(pmp_sm_rows)
+
     # pmp sm excel rows
     pmp_sm_excel_rows = []
     for val in pmp_sm_rows:
@@ -9203,6 +9213,9 @@ def generate_gis_inventory_excel(base_stations="", username="", fulltime="", gis
         logger.info("Problem in creating excel rows. Exception: ", e.message)
 
     # ***************************** Wimax SS *******************************
+    # remove duplicate dictionaries from wimax ss list
+    wimax_ss_rows = remove_duplicate_dict_from_list(wimax_ss_rows)
+
     # wimax ss excel rows
     wimax_ss_excel_rows = []
     for val in wimax_ss_rows:
@@ -11002,6 +11015,12 @@ def get_selected_wimax_inventory(base_station, sector):
             except Exception as e:
                 logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
 
+            # dr site master/slave
+            if sector.dr_site.lower() == "yes":
+                wimax_bs_row['DR Master/Slave'] = "Master"
+            else:
+                wimax_bs_row['DR Master/Slave'] = ""
+
             # ************************************* BS Perf Parameters **********************************
             # sector utilization
             try:
@@ -11397,6 +11416,16 @@ def get_selected_wimax_inventory(base_station, sector):
             # append 'wimax_bs_row' dictionary in 'wimax_bs_rows'
             wimax_bs_rows.append(wimax_bs_row)
 
+            # *********************************** DR Site Handling ************************************
+            if (sector.dr_site.lower() == "yes") and sector.dr_configured_on:
+                try:
+                    copy_bs_row = copy.deepcopy(wimax_bs_row)
+                    copy_bs_row['IDU IP'] = sector.dr_configured_on.ip_address
+                    copy_bs_row['DR Master/Slave'] = "Slave"
+                    wimax_bs_rows.append(copy_bs_row)
+                except Exception as e:
+                    logger.info("DR Device not exist. Exception: ", e.message)
+
             # append 'wimax_ss_row' dictionary in 'wimax_ss_rows'
             wimax_ss_rows.append(wimax_ss_row)
 
@@ -11605,8 +11634,10 @@ def remove_duplicate_dict_from_list(input_list=None):
 #################################################################################################
 ## TOPOLOGY UPDATE ##
 #################################################################################################
-from performance.models import Topology
-from inventory.utils.util import organization_network_devices, prepare_machines
+from performance.models import Topology, InventoryStatus, ServiceStatus
+from inventory.utils.util import organization_network_devices, \
+    organization_customer_devices\
+    , prepare_machines
 from organization.models import Organization
 from device.models import DeviceTechnology
 from inventory.models import Sector, Circuit, SubStation
@@ -11628,7 +11659,7 @@ def get_organizations():
     return orgs
 
 
-def get_devices(technology='WiMAX'):
+def get_devices(technology='WiMAX', type=None):
     """
 
     :param technology:
@@ -11637,14 +11668,23 @@ def get_devices(technology='WiMAX'):
     organizations = get_organizations()
     #organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all')
     technology = DeviceTechnology.objects.get(name__icontains=technology).id
-    network_devices = organization_network_devices(organizations=organizations,
-                                                   technology=technology
-    ).values(
-            'id',
-            'device_name',
-            'machine__name'
+
+    required_columns = ['id',
+                    'device_name',
+                    'machine__name'
+    ]
+
+    if type and type == 'customer':
+        network_devices = organization_customer_devices(organizations=organizations,
+                                                       technology=technology
         )
-    return network_devices
+
+    else:
+        network_devices = organization_network_devices(organizations=organizations,
+                                                       technology=technology
+        )
+
+    return network_devices.values(*required_columns)
 
 
 def get_sectors(sectors=None):
@@ -11867,6 +11907,7 @@ def update_sector_devices(sectors=None,polled_sectors=None):
             continue
     return bool(count)
 
+
 @task()
 def update_substation_devices(polled_ss=None, connected_ip=None):
     """
@@ -11885,5 +11926,117 @@ def update_substation_devices(polled_ss=None, connected_ip=None):
         except Exception as e:
             logger.exception(e)
             continue
+
+    return bool(count)
+
+
+@task()
+def get_topology_with_substations(technology):
+    """
+    the update topology is not working, needs to be debugged, but we have our
+    substations telling the sector id to which it is connected
+    this needs to be done per technology wise
+    :param technology: PMP or WiMAX
+    :return:
+    """
+    customer_devices = get_devices(technology=technology, type='customer')
+    device_list = []
+    for device in customer_devices:
+        device_list.append(
+            {
+                'id': device['id'],
+                'device_name': device['device_name'],
+                'device_machine': device['machine__name']
+            }
+        )
+    machine_dict = {}
+    # prepare_machines(device_list)
+    machine_dict = prepare_machines(device_list)
+
+    connected_sectors = None
+    connected_circuits = None
+
+    if technology and technology.strip().lower() in ['pmp']:
+        for machine in machine_dict:
+            #this is complete topology for the device set
+            data_source = 'ss_sector_id'
+            service_name = 'cambium_ss_sector_id_invent'
+
+            connected_sectors = InventoryStatus.objects.filter(
+                device_name__in=machine_dict[machine],
+                service_name=service_name,
+                data_source=data_source).using(alias=machine)
+
+            connected_circuits = Circuit.objects.filter(
+                sub_station__device__device_name__in=machine_dict[machine]
+            )
+
+            if connected_sectors and connected_circuits:
+                return update_topology_with_substations.delay(
+                    polled_sectors=connected_sectors,
+                    polled_circuits=connected_circuits
+                )
+
+    elif technology and technology.strip().lower() in ['wimax']:
+        for machine in machine_dict:
+            #this is complete topology for the device set
+            data_source = 'wimax_ss_sector_id'
+            service_name = 'ss_sector_id'
+
+            connected_sectors = ServiceStatus.objects.filter(
+                device_name__in=machine_dict[machine],
+                service_name=service_name,
+                data_source=data_source).using(alias=machine)
+
+            connected_circuits = Circuit.objects.filter(
+                sub_station__device__device_name__in=machine_dict[machine]
+            )
+
+            if connected_sectors and connected_circuits:
+                return update_topology_with_substations.delay(
+                    polled_sectors=connected_sectors,
+                    polled_circuits=connected_circuits
+                )
+
+    else:
+        return False
+
+    return True
+
+
+@task()
+def update_topology_with_substations(polled_sectors, polled_circuits):
+    """
+
+    :param polled_sectors:
+    :param technology:
+    :param polled_circuits:
+    :param sub_stations:
+    :return:
+    """
+    count = 0
+    for circuit in polled_circuits:
+        try:
+            device_name = circuit.sub_station.device.device_name
+            sector = polled_sectors.filter(device_name=device_name)[0]
+            sector_sector_id = sector.current_value
+            sector_object = Sector.objects.filter(sector_id__icontains = sector_sector_id)[0]
+            if circuit.sector_id != sector_object.id:
+                circuit.sector_id = sector_object.id
+                circuit.save()
+                count += 1
+            else:
+                continue
+        except Exception as e:
+            logger.exception(e.message)
+            continue
+
+    if bool(count):
+        from django.core.cache import cache
+        try:
+            cache.clear()
+            cache._cache.flush_all()
+        except Exception as e:
+            logger.exception(e.message)
 
     return bool(count)
