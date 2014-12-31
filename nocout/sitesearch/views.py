@@ -438,6 +438,42 @@ def prepare_raw_sector(sectors):
                               'value': format_value(format_this=sector['SECTOR_NAME'])
                             },
                             {
+                              'name': 'city',
+                              'title': 'City',
+                              'show': 1,
+                              'value': format_value(format_this=sector['BSCITY'])
+                            },
+                            {
+                              'name': 'building_height',
+                              'title': 'Building Height',
+                              'show': 1,
+                              'value': format_value(format_this=sector['BSBUILDINGHGT'])
+                            },
+                            {
+                              'name': 'technology',
+                              'title': 'Technology',
+                              'show': 1,
+                              'value': techno_to_append
+                            },
+                            {
+                              'name': 'tower_height',
+                              'title': 'Tower Height',
+                              'show': 1,
+                              'value': format_value(format_this=sector['BSTOWERHEIGHT'])
+                            },
+                            {
+                              'name': 'antenna_height',
+                              'title': 'Antenna Height',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'])
+                            },
+                            {
+                              'name': 'antenna_polarization',
+                              'title': 'Antenna Polarization',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'])
+                            },
+                            {
                               'name': 'sector_id',
                               'title': 'Sector ID',
                               'show': 1 if sector['SECTOR_SECTOR_ID'] else 0,
@@ -709,13 +745,13 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                                         {
                                             'name': 'frequency',
                                             'title': 'Planned Frequency',
-                                            'show': 1,
+                                            'show': 0,
                                             'value': format_value(format_this=circuit['SECTOR_PLANNED_FREQUENCY']),
                                         },
                                         {
                                             'name': 'planned_frequency',
                                             'title': 'Frequency',
-                                            'show': 1,
+                                            'show': 0,
                                             'value': format_value(format_this=frequency),
                                         },
                                     ]

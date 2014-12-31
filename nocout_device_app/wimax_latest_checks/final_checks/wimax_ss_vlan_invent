@@ -94,6 +94,7 @@ def check_wimax_ss_vlan_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
+    ss_vlan = None
     try:
 	if info[1]:
                 ss_mac = info[1][0]
@@ -112,12 +113,13 @@ def check_wimax_ss_vlan_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext)
+    return (state, infotext,[("ss_vlan",ss_vlan)])
 
 
 check_info["wimax_ss_vlan_invent"] = {
     'check_function': check_wimax_ss_vlan_invent,
     'service_description': 'wimax_ss_vlan_invent',
+    'has_perfdata':True,
 }
 
 #########################################################################

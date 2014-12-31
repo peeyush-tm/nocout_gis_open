@@ -41,6 +41,7 @@ def check_cambium_commanded_rx_power_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    rx_power = None
     try:
         if info:
             if info[0][0]:
@@ -49,12 +50,13 @@ def check_cambium_commanded_rx_power_invent(item, _no_params, info):
                 infotext = "%s" % rx_power
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[("commanded_rx_power",rx_power)])
 
 
 check_info["cambium_commanded_rx_power_invent"] = {
     'check_function': check_cambium_commanded_rx_power_invent,
     'service_description': 'cambium_commanded_rx_power_invent',
+    'has_perfdata':True,
 }
 
 #################################################################

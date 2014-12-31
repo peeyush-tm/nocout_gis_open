@@ -41,6 +41,7 @@ def check_cambium_vlan_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    vlan = None
     try:
         if info:
             if info[0][0]:
@@ -49,12 +50,13 @@ def check_cambium_vlan_invent(item, _no_params, info):
                 infotext = "%s" % vlan
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[("vlan",vlan)])
 
 
 check_info["cambium_vlan_invent"] = {
     'check_function': check_cambium_vlan_invent,
     'service_description': 'cambium_vlan_invent',
+    'has_perfdata':True,
 }
 
 #################################################################

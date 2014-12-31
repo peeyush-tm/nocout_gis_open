@@ -18,18 +18,29 @@ def get_from_socket(site_name, query):
          Exception: SyntaxError,socket error 
     """
     socket_path = "/omd/sites/%s/tmp/run/live" % site_name
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.connect(socket_path)
+    try:
+    	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    	s.connect(socket_path)
+    except Exception e:
+        raise e
+    s.settimeout(60.0)
     s.send(query)
     s.shutdown(socket.SHUT_WR)
     output = ''
     while True:
-        out = s.recv(100000000)
+        try:
+                out = s.recv(100000000)
+        except socket.timeout,e:
+                print 'socket timeout'
+                err=e.args[0]
+                if err == 'timed out':
+                        sys.exit(1)
         out.strip()
         if not len(out):
-	    break
+            break
         output += out
     return output
+
 
 
 def pivot_timestamp_fwd(timestamp):
@@ -45,8 +56,8 @@ def pivot_timestamp_fwd(timestamp):
            None
     """
     t_stmp = timestamp + timedelta(minutes=-(timestamp.minute % 5))
-    if (timestamp.minute %5) != 0:
-        t_stmp = t_stmp + timedelta(minutes=5)
+    #if (timestamp.minute %5) != 0:
+    t_stmp = t_stmp + timedelta(minutes=5)
 
 
     return t_stmp

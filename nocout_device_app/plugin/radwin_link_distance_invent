@@ -41,6 +41,7 @@ def check_radwin_link_distance_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    link_distance = None
     try:
         if info:
             link_distance = int(info[0][0])
@@ -57,12 +58,13 @@ def check_radwin_link_distance_invent(item, _no_params, info):
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
-    return (state, infotext)
+    return (state, infotext,[("link_distance",link_distance)])
 
 
 check_info["radwin_link_distance_invent"] = {
     'check_function': check_radwin_link_distance_invent,
     'service_description': 'radwin_link_distance_invent',
+    'has_perfdata': True
 }
 
 """

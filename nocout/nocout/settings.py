@@ -278,6 +278,16 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=300),
         'args': ['PMP']
     },
+    'wimax-ss-topology': {
+        'task': 'inventory.tasks.get_topology_with_substations',
+        'schedule': timedelta(seconds=300),
+        'args': ['WiMAX']
+    },
+    'pmp-ss-topology': {
+        'task': 'inventory.tasks.get_topology_with_substations',
+        'schedule': crontab(minute=0, hour=0),
+        'args': ['PMP']
+    },
     'update-sector-frequency': {
         'task': 'inventory.tasks.update_sector_frequency_per_day',
         'schedule': crontab(minute=0, hour=0)

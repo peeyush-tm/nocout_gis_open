@@ -82,7 +82,7 @@ def read_data(start_time, end_time, **kwargs):
 	if start_time is None:
             start_time = end_time - timedelta(minutes=15)
         cur = db.kpi_data.find({
-            "check_timestamp": {"$gt": start_time, "$lt": end_time}
+            "sys_timestamp": {"$gt": start_time, "$lt": end_time}
         })
 	configs1 = config_module.parse_config_obj()
     	for config, options in configs1.items():

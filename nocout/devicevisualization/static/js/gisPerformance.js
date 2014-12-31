@@ -456,10 +456,12 @@ function GisPerformance() {
                             for(var j=0;j<sub_station.length;j++) {
 
                                 var ss_marker_data = sub_station[j],
-                                    ss_perf_info = ss_marker_data.data.param.sub_station,
-                                    ss_pl = perf_self.getKeyValue(ss_perf_info,"pl",true),
-                                    ss_rta = perf_self.getKeyValue(ss_perf_info,"rta",true),
-                                    ckt_id_val = perf_self.getKeyValue(ss_perf_info,"cktid",true),
+                                    ss_static_info = ss_marker_data.data.param.sub_station,
+                                    ss_polled_info = ss_marker_data.data.param.polled_info,
+                                    ss_tooltip_info = JSON.parse(JSON.stringify(ss_static_info)).concat(JSON.parse(JSON.stringify(ss_polled_info))),
+                                    ss_pl = perf_self.getKeyValue(ss_tooltip_info,"pl",true),
+                                    ss_rta = perf_self.getKeyValue(ss_tooltip_info,"rta",true),
+                                    ckt_id_val = perf_self.getKeyValue(ss_tooltip_info,"cktid",true),
                                     ss_perf_url = ss_marker_data.data.perf_page_url ? ss_marker_data.data.perf_page_url : "",
                                     ss_inventory_url = ss_marker_data.data.inventory_url ? ss_marker_data.data.inventory_url : "";
 
@@ -468,9 +470,9 @@ function GisPerformance() {
                                     ptLat            :  ss_marker_data.data.lat,
                                     ptLon            :  ss_marker_data.data.lon,
                                     pointType        :  "sub_station",
-                                    dataset          :  ss_perf_info,
+                                    dataset          :  ss_static_info,
                                     bhInfo           :  [],
-                                    poll_info        :  [],
+                                    poll_info        :  ss_polled_info,
                                     pl               :  ss_pl,
                                     rta              :  ss_rta,
                                     antenna_height   :  ss_marker_data.data.antenna_height,
@@ -1134,13 +1136,15 @@ function GisPerformance() {
     this.getKeyValue = function(objArray,key,returnOnlyVal) {
         var val = "";
         for(var y=objArray.length;y--;) {
-            if($.trim(objArray[y].name) == key) {
-                if(returnOnlyVal) {
-                    val = objArray[y].value;
-                } else {
-                    val = objArray[y];
+            if(objArray[y]) {
+                if($.trim(objArray[y].name) == key) {
+                    if(returnOnlyVal) {
+                        val = objArray[y].value;
+                    } else {
+                        val = objArray[y];
+                    }
+                    break;
                 }
-                break;
             }
         }
 
