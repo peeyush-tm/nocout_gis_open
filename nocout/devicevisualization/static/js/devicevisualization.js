@@ -1280,19 +1280,20 @@ $("#show_hide_label").click(function(e) {
                 labelsArray[x].hide();
             }
         } else {
-            var move_listener_obj = labelsArray[x].moveListener_;
-            if(move_listener_obj) {
-                var keys_array = Object.keys(move_listener_obj);
-                for(var z=0;z<keys_array.length;z++) {
-                    if(typeof move_listener_obj[keys_array[z]] == 'object') {
-                       if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-                            if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
-                                labelsArray[x].setVisible(e.currentTarget.checked);
-                            }
-                       }
-                    }
-                }
-            }
+            labelsArray[x].setVisible(e.currentTarget.checked);
+            // var move_listener_obj = labelsArray[x].moveListener_;
+            // if(move_listener_obj) {
+            //     var keys_array = Object.keys(move_listener_obj);
+            //     for(var z=0;z<keys_array.length;z++) {
+            //         if(typeof move_listener_obj[keys_array[z]] == 'object') {
+            //            if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+            //                 if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
+            //                     labelsArray[x].setVisible(e.currentTarget.checked);
+            //                 }
+            //            }
+            //         }
+            //     }
+            // }
         }
 
     }
@@ -1310,19 +1311,20 @@ $("#show_hide_label").click(function(e) {
                 tooltipInfoLabel[key].hide();
             }
         } else {
-            var move_listener_obj = tooltipInfoLabel[key].moveListener_;
-            if(move_listener_obj) {
-                var keys_array = Object.keys(move_listener_obj);
-                for(var z=0;z<keys_array.length;z++) {
-                    if(typeof move_listener_obj[keys_array[z]] == 'object') {
-                       if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-                            if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
-                                tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
-                            }
-                       }
-                    }
-                }
-            }
+            tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
+            // var move_listener_obj = tooltipInfoLabel[key].moveListener_;
+            // if(move_listener_obj) {
+            //     var keys_array = Object.keys(move_listener_obj);
+            //     for(var z=0;z<keys_array.length;z++) {
+            //         if(typeof move_listener_obj[keys_array[z]] == 'object') {
+            //            if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+            //                 if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
+            //                     tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
+            //                 }
+            //            }
+            //         }
+            //     }
+            // }
         }
     }
 });
