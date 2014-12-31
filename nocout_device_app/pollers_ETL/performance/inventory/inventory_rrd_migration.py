@@ -110,6 +110,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 		service = entry[3]
 		try:				
 			plugin_output = str(entry[5].split('- ')[1])
+			plugin_output=plugin_output.strip()
 		except Exception as e:
 			print e
 			continue

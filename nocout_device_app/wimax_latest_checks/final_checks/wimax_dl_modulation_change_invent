@@ -86,7 +86,7 @@ def connection_telnet_dl_mod_change(hostip, port):
         try:
                 for i,row in enumerate(data.split("\n")):
                         if "downlink modulation changed:" in row:
-                                dl_modulation_change = int(row.split(':')[1])
+                                dl_modulation_change = row.split(':')[1]
                                 break
         except:
 		dl_modulation_change = None
@@ -138,7 +138,7 @@ def check_wimax_dl_modulation_change_invent(item, params, info):
                                         else:
                                                 state =0
 
-					infotext = "%s" % dl_modulation_change
+					infotext = "%s" % int(dl_modulation_change)
     except ValueError:
         infotext = "type_mismatch_value"
     except:
