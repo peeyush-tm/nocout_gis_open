@@ -2140,16 +2140,25 @@ function devicePlottingClass_gmap() {
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
 				    if($.trim(last_selected_label)) {
-				    	var labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false),
+				    	var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
+				    		labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false),
                         	labelHtml = "";
 
                     	if(labelInfoObject) {
-                            labelHtml += $.trim(labelInfoObject['value']);
+                    		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                            labelHtml += shownVal;
                         }
 
 				    	// If any html created then show label on ss
 				    	if(labelHtml) {
-				    		var perf_infobox = gisPerformanceClass.createInfoboxLabel(labelHtml,ssParamLabelStyle,-120,-10,ss_marker.getPosition(),hide_flag);
+				    		var perf_infobox = gisPerformanceClass.createInfoboxLabel(
+				    			labelHtml,
+				    			ssParamLabelStyle,
+				    			-120,
+				    			-10,
+				    			ss_marker.getPosition(),
+				    			hide_flag
+			    			);
 	                        perf_infobox.open(mapInstance, ss_marker);
 	                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = perf_infobox;
 				    	}
@@ -4022,20 +4031,22 @@ function devicePlottingClass_gmap() {
 		// Load Advance Filter
 		gmap_self.loadAdvanceFilters();
 
-		var BsObj = all_devices_loki_db.chain().where(function(obj){
-			var sector = obj.data.param.sector ? obj.data.param.sector : [],
-				isSS = false;
+		// var BsObj = all_devices_loki_db.chain().where(function(obj){
+		// 	var sector = obj.data.param.sector ? obj.data.param.sector : [],
+		// 		isSS = false;
 
-			for(var i=0;i<sector.length;i++) {
-				if(sector[i].sub_station && sector[i].sub_station.length > 0) {
-					isSS = true;
-					break;
-				}
-			}
-			return isSS;
-		}).limit(1).data();
+		// 	for(var i=0;i<sector.length;i++) {
+		// 		if(sector[i].sub_station && sector[i].sub_station.length > 0) {
+		// 			isSS = true;
+		// 			break;
+		// 		}
+		// 	}
+		// 	return isSS;
+		// }).limit(1).data();
 
-		var SSToolTipInfo = BsObj.length && BsObj.length > 0 ? BsObj[0].data.param.sector[0].sub_station[0].data.param.sub_station : false;
+		// var SSToolTipInfo = BsObj.length && BsObj.length > 0 ? BsObj[0].data.param.sector[0].sub_station[0].data.param.sub_station : false;
+
+		var SSToolTipInfo = ss_toolTip_static ? ss_toolTip_static : false;
 		
 		if(last_selected_label) {
 			if($("#apply_label").hasClass("btn-success")) {
@@ -8385,11 +8396,13 @@ function devicePlottingClass_gmap() {
 			for(key in ss_list) {
 
 				var ss_marker = ss_list[key],
+					ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
 					labelHtml = "",
-					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
+					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false);
 
             	if(labelInfoObject) {
-                    labelHtml += $.trim(labelInfoObject['value']);
+            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                    labelHtml += shownVal;
                 }
 
                 var toolTip_infobox = "";
@@ -8425,11 +8438,13 @@ function devicePlottingClass_gmap() {
 
 			for(key in ss_list) {
 				var ss_marker = ss_list[key],
+					ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
 					labelHtml = "",
-					labelInfoObject = gisPerformanceClass.getKeyValue(ss_marker.dataset,last_selected_label,false);
+					labelInfoObject = gisPerformanceClass.getKeyValue(ss_actual_data,last_selected_label,false);
 
             	if(labelInfoObject) {
-                    labelHtml += $.trim(labelInfoObject['value']);
+            		var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                    labelHtml += shownVal;
                 }
 
                 if(window.location.pathname.indexOf("googleEarth") > -1) {

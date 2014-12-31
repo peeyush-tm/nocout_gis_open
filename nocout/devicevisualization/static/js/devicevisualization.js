@@ -1937,9 +1937,10 @@ $("#static_label").change(function(e) {
  * @event click
  */
 $("#apply_label").click(function(e) {
-    var selected_val = $.trim($("#static_label").val());
+    var selected_val = $.trim($("#static_label").val()),
+        selected_text = $.trim($("#static_label option:selected").text());
 
-    if(last_selected_label != "" && selected_val == "") {
+    if(last_selected_label != "" && selected_val == "" && selected_text == 'Select Label') {
         // Call Function to remove ss param label from map & updates button and dropdown
         removeSSParamLabel();
 
