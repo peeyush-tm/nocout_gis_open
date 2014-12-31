@@ -57,7 +57,7 @@ def check_wimax_pmp2_dl_util_bgp(item, _no_params, info):
 			this_time = int(time.time())
 			try:
                         	timedif, rate = get_counter("wimax_pmp2_dl_util_bgp", this_time, saveint(dl_utilization))
-				rate = (rate*8)/(1024*1024)
+				rate = (rate*8)/(1024.0*1024)
                 	except MKCounterWrapped:
                         	wrapped=True
                 	status_list.append(("pmp2_dl_util", "%f" % (rate)))
