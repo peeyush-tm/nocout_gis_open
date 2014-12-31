@@ -3186,7 +3186,7 @@ function devicePlottingClass_gmap() {
 					if(actual_polled_info[i]["show"]) {
 						// Url
 						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
-						text_class = url ? "text-primary" : "";
+						text_class = "text-primary";
 
 						infoTable += "<tr><td class='"+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td><td>"+actual_polled_info[i]['value']+"</td></tr>";
 					}
@@ -3295,7 +3295,7 @@ function devicePlottingClass_gmap() {
 					if(actual_polled_info[i]["show"]) {
 						// Url
 						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
-						text_class = url ? "text-primary" : "";
+						text_class = "text-primary";
 
 						infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td><td>"+actual_polled_info[i]['value']+"</td></tr>";
 					}
