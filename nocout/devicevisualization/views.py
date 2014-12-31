@@ -1950,7 +1950,7 @@ class GISPerfData(View):
 
         return icon
 
-    def get_device_info(self, device_obj, machine_name, device_pl="", substation=False, isStatic=False):
+    def get_device_info(self, device_obj, machine_name, device_pl="", substation=False, is_static=False):
         """ Get Sector/Sub Station device information
 
             Parameters:
@@ -1981,11 +1981,19 @@ class GISPerfData(View):
                                                         }
                                                     ]
         """
+        # get device name
+        device_name = device_obj.device_name
+
+        # get device id (used to make url for perf api data)
+        device_id = device_obj.id
+
+        processed = {}
+
         # device info dictionary
         device_info = list()
         # is device is a substation device than add static inventory parameters in list
-        if substation:
-            if isStatic:
+        if is_static:
+            if substation:
                 # substation
                 substation = ""
                 try:
@@ -2253,119 +2261,113 @@ class GISPerfData(View):
                         'value': ss_sector_frequency
                     }
                 ]
-        # get device name
-        device_name = device_obj.device_name
 
-        # get device id (used to make url for perf api data)
-        device_id = device_obj.id
-
-        processed = {}
-
-        # device network info
-        device_network_info = NetworkStatus.objects.filter(device_name=device_name).values(
-            'service_name', 'data_source', 'current_value', 'sys_timestamp'
-        ).using(alias=machine_name)
-
-        for perf in device_network_info:
-            res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
-            if not res:
-                continue
-            if perf['data_source'] in processed:
-                continue
-            processed[perf['data_source']] = []
-
-            service_name = perf['service_name'].strip().lower()
-
-            perf_info = {
-                "name": name,
-                "title": title,
-                "show": show_gis,
-                "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(
-                    device_id) + "?start_date=&end_date=",
-                "value": perf['current_value'],
-            }
-            device_info.append(perf_info)
-
-        # if device is down than don't show services data
-        if device_pl != "100":
-
-            # to update the info window with all the services
-            # device performance info
-            device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
+        else:
+            # device network info
+            device_network_info = NetworkStatus.objects.filter(device_name=device_name).values(
                 'service_name', 'data_source', 'current_value', 'sys_timestamp'
             ).using(alias=machine_name)
 
-            # device inventory info
-            device_inventory_info = InventoryStatus.objects.filter(device_name=device_name).values(
-                'service_name', 'data_source', 'current_value', 'sys_timestamp'
-            ).using(alias=machine_name)
-
-            # device status info
-            device_status_info = Status.objects.filter(device_name=device_name).values(
-                'service_name', 'data_source', 'current_value', 'sys_timestamp'
-            ).using(alias=machine_name)
-
-            for perf in device_performance_info:
+            for perf in device_network_info:
                 res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
                 if not res:
                     continue
-                if perf['service_name'] in processed:
+                if perf['data_source'] in processed:
                     continue
-                processed[perf['service_name']] = []
+                processed[perf['data_source']] = []
 
-                service_name = perf['service_name'].strip()
+                service_name = perf['service_name'].strip().lower()
 
                 perf_info = {
                     "name": name,
                     "title": title,
                     "show": show_gis,
-                    "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
+                    "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(
                         device_id) + "?start_date=&end_date=",
                     "value": perf['current_value'],
                 }
                 device_info.append(perf_info)
 
-            for perf in device_inventory_info:
-                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
-                if not res:
-                    continue
-                if perf['service_name'] in processed:
-                    continue
-                processed[perf['service_name']] = []
+            # if device is down than don't show services data
+            if device_pl != "100":
 
-                service_name = perf['service_name'].strip()
+                # to update the info window with all the services
+                # device performance info
+                device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
+                    'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                ).using(alias=machine_name)
 
-                perf_info = {
-                    "name": name,
-                    "title": title,
-                    "show": show_gis,
-                    "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
-                        device_id) + "?start_date=&end_date=",
-                    "value": perf['current_value'],
-                }
-                device_info.append(perf_info)
+                # device inventory info
+                device_inventory_info = InventoryStatus.objects.filter(device_name=device_name).values(
+                    'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                ).using(alias=machine_name)
 
-            for perf in device_status_info:
-                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
-                if not res:
-                    continue
-                if perf['service_name'] in processed:
-                    continue
-                processed[perf['service_name']] = []
+                # device status info
+                device_status_info = Status.objects.filter(device_name=device_name).values(
+                    'service_name', 'data_source', 'current_value', 'sys_timestamp'
+                ).using(alias=machine_name)
 
-                service_name = perf['service_name']
+                for perf in device_performance_info:
+                    res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
+                    if not res:
+                        continue
+                    if perf['service_name'] in processed:
+                        continue
+                    processed[perf['service_name']] = []
 
-                perf_info = {
-                    "name": name,
-                    "title": title,
-                    "show": show_gis,
-                    "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
-                        device_id) + "?start_date=&end_date=",
-                    "value": perf['current_value'],
-                }
-                device_info.append(perf_info)
+                    service_name = perf['service_name'].strip()
 
-        # remove duplicate dictionaries in list
+                    perf_info = {
+                        "name": name,
+                        "title": title,
+                        "show": show_gis,
+                        "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
+                            device_id) + "?start_date=&end_date=",
+                        "value": perf['current_value'],
+                    }
+                    device_info.append(perf_info)
+
+                for perf in device_inventory_info:
+                    res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
+                    if not res:
+                        continue
+                    if perf['service_name'] in processed:
+                        continue
+                    processed[perf['service_name']] = []
+
+                    service_name = perf['service_name'].strip()
+
+                    perf_info = {
+                        "name": name,
+                        "title": title,
+                        "show": show_gis,
+                        "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
+                            device_id) + "?start_date=&end_date=",
+                        "value": perf['current_value'],
+                    }
+                    device_info.append(perf_info)
+
+                for perf in device_status_info:
+                    res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
+                    if not res:
+                        continue
+                    if perf['service_name'] in processed:
+                        continue
+                    processed[perf['service_name']] = []
+
+                    service_name = perf['service_name']
+
+                    perf_info = {
+                        "name": name,
+                        "title": title,
+                        "show": show_gis,
+                        "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
+                            device_id) + "?start_date=&end_date=",
+                        "value": perf['current_value'],
+                    }
+                    device_info.append(perf_info)
+
+            # remove duplicate dictionaries in list
         device_info = remove_duplicate_dict_from_list(device_info)
 
         return device_info
@@ -2688,7 +2690,8 @@ class GISPerfData(View):
         substation_info['param']['sub_station'] = self.get_device_info(substation_device,
                                                                        machine_name,
                                                                        device_pl,
-                                                                       substation,True)
+                                                                       substation,
+                                                                       True)
         # Fetch sub station polled info
         substation_info['param']['polled_info'] = self.get_device_info(substation_device,
                                                                        machine_name,
