@@ -648,12 +648,14 @@ function GisPerformance() {
 
                                     var hide_flag = !$("#show_hide_label")[0].checked;
 
-                                    if(last_selected_label && $.trim(last_selected_label)) {
-                                        var labelInfoObject = perf_self.getKeyValue(ss_marker.dataset,last_selected_label,false),
+                                    if(last_selected_label) {
+                                        var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
+                                            labelInfoObject = perf_self.getKeyValue(ss_actual_data,last_selected_label,false),
                                             labelHtml = "";
 
                                         if(labelInfoObject) {
-                                            labelHtml += $.trim(labelInfoObject['value']);
+                                            var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                                            labelHtml += shownVal;
                                         }
                                         // If any html created then show label on ss
                                         if(labelHtml) {
