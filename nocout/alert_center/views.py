@@ -134,6 +134,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
     polled_columns = ["id",
                       "ip_address",
+                      "service_name",
                       "data_source",
                       "device_name",
                       "severity",
@@ -783,6 +784,7 @@ class AlertListingTable(BaseDatatableView):
 
     polled_columns = ["id",
                       "ip_address",
+                      "service_name",
                       "data_source",
                       "device_name",
                       "severity",
