@@ -10,6 +10,8 @@ python aggregation_all.py -r mysql -t 1 -f hourly -d performance_performanceserv
 python aggregation_all.py -r mysql -t 24 -f daily -d performance_performanceservicehourly -d performance_performanceservicedaily
 python aggregation_all.py -r mysql -t 168 -f weekly -d performance_performancestatusdaily -d performance_performancestatusweekly
 python aggregation_all.py -r mysql -t 168 -f weekly -d performance_performanceinventorydaily -d performance_performanceinventoryweekly
+python aggregation_all.py -r mysql -t 720 -f monthly -d performance_performanceserviceweekly -d performance_performanceservicemonthly
+python aggregation_all.py -r mysql -t 8640 -f yearly -d performance_performanceservicemonthly -d performance_performanceserviceyearly
 Options ::
 t - Time frame for read operation [Hours]
 s - Source Mongodb collection
@@ -162,6 +164,14 @@ def quantify_perf_data(host_specific_data):
             pivot_to_weekday = 7 - time.weekday()
             # Pivoting the time to Sunday 23:55:00 [end of present week]
             time += timedelta(days=pivot_to_weekday-1)
+        elif time_frame == 'monthly':
+            # Pivot the time to 23:55:00 of month end
+            time = time.replace(month=time.month+1, day=1, hour=23, minute=55, 
+                    second=0, microsecond=0) - timedelta(days=1)
+        elif time_frame == 'yearly':
+            # Pivot the time to year end
+            time = time.replace(month=12, day=31, hour=23, minute=55,
+                    second=0, microsecond=0)
 
         aggr_data = {
                 'host': host,

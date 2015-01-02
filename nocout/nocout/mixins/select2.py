@@ -12,11 +12,11 @@ class Select2Mixin(object):
     """
     """
     obj_alias = 'alias'
-    required_values = ['id', obj_alias]
 
     def get_queryset(self):
         """
         """
+        required_values = ['id', self.obj_alias]
         qs = super(Select2Mixin, self).get_queryset()
         org_id = self.request.GET.get('org', '0')
         sSearch = self.request.GET.get('sSearch', None)
@@ -28,7 +28,7 @@ class Select2Mixin(object):
 
         if str(qs.model.__name__).strip().lower() == 'sector':
             sector_required_list = ['id', self.obj_alias, 'name', 'sector_configured_on__ip_address', 'sector_id']
-            self.required_values = sector_required_list
+            required_values = sector_required_list
 
         if sSearch:
             #specific cases to handle
@@ -47,7 +47,7 @@ class Select2Mixin(object):
             else:
                 qs = qs.filter(Q(**{"%s__icontains" % self.obj_alias: sSearch}))
 
-        qs = qs.values(*self.required_values)
+        qs = qs.values(*required_values)
         return qs
 
     def get(self, request, *args, **kwargs):
