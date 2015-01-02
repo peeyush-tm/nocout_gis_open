@@ -1182,7 +1182,7 @@ class SingleDeviceAlertDetails(View):
                 for column in range(column_length):
                     worksheet.write(row, column, data_list[row][required_columns[column]], style=style)
 
-            response = HttpResponse(mimetype='application/vnd.ms-excel', content_type='text/plain')
+            response = HttpResponse(content_type='application/vnd.ms-excel')
             start_date_string = datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
             end_date_string = datetime.datetime.fromtimestamp(float(end_date)).strftime("%d/%B/%Y")
             response['Content-Disposition'] = 'attachment; filename=alert_report_{0}_{1}_to_{2}.xls' \

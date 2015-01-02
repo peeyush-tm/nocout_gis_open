@@ -119,7 +119,7 @@ def auth_view(request):
             }
         }
 
-        return HttpResponse(json.dumps(result), mimetype='application/json')
+        return HttpResponse(json.dumps(result), content_type='application/json')
 
     username = request.POST.get('username', '')
     password = request.POST.get('password', '')
@@ -315,7 +315,7 @@ def auth_view(request):
             logger.error(general_exception)
         pass  # log nothing
 
-    return HttpResponse(json.dumps(result), mimetype='application/json')
+    return HttpResponse(json.dumps(result), content_type='application/json')
 
 
 def logout(request):
@@ -343,4 +343,4 @@ def reset_cache(request):
     """
 
     cache.clear()
-    return HttpResponse(json.dumps({'code': 0, 'message': 'Cache has been cleared.'}), mimetype='application/json')
+    return HttpResponse(json.dumps({'code': 0, 'message': 'Cache has been cleared.'}), content_type='application/json')

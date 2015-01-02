@@ -257,4 +257,4 @@ def device_group_devices_wrt_organization(request):
     for index in range(len(devices)):
         response_string+='<option value={0}>{1}</option>'.format(*map(str, devices[index]))
 
-    return HttpResponse(json.dumps({'response': response_string }), mimetype='application/json')
+    return HttpResponse(json.dumps({'response': response_string }), content_type='application/json')

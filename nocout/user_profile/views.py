@@ -336,7 +336,7 @@ def change_password(request):
                     }
                 }
             }
-            return HttpResponse(json.dumps(result), mimetype='application/json')
+            return HttpResponse(json.dumps(result), content_type='application/json')
 
         else:
             if '_session_security' in request.session:
@@ -354,7 +354,7 @@ def change_password(request):
                     }
                 }
             }
-            return HttpResponse(json.dumps(result), mimetype='application/json')
+            return HttpResponse(json.dumps(result), content_type='application/json')
     elif request.POST.get('action') == 'logout':
         #since we are having auto-logoff functionality with us as well
         #we need to check for session parameter _session_security
@@ -373,4 +373,4 @@ def change_password(request):
                 }
             }
         }
-        return HttpResponse(json.dumps(result), mimetype='application/json')
+        return HttpResponse(json.dumps(result), content_type='application/json')
