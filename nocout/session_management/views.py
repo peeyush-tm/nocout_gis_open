@@ -227,7 +227,7 @@ def dialog_action(request):
                     }
                 }
             }
-        return HttpResponse(json.dumps(result), mimetype='application/json')
+        return HttpResponse(json.dumps(result), content_type='application/json')
 
     elif request.POST.get('action') == 'logout':
         #since we are having auto-logoff functionality with us as well
@@ -248,7 +248,7 @@ def dialog_action(request):
                 }
             }
         }
-        return HttpResponse(json.dumps(result), mimetype='application/json')
+        return HttpResponse(json.dumps(result), content_type='application/json')
 
 @csrf_exempt
 def change_user_status(request):
@@ -278,7 +278,7 @@ def change_user_status(request):
         }
     }
 
-    return HttpResponse(json.dumps(result), mimetype='application/json')
+    return HttpResponse(json.dumps(result), content_type='application/json')
 
 @csrf_exempt
 def dialog_for_page_refresh(request):
@@ -301,7 +301,7 @@ def dialog_for_page_refresh(request):
         }
     }
 
-    return HttpResponse(json.dumps(result), mimetype='application/json')
+    return HttpResponse(json.dumps(result), content_type='application/json')
 
 @csrf_exempt
 def dialog_expired_logout_user(request):
@@ -320,7 +320,7 @@ def dialog_expired_logout_user(request):
             }
         }
     }
-    return HttpResponse(json.dumps(result), mimetype='application/json')
+    return HttpResponse(json.dumps(result), content_type='application/json')
 
 @csrf_exempt
 def logout_user(request):
@@ -338,7 +338,7 @@ def logout_user(request):
             "objects": {}
         }
     }
-    return HttpResponse(json.dumps(result), mimetype='application/json')
+    return HttpResponse(json.dumps(result), content_type='application/json')
 
 
 

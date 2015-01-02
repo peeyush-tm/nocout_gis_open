@@ -249,7 +249,7 @@ def inventory_details_wrt_organization(request):
 
     return HttpResponse(
         json.dumps({'response': {'device_groups': response_device_groups, 'user_groups': response_user_group}}), \
-        mimetype='application/json')
+        content_type='application/json')
 
 
 #**************************************** Antenna *********************************************
@@ -2711,7 +2711,7 @@ class ExcelWriterRowByRow(View):
         except Exception as e:
             logger.info(e.message)
 
-        response = HttpResponse(mimetype='application/vnd.ms-excel')
+        response = HttpResponse(content_type='application/vnd.ms-excel')
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
         wb.save(response)
