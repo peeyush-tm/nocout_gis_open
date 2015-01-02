@@ -119,12 +119,6 @@ def quantify_events_data(host_specific_data):
 			time = time.replace(hour=0, minute=0, second=0, microsecond=0)
 			# Pivot the time to next day time frame
 			time += timedelta(days=1)
-		elif time_frame == 'weekly':
-			# Pivot the time to 23:55:00
-			time = doc.get('time').replace(hour=23, minute=55, second=0, microsecond=0)
-			pivot_to_weekday = 7 - time.weekday()
-			# Pivoting the time to Sunday 23:55:00 [End of present week]
-			time += timedelta(days=pivot_to_weekday-1)
 		aggr_data = {
 				'host': host,
 				'service': service,
@@ -165,7 +159,7 @@ def quantify_events_data(host_specific_data):
 			existing_doc = existing_doc[0]
 			max_val = max([aggr_data.get('max'), existing_doc.get('max')])
 			min_val = min([aggr_data.get('min'), aggr_data.get('min')])
-			avg_val = sum([max_val + min_val])/2
+			avg_val = sum([max_val + min_val])/2.0
 			# Update the count for service state
 			current_value = aggr_data['current_value'] + 1
 			aggr_data.update({
