@@ -14,7 +14,8 @@ from mysql.connector import connect
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 
 
-def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_format=None):
+def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_format=None, kpi=False):
+	print start_time, end_time
 	db = None
 	docs = []
 	db = mongo_module.mongo_conn(
@@ -22,8 +23,12 @@ def read_data_from_mongo(source_perf_table, start_time, end_time, configs, t_for
 			port=int(configs.get('port')),
 			db_name='nocout') 
 	if db:
-		cur = db[source_perf_table].find({'local_timestamp': {'$gt': start_time, '$lt': end_time}})
-		docs = list(cur)
+		if not kpi:
+			cur = db[source_perf_table].find({'local_timestamp': {'$gt': start_time, '$lt': end_time}})
+			docs = list(cur)
+		else:
+			cur = db[source_perf_table].find({'sys_timestamp': {'$gt': start_time, '$lt': end_time}})
+			docs = list(cur)
 	return docs
 
 
