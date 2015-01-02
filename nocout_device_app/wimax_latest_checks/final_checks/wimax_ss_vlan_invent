@@ -62,10 +62,10 @@ def connection_telnet_ss_vlan(host_name, port,mac):
         try:
                 for i,row in enumerate(data.split("\n")):
                         if "VlanTag" in row:
-                                params_list = [r for r in row.split(',')]
+				params_list = [r for r in row.split(',')]
 				vlan_row = params_list[1]
 				ss_vlan  = int(vlan_row.split('=')[1])
-                                break
+				break
 		if not ss_vlan:
 			ss_vlan = "vlan-miss"
 			
