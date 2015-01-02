@@ -2366,7 +2366,10 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         data-filled forms and errors.
         """
         icon_settings = IconSettings.objects.all()
+        is_admin = False
         icon_details_selected = dict()
+        if 'admin' in self.request.path:
+            is_admin = True
         icon_settings_values_list = [ { key: form.data[key] }  for key in self.icon_settings_keys if form.data[key]]
         for icon_setting in icon_settings_values_list:
             icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
@@ -2375,7 +2378,8 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
                                   icon_settings=icon_settings,
-                                  icon_details_selected=icon_details_selected))
+                                  icon_details_selected=icon_details_selected,
+                                  is_admin=is_admin))
 
 
 class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
@@ -2462,7 +2466,10 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         data-filled forms and errors.
         """
         icon_settings = IconSettings.objects.all()
+        is_admin = False
         icon_details = list()
+        if 'admin' in self.request.path:
+            is_admin = True
         icon_details_selected = dict()
         if form.instance.icon_settings!='NULL':
             form.instance.icon_settings = eval(form.instance.icon_settings)
@@ -2473,7 +2480,8 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
                                   icon_settings=icon_settings,
-                                  icon_details_selected=icon_details_selected))
+                                  icon_details_selected=icon_details_selected,
+                                  is_admin=is_admin))
 
 
 class ServiceThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):

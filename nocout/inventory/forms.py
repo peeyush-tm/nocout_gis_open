@@ -1294,13 +1294,17 @@ class ServiceThematicSettingsForm(forms.ModelForm):
         Name unique validation
         """
         name = self.cleaned_data['name']
-        names = ThematicSettings.objects.filter(name=name)
+        thematic_name = ThematicSettings.objects.filter(name=name)
+        threshold_name = ThresholdConfiguration.objects.filter(name=name)
+        live_polling_name = LivePollingSettings.objects.filter(name=name)
         try:
             if self.id:
-                names = names.exclude(pk=self.id)
+                thematic_name = thematic_name.exclude(pk=self.id)
+                threshold_name = list()
+                live_polling_name = list()
         except Exception as e:
             logger.info(e.message)
-        if names.count() > 0:
+        if thematic_name.count() > 0 or len(threshold_name) >0 or len(live_polling_name) > 0:
             raise ValidationError('This name is already in use.')
         return name
 
