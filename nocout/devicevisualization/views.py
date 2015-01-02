@@ -2352,6 +2352,9 @@ class GISPerfData(View):
 
             sds_name = perf['data_source'].strip()
 
+            if sds_name not in ['pl', 'rta']:
+                sds_name = service_name + "_" + sds_name
+
             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                             if sds_name in SERVICE_DATA_SOURCE \
                             else None
