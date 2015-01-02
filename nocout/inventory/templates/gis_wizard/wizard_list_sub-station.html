@@ -4,6 +4,10 @@
 {% block content_title %}Inventory Stitching {% endblock %}
 {% block content_description %}List Sub Station {% endblock %}
 {% block content %}
+        {% if perms.inventory.add_basestation %}
+        <p><a href="{% url 'gis-wizard-base-station-select' %}"><i class="fa fa-plus">&nbsp;</i> Start Gis Wizard</a></p>
+        {% endif %}
+
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
