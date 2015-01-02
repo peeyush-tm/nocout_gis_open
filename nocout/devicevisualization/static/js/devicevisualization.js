@@ -721,13 +721,15 @@ function get_page_status() {
 $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $.trim($(this).val());
     defaultIconSize= val;
+
+    current_icon_size = val;
+    $.cookie("markerIconSize", val, {path: '/', secure : true});
+    
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.updateMarkersSize(val);
     } else if (window.location.pathname.indexOf("googleEarth") > -1) {
         earth_instance.updateAllMarkersWithNewIcon(val);
     } else {
-        current_icon_size = val;
-        $.cookie("markerIconSize", val, {path: '/', secure : true});
         networkMapInstance.updateAllMarkersWithNewIcon_gmap(val);
         
     }
