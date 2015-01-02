@@ -8,7 +8,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	var format, domEl, layers= {}, that= this;
 
 	format = whiteMapSettings.format; 
-	domEl= whiteMapSettings.domElement;
+	domEl = whiteMapSettings.domElement;
 
 	//Options for our White Map. Add navigation, panZoombar bar and mouse position
 	var wmap_options = { 
@@ -297,11 +297,18 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 	Select Control for BS, SS, Devices, Lines and Sectors Layer[Click event]
 	 */
 		//Hover Control for Openlayers layer
-		var hoverControl = new OpenLayers.Control.SelectFeature( [layers.markersLayer, layers.markerDevicesLayer],  { 
-			hover: true ,
+		var hoverControl = new OpenLayers.Control.SelectFeature([layers.markersLayer, layers.markerDevicesLayer], { 
+			hover: false,
+			click : true,
 			highlightOnly: true,
 			renderIndent: "temporary",
 			eventListeners: {
+				onfeatureselected: function(e) {
+					console.log(e);
+					// setTimeout(function() {
+					// 	whiteMapClass.mouseOverEvent(e);
+					// }, 20);
+				},
 				beforefeaturehighlighted: function(e) {
 					whiteMapClass.mouseOutEvent();
 				},
@@ -317,7 +324,18 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		} );
 
 		//Select Control for Openlayers layer.
-		var selectCtrl = new OpenLayers.Control.SelectFeature( [layers. stateLabelLayer,layers.markersLayer, layers.markerDevicesLayer, layers.linesLayer, layers.sectorsLayer],  { clickout: true } );
+		var selectCtrl = new OpenLayers.Control.SelectFeature(
+			[
+				layers.stateLabelLayer,
+				layers.markersLayer,
+				layers.markerDevicesLayer,
+				layers.linesLayer,
+				layers.sectorsLayer
+			],
+			{
+				clickout: true
+			}
+		);
 
 		//Add control to the map
 		ccpl_map.addControl(hoverControl);
@@ -328,14 +346,14 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		selectCtrl.activate();
 
 		layers.stateLabelLayer.events.on({
-			"featureselected": function(e) {
+			featureselected: function(e) {
 				var feature = e.feature;
 				gmap_self.state_label_clicked(feature.attributes.state_param);
 			}
 		});
 
 		layers.markersLayer.events.on({
-			"featureselected": function(e) {
+			featureselected: function(e) {
 				var feature = e.feature;
 				that.layerFeatureClicked(feature);
 				selectCtrl.unselectAll();
@@ -344,7 +362,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		});
 
 		layers.markerDevicesLayer.events.on({
-			"featureselected": function(e) {
+			featureselected: function(e) {
 				var feature = e.feature;
 				that.layerFeatureClicked(feature);
 				selectCtrl.unselectAll();
@@ -353,7 +371,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		});
 
 		layers.linesLayer.events.on({
-			"featureselected": function(e) {
+			featureselected: function(e) {
 				var feature = e.feature;
 				that.layerFeatureClicked(feature);
 				selectCtrl.unselectAll();
@@ -362,7 +380,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		});
 
 		layers.sectorsLayer.events.on({
-			"featureselected": function(e) {
+			featureselected: function(e) {
 				var feature = e.feature;
 				that.layerFeatureClicked(feature);
 				selectCtrl.unselectAll();
@@ -473,12 +491,22 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
  * @return {OpenLayer Vector}      OpenLayer Vector feature created
  */
 WhiteMapClass.prototype.createOpenLayerVectorMarker= function(size, iconUrl, lon, lat, additionalInfo) {
-	var feature= "", point = new OpenLayers.Geometry.Point(lon, lat);
+
+	var feature= "",
+		point = new OpenLayers.Geometry.Point(lon, lat);
 	//If size and iconUrl is present, create Vector feature using those
 	if(size && iconUrl) {
-		feature = new OpenLayers.Feature.Vector(point, {}, {externalGraphic: iconUrl, graphicHeight: size.h, graphicWidth: size.w});
+		feature = new OpenLayers.Feature.Vector(
+			point,
+			{},
+			{
+				externalGraphic: iconUrl,
+				graphicHeight: size.h,
+				graphicWidth: size.w
+			}
+		);
 	} else {
-		var feature = new OpenLayers.Feature.Vector(point, {});
+		feature = new OpenLayers.Feature.Vector(point, {});
 	}
 
 	//Add additional Info to the feature
@@ -488,6 +516,7 @@ WhiteMapClass.prototype.createOpenLayerVectorMarker= function(size, iconUrl, lon
 			feature[key] = additionalInfo[key];
 		}
 	}
+
 	//return feature
 	return feature;
 }

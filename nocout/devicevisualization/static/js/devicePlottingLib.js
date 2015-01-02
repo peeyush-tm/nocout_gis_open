@@ -8384,13 +8384,17 @@ function devicePlottingClass_gmap() {
 	            } else if(window.location.pathname.indexOf("white_background") > -1) {
             	    toolTip_infobox = new OpenLayers.Popup(key,
             	    	new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-            	    	null,
+            	    	new OpenLayers.Size(110,25),
             	    	labelHtml,
             	    	false
         	    	);
         	    	
 					ccpl_map.addPopup(toolTip_infobox);
-        	    	toolTip_infobox.updateSize();
+					// Shift label to left side of marker
+                    var current_left = $("#"+key).position().left;
+                    current_left = current_left - 125;
+                    $("#"+key).css("left",current_left+"px");
+        	    	// toolTip_infobox.updateSize();
 	            } else {
 	            	toolTip_infobox = gisPerformanceClass.createInfoboxLabel(
                         labelHtml,
@@ -8428,13 +8432,17 @@ function devicePlottingClass_gmap() {
 	                } else {
 		            	var toolTip_infobox = new OpenLayers.Popup(key,
 	            	    	new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-	            	    	null,
+	            	    	new OpenLayers.Size(110,25),
 	            	    	labelHtml,
 	            	    	false
 	        	    	);
 
 						ccpl_map.addPopup(toolTip_infobox);
-	        	    	toolTip_infobox.updateSize();
+						// Shift label to left side of marker
+                        var current_left = $("#"+key).position().left;
+                        current_left = current_left - 125;
+                        $("#"+key).css("left",current_left+"px");
+	        	    	// toolTip_infobox.updateSize();
 						tooltipInfoLabel[key] = toolTip_infobox;
 					}
 	            } else {

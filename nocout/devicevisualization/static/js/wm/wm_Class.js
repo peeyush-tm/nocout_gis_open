@@ -153,9 +153,10 @@ function WhiteMapClass() {
 						bsMarker.move(finalLatLong);
 						markerSpiderfied = feature;
 					} else {
-						var sector = bsData.data.param.sector[i];
-						var sectorMarker = allMarkersObject_wmap['sector_device']['sector_'+sector.sector_configured_on];
-						var xyDirection= "";
+						var sector = bsData.data.param.sector[i],
+							sectorMarker = sector.sector_configured_on ? allMarkersObject_wmap['sector_device']['sector_'+sector.sector_configured_on] : "",
+							xyDirection = "";
+
 						if(ccpl_map.getZoom() < 9) {
 							xyDirection = getAtXYDirection(currentAngle, 7, feature.ptLon, feature.ptLat);
 						} else {
@@ -171,10 +172,9 @@ function WhiteMapClass() {
 							
 						}					
 
-						var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat);
-											
-						var start_point = new OpenLayers.Geometry.Point(feature.ptLon,feature.ptLat);
-						var end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
+						var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat),
+							start_point = new OpenLayers.Geometry.Point(feature.ptLon,feature.ptLat),
+							end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
 
 						ccpl_map.getLayersByName("Devices")[0].addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
 						ccpl_map.getLayersByName("Devices")[0].addFeatures([sectorMarker]);
@@ -1159,9 +1159,52 @@ function WhiteMapClass() {
 				// ccpl_map.getLayersByName("Lines")[0].redraw();
 				previousValue= selectedValue;
 			}
-		}
+		};
+
+		/**
+		 * This function returns marker width & height object as per given type.
+		 * @method getMarkerSize_wmap
+		 * @param isBaseStation {boolean}, It states that the marker size is for BS or for any other markers(True in case of BS else False).
+		 */
+		this.getMarkerSize_wmap = function(isBaseStation) {
+
+			var largeur = 32/1.4,
+				hauteur = 37/1.4,
+				divideBy = 0.8,
+				anchorX = -0.2,
+				markerSizeObj = {
+					"width"   : 0,
+					"height"  : 0,
+					"xOffset" : 0,
+					"yOffset" : 0
+				};
+
+			if(isBaseStation) {
+				largeur = 20/1.4;
+				hauteur = 40/1.4;
+			}
+
+			if(current_icon_size == 'small') {
+				divideBy = 1.4;
+				anchorX = 0.4;
+			} else if(current_icon_size == 'medium') {
+				divideBy = 1;
+				anchorX = 0;
+			} else {
+				divideBy = 0.8;
+				anchorX = -0.2;
+			}
+
+			markerSizeObj["width"] = Math.ceil(largeur/divideBy);
+			markerSizeObj["height"] = Math.ceil(hauteur/divideBy);
+			markerSizeObj["xOffset"] = Math.ceil(16-(16*anchorX));
+			markerSizeObj["yOffset"] = Math.ceil(hauteur/divideBy);
+
+			return markerSizeObj;
+		};
+
 		/*
-		This function toggles all Station Marker
+		 * This function toggles all Station Marker
 		s size based on the Value selected in the dropdown.
 		 */
 		this.updateMarkersSize = function(iconSize) {
@@ -1817,15 +1860,22 @@ function WhiteMapClass() {
 		 */
 		
 	    this.plotDevices_wmaps = function(bs_ss_devices, stationType) {
+
 			if(isDebug) {
 				console.log("Plot Devices Function");
 				console.log("Plot Devices Start Time :- "+ new Date().toLocaleString());
 			}
 			var zoom_level = ccpl_map.getZoom(),
 				hide_flag = !$("#show_hide_label")[0].checked,
-				icon = base_url+"/static/img/icons/bs.png", 
-				bs_size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height),
-				devices_size = new OpenLayers.Size(whiteMapSettings.devices_size.medium.width, whiteMapSettings.devices_size.medium.height);
+				icon = base_url+"/static/img/icons/bs.png",
+				bs_size_obj = global_this.getMarkerSize_wmap(true),
+				bs_width = bs_size_obj.width ? bs_size_obj.width : whiteMapSettings.size.medium.width,
+				bs_height = bs_size_obj.height ? bs_size_obj.height : whiteMapSettings.size.medium.height,
+				bs_size = new OpenLayers.Size(bs_width, bs_height),
+				other_size_obj = global_this.getMarkerSize_wmap(false),
+				other_width = other_size_obj.width ? other_size_obj.width : whiteMapSettings.devices_size.medium.width,
+				other_height = other_size_obj.height ? other_size_obj.height : whiteMapSettings.devices_size.medium.height,
+				devices_size = new OpenLayers.Size(other_width, other_height);
 
 			//Loop through the bs_ss_devices
 			for(var i=0; i< bs_ss_devices.length; i++) {
@@ -2092,6 +2142,12 @@ function WhiteMapClass() {
 					    var ss_marker = global_this.createOpenLayerVectorMarker(devices_size, ss_marker_object.icon, ss_marker_object.ptLon, ss_marker_object.ptLat, ss_marker_object);
 					    bs_ss_markers.push(ss_marker);
 					    // ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
+					    var show_ss_len = $("#showAllSS:checked").length;
+
+				    	// Hide Feature if Show SS checkbox unchecked
+					    if(show_ss_len <= 0) {
+					    	hideOpenLayerFeature(ss_marker);
+				    	}
 
 					    if($.trim(last_selected_label)) {
 					    	var labelHtml = "";
@@ -2109,9 +2165,9 @@ function WhiteMapClass() {
 			            	    	labelHtml,
 			            	    	false
 			        	    	);
-			        	    	
 								ccpl_map.addPopup(toolTip_infobox);
-			        	    	toolTip_infobox.updateSize();
+			        	    	toolTip_infobox.autoSize = true;
+			        	    	// toolTip_infobox.updateSize();
 
 		                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = toolTip_infobox;
 					    	}
@@ -2162,6 +2218,12 @@ function WhiteMapClass() {
 
 						    	ccpl_map.getLayersByName("Lines")[0].addFeatures([ss_link_line]);
 
+						    	var isLineChecked = $("#showConnLines:checked").length;
+
+						    	if(isLineChecked <= 0) {
+									hideOpenLayerFeature(ss_link_line);
+						    	}
+
 						    	ssLinkArray.push(ss_link_line);
 						    	ssLinkArray_filtered = ssLinkArray;
 
@@ -2205,7 +2267,7 @@ function WhiteMapClass() {
 					gmap_self.getBasicFilters();
 				}
 
-				global_this.updateMarkersSize('medium');
+				// global_this.updateMarkersSize('medium');
 			}
 
 			if(bs_ss_markers.length> 0) {

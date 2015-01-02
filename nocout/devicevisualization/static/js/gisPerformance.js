@@ -556,14 +556,24 @@ function GisPerformance() {
                                     ss_marker_object['clusterIcon'] = ss_marker_icon;
                                     ss_marker_object['layerReference'] = ccpl_map.getLayersByName("Markers")[0];
 
-                                    if(show_ss_len > 0) {
-                                        ss_marker_object['map'] = '';
-                                    }
+                                    var other_size_obj = whiteMapClass.getMarkerSize_wmap(false),
+                                        other_width = other_size_obj.width ? other_size_obj.width : whiteMapSettings.devices_size.medium.width,
+                                        other_height = other_size_obj.height ? other_size_obj.height : whiteMapSettings.devices_size.medium.height;
 
-                                    var size = new OpenLayers.Size(32, 37);
+                                    var size = new OpenLayers.Size(other_width, other_height);
                                     /*Create SS Marker*/
-                                    var ss_marker = whiteMapClass.createOpenLayerVectorMarker(size, ss_marker_icon, ss_marker_data.data.lon, ss_marker_data.data.lat, ss_marker_object);
-                                    // ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
+                                    var ss_marker = whiteMapClass.createOpenLayerVectorMarker(
+                                        size,
+                                        ss_marker_icon,
+                                        ss_marker_data.data.lon,
+                                        ss_marker_data.data.lat,
+                                        ss_marker_object
+                                    );
+                                    
+                                    // If show SS checkbox is unchecked then hide SS
+                                    if(show_ss_len <= 0) {
+                                        hideOpenLayerFeature(ss_marker);
+                                    }
 
                                     new_plotted_ss.push(ss_marker);
 
@@ -583,21 +593,28 @@ function GisPerformance() {
                                         var labelHtml = "";
                                         for(var z=ss_marker.dataset.length;z--;) {
                                             if($.trim(ss_marker.dataset[z]['name']) == $.trim(last_selected_label)) {
-                                                labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
+                                                labelHtml += "("+$.trim(ss_marker.dataset[z]['value'])+")";
                                             }
                                         }
                                         // If any html created then show label on ss
                                         if(labelHtml) {
-                                            var toolTip_infobox = new OpenLayers.Popup(key,
+                                            var toolTip_infobox = new OpenLayers.Popup('ss_'+ss_marker.name,
                                                 new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-                                                null,
+                                                new OpenLayers.Size(110,25),
                                                 labelHtml,
                                                 false
                                             );
-                                            
                                             ccpl_map.addPopup(toolTip_infobox);
-                                            toolTip_infobox.updateSize();
 
+                                            // Shift label to left side of marker
+                                            var current_left = $("#ss_"+ss_marker.name).position().left;
+                                            current_left = current_left - 125;
+                                            $("#ss_"+ss_marker.name).css("left",current_left+"px");
+
+                                            // If show/hide checkbox is unchecked then hide label
+                                            if(hide_flag) {
+                                                toolTip_infobox.hide();
+                                            }
                                             tooltipInfoLabel['ss_'+ss_marker.name] = toolTip_infobox;    
                                         }
                                     }
@@ -614,7 +631,6 @@ function GisPerformance() {
                                     if(show_ss_len > 0) {
                                         ss_marker_object['map'] = mapInstance;
                                     }
-
 
                                     /*Create SS Marker*/
                                     var ss_marker = new google.maps.Marker(ss_marker_object);
@@ -763,6 +779,12 @@ function GisPerformance() {
                                     var ss_link_line = whiteMapClass.plotLines_wmap(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
 
                                     ccpl_map.getLayersByName("Lines")[0].addFeatures([ss_link_line]);
+
+                                    // If show Connection Line checkbox is unchecked then hide connection Line
+                                    if(!isLineChecked > 0) {
+                                        hideOpenLayerFeature(ss_link_line);
+                                    }
+
                                     ssLinkArray.push(ss_link_line);
                                     ssLinkArray_filtered = ssLinkArray;
                                     allMarkersObject_wmap['path']['line_'+ss_marker_data.name] = ss_link_line;
@@ -843,23 +865,25 @@ function GisPerformance() {
                                 // Create Label for Perf Value
                                 var existing_index = -1;
                                 for (var x = 0; x < labelsArray.length; x++) {
-                                    var move_listener_obj = labelsArray[x].moveListener_;
-                                    if (move_listener_obj) {
-                                        var keys_array = Object.keys(move_listener_obj);
-                                        for(var z=0;z<keys_array.length;z++) {
-                                            if(typeof move_listener_obj[keys_array[z]] == 'object') {
-                                               if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-                                                    if(($.trim(move_listener_obj[keys_array[z]]["name"]) == $.trim(ss_marker.name)) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == $.trim(ss_marker.bs_name))) {
-                                                        existing_index = x;
-                                                        if(window.location.pathname.indexOf("googleEarth") > -1) {
-                                                            labelsArray[x].setVisibility(false);
-                                                        } else if (window.location.pathname.indexOf("white_background") > -1) {
-                                                            labelsArray[x].destroy();
-                                                        } else {
+                                    if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                        labelsArray[x].setVisibility(false);
+                                    } else if (window.location.pathname.indexOf("white_background") > -1) {
+                                        if(labelsArray[x].id) {
+                                            labelsArray[x].destroy();
+                                        }
+                                    } else {
+                                        var move_listener_obj = labelsArray[x].moveListener_;
+                                        if (move_listener_obj) {
+                                            var keys_array = Object.keys(move_listener_obj);
+                                            for(var z=0;z<keys_array.length;z++) {
+                                                if(typeof move_listener_obj[keys_array[z]] == 'object') {
+                                                   if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+                                                        if(($.trim(move_listener_obj[keys_array[z]]["name"]) == $.trim(ss_marker.name)) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == $.trim(ss_marker.bs_name))) {
+                                                            existing_index = x;
                                                             labelsArray[x].close();
                                                         }
-                                                    }
-                                               }
+                                                   }
+                                                }
                                             }
                                         }
                                     }
@@ -895,15 +919,23 @@ function GisPerformance() {
                                         ss_marker_data.perf_val = perf_val;
                                         //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
                                     } else if (window.location.pathname.indexOf("white_background") > -1) {
-                                       var toolTip_infobox = new OpenLayers.Popup("perfLabel_"+ss_marker.name,
+                                       var perfLabel_infobox = new OpenLayers.Popup("perfLabel_"+ss_marker.name,
                                             new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-                                            null,
+                                            new OpenLayers.Size(90,25),
                                             perf_val,
                                             false
                                         );
-                                        ccpl_map.addPopup(toolTip_infobox);
-                                        toolTip_infobox.updateSize(); 
-                                        labelsArray.push(toolTip_infobox);
+                                        ccpl_map.addPopup(perfLabel_infobox);
+
+                                        var current_left = $("#perfLabel_"+ss_marker.name).position().left;
+                                        current_left = current_left + 10;
+                                        $("#perfLabel_"+ss_marker.name).css("left",current_left+"px");
+
+                                        // If show/hide checkbox is unchecked then hide label
+                                        if(hide_flag) {
+                                            perfLabel_infobox.hide();
+                                        }
+                                        labelsArray.push(perfLabel_infobox);
                                     } else {
                                         var perf_infobox = perf_self.createInfoboxLabel(
                                             perf_val,
@@ -1044,14 +1076,21 @@ function GisPerformance() {
 
             updateGoogleEarthPlacemark(marker, old_icon_obj);
         } else if (window.location.pathname.indexOf("white_background") > -1) {
+
             var iconUrl = base_url+"/"+new_icon,
-                old_icon_obj = iconUrl;
+                old_icon_obj = iconUrl,
+                other_size_obj = whiteMapClass.getMarkerSize_wmap(false),
+                other_width = other_size_obj.width ? other_size_obj.width : whiteMapSettings.devices_size.medium.width,
+                other_height = other_size_obj.height ? other_size_obj.height : whiteMapSettings.devices_size.medium.height;
+
             // Update sector marker icon
             marker.attributes.icon = hiddenIconObj;
             marker.attributes.clusterIcon = hiddenIconObj;
             marker.attributes.oldIcon = old_icon_obj;
             marker.oldIcon = old_icon_obj;
             marker.style['externalGraphic'] = old_icon_obj;
+            marker.style['graphicWidth'] = other_width;
+            marker.style['graphicHeight'] = other_height;
             var sectorMarkerLayer = marker.layer ? marker.layer : marker.layerReference;
             sectorMarkerLayer.redraw();
         } else {
@@ -1091,16 +1130,19 @@ function GisPerformance() {
             // Remove SS if exists
             if (allMarkersObject_wmap['sub_station']['ss_'+ss_name]){
                 hideOpenLayerFeature(allMarkersObject_wmap['sub_station']['ss_'+ss_name]);
+                allMarkersObject_wmap['sub_station']['ss_'+ss_name].destroy();
                 delete allMarkersObject_wmap['sub_station']['ss_'+ss_name];
             }
             // Remove line if exists
             if(allMarkersObject_wmap['path']['line_'+ss_name]) {
                 hideOpenLayerFeature(allMarkersObject_wmap['path']['line_'+ss_name]);
+                allMarkersObject_wmap['path']['line_'+ss_name].destroy();
                 delete allMarkersObject_wmap['path']['ss_'+ss_name];
             }
             // Remove label if exists
             if(tooltipInfoLabel['ss_'+ss_name]) {
-                tooltipInfoLabel['ss_'+ss_name].setVisibility(false);
+                tooltipInfoLabel['ss_'+ss_name].destroy();
+                // tooltipInfoLabel['ss_'+ss_name].setVisibility(false);
                 delete tooltipInfoLabel['ss_'+ss_name];
             }
         } else {
