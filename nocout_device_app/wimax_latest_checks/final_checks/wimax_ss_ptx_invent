@@ -49,12 +49,13 @@ def check_wimax_ss_ptx_invent(item, params, info):
         if info:
             if info[0][0]:
                 ptx = int(info[0][0])
+		ptx = ptx/100 
 		if ptx > crit:
 			state = 2
 		elif ptx >= warn and ptx <= crit:
 			state = 1
 		else:
-			state = 0 
+			state = 0
                 infotext = "%d" % ptx
     except ValueError:
         infotext = "type_mismatch_value"
