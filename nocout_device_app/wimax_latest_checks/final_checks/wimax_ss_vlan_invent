@@ -61,10 +61,14 @@ def connection_telnet_ss_vlan(host_name, port,mac):
 	ss_vlan = None
         try:
                 for i,row in enumerate(data.split("\n")):
-                        if "SS-VLAN:" in row:
-                                params_list = [r for r in row.split()]
-                                ss_vlan = int(params_list[1])
-                                break
+                        if "VlanTag" in row:
+				params_list = [r for r in row.split(',')]
+				vlan_row = params_list[1]
+				ss_vlan  = int(vlan_row.split('=')[1])
+				break
+		if not ss_vlan:
+			ss_vlan = "vlan-miss"
+			
         except:
 		ss_vlan = None
 	return ss_vlan
