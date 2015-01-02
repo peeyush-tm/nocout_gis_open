@@ -613,8 +613,9 @@ def format_threshold(warn, crit, service):
             return float(warn), float(crit)
         except:
             if service in wimax_mod_services:
-                return map(lambda x: x.strip(), warn.split(',')), \
-                       (map(lambda x: x.strip(), crit.split(',')))
+                l1 = map(lambda s: ''.join([e for e in s if e.isalnum()]), warn.split(','))
+                l2 = map(lambda s: ''.join([e for e in s if e.isalnum()]), crit.split(','))
+                return (l1, l2)
             return str(warn), str(crit)
     else:
         return ()
