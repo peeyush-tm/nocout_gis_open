@@ -9,6 +9,7 @@ from django.core.urlresolvers import reverse_lazy
 from mptt.forms import TreeNodeChoiceField
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import auth
+from django.contrib.sessions.models import Session
 from django.utils import timezone
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from user_profile.models import UserProfile, Roles, UserPasswordRecord
@@ -26,6 +27,7 @@ from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
 from nocout.mixins.generics import FormRequestMixin
+from session_management.models import Visitor
 
 
 class UserList(PermissionsRequiredMixin, ListView):
@@ -322,6 +324,14 @@ def change_password(request):
         form = UserPasswordForm(request.POST)
         if form.is_valid():
             user_id = request.POST.get('user_id')
+            session_key = request.session.session_key
+            if hasattr(request.user, 'visitor'):
+                Session.objects.filter(session_key=request.user.visitor.session_key).delete()
+                # If Session object is modified as session key is changed.
+                # Above doesn't remove existing Visitor object. So removing it below.
+                Visitor.objects.filter(user=request.user).delete()
+            Visitor.objects.create(session_key=session_key, user=request.user)
+
             kwargs=dict(password=make_password(form.data['confirm_pwd']),
                         password_changed_at=timezone.now(), user_invalid_attempt=0)
             UserProfile.objects.filter(id=user_id).update(**kwargs)
@@ -346,7 +356,7 @@ def change_password(request):
             result = {
                 "success": 0,  # 0 - fail, 1 - success, 2 - exception
                 "message": "Invalid Password",
-                "reason": "Ignore dictionary common words",
+                "reason": "Ignore dictionary common words and previously used password.",
                 "data": {
                     "meta": {},
                     "objects": {
