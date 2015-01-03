@@ -430,7 +430,9 @@ SERVICE_DATA_SOURCE = {
         "show_min": 0,
         "show_max": 0,
         "show_gis": 1,
-        "chart_color": "#70AFC4"
+        "chart_color": "#70AFC4",
+        "service_name": 'ping',
+        "service_alias": 'Ping',
     },
     "pl": {
         "display_name": "Packet Drop",
@@ -441,7 +443,9 @@ SERVICE_DATA_SOURCE = {
         "show_min": 0,
         "show_max": 0,
         "show_gis": 1,
-        "chart_color": "#70AFC4"
+        "chart_color": "#70AFC4",
+        "service_name": 'ping',
+        "service_alias": 'Ping',
     },
     "availability": {
         "display_name": "Availability",
@@ -452,7 +456,9 @@ SERVICE_DATA_SOURCE = {
         "show_min": 0,
         "show_max": 0,
         "show_gis": 1,
-        "chart_color": "#70AFC4"
+        "chart_color": "#70AFC4",
+        "service_name": 'availability',
+        "service_alias": 'Availability',
     },
     "rf": {
         "display_name": "RF Latency",
@@ -465,7 +471,9 @@ SERVICE_DATA_SOURCE = {
         "show_gis": 0,
         "show_ss": 0,
         "show_bs": 0,
-        "chart_color": "#70AFC4"
+        "chart_color": "#70AFC4",
+        "service_name": 'rf',
+        "service_alias": 'RF Latency',
     },
 
 }

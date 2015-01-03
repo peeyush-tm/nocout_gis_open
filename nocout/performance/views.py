@@ -36,6 +36,8 @@ from service.utils.util import service_data_sources
 
 from nocout.settings import DATE_TIME_FORMAT
 
+from performance.formulae import display_time, rta_null
+
 ##execute this globally
 SERVICE_DATA_SOURCE = service_data_sources()
 ##execute this globally
@@ -49,20 +51,20 @@ log = logging.getLogger(__name__)
 #         ret_val = int(float(uptime)/(60 * 60 * 2``))
 #         return ret_val if ret_val > 0 else int(float(uptime)/(60 * 60))
 
-
-def rta_null(rta=0):
-    """
-
-    :param rta:
-    :return:
-    """
-    try:
-        if float(rta) == 0:
-            return None
-    except Exception as e:
-        return None
-
-    return rta
+#
+# def rta_null(rta=0):
+#     """
+#
+#     :param rta:
+#     :return:
+#     """
+#     try:
+#         if float(rta) == 0:
+#             return None
+#     except Exception as e:
+#         return None
+#
+#     return rta
 
 
 class Live_Performance(ListView):
@@ -1152,33 +1154,10 @@ class Get_Service_Status(View):
         if service_data_source_type == 'uptime':
             if current_value:
                 tt_sec = float(current_value) / 100
-                return self.display_time(tt_sec)
+                return display_time(tt_sec)
         else:
             return current_value
 
-    def display_time(self, seconds, granularity=4):
-        """
-
-        :param seconds: seconds on float
-        :param granularity:
-        :return:
-        """
-        intervals = (
-            ('weeks', 604800),
-            ('days', 86400),
-            ('hours', 3600),
-            ('minutes', 60),
-            ('seconds', 1),
-        )
-        result = []
-        for name, count in intervals:
-            value = seconds // count
-            if value:
-                seconds -= value * count
-                if value == 1:
-                    name = name.rstrip('s')
-                result.append("{} {}".format(value, name))
-        return ', '.join(result[:granularity])
 
 
 class Get_Service_Type_Performance_Data(View):
@@ -1436,9 +1415,14 @@ class Get_Service_Type_Performance_Data(View):
 
                 #to check of string based dashboards
                 #need to return a table
-                if service_data_source_type.lower() in SERVICE_DATA_SOURCE \
-                        and SERVICE_DATA_SOURCE[service_data_source_type.lower()]['type'] == 'table':
-                    result = self.get_perf_table_result(performance_data)
+
+                sds_name = service_name.strip() + "_" +service_data_source_type.strip()
+
+                if sds_name in SERVICE_DATA_SOURCE \
+                        and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
+                    result = self.get_perf_table_result(performance_data,
+                                                        formula=SERVICE_DATA_SOURCE[sds_name]['formula']
+                    )
 
                 else:
                     result = self.dr_performance_data_result(performance_data=performance_data,
@@ -1455,9 +1439,14 @@ class Get_Service_Type_Performance_Data(View):
                 alias=inventory_device_machine_name).order_by('sys_timestamp')
                 #to check of string based dashboards
                 #need to return a table
-                if service_data_source_type.lower() in SERVICE_DATA_SOURCE \
-                        and SERVICE_DATA_SOURCE[service_data_source_type.lower()]['type'] == 'table':
-                    result = self.get_perf_table_result(performance_data)
+
+                sds_name = service_name.strip() + "_" +service_data_source_type.strip()
+
+                if sds_name in SERVICE_DATA_SOURCE \
+                        and SERVICE_DATA_SOURCE[sds_name]['type'] == 'table':
+                    result = self.get_perf_table_result(performance_data,
+                                                        formula=SERVICE_DATA_SOURCE[sds_name]['formula']
+                    )
 
                 else:
                     result = self.get_performance_data_result(performance_data)
@@ -1465,58 +1454,9 @@ class Get_Service_Type_Performance_Data(View):
         download_excel = self.request.GET.get('download_excel', '')
         download_csv = self.request.GET.get('download_csv', '')
 
-        if download_excel:
+        #TODO: EXCEL & CSV download
 
-            table_data, table_header = self.return_table_header_and_table_data(service_name, result)
-            workbook = xlwt.Workbook()
-            worksheet = workbook.add_sheet('report')
-            style = xlwt.XFStyle()
-
-            borders = xlwt.Borders()
-            borders.bottom = xlwt.Borders.DASHED
-            style.borders = borders
-
-            column_length = len(table_header)
-            row_length = len(table_data) + 1
-            #Writing headers first for the excel file.
-            for column in range(column_length):
-                worksheet.write(0, column, table_header[column], style=style)
-            #Writing rest of the rows.
-            for row in range(1, row_length):
-                for column in range(column_length):
-                    worksheet.write(row, column, table_data[row - 1][table_header[column].lower()], style=style)
-
-            response = HttpResponse(content_type='application/vnd.ms-excel')
-            start_date_string = start_date
-            end_date_string = end_date
-            response['Content-Disposition'] = 'attachment; filename=performance_report_{0}_{1}_to_{2}.xls' \
-                .format(inventory_device_name, start_date_string, end_date_string)
-            workbook.save(response)
-            return response
-
-        elif download_csv:
-
-            table_data, table_header = self.return_table_header_and_table_data(service_name, result)
-            response = HttpResponse(content_type='text/csv')
-            start_date_string = start_date
-            end_date_string = end_date
-            response['Content-Disposition'] = 'attachment; filename="performance_report_{0}_{1}_to_{2}.xls"' \
-                .format(inventory_device_name, start_date_string, end_date_string)
-
-            writer = csv.writer(response)
-            writer.writerow(table_header)
-            column_length = len(table_header)
-            row_length = len(table_data) + 1
-
-            for row in range(1, row_length):
-                row_list = list()
-                for column in range(0, column_length):
-                    row_list.append(table_data[row - 1][table_header[column].lower()])
-                writer.writerow(row_list)
-            return response
-
-        else:
-            return HttpResponse(json.dumps(result), content_type="application/json")
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
     def return_table_header_and_table_data(self, service_name, result):
 
@@ -1537,7 +1477,7 @@ class Get_Service_Type_Performance_Data(View):
             table_data = data_list
         return table_data, table_header
 
-    def get_perf_table_result(self, performance_data):
+    def get_perf_table_result(self, performance_data, formula=None):
 
         result_data, aggregate_data = list(), dict()
         for data in performance_data:
@@ -1547,12 +1487,18 @@ class Get_Service_Type_Performance_Data(View):
                 continue
             else:
                 aggregate_data[temp_time] = data.sys_timestamp
+
+                value = eval(str(formula) + "(" + str(data.current_value) + ")") \
+                                if formula \
+                                else data.current_value
+
                 result_data.append({
                     # 'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
                     'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime(DATE_TIME_FORMAT),
                     'ip_address': data.ip_address,
-                    'value': data.current_value,
+                    'value': value,
                 })
+
         self.result['success'] = 1
         self.result[
             'message'] = 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
@@ -1820,8 +1766,10 @@ class Get_Service_Type_Performance_Data(View):
                     #time in javascript format
                     js_time = data.sys_timestamp * 1000
                     #time in javascript format
+                    sds_name = str(data.data_source).strip()
+                    if sds_name not in ['availability']:
+                        sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
 
-                    sds_name = str(data.data_source).strip().lower()
                     sds_display_name = \
                         SERVICE_DATA_SOURCE[sds_name]["display_name"] \
                             if sds_name in SERVICE_DATA_SOURCE \
@@ -2031,7 +1979,9 @@ class Get_Service_Type_Performance_Data(View):
                     js_time = data.sys_timestamp * 1000
                     #time in javascript format
 
-                    sds_name = str(data.data_source).strip().lower()
+                    sds_name = str(data.data_source).strip()
+                    if sds_name not in ['availability']:
+                        sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
 
                     sds_display_name = \
                         SERVICE_DATA_SOURCE[sds_name]["display_name"] \
@@ -2343,7 +2293,7 @@ class DeviceServiceDetail(View):
                             'name': service_data_sources[data.service_name, data.data_source] + append_ip_address,
                             'data': [],
                             'color': SERVICE_DATA_SOURCE[
-                                        data.data_source.strip().lower()
+                                        data.service_name.strip() + "_" +data.data_source.strip()
                                     ]['chart_color'],
                         }
                     js_time = data.sys_timestamp*1000
@@ -2358,7 +2308,7 @@ class DeviceServiceDetail(View):
                             'name': service_data_sources[data.service_name, data.data_source],
                             'data': [],
                             'color': SERVICE_DATA_SOURCE[
-                                        data.data_source.strip().lower()
+                                        data.service_name.strip() + "_" +data.data_source.strip()
                                     ]['chart_color'],
                         }
                     js_time = data.sys_timestamp*1000
