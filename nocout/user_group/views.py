@@ -237,4 +237,4 @@ def user_group_users_render_wrt_organization(request):
     for index in range(len(user_profile)):
         response_string+= '<option value={0}>{1}</option>'.format(*map(str, user_profile[index]))
 
-    return HttpResponse(json.dumps({'response':response_string}), mimetype='application/json')
+    return HttpResponse(json.dumps({'response':response_string}), content_type='application/json')

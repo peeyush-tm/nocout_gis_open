@@ -164,14 +164,20 @@ class UserPasswordForm(forms.Form):
     """
     new_pwd = forms.CharField(max_length=128, required=True)
     confirm_pwd = forms.CharField(max_length=128, required=True)
+    user_id = forms.CharField(max_length=128, required=False)
 
-    def clean_confirm_pwd(self):
-        # Check that the two password entries match
+    def clean(self):
         confirm_pwd = self.cleaned_data.get("confirm_pwd")
         tknzr, enchant_obj = get_tokenizer("en_US"), enchant.Dict("en_US")
         words = list(filter(lambda x: len(x)>2, [word[0] for word in tknzr(confirm_pwd.lower())] ))
         check_word = [enchant_obj.check(w) for w in words]  # check if the words are dictionary common word or not.
         if check_word.count(True) > 0:
             raise forms.ValidationError("Ignore dictionay common words")
-        else:
-            return confirm_pwd
+        if confirm_pwd:
+            user_id = self.cleaned_data.get("user_id")
+            if user_id:
+                user_password_used = UserPasswordRecord.objects.filter(user_id=int(user_id)).\
+                    order_by('-password_used_on').values_list('password_used', flat=True)[:5]
+                for pwd in user_password_used:
+                    if check_password(confirm_pwd, pwd):
+                        raise forms.ValidationError("This password is recently used")

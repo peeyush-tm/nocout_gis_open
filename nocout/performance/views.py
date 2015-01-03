@@ -581,7 +581,7 @@ class Fetch_Inventory_Devices(View):
 
         result['success'] = 1
         result['message'] = 'Substation Devices Fetched Successfully.'
-        return HttpResponse(json.dumps(result), mimetype="application/json")
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
     def get_result(self, page_type, organizations):
         """
@@ -854,7 +854,7 @@ class Inventory_Device_Status(View):
 
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
-        return HttpResponse(json.dumps(result), mimetype="application/json")
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
 
 class Inventory_Device_Service_Data_Source(View):
@@ -993,7 +993,7 @@ class Inventory_Device_Service_Data_Source(View):
                 else:
                     result['data']['objects']['service_perf_tab']["info"].append(sds_info)
 
-                
+
         result['data']['objects']['availability_tab']["info"].append(
             {
                 'name': 'availability',
@@ -1027,7 +1027,7 @@ class Inventory_Device_Service_Data_Source(View):
 
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
-        return HttpResponse(json.dumps(result), mimetype="application/json")
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
 
 class Get_Service_Status(View):
@@ -1143,7 +1143,7 @@ class Get_Service_Status(View):
             except Exception as e:
                 log.exception(e.message)
 
-        return HttpResponse(json.dumps(self.result), mimetype="application/json")
+        return HttpResponse(json.dumps(self.result), content_type="application/json")
 
     def formulate_data(self, current_value, service_data_source_type):
         """
@@ -1456,7 +1456,7 @@ class Get_Service_Type_Performance_Data(View):
 
         #TODO: EXCEL & CSV download
 
-        return HttpResponse(json.dumps(result), mimetype="application/json")
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
     def return_table_header_and_table_data(self, service_name, result):
 
@@ -2339,4 +2339,4 @@ class DeviceServiceDetail(View):
             }
         }
 
-        return HttpResponse(json.dumps(result), mimetype="application/json")
+        return HttpResponse(json.dumps(result), content_type="application/json")

@@ -4,13 +4,14 @@
 {% block content_title %}PTP Listing{% endblock %}
 {% block content_description %}List of PTP{% endblock %}
 {% block content %}
+<p><a href="javascript:void(0)" onclick="window.history.go(-1);"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
 <p><a href="{% url 'gis-wizard-sector-create' bs_pk=base_station.id selected_technology=2 %}"><i class="fa fa-plus">&nbsp;</i> <span id="id_create_new_sector_link">Create New PTP</span></a></p>
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>PTP LISTING ({{ base_station.name }})</h4>
+            <h4><i class="fa fa-table"></i>PTP LISTING ({{ base_station.alias }})</h4>
         </div>
-        <div id="tableContainer" class="box-body">
+        <div id="tableContainer" class="box-body Tbl_FixHeight">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
                         <li><a href="#network_wifi_block" id="network_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
