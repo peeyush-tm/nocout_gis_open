@@ -3002,6 +3002,18 @@ function devicePlottingClass_gmap() {
 			infoTable =  "",
 			perfContent = "",
 			clickedType = contentObject.pointType ? $.trim(contentObject.pointType) : "";
+
+
+		// Tabs Structure HTML
+		/*Tabbale Start*/
+		infoTable += '<div class="tabbable">';
+		/*Tabs Creation Start*/
+		infoTable += '<ul class="nav nav-tabs">';
+		infoTable += '<li class="active"><a href="#static_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> Static Info</a></li>';
+		infoTable += '<li class=""><a href="#polled_block" data-toggle="tab"><i class="fa fa-arrow-circle-o-right"></i> Polled Info</a></li>';
+		infoTable += '</ul>';
+		/*Tabs Creation Ends*/
+
 		/*True,if clicked on the link line*/
 		if(clickedType == "path") {
 			try {
@@ -3012,6 +3024,9 @@ function devicePlottingClass_gmap() {
 					sector_title = lineStartTitle.toLowerCase().indexOf("point") > -1 ? lineStartTitle : "BS",
 					ss_title = lineEndTitle.toLowerCase().indexOf("point") > -1 ? lineEndTitle : "SS";
 
+				// Reset HTML String
+				infoTable = "";
+				
 				/*Tabbale Start*/
 				infoTable += '<div class="tabbable">';
 				/*Tabs Creation Start*/
@@ -3038,8 +3053,7 @@ function devicePlottingClass_gmap() {
 				}
 
 				// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.nearLat+", "+contentObject.nearLon+"</td></tr>";
-				infoTable += "</tbody></table>";			
-				infoTable += "</td>";
+				infoTable += "</tbody></table>";
 				/*BS-Sector Info End*/
 
 				infoTable += '</div>';
@@ -3144,6 +3158,9 @@ function devicePlottingClass_gmap() {
 				nearEndInfo = contentObject['deviceInfo'].concat(contentObject['deviceExtraInfo']),
 				static_info = !contentObject["tooltip_info"] ? nearEndInfo : rearrangeTooltipArray(ptp_sector_toolTip_static,contentObject["tooltip_info"]);
 
+			/*Tab-content Start*/
+			infoTable += '<div class="tab-content">';
+
 			if(nearend_perf_url) {
 				tools_html += "<a href='"+nearend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>";
 			}
@@ -3152,7 +3169,7 @@ function devicePlottingClass_gmap() {
 				tools_html += "<a href='"+nearend_inventory_url+"' target='_blank' title='Inventory'><i class='fa fa-dropbox text-info'> </i></a>";
 			}
 
-			infoTable += "<table class='table table-bordered table-hover'><tbody>";
+			// infoTable += "<table class='table table-bordered table-hover'><tbody>";
 			var sector_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
 			if(!contentObject["tooltip_info"]) {
 				if(sector_tech == 'wimax') {
@@ -3164,17 +3181,27 @@ function devicePlottingClass_gmap() {
 				}
 			}
 			
+			/*Static Tab Content Start*/
+			infoTable += '<div class="tab-pane fade active in" id="static_block"><div class="divide-10"></div>';
+
+			infoTable += "<table class='table table-bordered table-hover'><tbody>";
+
 			for(var i=0; i< static_info.length; i++) {
 				if(static_info[i].show) {
 					infoTable += "<tr><td>"+static_info[i]['title']+"</td><td>"+static_info[i]['value']+"</td></tr>";		
 				}
 			}
+			infoTable += "</tbody></table>";
+			/*BS-Sector Info End*/
+
+			infoTable += '</div>';
+			/*Static Tab Content End*/
 
 			// infoTable += "<tr><td>Technology</td><td>"+contentObject.technology+"</td></tr>";
 			// infoTable += "<tr><td>Vendor</td><td>"+contentObject.vendor+"</td></tr>";
 			
 
-			if(contentObject['poll_info'] && contentObject['poll_info'].length > 0) {
+			if(contentObject['poll_info'] != undefined) {
 				var backend_polled_info = contentObject['poll_info'],
 					actual_polled_info = backend_polled_info;
 
@@ -3188,6 +3215,11 @@ function devicePlottingClass_gmap() {
 					// pass
 				}
 
+				/*Polled Tab Content Start*/
+				infoTable += '<div class="tab-pane fade" id="polled_block"><div class="divide-10"></div>';
+
+				infoTable += "<table class='table table-bordered table-hover'><tbody>";
+
 				/*Poll Parameter Info*/
 				for(var i=0; i< actual_polled_info.length; i++) {
 					var url = "",
@@ -3200,68 +3232,66 @@ function devicePlottingClass_gmap() {
 						infoTable += "<tr><td class='"+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td><td>"+actual_polled_info[i]['value']+"</td></tr>";
 					}
 				}
+				infoTable += "</tbody></table>";
+				/*BS-Sector Info End*/
+
+				infoTable += '</div>';
+				/*Polled Tab Content End*/
 			}
 
-			infoTable += "</tbody></table>";
+			infoTable += '</div>';
+			/*Tab-content */
 
 			/*Final infowindow content string*/
 			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
 			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>"+sectorWindowTitle+"</h4><div class='tools'>"+tools_html+"<a class='close_info_window'><i class='fa fa-times text-danger' title='Close'></i></a></div></div>";
 			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
 			windowContent += "</div></div>";
-		} else {
 
-			infoTable += "<table class='table table-bordered table-hover'><tbody>";
-			
+		} else if(clickedType == 'sub_station') {
+
 			var startPtInfo = [],
 				ss_circuit_id = "",
 				BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase(),
 				farend_perf_url = contentObject.perf_url ? base_url+""+contentObject.perf_url : "",
 				farend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
-				tools_html = "";
+				tools_html = "",
+				ss_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
 
-			if(contentObject.bsInfo) {
-				// Rearrange BS tootip info as per actual sequence
-				var bs_actual_data = rearrangeTooltipArray(bs_toolTip_static,contentObject.bsInfo);
-				startPtInfo = bs_actual_data ? bs_actual_data : [];
+			if(ss_toolTip_static && ss_toolTip_static.length > 0) {
+				var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,contentObject.dataset);
+				startPtInfo = ss_actual_data;
 			} else {
-				if(clickedType == 'sub_station') {
-					var actual_sequence_array = ss_toolTip_static,
-						tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
-
-					if(actual_sequence_array) {
-						var ss_actual_data = rearrangeTooltipArray(actual_sequence_array,contentObject.dataset);
-						startPtInfo = ss_actual_data;
-					} else {
-						startPtInfo = contentObject.dataset;
-					}
-				} else {
-					startPtInfo = contentObject.dataset;
-				}
+				startPtInfo = contentObject.dataset;
 			}
 			
 			ss_circuit_id = gisPerformanceClass.getKeyValue(startPtInfo,"cktid",true);	
 
-			if(clickedType == "sub_station") {
-				var pos1 = "",
-					pos2 = "";
+			var pos1 = "",
+				pos2 = "";
 
-				if(ss_circuit_id) {
-					pos1 = "<a href='"+posLink1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a>";
-					pos2 = "<a href='"+posLink2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a>";
-				}
-
-				if(farend_perf_url) {
-					tools_html += "<a href='"+farend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>"
-				}
-				if(farend_inventory_url) {
-					tools_html += "<a href='"+farend_inventory_url+"' target='_blank' title='Inventory'><i class='fa fa-dropbox text-info'> </i></a>";
-				}
+			if(ss_circuit_id) {
+				pos1 = "<a href='"+posLink1+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a>";
+				pos2 = "<a href='"+posLink2+"="+ss_circuit_id+"' class='text-warning' target='_blank'>"+ss_circuit_id+"</a>";
 			}
 
+			if(farend_perf_url) {
+				tools_html += "<a href='"+farend_perf_url+"' target='_blank' title='Performance'><i class='fa fa-bar-chart-o text-info'> </i></a>"
+			}
+
+			if(farend_inventory_url) {
+				tools_html += "<a href='"+farend_inventory_url+"' target='_blank' title='Inventory'><i class='fa fa-dropbox text-info'> </i></a>";
+			}
+
+			/*Tab-content Start*/
+			infoTable += '<div class="tab-content">';
+
+			/*Static Tab Content Start*/
+			infoTable += '<div class="tab-pane fade active in" id="static_block"><div class="divide-10"></div>';
+			infoTable += "<table class='table table-bordered table-hover'><tbody>";
+
 			for(var i=0;i<startPtInfo.length;i++) {
-				var url = "",
-					text_class = "";
+
 				if(startPtInfo[i]) {
 					if(startPtInfo[i].name == 'pos_link1') {
 						startPtInfo[i].value = pos1;
@@ -3272,30 +3302,36 @@ function devicePlottingClass_gmap() {
 					}
 
 					if(startPtInfo[i].show == 1) {
-						// Url
-						url = startPtInfo[i]["url"] ? startPtInfo[i]["url"] : "";
-						text_class = url ? "text-primary" : "";
-
-						infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+startPtInfo[i]['title']+"</td><td>"+startPtInfo[i]['value']+"</td></tr>";
-						// infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
+						infoTable += "<tr><td class='polled_param_td'>"+startPtInfo[i]['title']+"</td><td>"+startPtInfo[i]['value']+"</td></tr>";
 					}
 				}
 			}
 
-			if(contentObject['poll_info'] && contentObject['poll_info'].length > 0) {
+			infoTable += "</tbody></table>";
+			/*SS Info End*/
+
+			infoTable += '</div>';
+			/*Static Tab Content End*/
+
+			if(contentObject['poll_info'] != undefined) {
 
 				var backend_polled_info = contentObject['poll_info'],
 					actual_polled_info = backend_polled_info;
 
-				if(ptp_tech_list.indexOf(sector_tech) > -1) {
+				if(ptp_tech_list.indexOf(ss_tech) > -1) {
 					actual_polled_info = rearrangeTooltipArray(ptp_ss_toolTip_polled,backend_polled_info);
-				} else if(sector_tech == 'wimax') {
+				} else if(ss_tech == 'wimax') {
 					actual_polled_info = rearrangeTooltipArray(wimax_ss_toolTip_polled,backend_polled_info);
-				} else if(sector_tech == 'pmp') {
+				} else if(ss_tech == 'pmp') {
 					actual_polled_info = rearrangeTooltipArray(pmp_ss_toolTip_polled,backend_polled_info);
 				} else {
 					// pass
 				}
+
+				/*Polled Tab Content Start*/
+				infoTable += '<div class="tab-pane fade" id="polled_block"><div class="divide-10"></div>';
+
+				infoTable += "<table class='table table-bordered table-hover'><tbody>";
 
 				/*Poll Parameter Info*/
 				for(var i=0; i< actual_polled_info.length; i++) {
@@ -3309,10 +3345,45 @@ function devicePlottingClass_gmap() {
 						infoTable += "<tr><td class='polled_param_td "+text_class+"' url='"+url+"'>"+actual_polled_info[i]['title']+"</td><td>"+actual_polled_info[i]['value']+"</td></tr>";
 					}
 				}
+				infoTable += "</tbody></table>";
+				/*SS Info End*/
+
+				infoTable += '</div>';
+				/*Polled Tab Content End*/
 			}
 
-			/*Set the lat lon of the point*/
-			// infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
+			/*Tab-content End*/
+			infoTable += '</div>';
+
+			
+
+			/*Final infowindow content string*/
+			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
+			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4><div class='tools'>"+tools_html+"<a class='close_info_window' title='Close'><i class='fa fa-times text-danger'></i></a></div></div>";
+			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
+			windowContent += "</div></div>";
+		} else {
+			// If base station then reset tabs html string
+			infoTable = "";
+
+			var startPtInfo = [],
+				BsSsWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : contentObject.pointType.toUpperCase();
+
+			if(contentObject.bsInfo) {
+				// Rearrange BS tootip info as per actual sequence
+				var bs_actual_data = rearrangeTooltipArray(bs_toolTip_static,contentObject.bsInfo);
+				startPtInfo = bs_actual_data ? bs_actual_data : [];
+			}
+
+			infoTable += "<table class='table table-bordered table-hover'><tbody>";
+
+			for(var i=0;i<startPtInfo.length;i++) {
+				if(startPtInfo[i]) {
+					if(startPtInfo[i].show) {
+						infoTable += "<tr><td class='polled_param_td'>"+startPtInfo[i]['title']+"</td><td>"+startPtInfo[i]['value']+"</td></tr>";
+					}
+				}
+			}
 
 			if(clickedType == "base_station" && contentObject.bhInfo) {
 				var severity_symbol = "";
@@ -3346,13 +3417,15 @@ function devicePlottingClass_gmap() {
 			}
 
 			infoTable += "</tbody></table>";
-			tools_html
+
 			/*Final infowindow content string*/
 			windowContent += "<div class='windowContainer' style='z-index: 300; position:relative;'><div class='box border'>";
-			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4><div class='tools'>"+tools_html+"<a class='close_info_window' title='Close'><i class='fa fa-times text-danger'></i></a></div></div>";
+			windowContent += "<div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+BsSsWindowTitle+"</h4><div class='tools'><a class='close_info_window' title='Close'><i class='fa fa-times text-danger'></i></a></div></div>";
 			windowContent += "<div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'></div><div class='clearfix'></div></div>";
 			windowContent += "</div></div>";
 		}
+
+
 		if(isDebug) {
 			console.log("Make Info Window HTML End Time :- "+ new Date().toLocaleString());
 			console.log("***********************************");

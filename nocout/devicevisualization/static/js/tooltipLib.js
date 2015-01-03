@@ -103,7 +103,21 @@ var bs_toolTip_static = [
         'show'  : 1,
         'value' : '',
         'url'   : ''
-	}
+	},
+    {
+        'name': 'tag1',
+        'title': 'Tag1',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name': 'tag2',
+        'title': 'Tag2',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    }
 ];
 
 // BH Tooltip static info object
@@ -249,13 +263,6 @@ var ss_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'pe_ip',
-		'title': 'PE IP',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
 		'name'  : 'qos_bandwidth',
         'title' : 'QOS(BW)',
         'show'  : 1,
@@ -370,20 +377,6 @@ var ss_toolTip_static = [
 	{
 		'name': 'pos_link2',
 		'title': 'POS Link2',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'tag1',
-		'title': 'Tag1',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'tag2',
-		'title': 'Tag2',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -558,13 +551,6 @@ var ptp_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'pe_ip',
-		'title': 'PE IP',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
 		'name'  : 'qos_bandwidth',
         'title' : 'QOS(BW)',
         'show'  : 1,
@@ -700,20 +686,6 @@ var ptp_sector_toolTip_static = [
 	{
 		'name': 'pos_link2',
 		'title': 'POS Link2',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'tag1',
-		'title': 'Tag1',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name': 'tag2',
-		'title': 'Tag2',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -1071,7 +1043,7 @@ var pmp_sector_toolTip_static = [
 	},
 	{
 		'name'  : 'rx_power_planned',
-        'title' : 'rx Power Planned',
+        'title' : 'Rx Power Planned',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -1093,20 +1065,6 @@ var pmp_sector_toolTip_static = [
 	{
 		'name'  : 'sync_splitter',
 		'title' : 'Sync Splitter Installed',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'tag1',
-		'title' : 'Tag1',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'tag2',
-		'title' : 'Tag2',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -1443,7 +1401,7 @@ var wimax_sector_toolTip_static = [
 	},
 	{
 		'name'  : 'rx_power_planned',
-        'title' : 'rx Power Planned',
+        'title' : 'Rx Power Planned',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -1486,20 +1444,6 @@ var wimax_sector_toolTip_static = [
 	{
 		'name'  : 'tdd_split',
 		'title' : 'TDD Split',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'tag1',
-		'title' : 'Tag1',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'tag2',
-		'title' : 'Tag2',
         'show'  : 1,
         'value' : '',
         'url'   : ''
