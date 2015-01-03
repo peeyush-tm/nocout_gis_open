@@ -4,7 +4,7 @@
 {% block content_title %}SubStation Listing{% endblock %}
 {% block content_description %}List of sub-stations{% endblock %}
 {% block content %}
-    <p><a href="{% url 'gis-wizard-sub-station-create' bs_pk=base_station.id selected_technology=selected_technology sector_pk=sector_pk %}"><i class="fa fa-plus">&nbsp;</i> Create New SubStation</a></p>
+<p><a href="javascript:void(0)" onclick="window.history.go(-1);"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a><br><a href="{% url 'gis-wizard-sub-station-create' bs_pk=base_station.id selected_technology=selected_technology sector_pk=sector_pk %}"><i class="fa fa-plus">&nbsp;</i> Create New SubStation</a></p>
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
