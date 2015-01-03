@@ -144,8 +144,8 @@ def indexed_alert_results(performance_data):
 
     for data in performance_data:
         # this would be a unique combination
-        if data['data_source'] is not None and data['device_name'] is not None:
-            defined_index = data['device_name'], data['data_source']
+        if data['data_source'] is not None and data['device_name'] is not None and data['service_name'] is not None:
+            defined_index = data['device_name'], data['service_name'], data['data_source']
             if defined_index not in indexed_raw_results:
                 indexed_raw_results[defined_index] = None
             indexed_raw_results[defined_index] = data
@@ -171,6 +171,7 @@ def prepare_raw_alert_results(performance_data=None):
         # the data would be a tuple of ("device_name"."data_source")
         # sample index data
         #{(u'511', u'pl'): {
+        # 'service_name': u'ping',
         # 'data_source': u'pl',
         # 'severity': u'down',
         # 'max_value': u'0',
@@ -182,12 +183,17 @@ def prepare_raw_alert_results(performance_data=None):
         # 'id': 59440L}
         # }
 
-        device_name, data_source = device_alert
+        device_name, service_name, data_source = device_alert
 
         data = indexed_alert_data[device_alert]
 
         if severity_level_check(list_to_check=[data['severity']]):
+
             sds_name = data_source.strip().lower()
+
+            if sds_name not in ['pl', 'rta']:
+                sds_name = service_name.strip() + "_" + data_source.strip()
+
             try:
                 sds_name = SERVICE_DATA_SOURCE[sds_name]['display_name']
             except:

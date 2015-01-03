@@ -569,15 +569,15 @@ function nocoutPerfLib() {
                     // text: config.name
                     text: ""
                 },
-                legend: {
-                    align: 'right',
-                    verticalAlign: 'top',
-                    x: 0,
-                    y: 0,
-                    floating: true,
-                    borderWidth: 1,
-                    backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
-                },
+                //legend: {
+                //    align: 'right',
+                //    verticalAlign: 'top',
+                //    x: 0,
+                //    y: 0,
+                //    floating: true,
+                //    borderWidth: 1,
+                //    backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+                //},
                 tooltip: {
                     pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
                     shared: true,

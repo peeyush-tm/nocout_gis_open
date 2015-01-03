@@ -5,10 +5,10 @@ from nocout.settings import SERVICE_DATA_SOURCE
 
 from nocout.utils.util import cache_for
 
-from service.models import ServiceDataSource
+from service.models import ServiceSpecificDataSource
 
 
-@cache_for(300)
+@cache_for(60)
 def service_data_sources():
     """ Fetch service data sources information in a dictionary
 
@@ -48,45 +48,54 @@ def service_data_sources():
     """
 
     # fields need to show on tool-tip
-    required_columns = ['name',
-                        'alias',
-                        'chart_type',
-                        'valuesuffix',
-                        'valuetext',
-                        'show_min',
-                        'show_max',
-                        'show_gis',
-                        'formula',
-                        'data_source_type',
-                        'warning',
-                        'critical',
-                        'chart_color']
+    required_columns = ['service_data_sources__name',
+                        'service_data_sources__alias',
+                        'service_data_sources__chart_type',
+                        'service_data_sources__valuesuffix',
+                        'service_data_sources__valuetext',
+                        'service_data_sources__show_min',
+                        'service_data_sources__show_max',
+                        'service_data_sources__show_gis',
+                        'service_data_sources__formula',
+                        'service_data_sources__data_source_type',
+                        'service_data_sources__warning',
+                        'service_data_sources__critical',
+                        'service_data_sources__chart_color',
+                        'service__name',
+                        'service__alias',
+    ]
+
 
     # data sources queryset
-    ds = ServiceDataSource.objects.all().values(*required_columns)
+    ds = ServiceSpecificDataSource.objects.filter().values(*required_columns)
+    #ds = ServiceDataSource.objects.all().values(*required_columns)
 
     # service data sources dictionary
     SDS = SERVICE_DATA_SOURCE
 
     for sds in ds:
         formula = None
-        if sds['formula'] and len(sds['formula'].strip()):
-            formula = sds['formula']
-        sds_name = sds['name'].strip().lower()
-        sds_alias = sds['alias']
+        if sds['service_data_sources__formula'] and len(sds['service_data_sources__formula'].strip()):
+            formula = sds['service_data_sources__formula']
+
+        sds_name = sds['service__name'].strip() + "_" +sds['service_data_sources__name'].strip()
+        sds_alias = sds['service_data_sources__alias'].strip()
+
         ds_to_append = {
             'display_name': sds_alias,
-            'type': sds['chart_type'],
-            'valuesuffix': sds['valuesuffix'],
-            'valuetext': sds['valuetext'],
+            'type': sds['service_data_sources__chart_type'],
+            'valuesuffix': sds['service_data_sources__valuesuffix'],
+            'valuetext': sds['service_data_sources__valuetext'],
             'formula': formula,
-            'show_min': sds['show_min'],
-            'show_max': sds['show_max'],
-            'show_gis': sds['show_gis'],
-            'data_source_type': 'String' if sds['data_source_type'] else 'Numeric',
-            'warning': sds['warning'],
-            'critical': sds['critical'],
-            'chart_color': sds['chart_color']
+            'show_min': sds['service_data_sources__show_min'],
+            'show_max': sds['service_data_sources__show_max'],
+            'show_gis': sds['service_data_sources__show_gis'],
+            'data_source_type': 'String' if sds['service_data_sources__data_source_type'] else 'Numeric',
+            'warning': sds['service_data_sources__warning'],
+            'critical': sds['service_data_sources__critical'],
+            'chart_color': sds['service_data_sources__chart_color'],
+            'service_name': sds['service__name'],
+            'service_alias': sds['service__alias'],
         }
         SDS.update({sds_name: ds_to_append})
     return SDS

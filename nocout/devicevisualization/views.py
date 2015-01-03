@@ -27,6 +27,12 @@ from django.core.urlresolvers import reverse_lazy
 import re, ast
 from activity_stream.models import UserAction
 
+
+#formulaes
+from performance.formulae import rta_null, display_time
+#formulaes
+
+
 # update the service data sources
 from service.utils.util import service_data_sources
 
@@ -2268,29 +2274,13 @@ class GISPerfData(View):
                 'service_name', 'data_source', 'current_value', 'sys_timestamp'
             ).using(alias=machine_name)
 
-            for perf in device_network_info:
-                res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
-                if not res:
-                    continue
-                if perf['data_source'] in processed:
-                    continue
-                processed[perf['data_source']] = []
-
-                service_name = perf['service_name'].strip().lower()
-
-                perf_info = {
-                    "name": name,
-                    "title": title,
-                    "show": show_gis,
-                    "url": "performance/service/" + service_name + "/service_data_source/" + name + "/device/" + str(
-                        device_id) + "?start_date=&end_date=",
-                    "value": perf['current_value'],
-                }
-                device_info.append(perf_info)
+            device_info += self.collect_performance(performance=device_network_info,
+                                                    device_id=device_id,
+                                                    processed=processed
+            )
 
             # if device is down than don't show services data
             if device_pl != "100":
-
                 # to update the info window with all the services
                 # device performance info
                 device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
@@ -2307,68 +2297,79 @@ class GISPerfData(View):
                     'service_name', 'data_source', 'current_value', 'sys_timestamp'
                 ).using(alias=machine_name)
 
-                for perf in device_performance_info:
-                    res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
-                    if not res:
-                        continue
-                    if perf['service_name'] in processed:
-                        continue
-                    processed[perf['service_name']] = []
+                device_info += self.collect_performance(performance=device_performance_info,
+                                                        device_id=device_id,
+                                                        processed=processed
+                )
 
-                    service_name = perf['service_name'].strip()
+                device_info += self.collect_performance(performance=device_inventory_info,
+                                                        device_id=device_id,
+                                                        processed=processed
+                )
 
-                    perf_info = {
-                        "name": name,
-                        "title": title,
-                        "show": show_gis,
-                        "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
-                            device_id) + "?start_date=&end_date=",
-                        "value": perf['current_value'],
-                    }
-                    device_info.append(perf_info)
-
-                for perf in device_inventory_info:
-                    res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
-                    if not res:
-                        continue
-                    if perf['service_name'] in processed:
-                        continue
-                    processed[perf['service_name']] = []
-
-                    service_name = perf['service_name'].strip()
-
-                    perf_info = {
-                        "name": name,
-                        "title": title,
-                        "show": show_gis,
-                        "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
-                            device_id) + "?start_date=&end_date=",
-                        "value": perf['current_value'],
-                    }
-                    device_info.append(perf_info)
-
-                for perf in device_status_info:
-                    res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
-                    if not res:
-                        continue
-                    if perf['service_name'] in processed:
-                        continue
-                    processed[perf['service_name']] = []
-
-                    service_name = perf['service_name']
-
-                    perf_info = {
-                        "name": name,
-                        "title": title,
-                        "show": show_gis,
-                        "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
-                            device_id) + "?start_date=&end_date=",
-                        "value": perf['current_value'],
-                    }
-                    device_info.append(perf_info)
+                device_info += self.collect_performance(performance=device_status_info,
+                                                        device_id=device_id,
+                                                        processed=processed
+                )
 
             # remove duplicate dictionaries in list
         device_info = remove_duplicate_dict_from_list(device_info)
+
+        return device_info
+
+    def collect_performance(self, performance, device_id, processed):
+        """
+
+
+        :param performance:
+        :param device_id:
+        :param processed:
+        :return:
+        """
+
+        SERVICE_DATA_SOURCE = service_data_sources()
+
+        device_info = list()
+
+        perf_info = {
+            "name": None,
+            "title": None,
+            "show": 0,
+            "url": None,
+            "value": None,
+        }
+
+        for perf in performance:
+            res, name, title, show_gis = self.sanatize_datasource(perf['data_source'], perf['service_name'])
+
+            if not res:
+                continue
+            if (perf['data_source'], perf['service_name']) in processed:
+                continue
+            processed[perf['data_source'], perf['service_name']] = []
+
+            service_name = perf['service_name']
+
+            sds_name = perf['data_source'].strip()
+
+            if sds_name not in ['pl', 'rta']:
+                sds_name = service_name + "_" + sds_name
+
+            formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
+                            if sds_name in SERVICE_DATA_SOURCE \
+                            else None
+
+            perf_info = {
+                "name": name,
+                "title": title,
+                "show": show_gis,
+                "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
+                    device_id) + "?start_date=&end_date=",
+                "value": eval(str(formula) + "(" + str(perf['current_value']) + ")") if formula
+                        else perf['current_value'],
+            }
+
+            device_info.append(perf_info)
 
         return device_info
 
@@ -2390,15 +2391,23 @@ class GISPerfData(View):
 
         if data_source and data_source[:1].isalpha():
             title = " ".join(data_source.split("_")).title()
-            key_name = data_source.strip().lower()
-            if data_source.strip().lower() not in ['pl', 'rta']:
-                name = service_name.strip().lower() + "_" + data_source.strip().lower()
+
+            key_name = service_name.strip() + "_" +data_source.strip()
+
+            if data_source.strip().lower() in ['pl', 'rta']:
+                name = data_source.strip()
+                key_name = data_source.strip()
             else:
                 name = key_name
                 
             show_gis = 0
             try:
-                title = SERVICE_DATA_SOURCE[key_name]['display_name']
+                if data_source.strip().lower() not in ['pl', 'rta']:
+                    title = SERVICE_DATA_SOURCE[key_name]['service_alias'] + "</br> [ " +\
+                            SERVICE_DATA_SOURCE[key_name]['display_name'] + " ]"
+                else:
+                    title = SERVICE_DATA_SOURCE[key_name]['display_name']
+
                 show_gis = SERVICE_DATA_SOURCE[key_name]['show_gis']
             except Exception as e:
                 logger.info("Something wrong with fetching data sources information. Exception: ", e.message)
