@@ -1,5 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% block content %}
+<p><a href="javascript:void(0)" onclick="window.history.go(-1);"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
     <style type="text/css">
         #user_profile table tr td:first-child {
             font-weight: bold;
@@ -10,7 +11,7 @@
     </style>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i> Backhaul Details (Base Station - {{ base_station.name }})</h4>
+            <h4><i class="fa fa-table"></i> Backhaul Details (Base Station - {{ base_station.alias }})</h4>
         </div>
         <div class="box-body">
             <div id="user_profile" class="col-md-6 col-md-offset-3">
