@@ -24,4 +24,12 @@ urlpatterns = patterns('',
     url(r'^dfr-processed-reports/$', views.DFRProcessedListView.as_view(), name='dfr-processed-reports-list'),
     url(r'^dfr-processed-reports/table/$', views.DFRProcessedListingTable.as_view(), name='dfr-processed-reports-table'),
     url(r'^dfr-processed-reports/(?P<pk>\d+)/download/$', views.dfr_processed_report_download, name='dfr-processed-reports-download'),
+
+    url(r'^dfr-reports/$', views.DFRReportsListView.as_view(), name='dfr-reports-list'),
+    url(r'^dfr-reports/table/$', views.DFRReportsListingTable.as_view(), name='dfr-reports-table'),
+    url(r'^dfr-reports/(?P<pk>\d+)/delete/$', views.DFRReportsDeleteView.as_view(), name='dfr-reports-delete'),
+
+    url(r'^mfr-reports/$', views.MFRReportsListView.as_view(), name='mfr-reports-list'),
+    url(r'^mfr-reports/table/$', views.MFRReportsListingTable.as_view(), name='mfr-reports-table'),
+    url(r'^mfr-reports/(?P<pk>\d+)/delete/$', views.MFRReportsDeleteView.as_view(), name='mfr-reports-delete'),
 )
