@@ -3043,7 +3043,13 @@ function devicePlottingClass_gmap() {
 				infoTable += '<div class="tab-pane fade active in" id="near_end_block"><div class="divide-10"></div>';
 
 				infoTable += "<table class='table table-bordered table-hover'><tbody>";
-				var bs_info = contentObject.bs_info ?  rearrangeTooltipArray(bs_toolTip_static,contentObject.bs_info) : [];
+				var bs_info = [];
+
+				if(lineStartTitle.toLowerCase().indexOf("point") > -1) {
+					bs_info = contentObject.bs_info;
+				} else {
+					bs_info = contentObject.bs_info ?  rearrangeTooltipArray(bs_toolTip_static,contentObject.bs_info) : [];
+				}
 				/*Loop for BS or Sector info object array*/
 				for(var i=0;i<bs_info.length;i++) {
 
@@ -3071,9 +3077,14 @@ function devicePlottingClass_gmap() {
 				var tech = gisPerformanceClass.getKeyValue(contentObject.ss_info,"ss_technology",true),
 					ss_tech = tech ? $.trim(tech.toLowerCase()) : "",
 					ss_tooltip_backend_data = contentObject.ss_info ? contentObject.ss_info : [],
-					actual_sequence_array = ss_toolTip_static;
+					actual_sequence_array = ss_toolTip_static,
+					ss_actual_data = [];
 
-				var ss_actual_data = rearrangeTooltipArray(actual_sequence_array,ss_tooltip_backend_data);
+				if(lineEndTitle.toLowerCase().indexOf("point") > -1) {
+					ss_actual_data = ss_tooltip_backend_data;
+				} else {
+					ss_actual_data = rearrangeTooltipArray(actual_sequence_array,ss_tooltip_backend_data);
+				}
 
 				var pos1 = "",
 					pos2 = "";
@@ -3372,7 +3383,7 @@ function devicePlottingClass_gmap() {
 			if(contentObject.bsInfo) {
 				// Rearrange BS tootip info as per actual sequence
 				var bs_actual_data = rearrangeTooltipArray(bs_toolTip_static,contentObject.bsInfo);
-				startPtInfo = bs_actual_data ? bs_actual_data : [];
+				startPtInfo = bs_actual_data;
 			}
 
 			infoTable += "<table class='table table-bordered table-hover'><tbody>";
