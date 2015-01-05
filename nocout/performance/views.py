@@ -1063,6 +1063,11 @@ class Get_Service_Status(View):
         inventory_device_name = device.device_name
         inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
+        #get the current status
+        #if the current status is OK
+        #check when was the element last down
+
+
         device_nms_uptime_query_set = NetworkStatus.objects.filter(
             device_name=inventory_device_name,
             data_source='pl',
@@ -1070,13 +1075,46 @@ class Get_Service_Status(View):
         # using(
         #     alias=inventory_device_machine_name
         # ).
-        device_nms_uptime = nocout_utils.nocout_query_results(query_set=device_nms_uptime_query_set,
-                                                              using=inventory_device_machine_name)
+
+        device_nms_uptime = nocout_utils.nocout_query_results(
+            query_set=device_nms_uptime_query_set,
+            using=inventory_device_machine_name
+        )
+
         if device_nms_uptime and len(device_nms_uptime):
             data = device_nms_uptime[0]
 
-            age = datetime.datetime.fromtimestamp(float(data['age'])
-            ).strftime(DATE_TIME_FORMAT)
+            if data['severity'].lower() in ['up', 'ok']:
+                #severity is ok
+                #lets check the last time it was down
+                device_last_down_query_set = PerformanceNetwork.objects.filter(
+                    device_name=inventory_device_name,
+                    service_name='ping',
+                    data_source='pl',
+                    current_value=100
+                ).values('age', 'severity', 'sys_timestamp')
+
+                device_last_down = nocout_utils.nocout_query_results(
+                    query_set=device_last_down_query_set,
+                    using=inventory_device_machine_name
+                )
+
+                if device_last_down and device_last_down.count():
+                    last_down_data = device_last_down[0]
+                    age = datetime.datetime.fromtimestamp(
+                        float(last_down_data['sys_timestamp'])
+                        ).strftime(DATE_TIME_FORMAT)
+
+                else:
+                    age = datetime.datetime.fromtimestamp(
+                        float(data['age'])
+                        ).strftime(DATE_TIME_FORMAT)
+            else:
+                age = datetime.datetime.fromtimestamp(
+                        float(data['age'])
+                        ).strftime(DATE_TIME_FORMAT)
+
+
             severity = data['severity']
 
             self.result = {
