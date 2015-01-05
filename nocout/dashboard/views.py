@@ -458,3 +458,143 @@ def dfr_processed_report_download(request, pk):
     response = HttpResponse(f.read(), content_type='application/vnd.ms-excel')
     response['Content-Disposition'] = 'attachment; filename="dfr_report_' + str(dfr_processed.processed_for.process_for) + '.xlsx"'
     return response
+
+#***************************************** DFR-REPORTS *******************************************************
+
+class DFRReportsListView(TemplateView):
+    """
+    Class Based View for the DFR-Reports data table rendering.
+
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
+    """
+    template_name = 'dfr/dfr_reports_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(DFRReportsListView, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'name', 'sTitle': 'Report Name', 'sWidth': 'auto', },
+            {'mData': 'is_processed', 'sTitle': 'Processed', 'sWidth': 'auto'},
+            {'mData': 'process_for', 'sTitle': 'Process For', 'sWidth': 'auto'},
+        ]
+
+        #if the user is superuser then the action column will appear on the datatable
+        if self.request.user.is_superuser:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False })
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class DFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    model = MFRDFRReports
+    columns = ['name', 'is_processed', 'process_for']
+    search_columns = ['name', 'is_processed']
+    order_columns = ['name', 'is_processed', 'process_for']
+
+    def get_initial_queryset(self):
+        qs = super(DFRReportsListingTable, self).get_initial_queryset()
+        qs = qs.filter(type='DFR')
+        return qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for obj in json_data:
+            obj['is_processed'] = 'Yes' if obj['is_processed'] else 'No'
+            obj_id = obj.pop('id')
+            delete_url = reverse_lazy('dfr-reports-delete', kwargs={'pk': obj_id})
+            delete_action = '<a href="%s"><i class="fa fa-trash-o text-danger"></i></a>' % delete_url
+            obj.update({'actions': delete_action})
+        return json_data
+
+
+class DFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
+    """
+    Class based View to delete the Dashboard Setting.
+
+    """
+    model = MFRDFRReports
+    template_name = 'mfrdfr/mfr_dfr_reports_delete.html'
+    success_url = reverse_lazy('dfr-reports-list')
+    obj_alias = 'name'
+
+
+#********************************************** MFR-Reports ************************************************
+
+
+class MFRReportsListView(TemplateView):
+    """
+    Class Based View for the MFR-Reports data table rendering.
+
+    In this view no data is passed to datatable while rendering template.
+    Another ajax call is made to fill in datatable.
+    """
+    template_name = 'mfr/mfr_reports_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(MFRReportsListView, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'name', 'sTitle': 'Report Name', 'sWidth': 'auto', },
+            {'mData': 'is_processed', 'sTitle': 'Processed', 'sWidth': 'auto'},
+            {'mData': 'process_for', 'sTitle': 'Process For', 'sWidth': 'auto'},
+        ]
+
+        #if the user is superuser then the action column will appear on the datatable
+        if self.request.user.is_superuser:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False })
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class MFRReportsListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    model = MFRDFRReports
+    columns = ['name', 'is_processed', 'process_for']
+    search_columns = ['name', 'is_processed']
+    order_columns = ['name', 'is_processed', 'process_for']
+
+    def get_initial_queryset(self):
+        qs = super(MFRReportsListingTable, self).get_initial_queryset()
+        qs = qs.filter(type='MFR')
+        return qs
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for obj in json_data:
+            obj['is_processed'] = 'Yes' if obj['is_processed'] else 'No'
+            obj_id = obj.pop('id')
+            delete_url = reverse_lazy('dfr-reports-delete', kwargs={'pk': obj_id})
+            delete_action = '<a href="%s"><i class="fa fa-trash-o text-danger"></i></a>' % delete_url
+            obj.update({'actions': delete_action})
+        return json_data
+
+
+class MFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
+    """
+    Class based View to delete the Dashboard Setting.
+
+    """
+    model = MFRDFRReports
+    template_name = 'mfrdfr/mfr_dfr_reports_delete.html'
+    success_url = reverse_lazy('mfr-reports-list')
+    obj_alias = 'name'
