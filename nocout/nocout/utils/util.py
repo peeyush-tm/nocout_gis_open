@@ -396,11 +396,11 @@ def query_all_gis_inventory_improved(monitored_only=False):
                 left join inventory_backhaul as backhaul
                 on backhaul.id = basestation.backhaul_id
                 left join device_country as country
-                on country.id = basestation.country
+                on country.id = basestation.country_id
                 left join device_city as city
-                on city.id = basestation.city
+                on city.id = basestation.city_id
                 left join device_state as state
-                on state.id = basestation.state
+                on state.id = basestation.state_id
                 left join device_device as device
                 on device.id = basestation.bs_switch_id
                 group by BSID
@@ -705,11 +705,11 @@ def query_all_gis_inventory(monitored_only=False):
                 left join inventory_backhaul as backhaul
                 on backhaul.id = basestation.backhaul_id 
                 left join device_country as country
-                on country.id = basestation.country
+                on country.id = basestation.country_id
                 left join device_city as city
-                on city.id = basestation.city
+                on city.id = basestation.city_id
                 left join device_state as state
-                on state.id = basestation.state
+                on state.id = basestation.state_id
                 left join device_device as device
                 on device.id = basestation.bs_switch_id
             )as bs_info

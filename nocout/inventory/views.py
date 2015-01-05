@@ -405,6 +405,10 @@ class BaseStationList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
             {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', },
+            {'mData': 'bh_capacity', 'sTitle': 'BH Capacity', 'sWidth': 'auto', },
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', },
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
@@ -425,9 +429,9 @@ class BaseStationListingTable(PermissionsRequiredMixin,
     """
     model = BaseStation
     required_permissions = ('inventory.view_basestation',)
-    columns = ['alias', 'bs_site_id',
+    columns = ['alias', 'bs_site_id', 'state__state_name', 'city__city_name', 'bh_capacity', 'tower_height',
                'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
-    order_columns = ['alias', 'bs_site_id',
+    order_columns = ['alias', 'bs_site_id', 'state__state_name', 'city__city_name', 'bh_capacity', 'tower_height',
                      'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
 

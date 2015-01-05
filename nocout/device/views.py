@@ -81,7 +81,8 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'host_state', 'sTitle': 'Host State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'mac_address', 'sTitle': 'MAC Address', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         #if the user role is Admin or superadmin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
@@ -101,7 +102,8 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'host_state', 'sTitle': 'Host State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'mac_address', 'sTitle': 'MAC Address', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
@@ -131,11 +133,11 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
     model = Device
     required_permissions = ('device.view_device',)
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-        'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
+        'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-        'device_type', 'host_state', 'ip_address', 'mac_address', 'state' ]
+        'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-        'ip_address', 'mac_address']
+        'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     extra_qs_kwargs = {
                         'is_deleted': 0,
                         'is_added_to_nms__in': [1,2]
@@ -226,11 +228,6 @@ class OperationalDeviceListingTable(PermissionsRequiredMixin, DatatableOrganizat
                     if dct['device_technology'] else ''
             except Exception as device_tech_exp:
                 dct['device_technology__name'] = ""
-
-            try:
-                dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
-            except Exception as device_state_exp:
-                dct['state__name'] = ""
 
             # img_url = static('img/nms_icons/circle_green.png')
             # dct.update(status_icon='<img src="{0}">'.format(img_url))
@@ -343,18 +340,18 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
     """
     model = Device
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-               'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
+               'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-        'device_type', 'host_state', 'ip_address', 'mac_address', 'state' ]
+                     'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-        'ip_address', 'mac_address']
+                      'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
 
     extra_qs_kwargs = {
-                        "is_deleted": 0,
-                        "is_monitored_on_nms": 0,
-                        "is_added_to_nms": 0,
-                        "host_state": 'Enable'
-        }
+        "is_deleted": 0,
+        "is_monitored_on_nms": 0,
+        "is_added_to_nms": 0,
+        "host_state": 'Enable'
+    }
 
     def filter_queryset(self, qs):
         """
@@ -441,11 +438,6 @@ class NonOperationalDeviceListingTable(DatatableOrganizationFilterMixin, BaseDat
                     if dct['device_technology'] else ''
             except Exception as device_tech_exp:
                 dct['device_technology__name'] = ""
-
-            try:
-                dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
-            except Exception as device_state_exp:
-                dct['state__name'] = ""
 
             # img_url = static('img/nms_icons/circle_orange.png')
             # dct.update(status_icon='<img src="{0}">'.format(img_url))
@@ -509,15 +501,15 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
     """
     model = Device
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-               'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
+               'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-        'device_type', 'host_state', 'ip_address', 'mac_address', 'state' ]
+                     'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-        'ip_address', 'mac_address']
+                      'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     extra_qs_kwargs = {
-                        "is_deleted": 0,
-                        "host_state": 'Disable'
-        }
+        "is_deleted": 0,
+        "host_state": 'Disable'
+    }
 
     def filter_queryset(self, qs):
         """
@@ -603,11 +595,6 @@ class DisabledDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                     if dct['device_technology'] else ''
             except Exception as device_tech_exp:
                 dct['device_technology__name'] = ""
-
-            try:
-                dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
-            except Exception as device_state_exp:
-                dct['state__name'] = ""
 
             # img_url = static('img/nms_icons/circle_grey.png')
             # dct.update(status_icon='<img src="{0}">'.format(img_url))
@@ -673,14 +660,14 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
     """
     model = Device
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-               'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
+               'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-        'device_type', 'host_state', 'ip_address', 'mac_address', 'state' ]
+                     'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-        'ip_address', 'mac_address']
+                      'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     extra_qs_kwargs = {
-                        'is_deleted':1
-        }
+        'is_deleted': 1
+    }
 
     def filter_queryset(self, qs):
         """
@@ -766,11 +753,6 @@ class ArchivedDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatable
                     if dct['device_technology'] else ''
             except Exception as device_tech_exp:
                 dct['device_technology__name'] = ""
-
-            try:
-                dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
-            except Exception as device_state_exp:
-                dct['state__name'] = ""
 
             # img_url = static('img/nms_icons/circle_red.png')
             # dct.update(status_icon='<img src="{0}">'.format(img_url))
@@ -840,14 +822,14 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
     """
     model = Device
     columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
-               'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
+               'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     order_columns = ['organization__name', 'device_name', 'site_instance__name', 'machine__name', 'device_technology',
-        'device_type', 'host_state', 'ip_address', 'mac_address', 'state' ]
+                     'device_type', 'host_state', 'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     search_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'host_state',
-        'ip_address', 'mac_address']
+                      'ip_address', 'mac_address', 'state__state_name', 'city__city_name']
     extra_qs_kwargs = {
-                        'is_deleted': 0
-        }
+        'is_deleted': 0
+    }
 
     def filter_queryset(self, qs):
         """
@@ -933,11 +915,6 @@ class AllDeviceListingTable(DatatableOrganizationFilterMixin, BaseDatatableView)
                     if dct['device_technology'] else ''
             except Exception as device_tech_exp:
                 dct['device_technology__name'] = ""
-
-            try:
-                dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
-            except Exception as device_state_exp:
-                dct['state__name'] = ""
 
             # if device is already added to nms core than show icon in device table
             icon = ""

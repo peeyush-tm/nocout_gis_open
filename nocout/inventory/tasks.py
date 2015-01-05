@@ -3,7 +3,8 @@ from dateutil.parser import *
 from models import GISInventoryBulkImport
 from machine.models import Machine
 from site_instance.models import SiteInstance
-from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency, DeviceType, ModelType, VendorModel
+from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency, DeviceType, ModelType, VendorModel, \
+    Country
 from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
@@ -6174,26 +6175,29 @@ def create_device(device_payload):
                 # timezone
                 device.timezone = 'Asia/Kolkata'
                 # country
-                device.country = 1
+                try:
+                    device.country = Country.objects.get(pk=1)
+                except Exception as e:
+                    logger.info("Country: ({}) not exist.".format(e.message))
                 # state
                 if state:
                     try:
-                        device_state_id = get_state(state=state)#State.objects.get(state_name=state).id
-                        if not device_state_id:
+                        device_state = get_state(state=state)
+                        if not device_state:
                             raise Exception("While Device Update: State Not Found")
-                        device.state = device_state_id
+                        device.state = device_state
                     except Exception as e:
                         logger.info("State: ({})".format(e.message))
                 # city
                 if city:
                     try:
                         if state:
-                            device_city_id = get_city(state=state, city_name=city)#City.objects.get(city_name=city).id
-                            if not device_city_id:
+                            device_city = get_city(state=state, city_name=city)
+                            if not device_city:
                                 raise Exception("While Device Update: City Not Found")
                         else:
                             raise Exception("While Device Update: In City: State Not Found")
-                        device.city = device_city_id
+                        device.city = device_city
                     except Exception as e:
                         logger.info("City: ({})".format(e.message))
                 # address
@@ -6300,26 +6304,29 @@ def create_device(device_payload):
                 # timezone
                 device.timezone = 'Asia/Kolkata'
                 # country
-                device.country = 1
+                try:
+                    device.country = Country.objects.get(pk=1)
+                except Exception as e:
+                    logger.info("Country: ({}) not exist.".format(e.message))
                 # state
                 if state:
                     try:
-                        device_state_id = get_state(state=state)#State.objects.get(state_name=state).id
-                        if not device_state_id:
+                        device_state = get_state(state=state)
+                        if not device_state:
                             raise Exception("While Device Update: State Not Found")
-                        device.state = device_state_id
+                        device.state = device_state
                     except Exception as e:
                         logger.info("State: ({})".format(e.message))
                 # city
                 if city:
                     try:
                         if state:
-                            device_city_id = get_city(state=state, city_name=city)#City.objects.get(city_name=city).id
-                            if not device_city_id:
+                            device_city = get_city(state=state, city_name=city)
+                            if not device_city:
                                 raise Exception("While Device Update: City Not Found")
                         else:
                             raise Exception("While Device Update: In City: State Not Found")
-                        device.city = device_city_id
+                        device.city = device_city
                     except Exception as e:
                         logger.info("City: ({})".format(e.message))
                 # address
@@ -7214,34 +7221,41 @@ def create_basestation(basestation_payload):
                         except Exception as e:
                             logger.info("Tower Height: ({} - {})".format(tower_height, e.message))
                 # country
-                basestation.country = 1
+                try:
+                    basestation.country = Country.objects.get(pk=1)
+                except Exception as e:
+                    logger.info("Country: ({}) not exist.".format(e.message))
                 # state
                 if state:
                     try:
-                        device_state_id = get_state(state=state)#State.objects.get(state_name=state).id
-                        if not device_state_id:
-                            raise Exception("While Base Station Update: State Not Found")
-                        basestation.state = device_state_id
+                        basestation_state = get_state(state=state)
+                        if not basestation_state:
+                            raise Exception("While Basestation Update: State Not Found")
+                        basestation.state = basestation_state
                     except Exception as e:
-                        logger.info("BS State: ({})".format(e.message))
+                        logger.info("State: ({})".format(e.message))
                 # city
                 if city:
                     try:
                         if state:
-                            device_city_id = get_city(state=state, city_name=city)#City.objects.get(city_name=city).id
-                            if not device_city_id:
-                                raise Exception("While Base Station: City Not Found")
+                            basestation_city = get_city(state=state, city_name=city)
+                            if not basestation_city:
+                                raise Exception("While Basestation Update: City Not Found")
                         else:
-                            raise Exception("While Base Station: In City: State Not Found")
-                        basestation.city = device_city_id
+                            raise Exception("While Basestation Update: In City: State Not Found")
+                        basestation.city = basestation_city
                     except Exception as e:
-                        logger.info("BS City: ({})".format(e.message))
+                        logger.info("City: ({})".format(e.message))
                 # address
                 if address:
                     try:
                         basestation.address = address
                     except Exception as e:
                         logger.info("BS Address: ({} - {})".format(address, e.message))
+                # maintenance status
+                basestation.maintenance_status = "No"
+                # provisioning status
+                basestation.provisioning_status = "Normal"
                 # description
                 if description:
                     try:
@@ -7376,34 +7390,41 @@ def create_basestation(basestation_payload):
                         except Exception as e:
                             logger.info("Tower Height: ({} - {})".format(tower_height, e.message))
                 # country
-                basestation.country = 1
+                try:
+                    basestation.country = Country.objects.get(pk=1)
+                except Exception as e:
+                    logger.info("Country: ({}) not exist.".format(e.message))
                 # state
                 if state:
                     try:
-                        device_state_id = get_state(state=state)#State.objects.get(state_name=state).id
-                        if not device_state_id:
-                            raise Exception("While Base Station Update: State Not Found")
-                        basestation.state = device_state_id
+                        basestation_state = get_state(state=state)
+                        if not basestation_state:
+                            raise Exception("While Basestation Update: State Not Found")
+                        basestation.state = basestation_state
                     except Exception as e:
-                        logger.info("BS State: ({})".format(e.message))
+                        logger.info("State: ({})".format(e.message))
                 # city
                 if city:
                     try:
                         if state:
-                            device_city_id = get_city(state=state, city_name=city)#City.objects.get(city_name=city).id
-                            if not device_city_id:
-                                raise Exception("While Base Station: City Not Found")
+                            basestation_city = get_city(state=state, city_name=city)
+                            if not basestation_city:
+                                raise Exception("While Basestation Update: City Not Found")
                         else:
-                            raise Exception("While Base Station: In City: State Not Found")
-                        basestation.city = device_city_id
+                            raise Exception("While Basestation Update: In City: State Not Found")
+                        basestation.city = basestation_city
                     except Exception as e:
-                        logger.info("BS City: ({})".format(e.message))
+                        logger.info("City: ({})".format(e.message))
                 # address
                 if address:
                     try:
                         basestation.address = address
                     except Exception as e:
                         logger.info("BS Address: ({} - {})".format(address, e.message))
+                # maintenance status
+                basestation.maintenance_status = "No"
+                # provisioning status
+                basestation.provisioning_status = "Normal"
                 # description
                 if description:
                     try:
@@ -8026,28 +8047,31 @@ def create_substation(substation_payload):
                     except Exception as e:
                         logger.info("Sub Station MAC Address: ({} - {})".format(mac_address, e.message))
                 # country
-                substation.country = 1
+                try:
+                    substation.country = Country.objects.get(pk=1)
+                except Exception as e:
+                    logger.info("Country: ({}) not exist.".format(e.message))
                 # state
                 if state:
                     try:
-                        device_state_id = get_state(state=state)#State.objects.get(state_name=state).id
-                        if not device_state_id:
-                            raise Exception("While Base Station Insert: State Not Found")
-                        substation.state = device_state_id
+                        substation_state = get_state(state=state)
+                        if not substation_state:
+                            raise Exception("While Substation Update: State Not Found")
+                        substation.state = substation_state
                     except Exception as e:
-                        logger.info("Sub Station BS State: ({})".format(e.message))
+                        logger.info("State: ({})".format(e.message))
                 # city
                 if city:
                     try:
                         if state:
-                            device_city_id = get_city(state=state, city_name=city)#City.objects.get(city_name=city).id
-                            if not device_city_id:
-                                raise Exception("While Base Station: City Not Found")
+                            substation_city = get_city(state=state, city_name=city)
+                            if not substation_city:
+                                raise Exception("While Substation Update: City Not Found")
                         else:
-                            raise Exception("While Base Station: In City: State Not Found")
-                        substation.city = device_city_id
+                            raise Exception("While Substation Update: In City: State Not Found")
+                        substation.city = substation_city
                     except Exception as e:
-                        logger.info("Sub Station BS City: ({})".format(e.message))
+                        logger.info("City: ({})".format(e.message))
                 # address
                 if address:
                     try:
@@ -8154,28 +8178,31 @@ def create_substation(substation_payload):
                     except Exception as e:
                         logger.info("Sub Station MAC Address: ({} - {})".format(mac_address, e.message))
                 # country
-                substation.country = 1
+                try:
+                    substation.country = Country.objects.get(pk=1)
+                except Exception as e:
+                    logger.info("Country: ({}) not exist.".format(e.message))
                 # state
                 if state:
                     try:
-                        device_state_id = get_state(state=state)#State.objects.get(state_name=state).id
-                        if not device_state_id:
-                            raise Exception("While Sub Station Insert: State Not Found")
-                        substation.state = device_state_id
+                        substation_state = get_state(state=state)
+                        if not substation_state:
+                            raise Exception("While Substation Update: State Not Found")
+                        substation.state = substation_state
                     except Exception as e:
-                        logger.info("Sub Station BS State: ({})".format(e.message))
+                        logger.info("State: ({})".format(e.message))
                 # city
                 if city:
                     try:
                         if state:
-                            device_city_id = get_city(state=state, city_name=city)#City.objects.get(city_name=city).id
-                            if not device_city_id:
-                                raise Exception("While Sub Station Insert: City Not Found")
+                            substation_city = get_city(state=state, city_name=city)
+                            if not substation_city:
+                                raise Exception("While Substation Update: City Not Found")
                         else:
-                            raise Exception("While Sub Station Insert: In City: State Not Found")
-                        substation.city = device_city_id
+                            raise Exception("While Substation Update: In City: State Not Found")
+                        substation.city = substation_city
                     except Exception as e:
-                        logger.info("Sub Station BS City: ({})".format(e.message))
+                        logger.info("City: ({})".format(e.message))
                 # address
                 if address:
                     try:
@@ -8637,13 +8664,13 @@ def get_state(state=None):
         state (unicode): u'West Bengal'
 
     Returns:
-        state_objects[0].id (long): u'29'
+        state_objects[0] (<class 'device.models.State'>): state object for e.g. Delhi
 
     """
     if state:
         state_objects = State.objects.filter(state_name__icontains=state)
         if len(state_objects):
-            return state_objects[0].id
+            return state_objects[0]
     return None
 
 
@@ -8655,13 +8682,13 @@ def get_city(state=None, city_name=None):
         city (unicode): u'Chennai'
 
     Returns:
-        city_objects[0].id (long): u'1135'
+        city_objects[0] (<class 'device.models.City'>): city object for e.g. Delhi
 
     """
     if state and city_name:
         city_objects = City.objects.filter(city_name__icontains=city_name, state__state_name__icontains=state)
         if len(city_objects):
-            return city_objects[0].id
+            return city_objects[0]
     return None
 
 
