@@ -47,7 +47,7 @@ class SessionSecurityMiddleware(object):
         # If user is already logged in another session.
         # Also has logged in using current session (skipping dialog box)
         # Log-out user from current session.
-        if hasattr(request.user, 'visitor'):
+        if request.path != '/user/change_password/' and hasattr(request.user, 'visitor'):
             key_from_cookie = request.session.session_key
             session_key_in_visitor_db = request.user.visitor.session_key
 
