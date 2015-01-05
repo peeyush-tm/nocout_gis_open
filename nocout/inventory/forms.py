@@ -352,13 +352,6 @@ class BaseStationForm(forms.ModelForm):
     Class Based View Base Station Model form to update and create.
     """
 
-    country = IntReturnModelChoiceField(queryset=Country.objects.all(),
-                                        required=False)
-    state = IntReturnModelChoiceField(queryset=State.objects.all(),
-                                      required=False)
-    city = IntReturnModelChoiceField(queryset=City.objects.all(),
-                                     required=False)
-
     BS_TYPE = (
         ('', 'Select'),
         ('Master', 'Master'),
