@@ -144,6 +144,8 @@ class BaseStation(models.Model):
     tag1 = models.CharField('Tag 1', max_length=60, null=True, blank=True)
     tag2 = models.CharField('Tag 2', max_length=60, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    maintenance_status = models.CharField('Maintenance Status', max_length=250, null=True, blank=True)
+    provisioning_status = models.CharField('Provisioning Status', max_length=250, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
