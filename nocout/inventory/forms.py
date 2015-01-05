@@ -660,13 +660,6 @@ class SubStationForm(forms.ModelForm):
     Class Based View SubStation Model form to update and create.
     """
 
-    country = IntReturnModelChoiceField(queryset=Country.objects.all(),
-                                        required=False)
-    state = IntReturnModelChoiceField(queryset=State.objects.all(),
-                                      required=False)
-    city = IntReturnModelChoiceField(queryset=City.objects.all(),
-                                     required=False)
-
     ETHERNET_EXTENDER = (
         ('', 'Select'),
         ('Yes', 'Yes'),
