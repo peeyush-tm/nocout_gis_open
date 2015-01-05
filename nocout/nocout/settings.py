@@ -296,6 +296,11 @@ CELERYBEAT_SCHEDULE = {
         'task': 'alarm_escalation.tasks.check_device_status',
         'schedule': timedelta(seconds=300),
     },
+    'gather_sector_status': {
+        'task': 'capacity_management.tasks.gather_sector_status',
+        'schedule': timedelta(seconds=300),
+        'args': ['WiMAX']
+    }
 }
 
 
