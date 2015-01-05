@@ -2500,7 +2500,7 @@ class ServiceThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin
         """
         self.object = self.get_object()
         success_url = self.get_success_url()
-        self.object.delete()
+        self.object.threshold_template.live_polling_template.delete()
         if 'admin' in self.request.path:
             return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
         return HttpResponseRedirect(success_url)
