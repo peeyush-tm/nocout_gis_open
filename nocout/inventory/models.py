@@ -219,9 +219,9 @@ class SubStation(models.Model):
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     mac_address = models.CharField('MAC Address', max_length=100, null=True, blank=True)
-    country = models.IntegerField('Country', null=True, blank=True)
-    state = models.IntegerField('State', null=True, blank=True)
-    city = models.IntegerField('City', null=True, blank=True)
+    country = models.ForeignKey(Country, null=True, blank=True)
+    state = models.ForeignKey(State, null=True, blank=True)
+    city = models.ForeignKey(City, null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
