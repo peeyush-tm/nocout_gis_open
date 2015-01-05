@@ -1144,7 +1144,7 @@ class Get_Service_Status(View):
         """
         if service_data_source_type == 'uptime':
             if current_value:
-                tt_sec = float(current_value) / 100
+                tt_sec = float(current_value)
                 return display_time(tt_sec)
         else:
             return current_value
