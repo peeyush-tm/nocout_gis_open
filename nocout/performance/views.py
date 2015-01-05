@@ -1091,7 +1091,8 @@ class Get_Service_Status(View):
                     device_name=inventory_device_name,
                     service_name='ping',
                     data_source='pl',
-                    current_value=100
+                    current_value=100,
+                    severity__in=['down']
                 ).values('age', 'severity', 'sys_timestamp')
 
                 device_last_down = nocout_utils.nocout_query_results(
