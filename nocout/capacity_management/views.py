@@ -52,6 +52,62 @@ def get_utilization_status(request, status_type="default"):
     return render_to_response(status_template, context_instance=RequestContext(request))
 
 
+class SectorStatusHeaders(ListView):
+    """
+    Headers for sector status
+    """
+    model = SectorCapacityStatus
+    template_name = 'capacity_management/sector_capacity_status.html'
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        """
+        context = super(SectorStatusHeaders, self).get_context_data(**kwargs)
+
+
+        hidden_headers = [
+            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'sector', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'severity', 'sTitle': 'severity', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'age', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'organization__alias', 'sTitle': 'organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+        ]
+
+        common_headers = [
+            {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+
+            {'mData': 'current_in_per', 'sTitle': 'DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'current_in_val', 'sTitle': 'DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'avg_in_per', 'sTitle': 'AVG DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'avg_in_val', 'sTitle': 'AVG DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'peak_in_per', 'sTitle': 'PEAK DL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'peak_in_val', 'sTitle': 'PEAK DL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'peak_in_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+
+            {'mData': 'current_out_per', 'sTitle': 'UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'current_out_val', 'sTitle': 'UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'avg_out_per', 'sTitle': 'AVG UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'avg_out_val', 'sTitle': 'AVG UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'peak_out_per', 'sTitle': 'PEAK UL (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'peak_out_val', 'sTitle': 'PEAK UL (mbps)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'peak_out_timestamp', 'sTitle': 'PEAK Time', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+        ]
+
+        datatable_headers = hidden_headers
+
+        datatable_headers += common_headers
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
 class SectorStatusListing(BaseDatatableView):
     """
     Extend the Sector Status View
@@ -65,12 +121,12 @@ class SectorStatusListing(BaseDatatableView):
     columns = [
         'id',
         'sector',
-        'sector_id',
-        'bs_name'
-        'city'
-        'state'
-        'ip_address',
-        'technology',
+        'sector_sector_id',
+        'sector__base_station__alias'
+        'sector__base_station__city__city_name'
+        'sector__base_station__state__state_name'
+        'sector__sector_configured_on__ip_address',
+        'sector__sector_configured_on__device_technology',
         'sector_capacity',
         'current_in_per',
         'current_in_val',
@@ -86,7 +142,9 @@ class SectorStatusListing(BaseDatatableView):
         'peak_out_per',
         'peak_out_val',
         'peak_out_timestamp',
-        'organization__alias'
+        'organization__alias',
+        'severity',
+        'age'
     ]
 
     def filter_queryset(self, qs):
