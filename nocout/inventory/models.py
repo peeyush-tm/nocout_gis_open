@@ -25,7 +25,7 @@ from user_group.models import UserGroup
 
 from service.models import Service, ServiceDataSource
 from device_group.models import DeviceGroup
-from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
+from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency, Country, State, City
 
 from inventory import signals as inventory_signals
 
@@ -137,9 +137,9 @@ class BaseStation(models.Model):
     gps_type = models.CharField('GPS Type', max_length=100, null=True, blank=True)
     building_height = models.FloatField('Building Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text='(mtr) Enter a number.')
-    country = models.IntegerField('Country', null=True, blank=True)
-    state = models.IntegerField('State', null=True, blank=True)
-    city = models.IntegerField('City', null=True, blank=True)
+    country = models.ForeignKey(Country, null=True, blank=True)
+    state = models.ForeignKey(State, null=True, blank=True)
+    city = models.ForeignKey(City, null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
     maintenance_status = models.CharField('Maintenance Status', max_length=250, null=True, blank=True)
     provisioning_status = models.CharField('Provisioning Status', max_length=250, null=True, blank=True)
