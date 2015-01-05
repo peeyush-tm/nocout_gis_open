@@ -21,23 +21,23 @@ class SectorCapacityStatus(models.Model):
     #static information so as to save another db call
 
     #polled information to be updated
-    sector_capacity = models.IntegerField('Sector Capacity',  default=0)
+    sector_capacity = models.FloatField('Sector Capacity',  default=0)
     #polled information to be updated
-    current_in_per = models.IntegerField('IN Current Utilization Percentage',  default=0)
-    current_in_val = models.IntegerField('IN Current Utilization Value',  default=0)
-    avg_in_per = models.IntegerField('IN Current Utilization Average Percentage',  default=0)
-    avg_in_val = models.IntegerField('IN Current Utilization Average Value',  default=0)
-    peak_in_per = models.IntegerField('IN Peak Utilization Percentage',  default=0)
-    peak_in_val = models.IntegerField('IN Peak Utilization Value',  default=0)
+    current_in_per = models.FloatField('IN Current Utilization Percentage',  default=0)
+    current_in_val = models.FloatField('IN Current Utilization Value',  default=0)
+    avg_in_per = models.FloatField('IN Current Utilization Average Percentage',  default=0)
+    avg_in_val = models.FloatField('IN Current Utilization Average Value',  default=0)
+    peak_in_per = models.FloatField('IN Peak Utilization Percentage',  default=0)
+    peak_in_val = models.FloatField('IN Peak Utilization Value',  default=0)
     peak_in_timestamp = models.IntegerField('Peak In Timestamp', default=0)
 
     #polled information to be updated
-    current_out_per = models.IntegerField('OUT Current Utilization Percentage',  default=0)
-    current_out_val = models.IntegerField('OUT Current Utilization Value',  default=0)
-    avg_out_per = models.IntegerField('OUT Current Utilization Average Percentage',  default=0)
-    avg_out_val = models.IntegerField('OUT Current Utilization Average Value',  default=0)
-    peak_out_per = models.IntegerField('OUT Peak Utilization Percentage',  default=0)
-    peak_out_val = models.IntegerField('OUT Peak Utilization Value',  default=0)
+    current_out_per = models.FloatField('OUT Current Utilization Percentage',  default=0)
+    current_out_val = models.FloatField('OUT Current Utilization Value',  default=0)
+    avg_out_per = models.FloatField('OUT Current Utilization Average Percentage',  default=0)
+    avg_out_val = models.FloatField('OUT Current Utilization Average Value',  default=0)
+    peak_out_per = models.FloatField('OUT Peak Utilization Percentage',  default=0)
+    peak_out_val = models.FloatField('OUT Peak Utilization Value',  default=0)
     peak_out_timestamp = models.IntegerField('Peak Out Timestamp', default=0)
     #polled information to be updated
     sys_timestamp = models.IntegerField('SYS Timestamp', db_index=True,  default=0)

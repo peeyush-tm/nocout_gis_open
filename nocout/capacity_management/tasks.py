@@ -242,7 +242,7 @@ def get_higher_severity(severity_dict):
         else:
             continue
 
-    return s, a
+    return s, float(a)
 
 
 def get_time():
@@ -283,7 +283,7 @@ def get_average_sector_util(device_object, service, data_source, getit='val'):
     else:
         return 0
 
-    return perf['current_value__avg']
+    return float(perf['current_value__avg'])
 
 
 def get_peak_sector_util(device_object, service, data_source, getit='val'):
@@ -299,7 +299,7 @@ def get_peak_sector_util(device_object, service, data_source, getit='val'):
             data_source=data_source,
             sys_timestamp__gte=start_date,
             sys_timestamp__lte=end_date
-        ).using(alias=device_object.machine.name).aggregate(Max('current_value'))['current_value__avg']
+        ).using(alias=device_object.machine.name).aggregate(Max('current_value'))['current_value__max']
 
         perf = PerformanceService.objects.filter(
                 device_name=device_object.device_name,
@@ -307,7 +307,7 @@ def get_peak_sector_util(device_object, service, data_source, getit='val'):
                 data_source=data_source,
                 sys_timestamp__gte=start_date,
                 sys_timestamp__lte=end_date,
-                current_value__get=max_value
+                current_value=max_value
             ).using(alias=device_object.machine.name).values('current_value', 'sys_timestamp')
 
     elif getit == 'per':
@@ -317,7 +317,7 @@ def get_peak_sector_util(device_object, service, data_source, getit='val'):
             data_source=data_source,
             sys_timestamp__gte=start_date,
             sys_timestamp__lte=end_date
-        ).using(alias=device_object.machine.name).aggregate(Max('current_value'))['current_value__avg']
+        ).using(alias=device_object.machine.name).aggregate(Max('current_value'))['current_value__max']
 
         perf = Utilization.objects.filter(
                 device_name=device_object.device_name,
@@ -325,14 +325,14 @@ def get_peak_sector_util(device_object, service, data_source, getit='val'):
                 data_source=data_source,
                 sys_timestamp__gte=start_date,
                 sys_timestamp__lte=end_date,
-                current_value__get=max_value
+                current_value=max_value
             ).using(alias=device_object.machine.name).values('current_value', 'sys_timestamp')
 
     else:
         return 0
 
     if perf and len(perf):
-        return perf[0]['current_value'], perf[0]['sys_timestamp']
+        return float(perf[0]['current_value']), float(perf[0]['sys_timestamp'])
 
 
 def update_sector_status(sectors, cbw, kpi, val, technology):
@@ -604,25 +604,25 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 #update the scs
                 scs.sector = sector
                 scs.sector_sector_id = sector.sector_id
-                scs.sector_capacity = sector_capacity
-                scs.current_in_per = current_in_per
-                scs.current_in_val = current_in_val
-                scs.avg_in_per = avg_in_per
-                scs.avg_in_val = avg_in_val
-                scs.peak_in_per = peak_in_per
-                scs.peak_in_val = peak_in_val
-                scs.peak_in_timestamp = peak_in_timestamp
-                scs.current_out_per = current_out_per
-                scs.current_out_val = current_out_val
-                scs.avg_out_per = avg_out_per
-                scs.avg_out_val = avg_out_val
-                scs.peak_out_per = peak_out_per
-                scs.peak_out_val = peak_out_val
-                scs.peak_out_timestamp = peak_out_timestamp
-                scs.sys_timestamp = sys_timestamp
-                scs.organization = organization
+                scs.sector_capacity = float(sector_capacity)
+                scs.current_in_per = float(current_in_per)
+                scs.current_in_val = float(current_in_val)
+                scs.avg_in_per = float(avg_in_per)
+                scs.avg_in_val = float(avg_in_val)
+                scs.peak_in_per = float(peak_in_per)
+                scs.peak_in_val = float(peak_in_val)
+                scs.peak_in_timestamp = float(peak_in_timestamp)
+                scs.current_out_per = float(current_out_per)
+                scs.current_out_val = float(current_out_val)
+                scs.avg_out_per = float(avg_out_per)
+                scs.avg_out_val = float(avg_out_val)
+                scs.peak_out_per = float(peak_out_per)
+                scs.peak_out_val = float(peak_out_val)
+                scs.peak_out_timestamp = float(peak_out_timestamp)
+                scs.sys_timestamp = float(sys_timestamp)
+                scs.organization = sector.organization
                 scs.severity = severity
-                scs.age = age
+                scs.age = float(age)
                 scs.save()
 
             else:
@@ -631,30 +631,30 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                     (
                         sector=sector,
                         sector_sector_id=sector.sector_id,
-                        sector_capacity=sector_capacity,
+                        sector_capacity=float(sector_capacity),
 
-                        current_in_per=current_in_per,
-                        current_in_val=current_in_val,
+                        current_in_per=float(current_in_per),
+                        current_in_val=float(current_in_val),
 
-                        avg_in_per=avg_in_per,
-                        avg_in_val=avg_in_val,
-                        peak_in_per=peak_in_per,
-                        peak_in_val=peak_in_val,
-                        peak_in_timestamp=peak_in_timestamp,
+                        avg_in_per=float(avg_in_per),
+                        avg_in_val=float(avg_in_val),
+                        peak_in_per=float(peak_in_per),
+                        peak_in_val=float(peak_in_val),
+                        peak_in_timestamp=float(peak_in_timestamp),
 
-                        current_out_per=current_out_per,
-                        current_out_val=current_out_val,
+                        current_out_per=float(current_out_per),
+                        current_out_val=float(current_out_val),
 
-                        avg_out_per=avg_out_per,
-                        avg_out_val=avg_out_val,
-                        peak_out_per=peak_out_per,
-                        peak_out_val=peak_out_val,
-                        peak_out_timestamp=peak_out_timestamp,
+                        avg_out_per=float(avg_out_per),
+                        avg_out_val=float(avg_out_val),
+                        peak_out_per=float(peak_out_per),
+                        peak_out_val=float(peak_out_val),
+                        peak_out_timestamp=float(peak_out_timestamp),
 
-                        sys_timestamp=sys_timestamp,
-                        organization=organization,
+                        sys_timestamp=float(sys_timestamp),
+                        organization=sector.organization,
                         severity=severity,
-                        age=age
+                        age=float(age)
                     )
                 )
 
