@@ -437,7 +437,10 @@ function GisPerformance() {
                         // Loop to remove ss,line & label for current sector from map.
                         for(var xxx=0;xxx<connected_sectors.length;xxx++) {
                             if(sectorArray[i].sub_station && sectorArray[i].sub_station.length > 0) {
-                                if((connected_sectors[xxx].sector_configured_on_device == sectorArray[i].device_name) && (connected_sectors[xxx].sector_configured_on == sectorArray[i].ip_address)) {
+                                var condition1 = connected_sectors[xxx].sector_configured_on_device == sectorArray[i].device_name;
+                                    condition2 = connected_sectors[xxx].sector_configured_on == sectorArray[i].ip_address;
+                                    condition3 = connected_sectors[xxx].sector_id == sectorArray[i].sector_id;
+                                if(condition1 && condition2 && condition3) {
                                     var connected_sub_stations = sectorArray[i].sub_station;
                                     for(var key=0; key< connected_sub_stations.length; key++) {
                                         var ss_name = connected_sub_stations[key]['name'] ? connected_sub_stations[key]['name'] : "";
@@ -1032,16 +1035,27 @@ function GisPerformance() {
             }// Sectors Loop End
 
             // Update loki db object start
+            old_sector_loop:
             for(var i=0;i<connected_sectors.length;i++) {
+                var condition1 = "",
+                    condition2 = "",
+                    condition3 = "";
+                new_sector_loop:
                 for(var j=0;j<sectorArray.length;j++) {
                     if(sectorArray[j].sub_station && sectorArray[j].sub_station.length > 0) {
-                        if((connected_sectors[i].sector_configured_on_device == sectorArray[j].device_name) && (connected_sectors[i].sector_configured_on == sectorArray[j].ip_address)) {
-                            bs_object.data.param.sector[i].sub_station = sectorArray[j].sub_station;
+                        condition1 = connected_sectors[i].sector_configured_on_device == sectorArray[j].device_name;
+                        condition2 = connected_sectors[i].sector_configured_on == sectorArray[j].ip_address;
+                        condition3 = connected_sectors[i].sector_id == sectorArray[j].sector_id;
+                        if(condition1 && condition2 && condition3) {
+                            // bs_object.data.param.sector[i].sub_station = sectorArray[j].sub_station;
+                            connected_sectors[i].sub_station =  sectorArray[j].sub_station;
+                            break new_sector_loop;
                         }
                     }
                 }
             }
 
+            bs_object.data.param.sector = connected_sectors;
             // Update Loki Object
             all_devices_loki_db.update(bs_object);
             // Update loki db object end
