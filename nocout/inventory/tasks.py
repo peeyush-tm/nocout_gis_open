@@ -7252,6 +7252,10 @@ def create_basestation(basestation_payload):
                         basestation.address = address
                     except Exception as e:
                         logger.info("BS Address: ({} - {})".format(address, e.message))
+                # maintenance status
+                basestation.maintenance_status = "No"
+                # provisioning status
+                basestation.provisioning_status = "Normal"
                 # description
                 if description:
                     try:
@@ -7417,6 +7421,10 @@ def create_basestation(basestation_payload):
                         basestation.address = address
                     except Exception as e:
                         logger.info("BS Address: ({} - {})".format(address, e.message))
+                # maintenance status
+                basestation.maintenance_status = "No"
+                # provisioning status
+                basestation.provisioning_status = "Normal"
                 # description
                 if description:
                     try:
