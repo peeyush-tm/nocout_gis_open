@@ -84,15 +84,8 @@ var bs_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'latitude',
-        'title' : 'Latitude',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'longitude',
-        'title' : 'Longitude',
+		'name'  : 'lat_lon',
+        'title' : 'Lat, Long',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -290,6 +283,13 @@ var ss_toolTip_static = [
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name': 'antenna_type',
+        'title': 'Antenna Type',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name': 'cable_length',
 		'title': 'Cable Length',
@@ -326,19 +326,12 @@ var ss_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'latitude',
-        'title': 'Latitude',
+        'name'  : 'lat_lon',
+        'title' : 'Lat, Long',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-	},
-	{
-		'name': 'longitude',
-		'title': 'Longitude',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
+    },
 	{
 		'name': 'customer_address',
 		'title': 'Customer Address',
@@ -422,7 +415,7 @@ var ptp_ss_toolTip_polled = [
 	},
 	{
 		'name'  : 'radwin_service_throughput_service_throughput',
-        'title' : 'Estimated Throughput',
+        'title' : 'Throughput',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -635,19 +628,12 @@ var ptp_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'latitude',
-        'title': 'Latitude',
+        'name'  : 'lat_lon',
+        'title' : 'Lat, Long',
         'show'  : 1,
         'value' : '',
         'url'   : ''
-	},
-	{
-		'name': 'longitude',
-		'title': 'Longitude',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
+    },
 	{
 		'name': 'customer_address',
 		'title': 'Customer Address',
@@ -891,7 +877,7 @@ var pmp_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'radwin_sync_state_status_site_sync_state',
+		'name'  : 'cambium_sync_state_invent_sync_state',
         'title' : 'Sync State',
         'show'  : 1,
         'value' : '',
@@ -967,6 +953,20 @@ var pmp_ss_toolTip_polled = [
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name'  : '',
+        'title' : 'If Out Errors',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : '',
+        'title' : 'If In Errors',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'cambium_bs_frequency_invent_frequency',
         'title' : 'Frequency',
@@ -1014,7 +1014,7 @@ var pmp_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'planned_frequency',
+		'name'  : 'frequency',
         'title' : 'Planned Frequency',
         'show'  : 1,
         'value' : '',
@@ -1073,6 +1073,27 @@ var pmp_sector_toolTip_static = [
 
 // PMP Sector Tooltip polled info object
 var pmp_sector_toolTip_polled = [
+    {
+        'name'  : 'cambium_bs_frequency_invent_frequency',
+        'title' : 'Polled Frequency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'cambium_transmit_power_invent_transmit_power',
+        'title' : 'Tx Power Polled',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'cambium_commanded_rx_power_invent_commanded_rx_power',
+        'title' : 'Rx Power Polled',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'cambium_bs_utilization_utilization',
 		'title' : 'Sector Utilization',
@@ -1090,7 +1111,7 @@ var pmp_sector_toolTip_polled = [
 	{
 		'name'  : '',
 		'title' : 'Interface eth Error',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
@@ -1111,14 +1132,14 @@ var pmp_sector_toolTip_polled = [
 	{
 		'name'  : '',
 		'title' : 'TDD Split',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
 		'name'  : '',
 		'title' : 'Last GPS Alert Time',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
@@ -1150,6 +1171,20 @@ var wimax_ss_toolTip_static = [];
 
 // Wimax SS Tooltip Polled Info Object
 var wimax_ss_toolTip_polled = [
+    {
+        'name'  : 'pl',
+        'title' : 'Packet Loss',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rta',
+        'title' : 'Latency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'wimax_ss_ul_utilization_ul_utilization',
         'title' : 'Uplink Utilization',
@@ -1172,7 +1207,7 @@ var wimax_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'wimax_qos_invent_qos',
+		'name'  : 'wimax_qos_invent_ul_qos',
         'title' : 'QOS(Polled)',
         'show'  : 1,
         'value' : '',
@@ -1186,12 +1221,33 @@ var wimax_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'wimax_bs_uptime_uptime',
+		'name'  : 'wimax_ss_uptime_uptime',
         'title' : 'Device Uptime',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name'  : 'wimax_ss_autonegotiation_status_autonegotiation',
+        'title' : 'Auto Negotiation',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_ss_duplex_status_duplex',
+        'title' : 'Duplex',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_ss_speed_status_ss_speed',
+        'title' : 'Speed',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'wimax_ss_link_status_link_state',
         'title' : 'Link Ethernet Status',
@@ -1277,7 +1333,7 @@ var wimax_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'cambium_bs_ip_invent_bs_ip',
+		'name'  : 'wimax_bs_ip_invent_bs_ip',
         'title' : 'Connected BS IP',
         'show'  : 1,
         'value' : '',
@@ -1298,7 +1354,7 @@ var wimax_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'cambium_bs_frequency_invent_frequency',
+		'name'  : 'wimax_ss_frequency_frequency',
         'title' : 'Frequency',
         'show'  : 1,
         'value' : '',
@@ -1307,20 +1363,6 @@ var wimax_ss_toolTip_polled = [
 	{
 		'name'  : 'wimax_dl_modulation_change_invent_dl_modulation_change',
         'title' : 'Downlink Modulation Change',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'pl',
-        'title' : 'Packet Loss',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'rta',
-        'title' : 'Latency',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -1358,7 +1400,7 @@ var wimax_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'planned_frequency',
+		'name'  : 'frequency',
         'title' : 'Planned Frequency',
         'show'  : 1,
         'value' : '',
@@ -1428,7 +1470,7 @@ var wimax_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'sync_splitter',
+		'name'  : 'antenna_splitter_installed',
 		'title' : 'Splitter Installed',
         'show'  : 1,
         'value' : '',
@@ -1440,25 +1482,67 @@ var wimax_sector_toolTip_static = [
         'show'  : 1,
         'value' : '',
         'url'   : ''
-	},
-	{
-		'name'  : 'tdd_split',
-		'title' : 'TDD Split',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
 	}
 ];
 
 // Wimax Sector Tooltip polled info object
 var wimax_sector_toolTip_polled = [
 	{
-		'name'  : '',
-		'title' : 'Sector Utilization',
-        'show'  : 0,
+        'name'  : 'wimax_pmp1_frequency_invent_frequency',
+        'title' : 'Polled Frequency[PMP1]',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_pmp2_frequency_invent_frequency',
+        'title' : 'Polled Frequency [PMP2]',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_transmit_power_pmp1_invent_transmit_power_pmp1',
+        'title' : 'Tx Power Polled [PMP1]',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_transmit_power_pmp2_invent_transmit_power_pmp2',
+        'title' : 'Tx Power Polled [PMP2]',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_p1_cmd_rx_pwr_invent_p1_cmd_rx_pwr',
+        'title' : 'Rx Power Polled [PMP1]',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_p2_cmd_rx_pwr_invent_p2_cmd_rx_pwr',
+        'title' : 'Rx Power Polled [PMP2]',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+		'name'  : 'wimax_pmp1_utilization_pmp1_utilization',
+		'title' : 'Sector Utilization [PMP1]',
+        'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name'  : 'wimax_pmp2_utilization_pmp2_utilization',
+        'title' : 'Sector Utilization [PMP2]',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'wimax_bs_uptime_uptime',
 		'title' : 'Sector Uptime',
@@ -1467,16 +1551,23 @@ var wimax_sector_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : '',
-		'title' : 'RF BW Polled',
-        'show'  : 0,
+		'name'  : 'wimax_pmp_bw_invent_pmp1_bw',
+		'title' : 'RF BW Polled [PMP1]',
+        'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name'  : 'wimax_pmp_bw_invent_pmp2_bw',
+        'title' : 'RF BW Polled [PMP2]',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : '',
 		'title' : 'Last GPS Alert Time',
-        'show'  : 0,
+        'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
