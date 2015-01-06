@@ -2165,9 +2165,11 @@ class Get_Service_Type_Performance_Data(View):
                             if data.max_value else None])
 
                         sds_inverted = False
+                        self.result['data']['objects']['is_inverted'] = sds_inverted
 
                         if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["is_inverted"]:
                             sds_inverted = SERVICE_DATA_SOURCE[sds_name]["is_inverted"]
+                            self.result['data']['objects']['is_inverted'] = sds_inverted
 
                         if not sds_inverted:
                             compare_point = lambda p1, p2, p3: chart_color \
@@ -2219,7 +2221,7 @@ class Get_Service_Type_Performance_Data(View):
                                        'type': self.result['data']['objects']['type'],
                                        'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                        'valuetext': self.result['data']['objects']['valuetext'],
-                                       'is_inverted': sds_inverted
+                                       'is_inverted': self.result['data']['objects']['is_inverted']
                                       }
                         ]
                         if len(min_data_list):
