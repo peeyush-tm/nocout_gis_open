@@ -147,6 +147,13 @@ class SectorStatusListing(BaseDatatableView):
         'age'
     ]
 
+    related_columns = [
+        'sector__base_station',
+        'sector__base_station__city',
+        'sector__base_station__state',
+        'sector__sector_configured_on'
+    ]
+
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
@@ -190,10 +197,27 @@ class SectorStatusListing(BaseDatatableView):
 
         sectors = self.model.objects.filter(
             Q(organization__in=kwargs['organizations'])
-        ).values(*self.columns)
+        ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
 
+    def prepare_results(self, qs):
+        """
+        """
+        # data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        data = []
+        technology_object = DeviceTechnology.objects.all()
+
+        for item in qs:
+            try:
+                techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
+                item['sector__sector_configured_on__device_technology'] = techno_name
+            except:
+                continue
+
+            data.append({key: val if val else "" for key, val in item.items()})
+
+        return data
 
     def get_context_data(self, *args, **kwargs):
         """
