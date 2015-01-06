@@ -550,7 +550,7 @@ function nocoutPerfLib() {
 
         function createHighChart(config) {
             // Is the y axis should be reversed or not
-            var y_reverse = config["is_inverted"] ? config["is_inverted"] : false;
+            var is_y_inverted = config["is_inverted"] ? config["is_inverted"] : false;
 
             chart_instance = $('#' + service_id + '_chart').highcharts({
                 chart: {
@@ -609,7 +609,7 @@ function nocoutPerfLib() {
                     title : {
                         text : config.valuetext
                     },
-                    reversed : y_reverse
+                    reversed : is_y_inverted
                 },
                 series: config.chart_data
             });
