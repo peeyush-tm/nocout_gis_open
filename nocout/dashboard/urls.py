@@ -32,4 +32,6 @@ urlpatterns = patterns('',
     url(r'^mfr-reports/$', views.MFRReportsListView.as_view(), name='mfr-reports-list'),
     url(r'^mfr-reports/table/$', views.MFRReportsListingTable.as_view(), name='mfr-reports-table'),
     url(r'^mfr-reports/(?P<pk>\d+)/delete/$', views.MFRReportsDeleteView.as_view(), name='mfr-reports-delete'),
+
+    url(r'^main-dashboard-sector/$', views.Main_Dashboard_Sector.as_view(), name='main-dashboard-sector'),
 )
