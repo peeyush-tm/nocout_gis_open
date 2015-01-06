@@ -1607,7 +1607,7 @@ class Get_Service_Type_Performance_Data(View):
                     'customer_name': customer_name,
                     'packet_loss': packet_loss,
                     'latency': latency,
-                    'status_since': status_since,
+                    'up_down_since': status_since,
                     'last_updated': last_updated,
                 })
 
@@ -1659,7 +1659,7 @@ class Get_Service_Type_Performance_Data(View):
                         'customer_name': customer_name,
                         'packet_loss': packet_loss,
                         'latency': latency,
-                        'status_since': status_since,
+                        'up_down_since': status_since,
                         'last_updated': last_updated,
                     })
 
@@ -1678,7 +1678,7 @@ class Get_Service_Type_Performance_Data(View):
                                                                'customer_name',
                                                                'packet_loss',
                                                                'latency',
-                                                               'status_since',
+                                                               'up_down_since',
                                                                'last_updated'
         ]
         return self.result
