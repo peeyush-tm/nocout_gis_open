@@ -252,3 +252,30 @@ def prepare_machines(device_list):
                                  device['device_machine'] == machine]
 
     return machine_dict
+
+
+def organization_sectors(organization, technology=None):
+    """
+    To result back the all the sector from the respective organization.
+
+    :param organization: organization list
+    :param technology:
+    :return list of sector
+    """
+    device_list = Device.objects.filter(
+                    is_added_to_nms=1,
+                    is_deleted=0,
+                    organization__in= organization
+                ).values_list('id', flat=True)
+    if not technology:
+        organisation_sectors = Sector.objects.filter(
+                                sector_configured_on__in=device_list,
+                            )
+    else:
+        organisation_sectors = Sector.objects.filter(
+                                sector_configured_on__in=device_list,
+                                bs_technology=technology,
+                            )
+
+    return organisation_sectors
+
