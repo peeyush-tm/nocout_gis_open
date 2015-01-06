@@ -67,6 +67,8 @@ class ServiceDataSource(models.Model):
     show_min = models.BooleanField('Show Min', default=False)
     show_max = models.BooleanField('Show Max', default=False)
     show_gis = models.BooleanField('Show Gis', default=True)
+    show_performance_center = models.BooleanField('Show In Performance Center', default=True)
+    is_inverted = models.BooleanField('The Comparison is inverted', default=False)
     data_source_type = models.IntegerField(choices=SOURCE_TYPE, default=1)
     warning = models.CharField('Warning', max_length=255, null=True, blank=True)
     critical = models.CharField('Critical', max_length=255, null=True, blank=True)
