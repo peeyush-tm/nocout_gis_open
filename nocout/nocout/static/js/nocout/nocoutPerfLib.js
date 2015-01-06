@@ -21,7 +21,7 @@ var perf_that = "",
     red_color = "#b94a48",
     green_status_array = ['ok','success','up'],
     red_status_array = ['warning','critical','down'],
-    left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;margin-left:30px;",
+    left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;",
     right_block_style = "border:1px solid #CCC;padding: 3px 5px;";
 
 /*Set the base url of application for ajax calls*/
@@ -430,6 +430,7 @@ function nocoutPerfLib() {
             success : function(response) {
                 var result = "",
                     age = "",
+                    lastDownTime = "",
                     last_updated = "",
                     perf = "",
                     status = "",
@@ -445,6 +446,7 @@ function nocoutPerfLib() {
 
                 if(result.data && result.data.objects) {
                     age = result.data.objects.age ? result.data.objects.age : "Unknown";
+                    lastDownTime = result.data.objects.last_down_time ? result.data.objects.last_down_time : "Unknown";
                     status = result.data.objects.status ? result.data.objects.status.toUpperCase() : "Unknown";
                     last_updated = result.data.objects.last_updated ? result.data.objects.last_updated : "";
                     perf = result.data.objects.perf ? result.data.objects.perf : "";
@@ -459,9 +461,10 @@ function nocoutPerfLib() {
 
                     status_html = "";
                     status_html += '<i class="fa fa-circle" style="vertical-align: middle;color:'+txt_color+';"> </i>';
-                    status_html += 'Device Status ';
-                    status_html += '<span style="'+left_block_style+'color:'+txt_color+';">Status : '+status+'</span>';
-                    status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Status Since : '+age+'</span>';
+                    // status_html += 'Device Status ';
+                    status_html += '<span style="'+left_block_style+'color:'+txt_color+';">Current Status : '+status+'</span>';
+                    status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Current Status Since : '+age+'</span>';
+                    status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Last Down Time : '+lastDownTime+'</span>';
 
                     // Update Status Block HTML as per the device status
                     $("#device_status_container").html(status_html);
