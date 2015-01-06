@@ -1079,7 +1079,7 @@ function GisPerformance() {
             var iconUrl = base_url+"/"+new_icon,
                 old_icon_obj = iconUrl;
             // Update sector marker icon
-            updateGoogleEarthPlacemark(marker, newIcon);
+            updateGoogleEarthPlacemark(marker, new_icon);
             // marker.icon = hiddenIconObj;
             try {
                 marker['clusterIcon'] = hiddenIconObj;

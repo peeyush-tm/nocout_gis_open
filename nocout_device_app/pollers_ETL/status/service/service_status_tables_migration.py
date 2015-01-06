@@ -211,14 +211,14 @@ def insert_data(table, data_values, **kwargs):
 	
 	if len(insert_dict['1']):
  		query = "UPDATE `%s` " % table
-		query += """SET `machine_name`=%s, `current_value`=%s,
+		query += """SET `machine_name`=%s, `site_name`=%s ,`current_value`=%s,
 		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
 		`ip_address`=%s,`severity`=%s,`age`=%s
 		WHERE (`device_name`=%s AND `service_name`=%s AND `data_source` = %s)
 		"""
 		try:
-			data_values = map(lambda x: ( x[2],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14],x[15]) + (x[0],x[1],x[4]), insert_dict.get('1'))
+			data_values = map(lambda x: ( x[2],x[3],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14],x[15]) + (x[0],x[1],x[4]), insert_dict.get('1'))
                 	cursor.executemany(query, data_values)
 		except mysql.connector.Error as err:
         		raise mysql.connector.Error, err

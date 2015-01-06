@@ -2153,16 +2153,10 @@ class GISPerfData(View):
                         'value': qos
                     },
                     {
-                        'name': 'latitude',
-                        'title': 'Latitude',
+                        'name': 'lat_lon',
+                        'title': 'Lat, Long',
                         'show': 1,
-                        'value': substation.latitude
-                    },
-                    {
-                        'name': 'longitude',
-                        'title': 'Longitude',
-                        'show': 1,
-                        'value': substation.longitude
+                        'value': str(substation.latitude)+","+str(substation.longitude)
                     },
                     {
                         'name': 'antenna_height',
