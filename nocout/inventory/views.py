@@ -3477,8 +3477,8 @@ class GisWizardListView(BaseStationList):
         context = super(GisWizardListView, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'BS Name', 'sWidth': 'auto', },
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', },
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', },
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', },
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', },
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
             {'mData': 'bs_switch__id', 'sTitle': 'BS Switch IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -3492,8 +3492,8 @@ class GisWizardListView(BaseStationList):
 
 
 class GisWizardListingTable(BaseStationListingTable):
-    columns = ['alias', 'city', 'state', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address', 'description']
-    order_columns = ['alias', 'city', 'state', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address']
+    columns = ['alias', 'city__city_name', 'state__state_name', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address', 'description']
+    order_columns = ['alias', 'city__city_name', 'state__state_name', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address']
 
     def prepare_results(self, qs):
         """
@@ -3501,9 +3501,6 @@ class GisWizardListingTable(BaseStationListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-
-            dct['city'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
 
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
@@ -3577,8 +3574,8 @@ class GisWizardBaseStationMixin(object):
 
     def form_valid(self, form):
         alias = re.compile(r'[^\w]').sub("_", form.cleaned_data['alias'])
-        city = City.objects.get(id=form.cleaned_data['city']).city_name[:3]
-        state = State.objects.get(id=form.cleaned_data['state']).state_name[:3]
+        city = form.cleaned_data['city'].city_name[:3]
+        state = form.cleaned_data['state'].state_name[:3]
         form.instance.name = alias + "_" + city + "_" + state
         return super(GisWizardBaseStationMixin, self).form_valid(form)
 
