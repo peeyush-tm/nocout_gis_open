@@ -961,17 +961,20 @@ class Inventory_Device_Service_Data_Source(View):
             for service_data_source in service_data_sources:
                 sds_name = service_data_source.name.strip().lower()
 
-                sds_info = {
-                            'name': service_data_source.name,
-                            'title': service.alias.strip().upper() +
-                                    "<br> [ " +
-                                    service_data_source.alias.strip().title() +
-                                    " ] <br>",
-                            'url': 'performance/service/' + service_name +
-                                   '/service_data_source/' + sds_name +
-                                   '/device/' + str(device_id),
-                            'active': 0,
-                        }
+                if service_data_source.show_performance_center:
+                    sds_info = {
+                                'name': service_data_source.name,
+                                'title': service.alias.strip() +
+                                        "<br> [ " +
+                                        service_data_source.alias.strip() +
+                                        " ] <br>",
+                                'url': 'performance/service/' + service_name +
+                                       '/service_data_source/' + sds_name +
+                                       '/device/' + str(device_id),
+                                'active': 0,
+                            }
+                else:
+                    continue
 
                 if '_status' in service_name:
                     result['data']['objects']['service_status_tab']["info"].append(sds_info)
@@ -1932,14 +1935,29 @@ class Get_Service_Type_Performance_Data(View):
                             max_data_list.append([js_time, float(data.max_value)
                             if data.max_value else None])
 
-                        compare_point = lambda p1, p2, p3: chart_color \
-                            if abs(p1) < abs(p2) \
-                            else ('#FFE90D'
-                                  if abs(p2) < abs(p1) < abs(p3)
-                                  else ('#FF193B' if abs(p3) < abs(p1)
-                                        else chart_color
-                        )
-                        )
+                        sds_inverted = False
+
+                        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["is_inverted"]:
+                            sds_inverted = SERVICE_DATA_SOURCE[sds_name]["is_inverted"]
+
+                        if not sds_inverted:
+                            compare_point = lambda p1, p2, p3: chart_color \
+                                if abs(p1) < abs(p2) \
+                                else ('#FFE90D'
+                                      if abs(p2) < abs(p1) < abs(p3)
+                                      else ('#FF193B' if abs(p3) < abs(p1)
+                                            else chart_color
+                                )
+                            )
+                        else:
+                            compare_point = lambda p1, p2, p3: chart_color \
+                                if abs(p1) > abs(p2) \
+                                else ('#FFE90D'
+                                      if abs(p2) > abs(p1) > abs(p3)
+                                      else ('#FF193B' if abs(p3) > abs(p1)
+                                            else chart_color
+                                )
+                            )
 
                         formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                             if sds_name in SERVICE_DATA_SOURCE \
@@ -1971,7 +1989,8 @@ class Get_Service_Type_Performance_Data(View):
                                        'data': data_list,
                                        'type': result['data']['objects']['type'],
                                        'valuesuffix': result['data']['objects']['valuesuffix'],
-                                       'valuetext': result['data']['objects']['valuetext']
+                                       'valuetext': result['data']['objects']['valuetext'],
+                                       'is_inverted': sds_inverted
                                       }
                         ]
                         if len(min_data_list):
@@ -2145,14 +2164,29 @@ class Get_Service_Type_Performance_Data(View):
                             max_data_list.append([js_time, float(data.max_value)
                             if data.max_value else None])
 
-                        compare_point = lambda p1, p2, p3: chart_color \
-                            if abs(p1) < abs(p2) \
-                            else ('#FFE90D'
-                                  if abs(p2) < abs(p1) < abs(p3)
-                                  else ('#FF193B' if abs(p3) < abs(p1)
-                                        else chart_color
-                        )
-                        )
+                        sds_inverted = False
+
+                        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["is_inverted"]:
+                            sds_inverted = SERVICE_DATA_SOURCE[sds_name]["is_inverted"]
+
+                        if not sds_inverted:
+                            compare_point = lambda p1, p2, p3: chart_color \
+                                if abs(p1) < abs(p2) \
+                                else ('#FFE90D'
+                                      if abs(p2) < abs(p1) < abs(p3)
+                                      else ('#FF193B' if abs(p3) < abs(p1)
+                                            else chart_color
+                                )
+                            )
+                        else:
+                            compare_point = lambda p1, p2, p3: chart_color \
+                                if abs(p1) > abs(p2) \
+                                else ('#FFE90D'
+                                      if abs(p2) > abs(p1) > abs(p3)
+                                      else ('#FF193B' if abs(p3) > abs(p1)
+                                            else chart_color
+                                )
+                            )
 
                         formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                             if sds_name in SERVICE_DATA_SOURCE \
@@ -2184,7 +2218,8 @@ class Get_Service_Type_Performance_Data(View):
                                        'data': data_list,
                                        'type': self.result['data']['objects']['type'],
                                        'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                                       'valuetext': self.result['data']['objects']['valuetext']
+                                       'valuetext': self.result['data']['objects']['valuetext'],
+                                       'is_inverted': sds_inverted
                                       }
                         ]
                         if len(min_data_list):
