@@ -2515,7 +2515,7 @@ def get_higher_severity(severity_dict):
         else:
             continue
 
-    return s, float(a)
+    return s, a
 
 
 def device_current_status(device_object):
