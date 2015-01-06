@@ -5606,18 +5606,18 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
             type_in_inventory_sheet = row['Converter Type'].replace(" ", "") if 'Converter Type' in row.keys() else ""
 
             # devices technology
-            bh_device_technology = ""
+            bh_device_technology = None
             try:
                 bh_device_technology = DeviceTechnology.objects.get(name__iexact=tech_in_inventory_sheet)
             except Exception as e:
-                logger.info("Backhaul devices technology not exist. Exception: ", e.message)
+                logger.info("Backhaul devices technology not exist.")
 
             # devices type
-            bh_device_type = ""
+            bh_device_type = None
             try:
                 bh_device_type = DeviceType.objects.get(name__iexact=type_in_inventory_sheet)
             except Exception as e:
-                logger.info("Backhaul device technology not exist. Exception: ", e.message)
+                logger.info("Backhaul device technology not exist.")
 
             # dummy exception class to skip all loops when maching model is found
             class FoundModel(Exception):
@@ -5652,7 +5652,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                                 try:
                                     temp_technology = TechnologyVendor.objects.filter(vendor=temp_vendor.vendor)
                                 except Exception as e:
-                                    logger.error("Temp technology not exist. Exception: ", e.message)
+                                    logger.error("Temp technology not exist.")
                                 if temp_technology:
 
                                     # loop on device technologies
@@ -5671,7 +5671,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
             try:
                 bh_device_vendor = VendorModel.objects.filter(model=bh_device_model)[0].vendor
             except Exception as e:
-                logger.info("Backhaul device vendor not exist. Exception: ", e.message)
+                logger.info("Backhaul device vendor not exist.")
 
             try:
                 # ------------------------------ Create BS Switch -----------------------------
@@ -5948,12 +5948,12 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                 try:
                     bh_port_name = bh_port_parts[0]
                 except Exception as e:
-                    logger.info("BH Configured On port not exist. Exception: ", e.message)
+                    logger.info("BH Configured On port not exist.")
 
                 try:
                     bh_port_number = bh_port_parts[1]
                 except Exception as e:
-                    logger.info("BH Configured On port number not exist. Exception: ", e.message)
+                    logger.info("BH Configured On port number not exist")
 
             try:
                 # ------------------------------- Backhaul -------------------------------
