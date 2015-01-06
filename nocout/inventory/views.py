@@ -963,8 +963,8 @@ class SubStationList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
             {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto'},
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             ]
@@ -989,9 +989,9 @@ class SubStationListingTable(PermissionsRequiredMixin,
     model = SubStation
     required_permissions = ('inventory.view_substation',)
     columns = ['alias', 'device__id', 'device__ip_address', 'antenna__alias', 'version', 'serial_no', 'building_height',
-               'tower_height', 'city', 'state', 'address', 'description']
+               'tower_height', 'city__city_name', 'state__state_name', 'address', 'description']
     order_columns = ['alias', 'device__id', 'device__ip_address', 'antenna__alias', 'version', 'serial_no', 'building_height',
-                     'tower_height']
+                     'tower_height', 'city__city_name', 'state__state_name']
 
     def get_initial_queryset(self):
         qs = super(SubStationListingTable, self).get_initial_queryset()
@@ -1022,8 +1022,6 @@ class SubStationListingTable(PermissionsRequiredMixin,
             except Exception as e:
                 logger.info("Sub Station Device not present. Exception: ", e.message)
 
-            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_substation'):
                 edit_action = '<a href="/sub_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
@@ -3477,8 +3475,8 @@ class GisWizardListView(BaseStationList):
         context = super(GisWizardListView, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'BS Name', 'sWidth': 'auto', },
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', },
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', },
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', },
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', },
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
             {'mData': 'bs_switch__id', 'sTitle': 'BS Switch IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -3492,8 +3490,8 @@ class GisWizardListView(BaseStationList):
 
 
 class GisWizardListingTable(BaseStationListingTable):
-    columns = ['alias', 'city', 'state', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address', 'description']
-    order_columns = ['alias', 'city', 'state', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address']
+    columns = ['alias', 'city__city_name', 'state__state_name', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address', 'description']
+    order_columns = ['alias', 'city__city_name', 'state__state_name', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address']
 
     def prepare_results(self, qs):
         """
@@ -3501,9 +3499,6 @@ class GisWizardListingTable(BaseStationListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-
-            dct['city'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
 
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
@@ -3577,8 +3572,8 @@ class GisWizardBaseStationMixin(object):
 
     def form_valid(self, form):
         alias = re.compile(r'[^\w]').sub("_", form.cleaned_data['alias'])
-        city = City.objects.get(id=form.cleaned_data['city']).city_name[:3]
-        state = State.objects.get(id=form.cleaned_data['state']).state_name[:3]
+        city = form.cleaned_data['city'].city_name[:3]
+        state = form.cleaned_data['state'].state_name[:3]
         form.instance.name = alias + "_" + city + "_" + state
         return super(GisWizardBaseStationMixin, self).form_valid(form)
 
@@ -4119,8 +4114,8 @@ class GisWizardSectorSubStationListView(SubStationList):
             {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
             {'mData': 'circuit__sector__sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto'},
             {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto'},
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
@@ -4134,9 +4129,9 @@ class GisWizardSubStationListing(SubStationListingTable):
     Class based View to render Sub Station Data table.
     """
     columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
-            'circuit__sector__sector_id', 'antenna__polarization', 'city', 'state', 'description']
+            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name', 'description']
     order_columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
-            'circuit__sector__sector_id', 'antenna__polarization']
+            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name']
 
     def get_initial_queryset(self):
         qs = super(GisWizardSubStationListing, self).get_initial_queryset()
@@ -4157,8 +4152,6 @@ class GisWizardSubStationListing(SubStationListingTable):
 
             #if dct['device__device_technology']: Always is 3 and 4 as in self.kwargs['selected_technology']
             dct['device__device_technology'] = DeviceTechnology.objects.get(pk=int(dct['device__device_technology'])).alias
-            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
 
             sub_station_id = dct.pop('id')
             kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology', 'sector_pk']}
@@ -4459,8 +4452,8 @@ class GisWizardSubStationListView(SubStationList):
             {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
             {'mData': 'circuit__sector__sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto'},
             {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto'},
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
@@ -4471,9 +4464,9 @@ class GisWizardSubStationListView(SubStationList):
 
 class GisWizardSubStationListingTable(SubStationListingTable):
     columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
-            'circuit__sector__sector_id', 'antenna__polarization', 'city', 'state', 'description']
+            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name', 'description']
     order_columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
-            'circuit__sector__sector_id', 'antenna__polarization']
+            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name']
 
     def get_initial_queryset(self):
 
@@ -4501,8 +4494,6 @@ class GisWizardSubStationListingTable(SubStationListingTable):
 
             #if dct['device__device_technology']: Always is 3 and 4 as in get_initial_queryset
             dct['device__device_technology'] = DeviceTechnology.objects.get(pk=int(dct['device__device_technology'])).alias
-            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             device_id = dct.pop('id')
             sub_station = SubStation.objects.get(id=device_id)
             detail_action = ''

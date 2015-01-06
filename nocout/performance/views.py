@@ -711,18 +711,8 @@ class Inventory_Device_Status(View):
                             dr_ip = None
                             log.exception(no_dr.message)
 
-                try:
-                    city_name = City.objects.get(id=base_station.city).city_name \
-                        if base_station.city \
-                        else "N/A"
-                except Exception as no_city:
-                    city_name = "N/A"
-                try:
-                    state_name = State.objects.get(id=base_station.state).state_name \
-                        if base_station.state \
-                        else "N/A"
-                except Exception as no_state:
-                    state_name = "N/A"
+                city_name = base_station.city.city_name if base_station.city else "N/A"
+                state_name = base_station.state.state_name if base_station.state else "N/A"
 
                 display_bs_name = base_station.alias
                 if display_bs_name:
