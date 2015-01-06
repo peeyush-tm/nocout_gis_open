@@ -3435,13 +3435,22 @@ function devicePlottingClass_gmap() {
 						infoTable += "<tr><td>"+bh_actual_data[i].title+"</td><td>"+bh_actual_data[i].value+"</td></tr>";
 					}
 				}
-				if(contentObject.bhInfo_polled) {
-					for(var i=0;i<contentObject.bhInfo_polled.length;i++) {
-						if(contentObject.bhInfo_polled[i].show == 1) {
-							infoTable += "<tr><td>"+contentObject.bhInfo_polled[i].title+"</td><td>"+contentObject.bhInfo_polled[i].value+"</td></tr>";
-						}
+
+				// if(contentObject.bhInfo_polled) {
+
+				var backend_BH_polled_info = contentObject.bhInfo_polled ? contentObject.bhInfo_polled : [],
+					actual_polled_params = rearrangeTooltipArray(bh_toolTip_polled,backend_BH_polled_info);
+				for(var i=0;i<actual_polled_params.length;i++) {
+					var text_class = "",
+						url = "";
+					if(actual_polled_params[i].show == 1) {
+						// Url
+						url = actual_polled_params[i]["url"] ? actual_polled_params[i]["url"] : "";
+						text_class = "text-primary";
+						infoTable += "<tr><td class='"+text_class+"' url='"+url+"'>"+actual_polled_params[i].title+"</td><td>"+actual_polled_params[i].value+"</td></tr>";
 					}
 				}
+				// }
 			}
 
 			infoTable += "</tbody></table>";

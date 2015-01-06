@@ -123,14 +123,7 @@ var bh_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'bh_utilization',
-        'title' : 'BH Utilization',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'bh_off_on_net',
+		'name'  : 'bh_connectivity',
         'title' : 'BH Offnet/Onnet',
         'show'  : 1,
         'value' : '',
@@ -151,7 +144,7 @@ var bh_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'bh_bso_circuit_id',
+		'name'  : 'bh_ttsl_circuit_id',
         'title' : 'BSO Circuit ID',
         'show'  : 1,
         'value' : '',
@@ -221,7 +214,7 @@ var bh_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'bh_configured_on_port',
+		'name'  : 'bh_device_port',
         'title' : 'SW/CON Port',
         'show'  : 1,
         'value' : '',
@@ -230,7 +223,22 @@ var bh_toolTip_static = [
 ];
 
 // BH Tooltip polled info object
-var bh_toolTip_polled = [];
+var bh_toolTip_polled = [
+    {
+        'name'  : 'converter_temp',
+        'title' : 'Converter Temperature',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'bh_utilization',
+        'title' : 'BH Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    }
+];
 
 // PTP SS Tooltip static info object
 var ss_toolTip_static = [
