@@ -19,7 +19,7 @@ var mapInstance = "",
     india_center_lat = 21.1500,
     posLink1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
 	posLink2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId",
-	ptp_not_show_items = ['antenna_type','pe_ip'];
+	ptp_not_show_items = ['pe_ip'];
 
 /*Lazy loading API calling variables*/
 var hitCounter = 1,
