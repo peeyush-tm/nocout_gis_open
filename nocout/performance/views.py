@@ -2541,9 +2541,11 @@ def device_current_status(device_object):
         using=inventory_device_machine_name
     )
 
-    for data in device_nms_uptime:
-        severity[data['severity']] = data['age']
-
+    if device_nms_uptime:
+        for data in device_nms_uptime:
+            severity[data['severity']] = data['age']
+    else:
+        return None, None
 
     return get_higher_severity(severity_dict=severity)
 
