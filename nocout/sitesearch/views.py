@@ -323,6 +323,12 @@ def prepare_raw_backhaul(backhaul):
                     'value': format_value(backhaul['BSSWITCH'])
                 },
                 {
+                    'name':'bh_device_type',
+                    'title':'Converter Type',
+                    'show':1,
+                    'value': format_value(backhaul['BHTYPE'])
+                },
+                {
                     'name': 'bs_converter_ip',
                     'title': 'BS Converter IP',
                     'show': 1,
@@ -564,6 +570,12 @@ def prepare_raw_sector(sectors):
                                 'value': format_value(format_this=sector['SECTOR_RX']),
                             },
                             {
+                                'name': 'ugps_installed',
+                                'title': 'UGPS Installed',
+                                'show': 1,
+                                'value': format_value(format_this=sector['BSGPSTYPE']),
+                            },
+                            {
                                 'name': 'dr_status',
                                 'title': 'DR Status',
                                 'show': 1,
@@ -699,6 +711,12 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                                             'title': 'SS IP',
                                             'show': 1,
                                             'value': format_value(circuit['SSIP'])
+                                        },
+                                        {
+                                            'name': 'pe_ip',
+                                            'title': 'PE IP',
+                                            'show': 1,
+                                            'value': format_value(circuit['BH_PE_IP'])
                                         },
                                         {
                                             'name': 'ss_mac',

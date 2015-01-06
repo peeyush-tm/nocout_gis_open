@@ -18,7 +18,8 @@ var mapInstance = "",
     india_center_lon = 79.0900,
     india_center_lat = 21.1500,
     posLink1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
-	posLink2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId";
+	posLink2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId",
+	ptp_not_show_items = ['antenna_type','pe_ip'];
 
 /*Lazy loading API calling variables*/
 var hitCounter = 1,
@@ -3202,15 +3203,31 @@ function devicePlottingClass_gmap() {
 
 			infoTable += "<table class='table table-bordered table-hover'><tbody>";
 
+			var circuit_id = "",
+				pos1 = "",
+				pos2 = "";
+
+			if(contentObject["tooltip_info"]) {
+				circuit_id = gisPerformanceClass.getKeyValue(static_info,"cktid",true);	
+				if(circuit_id) {
+					pos1 = "<a href='"+posLink1+"="+circuit_id+"' class='text-warning' target='_blank'>"+circuit_id+"</a>";
+					pos2 = "<a href='"+posLink2+"="+circuit_id+"' class='text-warning' target='_blank'>"+circuit_id+"</a>";
+				}
+			}
+
 			for(var i=0; i< static_info.length; i++) {
 				var highlight_class = "";
 				// If ptp sector then update lat-lon value by sector lat-lon
 				if(contentObject["tooltip_info"]) {
-					if(static_info[i]["name"] == 'lat_lon') {
-						static_info[i]["value"] = lat_lon_str;
-						static_info[i]["show"] = 0;
+					if(static_info[i]["name"] == 'pos_link1') {
+						static_info[i]["value"] = pos1;
+					}
+
+					if(static_info[i]["name"] == 'pos_link2') {
+						static_info[i]["value"] = pos2;
 					}
 				}
+
 				if(static_info[i]["name"] == 'pmp_port') {
 					highlight_class = "text-warning text-bold"
 				}
@@ -3327,6 +3344,12 @@ function devicePlottingClass_gmap() {
 
 					if(startPtInfo[i].name == 'pos_link2') {
 						startPtInfo[i].value = pos2;
+					}
+
+					if(ptp_tech_list.indexOf(ss_tech) <= -1) {
+						if(ptp_not_show_items.indexOf(startPtInfo[i].name) > -1) {
+							startPtInfo[i].show = 0;
+						}
 					}
 
 					if(startPtInfo[i].show == 1) {
