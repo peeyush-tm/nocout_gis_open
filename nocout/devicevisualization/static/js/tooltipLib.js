@@ -1171,6 +1171,20 @@ var wimax_ss_toolTip_static = [];
 
 // Wimax SS Tooltip Polled Info Object
 var wimax_ss_toolTip_polled = [
+    {
+        'name'  : 'pl',
+        'title' : 'Packet Loss',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rta',
+        'title' : 'Latency',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'wimax_ss_ul_utilization_ul_utilization',
         'title' : 'Uplink Utilization',
@@ -1193,7 +1207,7 @@ var wimax_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'wimax_qos_invent_qos',
+		'name'  : 'wimax_qos_invent_ul_qos',
         'title' : 'QOS(Polled)',
         'show'  : 1,
         'value' : '',
@@ -1207,12 +1221,33 @@ var wimax_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'wimax_bs_uptime_uptime',
+		'name'  : 'wimax_ss_uptime_uptime',
         'title' : 'Device Uptime',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name'  : 'wimax_ss_autonegotiation_status_autonegotiation',
+        'title' : 'Auto Negotiation',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_ss_duplex_status_duplex',
+        'title' : 'Duplex',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'wimax_ss_speed_status_ss_speed',
+        'title' : 'Speed',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'wimax_ss_link_status_link_state',
         'title' : 'Link Ethernet Status',
@@ -1328,20 +1363,6 @@ var wimax_ss_toolTip_polled = [
 	{
 		'name'  : 'wimax_dl_modulation_change_invent_dl_modulation_change',
         'title' : 'Downlink Modulation Change',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'pl',
-        'title' : 'Packet Loss',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'rta',
-        'title' : 'Latency',
         'show'  : 1,
         'value' : '',
         'url'   : ''
