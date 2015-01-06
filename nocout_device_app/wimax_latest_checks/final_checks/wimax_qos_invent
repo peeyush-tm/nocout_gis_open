@@ -112,6 +112,8 @@ def check_wimax_qos_invent(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
+    dl_qos= None
+    ul_qos = None
     try:
 	if info[1]:
 		ss_mac = info[1][0]
@@ -131,12 +133,13 @@ def check_wimax_qos_invent(item, _no_params, info):
     except:
         infotext = "unknown_value"
 
-    return (state, infotext)
+    return (state, infotext,[("ul_qos",ul_qos),("dl_qos",dl_qos)])
 
 
 check_info["wimax_qos_invent"] = {
     'check_function': check_wimax_qos_invent,
     'service_description': 'wimax_qos_invent',
+    'has_perfdata':True,
 }
 
 #########################################################################

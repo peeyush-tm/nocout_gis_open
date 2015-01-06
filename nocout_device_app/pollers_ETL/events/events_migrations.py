@@ -13,7 +13,7 @@ def main():
     mongo_conf = []
     configs = config_module.parse_config_obj()
     for section, options in configs.items():
-	mongo_conf.append((options.get('site'),options.get('host'), options.get('port')))
+        mongo_conf.append((options.get('site'),options.get('host'), options.get('port')))
 	
     network_event_script = configs.get(mongo_conf[0][0]).get('network_event').get('script')
     network_event_migration_script = __import__(network_event_script)

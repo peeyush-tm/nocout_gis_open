@@ -961,17 +961,20 @@ class Inventory_Device_Service_Data_Source(View):
             for service_data_source in service_data_sources:
                 sds_name = service_data_source.name.strip().lower()
 
-                sds_info = {
-                            'name': service_data_source.name,
-                            'title': service.alias.strip().upper() +
-                                    "<br> [ " +
-                                    service_data_source.alias.strip().title() +
-                                    " ] <br>",
-                            'url': 'performance/service/' + service_name +
-                                   '/service_data_source/' + sds_name +
-                                   '/device/' + str(device_id),
-                            'active': 0,
-                        }
+                if service_data_source.show_performance_center:
+                    sds_info = {
+                                'name': service_data_source.name,
+                                'title': service.alias.strip() +
+                                        "<br> [ " +
+                                        service_data_source.alias.strip() +
+                                        " ] <br>",
+                                'url': 'performance/service/' + service_name +
+                                       '/service_data_source/' + sds_name +
+                                       '/device/' + str(device_id),
+                                'active': 0,
+                            }
+                else:
+                    continue
 
                 if '_status' in service_name:
                     result['data']['objects']['service_status_tab']["info"].append(sds_info)
@@ -1042,7 +1045,8 @@ class Get_Service_Status(View):
                     'perf': None,
                     'last_updated': None,
                     'status': None,
-                    'age': None
+                    'age': None,
+                    'last_down_time': None
                 }
             }
         }
@@ -1058,7 +1062,14 @@ class Get_Service_Status(View):
         #check when was the element last down
 
 
-        age, severity, pl_value = device_uptime_data_result(device_object=device)
+        severity, age = device_current_status(device_object=device)
+        last_down_time = device_last_down_time(device_object=device)
+
+        if age:
+            age = datetime.datetime.fromtimestamp(float(age)).strftime(DATE_TIME_FORMAT)
+
+        if last_down_time:
+            last_down_time = datetime.datetime.fromtimestamp(float(last_down_time)).strftime(DATE_TIME_FORMAT)
 
         self.result = {
             'success': 1,
@@ -1069,7 +1080,8 @@ class Get_Service_Status(View):
                     'perf': None,
                     'last_updated': None,
                     'status': severity.lower().strip() if severity else None,
-                    'age': age
+                    'age': age,
+                    'last_down_time': last_down_time
                 }
             }
         }
@@ -1733,12 +1745,12 @@ class Get_Service_Type_Performance_Data(View):
                 continue
 
         #last time down results
-        age, severity, current_value = device_uptime_data_result(device_object=ss_device_object)
+        age = device_last_down_time(device_object=ss_device_object)
         #last time pl = 100 results
-        if 'age' == 'NA':
-            pass
-        else:
-            status_since = age
+        if age:
+            status_since = datetime.datetime.fromtimestamp(float(age)
+                ).strftime(DATE_TIME_FORMAT)
+
 
         return packet_loss, latency, status_since
 
@@ -1923,14 +1935,29 @@ class Get_Service_Type_Performance_Data(View):
                             max_data_list.append([js_time, float(data.max_value)
                             if data.max_value else None])
 
-                        compare_point = lambda p1, p2, p3: chart_color \
-                            if abs(p1) < abs(p2) \
-                            else ('#FFE90D'
-                                  if abs(p2) < abs(p1) < abs(p3)
-                                  else ('#FF193B' if abs(p3) < abs(p1)
-                                        else chart_color
-                        )
-                        )
+                        sds_inverted = False
+
+                        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["is_inverted"]:
+                            sds_inverted = SERVICE_DATA_SOURCE[sds_name]["is_inverted"]
+
+                        if not sds_inverted:
+                            compare_point = lambda p1, p2, p3: chart_color \
+                                if abs(p1) < abs(p2) \
+                                else ('#FFE90D'
+                                      if abs(p2) < abs(p1) < abs(p3)
+                                      else ('#FF193B' if abs(p3) < abs(p1)
+                                            else chart_color
+                                )
+                            )
+                        else:
+                            compare_point = lambda p1, p2, p3: chart_color \
+                                if abs(p1) > abs(p2) \
+                                else ('#FFE90D'
+                                      if abs(p2) > abs(p1) > abs(p3)
+                                      else ('#FF193B' if abs(p3) > abs(p1)
+                                            else chart_color
+                                )
+                            )
 
                         formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                             if sds_name in SERVICE_DATA_SOURCE \
@@ -1962,7 +1989,8 @@ class Get_Service_Type_Performance_Data(View):
                                        'data': data_list,
                                        'type': result['data']['objects']['type'],
                                        'valuesuffix': result['data']['objects']['valuesuffix'],
-                                       'valuetext': result['data']['objects']['valuetext']
+                                       'valuetext': result['data']['objects']['valuetext'],
+                                       'is_inverted': sds_inverted
                                       }
                         ]
                         if len(min_data_list):
@@ -2136,14 +2164,29 @@ class Get_Service_Type_Performance_Data(View):
                             max_data_list.append([js_time, float(data.max_value)
                             if data.max_value else None])
 
-                        compare_point = lambda p1, p2, p3: chart_color \
-                            if abs(p1) < abs(p2) \
-                            else ('#FFE90D'
-                                  if abs(p2) < abs(p1) < abs(p3)
-                                  else ('#FF193B' if abs(p3) < abs(p1)
-                                        else chart_color
-                        )
-                        )
+                        sds_inverted = False
+
+                        if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["is_inverted"]:
+                            sds_inverted = SERVICE_DATA_SOURCE[sds_name]["is_inverted"]
+
+                        if not sds_inverted:
+                            compare_point = lambda p1, p2, p3: chart_color \
+                                if abs(p1) < abs(p2) \
+                                else ('#FFE90D'
+                                      if abs(p2) < abs(p1) < abs(p3)
+                                      else ('#FF193B' if abs(p3) < abs(p1)
+                                            else chart_color
+                                )
+                            )
+                        else:
+                            compare_point = lambda p1, p2, p3: chart_color \
+                                if abs(p1) > abs(p2) \
+                                else ('#FFE90D'
+                                      if abs(p2) > abs(p1) > abs(p3)
+                                      else ('#FF193B' if abs(p3) > abs(p1)
+                                            else chart_color
+                                )
+                            )
 
                         formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
                             if sds_name in SERVICE_DATA_SOURCE \
@@ -2175,7 +2218,8 @@ class Get_Service_Type_Performance_Data(View):
                                        'data': data_list,
                                        'type': self.result['data']['objects']['type'],
                                        'valuesuffix': self.result['data']['objects']['valuesuffix'],
-                                       'valuetext': self.result['data']['objects']['valuetext']
+                                       'valuetext': self.result['data']['objects']['valuetext'],
+                                       'is_inverted': sds_inverted
                                       }
                         ]
                         if len(min_data_list):
@@ -2449,7 +2493,32 @@ class DeviceServiceDetail(View):
 
 
 #TODO: Move to performance utils
-def device_uptime_data_result(device_object):
+def get_higher_severity(severity_dict):
+    """
+
+    :param severity_dict:
+    :return:
+    """
+    s, a = None, None
+    for severity in severity_dict:
+        s = severity
+        a = severity_dict[severity]
+
+        if severity in ['down']:
+            return severity, severity_dict[severity]
+        elif severity in ['critical']:
+            return severity, severity_dict[severity]
+        elif severity in ['warning']:
+            return severity, severity_dict[severity]
+        elif severity in ['unknown']:
+            continue
+        else:
+            continue
+
+    return s, float(a)
+
+
+def device_current_status(device_object):
     """
     Device UP Status
     """
@@ -2459,30 +2528,38 @@ def device_uptime_data_result(device_object):
     inventory_device_name = device_object.device_name
     inventory_device_machine_name = device_object.machine.name
 
-    age = "NA"
-    severity = "NA"
-    current_value = "NA"
+    severity = {}
 
     device_nms_uptime_query_set = NetworkStatus.objects.filter(
         device_name=inventory_device_name,
-        data_source='pl',
+        service_name='ping',
+        data_source__in=['pl', 'rta']
     ).values('age', 'severity', 'current_value', 'sys_timestamp')
-    # using(
-    #     alias=inventory_device_machine_name
-    # ).
 
     device_nms_uptime = nocout_utils.nocout_query_results(
         query_set=device_nms_uptime_query_set,
         using=inventory_device_machine_name
     )
 
-    if device_nms_uptime and len(device_nms_uptime):
-        data = device_nms_uptime[0]
+    for data in device_nms_uptime:
+        severity[data['severity']] = data['age']
 
-        if data['severity'].lower() in ['up', 'ok']:
-            #severity is ok
-            #lets check the last time it was down
-            device_last_down_query_set = PerformanceNetwork.objects.filter(
+
+    return get_higher_severity(severity_dict=severity)
+
+
+def device_last_down_time(device_object):
+    """
+
+    :param device_object:
+    :return:
+    """
+    inventory_device_name = device_object.device_name
+    inventory_device_machine_name = device_object.machine.name
+
+    age = None
+
+    device_last_down_query_set = PerformanceNetwork.objects.filter(
                 device_name=inventory_device_name,
                 service_name='ping',
                 data_source='pl',
@@ -2490,27 +2567,27 @@ def device_uptime_data_result(device_object):
                 severity__in=['down']
             ).values('age', 'severity', 'current_value', 'sys_timestamp')
 
-            device_last_down = nocout_utils.nocout_query_results(
+    device_last_down = nocout_utils.nocout_query_results(
                 query_set=device_last_down_query_set,
                 using=inventory_device_machine_name
             )
 
-            if device_last_down and device_last_down.count():
-                last_down_data = device_last_down[0]
-                age = datetime.datetime.fromtimestamp(
-                    float(last_down_data['sys_timestamp'])
-                    ).strftime(DATE_TIME_FORMAT)
+    if device_last_down and device_last_down.count():
+        last_down_data = device_last_down[0]
+        age = float(last_down_data['age'])
 
-            else:
-                age = datetime.datetime.fromtimestamp(
-                    float(data['age'])
-                    ).strftime(DATE_TIME_FORMAT)
-        else:
-            age = datetime.datetime.fromtimestamp(
-                    float(data['age'])
-                    ).strftime(DATE_TIME_FORMAT)
+    if not age:
+        #device has never gone down
+        #we need to gather the first time ever
+        #it was monitored
+        try:
+            always_up = PerformanceNetwork.objects.filter(
+                    device_name=inventory_device_name,
+                    service_name='ping',
+                    data_source='pl',
+                ).order_by('sys_timestamp')[0]
+            age = float(always_up.sys_timestamp)
+        except:
+            pass
 
-        current_value = data['current_value']
-        severity = data['severity']
-
-    return age, severity, current_value
+    return age
