@@ -90,12 +90,12 @@ def prepare_raw_basestation(base_station=None):
                 'show': 1,
                 'value': format_value(base_station['BSSITEID'])
             },
-            {
-                'name': 'bs_site_type',
-                'title': 'BS Site Type',
-                'show': 1,
-                'value': format_value(base_station['BSSITETYPE'])
-            },
+            # {
+            #     'name': 'bs_site_type',
+            #     'title': 'BS Site Type',
+            #     'show': 1,
+            #     'value': format_value(base_station['BSSITETYPE'])
+            # },
             {
                 'name': 'building_height',
                 'title': 'Building Height',
@@ -145,11 +145,23 @@ def prepare_raw_basestation(base_station=None):
                 'show':1,
                 'value': format_value(base_station['BSSITETYPE'])
             },
+            # {
+            #     'name':'bs_switch',
+            #     'title':'BS Switch',
+            #     'show':1,
+            #     'value': format_value(base_station['BSSWITCH'])
+            # },
             {
-                'name':'bs_switch',
-                'title':'BS Switch',
+                'name':'tag1',
+                'title':'Tag1',
                 'show':1,
-                'value': format_value(base_station['BSSWITCH'])
+                'value': format_value(base_station['BSTAG1'])
+            },
+            {
+                'name':'tag2',
+                'title':'Tag2',
+                'show':1,
+                'value': format_value(base_station['BSTAG2'])
             },
             {
                 'name': 'lat_lon',
@@ -305,10 +317,40 @@ def prepare_raw_backhaul(backhaul):
                     'value': format_value(backhaul['POP_IP'])
                 },
                 {
+                    'name':'bs_switch_ip',
+                    'title':'BS Switch IP',
+                    'show':1,
+                    'value': format_value(backhaul['BSSWITCH'])
+                },
+                {
+                    'name':'bh_device_type',
+                    'title':'Converter Type',
+                    'show':1,
+                    'value': format_value(backhaul['BHTYPE'])
+                },
+                {
                     'name': 'bs_converter_ip',
                     'title': 'BS Converter IP',
                     'show': 1,
                     'value': format_value(backhaul['BSCONV_IP'])
+                },
+                {
+                    'name': 'bh_ttsl_circuit_id',
+                    'title': 'BSO Circuit ID',
+                    'show': 1,
+                    'value': format_value(backhaul['BH_TTSL_CIRCUIT_ID'])
+                },
+                {
+                    'name': 'bh_device_port',
+                    'title': 'SW/Con Port',
+                    'show': 1,
+                    'value': format_value(backhaul['BH_DEVICE_PORT'])
+                },
+                {
+                    'name': 'aggregation_switch_port',
+                    'title': 'Aggregation Switch Port',
+                    'show': 1,
+                    'value': format_value(backhaul['BH_AGGR_PORT'])
                 }
             ]
             # else:
@@ -528,6 +570,12 @@ def prepare_raw_sector(sectors):
                                 'value': format_value(format_this=sector['SECTOR_RX']),
                             },
                             {
+                                'name': 'ugps_installed',
+                                'title': 'UGPS Installed',
+                                'show': 1,
+                                'value': format_value(format_this=sector['BSGPSTYPE']),
+                            },
+                            {
                                 'name': 'dr_status',
                                 'title': 'DR Status',
                                 'show': 1,
@@ -663,6 +711,12 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                                             'title': 'SS IP',
                                             'show': 1,
                                             'value': format_value(circuit['SSIP'])
+                                        },
+                                        {
+                                            'name': 'pe_ip',
+                                            'title': 'PE IP',
+                                            'show': 1,
+                                            'value': format_value(circuit['BH_PE_IP'])
                                         },
                                         {
                                             'name': 'ss_mac',

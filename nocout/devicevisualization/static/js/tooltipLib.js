@@ -23,7 +23,7 @@ var bs_toolTip_static = [
 	{
 		'name'  : 'bs_site_name',
         'title' : 'BS Site Name',
-        'show'  : 1,
+        'show'  : 0,
         'value' : '',
         'url'   : ''
 	},
@@ -123,14 +123,7 @@ var bh_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'bh_utilization',
-        'title' : 'BH Utilization',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'bh_off_on_net',
+		'name'  : 'bh_connectivity',
         'title' : 'BH Offnet/Onnet',
         'show'  : 1,
         'value' : '',
@@ -151,7 +144,7 @@ var bh_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'bh_bso_circuit_id',
+		'name'  : 'bh_ttsl_circuit_id',
         'title' : 'BSO Circuit ID',
         'show'  : 1,
         'value' : '',
@@ -207,7 +200,7 @@ var bh_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'converter_type',
+		'name'  : 'bh_device_type',
         'title' : 'Converter Type',
         'show'  : 1,
         'value' : '',
@@ -221,7 +214,7 @@ var bh_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name'  : 'bh_configured_on_port',
+		'name'  : 'bh_device_port',
         'title' : 'SW/CON Port',
         'show'  : 1,
         'value' : '',
@@ -230,9 +223,38 @@ var bh_toolTip_static = [
 ];
 
 // BH Tooltip polled info object
-var bh_toolTip_polled = [];
+var bh_toolTip_polled = [
+    {
+        'name'  : 'converter_temp',
+        'title' : 'Converter Temperature',
+        'show'  : 0,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'bh_utilization',
+        'title' : 'BH Utilization',
+        'show'  : 0,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'pl',
+        'title' : 'Packet Loss',
+        'show'  : 0,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : 'rta',
+        'title' : 'Latency',
+        'show'  : 0,
+        'value' : '',
+        'url'   : ''
+    }
+];
 
-// PTP SS Tooltip static info object
+// General SS Tooltip static info object
 var ss_toolTip_static = [
 	{
 		'name'  : 'cktid',
@@ -255,6 +277,13 @@ var ss_toolTip_static = [
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name': 'pe_ip',
+        'title': 'PE IP',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'qos_bandwidth',
         'title' : 'QOS(BW)',
@@ -443,7 +472,7 @@ var ptp_ss_toolTip_polled = [
 	},
 	{
 		'name'  : 'radwin_uptime_uptime',
-        'title' : 'Uptime',
+        'title' : 'Device Uptime',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -543,6 +572,13 @@ var ptp_sector_toolTip_static = [
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name': 'pe_ip',
+        'title': 'PE IP',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'qos_bandwidth',
         'title' : 'QOS(BW)',
@@ -856,29 +892,50 @@ var pmp_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'cambium_qos_invent_qos',
+		'name'  : 'cambium_qos_invent_bw_ul_sus_rate',
         'title' : 'QOS(Polled)',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name'  : '',
+        'title' : 'Session Uptime',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'cambium_uptime_uptime',
-        'title' : 'Uptime',
+        'title' : 'Device Uptime',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name'  : '',
+        'title' : 'Auto Negotiation',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : '',
+        'title' : 'Duplex',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
+    {
+        'name'  : '',
+        'title' : 'Speed',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'cambium_link_ethernet_status_link_state',
         'title' : 'Link Ethernet Status',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-	},
-	{
-		'name'  : 'cambium_sync_state_invent_sync_state',
-        'title' : 'Sync State',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -940,14 +997,14 @@ var pmp_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'cambium_bs_sector_id_invent_bs_sector_id',
+		'name'  : 'cambium_ss_sector_id_invent_ss_sector_id',
         'title' : 'Sector ID',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
 	{
-		'name'  : 'cambium_bs_ip_invent_bs_ip',
+		'name'  : 'cambium_ss_connected_bs_ip_invent_bs_ip',
         'title' : 'Connected BS IP',
         'show'  : 1,
         'value' : '',
@@ -968,7 +1025,7 @@ var pmp_ss_toolTip_polled = [
         'url'   : ''
     },
 	{
-		'name'  : 'cambium_bs_frequency_invent_frequency',
+		'name'  : 'cambium_ss_frequency_invent_frequency',
         'title' : 'Frequency',
         'show'  : 1,
         'value' : '',
@@ -1034,6 +1091,13 @@ var pmp_sector_toolTip_static = [
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name'  : 'ugps_installed',
+        'title' : 'UGPS Installed',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'tx_power_planned',
         'title' : 'Tx Power Planned',
@@ -1095,12 +1159,19 @@ var pmp_sector_toolTip_polled = [
         'url'   : ''
     },
 	{
-		'name'  : 'cambium_bs_utilization_utilization',
-		'title' : 'Sector Utilization',
+		'name'  : 'cambium_ul_utilization_ul_utilization',
+		'title' : 'Sector UL Utilization',
         'show'  : 1,
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name'  : 'cambium_dl_utilization_dl_utilization',
+        'title' : 'Sector DL Utilization',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'cambium_uptime_uptime',
 		'title' : 'Sector Uptime',

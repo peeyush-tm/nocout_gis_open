@@ -587,6 +587,8 @@ left join
                 bh_info.BHCONF_IP as BHCONF_IP,
                 bh_info.BHTECH as BHTECH,
                 bh_info.BHTYPE as BHTYPE,
+                bh_info.BH_AGGR_PORT as BH_AGGR_PORT,
+                bh_info.BH_DEVICE_PORT as BH_DEVICE_PORT,
 
                 POP_IP,
                 AGGR_IP,
@@ -602,6 +604,8 @@ left join
                 backhaul.bh_circuit_id as BH_CIRCUIT_ID,
                 backhaul.bh_capacity as BH_CAPACITY,
                 backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
+                backhaul.aggregator_port as BH_AGGR_PORT,
+                backhaul.switch_port as BH_DEVICE_PORT,
                 
                 device.id as BH_DEVICE_ID,
                 device.device_name as BHCONF,
@@ -896,6 +900,8 @@ left join
                 bh_info.BHCONF_IP as BHCONF_IP,
                 bh_info.BHTECH as BHTECH,
                 bh_info.BHTYPE as BHTYPE,
+                bh_info.BH_AGGR_PORT as BH_AGGR_PORT,
+                bh_info.BH_DEVICE_PORT as BH_DEVICE_PORT,
                 
                 POP_IP,
                 AGGR_IP,
@@ -911,6 +917,8 @@ left join
                 backhaul.bh_circuit_id as BH_CIRCUIT_ID,
                 backhaul.bh_capacity as BH_CAPACITY,
                 backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
+                backhaul.aggregator_port as BH_AGGR_PORT,
+                backhaul.switch_port as BH_DEVICE_PORT,
                 
                 device.id as BH_DEVICE_ID,
                 device.device_name as BHCONF,
