@@ -90,12 +90,12 @@ def prepare_raw_basestation(base_station=None):
                 'show': 1,
                 'value': format_value(base_station['BSSITEID'])
             },
-            {
-                'name': 'bs_site_type',
-                'title': 'BS Site Type',
-                'show': 1,
-                'value': format_value(base_station['BSSITETYPE'])
-            },
+            # {
+            #     'name': 'bs_site_type',
+            #     'title': 'BS Site Type',
+            #     'show': 1,
+            #     'value': format_value(base_station['BSSITETYPE'])
+            # },
             {
                 'name': 'building_height',
                 'title': 'Building Height',
