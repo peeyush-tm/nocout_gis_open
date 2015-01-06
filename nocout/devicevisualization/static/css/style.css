@@ -461,3 +461,6 @@ iframe {
 #infoWindowContainer table > tbody > tr > td:first-child {
     width: 45%;
 }
+.text-bold {
+    font-weight: bold;
+}

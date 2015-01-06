@@ -3160,13 +3160,13 @@ function devicePlottingClass_gmap() {
 			}
 
 		} else if (clickedType == 'sector_Marker' || clickedType == 'sector') {
-
 			var sectorWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : "Base Station Device",
 				nearend_perf_url = contentObject.perf_url ? base_url+""+contentObject.perf_url : "",
 				nearend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
 				tools_html = "",
 				nearEndInfo = contentObject['deviceInfo'].concat(contentObject['deviceExtraInfo']),
-				static_info = !contentObject["tooltip_info"] ? nearEndInfo : rearrangeTooltipArray(ptp_sector_toolTip_static,contentObject["tooltip_info"]);
+				static_info = !contentObject["tooltip_info"] ? nearEndInfo : rearrangeTooltipArray(ptp_sector_toolTip_static,contentObject["tooltip_info"]),
+				lat_lon_str = "";
 
 			/*Tab-content Start*/
 			infoTable += '<div class="tab-content">';
@@ -3189,6 +3189,12 @@ function devicePlottingClass_gmap() {
 				} else {
 					// pass
 				}
+			} else {
+				if(contentObject.sector_lat && contentObject.sector_lon) {
+					lat_lon_str = String(contentObject.sector_lat)+","+String(contentObject.sector_lon);
+				} else {
+					lat_lon_str = String(contentObject.position.lat())+","+String(contentObject.position.lng());
+				}
 			}
 			
 			/*Static Tab Content Start*/
@@ -3197,8 +3203,20 @@ function devicePlottingClass_gmap() {
 			infoTable += "<table class='table table-bordered table-hover'><tbody>";
 
 			for(var i=0; i< static_info.length; i++) {
+				var highlight_class = "";
+				// If ptp sector then update lat-lon value by sector lat-lon
+				if(contentObject["tooltip_info"]) {
+					if(static_info[i]["name"] == 'lat_lon') {
+						static_info[i]["value"] = lat_lon_str;
+						static_info[i]["show"] = 0;
+					}
+				}
+				if(static_info[i]["name"] == 'pmp_port') {
+					highlight_class = "text-warning text-bold"
+				}
+				
 				if(static_info[i].show) {
-					infoTable += "<tr><td>"+static_info[i]['title']+"</td><td>"+static_info[i]['value']+"</td></tr>";		
+					infoTable += "<tr><td>"+static_info[i]['title']+"</td><td class='"+highlight_class+"'>"+static_info[i]['value']+"</td></tr>";		
 				}
 			}
 			infoTable += "</tbody></table>";
