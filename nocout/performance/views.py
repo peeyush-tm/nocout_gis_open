@@ -2576,7 +2576,7 @@ def device_last_down_time(device_object):
 
     if device_last_down and device_last_down.count():
         last_down_data = device_last_down[0]
-        age = float(last_down_data['age'])
+        age = float(last_down_data['sys_timestamp'])
 
     if not age:
         #device has never gone down
