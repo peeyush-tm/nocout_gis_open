@@ -534,7 +534,7 @@ class BackhaulList(PermissionsRequiredMixin, TemplateView):
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
             {'mData': 'bh_configured_on__id', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto'},
-            {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bh_port_name', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'auto', },
             {'mData': 'pop__id', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'auto', },
@@ -561,9 +561,9 @@ class BackhaulListingTable(PermissionsRequiredMixin,
     """
     model = Backhaul
     required_permissions = ('inventory.view_backhaul',)
-    columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id', 'pop_port',
+    columns = ['alias', 'bh_configured_on__id', 'bh_port_name', 'bh_type', 'pop__id', 'pop_port',
                'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id',
+    order_columns = ['alias', 'bh_configured_on__id', 'bh_port_name', 'bh_type', 'pop__id',
                      'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def prepare_results(self, qs):

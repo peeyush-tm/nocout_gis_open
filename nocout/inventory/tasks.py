@@ -4,7 +4,7 @@ from models import GISInventoryBulkImport
 from machine.models import Machine
 from site_instance.models import SiteInstance
 from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency, DeviceType, ModelType, VendorModel, \
-    Country
+    Country, TechnologyVendor
 from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
@@ -5602,7 +5602,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
             # technology present in inventory sheet
             tech_in_inventory_sheet = row['Technology'].replace(" ", "") if 'Technology' in row.keys() else ""
 
-            # technology present in inventory sheet
+            # type present in inventory sheet
             type_in_inventory_sheet = row['Converter Type'].replace(" ", "") if 'Converter Type' in row.keys() else ""
 
             # devices technology
@@ -5619,17 +5619,57 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
             except Exception as e:
                 logger.info("Backhaul device technology not exist. Exception: ", e.message)
 
+            # dummy exception class to skip all loops when maching model is found
+            class FoundModel(Exception):
+                pass
+
+            # reverse mapping: there can me multiple device models associates with the same device type
+            #                  for e.g. 'RiCi' device type is associated with models 'RiCi_Converter' & 'RICI-LC';
+            #                  so to get correct model we must check it corresponding to it's associated technologies,
+            #                  and consider model which is associated with the technology given in excel sheet; same
+            #                  condition exist with device vendor.
+
             # devices model
-            bh_device_model = ""
+            bh_device_model = None
             try:
-                bh_device_model = ModelType.objects.get(type=bh_device_type).model
-            except Exception as e:
-                logger.info("Backhaul device model not exist. Exception: ", e.message)
+                bh_device_model = ModelType.objects.filter(type=bh_device_type)
+                # if more than one device model is fetched than we need to loop on it to find it's corresponding
+                # technology; first we need to fetch models than we need to loop on them; then we fetch
+                # vendors corresponding to the model in current loop; then we fetch device technologies
+                # corresponding to the current vendor in loop; at last we need to loop on these device technologies
+                # and compare there name with one which is given in excel sheet; if we find a match than we consider the
+                # model in current loop as 'bh_device_model' and skip all other loops by raising an exception
+                if len(bh_device_model) > 1:
+
+                    # loop on device models
+                    for temp_model in bh_device_model:
+                        temp_vendors = VendorModel.objects.filter(model=temp_model.model)
+                        if temp_vendors:
+
+                            # loop on device vendors
+                            for temp_vendor in temp_vendors:
+                                temp_technology = None
+                                try:
+                                    temp_technology = TechnologyVendor.objects.filter(vendor=temp_vendor.vendor)
+                                except Exception as e:
+                                    logger.error("Temp technology not exist. Exception: ", e.message)
+                                if temp_technology:
+
+                                    # loop on device technologies
+                                    for tech in temp_technology:
+                                        # compare current technology with the technology in the loop
+                                        if tech.technology.name == tech_in_inventory_sheet:
+                                            bh_device_model = temp_model.model
+                                            raise FoundModel
+                elif bh_device_model:
+                    bh_device_model = bh_device_model[0].model
+            except FoundModel:
+                pass
 
             # device vendor
-            bh_device_vendor = ""
+            bh_device_vendor = None
             try:
-                bh_device_vendor = VendorModel.objects.get(model=bh_device_model).vendor
+                bh_device_vendor = VendorModel.objects.filter(model=bh_device_model)[0].vendor
             except Exception as e:
                 logger.info("Backhaul device vendor not exist. Exception: ", e.message)
 
@@ -5773,8 +5813,8 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                 try:
                     machine_and_site = get_machine_and_site(ospf5_machine_and_site_info)
                 except Exception as e:
-                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
-
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:",
+                                e.message)
                 if machine_and_site:
                     # get machine
                     machine = ""
@@ -5804,7 +5844,6 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                 if ip_sanitizer(row['BS Converter IP']):
                     # bs converter data
                     bs_converter_data = {
-                        # 'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
                         'device_name': device_latest_id,
                         'organization': organization,
                         'machine': machine,
@@ -5822,6 +5861,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                         'address': row['BS Address'] if 'BS Address' in row.keys() else "",
                         'description': 'BS Converter created on {}.'.format(full_time)
                     }
+
                     # bs converter object
                     bs_converter = create_device(bs_converter_data)
 
@@ -5930,7 +5970,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
                         backhaul_data = {
                             'ip': row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row.keys() else "",
                             'bh_configured_on': bh_configured_on,
-                            'bh_port_name': bh_port_name,
+                            'bh_port_name': bh_port,
                             'bh_port': bh_port_number,
                             'bh_type': row['Backhaul Type'] if 'Backhaul Type' in row.keys() else "",
                             'bh_switch': bs_converter,
