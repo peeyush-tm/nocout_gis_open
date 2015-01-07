@@ -1,6 +1,8 @@
 {% extends "nocout/base.html" %}
 
-{% block content_title %} {{ page_title }} Live{% endblock %}
+{% block content_title %}
+    {{ page_title }} Live <span style="font-size: 25px;">{{ realdevice.device_alias }} ({{ realdevice.ip_address }})</span>
+{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
@@ -20,10 +22,10 @@
     <!--Single Device Live Perf Start-->
     <div class='box border lite perfContainerBlock'>
     <div class='box-title'>
-        <h4><i class='fa fa-file-text'></i> {{ realdevice.device_alias }} ( {{ realdevice.ip_address }} )</h4>
+        <h4 class="hide">{{ realdevice.device_alias }} ({{ realdevice.ip_address }})</h4>
         <!--Filters Block Start-->
-        <div class="pull-right">
-            <ul class="list-unstyled list-inline">
+        <div class="">
+            <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
                 <!--  <li>
                     device_name Filter
                     <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
@@ -43,7 +45,7 @@
                     <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10"
                            id="end_date" placeholder="End Date" class="hide">
                 </li> -->
-                <li style="min-width: 320px;">
+                <li style="max-width: 320px;">
                     <div class="input-group">
                         <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text"
                                                                                                     name="reservation"
@@ -67,8 +69,7 @@
                     </div>
                 </li>
 
-                <li>
-                    <!--CSV or Excel download action. -->
+                <!-- <li>
                     <div class="btn-group dropdown col-xs-1">
                         <button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
                             Download Report
@@ -83,7 +84,7 @@
                             </li>
                         </ul>
                     </div>
-                </li>
+                </li> -->
             </ul>
         </div>
         <!--Filters Block End-->
@@ -92,10 +93,6 @@
     <div class='box-body'>
     <div class="box status_box">
         <div class="box-title" style="background:transparent;">
-            <h4 id="device_status_container">
-                
-            </h4>
-
             <div class="tools_status">
                 <a href="javascript:;" title="Hide Status" class="collapse">
                     <i class="fa fa-chevron-up"></i>
@@ -104,6 +101,10 @@
         </div>
         <div class="box-body status_body">
             <div class="well well-sm" id="status_container" style="overflow:auto;">
+                <div id="device_status_container">
+                    
+                </div>
+                <div class="clearfix divide-10"></div>
                 <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">
                     <thead></thead>
                     <tbody></tbody>
