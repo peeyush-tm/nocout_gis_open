@@ -1712,8 +1712,8 @@ function rearrangeTooltipArray(correct_info_list,backend_info_list) {
 	}
 
 	// Get extra info come from backend
-	var extra_info = getUncommonData(correct_info_list,backend_info_list);
-	updated_info_list = updated_info_list.concat(extra_info);
+	// var extra_info = getUncommonData(correct_info_list,backend_info_list);
+	// updated_info_list = updated_info_list.concat(extra_info);
 
 	return updated_info_list;
 }
