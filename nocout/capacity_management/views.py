@@ -4,8 +4,9 @@ from django.shortcuts import render_to_response
 
 from django.template import RequestContext
 
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F
 from django.db.models.query import ValuesQuerySet
+from django.utils.dateformat import format
 
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -223,6 +224,132 @@ class SectorStatusListing(BaseDatatableView):
                 ).strftime(DATE_TIME_FORMAT)
                 item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
                     float(item['peak_in_timestamp'])
+                ).strftime(DATE_TIME_FORMAT)
+            except:
+                continue
+
+        return json_data
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
+        request = self.request
+
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.annotate(Count('sector_sector_id')).count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.annotate(Count('id')).count()
+
+        if total_display_records and total_records:
+
+            #check if this has just initialised
+            #if so : process the results
+
+            qs = self.ordering(qs)
+            qs = self.paging(qs)
+
+            # if the qs is empty then JSON is unable to serialize the empty
+            # ValuesQuerySet.Therefore changing its type to list.
+            if not qs and isinstance(qs, ValuesQuerySet):
+                qs = list(qs)
+
+            aaData = self.prepare_results(qs)
+        else:
+            aaData = list()
+
+        ret = {
+            'sEcho': int(request.REQUEST.get('sEcho', 0)),
+            'iTotalRecords': total_records,
+            'iTotalDisplayRecords': total_display_records,
+            'aaData': aaData
+        }
+        return ret
+
+class SectorAugmentationAlertsListing(SectorStatusListing):
+    """
+    Sector Augmentation Alerts Listing is subset for the Sector Capacity only
+    """
+    model = SectorCapacityStatus
+    is_ordered = False
+    is_polled = False
+    is_searched = False
+    is_initialised = True
+
+    columns = [
+        'id',
+        'sector__sector_id',
+        'sector_sector_id',
+        'sector__base_station__alias',
+        'sector__base_station__city__city_name',
+        'sector__base_station__state__state_name',
+        'sector__sector_configured_on__ip_address',
+        'sector__sector_configured_on__device_technology',
+        'organization__alias',
+        'severity',
+        'age'
+    ]
+
+    order_columns = columns
+
+    related_columns = [
+        'sector__base_station',
+        'sector__base_station__city',
+        'sector__base_station__state',
+        'sector__sector_configured_on',
+        'organization'
+    ]
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        else:
+            organizations = logged_in_user_organizations(self)
+
+            return self.get_initial_query_set_data(organizations=organizations)
+
+    def get_initial_query_set_data(self, **kwargs):
+        """
+        Generic function required to fetch the initial data with respect to the page_type parameter in the get request requested.
+
+        :param device_association:
+        :param kwargs:
+        :return: list of devices
+        """
+
+        sectors = self.model.objects.filter(
+            Q(organization__in=kwargs['organizations']),
+            Q(severity__in=['warning', 'critical']),
+            Q(age__gte = F('sys_timestamp') - 600)
+        ).prefetch_related(*self.related_columns).values(*self.columns)
+
+        return sectors
+
+    def prepare_results(self, qs):
+        """
+        """
+        # data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        technology_object = DeviceTechnology.objects.all()
+
+        for item in json_data:
+            try:
+                techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
+                item['sector__sector_configured_on__device_technology'] = techno_name
+                item['age'] = datetime.datetime.fromtimestamp(
+                    float(item['age'])
                 ).strftime(DATE_TIME_FORMAT)
             except:
                 continue
