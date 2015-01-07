@@ -2405,7 +2405,7 @@ class DeviceServiceDetail(View):
             temp_s_name = s['name']
             sds_names.append(temp_sds_name)
             service_data_sources[temp_s_name, temp_sds_name] = \
-                s['alias'] + "[ " + s['servicespecificdatasource__service_data_sources__alias'] + " ]"
+                s['servicespecificdatasource__service_data_sources__alias']
 
         if dr_device:
             performance = PerformanceService.objects.filter(
