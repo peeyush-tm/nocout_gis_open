@@ -20,6 +20,7 @@ from inventory.models import ThematicSettings, UserThematicSettings, BaseStation
     PingThematicSettings, Circuit, CircuitL2Report
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
     PerformanceNetwork, PerformanceService, Status, Topology, Utilization, UtilizationStatus
+from performance.views import device_last_down_time
 from user_profile.models import UserProfile
 from devicevisualization.models import GISPointTool, KMZReport
 from django.views.decorators.csrf import csrf_exempt
@@ -35,6 +36,7 @@ from performance.formulae import rta_null, display_time
 
 # update the service data sources
 from service.utils.util import service_data_sources
+from nocout.utils.util import format_value
 
 logger = logging.getLogger(__name__)
 
@@ -2123,145 +2125,145 @@ class GISPerfData(View):
                         'name': 'ss_ip',
                         'title': 'SS IP',
                         'show': 1,
-                        'value': substation_device.ip_address
+                        'value': format_value(substation_device.ip_address)
                     },
                     {
                         'name': 'ss_mac',
                         'title': 'SS MAC',
                         'show': 0,
-                        'value': substation_device.mac_address
+                        'value': format_value(substation_device.mac_address)
                     },
                     {
                         'name': 'name',
                         'title': 'SS Name',
                         'show': 0,
-                        'value': substation.name
+                        'value': format_value(substation.name)
                     },
                     {
                         'name': 'connected_bs_ip',
                         'title': 'Connected BS IP',
                         'show': 1,
-                        'value': connected_bs_ip
+                        'value': format_value(connected_bs_ip)
                     },
                     {
                         'name': 'cktid',
                         'title': 'Circuit ID',
                         'show': 1,
-                        'value': circuit_id
+                        'value': format_value(circuit_id)
                     },
                     {
                         'name': 'qos_bandwidth',
                         'title': 'QOS(BW)',
                         'show': 1,
-                        'value': qos
+                        'value': format_value(qos)
                     },
                     {
                         'name': 'lat_lon',
                         'title': 'Lat, Long',
                         'show': 1,
-                        'value': str(substation.latitude)+","+str(substation.longitude)
+                        'value': format_value(str(substation.latitude)+","+str(substation.longitude))
                     },
                     {
                         'name': 'antenna_height',
                         'title': 'Antenna Height',
                         'show': 1,
-                        'value': antenna_height
+                        'value': format_value(antenna_height)
                     },
                     {
                         'name': 'polarisation',
                         'title': 'Antenna Polarisation',
                         'show': 1,
-                        'value': antenna_polarization
+                        'value': format_value(antenna_polarization)
                     },
                     {
                         'name': 'ss_technology',
                         'title': 'Technology',
                         'show': 1,
-                        'value': substation_technology
+                        'value': format_value(substation_technology)
                     },
                     {
                         'name': 'building_height',
                         'title': 'Building Height',
                         'show': 1,
-                        'value': substation.building_height
+                        'value': format_value(substation.building_height)
                     },
                     {
                         'name': 'tower_height',
                         'title': 'Tower Height',
                         'show': 1,
-                        'value': substation.tower_height
+                        'value': format_value(substation.tower_height)
                     },
                     {
                         'name': 'mount_type',
                         'title': 'SS MountType',
                         'show': 1,
-                        'value': antenna_mount_type
+                        'value': format_value(antenna_mount_type)
                     },
                     {
                         'name': 'alias',
                         'title': 'Alias',
                         'show': 1,
-                        'value': substation.alias
+                        'value': format_value(substation.alias)
                     },
                     {
                         'name': 'ss_device_id',
                         'title': 'SS Device ID',
                         'show': 0,
-                        'value': substation_device.id
+                        'value': format_value(substation_device.id)
                     },
                     {
                         'name': 'antenna_type',
                         'title': 'Antenna Type',
                         'show': 1,
-                        'value': antenna_type
+                        'value': format_value(antenna_type)
                     },
                     {
                         'name': 'ethernet_extender',
                         'title': 'Ethernet Extender',
                         'show': 1,
-                        'value': substation.ethernet_extender
+                        'value': format_value(substation.ethernet_extender)
                     },
                     {
                         'name': 'cable_length',
                         'title': 'Cable Length',
                         'show': 1,
-                        'value': substation.cable_length
+                        'value': format_value(substation.cable_length)
                     },
                     {
                         'name': 'customer_alias',
                         'title': 'Customer Name',
                         'show': 1,
-                        'value': customer_alias
+                        'value': format_value(customer_alias)
                     },
                     {
                         'name': 'customer_address',
                         'title': 'Customer Address',
                         'show': 1,
-                        'value': customer_address
+                        'value': format_value(customer_address)
                     },
                     {
                         'name': 'date_of_acceptance',
                         'title': 'Date of Acceptance',
                         'show': 1,
-                        'value': date_of_acceptance
+                        'value': format_value(date_of_acceptance)
                     },
                     {
                         'name': 'dl_rssi_during_acceptance',
                         'title': 'RSSI During Acceptance',
                         'show': 1,
-                        'value': dl_rssi_during_acceptance
+                        'value': format_value(dl_rssi_during_acceptance)
                     },
                     {
                         'name': 'dl_cinr_during_acceptance',
                         'title': 'CINR During Acceptance',
                         'show': 1,
-                        'value': dl_cinr_during_acceptance
+                        'value': format_value(dl_cinr_during_acceptance)
                     },
                     {
                         'name': 'planned_frequency',
                         'title': 'Planned Frequency',
                         'show': 1,
-                        'value': ss_sector_frequency
+                        'value': format_value(ss_sector_frequency)
                     }
                 ]
 
@@ -2309,6 +2311,20 @@ class GISPerfData(View):
                                                         processed=processed
                 )
 
+                # get session uptime
+                session_uptime = device_last_down_time(device_obj)
+
+                # session uptime tool tip dictionary
+                session_uptime_info = {
+                    "name": 'session_uptime',
+                    "title": 'Session Uptime',
+                    "show": 1,
+                    "url": None,
+                    "value": None,
+                }
+
+                device_info.append(session_uptime_info)
+
             # remove duplicate dictionaries in list
         device_info = remove_duplicate_dict_from_list(device_info)
 
@@ -2327,6 +2343,9 @@ class GISPerfData(View):
         SERVICE_DATA_SOURCE = service_data_sources()
 
         device_info = list()
+
+        # device object
+        device_obj = Device.objects.filter(pk=device_id)[0]
 
         perf_info = {
             "name": None,
@@ -2367,6 +2386,16 @@ class GISPerfData(View):
             }
 
             device_info.append(perf_info)
+
+            perf_info = {
+                "name": 'session_uptime',
+                "title": title,
+                "show": show_gis,
+                "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
+                    device_id) + "?start_date=&end_date=",
+                "value": eval(str(formula) + "(" + str(perf['current_value']) + ")") if formula
+                        else perf['current_value'],
+            }
 
         return device_info
 
