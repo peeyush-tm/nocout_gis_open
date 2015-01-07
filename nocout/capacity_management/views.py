@@ -231,12 +231,12 @@ class SectorStatusListing(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.annotate(Count('sector_sector_id'))
+        total_records = qs.annotate(Count('sector_sector_id')).count()
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.annotate(Count('id'))
+        total_display_records = qs.annotate(Count('id')).count()
 
         #check if this has just initialised
         #if so : process the results
