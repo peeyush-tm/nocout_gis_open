@@ -66,7 +66,6 @@ class SectorStatusHeaders(ListView):
         """
         context = super(SectorStatusHeaders, self).get_context_data(**kwargs)
 
-
         hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'sector', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
