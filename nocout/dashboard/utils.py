@@ -24,7 +24,7 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
         device_name__in=machine_device_list,
         service_name__icontains = service_name,
         data_source = data_source,
-    ).using(machine).values('id', 'device_name', 'service_name', 'ip_address', 'data_source', 'severity', 'current_value', 'warning_threshold', 'critical_threshold', 'sys_timestamp', 'check_timestamp')
+    ).using(machine).values('id', 'device_name', 'service_name', 'ip_address', 'data_source', 'severity', 'current_value', 'warning_threshold', 'critical_threshold', 'sys_timestamp', 'check_timestamp', 'age')
 
     if queue:
         try:
