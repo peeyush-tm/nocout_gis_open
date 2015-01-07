@@ -156,12 +156,8 @@ def insert_data(table, data_values,**kwargs):
             raise mysql.connector.Error, err
 
         if result:
-            if str(result[0]).lower() == str(entry[14]).lower():
-                # Don't update the entry if old event has same severity
-                continue
-            else:
-                # Add the entry for updation
-                insert_dict['1'].append(entry)
+            # Add the entry for updation
+            insert_dict['1'].append(entry)
         else:
             # Insert the new event entry
             insert_dict['0'].append(entry)
