@@ -2572,7 +2572,7 @@ def device_current_status(device_object):
 
     try:
         if pl_value and float(pl_value) == 100:
-            return 'Down', pl_age
+            return 'down', pl_age
         else:
             s, a = get_higher_severity(severity_dict=severity)
             if s and s.strip().lower() == 'down':
@@ -2596,6 +2596,12 @@ def device_last_down_time(device_object):
     inventory_device_machine_name = device_object.machine.name
 
     age = None
+
+    #first check the current PL state of the device
+    s, a = device_current_status(device_object=device_object)
+    if s == 'down':
+        return a
+    #if the current status id down, return down
 
     device_last_down_query_set = PerformanceNetwork.objects.filter(
                 device_name=inventory_device_name,
