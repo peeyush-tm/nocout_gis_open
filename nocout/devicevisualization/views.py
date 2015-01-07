@@ -2017,7 +2017,7 @@ class GISPerfData(View):
                 # connected bs ip
                 connected_bs_ip = ""
                 try:
-                    # if bs_connected_ip not exist 
+                    # if bs_connected_ip not exist in topology than get it from gis inventory
                     connected_bs_ip = Topology.objects.filter(connected_device_ip=device_obj.ip_address)[0].ip_address
                     if not connected_bs_ip:
                         connected_bs_ip = Circuit.objects.get(sub_station=substation).sector.sector_configured_on.ip_address
