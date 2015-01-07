@@ -576,15 +576,17 @@ function nocoutPerfLib() {
                     // text: config.name
                     text: ""
                 },
-                //legend: {
-                //    align: 'right',
-                //    verticalAlign: 'top',
-                //    x: 0,
-                //    y: 0,
-                //    floating: true,
-                //    borderWidth: 1,
-                //    backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
-                //},
+                legend:{
+                    itemDistance : 15,
+                    itemMarginBottom : 5,
+                    borderColor : "#FFF",
+                    borderWidth : "1",
+                    borderRadius : "8",
+                    itemStyle: {
+                        color: '#FFF',
+                        fontSize : '12px'
+                    }
+                },
                 tooltip: {
                     headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
                     pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
