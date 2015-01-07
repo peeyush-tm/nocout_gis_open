@@ -4,6 +4,7 @@ Dashboard Utilities.
 from multiprocessing import Process, Queue
 
 from django.conf import settings
+from datetime import datetime, timedelta
 
 import logging
 log = logging.getLogger(__name__)
@@ -127,6 +128,59 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
                     colors.append("#000000")
     chart_data.append(['Unknown', range_counter['unknown']])
     colors.append("#d3d3d3")
+
+    response_dict = {
+        "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
+        "data": {
+            "meta": {},
+            "objects": {
+                "plot_type": "charts",
+                "display_name": display_name,
+                "valuesuffix": "dB",
+                "colors": colors,
+                "chart_data": [{
+                    "type": 'pie',
+                    "name": display_name.upper(),
+                    "data": chart_data
+                }]
+            }
+        },
+        "success": 1
+    }
+    return response_dict
+
+
+def get_dashboard_status_sector_range_counter(service_status_results):
+    range_counter = {'Needs Augmentation': 0, 'Stop Provisioning': 0, 'Normal':0}
+    date_format = '%Y-%m-%d %H:%M:%S'
+    now = datetime.today() - timedelta(minutes=10)
+
+    for result in service_status_results:
+        age_str_since_the_epoch = datetime.fromtimestamp(float(result['age'])).strftime(date_format)
+        age_time_since_the_epoch = datetime.strptime(age_str_since_the_epoch, date_format)
+        if age_time_since_the_epoch > now:
+            if result['severity'] == 'warning':
+                range_counter['Needs Augmentation'] += 1
+            elif result['severity'] == 'critical':
+                range_counter['Stop Provisioning'] += 1
+            elif result['severity'] == 'ok':
+                range_counter['Normal'] += 1
+            else:
+                range_counter['Normal'] += 1
+
+    return range_counter
+
+
+def get_pie_chart_json_response_sector_dict(data_source, range_counter):
+
+    display_name = data_source.replace('_', ' ')
+    color_array = {'Needs Augmentation': "#FFE90D", 'Stop Provisioning': "#FF0022", 'Normal':"#99CC00"}
+
+    chart_data = []
+    colors = []
+    for key,value in range_counter.items():
+        chart_data.append(['%s: %s' % (key, value), range_counter[key]])
+        colors.append(color_array[key])
 
     response_dict = {
         "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
