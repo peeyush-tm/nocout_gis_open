@@ -1,5 +1,7 @@
+import datetime
+
 from django.shortcuts import render_to_response
-from django.views.generic.base import View
+
 from django.template import RequestContext
 
 from django.db.models import Q, Count
@@ -10,11 +12,12 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 
 import ujson as json
 
-from inventory.models import Sector
 from device.models import DeviceTechnology
 
 #get the organisation of logged in user
 from nocout.utils import logged_in_user_organizations
+
+from nocout.settings import DATE_TIME_FORMAT
 
 from capacity_management.models import SectorCapacityStatus
 
@@ -147,6 +150,8 @@ class SectorStatusListing(BaseDatatableView):
         'age'
     ]
 
+    order_columns = columns
+
     related_columns = [
         'sector__base_station',
         'sector__base_station__city',
@@ -213,6 +218,12 @@ class SectorStatusListing(BaseDatatableView):
             try:
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
                 item['sector__sector_configured_on__device_technology'] = techno_name
+                item['peak_out_timestamp'] = datetime.datetime.fromtimestamp(
+                    float(item['peak_out_timestamp'])
+                ).strftime(DATE_TIME_FORMAT)
+                item['peak_in_timestamp'] = datetime.datetime.fromtimestamp(
+                    float(item['peak_in_timestamp'])
+                ).strftime(DATE_TIME_FORMAT)
             except:
                 continue
 
