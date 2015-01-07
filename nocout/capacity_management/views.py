@@ -44,10 +44,10 @@ def get_utilization_status(request, status_type="default"):
     :params status_type:
     :return Https response object:
     """
-
+    status_template = ""
     if(status_type == "sector"):
         status_template = 'capacity_management/sector_capacity_status.html'
-    elif(status_type == "backhaul"):
+    else:
         status_template = 'capacity_management/backhaul_capacity_status.html'
 
     return render_to_response(status_template, context_instance=RequestContext(request))
