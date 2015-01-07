@@ -107,6 +107,7 @@ def check_wimax_ss_dl_utilization(item, _no_params, info):
 			if host_ip[0][0]:
                 		dl_throughput =connection_telnet_for_dl_utilization(host_ip[0][0], 23,ss_mac)
 				if dl_throughput:
+					dl_throughput = dl_throughput/1024.0
 					infotext = "SS downlink utilization is %s" % dl_throughput
 					state = 0
     except ValueError:
