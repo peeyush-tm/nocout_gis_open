@@ -7,6 +7,15 @@ from nocout.utils import util as nocout_utils
 
 from performance.utils import util as perf_utils
 
+from service.utils.util import service_data_sources
+
+from nocout.settings import DATE_TIME_FORMAT
+
+##execute this globally
+SERVICE_DATA_SOURCE = service_data_sources()
+##execute this globally
+
+
 # misc utility functions
 
 def prepare_query(table_name=None,
@@ -135,8 +144,8 @@ def indexed_alert_results(performance_data):
 
     for data in performance_data:
         # this would be a unique combination
-        if data['data_source'] is not None and data['device_name'] is not None:
-            defined_index = data['device_name'], data['data_source']
+        if data['data_source'] is not None and data['device_name'] is not None and data['service_name'] is not None:
+            defined_index = data['device_name'], data['service_name'], data['data_source']
             if defined_index not in indexed_raw_results:
                 indexed_raw_results[defined_index] = None
             indexed_raw_results[defined_index] = data
@@ -162,6 +171,7 @@ def prepare_raw_alert_results(performance_data=None):
         # the data would be a tuple of ("device_name"."data_source")
         # sample index data
         #{(u'511', u'pl'): {
+        # 'service_name': u'ping',
         # 'data_source': u'pl',
         # 'severity': u'down',
         # 'max_value': u'0',
@@ -173,24 +183,35 @@ def prepare_raw_alert_results(performance_data=None):
         # 'id': 59440L}
         # }
 
-        device_name, data_source = device_alert
+        device_name, service_name, data_source = device_alert
 
         data = indexed_alert_data[device_alert]
 
         if severity_level_check(list_to_check=[data['severity']]):
+
+            sds_name = data_source.strip().lower()
+
+            if sds_name not in ['pl', 'rta']:
+                sds_name = service_name.strip() + "_" + data_source.strip()
+
+            try:
+                sds_name = SERVICE_DATA_SOURCE[sds_name]['display_name']
+            except:
+                sds_name = " ".join(map(lambda a: a.title(), data_source.split("_")))
+
             device_events = {}
             device_events.update({
                 'device_name': device_name,
                 'severity': data['severity'],
                 'ip_address': data["ip_address"],
-                'data_source_name': " ".join(map(lambda a: a.title(), data_source.split("_"))),
+                'data_source_name': sds_name,
                 'current_value': data["current_value"],
                 'max_value': data["max_value"],
                 'min_value': data["min_value"],
                 'sys_timestamp': datetime.datetime.fromtimestamp(
-                    float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                    float(data["sys_timestamp"])).strftime(DATE_TIME_FORMAT),
                 'age': datetime.datetime.fromtimestamp(
-                    float(data["age"])).strftime("%m/%d/%y (%b) %H:%M:%S")
+                    float(data["age"])).strftime(DATE_TIME_FORMAT)
                 if data["age"]
                 else "",
                 'description': ''  #data['description']

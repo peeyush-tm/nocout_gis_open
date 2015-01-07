@@ -1,5 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% block content %}
+<p><a href="javascript:void(0)" onclick="window.history.go(-1);"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
     <style type="text/css">
         #user_profile table tr td:first-child {
             font-weight: bold;
@@ -10,7 +11,7 @@
     </style>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i> Backhaul Details (Base Station - {{ base_station.name }})</h4>
+            <h4><i class="fa fa-table"></i> Backhaul Details (Base Station - {{ base_station.alias }})</h4>
         </div>
         <div class="box-body">
             <div id="user_profile" class="col-md-6 col-md-offset-3">
@@ -36,39 +37,39 @@
                         <td>{{ object.bh_type }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Backhaul Switch </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> BS Convertor </td>
                         <td>{{ object.bh_switch }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Backhaul Switch Port Name </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> BS Convertor Port Name </td>
                         <td>{{ object.switch_port_name }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Backhaul Switch Port </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> BS Convertor Port Number </td>
                         <td>{{ object.switch_port }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Backhaul Pop </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Pop Convertor </td>
                         <td>{{ object.pop }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Backhaul Pop Port Name </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Pop Convertor Port Name </td>
                         <td>{{ object.pop_port_name }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Backhaul Pop Port </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Pop Convertor Port Number </td>
                         <td>{{ object.pop_port }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Backhaul Aggregator </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Aggregation Switch </td>
                         <td>{{ object.aggregator }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Backhaul Aggregator Port Name </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Aggregation Switch Port Name </td>
                         <td>{{ object.aggregator_port_name }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Backhaul Aggregator Port </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Aggregation Switch Port Number </td>
                         <td>{{ object.aggregator_port }}</td>
                     </tr>
                     <tr>

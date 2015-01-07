@@ -21,7 +21,18 @@ var recallPerf = "",
         padding       : '2px',
         borderRadius  : "5px",
         width         : '90px'
-    };
+    },
+    callsInProcess = false;
+
+if(!base_url) {
+    var base_url = "";
+    /*Set the base url of application for ajax calls*/
+    if(window.location.origin) {
+        base_url = window.location.origin;
+    } else {
+        base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+    }
+}
 
 if((window.location.pathname.indexOf("googleEarth") > -1) || (window.location.pathname.indexOf("white_background") > -1)) {
     hiddenIconObj = base_url+'/static/img/icons/1x1.png';
@@ -59,7 +70,7 @@ function GisPerformance() {
      */
     this.start = function (bs_list) {
 
-        if (isPollingActive == 0  && isPerfCallStopped == 0) {
+        if(isPollingActive == 0  && isPerfCallStopped == 0) {
             //Reset Variable
             perf_self.resetVariable()
 
@@ -116,11 +127,13 @@ function GisPerformance() {
         // +($.cookie('isFreezeSelected')) == 0 || +($.cookie('freezedAt')) > 0
         if (isPollingActive == 0  && isPerfCallStopped == 0) {
             if(perf_self.bsNamesList.length > 0 && perf_self.bsNamesList[counter]) {
+                callsInProcess = true;
                 //Call waitAndSend function with BS Json Data and counter value
                 perf_self.waitAndSend(perf_self.bsNamesList[counter], counter);
             } else {
+                callsInProcess = false;
                 //1 Minutes Timeout
-                setTimeout(function () {
+                recallPerf = setTimeout(function () {
                     //Start Performance Again
                     var bs_list = getMarkerInCurrentBound();
                     // Clear previous bs list
@@ -151,16 +164,21 @@ function GisPerformance() {
             type: 'GET',
             dataType: 'json',
             //In success
-            success: function (result) {
+            success: function (response) {
+
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+
                 var data = result.length ? result[0] : result;
-                // perf_fetched_devices.push(perf_self.bsNamesList[counter-1]);
-                // perf_self.bsNamesList.splice(counter-1,0);
                 //If data is there
                 if(data) {
                     //Store data in gisData
                     if(data.bs_id) {
-                        // perf_self.gisData = {};
-                        // perf_self.gisData = data;
                         if(window.location.pathname.indexOf("white_background") > -1) {
                             //Update Map with the data
                             perf_self.updateMap(data,function(response) {
@@ -175,21 +193,32 @@ function GisPerformance() {
                             });
                         } else {
                             var current_bs_in_bound = getMarkerInCurrentBound();
-                            /*Check that the bsname is present in current bounds or not*/
-                            if (current_bs_in_bound.indexOf(data.bs_id) > -1) {
-                                //Update Map with the data
-                                perf_self.updateMap(data,function(response) {
+                            // If map Zoom level is greater than 11 then proceed.
+                            if(mapInstance.getZoom() > 11) {
+                                /*Check that the bsname is present in current bounds or not*/
+                                if (current_bs_in_bound.indexOf(data.bs_id) > -1) {
+                                    //Update Map with the data
+                                    perf_self.updateMap(data,function(response) {
+                                        //Send Request for the next counter
+                                        perf_self.sendRequest(counter);
+                                    });
+                                } else {
                                     //Send Request for the next counter
                                     perf_self.sendRequest(counter);
-                                });
-                            } else {
+                                }
+                            }
+                        }
+                    } else {
+                        if(window.location.pathname.indexOf("white_background") > -1 || window.location.pathname.indexOf("googleEarth") > -1) {
+                            //Send Request for the next counter
+                            perf_self.sendRequest(counter);
+                        } else {
+                            // If map Zoom level is greater than 11 then proceed.
+                            if(mapInstance && mapInstance.getZoom() > 11) {
                                 //Send Request for the next counter
                                 perf_self.sendRequest(counter);
                             }
                         }
-                    } else {
-                        //Send Request for the next counter
-                        perf_self.sendRequest(counter);
                     }
                 }
 
@@ -217,7 +246,8 @@ function GisPerformance() {
                 bs_name = apiResponse.bs_name ? apiResponse.bs_name : "",
                 perf_bh_info = apiResponse.bh_info ? apiResponse.bh_info : [],
                 perf_bh_severity = apiResponse.bhSeverity ? apiResponse.bhSeverity : "",
-                bs_marker = "";
+                bs_marker = "",
+                show_ss_len = $("#showAllSS:checked").length;
 
             if(window.location.pathname.indexOf("googleEarth") > -1) {
                 bs_marker = allMarkersObject_earth['base_station']['bs_'+bs_name];
@@ -230,7 +260,7 @@ function GisPerformance() {
             // Update BH polled info to bs marker tooltip.
             if(bs_marker) {
                 try {
-                    bs_marker['bhInfo'] = bs_marker['bhInfo'].concat(perf_bh_info);
+                    bs_marker['bhInfo_polled'] = perf_bh_info;
                     bs_marker['bhSeverity'] = perf_bh_severity;
                 } catch(e) {
                     // console.log(e);
@@ -281,7 +311,6 @@ function GisPerformance() {
                     sector_tech = sector_marker['technology'] ? sector_marker['technology'] : "";
                     var sector_pl = perf_self.getKeyValue(sector_perf_info,"pl",true),
                         sector_rta = perf_self.getKeyValue(sector_perf_info,"rta",true);
-
                     if(sector_icon) {
                         perf_self.updateMarkerIcon(sector_marker,sector_icon);
                     }
@@ -400,516 +429,633 @@ function GisPerformance() {
                 } else {
                     // pass
                 }
-
-                // If any ss exist in response then clear old ss & their connection lines from map
-                if(sub_station.length > 0) {
-                    // Loop to remove ss,line & label for current sector from map.
-                    for(var xxx=0;xxx<connected_sectors.length;xxx++) {
-                        if(sectorArray[i].sub_station && sectorArray[i].sub_station.length > 0) {
-                            if((connected_sectors[xxx].sector_configured_on_device == sectorArray[i].device_name) && (connected_sectors[xxx].sector_configured_on == sectorArray[i].ip_address)) {
-                                var connected_sub_stations = sectorArray[i].sub_station;
-                                for(var key=0; key< connected_sub_stations.length; key++) {
-                                    var ss_name = connected_sub_stations[key]['name'] ? connected_sub_stations[key]['name'] : "";
-                                    if(connected_sub_stations[key] && ss_name) {
-                                        perf_self.removeOldSS(ss_name);
+                
+                // If any sector marker or polygon exist then continue
+                if(sector_marker || sector_polygon) {
+                    // If any ss exist in response then clear old ss & their connection lines from map
+                    if(sub_station.length > 0) {
+                        // Loop to remove ss,line & label for current sector from map.
+                        for(var xxx=0;xxx<connected_sectors.length;xxx++) {
+                            if(sectorArray[i].sub_station && sectorArray[i].sub_station.length > 0) {
+                                var condition1 = connected_sectors[xxx].sector_configured_on_device == sectorArray[i].device_name;
+                                    condition2 = connected_sectors[xxx].sector_configured_on == sectorArray[i].ip_address;
+                                    condition3 = connected_sectors[xxx].sector_id == sectorArray[i].sector_id;
+                                if(condition1 && condition2 && condition3) {
+                                    var connected_sub_stations = sectorArray[i].sub_station;
+                                    for(var key=0; key< connected_sub_stations.length; key++) {
+                                        var ss_name = connected_sub_stations[key]['name'] ? connected_sub_stations[key]['name'] : "";
+                                        if(connected_sub_stations[key] && ss_name) {
+                                            perf_self.removeOldSS(ss_name);
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    // Loop to plot new sub-stations
-                    for(var j=0;j<sub_station.length;j++) {
-                        var ss_marker_data = sub_station[j],
-                            ss_perf_info = ss_marker_data.data.param.sub_station,
-                            ss_pl = perf_self.getKeyValue(ss_perf_info,"pl",true),
-                            ss_rta = perf_self.getKeyValue(ss_perf_info,"rta",true);
+                        var plotSS = perf_self.isSectorDevicesPlottable(current_sector,connected_sectors);
+                        // If sectors satisfied filters condition only then plot SS
+                        if(plotSS) {
+                            // Loop to plot new sub-stations
+                            for(var j=0;j<sub_station.length;j++) {
 
-                        // var ss_marker_object = {};
-                        var ss_marker_object = {
-                            ptLat            :  ss_marker_data.data.lat,
-                            ptLon            :  ss_marker_data.data.lon,
-                            pointType        :  "sub_station",
-                            dataset          :  ss_perf_info,
-                            bhInfo           :  [],
-                            poll_info        :  [],
-                            pl               :  ss_pl,
-                            rta              :  ss_rta,
-                            antenna_height   :  ss_marker_data.data.antenna_height,
-                            name             :  ss_marker_data.name,
-                            technology       :  sector_tech,
-                            bs_name          :  apiResponse.bs_name,
-                            bs_sector_device :  sector_device,
-                            filter_data      :  {"bs_name" : apiResponse.bs_name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.bs_id, "sector_id" : sector_id},
-                            device_name      :  ss_marker_data.device_name,
-                            ss_ip            :  ss_marker_data.data.substation_device_ip_address,
-                            sector_ip        :  sector_ip,
-                            zIndex           :  200,
-                            optimized        :  false,
-                            isActive         :  1,
-                            // layerReference   :  ccpl_map.getLayersByName("Markers")[0]
-                        };
+                                var ss_marker_data = sub_station[j],
+                                    ss_static_info = ss_marker_data.data.param.sub_station,
+                                    ss_polled_info = ss_marker_data.data.param.polled_info,
+                                    ss_tooltip_info = JSON.parse(JSON.stringify(ss_static_info)).concat(JSON.parse(JSON.stringify(ss_polled_info))),
+                                    ss_pl = perf_self.getKeyValue(ss_tooltip_info,"pl",true),
+                                    ss_rta = perf_self.getKeyValue(ss_tooltip_info,"rta",true),
+                                    ckt_id_val = perf_self.getKeyValue(ss_tooltip_info,"cktid",true),
+                                    ss_perf_url = ss_marker_data.data.perf_page_url ? ss_marker_data.data.perf_page_url : "",
+                                    ss_inventory_url = ss_marker_data.data.inventory_url ? ss_marker_data.data.inventory_url : "";
 
-                        if(window.location.pathname.indexOf("googleEarth") > -1) {
-                            ss_marker_object['map'] = 'current';
-                            ss_marker_object['icon'] = base_url+"/"+ss_marker_data.data.markerUrl;
-                            ss_marker_object['oldIcon'] = base_url+"/"+ss_marker_data.data.markerUrl;
-                            ss_marker_object['clusterIcon'] = base_url+"/"+ss_marker_data.data.markerUrl;
+                                // var ss_marker_object = {};
+                                var ss_marker_object = {
+                                    ptLat            :  ss_marker_data.data.lat,
+                                    ptLon            :  ss_marker_data.data.lon,
+                                    pointType        :  "sub_station",
+                                    dataset          :  ss_static_info,
+                                    bhInfo           :  [],
+                                    poll_info        :  ss_polled_info,
+                                    pl               :  ss_pl,
+                                    rta              :  ss_rta,
+                                    antenna_height   :  ss_marker_data.data.antenna_height,
+                                    name             :  ss_marker_data.name,
+                                    technology       :  sector_tech,
+                                    perf_url         :  ss_perf_url,
+                                    inventory_url    :  ss_inventory_url,
+                                    bs_name          :  apiResponse.bs_name,
+                                    bs_sector_device :  sector_device,
+                                    filter_data      :  {"bs_name" : apiResponse.bs_name, "sector_name" : sector_ip, "ss_name" : ss_marker_data.name, "bs_id" : apiResponse.bs_id, "sector_id" : sector_id},
+                                    device_name      :  ss_marker_data.device_name,
+                                    ss_ip            :  ss_marker_data.data.substation_device_ip_address,
+                                    sector_ip        :  sector_ip,
+                                    cktId            :  ckt_id_val,
+                                    zIndex           :  200,
+                                    optimized        :  false,
+                                    isActive         :  1,
+                                    windowTitle      : "Sub Station"
+                                };
 
-                            var ss_marker = earth_self.makePlacemark(base_url+"/"+ss_marker_data.data.markerUrl, ss_marker_data.data.lat, ss_marker_data.data.lon,'ss_'+ss_marker_data.id, ss_marker_object);
+                                if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                    ss_marker_object['map'] = 'current';
+                                    ss_marker_object['icon'] = base_url+"/"+ss_marker_data.data.markerUrl;
+                                    ss_marker_object['oldIcon'] = base_url+"/"+ss_marker_data.data.markerUrl;
+                                    ss_marker_object['clusterIcon'] = base_url+"/"+ss_marker_data.data.markerUrl;
 
-                            (function(ss_marker) {
-                                google.earth.addEventListener(ss_marker, 'click', function(event) {
-                                    var content = gmap_self.makeWindowContent(ss_marker);
-                                    $("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
-                                    $("#infoWindowContainer").html(content);
-                                    $("#infoWindowContainer").removeClass('hide');
-                                    event.preventDefault();
-                                });
-
-                                google.earth.addEventListener(ss_marker, 'mouseover', function(event) {
-                                    var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-                                        condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
-
-                                    if(condition1 || condition2) {
-                                        var pl = $.trim(this.pl) ? this.pl : "N/A",
-                                            rta = $.trim(this.rta) ? this.rta : "N/A",
-                                            info_html = '';
-
-                                        // Create hover infowindow html content
-                                        info_html += '<table class="table table-responsive table-bordered table-hover">';
-                                        info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
-                                        info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
-                                        info_html += '</table>';
-
-                                        setTimeout(function() {
-                                            openGoogleEarthBaloon(info_html, ss_marker);
-                                        }, 20);
+                                    if(show_ss_len > 0) {
+                                        ss_marker_object['map'] = '';
                                     }
-                                });
 
-                                google.earth.addEventListener(ss_marker, 'mouseout', function(event) {
-                                    ge.setBalloon(null);
-                                });
-                            }(ss_marker));
-                            
-                            allMarkersObject_earth['sub_station']['ss_'+ss_marker.name] = ss_marker;
-                            allMarkersArray_earth.push(ss_marker);
+                                    var ss_marker = earth_self.makePlacemark(base_url+"/"+ss_marker_data.data.markerUrl, ss_marker_data.data.lat, ss_marker_data.data.lon,'ss_'+ss_marker_data.id, ss_marker_object);
 
-                        } else if (window.location.pathname.indexOf("white_background") > -1) {
+                                    (function(ss_marker) {
+                                        google.earth.addEventListener(ss_marker, 'click', function(event) {
+                                            var content = gmap_self.makeWindowContent(ss_marker);
+                                            $("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>');
+                                            $("#infoWindowContainer").html(content);
+                                            $("#infoWindowContainer").removeClass('hide');
+                                            event.preventDefault();
+                                        });
 
-                            var iconImageObj = base_url+"/"+ss_marker_data.data.markerUrl,
-                                ss_marker_icon = ss_marker_data.data.markerUrl ? iconImageObj : "";
+                                        google.earth.addEventListener(ss_marker, 'mouseover', function(event) {
+                                            var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+                                                condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
 
-                            /*Create SS Marker Object*/
-                            ss_marker_object['position'] = new OpenLayers.LonLat(ss_marker_data.data.lon, ss_marker_data.data.lat);
-                            ss_marker_object['map'] = 'current';
-                            ss_marker_object['icon'] = ss_marker_icon;
-                            ss_marker_object['oldIcon'] = ss_marker_icon;
-                            ss_marker_object['clusterIcon'] = ss_marker_icon;
-                            ss_marker_object['layerReference'] = ccpl_map.getLayersByName("Markers")[0];
+                                            if(condition1 || condition2) {
+                                                var pl = $.trim(this.pl) ? this.pl : "N/A",
+                                                    rta = $.trim(this.rta) ? this.rta : "N/A",
+                                                    info_html = '';
 
-                            var size = new OpenLayers.Size(32, 37);
-                            /*Create SS Marker*/
-                            var ss_marker = whiteMapClass.createOpenLayerVectorMarker(size, ss_marker_icon, ss_marker_data.data.lon, ss_marker_data.data.lat, ss_marker_object);
-                            // ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
+                                                // Create hover infowindow html content
+                                                info_html += '<table class="table table-responsive table-bordered table-hover">';
+                                                info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+                                                info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
+                                                info_html += '</table>';
 
-                            new_plotted_ss.push(ss_marker);
+                                                setTimeout(function() {
+                                                    openGoogleEarthBaloon(info_html, ss_marker);
+                                                }, 20);
+                                            }
+                                        });
 
-                            bs_ss_markers.push(ss_marker);
-                            markersMasterObj['SS'][String(ss_marker_data.data.lat)+ ss_marker_data.data.lon]= ss_marker;
-                            markersMasterObj['SSNamae'][String(ss_marker_data.device_name)]= ss_marker;
-                            allMarkersObject_wmap['sub_station']['ss_'+ss_marker_data.name] = ss_marker;
-                            allMarkersArray_wmap.push(ss_marker);
-                            /*Push SS marker to pollableDevices array*/
-                            pollableDevices.push(ss_marker)
+                                        google.earth.addEventListener(ss_marker, 'mouseout', function(event) {
+                                            ge.setBalloon(null);
+                                        });
+                                    }(ss_marker));
+                                    
+                                    allMarkersObject_earth['sub_station']['ss_'+ss_marker.name] = ss_marker;
+                                    allMarkersArray_earth.push(ss_marker);
 
-                            // ccpl_map.getLayersByName('Markers')[0].addFeatures([ss_marker]);
+                                } else if (window.location.pathname.indexOf("white_background") > -1) {
 
-                            var hide_flag = !$("#show_hide_label")[0].checked;
+                                    var iconImageObj = base_url+"/"+ss_marker_data.data.markerUrl,
+                                        ss_marker_icon = ss_marker_data.data.markerUrl ? iconImageObj : "";
 
-                            if(last_selected_label && $.trim(last_selected_label)) {
-                                var labelHtml = "";
-                                for(var z=ss_marker.dataset.length;z--;) {
-                                    if($.trim(ss_marker.dataset[z]['name']) == $.trim(last_selected_label)) {
-                                        labelHtml += "("+$.trim(ss_marker.dataset[z]['title'])+" - "+$.trim(ss_marker.dataset[z]['value'])+")";
-                                    }
-                                }
-                                // If any html created then show label on ss
-                                if(labelHtml) {
-                                    var toolTip_infobox = new OpenLayers.Popup(key,
-                                        new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-                                        null,
-                                        labelHtml,
-                                        false
+                                    /*Create SS Marker Object*/
+                                    ss_marker_object['position'] = new OpenLayers.LonLat(ss_marker_data.data.lon, ss_marker_data.data.lat);
+                                    ss_marker_object['map'] = 'current';
+                                    ss_marker_object['icon'] = ss_marker_icon;
+                                    ss_marker_object['oldIcon'] = ss_marker_icon;
+                                    ss_marker_object['clusterIcon'] = ss_marker_icon;
+                                    ss_marker_object['layerReference'] = ccpl_map.getLayersByName("Markers")[0];
+
+                                    var other_size_obj = whiteMapClass.getMarkerSize_wmap(false),
+                                        other_width = other_size_obj.width ? other_size_obj.width : whiteMapSettings.devices_size.medium.width,
+                                        other_height = other_size_obj.height ? other_size_obj.height : whiteMapSettings.devices_size.medium.height;
+
+                                    var size = new OpenLayers.Size(other_width, other_height);
+                                    /*Create SS Marker*/
+                                    var ss_marker = whiteMapClass.createOpenLayerVectorMarker(
+                                        size,
+                                        ss_marker_icon,
+                                        ss_marker_data.data.lon,
+                                        ss_marker_data.data.lat,
+                                        ss_marker_object
                                     );
                                     
-                                    ccpl_map.addPopup(toolTip_infobox);
-                                    toolTip_infobox.updateSize();
-
-                                    tooltipInfoLabel['ss_'+ss_marker.name] = toolTip_infobox;    
-                                }
-                            }
-                        } else {
-
-                            var ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_data.data.markerUrl,"other");
-
-                            ss_marker_object['position'] = new google.maps.LatLng(ss_marker_data.data.lat,ss_marker_data.data.lon);
-                            ss_marker_object['map'] = mapInstance;
-                            ss_marker_object['icon'] = ss_icon_obj;
-                            ss_marker_object['oldIcon'] = ss_icon_obj;
-                            ss_marker_object['clusterIcon'] = ss_icon_obj;
-
-                            /*Create SS Marker*/
-                            var ss_marker = new google.maps.Marker(ss_marker_object);
-                            
-                            /*Add SS Marker To Cluster*/
-                            masterClusterInstance.addMarkers([ss_marker],true);
-
-                            markersMasterObj['SS'][String(ss_marker_data.data.lat)+ ss_marker_data.data.lon]= ss_marker;
-                            markersMasterObj['SSNamae'][String(ss_marker_data.device_name)]= ss_marker;
-
-                            /*Add the master marker to the global master markers array*/
-                            masterMarkersObj.push(ss_marker);
-
-                            allMarkersObject_gmap['sub_station']['ss_'+ss_marker.name] = ss_marker;
-                            allMarkersArray_gmap.push(ss_marker);
-
-                            /*Add parent markers to the OverlappingMarkerSpiderfier*/
-                            oms_ss.addMarker(ss_marker);
-
-                            /*Push SS marker to pollableDevices array*/
-                            pollableDevices.push(ss_marker);
-
-                            var hide_flag = !$("#show_hide_label")[0].checked;
-
-                            if(last_selected_label && $.trim(last_selected_label)) {
-                                var labelInfoObject = perf_self.getKeyValue(ss_marker.dataset,last_selected_label,false),
-                                    labelHtml = "";
-
-                                if(labelInfoObject) {
-                                    labelHtml += "("+$.trim(labelInfoObject['title'])+" - "+$.trim(labelInfoObject['value'])+")";
-                                }
-                                // If any html created then show label on ss
-                                if(labelHtml) {
-                                    var toolTip_infobox = perf_self.createInfoboxLabel(
-                                        labelHtml,
-                                        ssParamLabelStyle,
-                                        -120,
-                                        -10,
-                                        ss_marker.getPosition(),
-                                        hide_flag
-                                    );
-                                    toolTip_infobox.open(mapInstance, ss_marker);
-                                    tooltipInfoLabel['ss_'+ss_marker_data.name] = toolTip_infobox;
-                                }
-                            }
-
-                            // Mouseover event on sub-station marker
-                            google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
-                                var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-                                    condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
-
-                                if(condition1 || condition2) {
-                                    var pl = $.trim(this.pl) ? this.pl : "N/A",
-                                        rta = $.trim(this.rta) ? this.rta : "N/A",
-                                        info_html = '';
-
-                                    // Create hover infowindow html content
-                                    info_html += '<table class="table table-responsive table-bordered table-hover">';
-                                    info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
-                                    info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
-                                    info_html += '</table>';
-
-                                    if(infowindow) {
-                                        /*Set the content for infowindow*/
-                                        infowindow.setContent(info_html);
-                                        /*Shift the window little up*/
-                                        infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
-                                        /*Set The Position for InfoWindow*/
-                                        infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
-                                        /*Open the info window*/
-                                        infowindow.open(mapInstance);
+                                    // If show SS checkbox is unchecked then hide SS
+                                    if(show_ss_len <= 0) {
+                                        hideOpenLayerFeature(ss_marker);
                                     }
-                                }
-                            });
 
-                            // Mouseout event on sub-station marker
-                            // google.maps.event.addListener(ss_marker, 'mouseout', function() {
-                            //     var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
-                            //         condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+                                    new_plotted_ss.push(ss_marker);
 
-                            //     if(condition1 || condition2) {
-                            //         if(infowindow) {
-                            //             infowindow.close();
-                            //         }
-                            //     }
-                            // });
-                        }
+                                    bs_ss_markers.push(ss_marker);
+                                    markersMasterObj['SS'][String(ss_marker_data.data.lat)+ ss_marker_data.data.lon]= ss_marker;
+                                    markersMasterObj['SSNamae'][String(ss_marker_data.device_name)]= ss_marker;
+                                    allMarkersObject_wmap['sub_station']['ss_'+ss_marker_data.name] = ss_marker;
+                                    allMarkersArray_wmap.push(ss_marker);
+                                    /*Push SS marker to pollableDevices array*/
+                                    pollableDevices.push(ss_marker)
 
-                        var ss_info = {
-                                "info" : ss_marker_data.data.param.sub_station ? ss_marker_data.data.param.sub_station : [],
-                                "antenna_height" : ss_marker_data.data.antenna_height
-                            },
-                            base_info = {
-                                "info" : bs_object.data.param.base_station ? bs_object.data.param.base_station : [],
-                                "antenna_height" : bs_object.data.antenna_height
-                            },
-                            sect_height = sector_marker ? sector_marker.antenna_height : 0;
+                                    // ccpl_map.getLayersByName('Markers')[0].addFeatures([ss_marker]);
 
+                                    var hide_flag = !$("#show_hide_label")[0].checked;
 
-                        startEndObj["nearEndLat"] = bs_lat;
-                        startEndObj["nearEndLon"] = bs_lon;
+                                    if(last_selected_label && $.trim(last_selected_label)) {
+                                        var labelHtml = "";
+                                        for(var z=ss_marker.dataset.length;z--;) {
+                                            if($.trim(ss_marker.dataset[z]['name']) == $.trim(last_selected_label)) {
+                                                labelHtml += "("+$.trim(ss_marker.dataset[z]['value'])+")";
+                                            }
+                                        }
+                                        // If any html created then show label on ss
+                                        if(labelHtml) {
+                                            var toolTip_infobox = new OpenLayers.Popup('ss_'+ss_marker.name,
+                                                new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
+                                                new OpenLayers.Size(110,25),
+                                                labelHtml,
+                                                false
+                                            );
+                                            ccpl_map.addPopup(toolTip_infobox);
 
-                        startEndObj["endLat"] = ss_marker_data.data.lat;
-                        startEndObj["endLon"] = ss_marker_data.data.lon;
+                                            // Shift label to left side of marker
+                                            var current_left = $("#ss_"+ss_marker.name).position().left;
+                                            current_left = current_left - 125;
+                                            $("#ss_"+ss_marker.name).css("left",current_left+"px");
 
-                        /*Link color object*/
-                        linkColor = ss_marker_data.data.link_color ? ss_marker_data.data.link_color : 'rgba(74,72,94,0.58)';
+                                            // If show/hide checkbox is unchecked then hide label
+                                            if(hide_flag) {
+                                                toolTip_infobox.hide();
+                                            }
+                                            tooltipInfoLabel['ss_'+ss_marker.name] = toolTip_infobox;    
+                                        }
+                                    }
+                                } else {
 
-                        if(window.location.pathname.indexOf("googleEarth") > -1) {
-                            /*Create the link between BS & SS or Sector & SS*/
-                            var ss_link_line = earth_self.createLink_earth(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
-                            ssLinkArray.push(ss_link_line);
-                            ssLinkArray_filtered = ssLinkArray;
-                            try {
-                                ss_link_line.setVisibility(true);
-                                ss_link_line.map = 'current';
-                            } catch(e) {
-                                // console.log(e);
-                            }
-                            
-                            allMarkersObject_earth['path']['line_'+ss_marker_data.name] = ss_link_line;
+                                    var ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_data.data.markerUrl,"other");
 
-                            allMarkersArray_earth.push(ss_link_line);
-                        } else if (window.location.pathname.indexOf('white_background') > -1) {
-                            /*Create the link between BS & SS or Sector & SS*/
-                            var ss_link_line = whiteMapClass.plotLines_wmap(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
-
-                            ccpl_map.getLayersByName("Lines")[0].addFeatures([ss_link_line]);
-                            ssLinkArray.push(ss_link_line);
-                            ssLinkArray_filtered = ssLinkArray;
-                            allMarkersObject_wmap['path']['line_'+ss_marker_data.name] = ss_link_line;
-                            markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= ss_link_line;
-                            markersMasterObj['LinesName'][String(bs_object.name)+ ss_marker_data.name]= ss_link_line;
-                            allMarkersArray_wmap.push(ss_link_line);
-                        } else {
-                            /*Create the link between BS & SS or Sector & SS*/
-
-                            // Unspiderify the marker
-                            if(oms) {
-                                oms.unspiderfy();
-                            }
-                            
-                            var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
-                            ssLinkArray.push(ss_link_line);
-                            ssLinkArray_filtered = ssLinkArray;
-                            ss_link_line.setMap(mapInstance);
-                            // ss_marker['pl'] = '100';
-                            // This is to show "X"(Cross) on line if pl is 100%
-                            if(ss_marker['pl'] && (ss_marker['pl'] == '100' || ss_marker['pl'] == '100%')) {
-                                
-                                var link_path_array = ss_link_line.getPath().getArray();
-
-                                // Calculate the center point lat lon to plot "X"
-                                var latLonArray = [
-                                    {"lat" : link_path_array[0].lat(), "lon" : link_path_array[0].lng()},
-                                    {"lat" : link_path_array[1].lat(), "lon" : link_path_array[1].lng()},
-                                ];
-
-                                var center_obj = gmap_self.getMiddlePoint(latLonArray),
-                                    center_lat = center_obj.lat * 180 / Math.PI,
-                                    center_lon = center_obj.lon * 180 / Math.PI;
-
+                                    ss_marker_object['position'] = new google.maps.LatLng(ss_marker_data.data.lat,ss_marker_data.data.lon);
+                                    ss_marker_object['map'] = null;
+                                    ss_marker_object['icon'] = ss_icon_obj;
+                                    ss_marker_object['oldIcon'] = ss_icon_obj;
+                                    ss_marker_object['clusterIcon'] = ss_icon_obj;
                                     
-                                var crossLabelPosition = new google.maps.LatLng(center_lat,center_lon),
-                                    cross_label = perf_self.createInfoboxLabel(
-                                        crossLabelHTML,
-                                        crossLabelStyle,
-                                        crossOffsetX,
-                                        crossOffsetY,
-                                        crossLabelPosition,
-                                        false
-                                    );
-
-                                cross_label.open(mapInstance);
-                                cross_label_array['line_'+ss_marker_data.name] = cross_label;
-                            }
-                            
-                            allMarkersObject_gmap['path']['line_'+ss_marker_data.name] = ss_link_line;
-
-                            allMarkersArray_gmap.push(ss_link_line);
-                        }
-
-                        // if(ss_marker_data.data.perf_value || sector_perf_val) {
-                        // Create Label for Perf Value
-                        var existing_index = -1;
-                        for (var x = 0; x < labelsArray.length; x++) {
-                            var move_listener_obj = labelsArray[x].moveListener_;
-                            if (move_listener_obj) {
-                                var keys_array = Object.keys(move_listener_obj);
-                                for(var z=0;z<keys_array.length;z++) {
-                                    if(typeof move_listener_obj[keys_array[z]] == 'object') {
-                                       if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-                                            if(($.trim(move_listener_obj[keys_array[z]]["name"]) == $.trim(ss_marker.name)) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == $.trim(ss_marker.bs_name))) {
-                                                existing_index = x;
-                                                if(window.location.pathname.indexOf("googleEarth") > -1) {
-                                                    labelsArray[x].setVisibility(false);
-                                                } else if (window.location.pathname.indexOf("white_background") > -1) {
-                                                    labelsArray[x].destroy();
-                                                } else {
-                                                    labelsArray[x].close();
-                                                }
-                                            }
-                                       }
+                                    if(show_ss_len > 0) {
+                                        ss_marker_object['map'] = mapInstance;
                                     }
+
+                                    /*Create SS Marker*/
+                                    var ss_marker = new google.maps.Marker(ss_marker_object);
+                                    
+                                    /*Add SS Marker To Cluster*/
+                                    masterClusterInstance.addMarkers([ss_marker],true);
+
+                                    markersMasterObj['SS'][String(ss_marker_data.data.lat)+ ss_marker_data.data.lon]= ss_marker;
+                                    markersMasterObj['SSNamae'][String(ss_marker_data.device_name)]= ss_marker;
+
+                                    /*Add the master marker to the global master markers array*/
+                                    masterMarkersObj.push(ss_marker);
+
+                                    // If still marker exist then first remove it from object then add
+                                    if(allMarkersObject_gmap['sub_station']['ss_'+ss_marker.name]) {
+                                        // if map
+                                        if(allMarkersObject_gmap['sub_station']['ss_'+ss_marker.name].map) {
+                                            allMarkersObject_gmap['sub_station']['ss_'+ss_marker.name].setMap(null);
+                                        }
+                                        allMarkersObject_gmap['sub_station']['ss_'+ss_marker.name] = "";
+                                    }
+
+                                    allMarkersObject_gmap['sub_station']['ss_'+ss_marker.name] = ss_marker;
+                                    // allMarkersArray_gmap.push(ss_marker);
+
+                                    /*Add parent markers to the OverlappingMarkerSpiderfier*/
+                                    oms_ss.addMarker(ss_marker);
+
+                                    /*Push SS marker to pollableDevices array*/
+                                    pollableDevices.push(ss_marker);
+
+                                    var hide_flag = !$("#show_hide_label")[0].checked;
+
+                                    if(last_selected_label) {
+                                        var ss_actual_data = rearrangeTooltipArray(ss_toolTip_static,ss_marker.dataset),
+                                            labelInfoObject = perf_self.getKeyValue(ss_actual_data,last_selected_label,false),
+                                            labelHtml = "";
+
+                                        if(labelInfoObject) {
+                                            var shownVal = labelInfoObject['value'] ? $.trim(labelInfoObject['value']) : "NA";
+                                            labelHtml += shownVal;
+                                        }
+                                        // If any html created then show label on ss
+                                        if(labelHtml) {
+                                            var toolTip_infobox = perf_self.createInfoboxLabel(
+                                                labelHtml,
+                                                ssParamLabelStyle,
+                                                -120,
+                                                -10,
+                                                ss_marker.getPosition(),
+                                                hide_flag
+                                            );
+                                            toolTip_infobox.open(mapInstance, ss_marker);
+                                            tooltipInfoLabel['ss_'+ss_marker_data.name] = toolTip_infobox;
+                                        }
+                                    }
+
+                                    // Right click event on sub-station marker
+                                    google.maps.event.addListener(ss_marker, 'rightclick', function(e) {
+                                        var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+                                            condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+                                        if(condition1 || condition2) {
+                                            var pl = $.trim(this.pl) ? this.pl : "N/A",
+                                                rta = $.trim(this.rta) ? this.rta : "N/A",
+                                                info_html = '';
+
+                                            // Create hover infowindow html content
+                                            info_html += '<table class="table table-responsive table-bordered table-hover">';
+                                            info_html += '<tr><td>Packet Drop</td><td>'+pl+'</td></tr>';
+                                            info_html += '<tr><td>Latency</td><td>'+rta+'</td></tr>';
+                                            info_html += '</table>';
+
+                                            if(infowindow) {
+                                                /*Set the content for infowindow*/
+                                                infowindow.setContent(info_html);
+                                                /*Shift the window little up*/
+                                                infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
+                                                /*Set The Position for InfoWindow*/
+                                                infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
+                                                /*Open the info window*/
+                                                infowindow.open(mapInstance);
+                                            }
+                                        }
+                                    });
+
+                                    // Mouseout event on sub-station marker
+                                    // google.maps.event.addListener(ss_marker, 'mouseout', function() {
+                                    //     var condition1 = ($.trim(this.pl) && $.trim(this.pl) != 'N/A'),
+                                    //         condition2 = ($.trim(this.rta) && $.trim(this.rta) != 'N/A');
+
+                                    //     if(condition1 || condition2) {
+                                    //         if(infowindow) {
+                                    //             infowindow.close();
+                                    //         }
+                                    //     }
+                                    // });
                                 }
-                            }
-                        }
-                        
-                        /*Remove that label from array*/
-                        if (existing_index >= 0) {
-                            labelsArray.splice(existing_index, 1);
-                        }
-                        
-                        var ss_val = ss_marker_data.data.perf_value ? ss_marker_data.data.perf_value : "N/A",
-                            perf_val = "";
 
-                        if(sector_marker) {
-                            if(ss_val && sector_perf_val) {
-                                perf_val = "("+ss_val+", "+sector_perf_val+")";
-                            } else if(ss_val && !sector_perf_val) {
-                                perf_val = "("+ss_val+", N/A)";
-                            } else if(!ss_val && sector_perf_val) {
-                                perf_val = "(N/A, "+sector_perf_val+")";
-                            } else {
-                                perf_val = "(N/A, N/A)";
-                            }
-                        } else if(sector_polygon) {
-                            if(ss_val) {
-                                perf_val = "("+ss_val+")";
-                            }
-                        }
+                                var ss_info = {
+                                        "info" : ss_marker_data.data.param.sub_station ? ss_marker_data.data.param.sub_station : [],
+                                        "antenna_height" : ss_marker_data.data.antenna_height
+                                    },
+                                    base_info = {
+                                        "info" : bs_object.data.param.base_station ? bs_object.data.param.base_station : [],
+                                        "antenna_height" : bs_object.data.antenna_height
+                                    },
+                                    sect_height = sector_marker ? sector_marker.antenna_height : 0;
 
-                        if($.trim(perf_val)) {
 
-                            if(window.location.pathname.indexOf("googleEarth") > -1) {
-                                ss_marker_data.perf_val = perf_val;
-                                //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
-                            } else if (window.location.pathname.indexOf("white_background") > -1) {
-                               var toolTip_infobox = new OpenLayers.Popup("perfLabel_"+ss_marker.name,
-                                    new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
-                                    null,
-                                    perf_val,
-                                    false
-                                );
-                                ccpl_map.addPopup(toolTip_infobox);
-                                toolTip_infobox.updateSize(); 
-                                labelsArray.push(toolTip_infobox);
-                            } else {
-                                var perf_infobox = perf_self.createInfoboxLabel(
-                                    perf_val,
-                                    perfLabelStyle,
-                                    10,
-                                    -10,
-                                    ss_marker.getPosition(),
-                                    hide_flag
-                                );
+                                startEndObj["nearEndLat"] = bs_lat;
+                                startEndObj["nearEndLon"] = bs_lon;
 
-                                perf_infobox.open(mapInstance, ss_marker);
-                                labelsArray.push(perf_infobox);
-                            }
-                        }
-                        // }
-                    }//Sub-Station Loop End
+                                startEndObj["endLat"] = ss_marker_data.data.lat;
+                                startEndObj["endLon"] = ss_marker_data.data.lon;
 
-                    if (window.location.pathname.indexOf("white_background") > -1) {
-                        ccpl_map.getLayersByName("Markers")[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
-                        ccpl_map.getLayersByName("Markers")[0].strategies[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
+                                startEndObj["windowTitle"] = "BS-SS";
+                                startEndObj["startTitle"] = "BS Info";
+                                startEndObj["endTitle"] = "SS Info";
 
-                        ccpl_map.getLayersByName("Markers")[0].redraw();
-                        ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
-                    }
-                } else if(sector_polygon) {
-
-                    var ss_marker_obj = "",
-                        ss_name_array = [];
-
-                    for(var xxx=0;xxx<connected_sectors.length;xxx++) {
-                        if(sectorArray[i].sub_station && sectorArray[i].sub_station.length > 0) {
-                            if((connected_sectors[xxx].sector_configured_on_device == sectorArray[i].device_name) && (connected_sectors[xxx].sector_configured_on == sectorArray[i].ip_address)) {
-                                var connected_sub_stations = sectorArray[i].sub_station;
-                                for(var key=0; key< connected_sub_stations.length; key++) {
-                                    var ss = connected_sub_stations[key]['name'] ? connected_sub_stations[key]['name'] : "";
-                                    if(connected_sub_stations[key] && ss) {
-                                        if(window.location.pathname.indexOf("googleEarth") > -1) {
-                                            // Remove Line from map & array
-                                            if(allMarkersObject_earth['path']['line_'+ss]) {
-                                                if(startEndObj["startLat"] && startEndObj["startLon"]) {
-
-                                                    var current_line = allMarkersObject_earth['path']['line_'+ss];
-
-                                                    var lineString = ge.createLineString('');
-                                                    current_line.setGeometry(lineString);
-                                                    // Add LineString points
-                                                    lineString.getCoordinates().pushLatLngAlt((+startEndObj.startLat), (+startEndObj.startLon), 0);
-                                                    lineString.getCoordinates().pushLatLngAlt((+current_line.ss_lat), (+current_line.ss_lon), 0);
-                                                }
-                                            }
-                                        } else if (window.location.pathname.indexOf("white_background") > -1) {
-                                            // Remove Line from map & array
-                                            if(allMarkersObject_wmap['path']['line_'+ss]) {
-                                                if(startEndObj["startLat"] && startEndObj["startLon"]) {
-                                                    var current_line = allMarkersObject_gmap['path']['line_'+ss];
-                                                    var pathDataObject = new OpenLayers.Geometry.LineString([
-                                                        new OpenLayers.Geometry.Point(startEndObj["startLon"], startEndObj["startLat"]),
-                                                        new OpenLayers.Geometry.Point(current_line.ss_lon,current_line.ss_lat)
-                                                    ]);
-                                                    current_line.geometry = pathDataObject;
-                                                    current_line.layer.refresh();
-                                                }
-                                            }
+                                /*Link color object*/
+                                linkColor = ss_marker_data.data.link_color ? ss_marker_data.data.link_color : 'rgba(74,72,94,0.58)';
+                                var isLineChecked = $("#showConnLines:checked").length;
+                                if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                    /*Create the link between BS & SS or Sector & SS*/
+                                    var ss_link_line = earth_self.createLink_earth(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
+                                    ssLinkArray.push(ss_link_line);
+                                    ssLinkArray_filtered = ssLinkArray;
+                                    try {
+                                        if(isLineChecked > 0) {
+                                            ss_link_line.setVisibility(true);
+                                            ss_link_line.map = 'current';
                                         } else {
-                                            // Remove Line from map & array
-                                            if(allMarkersObject_gmap['path']['line_'+ss]) {
-                                                if(startEndObj["startLat"] && startEndObj["startLon"]) {
+                                            ss_link_line.setVisibility(false);
+                                            ss_link_line.map = '';
+                                        }
+                                    } catch(e) {
+                                        // console.log(e);
+                                    }
+                                    
+                                    allMarkersObject_earth['path']['line_'+ss_marker_data.name] = ss_link_line;
 
-                                                    var current_line = allMarkersObject_gmap['path']['line_'+ss],
-                                                        new_path = [
-                                                            new google.maps.LatLng(startEndObj["startLat"],startEndObj["startLon"]),
-                                                            new google.maps.LatLng(current_line.ss_lat,current_line.ss_lon)
-                                                        ];
-                                                    // Update line path
-                                                    current_line.setOptions({
-                                                        path : new_path
-                                                    });
+                                    allMarkersArray_earth.push(ss_link_line);
+                                } else if (window.location.pathname.indexOf('white_background') > -1) {
+                                    /*Create the link between BS & SS or Sector & SS*/
+                                    var ss_link_line = whiteMapClass.plotLines_wmap(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
+
+                                    ccpl_map.getLayersByName("Lines")[0].addFeatures([ss_link_line]);
+
+                                    // If show Connection Line checkbox is unchecked then hide connection Line
+                                    if(!isLineChecked > 0) {
+                                        hideOpenLayerFeature(ss_link_line);
+                                    }
+
+                                    ssLinkArray.push(ss_link_line);
+                                    ssLinkArray_filtered = ssLinkArray;
+                                    allMarkersObject_wmap['path']['line_'+ss_marker_data.name] = ss_link_line;
+                                    markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= ss_link_line;
+                                    markersMasterObj['LinesName'][String(bs_object.name)+ ss_marker_data.name]= ss_link_line;
+                                    allMarkersArray_wmap.push(ss_link_line);
+                                } else {
+                                    /*Create the link between BS & SS or Sector & SS*/
+
+                                    // Unspiderify the marker
+                                    if(oms) {
+                                        oms.unspiderfy();
+                                    }
+                                    
+                                    var ss_link_line = gmap_self.createLink_gmaps(
+                                        startEndObj,
+                                        linkColor,
+                                        base_info,
+                                        ss_info,
+                                        sect_height,
+                                        sector_ip,
+                                        ss_marker_data.name,
+                                        bs_object.name,
+                                        bs_object.id
+                                    );
+                                    ssLinkArray.push(ss_link_line);
+                                    ssLinkArray_filtered = ssLinkArray;
+
+                                    if(isLineChecked > 0) {
+                                        ss_link_line.setMap(mapInstance);
+                                    } else {
+                                        ss_link_line.setMap(null);
+                                    }
+                                    // ss_marker['pl'] = '100';
+                                    // This is to show "X"(Cross) on line if pl is 100%
+                                    if(ss_marker['pl'] && (ss_marker['pl'] == '100' || ss_marker['pl'] == '100%')) {
+                                        
+                                        var link_path_array = ss_link_line.getPath().getArray();
+
+                                        // Calculate the center point lat lon to plot "X"
+                                        var latLonArray = [
+                                            {"lat" : link_path_array[0].lat(), "lon" : link_path_array[0].lng()},
+                                            {"lat" : link_path_array[1].lat(), "lon" : link_path_array[1].lng()},
+                                        ];
+
+                                        var center_obj = gmap_self.getMiddlePoint(latLonArray),
+                                            center_lat = center_obj.lat * 180 / Math.PI,
+                                            center_lon = center_obj.lon * 180 / Math.PI;
+
+                                        // Close the label if exist
+                                        if(cross_label_array['line_'+ss_marker_data.name]) {
+                                            // Remove the cross label
+                                            cross_label_array['line_'+ss_marker_data.name].close();
+                                            // Delete cross label from global object
+                                            delete cross_label_array['line_'+ss_marker_data.name];
+                                        }
+
+                                        var crossLabelPosition = new google.maps.LatLng(center_lat,center_lon),
+                                            cross_label = perf_self.createInfoboxLabel(
+                                                crossLabelHTML,
+                                                crossLabelStyle,
+                                                crossOffsetX,
+                                                crossOffsetY,
+                                                crossLabelPosition,
+                                                false
+                                            );
+
+                                        cross_label.open(mapInstance);
+                                        cross_label_array['line_'+ss_marker_data.name] = cross_label;
+                                    }
+                                    
+                                    allMarkersObject_gmap['path']['line_'+ss_marker_data.name] = ss_link_line;
+
+                                    // allMarkersArray_gmap.push(ss_link_line);
+                                }
+
+                                // if(ss_marker_data.data.perf_value || sector_perf_val) {
+                                // Create Label for Perf Value
+                                var existing_index = -1;
+                                for (var x = 0; x < labelsArray.length; x++) {
+                                    if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                        labelsArray[x].setVisibility(false);
+                                    } else if (window.location.pathname.indexOf("white_background") > -1) {
+                                        if(labelsArray[x].id) {
+                                            labelsArray[x].destroy();
+                                        }
+                                    } else {
+                                        var move_listener_obj = labelsArray[x].moveListener_;
+                                        if (move_listener_obj) {
+                                            var keys_array = Object.keys(move_listener_obj);
+                                            for(var z=0;z<keys_array.length;z++) {
+                                                if(typeof move_listener_obj[keys_array[z]] == 'object') {
+                                                   if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+                                                        if(($.trim(move_listener_obj[keys_array[z]]["name"]) == $.trim(ss_marker.name)) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == $.trim(ss_marker.bs_name))) {
+                                                            existing_index = x;
+                                                            labelsArray[x].close();
+                                                        }
+                                                   }
                                                 }
                                             }
                                         }
+                                    }
+                                }
+                                
+                                /*Remove that label from array*/
+                                if (existing_index >= 0) {
+                                    labelsArray.splice(existing_index, 1);
+                                }
+                                
+                                var ss_val = ss_marker_data.data.perf_value ? ss_marker_data.data.perf_value : "N/A",
+                                    perf_val = "";
+
+                                if(sector_marker) {
+                                    if(ss_val && sector_perf_val) {
+                                        perf_val = "("+ss_val+", "+sector_perf_val+")";
+                                    } else if(ss_val && !sector_perf_val) {
+                                        perf_val = "("+ss_val+", N/A)";
+                                    } else if(!ss_val && sector_perf_val) {
+                                        perf_val = "(N/A, "+sector_perf_val+")";
                                     } else {
-                                        // pass
+                                        perf_val = "(N/A, N/A)";
+                                    }
+                                } else if(sector_polygon) {
+                                    if(ss_val) {
+                                        perf_val = "("+ss_val+")";
+                                    }
+                                }
+
+                                if($.trim(perf_val)) {
+
+                                    if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                        ss_marker_data.perf_val = perf_val;
+                                        //couldn't find any option to draw Label with Google Earth, so plese check the values on mouse hover ballon
+                                    } else if (window.location.pathname.indexOf("white_background") > -1) {
+                                       var perfLabel_infobox = new OpenLayers.Popup("perfLabel_"+ss_marker.name,
+                                            new OpenLayers.LonLat(ss_marker.ptLon,ss_marker.ptLat),
+                                            new OpenLayers.Size(90,25),
+                                            perf_val,
+                                            false
+                                        );
+                                        ccpl_map.addPopup(perfLabel_infobox);
+
+                                        var current_left = $("#perfLabel_"+ss_marker.name).position().left;
+                                        current_left = current_left + 10;
+                                        $("#perfLabel_"+ss_marker.name).css("left",current_left+"px");
+
+                                        // If show/hide checkbox is unchecked then hide label
+                                        if(hide_flag) {
+                                            perfLabel_infobox.hide();
+                                        }
+                                        labelsArray.push(perfLabel_infobox);
+                                    } else {
+                                        var perf_infobox = perf_self.createInfoboxLabel(
+                                            perf_val,
+                                            perfLabelStyle,
+                                            10,
+                                            -10,
+                                            ss_marker.getPosition(),
+                                            hide_flag
+                                        );
+
+                                        perf_infobox.open(mapInstance, ss_marker);
+                                        labelsArray.push(perf_infobox);
+                                    }
+                                }
+                                // }
+                            }//Sub-Station Loop End
+
+                            if (window.location.pathname.indexOf("white_background") > -1) {
+                                ccpl_map.getLayersByName("Markers")[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
+                                // ccpl_map.getLayersByName("Markers")[0].strategies[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
+
+                                ccpl_map.getLayersByName("Markers")[0].redraw();
+                                // ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+                            }
+                        }// If sector child are plottable of not condition end-----
+                    } else if(sector_polygon) {
+
+                        var ss_marker_obj = "",
+                            ss_name_array = [];
+
+                        for(var xxx=0;xxx<connected_sectors.length;xxx++) {
+                            if(sectorArray[i].sub_station && sectorArray[i].sub_station.length > 0) {
+                                if((connected_sectors[xxx].sector_configured_on_device == sectorArray[i].device_name) && (connected_sectors[xxx].sector_configured_on == sectorArray[i].ip_address)) {
+                                    var connected_sub_stations = sectorArray[i].sub_station;
+                                    for(var key=0; key< connected_sub_stations.length; key++) {
+                                        var ss = connected_sub_stations[key]['name'] ? connected_sub_stations[key]['name'] : "";
+                                        if(connected_sub_stations[key] && ss) {
+                                            if(window.location.pathname.indexOf("googleEarth") > -1) {
+                                                // Remove Line from map & array
+                                                if(allMarkersObject_earth['path']['line_'+ss]) {
+                                                    if(startEndObj["startLat"] && startEndObj["startLon"]) {
+
+                                                        var current_line = allMarkersObject_earth['path']['line_'+ss];
+
+                                                        var lineString = ge.createLineString('');
+                                                        current_line.setGeometry(lineString);
+                                                        // Add LineString points
+                                                        lineString.getCoordinates().pushLatLngAlt((+startEndObj.startLat), (+startEndObj.startLon), 0);
+                                                        lineString.getCoordinates().pushLatLngAlt((+current_line.ss_lat), (+current_line.ss_lon), 0);
+                                                    }
+                                                }
+                                            } else if (window.location.pathname.indexOf("white_background") > -1) {
+                                                // Remove Line from map & array
+                                                if(allMarkersObject_wmap['path']['line_'+ss]) {
+                                                    if(startEndObj["startLat"] && startEndObj["startLon"]) {
+                                                        var current_line = allMarkersObject_gmap['path']['line_'+ss];
+                                                        var pathDataObject = new OpenLayers.Geometry.LineString([
+                                                            new OpenLayers.Geometry.Point(startEndObj["startLon"], startEndObj["startLat"]),
+                                                            new OpenLayers.Geometry.Point(current_line.ss_lon,current_line.ss_lat)
+                                                        ]);
+                                                        current_line.geometry = pathDataObject;
+                                                        current_line.layer.refresh();
+                                                    }
+                                                }
+                                            } else {
+                                                // Remove Line from map & array
+                                                if(allMarkersObject_gmap['path']['line_'+ss]) {
+                                                    if(startEndObj["startLat"] && startEndObj["startLon"]) {
+
+                                                        var current_line = allMarkersObject_gmap['path']['line_'+ss],
+                                                            new_path = [
+                                                                new google.maps.LatLng(startEndObj["startLat"],startEndObj["startLon"]),
+                                                                new google.maps.LatLng(current_line.ss_lat,current_line.ss_lon)
+                                                            ];
+                                                        // Update line path
+                                                        current_line.setOptions({
+                                                            path : new_path
+                                                        });
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            // pass
+                                        }
                                     }
                                 }
                             }
                         }
+                        
+                    } else {
+                        // pass
                     }
-                    
-                } else {
-                    // pass
                 }
             }// Sectors Loop End
 
             // Update loki db object start
+            old_sector_loop:
             for(var i=0;i<connected_sectors.length;i++) {
+                var condition1 = "",
+                    condition2 = "",
+                    condition3 = "";
+                new_sector_loop:
                 for(var j=0;j<sectorArray.length;j++) {
                     if(sectorArray[j].sub_station && sectorArray[j].sub_station.length > 0) {
-                        if((connected_sectors[i].sector_configured_on_device == sectorArray[j].device_name) && (connected_sectors[i].sector_configured_on == sectorArray[j].ip_address)) {
-                            bs_object.data.param.sector[i].sub_station = sectorArray[j].sub_station;
+                        condition1 = connected_sectors[i].sector_configured_on_device == sectorArray[j].device_name;
+                        condition2 = connected_sectors[i].sector_configured_on == sectorArray[j].ip_address;
+                        condition3 = connected_sectors[i].sector_id == sectorArray[j].sector_id;
+                        if(condition1 && condition2 && condition3) {
+                            // bs_object.data.param.sector[i].sub_station = sectorArray[j].sub_station;
+                            connected_sectors[i].sub_station =  sectorArray[j].sub_station;
+                            break new_sector_loop;
                         }
                     }
                 }
             }
 
+            bs_object.data.param.sector = connected_sectors;
             // Update Loki Object
             all_devices_loki_db.update(bs_object);
             // Update loki db object end
@@ -930,11 +1076,10 @@ function GisPerformance() {
     this.updateMarkerIcon = function(marker,new_icon) {
 
         if(window.location.pathname.indexOf("googleEarth") > -1) {
-
             var iconUrl = base_url+"/"+new_icon,
                 old_icon_obj = iconUrl;
             // Update sector marker icon
-            updateGoogleEarthPlacemark(marker, newIcon);
+            updateGoogleEarthPlacemark(marker, new_icon);
             // marker.icon = hiddenIconObj;
             try {
                 marker['clusterIcon'] = hiddenIconObj;
@@ -944,19 +1089,24 @@ function GisPerformance() {
             }
 
             updateGoogleEarthPlacemark(marker, old_icon_obj);
-
         } else if (window.location.pathname.indexOf("white_background") > -1) {
+
             var iconUrl = base_url+"/"+new_icon,
-                old_icon_obj = iconUrl;
+                old_icon_obj = iconUrl,
+                other_size_obj = whiteMapClass.getMarkerSize_wmap(false),
+                other_width = other_size_obj.width ? other_size_obj.width : whiteMapSettings.devices_size.medium.width,
+                other_height = other_size_obj.height ? other_size_obj.height : whiteMapSettings.devices_size.medium.height;
+
             // Update sector marker icon
             marker.attributes.icon = hiddenIconObj;
             marker.attributes.clusterIcon = hiddenIconObj;
             marker.attributes.oldIcon = old_icon_obj;
             marker.oldIcon = old_icon_obj;
             marker.style['externalGraphic'] = old_icon_obj;
+            marker.style['graphicWidth'] = other_width;
+            marker.style['graphicHeight'] = other_height;
             var sectorMarkerLayer = marker.layer ? marker.layer : marker.layerReference;
             sectorMarkerLayer.redraw();
-
         } else {
             var sector_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+new_icon,"other");
 
@@ -994,16 +1144,19 @@ function GisPerformance() {
             // Remove SS if exists
             if (allMarkersObject_wmap['sub_station']['ss_'+ss_name]){
                 hideOpenLayerFeature(allMarkersObject_wmap['sub_station']['ss_'+ss_name]);
+                allMarkersObject_wmap['sub_station']['ss_'+ss_name].destroy();
                 delete allMarkersObject_wmap['sub_station']['ss_'+ss_name];
             }
             // Remove line if exists
             if(allMarkersObject_wmap['path']['line_'+ss_name]) {
                 hideOpenLayerFeature(allMarkersObject_wmap['path']['line_'+ss_name]);
+                allMarkersObject_wmap['path']['line_'+ss_name].destroy();
                 delete allMarkersObject_wmap['path']['ss_'+ss_name];
             }
             // Remove label if exists
             if(tooltipInfoLabel['ss_'+ss_name]) {
-                tooltipInfoLabel['ss_'+ss_name].setVisibility(false);
+                tooltipInfoLabel['ss_'+ss_name].destroy();
+                // tooltipInfoLabel['ss_'+ss_name].setVisibility(false);
                 delete tooltipInfoLabel['ss_'+ss_name];
             }
         } else {
@@ -1041,13 +1194,15 @@ function GisPerformance() {
     this.getKeyValue = function(objArray,key,returnOnlyVal) {
         var val = "";
         for(var y=objArray.length;y--;) {
-            if($.trim(objArray[y].name) == key) {
-                if(returnOnlyVal) {
-                    val = objArray[y].value;
-                } else {
-                    val = objArray[y];
+            if(objArray[y]) {
+                if($.trim(objArray[y].name) == key) {
+                    if(returnOnlyVal) {
+                        val = objArray[y].value;
+                    } else {
+                        val = objArray[y];
+                    }
+                    break;
                 }
-                break;
             }
         }
 
@@ -1080,7 +1235,6 @@ function GisPerformance() {
         return toolTip_infobox;
     };
 
-
     /**
      * This function get uncommon data from 2 array
      * @method get_intersection_bs
@@ -1099,5 +1253,79 @@ function GisPerformance() {
 
         /*return the uncommon or different bs list*/
         return uncommon_bs;
+    };
+
+    /**
+     * This function checks that the given SS devices is to be shown or hide as per the filters
+     * @method isSectorDevicesPlottable
+     * @param current_sector {Object}, It contains the sectors data whose child is to be plotted
+     * @param connected_sectors {Array}, It contains all the sectors data of specific BS
+     */
+    this.isSectorDevicesPlottable = function(current_sector,connected_sectors) {
+
+        var isPlottable = false,
+            technology_filter = $("#filter_technology").select2('val').length > 0 ? $("#filter_technology").select2('val').join(',').toLowerCase().split(',') : [],
+            vendor_filter = $("#filter_vendor").select2('val').length > 0 ? $("#filter_vendor").select2('val').join(',').toLowerCase().split(',') : [],
+            frequency_filter = $("#filter_frequency").select2('val').length > 0 ? $("#filter_frequency").select2('val').join(',').toLowerCase().split(',') : [],
+            polarization_filter = $("#filter_polarization").select2('val').length > 0 ? $("#filter_polarization").select2('val').join(',').toLowerCase().split(',') : [],
+            isAdvanceFilterApplied = technology_filter.length > 0 || vendor_filter.length > 0 || frequency_filter.length > 0 || polarization_filter.length > 0,
+            isBasicFilterApplied = $.trim($("#technology").val()).length > 0 || $.trim($("#vendor").val()).length > 0;
+
+        // If no filters applied
+        if(!isAdvanceFilterApplied && !isBasicFilterApplied) {
+            isPlottable = true;
+        } else {
+            // Loop all bs sectors
+            for(var i=0;i<connected_sectors.length;i++) {
+                if(!isPlottable) {    
+                    var condition1 = connected_sectors[i].sector_configured_on_device == current_sector.device_name,
+                        condition2 = connected_sectors[i].sector_configured_on == current_sector.ip_address;
+                    // If both condition satisfied
+                    if(condition1 && condition2) {
+                        var sector_tech = connected_sectors[i].technology ? $.trim(connected_sectors[i].technology.toLowerCase()) : "",
+                            sector_vendor = connected_sectors[i].vendor ? $.trim(connected_sectors[i].vendor.toLowerCase()) : "",
+                            sector_frequency = connected_sectors[i].planned_frequency ? $.trim(connected_sectors[i].planned_frequency) : "",
+                            sector_polarization = connected_sectors[i].orientation ? $.trim(connected_sectors[i].orientation.toLowerCase()) : "";
+
+                        if(isBasicFilterApplied) {
+                            var basic_filter_technology = $.trim($("#technology").val()).length > 0 ? $.trim($("#technology option:selected").text()).toLowerCase() == sector_tech : true,
+                                basic_filter_vendor = $.trim($("#vendor").val()).length > 0 ? $.trim($("#vendor option:selected").text()).toLowerCase() == sector_vendor : true;
+
+                            // If basic filters condition satisfied
+                            if(basic_filter_technology && basic_filter_vendor) {
+                                isPlottable = true;
+                            }
+
+                            if(!isPlottable) {
+                                if(isAdvanceFilterApplied) {
+                                    var advance_filter_condition1 = technology_filter.length > 0 ? technology_filter.indexOf(sector_tech) > -1 : true,
+                                        advance_filter_condition2 = vendor_filter.length > 0 ? vendor_filter.indexOf(sector_vendor) > -1 : true,
+                                        advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter.indexOf(sector_frequency) > -1 : true,
+                                        advance_filter_condition4 = polarization_filter.length > 0 ? polarization_filter.indexOf(sector_polarization) > -1 : true;
+
+                                    if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4) {
+                                        isPlottable = true;
+                                    }
+                                }
+                            }
+
+                        } else if(isAdvanceFilterApplied) {
+                            var advance_filter_condition1 = technology_filter.length > 0 ? technology_filter.indexOf(sector_tech) > -1 : true,
+                                advance_filter_condition2 = vendor_filter.length > 0 ? vendor_filter.indexOf(sector_vendor) > -1 : true,
+                                advance_filter_condition3 = frequency_filter.length > 0 ? frequency_filter.indexOf(sector_frequency) > -1 : true,
+                                advance_filter_condition4 = polarization_filter.length > 0 ? polarization_filter.indexOf(sector_polarization) > -1 : true;
+
+                            if(advance_filter_condition1 && advance_filter_condition2 && advance_filter_condition3 && advance_filter_condition4) {
+                                isPlottable = true;
+                            }
+                        } else {
+                            isPlottable = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return isPlottable;
     };
 }

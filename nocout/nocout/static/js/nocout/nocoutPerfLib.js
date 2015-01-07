@@ -1,7 +1,8 @@
 /**
- * This library is used to show live performance of particular device & its functionality
+ * This library is used to show performance data of particular device in charts & tables
  * @class nocout.perf.lib
- * @uses Hi
+ * @uses Highcharts
+ * @uses jquery Datatables
  * Coded By :- Yogender Purohit
  */
 
@@ -10,6 +11,7 @@ var perf_that = "",
     allDevices = "",
     device_status = "",
     device_services = "",
+    tabs_click_counter = -1,
     single_service_data = "",
     getServiceDataUrl = "",
     chart_instance = "",
@@ -19,7 +21,7 @@ var perf_that = "",
     red_color = "#b94a48",
     green_status_array = ['ok','success','up'],
     red_status_array = ['warning','critical','down'],
-    left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;margin-left:30px;",
+    left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;",
     right_block_style = "border:1px solid #CCC;padding: 3px 5px;";
 
 /*Set the base url of application for ajax calls*/
@@ -71,7 +73,15 @@ function nocoutPerfLib() {
             url: get_url,
             type: "GET",
             dataType: "json",
-            success: function (result) {
+            success: function (response) {
+
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
 
                 if (result.success == 1) {
                     allDevices = result.data.objects;
@@ -123,9 +133,17 @@ function nocoutPerfLib() {
             url: get_url,
             type: "GET",
             dataType: "json",
-            success: function (result) {
-                if (result.success == 1) {
+            success: function (response) {
 
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+
+                if (result.success == 1) {
                     device_status = result.data.objects;
                     /*Loop for table headers*/
                     var headers = "<tr>";
@@ -200,7 +218,16 @@ function nocoutPerfLib() {
             url: get_url,
             type: "GET",
             dataType: "json",
-            success: function (result) {
+            success: function (response) {
+                
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+
                 if (result.success == 1) {
 
                     var device_services_tab = Object.keys(result.data.objects);
@@ -227,11 +254,19 @@ function nocoutPerfLib() {
 
                             device_services = result.data.objects[device_services_tab[i]].info;
 
-                            if (device_services.length > 0) {
-                                var tabs_with_data = "";
-                                var service_tabs = '<div class="col-md-3"><ul class="nav nav-tabs">';
+                            if(device_services && device_services.length > 0) {
+                                var left_section_class = "col-md-3",
+                                    right_section_class = "col-md-9"
+                                
+                                if(device_services.length == 1) {
+                                    left_section_class = "hide",
+                                    right_section_class = "col-md-12"
+                                }
 
-                                var service_tabs_data = '<div class="col-md-9">'
+                                var tabs_with_data = "";
+                                var service_tabs = '<div class="left_tabs_container '+left_section_class+'"><ul class="nav nav-tabs">';
+
+                                var service_tabs_data = '<div class="'+right_section_class+'">';
                                 service_tabs_data += '<div class="tab-content">';
 
                                 var is_first_tab = 0;
@@ -261,6 +296,10 @@ function nocoutPerfLib() {
                                 service_tabs += '</ul></div>';
                                 service_tabs_data += '</div>';
                                 tabs_with_data = service_tabs + " " + service_tabs_data;
+                            } else {
+                                if(!$("#" + tab_id).hasClass("hide")) {
+                                    $("#" + tab_id).addClass("hide")
+                                }
                             }
 
                             $("#" + device_services_tab[i] + " .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
@@ -371,21 +410,34 @@ function nocoutPerfLib() {
      */
     this.getServiceStatus = function(service_status_url,callback) {
 
-        var updated_url = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url+"/" : service_status_url;
-        // Replace 'service' with 'servicestatus'
-        updated_url = updated_url.replace("/service/","/servicestatus/");
+        var updated_url = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url+"/" : service_status_url,
+            device_id = service_status_url.split("/")[service_status_url.split("/").length -1] != "" ? service_status_url.split("/")[service_status_url.split("/").length -1] : service_status_url.split("/")[service_status_url.split("/").length -2];
+
+        if(updated_url.indexOf("/servicedetail/") > -1) {
+            if(updated_url.indexOf("rssi") > -1) {
+                updated_url = "/performance/servicestatus/rssi/service_data_source/rssi/device/"+device_id+"/";
+            } else if(updated_url.indexOf("util") > -1) {
+                updated_url = "/performance/servicestatus/utilization/service_data_source/utilization/device/"+device_id+"/";
+            }
+        } else {
+            // Replace 'service' with 'servicestatus'
+            updated_url = updated_url.replace("/service/","/servicestatus/");
+        }
+
         $.ajax({
             url : base_url+""+updated_url,
             type : "GET",
             success : function(response) {
                 var result = "",
                     age = "",
+                    lastDownTime = "",
                     last_updated = "",
                     perf = "",
                     status = "",
                     txt_color = "",
                     status_html = "";
 
+                // Type check of response
                 if(typeof response == 'string') {
                     result = JSON.parse(response);
                 } else {
@@ -394,6 +446,7 @@ function nocoutPerfLib() {
 
                 if(result.data && result.data.objects) {
                     age = result.data.objects.age ? result.data.objects.age : "Unknown";
+                    lastDownTime = result.data.objects.last_down_time ? result.data.objects.last_down_time : "Unknown";
                     status = result.data.objects.status ? result.data.objects.status.toUpperCase() : "Unknown";
                     last_updated = result.data.objects.last_updated ? result.data.objects.last_updated : "";
                     perf = result.data.objects.perf ? result.data.objects.perf : "";
@@ -408,9 +461,10 @@ function nocoutPerfLib() {
 
                     status_html = "";
                     status_html += '<i class="fa fa-circle" style="vertical-align: middle;color:'+txt_color+';"> </i>';
-                    status_html += 'Device Status ';
-                    status_html += '<span style="'+left_block_style+'color:'+txt_color+';">Status : '+status+'</span>';
-                    status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Status Since : '+age+'</span>';
+                    // status_html += 'Device Status ';
+                    status_html += '<span style="'+left_block_style+'color:'+txt_color+';">Current Status : '+status+'</span>';
+                    status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Current Status Since : '+age+'</span>';
+                    status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Last Down Time : '+lastDownTime+'</span>';
 
                     // Update Status Block HTML as per the device status
                     $("#device_status_container").html(status_html);
@@ -438,6 +492,9 @@ function nocoutPerfLib() {
      * @param device_id "INT", It contains the ID of current device.
      */
     this.getServiceData = function (get_service_data_url, service_id, device_id) {
+
+        // Decrement the tabs click on evert click counter
+        tabs_click_counter--;
 
         $.cookie('activeTabId', service_id+"_tab", {path: '/', secure: true});
 
@@ -495,6 +552,9 @@ function nocoutPerfLib() {
         }
 
         function createHighChart(config) {
+            // Is the y axis should be reversed or not
+            var is_y_inverted = config["is_inverted"] ? config["is_inverted"] : false;
+
             chart_instance = $('#' + service_id + '_chart').highcharts({
                 chart: {
                     events: {
@@ -515,15 +575,15 @@ function nocoutPerfLib() {
                     // text: config.name
                     text: ""
                 },
-                legend: {
-                    align: 'right',
-                    verticalAlign: 'top',
-                    x: 0,
-                    y: 0,
-                    floating: true,
-                    borderWidth: 1,
-                    backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
-                },
+                //legend: {
+                //    align: 'right',
+                //    verticalAlign: 'top',
+                //    x: 0,
+                //    y: 0,
+                //    floating: true,
+                //    borderWidth: 1,
+                //    backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+                //},
                 tooltip: {
                     pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
                     shared: true,
@@ -549,9 +609,10 @@ function nocoutPerfLib() {
                     }
                 },
                 yAxis: {
-                    title: {
-                        text: config.valuetext
-                    }
+                    title : {
+                        text : config.valuetext
+                    },
+                    reversed : is_y_inverted
                 },
                 series: config.chart_data
             });
@@ -593,22 +654,40 @@ function nocoutPerfLib() {
         }
 
         function addDataToDataTableForChart(table_obj, table_id) {
+            var data = table_obj[0].data,
+                total_columns = table_obj.length * 2;
 
-            var data = table_obj[0].data;
-
-            for (var j = 0; j < data.length; j++) {
+            for (var i = 0; i < data.length; i++) {
                 var row_val = [];
-                for (var i = 0; i < table_obj.length; i++) {
-                    var inner_data = table_obj[i].data[j];
-                    if (inner_data instanceof Array) {
-                        row_val.push(new Date(inner_data[0]).toLocaleString());
-                        row_val.push(inner_data[1]);
-                    } else {
-                        row_val.push(new Date(inner_data.x).toLocaleString());
-                        row_val.push(inner_data.y);
+                for (var j = 0; j < table_obj.length; j++) {
+                    var inner_data = table_obj[j].data[i];
+
+                    if(inner_data) {
+                        if(inner_data.constructor == Array) {
+                            if(inner_data[0]) {
+                                row_val.push(new Date(inner_data[0]).toLocaleString());
+                                var chart_val = inner_data[1];
+                                row_val.push(chart_val);
+                            }
+                        } else if(inner_data.constructor == Object) {
+                            if(inner_data.x) {
+                                row_val.push(new Date(inner_data.x).toLocaleString());
+                                var chart_val = inner_data.y;
+                                row_val.push(chart_val);
+                            }
+                        }
                     }
                 }
-                $('#' + table_id).dataTable().fnAddData(row_val);
+                // If row are less than total columns then add blank fields
+                if(row_val.length < total_columns) {
+                    var val_diff = total_columns - row_val.length;
+                    for(var x=0;x<val_diff;x++) {
+                        row_val.push(" ");
+                    }
+                    $('#' + table_id).dataTable().fnAddData(row_val);
+                } else {
+                    $('#' + table_id).dataTable().fnAddData(row_val);
+                }
             }
         }
 
@@ -639,7 +718,8 @@ function nocoutPerfLib() {
             for (var j = 0; j < table_data.length; j++) {
                 var row_val = [];
                 for (var i = 0; i < table_headers.length; i++) {
-                    row_val.push(table_data[j][table_headers[i]]);
+                    var insert_val = table_data[j][table_headers[i]] ? table_data[j][table_headers[i]] : "";
+                    row_val.push(insert_val);
                 }
                 $('#' + table_id).dataTable().fnAddData(row_val);
             }
@@ -652,7 +732,7 @@ function nocoutPerfLib() {
                 // Pass              
             } else {
                 var end_Date = "";
-                if(moment(ajax_start_date).date() === moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() === moment(ajax_end_date).dayOfYear()) {
+                if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
                     end_Date = moment(ajax_end_date).toDate();
                 } else {
                     end_Date = moment(ajax_start_date).endOf('day').toDate();
@@ -674,35 +754,43 @@ function nocoutPerfLib() {
                 },
                 type: "GET",
                 dataType: "json",
-                success: function (result) {
-                    if (result.success === 1) {
-                        if (result.data.objects.table_data_header != undefined) {
+                success: function (response) {
+
+                    var result = "";
+                    // Type check of response
+                    if(typeof response == 'string') {
+                        result = JSON.parse(response);
+                    } else {
+                        result = response;
+                    }
+
+                    if(result.success == 1) {
+                        if (result.data.objects.table_data_header && result.data.objects.table_data_header.length > 0) {
                             if ($("#other_perf_table").length == 0) {
                                 createDataTable('other_perf_table', result.data.objects.table_data_header);
                             }
                             addDataToDataTable(result.data.objects.table_data, result.data.objects.table_data_header, 'other_perf_table');
                         } else {
-                            if (chart_instance === "") {
-                                createHighChart(result.data.objects);
-                                createDataTableForChart("perf_data_table", result.data.objects.chart_data);
-                            } else {
-                                addPointsToHighChart(result.data.objects.chart_data);
-                            }
-                            if ($("#perf_data_table").length > 0) {
-                                addDataToDataTableForChart(result.data.objects.chart_data, 'perf_data_table')
+                            // If any data available then plot chart & table
+                            if(result.data.objects.chart_data.length > 0) {
+                                if (chart_instance == "") {
+                                    createHighChart(result.data.objects);
+                                    createDataTableForChart("perf_data_table", result.data.objects.chart_data);
+                                } else {
+                                    addPointsToHighChart(result.data.objects.chart_data);
+                                }
+                                if ($("#perf_data_table").length > 0) {
+                                    addDataToDataTableForChart(result.data.objects.chart_data, 'perf_data_table')
+                                }
                             }
                         }
                     }
 
-                    // if (result && result.success === 1 && result.data && result.data.objects && result.data.objects.table_data && result.data.objects.table_data.length === 0) {
-                    //     $('#' + service_id + '_chart').html(result.message);
-                    // }
-
                     //check condition if start date and end date is defined.
-                    if ($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
+                    if($.trim(ajax_start_date) && $.trim(ajax_end_date)) {
 
                         //if last date
-                        if(moment(ajax_start_date).date() === moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() === moment(ajax_end_date).dayOfYear()) {
+                        if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
 
 
                             if ($('#' + service_id + '_chart').highcharts()) {
@@ -728,9 +816,7 @@ function nocoutPerfLib() {
                         hideSpinner();
                     }
                 }
-            })
-            
-
+            });
         }
     };
 }

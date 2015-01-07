@@ -1,5 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% block content %}
+<p><a href="javascript:void(0)" onclick="window.history.go(-1);"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
     <style type="text/css">
         #user_profile table tr td:first-child {
             font-weight: bold;
@@ -66,10 +67,6 @@
                     <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> Base Station Switch </td>
                         <td>{{ object.bs_switch }}</td>
-                    </tr>
-                    <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Base Station Type </td>
-                        <td>{{ object.bs_type }}</td>
                     </tr>
                     <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> Base Station bh bso </td>

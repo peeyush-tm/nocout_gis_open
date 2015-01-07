@@ -5,6 +5,7 @@
 {% block content_description %}Add device type{% endblock %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/schedule_style.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/bootstrap-timepicker.min.css" %} >
 {% endblock %}
 {% block content %}
     <div class="row formContainer">
@@ -19,7 +20,7 @@
                             <div class="col-md-8"><br />
                                 <form action="" method="post" class="form-horizontal" role="form" enctype="multipart/form-data">{% csrf_token %}
                                     <div class="form-group">
-
+                                    <input type="hidden" id="id_form" value="{{form.id}}" />
                                             <div class="form-group">
                                                 <label for="{{ form.name.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.name.label|title }}</label>
                                                 <div class="col-sm-9">
@@ -87,6 +88,19 @@
                                                 </div>
                                             </div>
                                             <div class="form-group">
+                                                <label for="duration" class="col-sm-3 control-label"><span class="mandatory">* </span>Duration: </label>
+                                                <div class="col-sm-9">
+                                                    <div class="col-md-8">
+                                                        <div class="bootstrap-timepicker col-md-5">
+                                                            From: {{ form.start_on_time }} {{ form.start_on_time.errors }}
+                                                        </div>
+                                                        <div class="bootstrap-timepicker col-md-5">
+                                                            To: {{ form.end_on_time }} {{ form.end_on_time.errors }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
                                                 <label for="{{ form.scheduling_type.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.scheduling_type.label|title }}</label>
                                                 <div class="col-sm-9">
                                                     <div class="col-md-8">
@@ -94,6 +108,17 @@
                                                     </div>
                                                     <div class="col-md-4 help_text">
                                                         {{ form.scheduling_type.help_text }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="col-sm-3 control-label">Technology</label>
+                                                <div class="col-sm-9">
+                                                    <div class="col-md-8">
+                                                        {{ form.technology }} {{ form.technology.errors }}
+                                                    </div>
+                                                    <div class="col-md-4 help_text">
+                                                        {{ form.technology.help_text }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -131,7 +156,7 @@
                                         <div class="col-sm-offset-3 col-sm-9">
                                             <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i>Update</button>
                                             &nbsp;
-                                            <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
+                                            <button type="reset" class="btn btn-warning" onclick="window.location.replace('/scheduling/{{form.id}}/edit/')"><i class="fa fa-refresh"></i>Reset</button>
                                             &nbsp;
                                             <button type="reset" class="btn btn-warning" onclick="window.location.replace('/scheduling/')"><i class="fa fa-times"></i>Skip</button>
                                             &nbsp;
@@ -151,6 +176,7 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
         <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-timepicker.js" %}></script>
     {% endblock %}
     <script>
         $(document).ready(function(){
@@ -170,26 +196,107 @@
                 navigationAsDateFormat: true,
             });
 
+            $('#id_start_on_time').timepicker({
+                minuteStep: 1,
+                showSeconds: false,
+                showMeridian: false,
+                disableFocus: true
+            });
+            $('#id_end_on_time').timepicker({
+                minuteStep: 1,
+                showSeconds: false,
+                showMeridian: false,
+                disableFocus: true
+            });
+
+            // handle the duration start_tim and end_time.
+            $('#id_start_on_time').timepicker().on('hide.timepicker', function(e) {
+                if (( Date.parse('01/01/2011 '+$('#id_start_on_time').val()) <
+                    Date.parse('01/01/2011 '+$('#id_end_on_time').val()) ) &&
+                    ($(this).val() != '') ){
+                    filter_selected_device()
+                }
+                else{
+                    $('#id_start_on_time').timepicker('setTime', $('#id_end_on_time').val());
+                    alert('Start time must be lesser than End time')
+                }
+            });
+            $('#id_end_on_time').timepicker().on('hide.timepicker', function(e) {
+                if (( Date.parse('01/01/2011 '+$('#id_start_on_time').val()) <
+                    Date.parse('01/01/2011 '+$('#id_end_on_time').val()) ) &&
+                    ($(this).val() != '') ){
+                    filter_selected_device()
+                }
+                else{
+                    $('#id_end_on_time').timepicker('setTime', $('#id_start_on_time').val());
+                    alert('End time must be greater than Start time')
+                }
+            });
+
+            function filter_selected_device(){
+                var start_on_time = $("#id_start_on_time").val();
+                var end_on_time = $("#id_end_on_time").val();
+                var device_ids = $("input[name='device']").val()
+                var obj_id = $("#id_form").val()
+                if (device_ids.length){
+                    $.ajax({
+                        url: '/device/filter/selected/device/',
+                        type: 'GET',
+                        dataType: 'json',
+                        contentType: 'application/json; charset=utf-8',
+                        data: {
+                            ids: device_ids,
+                            start_on_time: start_on_time,
+                            end_on_time: end_on_time,
+                            obj_id: obj_id,
+                        },
+                        success: function (response) {
+                            $("input[name='device']").select2("data", response.device_result)
+                        }
+                    });
+                }
+            }
+
             // handle the ends field of the form.
             var $radios = $('input:radio[name=ends]');
-            $("#id_end_after").val('').prop('readonly',true)
-            $("#id_end_on").val('').prop('readonly',true)
+            $("#id_end_never").val(false)
+            $("#id_end_on").prop('disabled', true)
+            $("#id_end_after").prop('readonly', true)
+            if ($("#id_end_after").val().length){
+                $radios.filter("[value=end_after]").prop('checked', true)
+                $("#id_end_after").prop('readonly', false).prop('required', true)
+            }
+            else if($("#id_end_on").val().length){
+                $radios.filter("[value=end_on]").prop('checked', true)
+                $("#id_end_on").prop('disabled', false).prop('required', true)
+            }
+            else{
+                $("#id_end_never").val(true)
+                $("#id_end_on").val('').prop('disabled',true).prop('required', false)
+                $("#id_end_after").val('').prop('readonly',true).prop('required', false)
+            }
+
+            $("#id_end_after").change(function() {
+                var end_after_val = $(this).val();
+                if (end_after_val < 1){ alert('End after value should be positive integer.'); $(this).val('1'); }
+            });
+
             $radios.change(function(){
                 var x = $(this).val();
                 if (x=='end_after'){
-                    $("#id_end_after").val('0').prop('readonly',false).prop('required', true)
+                    $("#id_end_after").val('1').prop('readonly',false).prop('required', true)
                     $("#id_end_never").val(false)
-                    $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                    $("#id_end_on").val('').prop('disabled',true).prop('required', false)
                 }
                 else if(x=='end_on'){
-                    $("#id_end_on").val('').prop('readonly',false).prop('required', true)
+                    $("#id_end_on").val('').prop('disabled',false).prop('required', true)
                     $("#id_end_never").val(false)
                     $("#id_end_after").val('').prop('readonly',true).prop('required', false)
                 }
                 else{
                     $("#id_end_never").val(true)
                     $("#id_end_after").val('').prop('readonly',true).prop('required', false)
-                    $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                    $("#id_end_on").val('').prop('disabled',true).prop('required', false)
                 }
             });
 
@@ -260,11 +367,6 @@
     </script>
 
     <script>
-        // var device_val = $("#id_device").val().split(",")
-        // device_val[0] = device_val[0].split("[")[1]
-        // device_val[device_val.length-1] = device_val[device_val.length-1].split("]")[0]
-        // $("#id_device").val(device_val)
-
         $(function() {
             $("input[name='device']").select2({
                 placeholder: "Search with (IP, Device Name, Device Alias, MAC, Sector ID, Circuit)",
@@ -277,9 +379,17 @@
                     quietMillis: 250,
                     data: function (term, page) {
                         var scheduling_type = $("#id_scheduling_type").val()
+                        var start_on_time = $("#id_start_on_time").val()
+                        var end_on_time = $("#id_end_on_time").val()
+                        var obj_id = $("#id_form").val()
+                        var technology_id = $("#id_technology").val()
                         return {
                             sSearch: term, // search term
                             scheduling_type: scheduling_type,
+                            start_on_time: start_on_time,
+                            end_on_time: end_on_time,
+                            obj_id: obj_id,
+                            technology_id: technology_id,
                         };
                     },
                     results: function (data, page) { // parse the results into the format expected by Select2.

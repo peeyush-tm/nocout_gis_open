@@ -1,29 +1,41 @@
+"""
+Contain Gis Inventory models.
+
+Following are basic models of this module.
+
+- Base Station
+- Backhaul
+- Sector / PTP Near End
+- Sub STation / PTP Far End
+- Circuit
+- Antenna
+- Customer
+- Thematic Settings
+"""
+
 import time
 from datetime import datetime
-from django.contrib.auth.models import User
+
 from django.db import models
-from service.models import Service, ServiceDataSource
-from user_group.models import UserGroup
-from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
-from device_group.models import DeviceGroup
-from organization.models import Organization
-from django.utils.safestring import mark_safe
-from django.core.files.storage import FileSystemStorage
-from django.conf import settings
-from django.utils.translation import ugettext_lazy
-from user_profile.models import UserProfile
-from organization.models import Organization
-from inventory.signals import auto_assign_thematic
 from django.db.models.signals import post_save, pre_save, pre_delete
-from inventory.signals import resize_icon_size, delete_antenna_of_sector, delete_antenna_of_substation, delete_customer_of_circuit
+
+from organization.models import Organization
+from user_profile.models import UserProfile
+from user_group.models import UserGroup
+
+from service.models import Service, ServiceDataSource
+from device_group.models import DeviceGroup
+from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency, Country, State, City
+
+from inventory import signals as inventory_signals
 
 
 def get_default_org():
     """
-
     :return: organisation ID = 1
     """
     return Organization.objects.get(id=1)
+
 
 # inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
@@ -125,10 +137,12 @@ class BaseStation(models.Model):
     gps_type = models.CharField('GPS Type', max_length=100, null=True, blank=True)
     building_height = models.FloatField('Building Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text='(mtr) Enter a number.')
-    country = models.IntegerField('Country', null=True, blank=True)
-    state = models.IntegerField('State', null=True, blank=True)
-    city = models.IntegerField('City', null=True, blank=True)
+    country = models.ForeignKey(Country, null=True, blank=True)
+    state = models.ForeignKey(State, null=True, blank=True)
+    city = models.ForeignKey(City, null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
+    maintenance_status = models.CharField('Maintenance Status', max_length=250, null=True, blank=True)
+    provisioning_status = models.CharField('Provisioning Status', max_length=250, null=True, blank=True)
     tag1 = models.CharField('Tag 1', max_length=60, null=True, blank=True)
     tag2 = models.CharField('Tag 2', max_length=60, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
@@ -137,7 +151,7 @@ class BaseStation(models.Model):
         return self.name
 
     class Meta:
-        ordering = ['city','state']
+        ordering = ['city', 'state']
 
 
 # gis sector model
@@ -205,9 +219,9 @@ class SubStation(models.Model):
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     mac_address = models.CharField('MAC Address', max_length=100, null=True, blank=True)
-    country = models.IntegerField('Country', null=True, blank=True)
-    state = models.IntegerField('State', null=True, blank=True)
-    city = models.IntegerField('City', null=True, blank=True)
+    country = models.ForeignKey(Country, null=True, blank=True)
+    state = models.ForeignKey(State, null=True, blank=True)
+    city = models.ForeignKey(City, null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
@@ -260,7 +274,6 @@ class IconSettings(models.Model):
 
         return '{}/{}/{}'.format(path, year_month_date, filename)
 
-    # fs = FileSystemStorage(location=settings.MEDIA_ROOT)
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     upload_image = models.ImageField(upload_to=uploaded_file_name)
@@ -388,6 +401,7 @@ class GISInventoryBulkImport(models.Model):
         """
         return self.original_filename
 
+
 #*********** L2 Reports Model *******************
 class CircuitL2Report(models.Model):
 
@@ -464,15 +478,37 @@ class PingThematicSettings(models.Model):
 
 class UserPingThematicSettings(models.Model):
     """
-        User PING thematic settings
+    User PING thematic settings
     """
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(PingThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
 
 
-post_save.connect(auto_assign_thematic, sender=UserProfile)
-pre_save.connect(resize_icon_size, sender=IconSettings)
-pre_delete.connect(delete_antenna_of_sector, sender=Sector)
-pre_delete.connect(delete_antenna_of_substation, sender=SubStation)
-pre_delete.connect(delete_customer_of_circuit, sender=Circuit)
+class GISExcelDownload(models.Model):
+    file_path = models.CharField('Inventory File', max_length=250, null=True, blank=True)
+    status = models.IntegerField('Status', null=True, blank=True)
+    base_stations = models.CharField('Base Stations', max_length=250, null=True, blank=True)
+    description = models.TextField('Description', null=True, blank=True)
+    downloaded_by = models.CharField('Downloaded By', max_length=100, null=True, blank=True)
+    added_on = models.DateTimeField('Added On', null=True, blank=True)
+    modified_on = models.DateTimeField('Modified On', null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        """ On save, update timestamps """
+        if not self.id:
+            self.added_on = datetime.now()
+        self.modified_on = datetime.now()
+        return super(GISExcelDownload, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        return self.file_path
+
+
+#********************* Connect Inventory Signals *******************
+
+post_save.connect(inventory_signals.auto_assign_thematic, sender=UserProfile)
+pre_save.connect(inventory_signals.resize_icon_size, sender=IconSettings)
+pre_delete.connect(inventory_signals.delete_antenna_of_sector, sender=Sector)
+pre_delete.connect(inventory_signals.delete_antenna_of_substation, sender=SubStation)
+pre_delete.connect(inventory_signals.delete_customer_of_circuit, sender=Circuit)

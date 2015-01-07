@@ -31,10 +31,48 @@ class ServiceDataSource(models.Model):
     """
     Service Data Source Model Columns declaration
     """
+    CHART_TYPE_CHOICES  = (
+                          ('line', 'Line'),
+                          ('spline', 'Spline'),
+                          ('column', 'Column'),
+                          ('area', 'Area'),
+                          ('pie', 'Pie'),
+                          ('table', 'Table'),
+                          ('areaspline', 'Areaspline'),
+                          ('bar', 'Bar'),
+                          ('scatter', 'Scatter'),
+                          ('polar', 'Polar'),
+                          ('angular', 'Angular'),
+                          ('range', 'Range'),
+                          ('candlestick', 'Candlestick'),
+                          ('ohlc', 'OHLC'),
+                          ('flag', 'Flag'),
+                          ('errorbar', 'Error bar'),
+                          ('funnel', 'Funnel'),
+                          ('waterfall', 'Waterfall'),
+                          ('heatmap', 'Heat Map'),
+                          )
+
+    SOURCE_TYPE = (
+                   (1,'Numeric'),
+                   (2,'String'),
+                  )
+
     name = models.CharField('Name', max_length=100)
     alias = models.CharField('Alias', max_length=250)
+    chart_type = models.CharField(choices=CHART_TYPE_CHOICES, max_length=50)
+    formula = models.CharField('Formula', max_length=100, null=True, blank=True)
+    valuesuffix = models.CharField('Value Suffix', max_length=100)
+    valuetext = models.CharField('Value Text', max_length=100)
+    show_min = models.BooleanField('Show Min', default=False)
+    show_max = models.BooleanField('Show Max', default=False)
+    show_gis = models.BooleanField('Show Gis', default=True)
+    show_performance_center = models.BooleanField('Show In Performance Center', default=True)
+    is_inverted = models.BooleanField('The Comparison is inverted', default=False)
+    data_source_type = models.IntegerField(choices=SOURCE_TYPE, default=1)
     warning = models.CharField('Warning', max_length=255, null=True, blank=True)
     critical = models.CharField('Critical', max_length=255, null=True, blank=True)
+    chart_color = models.CharField('Chart Color', max_length=100)
 
     def __unicode__(self):
         """

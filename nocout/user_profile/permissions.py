@@ -50,10 +50,10 @@ admin_perms = [
     'alarm_escalation.change_escalationlevel',
     'alarm_escalation.delete_escalationlevel',
     'alarm_escalation.view_escalationlevel',
-    'alarm_escalation.add_alarmescalation',
-    'alarm_escalation.change_alarmescalation',
-    'alarm_escalation.delete_alarmescalation',
-    'alarm_escalation.view_alarmescalation',
+    'scheduling_management.add_event',
+    'scheduling_management.change_event',
+    'scheduling_management.delete_event',
+    'scheduling_management.view_event',
 ]
 
 
@@ -83,7 +83,7 @@ operator_perms = [
     'organization.view_organization',
     'user_profile.view_userprofile',
     'alarm_escalation.view_escalationlevel',
-    'alarm_escalation.view_alarmescalation',
+    'scheduling_management.view_event',
 ]
 
 
@@ -102,5 +102,5 @@ viewer_perms = [
     'inventory.view_thematicsettings',
     'inventory.view_thresholdconfiguration',
     'alarm_escalation.view_escalationlevel',
-    'alarm_escalation.view_alarmescalation',
+    'scheduling_management.view_event',
 ]

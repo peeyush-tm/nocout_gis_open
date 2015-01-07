@@ -9,51 +9,111 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
 
-        # Changing field 'EscalationLevel.emails'
-        db.alter_column(u'alarm_escalation_escalationlevel', 'emails', self.gf('django.db.models.fields.TextField')())
+        # Changing field 'SectorCapacityStatus.peak_out_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'peak_out_per', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.avg_out_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'avg_out_per', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.avg_out_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'avg_out_val', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.peak_out_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'peak_out_val', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.current_in_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'current_in_per', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.current_out_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'current_out_per', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.current_in_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'current_in_val', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.current_out_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'current_out_val', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.peak_in_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'peak_in_val', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.peak_in_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'peak_in_per', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.avg_in_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'avg_in_per', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.avg_in_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'avg_in_val', self.gf('django.db.models.fields.FloatField')())
+
+        # Changing field 'SectorCapacityStatus.sector_capacity'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'sector_capacity', self.gf('django.db.models.fields.FloatField')())
 
     def backwards(self, orm):
 
-        # Changing field 'EscalationLevel.emails'
-        db.alter_column(u'alarm_escalation_escalationlevel', 'emails', self.gf('alarm_escalation.fields.MultiEmailField')())
+        # Changing field 'SectorCapacityStatus.peak_out_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'peak_out_per', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.avg_out_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'avg_out_per', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.avg_out_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'avg_out_val', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.peak_out_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'peak_out_val', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.current_in_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'current_in_per', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.current_out_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'current_out_per', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.current_in_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'current_in_val', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.current_out_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'current_out_val', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.peak_in_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'peak_in_val', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.peak_in_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'peak_in_per', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.avg_in_per'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'avg_in_per', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.avg_in_val'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'avg_in_val', self.gf('django.db.models.fields.IntegerField')())
+
+        # Changing field 'SectorCapacityStatus.sector_capacity'
+        db.alter_column(u'capacity_management_sectorcapacitystatus', 'sector_capacity', self.gf('django.db.models.fields.IntegerField')())
 
     models = {
-        u'alarm_escalation.alarmescalation': {
-            'Meta': {'object_name': 'AlarmEscalation'},
-            'alert_description': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'base_station': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['inventory.BaseStation']"}),
+        u'capacity_management.sectorcapacitystatus': {
+            'Meta': {'ordering': "['-sys_timestamp']", 'object_name': 'SectorCapacityStatus'},
+            'age': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'avg_in_per': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'avg_in_val': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'avg_out_per': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'avg_out_val': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'current_in_per': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'current_in_val': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'current_out_per': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'current_out_val': ('django.db.models.fields.FloatField', [], {'default': '0'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15'}),
-            'is_closed': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'l1_email_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l1_phone_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l2_email_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l2_phone_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l3_email_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l3_phone_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l4_email_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l4_phone_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l5_email_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l5_phone_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l6_email_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l6_phone_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l7_email_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'l7_phone_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'level': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['alarm_escalation.EscalationLevel']", 'symmetrical': 'False'}),
-            'technology': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceTechnology']"})
-        },
-        u'alarm_escalation.escalationlevel': {
-            'Meta': {'object_name': 'EscalationLevel'},
-            'alarm_age': ('django.db.models.fields.IntegerField', [], {}),
-            'device_type': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceType']"}),
-            'emails': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
-            'phones': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'region_name': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '50', 'blank': 'True'}),
-            'service': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.Service']"}),
-            'service_data_source': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.ServiceDataSource']"})
+            'peak_in_per': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'peak_in_timestamp': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'peak_in_val': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'peak_out_per': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'peak_out_timestamp': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'peak_out_val': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'sector': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['inventory.Sector']"}),
+            'sector_capacity': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            'sector_sector_id': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '64', 'null': 'True', 'blank': 'True'}),
+            'severity': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'sys_timestamp': ('django.db.models.fields.IntegerField', [], {'default': '0', 'db_index': 'True'})
         },
         u'command.command': {
             'Meta': {'object_name': 'Command'},
@@ -62,11 +122,22 @@ class Migration(SchemaMigration):
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
         },
+        u'device.city': {
+            'Meta': {'object_name': 'City'},
+            'city_name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'state': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.State']", 'null': 'True', 'blank': 'True'})
+        },
+        u'device.country': {
+            'Meta': {'object_name': 'Country'},
+            'country_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
+        },
         u'device.device': {
             'Meta': {'ordering': "['machine']", 'object_name': 'Device'},
             'address': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'city': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'country': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'city': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.City']", 'null': 'True', 'blank': 'True'}),
+            'country': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.Country']", 'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'device_alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'device_model': ('django.db.models.fields.IntegerField', [], {}),
@@ -95,9 +166,16 @@ class Migration(SchemaMigration):
             'ports': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.DevicePort']", 'null': 'True', 'blank': 'True'}),
             u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'site_instance': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['site_instance.SiteInstance']", 'null': 'True', 'blank': 'True'}),
-            'state': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'state': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.State']", 'null': 'True', 'blank': 'True'}),
             'timezone': ('django.db.models.fields.CharField', [], {'default': "'Asia/Kolkata'", 'max_length': '100'}),
             u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
+        },
+        u'device.devicefrequency': {
+            'Meta': {'object_name': 'DeviceFrequency'},
+            'color_hex_value': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'frequency_radius': ('django.db.models.fields.FloatField', [], {'default': '0'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'value': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         },
         u'device.devicemodel': {
             'Meta': {'object_name': 'DeviceModel'},
@@ -167,6 +245,12 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceModel']"}),
             'type': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceType']"})
         },
+        u'device.state': {
+            'Meta': {'object_name': 'State'},
+            'country': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.Country']", 'null': 'True', 'blank': 'True'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'state_name': ('django.db.models.fields.CharField', [], {'max_length': '200'})
+        },
         u'device.technologyvendor': {
             'Meta': {'object_name': 'TechnologyVendor'},
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -178,6 +262,26 @@ class Migration(SchemaMigration):
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'model': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceModel']"}),
             'vendor': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceVendor']"})
+        },
+        u'inventory.antenna': {
+            'Meta': {'object_name': 'Antenna'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'antenna_type': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'azimuth_angle': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'beam_width': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'gain': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'height': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'make_of_antenna': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'blank': 'True'}),
+            'mount_type': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
+            'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
+            'polarization': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
+            'reflector': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'splitter_installed': ('django.db.models.fields.CharField', [], {'max_length': '4', 'null': 'True', 'blank': 'True'}),
+            'sync_splitter_used': ('django.db.models.fields.CharField', [], {'max_length': '4', 'null': 'True', 'blank': 'True'}),
+            'tilt': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'})
         },
         u'inventory.backhaul': {
             'Meta': {'object_name': 'Backhaul'},
@@ -221,8 +325,8 @@ class Migration(SchemaMigration):
             'bs_switch': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'bs_switch'", 'null': 'True', 'to': u"orm['device.Device']"}),
             'bs_type': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'blank': 'True'}),
             'building_height': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'city': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'country': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'city': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.City']", 'null': 'True', 'blank': 'True'}),
+            'country': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.Country']", 'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'gps_type': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'hssu_used': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'blank': 'True'}),
@@ -230,12 +334,39 @@ class Migration(SchemaMigration):
             'infra_provider': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'latitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'longitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'maintenance_status': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
-            'state': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'provisioning_status': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'state': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.State']", 'null': 'True', 'blank': 'True'}),
             'tag1': ('django.db.models.fields.CharField', [], {'max_length': '60', 'null': 'True', 'blank': 'True'}),
             'tag2': ('django.db.models.fields.CharField', [], {'max_length': '60', 'null': 'True', 'blank': 'True'}),
             'tower_height': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'})
+        },
+        u'inventory.sector': {
+            'Meta': {'object_name': 'Sector'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'antenna': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'antenna'", 'null': 'True', 'on_delete': 'models.SET_NULL', 'to': u"orm['inventory.Antenna']"}),
+            'base_station': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'sector'", 'null': 'True', 'on_delete': 'models.SET_NULL', 'to': u"orm['inventory.BaseStation']"}),
+            'bs_technology': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceTechnology']", 'null': 'True', 'blank': 'True'}),
+            'cell_radius': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'dr_configured_on': ('django.db.models.fields.related.ForeignKey', [], {'max_length': '250', 'related_name': "'dr_configured_on'", 'null': 'True', 'blank': 'True', 'to': u"orm['device.Device']"}),
+            'dr_site': ('django.db.models.fields.CharField', [], {'max_length': '150', 'null': 'True', 'blank': 'True'}),
+            'frame_length': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'frequency': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceFrequency']", 'null': 'True', 'blank': 'True'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'modulation': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'mrc': ('django.db.models.fields.CharField', [], {'max_length': '4', 'null': 'True', 'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
+            'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
+            'planned_frequency': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'rf_bandwidth': ('django.db.models.fields.FloatField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'rx_power': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'sector_configured_on': ('django.db.models.fields.related.ForeignKey', [], {'max_length': '250', 'related_name': "'sector_configured_on'", 'null': 'True', 'on_delete': 'models.SET_NULL', 'to': u"orm['device.Device']"}),
+            'sector_configured_on_port': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DevicePort']", 'null': 'True', 'blank': 'True'}),
+            'sector_id': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'tx_power': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'})
         },
         u'machine.machine': {
             'Meta': {'object_name': 'Machine'},
@@ -290,9 +421,18 @@ class Migration(SchemaMigration):
         u'service.servicedatasource': {
             'Meta': {'object_name': 'ServiceDataSource'},
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'chart_color': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'chart_type': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'critical': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
+            'data_source_type': ('django.db.models.fields.IntegerField', [], {'default': '1'}),
+            'formula': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'show_gis': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
+            'show_max': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'show_min': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'valuesuffix': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'valuetext': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'warning': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'})
         },
         u'service.serviceparameters': {
@@ -326,4 +466,4 @@ class Migration(SchemaMigration):
         }
     }
 
-    complete_apps = ['alarm_escalation']
+    complete_apps = ['capacity_management']

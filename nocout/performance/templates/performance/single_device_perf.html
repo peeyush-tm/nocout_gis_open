@@ -93,7 +93,7 @@
     <div class="box status_box">
         <div class="box-title" style="background:transparent;">
             <h4 id="device_status_container">
-                Device Status
+                
             </h4>
 
             <div class="tools_status">
@@ -124,21 +124,41 @@
     <div id="tableContainer" class="box-body">
     <div class="tabbable header-tabs">
         <ul class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
-            <li><a href="#errors_tab" id="errors" data-toggle="tab"><span class="hidden-inline-mobile">Errors</span></a>
+            <li>
+                <a href="#utilization_top_tab" id="utilization_top" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Utilization</span>
+                </a>
             </li>
-            <li><a href="#sia_tab" id="sia" data-toggle="tab"><span class="hidden-inline-mobile">SIA</span></a></li>
-            <li><a href="#topology_tab" id="topology" class="hide" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a>
+            <li>
+                <a href="#topology_tab" id="topology" class="hide" data-toggle="tab">
+                    <span class="hidden-inline-mobile">IA Table</span>
+                </a>
             </li>
-            <li><a href="#availability_tab" id="availability" data-toggle="tab"><span class="hidden-inline-mobile">Availability</span></a>
+            <li>
+                <a href="#availability_tab" id="availability" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Availability</span>
+                </a>
             </li>
-            <li><a href="#inventory_status_tab" id="inventory_status" data-toggle="tab"><span
-                    class="hidden-inline-mobile">Inventory Status</span></a></li>
-            <li><a href="#service_status_tab" id="service_status" data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a>
+            <li>
+                <a href="#inventory_status_tab" id="inventory_status" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Inventory Status</span>
+                </a>
             </li>
-            <li><a href="#service_perf_tab" id="service_perf" data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a>
+            <li>
+                <a href="#service_status_tab" id="service_status" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Service Status</span>
+                </a>
             </li>
-            <li class="active"><a href="#network_perf_tab" id="network_perf" data-toggle="tab"><span
-                    class="hidden-inline-mobile">Network Performance</span></a></li>
+            <li>
+                <a href="#service_perf_tab" id="service_perf" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Service Performance</span>
+                </a>
+            </li>
+            <li class="active">
+                <a href="#network_perf_tab" id="network_perf" data-toggle="tab">
+                    <span class="hidden-inline-mobile">Network Performance</span>
+                </a>
+            </li>
         </ul>
 
         <div class="clearfix"></div>
@@ -147,7 +167,7 @@
         <div class="tab-content" style="overflow:auto;">
             <div class="tab-pane active" id="network_perf_tab">
                 <div class="panel panel-default inner_tab_container">
-                    <div class="panel-body">
+                    <div class="panel-body" style="overflow:auto;">
                         <div class="tabbable tabs-left">
 
                         </div>
@@ -156,7 +176,7 @@
             </div>
             <div class="tab-pane" id="service_perf_tab">
                 <div class="panel panel-default inner_tab_container">
-                    <div class="panel-body">
+                    <div class="panel-body" style="overflow:auto;">
                         <div class="tabbable tabs-left">
 
                         </div>
@@ -165,16 +185,17 @@
             </div>
             <div class="tab-pane" id="service_status_tab">
                 <div class="panel panel-default inner_tab_container">
-                    <div class="panel-body">
+                    <div class="panel-body" style="overflow:auto;">
                         <div class="tabbable tabs-left">
 
                         </div>
                     </div>
                 </div>
             </div>
+            
             <div class="tab-pane" id="inventory_status_tab">
                 <div class="panel panel-default inner_tab_container">
-                    <div class="panel-body">
+                    <div class="panel-body" style="overflow:auto;">
                         <div class="tabbable tabs-left">
 
                         </div>
@@ -184,171 +205,32 @@
 
             <div class="tab-pane" id="availability_tab">
                 <div class="panel panel-default inner_tab_container">
-                    <div class="panel-body">
+                    <div class="panel-body" style="overflow:auto;">
                         <div class="tabbable tabs-left">
 
                         </div>
                     </div>
                 </div>
             </div>
+
             <div class="tab-pane hide" id="topology_tab">
                 <div class="panel panel-default inner_tab_container">
-                    <div class="panel-body">
+                    <div class="panel-body" style="overflow:auto;">
                         <div class="tabbable tabs-left">
 
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="tab-pane" id="sia_tab">
-                <div class="panel panel-default">
-                    <div class="panel-body" style="overflow-x: auto;">
-                        <table id="sia_table"
-                               class="datatable table table-striped table-bordered table-hover table-responsive">
-                            <thead>
-                            <tr>
-                                <th></th>
-                                <th>Device Name</th>
-                                <th>IP Address</th>
-                                <th>Service Name</th>
-                                <th>Severity</th>
-                                <th>Latency</th>
-                                <th>Packet Loss</th>
-                                <th>Alert Date Time</th>
-                                <th>Description</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {#                                                <!-- {% if sia_data %}#}
-                            {#                                                    {% for data in sia_data %}#}
-                            {#                                                    <tr>#}
-                            {#                                                        {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}#}
-                            {#                                                            <td><i class="fa fa-circle red-dot"></i></td>#}
-                            {#                                                            <td>{{ data.device_name }}</td>#}
-                            {#                                                            <td>{{ data.ip_address }}</td>#}
-                            {#                                                            <td>{{ data.service_name }}</td>#}
-                            {#                                                            <td>{{ data.data_source }}</td>#}
-                            {#                                                            <td><span class="text-danger">{{ data.severity }}</span></td>#}
-                            {#                                                            <td><span class="text-danger">{{ data.current_value }}</span></td>#}
-                            {#                                                            <td>{{ data.alert_date_time }}</td>#}
-                            {#                                                            <td><span class="text-danger">{{ data.description }}</span></td>#}
-                            {#                                                        {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}#}
-                            {#                                                            <td><i class="fa fa-circle orange-dot"></i></td>#}
-                            {#                                                            <td>{{ data.device_name }}</td>#}
-                            {#                                                            <td>{{ data.ip_address }}</td>#}
-                            {#                                                            <td>{{ data.service_name }}</td>#}
-                            {#                                                            <td>{{ data.data_source }}</td>#}
-                            {#                                                            <td><span class="text-warning">{{ data.severity }}</span></td>#}
-                            {#                                                            <td><span class="text-warning">{{ data.current_value }}</span></td>#}
-                            {#                                                            <td>{{ data.alert_date_time }}</td>#}
-                            {#                                                            <td><span class="text-warning">{{ data.description }}</span></td>#}
-                            {#                                                        {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}#}
-                            {#                                                            <td><i class="fa fa-circle green-dot"></i></td>#}
-                            {#                                                            <td>{{ data.device_name }}</td>#}
-                            {#                                                            <td>{{ data.ip_address }}</td>#}
-                            {#                                                            <td>{{ data.service_name }}</td>#}
-                            {#                                                            <td>{{ data.data_source }}</td>#}
-                            {#                                                            <td><span class="text-success">{{ data.severity }}</span></td>#}
-                            {#                                                            <td><span class="text-success">{{ data.current_value }}</span></td>#}
-                            {#                                                            <td>{{ data.alert_date_time }}</td>#}
-                            {#                                                            <td><span class="text-success">{{ data.description }}</span></td>#}
-                            {#                                                        {% else %}#}
-                            {#                                                            <td><i class="fa fa-circle grey-dot"></i></td>#}
-                            {#                                                            <td>{{ data.device_name }}</td>#}
-                            {#                                                            <td>{{ data.ip_address }}</td>#}
-                            {#                                                            <td>{{ data.service_name }}</td>#}
-                            {#                                                            <td>{{ data.data_source }}</td>#}
-                            {#                                                            <td><span class="text-muted">{{ data.severity }}</span></td>#}
-                            {#                                                            <td><span class="text-muted">{{ data.current_value }}</span></td>#}
-                            {#                                                            <td>{{ data.alert_date_time }}</td>#}
-                            {#                                                            <td><span class="text-muted">{{ data.description }}</span></td>#}
-                            {#                                                        {% endif %}#}
-                            {#                                                    </tr>#}
-                            {#                                                {% endfor %}#}
-                            {#                                                {% endif %} -->#}
-                            </tbody>
-                        </table>
 
+            <div class="tab-pane" id="utilization_top_tab">
+                <div class="panel panel-default inner_tab_container">
+                    <div class="panel-body" style="overflow:auto;">
+                        <div class="tabbable tabs-left"></div>
                     </div>
                 </div>
             </div>
-            <div class="tab-pane" id="errors_tab">
-                <div class="panel panel-default">
-                    <div class="panel-body">
-                        <table id="error_table"
-                               class="datatable table table-striped table-bordered table-hover table-responsive">
-                            <thead>
-                            <tr>
-                                <th></th>
-                                <th>Device Name</th>
-                                <th>IP Address</th>
-                                <th>Service Name</th>
-                                <th>Severity</th>
-                                <th>Latency</th>
-                                <th>Packet Loss</th>
-                                <th>Alert Date Time</th>
-                                <th>Description</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% if error_data %}
-                                {% for data in error_data %}
-                                    <tr>
-                                        {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
-                                            <td><i class="fa fa-circle red-dot"><span style="display:none">1</span></i>
-                                            </td>
-                                            <td>{{ data.device_name }}</td>
-                                            <td>{{ data.ip_address }}</td>
-                                            <td>{{ data.service_name }}</td>
-                                            <td><span class="text-danger">{{ data.severity }}</span></td>
-                                            <td><span class="text-danger">{{ data.latency }} ms</span></td>
-                                            <td><span class="text-danger">{{ data.packet_loss }}%</span></td>
-                                            <td>{{ data.alert_date_time }}</td>
-                                            <td><span class="text-danger">{{ data.description }}</span></td>
-                                        {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
-                                            <td><i class="fa fa-circle orange-dot"><span
-                                                    style="display:none">2</span></i></td>
-                                            <td>{{ data.device_name }}</td>
-                                            <td>{{ data.ip_address }}</td>
-                                            <td>{{ data.service_name }}</td>
-                                            <td><span class="text-warning">{{ data.severity }}</span></td>
-                                            <td><span class="text-warning">{{ data.latency }} ms</span></td>
-                                            <td><span class="text-warning">{{ data.description | slice:"-4:" }}</span>
-                                            </td>
-                                            <td>{{ data.alert_date_time }}</td>
-                                            <td><span class="text-warning">{{ data.description }}</span></td>
-                                        {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
-                                            <td><i class="fa fa-circle green-dot"><span
-                                                    style="display:none">3</span></i></td>
-                                            <td>{{ data.device_name }}</td>
-                                            <td>{{ data.ip_address }}</td>
-                                            <td>{{ data.service_name }}</td>
-                                            <td><span class="text-success">{{ data.severity }}</span></td>
-                                            <td><span class="text-success">{{ data.latency }} ms</span></td>
-                                            <td><span class="text-success">{{ data.packet_loss }}%</span></td>
-                                            <td>{{ data.alert_date_time }}</td>
-                                            <td><span class="text-success">{{ data.description }}</span></td>
-                                        {% else %}
-                                            <td><i class="fa fa-circle grey-dot"><span style="display:none">4</span></i>
-                                            </td>
-                                            <td>{{ data.device_name }}</td>
-                                            <td>{{ data.ip_address }}</td>
-                                            <td>{{ data.service_name }}</td>
-                                            <td><span class="text-muted">{{ data.severity }}</span></td>
-                                            <td><span class="text-muted">{{ data.latency }} ms</span></td>
-                                            <td><span class="text-muted">{{ data.packet_loss }}%</span></td>
-                                            <td>{{ data.alert_date_time }}</td>
-                                            <td><span class="text-muted">{{ data.description }}</span></td>
-                                        {% endif %}
-                                    </tr>
-                                {% endfor %}
-                            {% endif %}
-                            </tbody>
-                        </table>
 
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
     </div>
@@ -369,18 +251,8 @@
     <script type="text/javascript">
     /*Global Variables*/
     var perfInstance = "",
-            current_device = "";
-
-    var desired_url_string = "https";
-    // if (window.location.protocol == "https:") {
-    //     desired_url_string = "https://";
-    // }
-
-    // if (window.location.protocol == "https:") {
-    //     if(window.location.origin) {
-    //         window.location.origin = "https:" + window.location.origin.substring(window.location.protocol.length);
-    //     }
-    // }
+        current_device = "",
+        device_technology = "";
 
 
     $(document).ready(function (e) {
@@ -403,10 +275,10 @@
         }
 
         /*Show SIA tab only for network devices*/
-        var device_technology = '{{ device_technology }}';
+        device_technology = '{{ device_technology }}';
 
         // Hide Topology tab for PTP
-        if (page_type_val == 'customer' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
+        if(page_type_val == 'customer' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
             if (!$("#topology").hasClass("hide")) {
                 $("#topology").addClass("hide");
             }
@@ -414,7 +286,9 @@
             if (!$("#topology_tab").hasClass("hide")) {
                 $("#topology_tab").addClass("hide");
             }
+
         } else {
+            
             if ($("#topology").hasClass("hide")) {
                 $("#topology").removeClass("hide");
             }
@@ -424,33 +298,28 @@
             }
         }
 
-        if (page_type_val != 'network' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
-            if (!$("#sia").hasClass("hide")) {
-                $("#sia").addClass("hide");
+
+        if(page_type_val == 'other') {
+            // Hide Utilization & RSSI Tabs for all network devices
+            if (!$("#utilization_top").hasClass("hide")) {
+                $("#utilization_top").addClass("hide");
             }
 
-            if (!$("#sia_tab").hasClass("hide")) {
-                $("#sia_tab").addClass("hide");
+            if (!$("#utilization_top_tab").hasClass("hide")) {
+                $("#utilization_top_tab").addClass("hide");
             }
+
         } else {
-            if ($("#sia").hasClass("hide")) {
-                $("#sia").removeClass("hide");
+            // Hide Utilization & RSSI Tabs for all network devices
+            if ($("#utilization_top").hasClass("hide")) {
+                $("#utilization_top").removeClass("hide");
             }
 
-            if ($("#sia_tab").hasClass("hide")) {
-                $("#sia_tab").removeClass("hide");
+            if ($("#utilization_top_tab").hasClass("hide")) {
+                $("#utilization_top_tab").removeClass("hide");
             }
+
         }
-
-        /*Error & SIA table initialization*/
-        $("#sia_table").DataTable({
-            bPaginate: true,
-            sPaginationType: "full_numbers"
-        });
-        $("#error_table").DataTable({
-            bPaginate: true,
-            sPaginationType: "full_numbers"
-        });
 
 
         //setting up a custom jquery function to retrive the get paramters.
@@ -541,25 +410,6 @@
                             '?download_excel=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
                             '&end_date=' + encodeURIComponent($("#end_date").val()));
                 }
-            } else {
-                if ($("#errors").parent().hasClass("active")) {
-
-                    //if start date and end date is present, url request with epoch start and end date
-                    if (start_date && end_date) {
-                        window.location.href = base_url + "/alert_center/" + page_type_val + "/device/{{ device.id }}/service_tab/ping/?start_date=" + encodeURIComponent(start_date) + "&end_date=" + encodeURIComponent(end_date) + "&download_excel=true";
-                    } else {
-                        window.location.href = base_url + "/alert_center/" + page_type_val + "/device/{{ device.id }}/service_tab/ping/?start_date=" + encodeURIComponent($("#start_date").val()) + "&end_date=" + encodeURIComponent($("#end_date").val()) + "&download_excel=true";
-                    }
-
-                } else if ($("#sia").parent().hasClass("active")) {
-
-                    //if start date and end date is present, url request with epoch start and end date
-                    if (start_date && end_date) {
-                        window.location.href = base_url + "/alert_center/" + page_type_val + "/device/{{ device.id }}/service_tab/service/?start_date=" + encodeURIComponent(start_date) + "&end_date=" + encodeURIComponent(end_date) + "&download_excel=true";
-                    } else {
-                        window.location.href = base_url + "/alert_center/" + page_type_val + "/device/{{ device.id }}/service_tab/service/?start_date=" + encodeURIComponent($("#start_date").val()) + "&end_date=" + encodeURIComponent($("#end_date").val()) + "&download_excel=true";
-                    }
-                }
             }
         });
 
@@ -585,26 +435,6 @@
                             '/device/{{ device.id }}' +
                             '?download_csv=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
                             '&end_date=' + encodeURIComponent($("#end_date").val()))
-                }
-            } else {
-
-                if ($("#errors").parent().hasClass("active")) {
-
-                    //if start date and end date is present, url request with epoch start and end date
-                    if (start_date && end_date) {
-                        window.location.href = base_url + "/alert_center/" + page_type_val + "/device/{{ device.id }}/service_tab/ping/?start_date=" + encodeURIComponent(start_date) + "&end_date=" + encodeURIComponent(end_date) + "&download_csv=true";
-                    } else {
-                        window.location.href = base_url + "/alert_center/" + page_type_val + "/device/{{ device.id }}/service_tab/ping/?start_date=" + encodeURIComponent($("#start_date").val()) + "&end_date=" + encodeURIComponent($("#end_date").val()) + "&download_csv=true";
-                    }
-
-                } else if ($("#sia").parent().hasClass("active")) {
-
-                    //if start date and end date is present, url request with epoch start and end date
-                    if (start_date && end_date) {
-                        window.location.href = base_url + "/alert_center/" + page_type_val + "/device/{{ device.id }}/service_tab/service/?start_date=" + encodeURIComponent(start_date) + "&end_date=" + encodeURIComponent(end_date) + "&download_csv=true";
-                    } else {
-                        window.location.href = base_url + "/alert_center/" + page_type_val + "/device/{{ device.id }}/service_tab/service/?start_date=" + encodeURIComponent($("#start_date").val()) + "&end_date=" + encodeURIComponent($("#end_date").val()) + "&download_csv=true";
-                    }
                 }
             }
         });
@@ -675,6 +505,13 @@
     /*Load first inner tab of inventory status*/
     $("#topology").click(function (e) {
         fetchFirstTabContent(e);
+        $.cookie('parent_tab_id', 'topology', {path: '/', secure: true});
+    });
+
+    /*Load first inner tab of Utilization tab*/
+    $("#utilization_top").click(function (e) {
+        fetchFirstTabContent(e);
+        $.cookie('parent_tab_id', 'utilization_top', {path: '/', secure: true});
     });
 
     /**
@@ -682,14 +519,14 @@
      */
     function fetchFirstTabContent(e) {
         var tab_id = e.currentTarget.attributes.href.value.split("#")[1];
-        var li_count = $("#" + tab_id + " .inner_tab_container .col-md-3 ul li").length;
+        var li_count = $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li").length;
         if (li_count > 0) {
             var activeTabId = $.cookie('activeTabId');
             //if activeTabId is stored in cookie and tabEL exist.
-            if (activeTabId && $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#" + activeTabId).length) {
-                $("#" + tab_id + " .inner_tab_container .col-md-3 ul li a#" + activeTabId).trigger('click');
+            if (activeTabId && $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li a#" + activeTabId).length) {
+                $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li a#" + activeTabId).trigger('click');
             } else {
-                $("#" + tab_id + " .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
+                $("#" + tab_id + " .inner_tab_container .left_tabs_container ul li:first-child a").trigger('click');
             }
         }
     }
@@ -771,6 +608,12 @@
             //         $('#'+$.cookie('activeTabId')).trigger('click');
             //     }
             // }, 100);
+        });
+
+        // Add click event to technology on breadcrumb
+        $("body").delegate(".perf_tech_breadcrumb",'click',function(e) {
+            // Go back to last tab
+            window.history.go(tabs_click_counter);
         });
     </script>
 {% endblock %}

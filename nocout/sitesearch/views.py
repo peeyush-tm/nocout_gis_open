@@ -9,7 +9,6 @@ from nocout.utils.util import format_value, cache_for
 
 logger = logging.getLogger(__name__)
 
-
 def tech_marker_url(device_type, techno, ms=True):
     """
 
@@ -91,23 +90,30 @@ def prepare_raw_basestation(base_station=None):
                 'show': 1,
                 'value': format_value(base_station['BSSITEID'])
             },
-            {
-                'name': 'bs_site_type',
-                'title': 'BS Site Type',
-                'show': 1,
-                'value': format_value(base_station['BSSITETYPE'])
-            },
+            # {
+            #     'name': 'bs_site_type',
+            #     'title': 'BS Site Type',
+            #     'show': 1,
+            #     'value': format_value(base_station['BSSITETYPE'])
+            # },
             {
                 'name': 'building_height',
                 'title': 'Building Height',
                 'show': 1,
-                'value': format_value(base_station['BSTOWERHEIGHT'])
+                'value': format_value(base_station['BSBUILDINGHGT'])
+                
             },
             {
                 'name': 'tower_height',
                 'title': 'Tower Height',
                 'show': 1,
-                'value': format_value(base_station['BSBUILDINGHGT'])
+                'value': format_value(base_station['BSTOWERHEIGHT'])
+            },
+            {
+                'name': 'bs_infra_provider',
+                'title': 'Infra Provider',
+                'show': 1,
+                'value': format_value(base_station['BSINFRAPROVIDER'])
             },
             {
                 'name': 'bs_city',
@@ -139,11 +145,29 @@ def prepare_raw_basestation(base_station=None):
                 'show':1,
                 'value': format_value(base_station['BSSITETYPE'])
             },
+            # {
+            #     'name':'bs_switch',
+            #     'title':'BS Switch',
+            #     'show':1,
+            #     'value': format_value(base_station['BSSWITCH'])
+            # },
             {
-                'name':'bs_switch',
-                'title':'BS Switch',
+                'name':'tag1',
+                'title':'Tag1',
                 'show':1,
-                'value': format_value(base_station['BSSWITCH'])
+                'value': format_value(base_station['BSTAG1'])
+            },
+            {
+                'name':'tag2',
+                'title':'Tag2',
+                'show':1,
+                'value': format_value(base_station['BSTAG2'])
+            },
+            {
+                'name': 'lat_lon',
+                'title': 'Lat, Long',
+                'show':1,
+                'value': str(format_value(base_station['BSLAT']))+","+str(format_value(base_station['BSLONG']))
             }
         ]
         return base_station_info
@@ -251,6 +275,18 @@ def prepare_raw_backhaul(backhaul):
                     'value': format_value(backhaul['BHTECH'])
                 },
                 {
+                    'name': 'bh_circuit_id',
+                    'title': 'BH Circuit ID',
+                    'show': 1,
+                    'value': format_value(backhaul['BH_CIRCUIT_ID'])
+                },
+                {
+                    'name': 'bh_pe_hostname',
+                    'title': 'PE Hostname',
+                    'show': 1,
+                    'value': format_value(backhaul['BH_PE_HOSTNAME'])
+                },
+                {
                     'name': 'bh_type',
                     'title': 'BH Type',
                     'show': 1,
@@ -281,10 +317,40 @@ def prepare_raw_backhaul(backhaul):
                     'value': format_value(backhaul['POP_IP'])
                 },
                 {
+                    'name':'bs_switch_ip',
+                    'title':'BS Switch IP',
+                    'show':1,
+                    'value': format_value(backhaul['BSSWITCH'])
+                },
+                {
+                    'name':'bh_device_type',
+                    'title':'Converter Type',
+                    'show':1,
+                    'value': format_value(backhaul['BHTYPE'])
+                },
+                {
                     'name': 'bs_converter_ip',
                     'title': 'BS Converter IP',
                     'show': 1,
                     'value': format_value(backhaul['BSCONV_IP'])
+                },
+                {
+                    'name': 'bh_ttsl_circuit_id',
+                    'title': 'BSO Circuit ID',
+                    'show': 1,
+                    'value': format_value(backhaul['BH_TTSL_CIRCUIT_ID'])
+                },
+                {
+                    'name': 'bh_device_port',
+                    'title': 'SW/Con Port',
+                    'show': 1,
+                    'value': format_value(backhaul['BH_DEVICE_PORT'])
+                },
+                {
+                    'name': 'aggregation_switch_port',
+                    'title': 'Aggregation Switch Port',
+                    'show': 1,
+                    'value': format_value(backhaul['BH_AGGR_PORT'])
                 }
             ]
             # else:
@@ -292,12 +358,33 @@ def prepare_raw_backhaul(backhaul):
 
     return backhaul_info
 
-def prepare_raw_sector(basestations):
+def pivot_element(bs_result, pivot_key):
+    """
+
+    :param bs_result:
+    :return:
+    """
+
+    sector_dict = dict()
+    if bs_result:
+        #preparing result by pivoting via basestation id
+        for sector in bs_result:
+            if sector[pivot_key]:
+                sid = sector[pivot_key]
+                if sid not in sector_dict:
+                    sector_dict[sid] = []
+                sector_dict[sid].append(sector)
+    return sector_dict
+
+
+
+def prepare_raw_sector(sectors):
     """
 
     :param sector:
     :return:
     """
+
     sector_info = []
     sector_list = []
 
@@ -306,132 +393,262 @@ def prepare_raw_sector(basestations):
     sector_configured_on_devices = []
     sector_planned_frequencies = []
     circuit_ids = []
-    if basestations:
-        for sector in basestations:
-            if sector['SECTOR_ID']:
-                if sector['SECTOR_ID'] not in sector_list:
-                    sector_list.append(sector['SECTOR_ID'])
-                    #prepare sector vendor list
-                    sector_ss_vendor.append(format_value(format_this=sector['SECTOR_VENDOR']))
-                    #prepare Sector technology list
-                    sector_ss_technology.append(format_value(format_this=sector['SECTOR_TECH']))
-                    #prepare BH technology list
-                    # sector_ss_technology.append(format_value(format_this=sector['BHTECH']))
-                    #prepare sector configured on device
-                    sector_configured_on_devices.append(format_value(format_this=sector['SECTOR_CONF_ON_IP']))
-                    #prepare BH configured on device
-                    # sector_configured_on_devices.append(format_value(format_this=sector['BHCONF_IP']))
+    if sectors:
+        for sector_id in sectors:
+            if sector_id not in sector_list:
+                sector_list.append(sector_id)
+                sector = sectors[sector_id][0]
 
-                    #circuit id prepare ?
-                    substation, circuit_id, substation_ip = prepare_raw_ss_result(basestations=basestations,
-                                                                 sector_id=sector['SECTOR_ID'],
-                                                                 frequency_color=format_value(
-                                                                     format_this=sector['SECTOR_FREQUENCY_COLOR'],
-                                                                     type_of='frequency_color'
-                                                                 ),
-                                                                 frequency=format_value(
-                                                                     format_this=sector['SECTOR_FREQUENCY']
-                                                                 )
-                    )
-                    circuit_ids += circuit_id
-                    sector_configured_on_devices += substation_ip
-                    sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_FREQUENCY']))
-                    sector_info.append(
-                        {
-                            "color": format_value(format_this=sector['SECTOR_FREQUENCY_COLOR'],type_of='frequency_color'),
-                            'radius': format_value(format_this=sector['SECTOR_FREQUENCY_RADIUS'],type_of='frequency_radius'),
-                            #sector.cell_radius if sector.cell_radius else 0,
-                            'azimuth_angle': format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE'],type_of='integer'),
-                            'beam_width': format_value(format_this=sector['SECTOR_BEAM_WIDTH'],type_of='integer'),
-                            'planned_frequency': format_value(format_this=sector['SECTOR_FREQUENCY']),
-                            # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
-                            'orientation': format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'],type_of='antenna'),
-                            'technology':format_value(format_this=sector['SECTOR_TECH']),
-                            'vendor': format_value(format_this=sector['SECTOR_VENDOR']),
-                            'sector_configured_on': format_value(format_this=sector['SECTOR_CONF_ON_IP']),
-                            'sector_configured_on_device': format_value(format_this=sector['SECTOR_CONF_ON']),
-                            'circuit_id':None,
-                            'sector_id' : format_value(format_this=sector['SECTOR_ID']),
-                            'antenna_height': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'], type_of='random'),
-                            "markerUrl": format_value(format_this=sector['SECTOR_GMAP_ICON'], type_of='icon'),
-                            'device_info':[
+                #prepare sector vendor list
+                sector_ss_vendor.append(format_value(format_this=sector['SECTOR_VENDOR']))
+                #prepare Sector technology list
+                techno_to_append = format_value(format_this=sector['SECTOR_TECH'])
+                if sector['CIRCUIT_TYPE'] and sector['CIRCUIT_TYPE'].lower() in ['backhaul', 'bh']:
+                    techno_to_append = 'PTP BH'
+                sector_ss_technology.append(techno_to_append)
+                #prepare BH technology list
+                # sector_ss_technology.append(format_value(format_this=sector['BHTECH']))
+                #prepare sector configured on device
+                sector_configured_on_devices.append(format_value(format_this=sector['SECTOR_CONF_ON_IP']))
+                #prepare BH configured on device
+                # sector_configured_on_devices.append(format_value(format_this=sector['BHCONF_IP']))
 
-                             {
-                                 "name": "device_name",
-                                 "title": "Device Name",
-                                 "show": 1,
-                                 "value": format_value(format_this=sector['SECTOR_CONF_ON_IP'])
-                             },
-                             {
-                                 "name": "device_id",
-                                 "title": "Device ID",
-                                 "show": 0,
-                                 "value": format_value(format_this=sector['SECTOR_CONF_ON_ID'])
-                             },
-                             {
-                                 "name": "device_mac",
-                                 "title": "Device MAC",
-                                 "show": 0,
-                                 "value": format_value(format_this=sector['SECTOR_CONF_ON_MAC'])
-                             }
+                circuit_dict = pivot_element(sectors[sector_id], 'CCID')
 
-                            ],
-                            'info': [
-                                {
-                                  'name': 'sector_name',
-                                  'title': 'Sector Name',
-                                  'show': 1,
-                                  'value': format_value(format_this=sector['SECTOR_NAME'])
-                                },
-                                {
-                                    'name': 'planned_frequency',
-                                    'title': 'Planned Frequency',
-                                    'show': 1,
-                                    'value': format_value(format_this=sector['SECTOR_FREQUENCY']),
-                                },
-                                {
-                                  'name': 'type_of_antenna',
-                                  'title': 'Antenna Type',
-                                  'show': 1,
-                                  'value': format_value(format_this=sector['SECTOR_ANTENNA_TYPE']),
-                                },
-                                {
-                                  'name': 'antenna_tilt',
-                                  'title': 'Antenna Tilt',
-                                  'show': 1,
-                                  'value': format_value(format_this=sector['SECTOR_ANTENNA_TILT']),
-                                },
-                                {
-                                  'name': 'antenna_height',
-                                  'title': 'Antenna Height',
-                                  'show': 1,
-                                  'value': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT']),
-                                },
-                                {
-                                  'name': 'antenna_bw',
-                                  'title': 'Antenna Beam Width',
-                                  'show': 1,
-                                  'value': format_value(format_this=sector['SECTOR_BEAM_WIDTH']),
-                                },
-                                {
-                                  'name': 'antenna_azimuth',
-                                  'title': 'Antenna Azimuth Angle',
-                                  'show': 1,
-                                  'value': format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE']),
-                                },
-                                {
-                                  'name': 'antenna_splitter_installed',
-                                  'title': 'Installation of Splitter',
-                                  'show': 1,
-                                  'value': format_value(format_this=sector['SECTOR_ANTENNA_SPLITTER']),
-                                }
-                            ],
-                            'sub_station': substation
-                        }
-                    )
+                #circuit id prepare ?
+                substation, circuit_id, substation_ip = prepare_raw_ss_result(circuits=circuit_dict,
+                                                             sector_id=sector_id,
+                                                             frequency_color=format_value(
+                                                                 format_this=sector['SECTOR_FREQUENCY_COLOR'],
+                                                                 type_of='frequency_color'
+                                                             ),
+                                                             frequency=format_value(
+                                                                 format_this=sector['SECTOR_FREQUENCY']
+                                                             )
+                )
+
+                near_end_perf_url = ""
+                near_end_inventory_url = ""
+                # Check for technology to make perf page url
+                if techno_to_append.lower() in ['pmp', 'wimax', 'ptp bh']:
+                    near_end_perf_url = '/performance/network_live/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
+                else:
+                    near_end_perf_url = '/performance/customer_live/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
+
+                # Sector Device Inventory URL
+                near_end_inventory_url = '/device/'+str(sector['SECTOR_CONF_ON_ID'])+'/'
+
+                circuit_ids += circuit_id
+                sector_configured_on_devices += substation_ip
+                sector_planned_frequencies.append(format_value(format_this=sector['SECTOR_FREQUENCY']))
+                sector_info.append(
+                    {
+                        "color": format_value(format_this=sector['SECTOR_FREQUENCY_COLOR'],type_of='frequency_color'),
+                        'radius': format_value(format_this=sector['SECTOR_FREQUENCY_RADIUS'],type_of='frequency_radius'),
+                        #sector.cell_radius if sector.cell_radius else 0,
+                        'azimuth_angle': format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE'],type_of='integer'),
+                        'beam_width': format_value(format_this=sector['SECTOR_BEAM_WIDTH'],type_of='integer'),
+                        'planned_frequency': format_value(format_this=sector['SECTOR_FREQUENCY']),
+                        'frequency': format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']),
+                        # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
+                        'orientation': format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'],type_of='antenna'),
+                        'technology': techno_to_append,
+                        'vendor': format_value(format_this=sector['SECTOR_VENDOR']),
+                        'sector_configured_on': format_value(format_this=sector['SECTOR_CONF_ON_IP']),
+                        'sector_configured_on_device': format_value(format_this=sector['SECTOR_CONF_ON']),
+                        # 'sector_device_id' : format_value(format_this=sector['SECTOR_CONF_ON_ID']),
+                        'perf_page_url' : near_end_perf_url,
+                        "inventory_url" : near_end_inventory_url,
+                        'circuit_id':None,
+                        'sector_id' : format_value(format_this=sector['SECTOR_ID']),
+                        'antenna_height': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'], type_of='random'),
+                        "markerUrl": format_value(format_this=sector['SECTOR_GMAP_ICON'], type_of='icon'),
+                        'device_info':[
+                         {
+                             "name": "device_name",
+                             "title": "Device Name",
+                             "show": 0,
+                             "value": format_value(format_this=sector['SECTOR_CONF_ON_ALIAS'])
+                         },
+                         {
+                             "name": "device_id",
+                             "title": "Device ID",
+                             "show": 0,
+                             "value": format_value(format_this=sector['SECTOR_CONF_ON_ID'])
+                         },
+                         {
+                             "name": "device_mac",
+                             "title": "Device MAC",
+                             "show": 0,
+                             "value": format_value(format_this=sector['SECTOR_CONF_ON_MAC'])
+                         }
+
+                        ],
+                        'info': [
+                            {
+                              'name': 'sector_name',
+                              'title': 'Sector Name',
+                              'show': 0 if sector['SECTOR_TECH'] != 'P2P' else 0,
+                              'value': format_value(format_this=sector['SECTOR_NAME'])
+                            },
+                            {
+                              'name': 'city',
+                              'title': 'City',
+                              'show': 0,
+                              'value': format_value(format_this=sector['BSCITY'])
+                            },
+                            {
+                              'name': 'building_height',
+                              'title': 'Building Height',
+                              'show': 0,
+                              'value': format_value(format_this=sector['BSBUILDINGHGT'])
+                            },
+                            {
+                              'name': 'technology',
+                              'title': 'Technology',
+                              'show': 1,
+                              'value': techno_to_append
+                            },
+                            {
+                              'name': 'tower_height',
+                              'title': 'Tower Height',
+                              'show': 0,
+                              'value': format_value(format_this=sector['BSTOWERHEIGHT'])
+                            },
+                            {
+                              'name': 'antenna_height',
+                              'title': 'Antenna Height',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT'])
+                            },
+                            {
+                              'name': 'antenna_polarization',
+                              'title': 'Antenna Polarization',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'])
+                            },
+                            {
+                              'name': 'sector_id',
+                              'title': 'Sector ID',
+                              'show': 1 if sector['SECTOR_SECTOR_ID'] else 0,
+                              'value': format_value(format_this=sector['SECTOR_SECTOR_ID'])
+                            },
+                            {
+                              'name': 'idu_ip',
+                              'title': 'IDU IP',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_CONF_ON_IP'])
+                            },
+                            {
+                                'name': 'pmp_port',
+                                'title': 'PMP PORT',
+                                'show': 1 if sector['SECTOR_PORT'] else 0,
+                                'value': sector['SECTOR_PORT']
+                            },
+                            {
+                                'name': 'planned_frequency',
+                                'title': 'Polled Frequency',
+                                'show': 0,
+                                'value': format_value(format_this=sector['SECTOR_FREQUENCY']),
+                            },
+                            {
+                                'name': 'frequency',
+                                'title': 'Planned Frequency',
+                                'show': 1,
+                                'value': format_value(format_this=sector['SECTOR_PLANNED_FREQUENCY']),
+                            },
+                            {
+                                'name': 'tx_power_planned',
+                                'title': 'Tx Power Planned',
+                                'show': 1,
+                                'value': format_value(format_this=sector['SECTOR_TX']),
+                            },
+                            {
+                                'name': 'rx_power_planned',
+                                'title': 'Rx Power Planned',
+                                'show': 1,
+                                'value': format_value(format_this=sector['SECTOR_RX']),
+                            },
+                            {
+                                'name': 'ugps_installed',
+                                'title': 'UGPS Installed',
+                                'show': 1,
+                                'value': format_value(format_this=sector['BSGPSTYPE']),
+                            },
+                            {
+                                'name': 'dr_status',
+                                'title': 'DR Status',
+                                'show': 1,
+                                'value': format_value(format_this=sector['SECTOR_DR']),
+                            },
+                            {
+                                'name': 'mrc_status',
+                                'title': 'MRC Status',
+                                'show': 1,
+                                'value': format_value(format_this=sector['SECTOR_MRC']),
+                            },
+                            {
+                                'name': 'antenna_make',
+                                'title': 'Antenna Make',
+                                'show': 1,
+                                'value': format_value(format_this=sector['SECTOR_ANTENNA_MAKE']),
+                            },
+                            {
+                              'name': 'type_of_antenna',
+                              'title': 'Antenna Type',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_TYPE']),
+                            },
+                            {
+                              'name': 'antenna_tilt',
+                              'title': 'Antenna Tilt',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_TILT']),
+                            },
+                            {
+                              'name': 'frame_length',
+                              'title': 'Frame Length',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_FRAME_LENGTH']),
+                            },
+                            {
+                              'name': 'antenna_height',
+                              'title': 'Antenna Height',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_HEIGHT']),
+                            },
+                            {
+                              'name': 'antenna_bw',
+                              'title': 'Antenna Beam Width',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_BEAM_WIDTH']),
+                            },
+                            {
+                              'name': 'antenna_azimuth',
+                              'title': 'Antenna Azimuth Angle',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_AZMINUTH_ANGLE']),
+                            },
+                            {
+                              'name': 'sync_splitter',
+                              'title': 'Sync Splitter Used',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_SYNC_SPLITTER']),
+                            },
+                            {
+                              'name': 'antenna_splitter_installed',
+                              'title': 'Installation of Splitter',
+                              'show': 1,
+                              'value': format_value(format_this=sector['SECTOR_ANTENNA_SPLITTER']),
+                            }
+                        ],
+                        'sub_station': substation
+                    }
+                )
     return (sector_info, sector_ss_vendor, sector_ss_technology, sector_configured_on_devices, circuit_ids, sector_planned_frequencies)
 
-def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
+
+def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
     """
 
     :param frequency:
@@ -443,25 +660,47 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
     substation_info = []
     circuit_ids = []
     substation_ip = []
-    if basestations and sector_id:
-        for circuit in basestations:
-            if circuit['CCID']:
+    if circuits and sector_id:
+        for circuit_id in circuits:
+            if circuit_id:
+                circuit = circuits[circuit_id][0]
                 if circuit['SID'] and circuit['SID'] == sector_id:
-                    if circuit['CCID'] not in circuit_ids:
-                        circuit_ids.append(circuit['CCID'])
+                    far_end_perf_url = ""
+                    far_end_inventory_url = ""
+
+                    if circuit_id not in circuit_ids:
+                        circuit_ids.append(circuit_id)
+
+                    techno_to_append = circuit['SS_TECH']
+                    if circuit['CIRCUIT_TYPE'] and circuit['CIRCUIT_TYPE'].lower() in ['backhaul', 'bh']:
+                        techno_to_append = 'PTP BH'
+
                     if circuit['SSIP'] and circuit['SSIP'] not in substation_ip:
+                        # Check for technology to make perf page url
+                        if techno_to_append.lower() in ['pmp', 'wimax', 'ptp', 'p2p']:
+                            far_end_perf_url = '/performance/customer_live/'+str(circuit['SS_DEVICE_ID'])+'/'
+                        elif techno_to_append.lower() in ['ptp bh']:
+                            far_end_perf_url = '/performance/network_live/'+str(circuit['SS_DEVICE_ID'])+'/'
+
+                        # Sector Device Inventory URL
+                        far_end_inventory_url = '/device/'+str(circuit['SS_DEVICE_ID'])+'/'
+
                         substation_ip.append(circuit['SSIP'])
+
                     substation_info.append(
                         {
                             'id': circuit['SSID'],
                             'name': circuit['SS_NAME'],
                             'device_name': circuit['SSDEVICENAME'],
+                            # 'device_id' : circuit['SS_DEVICE_ID'],
                             'data': {
                                 "lat": circuit['SS_LATITUDE'],
                                 "lon": circuit['SS_LONGITUDE'],
+                                "perf_page_url" : far_end_perf_url,
+                                "inventory_url" : far_end_inventory_url,
                                 "antenna_height": format_value(circuit['SSHGT'], type_of='random'),
                                 "substation_device_ip_address": circuit['SSIP'],
-                                "technology": circuit['SS_TECH'],
+                                "technology": techno_to_append,
                                 "markerUrl": format_value(format_this=circuit['SS_GMAP_ICON'], type_of='icon'),
                                 "show_link": 1,
                                 "link_color": frequency_color,
@@ -472,6 +711,12 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
                                             'title': 'SS IP',
                                             'show': 1,
                                             'value': format_value(circuit['SSIP'])
+                                        },
+                                        {
+                                            'name': 'pe_ip',
+                                            'title': 'PE IP',
+                                            'show': 1,
+                                            'value': format_value(circuit['BH_PE_IP'])
                                         },
                                         {
                                             'name': 'ss_mac',
@@ -498,16 +743,10 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
                                             'value': format_value(circuit['QOS'])
                                         },
                                         {
-                                            'name': 'latitude',
-                                            'title': 'Latitude',
+                                            'name': 'lat_lon',
+                                            'title': 'Lat, Long',
                                             'show': 1,
-                                            'value': format_value(circuit['SS_LATITUDE'])
-                                        },
-                                        {
-                                            'name': 'longitude',
-                                            'title': 'Longitude',
-                                            'show': 1,
-                                            'value': format_value(circuit['SS_LONGITUDE'])
+                                            'value': str(format_value(circuit['SS_LATITUDE']))+","+str(format_value(circuit['SS_LONGITUDE']))
                                         },
                                         {
                                             'name': 'antenna_height',
@@ -525,7 +764,7 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
                                             'name': 'ss_technology',
                                             'title': 'Technology',
                                             'show': 1,
-                                            'value': format_value(circuit['SS_TECH'])
+                                            'value': format_value(techno_to_append)
                                         },
                                         {
                                             'name': 'building_height',
@@ -576,6 +815,12 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
                                             'value': format_value(circuit['SS_CABLE_LENGTH'])
                                         },
                                         {
+                                            'name': 'customer_alias',
+                                            'title': 'Customer Name',
+                                            'show': 1,
+                                            'value': format_value(circuit['CUST'])
+                                        },
+                                        {
                                             'name': 'customer_address',
                                             'title': 'Customer Address',
                                             'show': 1,
@@ -594,11 +839,17 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
                                             'value': format_value(circuit['RSSI'])
                                         },
                                         {
-                                            'name': 'planned_frequency',
+                                            'name': 'frequency',
                                             'title': 'Planned Frequency',
-                                            'show': 1,
-                                            'value': frequency
-                                        }
+                                            'show': 0,
+                                            'value': format_value(format_this=circuit['SECTOR_PLANNED_FREQUENCY']),
+                                        },
+                                        {
+                                            'name': 'planned_frequency',
+                                            'title': 'Frequency',
+                                            'show': 0,
+                                            'value': format_value(format_this=frequency),
+                                        },
                                     ]
                                 }
                             }
@@ -643,12 +894,14 @@ def prepare_raw_bs_result(bs_result=None):
             },
         }
 
+        sector_dict = pivot_element(bs_result, 'SECTOR_ID')
+
         sector_info, \
         sector_ss_vendor, \
         sector_ss_technology, \
         sector_configured_on_devices, \
         circuit_ids, \
-        sector_planned_frequencies = prepare_raw_sector(basestations=bs_result)
+        sector_planned_frequencies = prepare_raw_sector(sectors=sector_dict)
 
         base_station_info['data']['param']['sector'] = sector_info
         base_station_info['sector_ss_vendor'] = "|".join(sector_ss_vendor)

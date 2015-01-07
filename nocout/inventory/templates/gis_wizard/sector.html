@@ -1,19 +1,21 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block content_title %}GIS Wizard: Sector{% endblock %}
-{% block content_description %}gis wizard: sector{% endblock %}
+{% block content_title %}GIS Wizard: {% if selected_technology == '2' %}PTP{% else %}Sector{% endif %}{% endblock %}
+{% block content_description %}gis wizard: {% if selected_technology == '2' %}PTP{% else %}sector{% endif %}{% endblock %}
 {% block content %}
+<p><a href="javascript:void(0)" onclick="window.history.go(-1);"><i class="fa fa-arrow-left">&nbsp;</i> Previous Page</a></p>
     <div class="row formContainer">
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> GIS WIZARD: SECTOR ({{ base_station.name }})</h4>
+                            <h4><i class="fa fa-bars"></i> GIS WIZARD: {% if selected_technology == '2' %}PTP{% else %}SECTOR{% endif %} ({{ base_station.alias }})</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br/>
 
+            {% if not base_station_has_sector %}
                 <!-- :START: Radio Buttons to choose technology and to choose existing or create new -->
                 <div class="form-group">
                     <label class="control-label pull-left">Technology &nbsp;:&nbsp;&nbsp;</label>
@@ -26,7 +28,6 @@
                         {% endfor %}
                     </div>
                 </div><br/>
-            {% if not base_station_has_sector %}
                 <div class="form-group">
                     <label class="control-label pull-left">{% if selected_technology == '2' %}Near End {% else %}Sector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;</label>
                     <div class="pull-left">
@@ -253,6 +254,9 @@
             $('#id_sector_form').attr('action', "?show=True").submit();
         });
             // Changing labels of form fields
+        {% if selected_technology == '2' %}
+            $("label[for=id_sector_configured_on]").html('<span class="mandatory">* </span>Near End IP');
+        {% endif %}
             $("label[for=id_sector_id]").text('Sector ID');
             $("label[for=id_mrc]").text('MRC');
             $("label[for=id_tx_power]").text('TX Power');
@@ -271,7 +275,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/inventory/list/device/",
+                    url: "/device/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -292,8 +296,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/inventory/select/device/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
                             });
@@ -457,7 +462,7 @@
                             minimumInputLength: 2,
                             width: "resolve",
                             ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                                url: "/sector/list/sector/",
+                                url: "/sector/select2/elements/",
                                 dataType: 'json',
                                 quietMillis: 250,
                                 data: function (term, page) {
@@ -478,8 +483,9 @@
                                 // using its formatResult renderer - that way the repository name is shown preselected
                                 var id = $(element).val();
                                 if (id !== "") {
-                                    $.ajax("/sector/select/sector/" + id+"/", {
-                                        dataType: "json"
+                                    $.ajax("/sector/select2/elements/", {
+                                        dataType: "json",
+                                        data: {'obj_id': id}
                                     }).done(function(data) {
                                         callback({id: id, alias: data[0]});
                                         });
@@ -501,6 +507,66 @@
                 {% endif %}
             });
 
+            function bind_dr_configured_on () {
+
+                    $("#id_dr_configured_on").select2({
+                        placeholder: "Search for a dr config on.",
+                        minimumInputLength: 2,
+                        width: "resolve",
+                        ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                            url: "/device/select2/elements/",
+                            dataType: 'json',
+                            quietMillis: 250,
+                            data: function (term, page) {
+                                return {
+                                    sSearch: term, // search term
+                                    org: {{ base_station.organization.id }},
+                                };
+                            },
+                            results: function (data, page) { // parse the results into the format expected by Select2.
+                                // since we are using custom formatting functions we do not need to alter the remote JSON data
+                                return { results: data.items };
+                            },
+                            cache: false
+                        },
+                        initSelection: function(element, callback) {
+                            // the input tag has a value attribute preloaded that points to a preselected repository's id
+                            // this function resolves that id attribute to an object that select2 can render
+                            // using its formatResult renderer - that way the repository name is shown preselected
+                            var id = $(element).val();
+                            if (id !== "") {
+                                $.ajax("/device/select2/elements/", {
+                                    dataType: "json",
+                                    data: {'obj_id': id}
+                                }).done(function(data) {
+                                    callback({id: id, device_alias: data[0]});
+                                    });
+                            }
+                        },
+                        formatResult: repoFormatResult, // omitted for brevity, see the source of this page
+                        formatSelection: repoFormatSelection,  // omitted for brevity, see the source of this page
+                    });
+            }
+
+            if ($("#id_dr_site").val() == 'Yes') {
+                bind_dr_configured_on();
+            } else {
+                var dr_configured_on = $("#id_dr_configured_on");
+                dr_configured_on.parent().parent().parent().attr('style', 'display:None');
+            }
+
+            $("#id_dr_site").change(function() {
+                if ($("#id_dr_site").val() == 'Yes') {
+                    $("#id_dr_configured_on").parent().parent().parent().attr('style', 'display:Block');
+                    bind_dr_configured_on();
+                } else {
+                    var dr_configured_on = $("#id_dr_configured_on");
+                    dr_configured_on.select2("val", "");
+                    dr_configured_on.select2("container").hide();
+                    dr_configured_on.parent().parent().parent().attr('style', 'display:None');
+                }
+            }); // :END: id_dr_site.change_event
+
         });
 
         function repoSectorFormatResult(result) {
@@ -518,7 +584,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/antenna/list/antenna/",
+                    url: "/antenna/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -539,8 +605,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/antenna/select/antenna/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/antenna/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
                             });
@@ -570,7 +637,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/sub_station/list/sub_station/",
+                    url: "/sub_station/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -591,8 +658,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/sub_station/select/sub_station/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/sub_station/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
                             });
@@ -623,7 +691,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/antenna/list/antenna/",
+                    url: "/antenna/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -644,8 +712,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/antenna/select/antenna/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/antenna/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
                             });
@@ -667,7 +736,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/circuit/list/circuit/",
+                    url: "/circuit/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -688,8 +757,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/circuit/select/circuit/" + id+"/", {
-                            dataType: "json"
+                        $.ajax("/circuit/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
                             });
@@ -719,7 +789,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/customer/list/customer/",
+                    url: "/customer/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -740,8 +810,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/customer/select/customer/"+id+"/", {
-                            dataType: "json"
+                        $.ajax("/customer/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, alias: data[0]});
                             });
@@ -771,7 +842,7 @@
                 minimumInputLength: 2,
                 width: "resolve",
                 ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
-                    url: "/inventory/list/device/",
+                    url: "/device/select2/elements/",
                     dataType: 'json',
                     quietMillis: 250,
                     data: function (term, page) {
@@ -792,8 +863,9 @@
                     // using its formatResult renderer - that way the repository name is shown preselected
                     var id = $(element).val();
                     if (id !== "") {
-                        $.ajax("/inventory/select/device/" + id, {
-                            dataType: "json"
+                        $.ajax("/device/select2/elements/", {
+                            dataType: "json",
+                            data: {'obj_id': id}
                         }).done(function(data) {
                             callback({id: id, device_alias: data[0]});
                             });

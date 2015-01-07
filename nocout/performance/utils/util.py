@@ -4,11 +4,13 @@
 import datetime
 #python utilities
 
+from django.utils.dateformat import format
+
 from multiprocessing import Process, Queue
 
 #nocout utilities
-from nocout.utils.util import fetch_raw_result, dict_fetchall, \
-    format_value, cache_for, time_it, \
+from nocout.utils.util import fetch_raw_result, \
+    format_value, cache_for, \
     cached_all_gis_inventory, query_all_gis_inventory, query_all_gis_inventory_improved
 #nocout utilities
 
@@ -255,6 +257,7 @@ def prepare_gis_devices(devices, page_type):
     for device in devices:
 
         device.update({
+            "near_end_ip": "",
             "sector_id": "",
             "circuit_id": "",
             "customer_name": "",
@@ -293,36 +296,49 @@ def prepare_gis_devices(devices, page_type):
 
         if is_sector:
             for bs_row in raw_result:
-                port = bs_row['SECTOR_PORT']
-                if port:
-                    apnd = "( " + port + " )"
-                if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
-                        and bs_row['SECTOR_SECTOR_ID'] is not None:
-                    sector_id.append(bs_row['SECTOR_SECTOR_ID'])
-                    sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd)
+                mrc = bs_row['SECTOR_MRC']
+                if mrc and mrc.strip().lower() == 'yes':
+                    apnd = " MRC: (PMP 1, PMP 2) "
+                else:
+                    port = bs_row['SECTOR_PORT']
+                    if port:
+                        apnd = "( " + port + " )"
+                    if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
+                            and bs_row['SECTOR_SECTOR_ID'] is not None:
+                        sector_id.append(bs_row['SECTOR_SECTOR_ID'])
+                        sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd.upper())
 
         for bs_row in raw_result:
             if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
+                    "near_end_ip": format_value(bs_row['SECTOR_CONF_ON_IP']),
                     "sector_id": ", ".join(sector_details),
                     "circuit_id": format_value(bs_row['CCID']),
                     "customer_name": format_value(bs_row['CUST']),
-                    "bs_name": format_value(bs_row['BSALIAS']),
+                    "bs_name": format_value(bs_row['BSALIAS']).upper(),
                     "city": format_value(bs_row['BSCITY']),
                     "state": format_value(bs_row['BSSTATE']),
                     "device_type": format_value(bs_row['SECTOR_TYPE']),
                     "device_technology": format_value(bs_row['SECTOR_TECH'])
                 })
                 if is_ss:
+                    mrc = bs_row['SECTOR_MRC']
+                    port = bs_row['SECTOR_PORT']
+                    if mrc and mrc.strip().lower() == 'yes':
+                        apnd = " MRC: (PMP 1, PMP 2) "
+                    else:
+                        if port:
+                            apnd = "( " + port + " )"
+
                     if bs_row['CIRCUIT_TYPE']:
                         if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
                             device.update({
-                                "bs_name": format_value(bs_row['CUST']),
+                                "bs_name": format_value(bs_row['CUST']).upper(),
                             })
 
                     device.update({
-                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']) + apnd,
+                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']) + apnd.upper(),
                         "device_type": format_value(bs_row['SS_TYPE']),
                         "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
@@ -511,3 +527,39 @@ def get_performance_data(device_list, machine, model):
     #  device_result
 
     return device_result
+
+
+def get_time(start_date, end_date, date_format):
+
+    isSet = False
+
+    if len(start_date) and len(end_date) and 'undefined' not in [start_date, end_date]:
+        isSet = True
+        try:
+            start_date = float(start_date)
+            end_date = float(end_date)
+        except Exception, e:
+            start_date_object = datetime.datetime.strptime(start_date, date_format)
+            end_date_object = datetime.datetime.strptime(end_date, date_format)
+            start_date = format(start_date_object, 'U')
+            end_date = format(end_date_object, 'U')
+
+    else:
+        # The end date is the end limit we need to make query till.
+        end_date_object = datetime.datetime.now()
+        # The start date is the last monday of the week we need to calculate from.
+        start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+        # Replacing the time, to start with the 00:00:00 of the last monday obtained.
+        start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+        # Converting the date to epoch time or Unix Timestamp
+        end_date = format(end_date_object, 'U')
+        start_date = format(start_date_object, 'U')
+
+    return isSet, start_date, end_date
+
+
+def color_picker():
+    import random
+    color = "#"
+    color += "%06x" % random.randint(0,0xFFFFFF)
+    return color.upper()

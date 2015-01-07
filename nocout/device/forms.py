@@ -32,12 +32,7 @@ class DeviceForm(forms.ModelForm):
                                              required=True)
     device_type = IntReturnModelChoiceField(queryset=DeviceType.objects.all(),
                                             required=True)
-    country = IntReturnModelChoiceField(queryset=Country.objects.all(),
-                                        required=False)
-    state = IntReturnModelChoiceField(queryset=State.objects.all(),
-                                      required=False)
-    city = IntReturnModelChoiceField(queryset=City.objects.all(),
-                                     required=False)
+
     #latitude = forms.CharField( widget=forms.TextInput(attrs={'type':'text'}))
     #longitude = forms.CharField( widget=forms.TextInput(attrs={'type':'text'}))
 
@@ -84,12 +79,6 @@ class DeviceForm(forms.ModelForm):
         self.fields['device_model'].widget.choices = self.fields['device_model'].choices
         self.fields['device_type'].empty_label = "Select"
         self.fields['device_type'].widget.choices = self.fields['device_type'].choices
-        self.fields['country'].empty_label = "Select"
-        self.fields['country'].widget.choices = self.fields['country'].choices
-        self.fields['state'].empty_label = "Select"
-        self.fields['state'].widget.choices = self.fields['state'].choices
-        self.fields['city'].empty_label = "Select"
-        self.fields['city'].widget.choices = self.fields['city'].choices
         self.fields['ports'].empty_label = "Select"
         self.fields['ports'].widget.choices = self.fields['ports'].choices
         self.fields['site_instance'].required = True

@@ -8,6 +8,10 @@ var g_earth = "",
 	isFirstTime = 1,
 	isFromSearch = false,
 	current_zoom = "",
+	green_status_array = ['ok','success','up'],
+    red_status_array = ['critical','down'],
+    orange_status_array = ['warning'],
+    ptp_tech_list = ['ptp','p2p','ptp bh']
 	ge = "",
 	plotted_bs_earth = [],
 	plotted_sector_earth = [],
@@ -24,8 +28,12 @@ var g_earth = "",
 	devicesCount = 0,
 	counter = -999,
 	marker_count = 0,
-	place_markers= [];
-var markersMasterObj;
+	place_markers= [],
+	markersMasterObj= {},
+	country_label = {
+    	"india" : ""
+    };
+
 var allMarkersObject_earth= {
 	'base_station': {},
 	'path': {},
@@ -148,6 +156,7 @@ function googleEarthClass() {
 
 		//Google Map View Change Event
 		google.earth.addEventListener(ge.getView(), 'viewchangeend', function(){
+
 			if(timer){
 				clearTimeout(timer);
 			}
@@ -164,7 +173,7 @@ function googleEarthClass() {
 
 				if(AltToZoom(lookAt.getRange()) > 7) {
 					// If zoom level is greate than 10 then start perf calling
-            		if(AltToZoom(lookAt.getRange()) > 10) {
+            		if(AltToZoom(lookAt.getRange()) > 11) {
 	            		// Reset Perf calling Flag
             			isPerfCallStopped = 0;
         			} else {
@@ -263,76 +272,85 @@ function googleEarthClass() {
 							earth_self.plotDevices_earth(inBoundData,"base_station");
 
 							// if(searchResultData.length == 0 || AltToZoom(lookAt.getRange()) == 8) {
-							// 	var polylines = allMarkersObject_earth['path'],
-							// 		polygons = allMarkersObject_earth['sector_polygon'];
+							if(AltToZoom(lookAt.getRange()) <= 11) {
+								var polylines = allMarkersObject_earth['path'],
+									polygons = allMarkersObject_earth['sector_polygon'],
+									ss_markers = allMarkersObject_earth['sub_station'],
+									show_ss_len = $("#showAllSS:checked").length;
 
-							// 	// Hide polylines if shown
-							// 	for(key in polylines) {
-							// 		try {
-							// 	        var current_line = polylines[key];
-							// 			// If shown
-							// 			if(current_line.map) {
-							// 				current_line.setVisibility(false);
-							// 				current_line.map = '';
-							// 			}
-							// 	    } catch(e) {
-							// 	        // console.debug('sector polygon name: '+key);
-							// 	        // console.error(e);
-							// 	    }
-							// 	}
+								// Hide polylines if shown
+								for(key in polylines) {
+									try {
+								        var current_line = polylines[key];
+										// If shown
+										if(current_line.map) {
+											current_line.setVisibility(false);
+											current_line.map = '';
+										}
+								    } catch(e) {
+								        // console.debug('sector polygon name: '+key);
+								        // console.error(e);
+								    }
+								}
 
-							// 	// Hide polygons if shown
-							// 	for(key in polygons) {
-							// 		try {
-							// 	        var current_polygons = polygons[key];
-							// 			// If shown
-							// 			if(current_polygons.map) {
-							// 				current_polygons.setVisibility(false);
-							// 				current_polygons.map = '';
-							// 			}
-							// 	    } catch(e) {
-							// 	        // console.debug('sector polygon name: '+key);
-							// 	        // console.error(e);
-							// 	    }
-							// 	}
-							// } else {
-							// 	if(AltToZoom(lookAt.getRange()) > 8) {
-							// 		setTimeout(function() {
-			    // 						gmap_self.showLinesInBounds();
-							// 			gmap_self.showSubStaionsInBounds();
-							// 			gmap_self.showBaseStaionsInBounds();
-							// 			gmap_self.showSectorDevicesInBounds();
-							// 			gmap_self.showSectorPolygonInBounds();
-			    // 					},300);
-							// 	}
-							// }
-							
-							if(AltToZoom(lookAt.getRange()) > 8) {
-								earth_self.showLinesInBounds();
-								earth_self.showSubStaionsInBounds();
-								earth_self.showBaseStaionsInBounds();
-								earth_self.showSectorDevicesInBounds();
-								earth_self.showSectorPolygonInBounds();	
+								// Hide polygons if shown
+								for(key in polygons) {
+									try {
+								        var current_polygons = polygons[key];
+										// If shown
+										if(current_polygons.map) {
+											current_polygons.setVisibility(false);
+											current_polygons.map = '';
+										}
+								    } catch(e) {
+								        // console.debug('sector polygon name: '+key);
+								        // console.error(e);
+								    }
+								}
+
+								// Hide SS if show ss checkbox is unchecked
+								for(key in ss_markers) {
+									var current_ss = ss_markers[key];
+									if(show_ss_len <= 0) {
+										try {
+											// If shown
+											if(current_ss.getVisibility()) {
+												current_ss.setVisibility(false);
+											}
+										} catch(e) {
+											// console.error(e);
+										}
+									}
+								}
+
+							} else {
+								if(AltToZoom(lookAt.getRange()) > 10) {
+									gmap_self.showLinesInBounds();
+									gmap_self.showSubStaionsInBounds();
+									gmap_self.showBaseStaionsInBounds();
+									gmap_self.showSectorDevicesInBounds();
+									gmap_self.showSectorPolygonInBounds();
+								}
 							}
 						}
 
 	            		// Show points line if exist
 	            		for(key in line_data_obj) {
 	            			try {
-	            				line_data_obj[key].setVisibility(true);
-		            			line_data_obj[key].map = 'current';
+	            				if(!line_data_obj[key].getVisibility()) {
+	            					line_data_obj[key].setVisibility(true);
+		            				line_data_obj[key].map = 'current';
+	            				}
 	            			} catch(e) {
 	            				// console.log(e);
 	            			}
 	            		}
 					} else {
-						// setTimeout(function() {
-	    		// 			earth_self.showLinesInBounds();
-							// earth_self.showSubStaionsInBounds();
-							// earth_self.showBaseStaionsInBounds();
-							// earth_self.showSectorDevicesInBounds();
-							// earth_self.showSectorPolygonInBounds();
-						// }, 300);
+						earth_self.showLinesInBounds();
+						earth_self.showSubStaionsInBounds();
+						earth_self.showBaseStaionsInBounds();
+						earth_self.showSectorDevicesInBounds();
+						earth_self.showSectorPolygonInBounds();
 					}
 					
 	            	// Start Performance API calling
@@ -343,88 +361,141 @@ function googleEarthClass() {
 		            	}
             		}
             		
-				} else {
+				} else if(AltToZoom(lookAt.getRange()) <= 7) {
 
-					// Clear performance calling timeout
-					if(recallPerf != "") {
-            			clearTimeout(recallPerf);
-            			recallPerf = "";
-            		}
-        			// Set Flag
-        			isPerfCallStopped = 1;
-        			isPerfCallStarted = 0;
-
-        			// Reset Performance variables
-        			gisPerformanceClass.resetVariable();
-
-					
-                    /*Loop to hide Marker Labels*/
-        			try {
-        				// Remove perf info label
-					    for (var x = 0; x < labelsArray.length; x++) {
-					        labelsArray[x].close();
-					    }
-
-					    // Remove tooltip info label
-					    for (key in tooltipInfoLabel) {
-					        tooltipInfoLabel[key].close();
-					    }
-        			} catch(e) {
-        				// console.log(e);
-        			}
-
-                    // Reset labels array 
-                    labelsArray = [];
-                    tooltipInfoLabel = {};
-
-					/*Clear all everything from map*/
-					$.grep(allMarkersArray_earth,function(marker) {
-						try {
-							marker.isActive= 0;
-							marker.setVisibility(false);
-						} catch(e) {
-							// console.log(e);
+					// At zoom level less than or equal to 4, hide state clusters & show country cluster.
+					if(AltToZoom(lookAt.getRange()) < 4) {
+						// Remove country cluster if exists country cluster
+						if(country_label["india"]) {
+							country_label["india"].setVisibility(false);
+							ge.getFeatures().removeChild(country_label["india"]);
+							country_label["india"] = "";
 						}
-					});
-					// Reset Variables
-					allMarkersArray_earth = [];
-					main_devices_data_earth = [];
-					currentlyPlottedDevices = [];
-					plottedBsIds = [];
-					pollableDevices = [];
-					sectorMarkersMasterObj = {};
-					sectorMarkerConfiguredOn = [];
-					allMarkersObject_earth= {
-						'base_station': {},
-						'path': {},
-						'sub_station': {},
-						'sector_device': {},
-						'sector_polygon': {}
-					};
+						var total_country_devices = gmap_self.getCountryWiseCount();
+						// Hide State Clusters
+						state_lat_lon_db.where(function(obj) {
+							if(state_wise_device_labels[obj.name]) {
+								state_wise_device_labels[obj.name].setVisibility(false);
+								return ;
+							}
+						});
 
-					var states_with_bounds = state_lat_lon_db.where(function(obj) {
-						return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
-            		});
-					for(var i=states_with_bounds.length;i--;) {
-						if(state_wise_device_labels[states_with_bounds[i].name]) {
-							if(state_wise_device_labels[states_with_bounds[i].name].isHidden_) {
-								state_wise_device_labels[states_with_bounds[i].name].setVisibility(true);
+						//Create the placemark
+			   			country_label["india"] = ge.createPlacemark('');
+			   			country_label["india"].setName(String(total_country_devices));
+			   			var clusterIcon = ge.createIcon('');
+						clusterIcon.setHref(base_url+"/static/js/OpenLayers/img/state_cluster.png");
+						var clusterIconStyle = ge.createStyle(''); //create a new style
+						clusterIconStyle.getIconStyle().setIcon(clusterIcon); //apply the icon to the style
+						country_label["india"].setStyleSelector(clusterIconStyle); //apply the style to the placemark
+						clusterIconStyle.getIconStyle().setScale(10.0);
+
+			   			//Set the placemark location;
+			   			var clusterPoint = ge.createPoint('');
+			   			clusterPoint.setLatitude(24.2870);
+			   			clusterPoint.setLongitude(77.7832);
+			   			country_label["india"].setGeometry(clusterPoint);
+						ge.getFeatures().appendChild(country_label["india"]);
+
+						country_label["india"].setName(String(total_country_devices));
+						// Click event on country cluster
+						google.earth.addEventListener(country_label["india"], 'click', function(event) {
+		   					event.preventDefault();
+							earth_self.state_label_clicked(0);
+			   			});
+
+					} else {
+
+						// Hide country cluster
+						if(country_label["india"]) {
+							country_label["india"].setVisibility(false);
+							ge.getFeatures().removeChild(country_label["india"]);
+						}
+
+						// Clear performance calling timeout
+						if(recallPerf != "") {
+	            			clearTimeout(recallPerf);
+	            			recallPerf = "";
+	            		}
+	        			// Set Flag
+	        			isPerfCallStopped = 1;
+	        			isPerfCallStarted = 0;
+
+	        			// Reset Performance variables
+	        			gisPerformanceClass.resetVariable();
+
+						
+	                    /*Loop to hide Marker Labels*/
+	        			try {
+	        				// Remove perf info label
+						    for (var x = 0; x < labelsArray.length; x++) {
+						        labelsArray[x].close();
+						    }
+
+						    // Remove tooltip info label
+						    for (key in tooltipInfoLabel) {
+						        tooltipInfoLabel[key].close();
+						    }
+	        			} catch(e) {
+	        				// console.log(e);
+	        			}
+
+	                    // Reset labels array 
+	                    labelsArray = [];
+	                    tooltipInfoLabel = {};
+
+						/*Clear all everything from map*/
+						$.grep(allMarkersArray_earth,function(marker) {
+							try {
+								marker.isActive= 0;
+								marker.setVisibility(false);
+							} catch(e) {
+								// console.log(e);
+							}
+						});
+						// Reset Variables
+						allMarkersArray_earth = [];
+						main_devices_data_earth = [];
+						currentlyPlottedDevices = [];
+						plottedBsIds = [];
+						pollableDevices = [];
+						sectorMarkersMasterObj = {};
+						sectorMarkerConfiguredOn = [];
+						allMarkersObject_earth= {
+							'base_station': {},
+							'path': {},
+							'sub_station': {},
+							'sector_device': {},
+							'sector_polygon': {}
+						};
+
+						var states_with_bounds = state_lat_lon_db.where(function(obj) {
+							return isPointInPoly(poly, {lat: obj.lat, lon: obj.lon});
+	            		});
+
+						for(var i=states_with_bounds.length;i--;) {
+							if(state_wise_device_labels[states_with_bounds[i].name]) {
+								if(state_wise_device_labels[states_with_bounds[i].name].isHidden_) {
+									state_wise_device_labels[states_with_bounds[i].name].setVisibility(true);
+								}
 							}
 						}
+
+						state_lat_lon_db.where(function(obj) {
+							if(state_wise_device_labels[obj.name]) {
+								state_wise_device_labels[obj.name].setVisibility(true);
+								return ;
+							}
+						});
+
+						// Hide points line if exist
+	            		for(key in line_data_obj) {
+	            			if(line_data_obj[key].map) {
+	            				line_data_obj[key].setVisibility(false);
+	            			}
+	            		}
 					}
 
-					state_lat_lon_db.where(function(obj) {
-						if(state_wise_device_labels[obj.name]) {
-							state_wise_device_labels[obj.name].setVisibility(true);return ;
-						}
-					});
-
-					// Hide points line if exist
-            		for(key in line_data_obj) {
-            			if(line_data_obj[key].map) {
-            				line_data_obj[key].setVisibility(false);
-            			}
-            		}
 	            }
 
 	            // Save last Zoom Value
@@ -457,6 +528,7 @@ function googleEarthClass() {
 		state_lat_lon_db.insert({"name" : "Bihar","lat" : 25.37,"lon" : 85.13});
 		state_lat_lon_db.insert({"name" : "Chhattisgarh","lat" : 21.27,"lon" : 81.60});
 		state_lat_lon_db.insert({"name" : "Delhi","lat" : 28.61,"lon" : 77.23});
+		state_lat_lon_db.insert({"name" : "NCR","lat" : 28.57,"lon" : 76.42});
 		state_lat_lon_db.insert({"name" : "Goa","lat" : 15.4989,"lon" : 73.8278});
 		state_lat_lon_db.insert({"name" : "Gujrat","lat" : 23.2167,"lon" : 72.6833});
 		state_lat_lon_db.insert({"name" : "Haryana","lat" : 30.73,"lon" : 76.78});
@@ -572,7 +644,15 @@ function googleEarthClass() {
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
-				success : function(result) {
+				success: function (response) {
+
+	                var result = "";
+	                // Type check of response
+	                if(typeof response == 'string') {
+	                    result = JSON.parse(response);
+	                } else {
+	                    result = response;
+	                }
 
 					if(result.success == 1) {
 
@@ -976,35 +1056,49 @@ var state_wise_device_label_text= {};
 	 */
 	this.state_label_clicked = function(state_obj) {
 		if(isExportDataActive == 0) {
-			var clicked_state = state_obj ? JSON.parse(state_obj).name : "",
-				selected_state_devices = [];
-
-			if(clicked_state) {
-
-				// Get the current view.
-				var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
-
-				// Pan to state latitude and longitude values.
-				lookAt.setLatitude(JSON.parse(state_obj).lat);
-				lookAt.setLongitude(JSON.parse(state_obj).lon);
+			// Get the current view.
+			var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+			if(state_obj == 0) {
+				lookAt.setLatitude(21.1500);
+				lookAt.setLongitude(79.0900);
 
 				// Update the view in Google Earth.
 				ge.getView().setAbstractView(lookAt);
 
-				// Zoom out to 8times the current range.
-				lookAt.setRange(ZoomToAlt(8));		
-
-		
+				// Set zoom level to 4
+				lookAt.setRange(ZoomToAlt(4));
 				ge.getView().setAbstractView(lookAt);
+			} else {
+				var clicked_state = state_obj ? JSON.parse(state_obj).name : "",
+					selected_state_devices = [];
 
-				current_zoom = lookAt.getRange();
-	
-				// Hide Clicked state Label
-				if(!(state_wise_device_labels[clicked_state].isHidden_)) {
-        			// Hide Label
-					state_wise_device_labels[clicked_state].setVisibility(false);
-					// state_wise_device_labels[clicked_state].hide();
-    			}
+				if(clicked_state) {
+
+					// Get the current view.
+					// var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+
+					// Pan to state latitude and longitude values.
+					lookAt.setLatitude(JSON.parse(state_obj).lat);
+					lookAt.setLongitude(JSON.parse(state_obj).lon);
+
+					// Update the view in Google Earth.
+					ge.getView().setAbstractView(lookAt);
+
+					// Zoom out to 8times the current range.
+					lookAt.setRange(ZoomToAlt(8));
+
+			
+					ge.getView().setAbstractView(lookAt);
+
+					current_zoom = lookAt.getRange();
+		
+					// Hide Clicked state Label
+					if(!(state_wise_device_labels[clicked_state].isHidden_)) {
+	        			// Hide Label
+						state_wise_device_labels[clicked_state].setVisibility(false);
+						// state_wise_device_labels[clicked_state].hide();
+	    			}
+				}
 			}
 		}
 	};
@@ -1068,8 +1162,7 @@ var state_wise_device_label_text= {};
 	 */
 	this.plotDevices_earth = function(resultantMarkers,station_type) {
 
-		for(var i=0;i<resultantMarkers.length;i++) {
-			
+		for(var i=0;i<resultantMarkers.length;i++) {			
 
 			var bs_marker_icon = base_url+"/static/img/icons/bs.png";
 
@@ -1087,6 +1180,7 @@ var state_wise_device_label_text= {};
 				device_name: resultantMarkers[i].data.device_name,
 				bsInfo: resultantMarkers[i].data.param.base_station,
 				bhInfo: resultantMarkers[i].data.param.backhual,
+				bhInfo_polled : [],
 				bs_name: resultantMarkers[i].name,
 				name: resultantMarkers[i].name,
 				filter_data: {"bs_name" : resultantMarkers[i].name, "bs_id" : resultantMarkers[i].originalId},
@@ -1159,6 +1253,8 @@ var state_wise_device_label_text= {};
 					azimuth = sectorsArray[j].azimuth_angle,
 					beam_width = sectorsArray[j].beam_width,
 					sector_color = earth_self.makeRgbaObject(sectorsArray[j].color),
+					sector_perf_url = sectorsArray[j].perf_page_url ? sectorsArray[j].perf_page_url : "",
+					sector_inventory_url = sectorsArray[j].inventory_url ? sectorsArray[j].inventory_url : "",
 					sectorInfo = {
 						"map": 'current',
 						"info" : sectorsArray[j].info,
@@ -1167,12 +1263,14 @@ var state_wise_device_label_text= {};
 						"sector_id" : sectorsArray[j].sector_id,
 						"device_info" : sectorsArray[j].device_info,
 						"technology" : sectorsArray[j].technology,
-						"vendor" : sectorsArray[j].vendor
+						"vendor" : sectorsArray[j].vendor,
+						"sector_perf_url" : sector_perf_url,
+						"inventory_url" : sector_inventory_url
 					},
 					orientation = $.trim(sectorsArray[j].orientation),
 					sector_child = sectorsArray[j].sub_station,
 					childSS = JSON.stringify(sectorsArray[j].sub_station),
-					device_technology = $.trim(sectorsArray[j].technology),
+					sector_tech = sectorsArray[j].technology ? $.trim(sectorsArray[j].technology.toLowerCase()) : "",
 					orientation = $.trim(sectorsArray[j].orientation),
 					sectorRadius = (+sectorsArray[j].radius),
 					startEndObj = {},
@@ -1190,7 +1288,8 @@ var state_wise_device_label_text= {};
 					var halfPt = Math.floor(pointsArray.length / (+2));
 
 					/*In case of PMP & WIMAX*/
-					if($.trim(sectorsArray[j].technology) != "PTP" && $.trim(sectorsArray[j].technology) != "P2P") {
+					// if($.trim(sectorsArray[j].technology) != "PTP" && $.trim(sectorsArray[j].technology) != "P2P") {
+					if(ptp_tech_list.indexOf(sector_tech)  == -1) {
 
 						/*Plot sector on google earth with the retrived points*/
 						earth_self.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color,childSS,$.trim(sectorsArray[j].technology),orientation,rad,azimuth,beam_width);
@@ -1209,7 +1308,8 @@ var state_wise_device_label_text= {};
 					}
 				});
 
-				if($.trim(sectorsArray[j].technology.toLowerCase()) == "ptp" || $.trim(sectorsArray[j].technology.toLowerCase()) == "p2p") {
+				// if($.trim(sectorsArray[j].technology.toLowerCase()) == "ptp" || $.trim(sectorsArray[j].technology.toLowerCase()) == "p2p") {
+				if(ptp_tech_list.indexOf(sector_tech)  > -1) {
 
 					if(deviceIDArray.indexOf(sectorsArray[j]['device_info'][1]['value']) == -1) {
 						var sectorMarkerIcon = base_url+"/"+sectorsArray[j].markerUrl;
@@ -1227,7 +1327,9 @@ var state_wise_device_label_text= {};
 							deviceInfo: sectorsArray[j].device_info,
 							poll_info: [],
 							pl: "",
-							rta: "",
+							rta : "",
+							perf_url : sector_perf_url,
+							inventory_url : sector_inventory_url,
 							sectorName: sectorsArray[j].sector_configured_on,
 							device_name: sectorsArray[j].sector_configured_on_device,
 							name: sectorsArray[j].sector_configured_on_device,
@@ -1316,10 +1418,14 @@ var state_wise_device_label_text= {};
 
 				for(var k=0;k<sectorsArray[j].sub_station.length;k++) {
 					
-					var ssDataObj = sectorsArray[j].sub_station[k];
+					var ssDataObj = sectorsArray[j].sub_station[k],
+						ckt_id_val = gisPerformanceClass.getKeyValue(ssDataObj.data.param.sub_station,"cktid",true),
+						ss_perf_url = ssDataObj.data.perf_page_url ? ssDataObj.data.perf_page_url : "",
+						ss_inventory_url = ssDataObj.data.inventory_url ? ssDataObj.data.inventory_url : "";
 					
 					// var ssMarkerIcon = base_url+"/"+ssDataObj.markerUrl;
 					var ssMarkerIcon = base_url+"/"+ssDataObj.data.markerUrl;
+
 					var ssInfo= {
 						map: 'current',
 						ptLat: ssDataObj.data.lat,
@@ -1334,6 +1440,8 @@ var state_wise_device_label_text= {};
 						poll_info: [],
 						pl: "",
 						rta: "",
+						perf_url : ss_perf_url,
+						inventory_url : ss_inventory_url,
 						antenna_height: ssDataObj.data.antenna_height,
 						name: ssDataObj.name,
 						bs_name: resultantMarkers[i].name,
@@ -2039,6 +2147,8 @@ var state_wise_device_label_text= {};
 			azimuth 		 : azimuth,
 			beam_width 		 : beam_width,
 			technology 		 : sectorInfo.technology,
+			perf_url 		 : sectorInfo.sector_perf_url,
+			inventory_url    : sectorInfo.inventory_url,
 			vendor 			 : sectorInfo.vendor,
 			deviceExtraInfo  : sectorInfo.info,
 			deviceInfo 		 : sectorInfo.device_info,
@@ -2267,14 +2377,14 @@ var state_wise_device_label_text= {};
     		$.ajax({
     			url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&service_type="+service_type,
     			// url : base_url+"/"+"static/livePolling.json",
-    			success : function(results) {
+    			success : function(response) {
 
     				var result = "";
-
-    				if(typeof results == 'string') {
-    					result = JSON.parse(results);
+    				// Type check for response
+    				if(typeof response == 'string') {
+    					result = JSON.parse(response);
     				} else {
-    					result = results;
+    					result = response;
     				}
     				
     				if(result.success == 1) {
@@ -2344,11 +2454,13 @@ var state_wise_device_label_text= {};
 
 									for(var k=allSS.length;k--;) {
 										if(allSS[k]['ptLat'] && allSS[k]['ptLon']) {
-											var point = {lat: allSS[k]['ptLat'], lon: allSS[k]['ptLon']};
+											var point = {lat: allSS[k]['ptLat'], lon: allSS[k]['ptLon']},
+												point_tech = allSS[k]['technology'] ? $.trim(allSS[k]['technology'].toLowerCase()) : "";
+
 											if (isPointInPoly(pollingPolygonLatLngArr, point)) {
-												if(allSS[k]['technology']) {
-													if($.trim(allSS[k]['technology'].toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-														if($.trim(allSS[k]['technology'].toLowerCase()) == "ptp" || $.trim(allSS[k]['technology'].toLowerCase()) == "p2p") {
+												if(point_tech) {
+													if(point_tech == $.trim(selected_polling_technology.toLowerCase())) {
+														if(ptp_tech_list.indexOf(sector_tech)  > -1) {
 															if(allSSIds.indexOf(allSS[k]['device_name']) < 0) {
 																if(allSS[k]['pointType'] == 'sub_station') {
 																	if(allSSIds.indexOf(allSS[k]['bs_sector_device']) < 0) {
@@ -2417,7 +2529,7 @@ var state_wise_device_label_text= {};
 										for(var i=0;i<polygonSelectedDevices.length;i++) {
 											
 											var new_device_name = "";
-											var current_technology = $.trim(polygonSelectedDevices[i]['technology'].toLowerCase());
+											var current_technology = polygonSelectedDevices[i]['technology'] ? $.trim(polygonSelectedDevices[i]['technology'].toLowerCase()) : "";
 											
 											if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
 												new_device_name = polygonSelectedDevices[i]['device_name'].split(".");
@@ -2440,8 +2552,7 @@ var state_wise_device_label_text= {};
 												polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
 											}
 
-
-											if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i]['pointType'] == 'sub_station') {
+											if((ptp_tech_list.indexOf(current_technology)  > -1) && polygonSelectedDevices[i]['pointType'] == 'sub_station') {
 
 												if(polygonSelectedDevices[i].bs_sector_device.indexOf(".") != -1) {
 													var new_device_name2 = polygonSelectedDevices[i]['bs_sector_device'].split(".");
@@ -2467,7 +2578,7 @@ var state_wise_device_label_text= {};
 												var device_end_txt = "",
 													point_name = "";
 
-												if($.trim(polygonSelectedDevices[i]['technology'].toLowerCase()) == "ptp" || $.trim(polygonSelectedDevices[i]['technology'].toLowerCase()) == "p2p") {
+												if(ptp_tech_list.indexOf(current_technology)  > -1) {
 			                                        if(polled_device_count[devices_counter] <= 1) {
 														if(polygonSelectedDevices[i]['pointType'] == 'sub_station') {
 															device_end_txt = "Far End";
@@ -2652,16 +2763,16 @@ var state_wise_device_label_text= {};
 	    	$.ajax({
 				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds)+"&service_type="+service_type,
 				// url : base_url+"/"+"static/services.json",
-				success : function(results) {
+				success : function(response) {
+					
 					var result = "";
-
-					if(typeof results == 'string') {
-						result = JSON.parse(results);
+					// Type check for response
+					if(typeof response == 'string') {
+						result = JSON.parse(response);
 					} else {
-						result = results;
+						result = response;
 					}
 
-					
 					if(result.success == 1) {
 						$("#getDevicesPollingData").button("complete");
 

@@ -18,6 +18,10 @@ var bs_loki_db = [],
     polygon_loki_db = [],
     line_loki_db = [],
     all_devices_loki_db= [],
+    green_status_array = ['ok','success','up'],
+    red_status_array = ['critical','down'],
+    orange_status_array = ['warning'],
+    ptp_tech_list = ['ptp','p2p','ptp bh'],
 	state_lat_lon_db= [],
 	searchResultData= [],
 	state_wise_device_labels= {},
@@ -149,9 +153,10 @@ function WhiteMapClass() {
 						bsMarker.move(finalLatLong);
 						markerSpiderfied = feature;
 					} else {
-						var sector = bsData.data.param.sector[i];
-						var sectorMarker = allMarkersObject_wmap['sector_device']['sector_'+sector.sector_configured_on];
-						var xyDirection= "";
+						var sector = bsData.data.param.sector[i],
+							sectorMarker = sector.sector_configured_on ? allMarkersObject_wmap['sector_device']['sector_'+sector.sector_configured_on] : "",
+							xyDirection = "";
+
 						if(ccpl_map.getZoom() < 9) {
 							xyDirection = getAtXYDirection(currentAngle, 7, feature.ptLon, feature.ptLat);
 						} else {
@@ -167,10 +172,9 @@ function WhiteMapClass() {
 							
 						}					
 
-						var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat);
-											
-						var start_point = new OpenLayers.Geometry.Point(feature.ptLon,feature.ptLat);
-						var end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
+						var finalLatLong = new OpenLayers.LonLat(xyDirection.lon, xyDirection.lat),
+							start_point = new OpenLayers.Geometry.Point(feature.ptLon,feature.ptLat),
+							end_point = new OpenLayers.Geometry.Point(xyDirection.lon,xyDirection.lat);
 
 						ccpl_map.getLayersByName("Devices")[0].addFeatures([new OpenLayers.Feature.Vector(new OpenLayers.Geometry.LineString([start_point, end_point]))]);
 						ccpl_map.getLayersByName("Devices")[0].addFeatures([sectorMarker]);
@@ -329,9 +333,16 @@ function WhiteMapClass() {
 				/*ajax call for services & datasource*/
 				$.ajax({
 					url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology)+"&service_type="+service_type,
-					success : function(results) {
+					success: function (response) {
 
-						result = JSON.parse(results);
+		                var result = "";
+		                // Type check of response
+		                if(typeof response == 'string') {
+		                    result = JSON.parse(response);
+		                } else {
+		                    result = response;
+		                }
+
 						if(result.success == 1) {
 							/*Make live polling template select box*/
 							var polling_templates = result.data.thematic_settings;
@@ -525,23 +536,26 @@ function WhiteMapClass() {
 				
 				if(allSS[k].ptLon && allSS[k].ptLat && polygon) {
 					if (displayBounds(polygon, allSS[k].ptLon, allSS[k].ptLat) === 'in') {
-						if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-							if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
-								if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
-									if(allSS[k].pointType == 'sub_station') {
-										if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
-											allSSIds.push(allSS[k].bs_sector_device);
-											polygonSelectedDevices.push(allMarkersObject_wmap['sector_device']['sector_'+allSS[k].sector_ip]);
-										}
-									}
-									allSSIds.push(allSS[k].device_name);
-									polygonSelectedDevices.push(allSS[k]);
-								}
-							} else {
-								if(allSS[k].pointType == 'sub_station') {
+						var point_tech = allSS[k].technology ? $.trim(allSS[k].technology.toLowerCase()) : "";
+						if(point_tech) {
+							if(point_tech == $.trim(selected_polling_technology.toLowerCase())) {
+								if(ptp_tech_list.indexOf(point_tech)  > -1) {
 									if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+										if(allSS[k].pointType == 'sub_station') {
+											if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
+												allSSIds.push(allSS[k].bs_sector_device);
+												polygonSelectedDevices.push(allMarkersObject_wmap['sector_device']['sector_'+allSS[k].sector_ip]);
+											}
+										}
 										allSSIds.push(allSS[k].device_name);
 										polygonSelectedDevices.push(allSS[k]);
+									}
+								} else {
+									if(allSS[k].pointType == 'sub_station') {
+										if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+											allSSIds.push(allSS[k].device_name);
+											polygonSelectedDevices.push(allSS[k]);
+										}
 									}
 								}
 							}
@@ -605,7 +619,7 @@ function WhiteMapClass() {
 					}
 
 					var devices_counter = "";
-					if(current_technology == "ptp" || current_technology == "p2p") {					
+					if(ptp_tech_list.indexOf(current_technology)  > -1) {
 						if(polygonSelectedDevices[i].pointType == 'sub_station') {
 							devices_counter = polygonSelectedDevices[i].bs_sector_device;
 						} else {
@@ -620,7 +634,7 @@ function WhiteMapClass() {
 					}
 
 
-					if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i].pointType == 'sub_station') {
+					if((ptp_tech_list.indexOf(current_technology)  > -1) && polygonSelectedDevices[i].pointType == 'sub_station') {
 
 						if(polygonSelectedDevices[i].bs_sector_device.indexOf(".") != -1) {
 							var new_device_name2 = polygonSelectedDevices[i].bs_sector_device.split(".");
@@ -648,7 +662,7 @@ function WhiteMapClass() {
 						var device_end_txt = "",
 							point_name = "";
 
-						if(current_technology == "ptp" || current_technology == "p2p") {
+						if(ptp_tech_list.indexOf(current_technology)  > -1) {
 							if(polled_device_count[devices_counter] <= 1) {
 								if(polygonSelectedDevices[i].pointType == 'sub_station') {
 									device_end_txt = "Far End";
@@ -1145,9 +1159,52 @@ function WhiteMapClass() {
 				// ccpl_map.getLayersByName("Lines")[0].redraw();
 				previousValue= selectedValue;
 			}
-		}
+		};
+
+		/**
+		 * This function returns marker width & height object as per given type.
+		 * @method getMarkerSize_wmap
+		 * @param isBaseStation {boolean}, It states that the marker size is for BS or for any other markers(True in case of BS else False).
+		 */
+		this.getMarkerSize_wmap = function(isBaseStation) {
+
+			var largeur = 32/1.4,
+				hauteur = 37/1.4,
+				divideBy = 0.8,
+				anchorX = -0.2,
+				markerSizeObj = {
+					"width"   : 0,
+					"height"  : 0,
+					"xOffset" : 0,
+					"yOffset" : 0
+				};
+
+			if(isBaseStation) {
+				largeur = 20/1.4;
+				hauteur = 40/1.4;
+			}
+
+			if(current_icon_size == 'small') {
+				divideBy = 1.4;
+				anchorX = 0.4;
+			} else if(current_icon_size == 'medium') {
+				divideBy = 1;
+				anchorX = 0;
+			} else {
+				divideBy = 0.8;
+				anchorX = -0.2;
+			}
+
+			markerSizeObj["width"] = Math.ceil(largeur/divideBy);
+			markerSizeObj["height"] = Math.ceil(hauteur/divideBy);
+			markerSizeObj["xOffset"] = Math.ceil(16-(16*anchorX));
+			markerSizeObj["yOffset"] = Math.ceil(hauteur/divideBy);
+
+			return markerSizeObj;
+		};
+
 		/*
-		This function toggles all Station Marker
+		 * This function toggles all Station Marker
 		s size based on the Value selected in the dropdown.
 		 */
 		this.updateMarkersSize = function(iconSize) {
@@ -1803,15 +1860,22 @@ function WhiteMapClass() {
 		 */
 		
 	    this.plotDevices_wmaps = function(bs_ss_devices, stationType) {
+
 			if(isDebug) {
 				console.log("Plot Devices Function");
 				console.log("Plot Devices Start Time :- "+ new Date().toLocaleString());
 			}
 			var zoom_level = ccpl_map.getZoom(),
 				hide_flag = !$("#show_hide_label")[0].checked,
-				icon = base_url+"/static/img/icons/bs.png", 
-				bs_size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height),
-				devices_size = new OpenLayers.Size(whiteMapSettings.devices_size.medium.width, whiteMapSettings.devices_size.medium.height);
+				icon = base_url+"/static/img/icons/bs.png",
+				bs_size_obj = global_this.getMarkerSize_wmap(true),
+				bs_width = bs_size_obj.width ? bs_size_obj.width : whiteMapSettings.size.medium.width,
+				bs_height = bs_size_obj.height ? bs_size_obj.height : whiteMapSettings.size.medium.height,
+				bs_size = new OpenLayers.Size(bs_width, bs_height),
+				other_size_obj = global_this.getMarkerSize_wmap(false),
+				other_width = other_size_obj.width ? other_size_obj.width : whiteMapSettings.devices_size.medium.width,
+				other_height = other_size_obj.height ? other_size_obj.height : whiteMapSettings.devices_size.medium.height,
+				devices_size = new OpenLayers.Size(other_width, other_height);
 
 			//Loop through the bs_ss_devices
 			for(var i=0; i< bs_ss_devices.length; i++) {
@@ -1835,6 +1899,7 @@ function WhiteMapClass() {
 					device_name 	   : 	bs_ss_devices[i].data.device_name,
 					bsInfo 			   : 	bs_ss_devices[i].data.param.base_station,
 					bhInfo 			   : 	bs_ss_devices[i].data.param.backhual,
+					bhInfo_polled 	   :    [],
 					bs_name 		   : 	bs_ss_devices[i].name,
 					bs_alias 		   :    bs_ss_devices[i].alias,
 					name 		 	   : 	bs_ss_devices[i].name,
@@ -1906,6 +1971,8 @@ function WhiteMapClass() {
 					var azimuth = sector_array[j].azimuth_angle,
 						beam_width = sector_array[j].beam_width,
 						sector_color = sector_array[j].color,
+						sector_perf_url = sector_array[j].perf_page_url ? sector_array[j].perf_page_url : "",
+						sector_inventory_url = sector_array[j].inventory_url ? sector_array[j].inventory_url : "",
 						sectorInfo = {
 							"info" : sector_array[j].info,
 							"bs_name" : bs_ss_devices[i].name,
@@ -1913,9 +1980,12 @@ function WhiteMapClass() {
 							"sector_id" : sector_array[j].sector_id,
 							"device_info" : sector_array[j].device_info,
 							"technology" : sector_array[j].technology,
-							"vendor" : sector_array[j].vendor
+							"vendor" : sector_array[j].vendor,
+							"sector_perf_url" : sector_perf_url,
+							"inventory_url" : sector_inventory_url
 						},
 						orientation = $.trim(sector_array[j].orientation),
+						sector_tech = sector_array[j].technology ? $.trim(sector_array[j].technology.toLowerCase()) : "",
 						sector_child = sector_array[j].sub_station,
 						rad = 4,
 						sectorRadius = (+sector_array[j].radius),
@@ -1929,7 +1999,7 @@ function WhiteMapClass() {
 
 					var startEndObj = {};
 
-					if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
+					if(ptp_tech_list.indexOf(sector_tech)  == -1) {
 						// if(zoom_level > 9) {
 							/*Call createSectorData function to get the points array to plot the sector on google maps.*/
 							gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
@@ -1955,7 +2025,7 @@ function WhiteMapClass() {
 						startEndObj["sectorLon"] = bs_ss_devices[i].data.lon;
 					}
 
-					if($.trim(sector_array[j].technology.toLowerCase()) == "ptp" || $.trim(sector_array[j].technology.toLowerCase()) == "p2p") {
+					if(ptp_tech_list.indexOf(sector_tech)  > -1) {
 
 						if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) == -1) {
 
@@ -1975,6 +2045,8 @@ function WhiteMapClass() {
 								poll_info 			: [],
 								pl 					: "",
 								rta					: "",
+								perf_url 		 	: sector_perf_url,
+								inventory_url    	: sector_inventory_url,
 								sectorName  		: sector_array[j].sector_configured_on,
 								device_name  		: sector_array[j].sector_configured_on_device,
 								name  				: sector_array[j].sector_configured_on_device,
@@ -2028,7 +2100,10 @@ function WhiteMapClass() {
 					for(var k=sector_child.length;k--;) {
 
 					
-						var ss_marker_obj = sector_child[k];
+						var ss_marker_obj = sector_child[k],
+							ckt_id_val = gisPerformanceClass.getKeyValue(ss_marker_obj.data.param.sub_station,"cktid",true),
+							ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
+							ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
 
 						/*Create SS Marker Object*/
 						var ss_marker_object = {
@@ -2046,6 +2121,8 @@ function WhiteMapClass() {
 					    	poll_info 		 :  [],
 					    	pl 				 :  "",
 							rta				 :  "",
+							perf_url 		 :  ss_perf_url,
+							inventory_url 	 :  ss_inventory_url,
 					    	antenna_height   : 	ss_marker_obj.data.antenna_height,
 					    	name 		 	 : 	ss_marker_obj.name,
 					    	bs_name 		 :  bs_ss_devices[i].name,
@@ -2065,6 +2142,12 @@ function WhiteMapClass() {
 					    var ss_marker = global_this.createOpenLayerVectorMarker(devices_size, ss_marker_object.icon, ss_marker_object.ptLon, ss_marker_object.ptLat, ss_marker_object);
 					    bs_ss_markers.push(ss_marker);
 					    // ccpl_map.getLayersByName("Markers")[0].addFeatures([ss_marker]);
+					    var show_ss_len = $("#showAllSS:checked").length;
+
+				    	// Hide Feature if Show SS checkbox unchecked
+					    if(show_ss_len <= 0) {
+					    	hideOpenLayerFeature(ss_marker);
+				    	}
 
 					    if($.trim(last_selected_label)) {
 					    	var labelHtml = "";
@@ -2082,9 +2165,9 @@ function WhiteMapClass() {
 			            	    	labelHtml,
 			            	    	false
 			        	    	);
-			        	    	
 								ccpl_map.addPopup(toolTip_infobox);
-			        	    	toolTip_infobox.updateSize();
+			        	    	toolTip_infobox.autoSize = true;
+			        	    	// toolTip_infobox.updateSize();
 
 		                        tooltipInfoLabel['ss_'+ss_marker_obj.name] = toolTip_infobox;
 					    	}
@@ -2135,6 +2218,12 @@ function WhiteMapClass() {
 
 						    	ccpl_map.getLayersByName("Lines")[0].addFeatures([ss_link_line]);
 
+						    	var isLineChecked = $("#showConnLines:checked").length;
+
+						    	if(isLineChecked <= 0) {
+									hideOpenLayerFeature(ss_link_line);
+						    	}
+
 						    	ssLinkArray.push(ss_link_line);
 						    	ssLinkArray_filtered = ssLinkArray;
 
@@ -2178,7 +2267,7 @@ function WhiteMapClass() {
 					gmap_self.getBasicFilters();
 				}
 
-				global_this.updateMarkersSize('medium');
+				// global_this.updateMarkersSize('medium');
 			}
 
 			if(bs_ss_markers.length> 0) {
@@ -2209,14 +2298,21 @@ function WhiteMapClass() {
 				//Success callback
 				success: function(response) {
 
-					if(response.success == 1) {
+	                var result = "";
+	                // Type check of response
+	                if(typeof response == 'string') {
+	                    result = JSON.parse(response);
+	                } else {
+	                    result = response;
+	                }
 
-						var result = response;
+					if(result.success == 1) {
+						
 						//First Time, find how many times Ajax Request is to be sent.
 						if (i === 1) {
-							total_count = response.data.meta.total_count;
-							device_count = response.data.meta.device_count;
-							limit = response.data.meta.limit;
+							total_count = result.data.meta.total_count;
+							device_count = result.data.meta.device_count;
+							limit = result.data.meta.limit;
 
 							loop_count = Math.ceil(total_count / limit);
 						}
@@ -2230,7 +2326,7 @@ function WhiteMapClass() {
 						}
 
 						//Condition to check if we need to call Ajax Request again
-						if (i <= loop_count && response.success) {
+						if (i <= loop_count && result.success) {
 
 							//if all calls are completed
 							if (i === loop_count) {

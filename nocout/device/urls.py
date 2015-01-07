@@ -16,7 +16,7 @@ urlpatterns = patterns('',
   url(r'^stats/$', api.DeviceStatsApi.as_view()),
 
   #cache the Filters. they dont change
-  url(r'^filter/$', cache_page(60 * 60)(api.DeviceFilterApi.as_view())),
+  url(r'^filter/(?P<for_map>\d+)/$', cache_page(60 * 60)(api.DeviceFilterApi.as_view())),
   #cache the Filters. they dont change
 
   url(r'^lp_services/', api.LPServicesApi.as_view()),
@@ -30,6 +30,9 @@ urlpatterns = patterns('',
   url(r'^archiveddevicelistingtable/', views.ArchivedDeviceListingTable.as_view(), name= 'ArchivedDeviceListingTable'),
   url(r'^alldevicelistingtable/', views.AllDeviceListingTable.as_view(), name= 'AllDeviceListingTable'),
 
+  url(r'^select2/elements/$', views.SelectDeviceListView.as_view(), name='select2-device-elements'),
+
   url(r'^list/schedule/device/$', views.list_schedule_device, name='list-schedule-device'),
   url(r'^select/schedule/device/$', views.select_schedule_device, name='select-schedule-device'),
+  url(r'^filter/selected/device/$', views.filter_selected_device, name='filter-selected-device/'),
 )

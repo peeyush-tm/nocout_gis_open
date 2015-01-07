@@ -10,6 +10,7 @@
 
 */1 * * * * /usr/bin/python nocout/events/events_rrd_migration.py >> /tmp/nocout_da/ospf3_slave_1/events/events_rrd_migration.log 2>&1
 */2 * * * * /usr/bin/python nocout/events/events_migrations.py >> /tmp/nocout_da/ospf3_slave_1/events/events_migrations.log 2>&1
+*/2 * * * * /usr/bin/python nocout/events/events_status_migrations.py >> /tmp/nocout_da/ospf3_slave_1/events/events_status_migrations.log 2>&1
 
 
 30 23 * * * /usr/bin/python nocout/performance/inventory/inventory_rrd_migration.py >> /tmp/nocout_da/ospf3_slave_1/inventory/inventory_rrd_migration.log 2>&1

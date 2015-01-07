@@ -1,22 +1,38 @@
 import datetime
+from dateutil import tz
 
-#Used for JsonDatetime Encoding #example# ::json.dumps( json_object, default=date_handler )
-from django.contrib.auth.models import User
-from device.models import Device
-from device_group.models import DeviceGroup
-from organization.models import Organization
-from user_group.models import UserGroup
-from user_profile.models import UserProfile
-from random import randint, uniform
+from random import randint
 
 from django.db import connections
+from nocout.settings import DATE_TIME_FORMAT
 
-date_handler = lambda obj: obj.strftime('%Y-%m-%d %H:%M:%S') if isinstance(obj, datetime.datetime) else None
+from nocout.settings import DATE_TIME_FORMAT
+
+date_handler = lambda obj: obj.strftime(DATE_TIME_FORMAT) if isinstance(obj, datetime.datetime) else None
 
 #for managing the slave-master connections
 from django.conf import settings
 import socket
 #http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+
+#https://github.com/benjamin-croker/loggy/blob/master/loggy.py
+import inspect
+# import functools
+# def log(fn):
+#     @functools.wraps(fn)
+#     def decorated(*args, **kwargs):
+#         # get the names of all the args
+#         arguments = inspect.getcallargs(fn, *args, **kwargs)
+#
+#         logging.debug("function '{}' called by '{}' with arguments:\n{}".format(
+#                       fn.__name__,
+#                       inspect.stack()[1][3],
+#                       arguments))
+#         result = fn(*args, **kwargs)
+#         logging.debug("result: {}\n".format(result))
+#
+#     return decorated
+#https://github.com/benjamin-croker/loggy/blob/master/loggy.py
 
 #logging the performance of function
 import logging
@@ -51,16 +67,46 @@ project_group_role_dict_mapper={
     'viewer':'group_viewer',
 }
 
+if getattr(settings, 'PROFILE'):
+    from line_profiler import LineProfiler as LLP
+    from memory_profiler import LineProfiler as MLP
+    from memory_profiler import show_results
 
 # #profiler
-def time_it(debug=getattr(settings, 'DEBUG')):
+def time_it(debug=getattr(settings, 'PROFILE')):
         def decorator(fn):
             def wrapper(*args, **kwargs):
                 st = datetime.datetime.now()
                 if debug:
                     log.debug("+++"*40)
                     log.debug("START     \t\t\t: { " + fn.__name__ + " } : ")
-                result = fn(*args, **kwargs)
+                    try:
+                        #check the module calling the function
+                        log.debug("          \t\t\t: function '{}' called by '{}' : '{}'".format(
+                                      fn.__name__,
+                                      inspect.stack()[1][3],
+                                      inspect.stack()[1][1],
+                                      )
+                        )
+                    except:
+                        pass
+                    #check the module calling the function
+                    profile_type = getattr(settings, 'PROFILE_TYPE')
+                    if profile_type == 'line':
+                        profiler = LLP()
+                        profiled_func = profiler(fn)
+                    else:
+                        profiler = MLP()
+                        profiled_func = profiler(fn)
+                    try:
+                        result = profiled_func(*args, **kwargs)
+                    finally:
+                        if profile_type == 'line':
+                            profiler.print_stats()
+                        else:
+                            show_results(profiler)
+                else:
+                    result = fn(*args, **kwargs)
                 end = datetime.datetime.now()
                 if debug:
                     elapsed = end - st
@@ -72,7 +118,57 @@ def time_it(debug=getattr(settings, 'DEBUG')):
             return wrapper
         return decorator
 
+#http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
+#defining utility to exatly choose a database to query from
+#django routers are of no use
+#we will pass in the machine name
+#we will test the connection
+#and we will return the results of the database to be used
 
+import random
+
+@time_it()
+def nocout_db_router(db='default', levels=0):
+    """
+
+    :param db: pass the name for the database
+    :param levels: number of slaves available
+    :return:the database to be queried on
+    """
+    db_slave_up = list()
+    #can choose from master db as well
+    db_slave_up.append(db)
+    db_slave = db + "_slave"
+    if levels and levels != -1:
+        for x in range(1, levels):
+            db_slave = db + "_slave_" + str(x)
+            if test_connection_to_db(db_slave):
+                db_slave_up.append(db_slave)
+    elif levels == -1:
+        return db
+    else:
+        if test_connection_to_db(db_slave):
+                db_slave_up.append(db_slave)
+
+    return random.choice(db_slave_up)
+
+@time_it()
+def nocout_query_results(query_set=None, using='default', levels=0):
+    """
+
+    :param query_set: query set to be executed
+    :param using: the db alias
+    :param levels: levels of slaves default = 0, that is one slave is present, -1 means no slave
+    :return:
+    """
+    if query_set:
+        #choose a random database : slave // master
+        if levels == -1:
+            return query_set.using(alias=using)
+        else:
+            db = nocout_db_router(db=using, levels=levels)
+            return query_set.using(alias=db)
+    return None
 
 #http://stackoverflow.com/questions/26608906/django-multiple-databases-fallback-to-master-if-slave-is-down
 def test_connection_to_db(database_name):
@@ -84,7 +180,7 @@ def test_connection_to_db(database_name):
     try:
         db_definition = getattr(settings, 'DATABASES')[database_name]
         #if it gets a socket connection in 2 seconds
-        s = socket.create_connection((db_definition['HOST'], db_definition['PORT']), 2)
+        s = socket.create_connection((db_definition['HOST'], db_definition['PORT']), 5)
         #if it gets a socket connection in 2 seconds
         s.close()
         return True
@@ -160,6 +256,10 @@ def format_value(format_this, type_of=None):
                 return "static/img/icons/mobilephonetower10.png"
         elif type_of == 'mac':
             return format_this.upper() if format_this else 'NA'
+        elif type_of == 'date':
+            return str(format_this)
+        elif type_of == 'epoch':
+            return date_handler(format_this)
     except:
         return 'NA'
     return 'NA'
@@ -185,7 +285,7 @@ def cache_get_key(*args, **kwargs):
 def cache_for(time):
     def decorator(fn):
         def wrapper(*args, **kwargs):
-            debug=getattr(settings, 'DEBUG')
+            debug=getattr(settings, 'PROFILE')
             st = datetime.datetime.now()
             if debug:
                 log.debug("---"*40)
@@ -195,8 +295,37 @@ def cache_for(time):
             if not result:
                 if debug:
                     log.debug("FUNCTION CALL\t: START : { " + fn.__name__ + " } : ")
-                result = fn(*args, **kwargs)
-                cache.set(key, result, time)
+                    #check the module calling the function
+                    try:
+                        #check the module calling the function
+                        log.debug("          \t\t\t: function '{}' called by '{}' : '{}'".format(
+                                      fn.__name__,
+                                      inspect.stack()[1][3],
+                                      inspect.stack()[1][1],
+                                      )
+                        )
+                    except:
+                        pass
+                    #check the module calling the function
+                    profile_type = getattr(settings, 'PROFILE_TYPE')
+                    if profile_type == 'line':
+                        profiler = LLP()
+                        profiled_func = profiler(fn)
+                    else:
+                        profiler = MLP()
+                        profiled_func = profiler(fn)
+                    try:
+                        result = profiled_func(*args, **kwargs)
+                    finally:
+                        if profile_type == 'line':
+                            profiler.print_stats()
+                        else:
+                            show_results(profiler)
+                    cache.set(key, result, time)
+                else:
+                    result = fn(*args, **kwargs)
+                    cache.set(key, result, time)
+
                 if debug:
                     end = datetime.datetime.now()
                     elapsed = end - st
@@ -215,7 +344,7 @@ def cache_for(time):
     return decorator
 
 ## TODO: remove the duplicate code for GIS inventory data
-@cache_for(3600)  #caching GIS inventory
+@cache_for(600)  #caching GIS inventory
 def cached_all_gis_inventory(query):
     """
 
@@ -249,6 +378,8 @@ def query_all_gis_inventory_improved(monitored_only=False):
                         basestation.gps_type as BSGPSTYPE,
                         basestation.building_height as BSBUILDINGHGT,
                         basestation.tower_height as BSTOWERHEIGHT,
+                        basestation.tag1 as BSTAG1,
+			            basestation.tag2 as BSTAG2,
 
                         city.city_name as BSCITY,
                         state.state_name as BSSTATE,
@@ -265,11 +396,11 @@ def query_all_gis_inventory_improved(monitored_only=False):
                 left join inventory_backhaul as backhaul
                 on backhaul.id = basestation.backhaul_id
                 left join device_country as country
-                on country.id = basestation.country
+                on country.id = basestation.country_id
                 left join device_city as city
-                on city.id = basestation.city
+                on city.id = basestation.city_id
                 left join device_state as state
-                on state.id = basestation.state
+                on state.id = basestation.state_id
                 left join device_device as device
                 on device.id = basestation.bs_switch_id
                 group by BSID
@@ -283,12 +414,14 @@ left join (
         sector.sector_id as SECTOR_SECTOR_ID,
         sector.base_station_id as SECTOR_BS_ID,
         sector.mrc as SECTOR_MRC,
+        sector.dr_site as SECTOR_DR,
         sector.tx_power as SECTOR_TX,
         sector.rx_power as SECTOR_RX,
         sector.rf_bandwidth as SECTOR_RFBW,
         sector.frame_length as SECTOR_FRAME_LENGTH,
         sector.cell_radius as SECTOR_CELL_RADIUS,
         sector.modulation as SECTOR_MODULATION,
+        sector.planned_frequency as SECTOR_PLANNED_FREQUENCY,
 
         technology.name as SECTOR_TECH,
         vendor.name as SECTOR_VENDOR,
@@ -454,6 +587,8 @@ left join
                 bh_info.BHCONF_IP as BHCONF_IP,
                 bh_info.BHTECH as BHTECH,
                 bh_info.BHTYPE as BHTYPE,
+                bh_info.BH_AGGR_PORT as BH_AGGR_PORT,
+                bh_info.BH_DEVICE_PORT as BH_DEVICE_PORT,
 
                 POP_IP,
                 AGGR_IP,
@@ -469,6 +604,8 @@ left join
                 backhaul.bh_circuit_id as BH_CIRCUIT_ID,
                 backhaul.bh_capacity as BH_CAPACITY,
                 backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
+                backhaul.aggregator_port as BH_AGGR_PORT,
+                backhaul.switch_port as BH_DEVICE_PORT,
                 
                 device.id as BH_DEVICE_ID,
                 device.device_name as BHCONF,
@@ -489,7 +626,7 @@ left join
             and
             devicetype.id = device.device_type
         )
-{0}
+
         ) as bh_info left join (
                 select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
                 left join (
@@ -555,6 +692,8 @@ def query_all_gis_inventory(monitored_only=False):
                         basestation.gps_type as BSGPSTYPE,
                         basestation.building_height as BSBUILDINGHGT,
                         basestation.tower_height as BSTOWERHEIGHT,
+                        basestation.tag1 as BSTAG1,
+			            basestation.tag2 as BSTAG2,
 
                         city.city_name as BSCITY,
                         state.state_name as BSSTATE,
@@ -571,11 +710,11 @@ def query_all_gis_inventory(monitored_only=False):
                 left join inventory_backhaul as backhaul
                 on backhaul.id = basestation.backhaul_id 
                 left join device_country as country
-                on country.id = basestation.country
+                on country.id = basestation.country_id
                 left join device_city as city
-                on city.id = basestation.city
+                on city.id = basestation.city_id
                 left join device_state as state
-                on state.id = basestation.state
+                on state.id = basestation.state_id
                 left join device_device as device
                 on device.id = basestation.bs_switch_id
             )as bs_info
@@ -588,12 +727,14 @@ left join (
         sector.sector_id as SECTOR_SECTOR_ID,
         sector.base_station_id as SECTOR_BS_ID,
         sector.mrc as SECTOR_MRC,
+        sector.dr_site as SECTOR_DR,
         sector.tx_power as SECTOR_TX,
         sector.rx_power as SECTOR_RX,
         sector.rf_bandwidth as SECTOR_RFBW,
         sector.frame_length as SECTOR_FRAME_LENGTH,
         sector.cell_radius as SECTOR_CELL_RADIUS,
         sector.modulation as SECTOR_MODULATION,
+        sector.planned_frequency as SECTOR_PLANNED_FREQUENCY,
 
         technology.name as SECTOR_TECH,
         vendor.name as SECTOR_VENDOR,
@@ -759,6 +900,8 @@ left join
                 bh_info.BHCONF_IP as BHCONF_IP,
                 bh_info.BHTECH as BHTECH,
                 bh_info.BHTYPE as BHTYPE,
+                bh_info.BH_AGGR_PORT as BH_AGGR_PORT,
+                bh_info.BH_DEVICE_PORT as BH_DEVICE_PORT,
                 
                 POP_IP,
                 AGGR_IP,
@@ -774,6 +917,8 @@ left join
                 backhaul.bh_circuit_id as BH_CIRCUIT_ID,
                 backhaul.bh_capacity as BH_CAPACITY,
                 backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
+                backhaul.aggregator_port as BH_AGGR_PORT,
+                backhaul.switch_port as BH_DEVICE_PORT,
                 
                 device.id as BH_DEVICE_ID,
                 device.device_name as BHCONF,
@@ -794,7 +939,7 @@ left join
             and
             devicetype.id = device.device_type
         )
-{0}
+
         ) as bh_info left join (
                 select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
                 left join (
@@ -834,3 +979,39 @@ on
         ;
         '''.format(added_device)
     return gis
+
+
+def convert_utc_to_local_timezone(datetime_obj=None):
+    """ Convert datetime object timezone from 'utc' to 'local'
+
+        Parameters:
+            - datetime_obj ('datetime.datetime') - timestamp as datetime object for e.g. 2014-12-25 12:26:00+00:00
+
+        Returns:
+           - output (str) - output as a timestamp string for e.g. 12/25/14 (Dec) 17:56:03 (05:56 PM)
+
+    """
+
+    # get 'utc' timezone
+    from_zone = tz.tzutc()
+
+    # get 'local' timezone
+    to_zone = tz.tzlocal()
+
+    # output timestamp
+    output = datetime_obj
+
+    if output:
+        try:
+            # modify timezone info in datetime object to 'utc'
+            output = output.replace(tzinfo=from_zone)
+
+            # convert timezone from 'utc' to 'local'
+            output = output.astimezone(to_zone)
+
+            # format datetime string
+            output = output.strftime(DATE_TIME_FORMAT)
+        except Exception as e:
+            log.error("Timezone conversion not possible. Exception: ", e.message)
+
+    return output

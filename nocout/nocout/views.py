@@ -1,4 +1,5 @@
 import json
+from django.core.cache import cache
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib import auth
@@ -118,7 +119,7 @@ def auth_view(request):
             }
         }
 
-        return HttpResponse(json.dumps(result), mimetype='application/json')
+        return HttpResponse(json.dumps(result), content_type='application/json')
 
     username = request.POST.get('username', '')
     password = request.POST.get('password', '')
@@ -314,7 +315,7 @@ def auth_view(request):
             logger.error(general_exception)
         pass  # log nothing
 
-    return HttpResponse(json.dumps(result), mimetype='application/json')
+    return HttpResponse(json.dumps(result), content_type='application/json')
 
 
 def logout(request):
@@ -335,3 +336,11 @@ def logout(request):
     auth.logout(request)
     return HttpResponseRedirect(settings.LOGIN_URL)
 
+
+def reset_cache(request):
+    """
+    Clear complete cache.
+    """
+
+    cache.clear()
+    return HttpResponse(json.dumps({'code': 0, 'message': 'Cache has been cleared.'}), content_type='application/json')

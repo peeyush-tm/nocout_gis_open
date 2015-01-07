@@ -17,8 +17,10 @@ from celery.schedules import crontab
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
+PROFILE = DEBUG
+PROFILE_TYPE = 'line'
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -55,7 +57,7 @@ LANGUAGE_CODE = 'en-us'
 SITE_ID = 1
 
 LOGIN_URL = '/login/'
-LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/')
+LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -276,10 +278,29 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(seconds=300),
         'args': ['PMP']
     },
+    'wimax-ss-topology': {
+        'task': 'inventory.tasks.get_topology_with_substations',
+        'schedule': timedelta(seconds=300),
+        'args': ['WiMAX']
+    },
+    'pmp-ss-topology': {
+        'task': 'inventory.tasks.get_topology_with_substations',
+        'schedule': crontab(minute=0, hour=0),
+        'args': ['PMP']
+    },
     'update-sector-frequency': {
         'task': 'inventory.tasks.update_sector_frequency_per_day',
         'schedule': crontab(minute=0, hour=0)
     },
+    'check-device-status': {
+        'task': 'alarm_escalation.tasks.check_device_status',
+        'schedule': timedelta(seconds=300),
+    },
+    'gather_sector_status': {
+        'task': 'capacity_management.tasks.gather_sector_status',
+        'schedule': timedelta(seconds=300),
+        'args': ['WiMAX']
+    }
 }
 
 
@@ -405,184 +426,77 @@ DEVICE_APPLICATION = {
 
 ###Services & SErvice Datasoruces settings
 SERVICE_DATA_SOURCE = {
-    "uas": {
-        "display_name": "UAS",
-        "type": "area",
-        "valuesuffix": "seconds",
-        "valuetext": "Seconds",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-    "rssi": {
-        "display_name": "RSSI",
-        "type": "column",
-        "valuesuffix": "dB",
-        "valuetext": "dB",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-    "uptime": {
-        "display_name": "UPTIME",
-        "type": "line",
-        "valuesuffix": " seconds",
-        "valuetext": "up since (timeticks)",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
     "rta": {
         "display_name": "Latency",
         "type": "line",
-        "valuesuffix": "ms",
+        "valuesuffix": " ms",
         "valuetext": "ms",
         "formula": "rta_null",
-        "show_min": True,
-        "show_max": True
+        "show_min": 0,
+        "show_max": 0,
+        "show_gis": 1,
+        "show_performance_center": 1,
+        "is_inverted": 0,
+        "chart_color": "#70AFC4",
+        "service_name": 'ping',
+        "service_alias": 'Ping',
     },
     "pl": {
         "display_name": "Packet Drop",
         "type": "column",
-        "valuesuffix": "%",
+        "valuesuffix": " %",
         "valuetext": "Percentage (%)",
         "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-    "service_throughput": {
-        "display_name": "Service throughput",
-        "type": "area",
-        "valuesuffix": " mbps",
-        "valuetext": " mbps",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-    "management_port_on_odu": {
-        "display_name": "Management Port on ODU",
-        "type": "area",
-        "valuesuffix": " mbps",
-        "valuetext": " mbps",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-    "radio_interface": {
-        "display_name": "Radio Interface" ,
-        "type": "area",
-        "valuesuffix": " mbps",
-        "valuetext": " mbps",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
+        "show_min": 0,
+        "show_max": 0,
+        "show_gis": 1,
+        "show_performance_center": 1,
+        "is_inverted": 0,
+        "chart_color": "#70AFC4",
+        "service_name": 'ping',
+        "service_alias": 'Ping',
     },
     "availability": {
         "display_name": "Availability",
         "type": "column",
         "valuesuffix": " %",
-        "valuetext": " %",
+        "valuetext": "Percentage (%)",
         "formula": None,
-        "show_min": False,
-        "show_max": False
+        "show_min": 0,
+        "show_max": 0,
+        "show_gis": 1,
+        "show_performance_center": 1,
+        "is_inverted": 0,
+        "chart_color": "#70AFC4",
+        "service_name": 'availability',
+        "service_alias": 'Availability',
     },
-    ##listing there special performance checks with type string
-    #wimax_ss_ip#ss_ip
-    #wimax_modulation_dl_fec#modulation_dl_fec
-    #wimax_ss_sector_id#ss_sector_id
-    #wimax_ss_frequency#frequency
-    #wimax_modulation_ul_fec#modulation_ul_fec
-    #wimax_ul_intrf#ul_intrf
-    #wimax_dl_intrf#dl_intrf
-    #wimax_ss_mac#ss_mac
-    ##listing there special performance checks with type string
-
-    "ss_ip": {
-        "display_name": "ss_ip",
-        "type": "table",
-        "valuesuffix": " ",
-        "valuetext": " ",
+    "rf": {
+        "display_name": "RF Latency",
+        "type": "spline",
+        "valuesuffix": " ms",
+        "valuetext": "ms",
         "formula": None,
-        "show_min": False,
-        "show_max": False
+        "show_min": 0,
+        "show_max": 0,
+        "show_gis": 0,
+        "show_ss": 1,
+        "show_bs": 1,
+        "show_performance_center": 1,
+        "is_inverted": 0,
+        "chart_color": "#70AFC4",
+        "service_name": 'rf',
+        "service_alias": 'RF Latency',
     },
-
-    "modulation_dl_fec": {
-        "display_name": "modulation_dl_fec",
-        "type": "table",
-        "valuesuffix": " ",
-        "valuetext": " ",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-
-    "ss_sector_id": {
-        "display_name": "ss_sector_id",
-        "type": "table",
-        "valuesuffix": " ",
-        "valuetext": " ",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-
-    "frequency": {
-        "display_name": "frequency",
-        "type": "table",
-        "valuesuffix": " MHz",
-        "valuetext": " MHz",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-
-    "modulation_ul_fec": {
-        "display_name": "modulation_ul_fec",
-        "type": "table",
-        "valuesuffix": " ",
-        "valuetext": " ",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-
-    "ul_intrf": {
-        "display_name": "ul_intrf",
-        "type": "table",
-        "valuesuffix": " ",
-        "valuetext": " ",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-
-    "dl_intrf": {
-        "display_name": "dl_intrf",
-        "type": "table",
-        "valuesuffix": " ",
-        "valuetext": " ",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-
-    "ss_mac": {
-        "display_name": "ss_mac",
-        "type": "table",
-        "valuesuffix": " ",
-        "valuetext": " ",
-        "formula": None,
-        "show_min": False,
-        "show_max": False
-    },
-
 
 }
 
 SERVICES = {
 
 }
+
+#Date Format to be used throughout the application
+DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
 
 ###################REPORT_PATH
 

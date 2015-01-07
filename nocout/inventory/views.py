@@ -1,65 +1,75 @@
-import re
-import ast
-import copy
-from operator import itemgetter
-import time
-from datetime import datetime
-from django.contrib.auth.models import User
-from machine.models import Machine
+"""
+Contain Gis Inventory Views.
+
+- Provide views to List, Create, Update and Delete Gis Inventory Models.
+- Provide views to Bulk Upload inventory data using Excel Sheets.
+- Provide Gis Wizard to manage inventory in easier way.
+"""
 import os
-from os.path import basename
-from django.views.generic.base import View
 import re
-from django.shortcuts import render, render_to_response
+import time
 import json
-from django.db.models.query import ValuesQuerySet
-from django.http import HttpResponseRedirect, HttpResponse
-from django.views.generic import ListView, DetailView, TemplateView, View
-from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
-from django.core.urlresolvers import reverse_lazy, reverse
-from django_datatables_view.base_datatable_view import BaseDatatableView
-from django.db.models import Count, Q
-from device_group.models import DeviceGroup
-from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
-
-from nocout.utils.util import DictDiffer, cache_for, cache_get_key
-
-from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
-    ThematicSettings, GISInventoryBulkImport, UserThematicSettings, CircuitL2Report, PingThematicSettings, \
-    UserPingThematicSettings
-from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
-    ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm, PingThematicSettingsForm, \
-    ServiceThematicSettingsForm, ServiceThresholdConfigurationForm, ServiceLivePollingSettingsForm, \
-    WizardBaseStationForm, WizardBackhaulForm, WizardSectorForm, WizardAntennaForm, WizardSubStationForm, \
-    WizardCustomerForm, WizardCircuitForm, WizardPTPSubStationAntennaFormSet
-from organization.models import Organization
-from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, Status
-from site_instance.models import SiteInstance
-from user_group.models import UserGroup
-from user_profile.models import UserProfile
-from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
-from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm, CircuitL2ReportForm
-from device.models import Country, State, City, Device, DeviceType
-from django.contrib.staticfiles.templatetags.staticfiles import static
-from user_profile.models import UserProfile
 import xlrd
 import xlwt
-import logging
+
+from operator import itemgetter
+from datetime import datetime
+
+from django.db.models import Count, Q
+from django.db.models.query import ValuesQuerySet
+from django.core.urlresolvers import reverse_lazy, reverse
+
+from django.views.generic import ListView, DetailView, View, TemplateView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
+
+from django.http import HttpResponseRedirect, HttpResponse
+from django.shortcuts import render, render_to_response
 from django.template import RequestContext
-from nocout.utils import logged_in_user_organizations
-from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
-    bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
-    bulk_upload_wimax_ss_inventory
+
+from django.contrib.auth.models import User
+from django.contrib.staticfiles.templatetags.staticfiles import static
+
+from django_datatables_view.base_datatable_view import BaseDatatableView
+
+from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL, DATE_TIME_FORMAT
 from nocout.mixins.permissions import PermissionsRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.datatable import DatatableOrganizationFilterMixin, DatatableSearchMixin, ValuesQuerySetMixin
+from nocout.mixins.select2 import Select2Mixin
+from nocout.utils import logged_in_user_organizations
+from nocout.utils.util import DictDiffer, cache_for, cache_get_key, convert_utc_to_local_timezone
 
+from organization.models import Organization
+from user_profile.models import UserProfile
+from user_group.models import UserGroup
+from device_group.models import DeviceGroup
+from device.models import Country, State, City, Device, DeviceType, DeviceTechnology
+from performance.models import ServiceStatus, InventoryStatus, NetworkStatus, Status
+
+from inventory.models import (Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, Inventory,
+        IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, GISInventoryBulkImport,
+        UserThematicSettings, CircuitL2Report, PingThematicSettings, UserPingThematicSettings, GISExcelDownload)
+from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm,
+        CircuitForm, CircuitL2ReportForm, InventoryForm, IconSettingsForm, LivePollingSettingsForm,
+        ThresholdConfigurationForm, ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm,
+        PingThematicSettingsForm,  ServiceThematicSettingsForm, ServiceThresholdConfigurationForm,
+        ServiceLivePollingSettingsForm, WizardBaseStationForm, WizardBackhaulForm, WizardSectorForm, WizardAntennaForm,
+        WizardSubStationForm, WizardCustomerForm, WizardCircuitForm, WizardPTPSubStationAntennaFormSet,
+        DownloadSelectedBSInventoryEditForm)
+from inventory.tasks import (validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory,
+        bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory,
+        bulk_upload_wimax_ss_inventory, bulk_upload_backhaul_inventory, generate_gis_inventory_excel)
+
+import logging
 logger = logging.getLogger(__name__)
 
 ##caching
 from django.core.cache import cache
 ##caching
+
+from django.views.decorators.csrf import csrf_exempt
+
 
 # **************************************** Inventory *********************************************
 def inventory(request):
@@ -239,39 +249,17 @@ def inventory_details_wrt_organization(request):
 
     return HttpResponse(
         json.dumps({'response': {'device_groups': response_device_groups, 'user_groups': response_user_group}}), \
-        mimetype='application/json')
-
-def list_device(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        devices = Device.objects.filter(organization__id__in=organizations).\
-            filter(device_alias__icontains=sSearch).values('id', 'device_alias')[:50]
-    else:
-        devices = Device.objects.filter(organization_id=org_id).\
-            filter(device_alias__icontains=sSearch).values('id', 'device_alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": devices.count(),
-        "incomplete_results": False,
-        "items": list(devices)
-    }))
-
-def select_device(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Device.objects.get(id=pk).device_alias]))
+        content_type='application/json')
 
 
 #**************************************** Antenna *********************************************
+class SelectAntennaListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Antenna
+
+
 class AntennaList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Antenna data table rendering.
@@ -386,29 +374,14 @@ class AntennaDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_antenna',)
 
 
-def list_antenna(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    antennas = Antenna.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": antennas.count(),
-        "incomplete_results": False,
-        "items": list(antennas)
-    }))
-
-def select_antenna(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Antenna.objects.get(id=pk).alias]))
-
-
 #****************************************** Base Station ********************************************
+class SelectBaseStationListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = BaseStation
+
+
 class BaseStationList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Base Station data table rendering.
@@ -432,6 +405,10 @@ class BaseStationList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
             {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', },
+            {'mData': 'bh_capacity', 'sTitle': 'BH Capacity', 'sWidth': 'auto', },
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', },
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
@@ -452,9 +429,9 @@ class BaseStationListingTable(PermissionsRequiredMixin,
     """
     model = BaseStation
     required_permissions = ('inventory.view_basestation',)
-    columns = ['alias', 'bs_site_id',
+    columns = ['alias', 'bs_site_id', 'state__state_name', 'city__city_name', 'bh_capacity', 'tower_height',
                'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
-    order_columns = ['alias', 'bs_site_id',
+    order_columns = ['alias', 'bs_site_id', 'state__state_name', 'city__city_name', 'bh_capacity', 'tower_height',
                      'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
 
@@ -531,37 +508,14 @@ class BaseStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView
     required_permissions = ('inventory.delete_basestation',)
 
 
-def list_base_station(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        base_stations = BaseStation.objects.filter(organization__id__in=organizations).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-    else:
-        base_stations = BaseStation.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": base_stations.count(),
-        "incomplete_results": False,
-        "items": list(base_stations)
-    }))
-
-def select_base_station(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([BaseStation.objects.get(id=pk).alias]))
-
-
 #**************************************** Backhaul *********************************************
+class SelectBackhaulListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Backhaul
+
+
 class BackhaulList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Backhaul data table rendering.
@@ -580,7 +534,7 @@ class BackhaulList(PermissionsRequiredMixin, TemplateView):
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
             {'mData': 'bh_configured_on__id', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto'},
-            {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bh_port_name', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'auto', },
             {'mData': 'pop__id', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'auto', },
@@ -607,9 +561,9 @@ class BackhaulListingTable(PermissionsRequiredMixin,
     """
     model = Backhaul
     required_permissions = ('inventory.view_backhaul',)
-    columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id', 'pop_port',
+    columns = ['alias', 'bh_configured_on__id', 'bh_port_name', 'bh_type', 'pop__id', 'pop_port',
                'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id',
+    order_columns = ['alias', 'bh_configured_on__id', 'bh_port_name', 'bh_type', 'pop__id',
                      'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def prepare_results(self, qs):
@@ -696,37 +650,14 @@ class BackhaulDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     required_permissions = ('inventory.delete_backhaul',)
 
 
-def list_backhaul(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        backhauls = Backhaul.objects.filter(organization__id__in=organizations).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-    else:
-        backhauls = Backhaul.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": backhauls.count(),
-        "incomplete_results": False,
-        "items": list(backhauls)
-    }))
-
-def select_backhaul(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Backhaul.objects.get(id=pk).alias]))
-
-
 #**************************************** Sector *********************************************
+class SelectSectorListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Sector
+
+
 class SectorList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Sector data table rendering.
@@ -877,37 +808,15 @@ class SectorDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     success_url = reverse_lazy('sectors_list')
     required_permissions = ('inventory.delete_sector',)
 
-def list_sector(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        sectors = Sector.objects.filter(organization__id__in=organizations).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-    else:
-        sectors = Sector.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": sectors.count(),
-        "incomplete_results": False,
-        "items": list(sectors)
-    }))
-
-def select_sector(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Sector.objects.get(id=pk).alias]))
-
 
 #**************************************** Customer *********************************************
+class SelectCustomerListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Customer
+
+
 class CustomerList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Customer data table rendering.
@@ -1021,29 +930,15 @@ class CustomerDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     success_url = reverse_lazy('customers_list')
     required_permissions = ('inventory.delete_customer',)
 
-def list_customer(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    customers = Customer.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": customers.count(),
-        "incomplete_results": False,
-        "items": list(customers)
-    }))
-
-def select_customer(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Customer.objects.get(id=pk).alias]))
-
 
 #**************************************** Sub Station *********************************************
+class SelectSubStationListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = SubStation
+
+
 class SubStationList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Sub Station data table rendering.
@@ -1061,14 +956,15 @@ class SubStationList(PermissionsRequiredMixin, TemplateView):
         context = super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device__id', 'sTitle': 'Device Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device__ip_address', 'sTitle': 'Device IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
             {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto'},
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             ]
@@ -1092,10 +988,10 @@ class SubStationListingTable(PermissionsRequiredMixin,
     """
     model = SubStation
     required_permissions = ('inventory.view_substation',)
-    columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
-               'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
-                     'tower_height']
+    columns = ['alias', 'device__id', 'device__ip_address', 'antenna__alias', 'version', 'serial_no', 'building_height',
+               'tower_height', 'city__city_name', 'state__state_name', 'address', 'description']
+    order_columns = ['alias', 'device__id', 'device__ip_address', 'antenna__alias', 'version', 'serial_no', 'building_height',
+                     'tower_height', 'city__city_name', 'state__state_name']
 
     def get_initial_queryset(self):
         qs = super(SubStationListingTable, self).get_initial_queryset()
@@ -1122,13 +1018,10 @@ class SubStationListingTable(PermissionsRequiredMixin,
             try:
                 if 'device__id' in dct:
                     ss_device_alias = Device.objects.get(id=dct['device__id']).device_alias
-                    ss_device_ip = Device.objects.get(id=dct['device__id']).ip_address
-                    dct['device__id'] = "{} ({})".format(ss_device_alias, ss_device_ip)
+                    dct['device__id'] = "{}".format(ss_device_alias)
             except Exception as e:
                 logger.info("Sub Station Device not present. Exception: ", e.message)
 
-            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_substation'):
                 edit_action = '<a href="/sub_station/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
@@ -1187,36 +1080,14 @@ class SubStationDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView)
     required_permissions = ('inventory.delete_substation',)
 
 
-def list_sub_station(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        sub_stations = SubStation.objects.filter(organization__id__in=organizations).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-    else:
-        sub_stations = SubStation.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": sub_stations.count(),
-        "incomplete_results": False,
-        "items": list(sub_stations)
-    }))
-
-def select_sub_station(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([SubStation.objects.get(id=pk).alias]))
-
 #**************************************** Circuit *********************************************
+class SelectCircuitListView(Select2Mixin, ListView):
+    """
+    Provide selector data for jquery select2 when loading data from Remote.
+    """
+    model = Circuit
+
+
 class CircuitList(PermissionsRequiredMixin, TemplateView):
     """
     Class Based View for the Circuit data table rendering.
@@ -1237,8 +1108,10 @@ class CircuitList(PermissionsRequiredMixin, TemplateView):
             {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
             {'mData': 'sector__base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto'},
             {'mData': 'sector__alias', 'sTitle': 'Sector', 'sWidth': 'auto', },
+            {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
             {'mData': 'customer__alias', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'sub_station__alias', 'sTitle': 'Sub Station', 'sWidth': 'auto', },
+            {'mData': 'sub_station__device__ip_address', 'sTitle': 'Sub Station Configured On', 'sWidth': 'auto', },
             {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto',  'sClass': 'hidden-xs'}
         ]
@@ -1261,12 +1134,15 @@ class CircuitListingTable(PermissionsRequiredMixin,
     """
     model = Circuit
     required_permissions = ('inventory.view_circuit',)
-    columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
-               'sub_station__alias', 'date_of_acceptance', 'description']
-    order_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
-                     'sub_station__alias', 'date_of_acceptance', 'description']
-    search_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
-               'sub_station__alias']
+    columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
+               'sector__sector_configured_on__ip_address', 'customer__alias',
+               'sub_station__alias', 'sub_station__device__ip_address', 'date_of_acceptance', 'description']
+    order_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
+                     'sector__sector_configured_on__ip_address', 'customer__alias',
+                     'sub_station__alias', 'sub_station__device__ip_address', 'date_of_acceptance', 'description']
+    search_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias',
+                      'sector__sector_configured_on__ip_address', 'customer__alias',
+               'sub_station__alias', 'sub_station__device__ip_address']
 
     def get_initial_queryset(self):
         qs = super(CircuitListingTable, self).get_initial_queryset()
@@ -1345,37 +1221,6 @@ class CircuitDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
     template_name = 'circuit/circuit_delete.html'
     success_url = reverse_lazy('circuits_list')
     required_permissions = ('inventory.delete_circuit',)
-
-
-def list_circuit(request):
-    """
-    Used to return the list to the select2 element using ajax call.
-    """
-    org_id = request.GET['org']
-    sSearch = request.GET['sSearch']
-    if str(org_id) == "0":
-        class SelfObject: pass
-        self_object = SelfObject()
-        self_object.request = request
-        organizations = logged_in_user_organizations(self_object)
-        circuits = Circuit.objects.filter(organization__id__in=organizations).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-    else:
-        circuits = Circuit.objects.filter(organization__id=org_id).\
-            filter(alias__icontains=sSearch).values('id', 'alias')[:50]
-
-    return HttpResponse(json.dumps({
-        "total_count": circuits.count(),
-        "incomplete_results": False,
-        "items": list(circuits)
-    }))
-
-
-def select_circuit(request, pk):
-    """
-    Called when Select2 is created to allow the user to initialize the selection based on the value of the element select2 is attached to.
-    """
-    return HttpResponse(json.dumps([Circuit.objects.get(id=pk).alias]))
 
 
 #********************************* Circuit L2 Reports*******************************************
@@ -2350,10 +2195,13 @@ class ServiceThematicSettingsList(PermissionsRequiredMixin, ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
 
         is_global = False
+        is_admin = False
         if 'admin' in self.request.path:
             is_global = True
+            is_admin = True
 
         context['is_global'] = json.dumps(is_global)
+        context['is_admin'] = is_admin
 
         return context
 
@@ -2392,6 +2240,13 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
+            obj_id = dct.pop('id')
+            if self.request.GET.get('admin'):
+                actions='<a href="/serv_thematic_settings/admin/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/admin/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj_id)
+            else:
+                actions='<a href="/serv_thematic_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/serv_thematic_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(obj_id)
             threshold_config = ThresholdConfiguration.objects.get(id=int(dct['threshold_template']))
             image_string, range_text, full_string='','',''
             if dct['icon_settings'] and dct['icon_settings'] !='NULL':
@@ -2415,14 +2270,13 @@ class ServiceThematicSettingsListingTable(PermissionsRequiredMixin, ValuesQueryS
                     full_string += image_string + range_text + "(" + range_start_value + ", " + range_end_value + ")" + "</br>"
             else:
                 full_string='N/A'
-            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user_profile.values_list('id', flat=True)
+            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=obj_id).user_profile.values_list('id', flat=True)
             checkbox_checked_true='checked' if user_current_thematic_setting else ''
             dct.update(
-                threshold_template=threshold_config.name,
+                threshold_template=threshold_config.alias,
                 icon_settings= full_string,
-                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
-                actions='<a href="/serv_thematic_settings/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/serv_thematic_settings/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(obj_id),
+                actions=actions)
         return json_data
 
 
@@ -2454,16 +2308,20 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         and its inline formsets.
         """
         self.object = None
+        is_admin = False
         form_class = self.get_form_class()
         form = ServiceThematicSettingsForm()
         icon_settings = IconSettings.objects.all()
         threshold_configuration_form = ServiceThresholdConfigurationForm()
         live_polling_settings_form = ServiceLivePollingSettingsForm()
+        if 'admin' in self.request.path:
+            is_admin = True
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
-                                  icon_settings=icon_settings))
+                                  icon_settings=icon_settings,
+                                  is_admin=is_admin))
 
     def post(self, request, *args, **kwargs):
         """
@@ -2499,6 +2357,9 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         form.instance.icon_settings = icon_settings_values_list
         self.object = form.save()
 
+        if 'admin' in self.request.path:
+            return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
+
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, threshold_configuration_form, live_polling_settings_form):
@@ -2507,11 +2368,20 @@ class ServiceThematicSettingsCreate(PermissionsRequiredMixin, CreateView):
         data-filled forms and errors.
         """
         icon_settings = IconSettings.objects.all()
+        is_admin = False
+        icon_details_selected = dict()
+        if 'admin' in self.request.path:
+            is_admin = True
+        icon_settings_values_list = [ { key: form.data[key] }  for key in self.icon_settings_keys if form.data[key]]
+        for icon_setting in icon_settings_values_list:
+            icon_details_selected['range_' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
         return self.render_to_response(
             self.get_context_data(form=form,
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
-                                  icon_settings=icon_settings))
+                                  icon_settings=icon_settings,
+                                  icon_details_selected=icon_details_selected,
+                                  is_admin=is_admin))
 
 
 class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
@@ -2533,12 +2403,15 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         and its inline formsets.
         """
         self.object = self.get_object()
+        is_admin = False
         form_class = self.get_form_class()
         form = ServiceThematicSettingsForm(instance=self.object)
         icon_settings = IconSettings.objects.all()
         threshold_configuration_form = ServiceThresholdConfigurationForm(instance=self.object.threshold_template)
         icon_details = list()
         icon_details_selected = dict()
+        if 'admin' in self.request.path:
+            is_admin = True
         if form.instance.icon_settings!='NULL':
             form.instance.icon_settings
             form.instance.icon_settings = eval(form.instance.icon_settings)
@@ -2550,7 +2423,8 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
                                   icon_settings=icon_settings,
-                                  icon_details_selected=icon_details_selected,))
+                                  icon_details_selected=icon_details_selected,
+                                  is_admin=is_admin))
 
     def post(self, request, *args, **kwargs):
         """
@@ -2573,11 +2447,19 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         Called if all forms are valid. Updates ThematicSettings, LivePollingSettings and IconSettings.
         """
         self.object = self.get_object()
+        name = form.instance.name
+        alias = form.instance.alias
         icon_settings_values_list = [ { key: form.data[key] }  for key in self.icon_settings_keys if form.data[key]]
         form.instance.icon_settings = icon_settings_values_list
         form.save()
+        threshold_configuration_form.instance.name = name
+        threshold_configuration_form.instance.alias = alias
         threshold_configuration_form.save()
+        live_polling_settings_form.instance.name = name
+        live_polling_settings_form.instance.alias = alias
         live_polling_settings_form.save()
+        if 'admin' in self.request.path:
+            return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, threshold_configuration_form, live_polling_settings_form):
@@ -2586,7 +2468,10 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
         data-filled forms and errors.
         """
         icon_settings = IconSettings.objects.all()
+        is_admin = False
         icon_details = list()
+        if 'admin' in self.request.path:
+            is_admin = True
         icon_details_selected = dict()
         if form.instance.icon_settings!='NULL':
             form.instance.icon_settings = eval(form.instance.icon_settings)
@@ -2597,7 +2482,8 @@ class ServiceThematicSettingsUpdate(PermissionsRequiredMixin, UpdateView):
                                   threshold_configuration_form=threshold_configuration_form,
                                   live_polling_settings_form=live_polling_settings_form,
                                   icon_settings=icon_settings,
-                                  icon_details_selected=icon_details_selected))
+                                  icon_details_selected=icon_details_selected,
+                                  is_admin=is_admin))
 
 
 class ServiceThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
@@ -2609,9 +2495,20 @@ class ServiceThematicSettingsDelete(PermissionsRequiredMixin, UserLogDeleteMixin
     success_url = reverse_lazy('service_thematic_settings_list')
     required_permissions = ('inventory.delete_thematicsettings',)
 
+    def delete(self, request, *args, **kwargs):
+        """
+        Calls the delete() method on the fetched object and then
+        redirects to the success URL.
+        """
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.threshold_template.live_polling_template.delete()
+        if 'admin' in self.request.path:
+            return HttpResponseRedirect(reverse_lazy('service-admin-thematic-settings-list'))
+        return HttpResponseRedirect(success_url)
 
-#************************************ GIS Inventory Bulk Upload ******************************************
 
+# ************************************ GIS Inventory Bulk Upload ******************************************
 class GISInventoryBulkImportView(FormView):
     template_name = 'bulk_import/gis_bulk_import.html'
     success_url = '/bulk_import/'
@@ -2686,6 +2583,7 @@ class GISInventoryBulkImportView(FormView):
         bs_sheet = ""
         ss_sheet = ""
         ptp_sheet = ""
+        backhaul_sheet = ""
         technology = ""
 
         # fetching values form POST
@@ -2693,6 +2591,7 @@ class GISInventoryBulkImportView(FormView):
             bs_sheet = self.request.POST['bs_sheet'] if self.request.POST['bs_sheet'] else ""
             ss_sheet = self.request.POST['ss_sheet'] if self.request.POST['ss_sheet'] else ""
             ptp_sheet = self.request.POST['ptp_sheet'] if self.request.POST['ptp_sheet'] else ""
+            backhaul_sheet = self.request.POST['backhaul_sheet'] if self.request.POST['backhaul_sheet'] else ""
         except Exception as e:
             logger.info(e.message)
 
@@ -2700,6 +2599,7 @@ class GISInventoryBulkImportView(FormView):
         try:
             book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read(), formatting_info=True)
         except Exception as e:
+            logger.info("Workbook not uploaded. Exception: ", e.message)
             return render_to_response('bulk_import/gis_bulk_validator.html', {'headers': "",
                                                                               'filename': uploaded_file.name,
                                                                               'sheet_name': "",
@@ -2709,7 +2609,7 @@ class GISInventoryBulkImportView(FormView):
                                       context_instance=RequestContext(self.request))
 
         # execute only if a valid sheet is selected from form
-        if bs_sheet or ss_sheet or ptp_sheet:
+        if bs_sheet or ss_sheet or ptp_sheet or backhaul_sheet:
             if bs_sheet:
                 sheet = book.sheet_by_name(bs_sheet)
                 sheet_name = bs_sheet
@@ -2719,6 +2619,9 @@ class GISInventoryBulkImportView(FormView):
             elif ptp_sheet:
                 sheet = book.sheet_by_name(ptp_sheet)
                 sheet_name = ptp_sheet
+            elif backhaul_sheet:
+                sheet = book.sheet_by_name(backhaul_sheet)
+                sheet_name = backhaul_sheet
             else:
                 sheet = ""
                 sheet_name = ""
@@ -2730,13 +2633,17 @@ class GISInventoryBulkImportView(FormView):
                 technology = "PMP"
             elif "PTP" in sheet_name:
                 technology = "PTP"
+            elif "Backhaul" in sheet_name:
+                technology = "Backhaul"
             elif "Converter" in sheet_name:
                 technology = "Converter"
             else:
                 technology = "Unknown"
 
             keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+
             keys_list = [x.encode('utf-8').strip() for x in keys]
+
             complete_d = list()
             for row_index in xrange(1, sheet.nrows):
                 d = {keys[col_index].encode('utf-8').strip(): sheet.cell(row_index, col_index).value
@@ -2762,7 +2669,8 @@ class GISInventoryBulkImportView(FormView):
             result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id, complete_d, sheet_name, keys_list, full_time, uploaded_file.name)
             return HttpResponseRedirect('/bulk_import/')
         else:
-            print "No sheet is selected."
+            logger.info("No sheet is selected.")
+
         return super(GISInventoryBulkImportView, self).get(self, form)
 
 
@@ -2805,7 +2713,7 @@ class ExcelWriterRowByRow(View):
         except Exception as e:
             logger.info(e.message)
 
-        response = HttpResponse(mimetype='application/vnd.ms-excel')
+        response = HttpResponse(content_type='application/vnd.ms-excel')
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
         wb.save(response)
@@ -2844,6 +2752,8 @@ class BulkUploadValidData(View):
                     result = bulk_upload_wimax_bs_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 elif kwargs['sheetname'] == 'Wimax SS':
                     result = bulk_upload_wimax_ss_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
+                elif kwargs['sheetname'] == 'Backhaul':
+                    result = bulk_upload_backhaul_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 else:
                     result = ""
         except Exception as e:
@@ -3019,10 +2929,22 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
             except Exception as e:
                 logger.info(e)
 
+            # added on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            # modified on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['modified_on'] = convert_utc_to_local_timezone(dct['modified_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
             dct.update(actions='<a href="/bulk_import/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
                                 <a href="/bulk_import/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
             try:
-                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS']
+                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
                         dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
@@ -3326,2742 +3248,219 @@ class DownloadSelectedBSInventory(View):
         :Returns:
            - 'file' (file) - inventory excel sheet
     """
-    def get(self, request):
-        # get base stations id's list
-        bs_ids = eval(str(self.request.GET.get('base_stations', None)))
 
-        # list of ptp rows
-        ptp_rows = []
+    def post(self, request):
+        # get base stations id's as js array
+        base_stations = self.request.POST.get('base_stations', None)
 
-        # list of ptp bh rows
-        ptp_bh_rows = []
+        # result
+        result = {
+            'success': 0,
+            'message': "Something wrong with inventory download."
+        }
 
-        # list of pmp bs
-        pmp_bs_rows = []
+        # convert base stations id's string to a python list
+        bs_ids = eval(str(base_stations))
+        timestamp = time.time()
+        fulltime = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
 
-        # list of pmp sm sheet
-        pmp_sm_rows = []
+        # current user's username
+        username = self.request.user.username
 
-        # list of wimax bs rows
-        wimax_bs_rows = []
+        # create 'GISExcelDownload' object
+        gis_excel_download = GISExcelDownload()
+        gis_excel_download.status = 0
+        gis_excel_download.base_stations = base_stations
+        gis_excel_download.description = "Started downloading inventory on {}.".format(fulltime)
+        gis_excel_download.downloaded_by = username
+        gis_excel_download.save()
 
-        # list of wimax ss rows
-        wimax_ss_rows = []
+        # gis excel download id
+        gis_excel_download_id = gis_excel_download.id
 
-        # selected inventory
-        selected_inventory = dict()
-
-        # ptp dictionary
-        ptp_fields = ['State', 'City', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
-                      'QOS (BW)', 'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height', 'Polarization',
-                      'Antenna Type', 'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
-                      'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance', 'Throughput During Acceptance',
-                      'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU Used', 'BS Switch IP', 'Aggregation Switch',
-                      'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP', 'Converter Type',
-                      'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet',
-                      'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'BSO Circuit ID', 'SS City', 'SS State',
-                      'SS Circuit ID', 'SS Customer Name', 'SS Customer Address', 'SS BS Name', 'SS QOS (BW)',
-                      'SS Latitude', 'SS Longitude', 'SS Antenna Height', 'SS Antenna Type', 'SS Antenna Gain',
-                      'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
-                      'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
-                      'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC',
-                      'BS Product Type', 'BS Frequency', 'BS UAS', 'BS RSSI', 'BS Estimated Throughput',
-                      'BS Utilisation DL', 'BS Utilisation UL', 'BS Uptime', 'BS Link Distance', 'BS CBW', 'BS Latency',
-                      'BS PD', 'BS Auto Negotiation', 'BS Duplex', 'BS Speed', 'BS Link',
-                      'SS Product Type', 'SS Frequency', 'SS UAS', 'SS RSSI', 'SS Estimated Throughput',
-                      'SS Utilisation DL', 'SS Utilisation UL', 'SS Uptime', 'SS Link Distance', 'SS CBW', 'SS Latency',
-                      'SS PD', 'SS Auto Negotiation', 'SS Duplex', 'SS Speed', 'SS Link']
-
-        # ptp bh dictionary
-        ptp_bh_fields = ['State', 'City', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
-                         'QOS (BW)', 'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height', 'Polarization',
-                         'Antenna Type', 'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
-                         'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance', 'Throughput During Acceptance',
-                         'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU Used', 'BS Switch IP', 'Aggregation Switch',
-                         'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP', 'Converter Type',
-                         'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet',
-                         'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'BSO CKT ID', 'SS City', 'SS State',
-                         'SS Circuit ID', 'SS Customer Name', 'SS Customer Address', 'SS BS Name', 'SS QOS (BW)',
-                         'SS Latitude', 'SS Longitude', 'SS Antenna Height', 'SS Antenna Type', 'SS Antenna Gain',
-                         'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
-                         'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
-                         'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC', 'SS MIMO/Diversity',
-                         'SS Polarization',
-                         'BS Product Type', 'BS Frequency', 'BS UAS', 'BS RSSI', 'BS Estimated Throughput',
-                         'BS Utilisation DL', 'BS Utilisation UL', 'BS Uptime', 'BS Link Distance', 'BS CBW',
-                         'BS Latency', 'BS PD', 'BS Auto Negotiation', 'BS Duplex', 'BS Speed', 'BS Link',
-                         'SS Product Type', 'SS Frequency', 'SS UAS', 'SS RSSI', 'SS Estimated Throughput',
-                         'SS Utilisation DL', 'SS Utilisation UL', 'SS Uptime', 'SS Link Distance', 'SS CBW',
-                         'SS Latency', 'SS PD', 'SS Auto Negotiation', 'SS Duplex', 'SS Speed', 'SS Link']
-
-        # pmp bs dictionary
-        pmp_bs_fields = ['State', 'City', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
-                         'Infra Provider', 'Site ID', 'Building Height', 'Tower Height', 'Latitude', 'Longitude',
-                         'ODU IP', 'Sector Name', 'Make Of Antenna', 'Polarization', 'Antenna Tilt', 'Antenna Height',
-                         'Antenna Beamwidth', 'Azimuth', 'Sync Splitter Used', 'Type Of GPS', 'BS Switch IP',
-                         'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
-                         'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port', 'BH Capacity',
-                         'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname', 'PE IP', 'DR Site',
-                         'Sector ID', 'BSO Circuit ID', 'Frequency', 'Cell Radius', 'Utilization DL', 'Utilization UL',
-                         'Sector Uptime', 'TX Power', 'RX Power']
-
-        # pmp ss dictionary
-        pmp_sm_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
-                         'Building Height', 'Tower/Pole Height', 'Antenna Height', 'Antenna Beamwidth',
-                         'Polarization', 'Antenna Type', 'SS Mount Type', 'Ethernet Extender', 'Cable Length',
-                         'RSSI During Acceptance', 'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance',
-                         'Lens/Reflector', 'AP IP', 'Frequency', 'Sector ID', 'RSSI DL', 'RSSI UL', 'Jitter DL',
-                         'Jitter UL', 'Transmit Power', 'Polled SS IP', 'Polled SS MAC', 'Polled BS IP',
-                         'Polled BS MAC', 'Session Uptime', 'Latency', 'PD', 'Utilization DL', 'Utilization UL',
-                         'Auto Negotiation', 'Duplex', 'Speed', 'Link']
-
-        # wimax bs dictionary
-        wimax_bs_fields = ['State', 'City', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
-                           'Infra Provider', 'Site ID', 'Building Height', 'Tower Height', 'Latitude', 'Longitude',
-                           'IDU IP', 'Sector Name', 'Make Of Antenna', 'Polarization', 'Antenna Tilt', 'Antenna Height',
-                           'Antenna Beamwidth', 'Azimuth', 'Installation Of Splitter', 'Type Of GPS', 'BS Switch IP',
-                           'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP', 'POP Converter IP',
-                           'Converter Type', 'BH Configured On Switch/Converter', 'Switch/Converter Port',
-                           'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID', 'PE Hostname',
-                           'PE IP', 'DR Site', 'Sector ID', 'BSO Circuit ID', 'PMP', 'Vendor', 'Sector Utilization',
-                           'Frequency', 'MRC', 'IDU Type', 'System Uptime', 'Latency', 'PD']
-
-        # wimax ss dictionary
-        wimax_ss_fields = ['Customer Name', 'Circuit ID', 'SS IP', 'QOS (BW)', 'Latitude', 'Longitude', 'MAC',
-                           'Building Height', 'Tower/Pole Height', 'Antenna Height', 'Antenna Beamwidth',
-                           'Polarization', 'Antenna Type', 'SS Mount Type', 'Ethernet Extender', 'Cable Length',
-                           'RSSI During Acceptance', 'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance',
-                           'Vendor', 'Frequency', 'Sector ID', 'Polled SS IP', 'Polled SS MAC', 'RSSI DL', 'RSSI UL',
-                           'CINR DL', 'CINR UL', 'INTRF DL', 'INTRF UL', 'PTX', 'Session Uptime', 'Device Uptime',
-                           'Modulation UL FEC', 'Modulation DL FEC', 'Latency', 'PD', 'Utilization DL',
-                           'Utilization UL', 'Auto Negotiation', 'Duplex', 'Speed', 'Link']
-
-        # loop on base stations by using bs_ids list conatining base stations id's
         try:
-            for bs_id in bs_ids:
-                # base station
-                base_station = BaseStation.objects.get(pk=int(bs_id))
-
-                # sectors associated with base station (base_station)
-                sectors = base_station.sector.all()
-
-                # loop on sectors to get inventory rows by technology
-                for sector in sectors:
-                    # sector technology
-                    technology = sector.bs_technology.name
-                    if technology == "P2P":
-                        rows = self.get_selected_ptp_inventory(base_station, sector)
-                        # insert 'ptp' data dictionary in 'ptp_rows' list
-                        ptp_rows.extend(rows['ptp'])
-                        # insert 'ptp_bh' data dictionary in 'ptp_bh_rows' list
-                        ptp_bh_rows.extend(rows['ptp_bh'])
-                    elif technology == "PMP":
-                        rows = self.get_selected_pmp_inventory(base_station, sector)
-                        # insert 'pmp bs' data dictionary in 'pmp_bs_rows' list
-                        pmp_bs_rows.extend(rows['pmp_bs'])
-                        # insert 'pmp_sm' data dictionary in 'pmp_sm_rows' list
-                        pmp_sm_rows.extend(rows['pmp_sm'])
-                    elif technology == "WiMAX":
-                        rows = self.get_selected_wimax_inventory(base_station, sector)
-                        # insert 'wimax bs' data dictionary in 'wimax_bs_rows' list
-                        wimax_bs_rows.extend(rows['wimax_bs'])
-                        # insert 'wimax_ss' data dictionary in 'wimax_ss_rows' list
-                        wimax_ss_rows.extend(rows['wimax_ss'])
-                    else:
-                        pass
-
+            task = generate_gis_inventory_excel.delay(bs_ids, username, fulltime, gis_excel_download_id)
+            result['success'] = 1
+            result['message'] = "Inventory download started. Please check status \
+                                 <a href='/gis_downloaded_inventories/' target='_blank'>Here</a>."
         except Exception as e:
-            logger.info("Something wrongs with base station in initial loop. Exception: {}".format(e.message))
+            logger.info("Something wrong with inventory download. Exception: ", e.message)
 
-        # insert 'ptp rows' in selected inventory dictionary
-        selected_inventory['ptp'] = ptp_rows
+        return HttpResponse(json.dumps(result))
 
-        # insert 'ptp rows' in selected inventory dictionary
-        selected_inventory['ptp_bh'] = ptp_bh_rows
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(DownloadSelectedBSInventory, self).dispatch(*args, **kwargs)
 
-        # insert 'ptp rows' in selected inventory dictionary
-        selected_inventory['pmp_bs'] = pmp_bs_rows
 
-        # insert 'ptp rows' in selected inventory dictionary
-        selected_inventory['pmp_sm'] = pmp_sm_rows
-
-        # insert 'ptp rows' in selected inventory dictionary
-        selected_inventory['wimax_bs'] = wimax_bs_rows
-
-        # insert 'ptp rows' in selected inventory dictionary
-        selected_inventory['wimax_ss'] = wimax_ss_rows
-
-        # inventory excel workbook
-        inventory_wb = xlwt.Workbook()
-
-        # ***************************** PTP *******************************
-        # ptp bs excel rows
-        ptp_excel_rows = []
-        for val in ptp_rows:
-            temp_list = list()
-            for key in ptp_fields:
-                try:
-                    temp_list.append(val[key])
-                except Exception as e:
-                    temp_list.append("")
-                    logger.info(e.message)
-            ptp_excel_rows.append(temp_list)
-
-        # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
-        ws_ptp = inventory_wb.add_sheet("PTP")
-
-        # style for header row in excel
-        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
-
-        # creating excel headers
-        try:
-            for i, col in enumerate(ptp_fields):
-                ws_ptp.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
-        except Exception as e:
-            logger.info("Problem in creating excel headers. Exception: ", e.message)
-
-        # creating excel rows
-        try:
-            for i, l in enumerate(ptp_excel_rows):
-                i += 1
-                for j, col in enumerate(l):
-                    ws_ptp.write(i, j, col)
-        except Exception as e:
-            logger.info("Problem in creating excel rows. Exception: ", e.message)
-
-        # ***************************** PTP BH *******************************
-        # ptp bh bs excel rows
-        ptp_bh_excel_rows = []
-        for val in ptp_bh_rows:
-            temp_list = list()
-            for key in ptp_bh_fields:
-                try:
-                    temp_list.append(val[key])
-                except Exception as e:
-                    temp_list.append("")
-                    logger.info(e.message)
-            ptp_bh_excel_rows.append(temp_list)
-
-        # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
-        ws_ptp_bh = inventory_wb.add_sheet("PTP BH")
-
-        # style for header row in excel
-        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
-
-        # creating excel headers
-        try:
-            for i, col in enumerate(ptp_bh_fields):
-                ws_ptp_bh.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
-        except Exception as e:
-            logger.info("Problem in creating excel headers. Exception: ", e.message)
-
-        # creating excel rows
-        try:
-            for i, l in enumerate(ptp_bh_excel_rows):
-                i += 1
-                for j, col in enumerate(l):
-                    ws_ptp_bh.write(i, j, col)
-        except Exception as e:
-            logger.info("Problem in creating excel rows. Exception: ", e.message)
-
-        # ***************************** PMP BS *******************************
-        # pmp bs excel rows
-        pmp_bs_excel_rows = []
-        for val in pmp_bs_rows:
-            temp_list = list()
-            for key in pmp_bs_fields:
-                try:
-                    temp_list.append(val[key])
-                except Exception as e:
-                    temp_list.append("")
-                    logger.info(e.message)
-            pmp_bs_excel_rows.append(temp_list)
-
-        # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
-        ws_pmp_bs = inventory_wb.add_sheet("PMP BS")
-
-        # style for header row in excel
-        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
-
-        # creating excel headers
-        try:
-            for i, col in enumerate(pmp_bs_fields):
-                ws_pmp_bs.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
-        except Exception as e:
-            logger.info("Problem in creating excel headers. Exception: ", e.message)
-
-        # creating excel rows
-        try:
-            for i, l in enumerate(pmp_bs_excel_rows):
-                i += 1
-                for j, col in enumerate(l):
-                    ws_pmp_bs.write(i, j, col)
-        except Exception as e:
-            logger.info("Problem in creating excel rows. Exception: ", e.message)
-
-        # ***************************** PMP SM *******************************
-        # pmp sm excel rows
-        pmp_sm_excel_rows = []
-        for val in pmp_sm_rows:
-            temp_list = list()
-            for key in pmp_sm_fields:
-                try:
-                    temp_list.append(val[key])
-                except Exception as e:
-                    temp_list.append("")
-                    logger.info(e.message)
-            pmp_sm_excel_rows.append(temp_list)
-
-        # wimax sm sheet (contain by inventory excel workbook i.e inventory_wb)
-        ws_pmp_sm = inventory_wb.add_sheet("PMP SM")
-
-        # style for header row in excel
-        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
-
-        # creating excel headers
-        try:
-            for i, col in enumerate(pmp_sm_fields):
-                ws_pmp_sm.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
-        except Exception as e:
-            logger.info("Problem in creating excel headers. Exception: ", e.message)
-
-        # creating excel rows
-        try:
-            for i, l in enumerate(pmp_sm_excel_rows):
-                i += 1
-                for j, col in enumerate(l):
-                    ws_pmp_sm.write(i, j, col)
-        except Exception as e:
-            logger.info("Problem in creating excel rows. Exception: ", e.message)
-
-        # ***************************** Wimax BS *******************************
-        # remove duplicate dictionaries from wimax bs list
-        wimax_bs_rows = remove_duplicate_dict_from_list(wimax_bs_rows)
-
-        # wimax bs excel rows
-        wimax_bs_excel_rows = []
-        for val in wimax_bs_rows:
-            temp_list = list()
-            for key in wimax_bs_fields:
-                try:
-                    temp_list.append(val[key])
-                except Exception as e:
-                    temp_list.append("")
-                    logger.info(e.message)
-            wimax_bs_excel_rows.append(temp_list)
-
-        print "************************ WIMAX BS ROWS - ", wimax_bs_rows
-
-        # wimax bs sheet (contain by inventory excel workbook i.e inventory_wb)
-        ws_wimax_bs = inventory_wb.add_sheet("Wimax BS")
-
-        # style for header row in excel
-        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
-
-        # creating excel headers
-        try:
-            for i, col in enumerate(wimax_bs_fields):
-                ws_wimax_bs.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
-        except Exception as e:
-            logger.info("Problem in creating excel headers. Exception: ", e.message)
-
-        # creating excel rows
-        try:
-            for i, l in enumerate(wimax_bs_excel_rows):
-                i += 1
-                for j, col in enumerate(l):
-                    ws_wimax_bs.write(i, j, col)
-        except Exception as e:
-            logger.info("Problem in creating excel rows. Exception: ", e.message)
-
-        # ***************************** Wimax SS *******************************
-        # wimax ss excel rows
-        wimax_ss_excel_rows = []
-        for val in wimax_ss_rows:
-            temp_list = list()
-            for key in wimax_ss_fields:
-                try:
-                    temp_list.append(val[key])
-                except Exception as e:
-                    temp_list.append("")
-                    logger.info(e.message)
-            wimax_ss_excel_rows.append(temp_list)
-
-        # wimax ss sheet (contain by inventory excel workbook i.e inventory_wb)
-        ws_wimax_ss = inventory_wb.add_sheet("Wimax SS")
-
-        # style for header row in excel
-        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
-
-        # creating excel headers
-        try:
-            for i, col in enumerate(wimax_ss_fields):
-                ws_wimax_ss.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
-        except Exception as e:
-            logger.info("Problem in creating excel headers. Exception: ", e.message)
-
-        # creating excel rows
-        try:
-            for i, l in enumerate(wimax_ss_excel_rows):
-                i += 1
-                for j, col in enumerate(l):
-                    ws_wimax_ss.write(i, j, col)
-        except Exception as e:
-            logger.info("Problem in creating excel rows. Exception: ", e.message)
-
-        fname = 'bs_inventory.xls'
-        response = HttpResponse(mimetype="application/ms-excel")
-        response['Content-Disposition'] = 'attachment; filename=%s' % fname
-
-        # ***************************** Saving Excel (Start) ******************************
-        # saving bulk upload errors excel sheet
-        try:
-            inventory_wb.save(response)
-        except Exception as e:
-            logger.info(e.message)
-        # ***************************** Saving Excel (End) **********************************
-
-        return response
-
-    def get_selected_ptp_inventory(self, base_station, sector):
-        # result dictionary (contains ptp and ptp bh inventory)
-        result = dict()
-
-        # base station device name
-        bs_device_name = ""
-        try:
-            bs_device_name = sector.sector_configured_on.device_name
-        except Exception as e:
-            logger.info("PTP BS Device not exist. Exception: ", e.message)
-
-        # base station machine
-        bs_machine_name = ""
-        try:
-            bs_machine_name = sector.sector_configured_on.machine.name
-        except Exception as e:
-            logger.info("PTP BS Machine not found.  Exception: ", e.message)
-
-        # ptp rows list
-        ptp_rows = list()
-
-        # ptp bh rows list
-        ptp_bh_rows = list()
-
-        # circuits associated with current sector
-        circuits = sector.circuit_set.all()
-
-        # loop through circuits; if available to get inventory rows
-        if circuits:
-            for circuit in circuits:
-                # sub station
-                sub_station = circuit.sub_station
-
-                # sub station device name
-                ss_device_name = ""
-                try:
-                    ss_device_name = sub_station.device.device_name
-                except Exception as e:
-                    logger.info("PTP SS device not found. Exception: ", e.message)
-
-                # sub station machine
-                ss_machine_name = ""
-                try:
-                    ss_machine_name = sub_station.device.machine.name
-                except Exception as e:
-                    logger.info("PTP SS machine not found. Exception: ", e.message)
-
-                # backhaul
-                backhaul = base_station.backhaul
-
-                # customer
-                customer = circuit.customer
-
-                # ptp row dictionary
-                ptp_row = dict()
-
-                # state
-                try:
-                    ptp_row['State'] = State.objects.get(pk=base_station.state).state_name
-                except Exception as e:
-                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-                # city
-                try:
-                    ptp_row['City'] = City.objects.get(pk=base_station.city).city_name
-                except Exception as e:
-                    logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
-
-                # circuit id
-                try:
-                    if circuit.circuit_type == "Customer":
-                        ptp_row['Circuit ID'] = circuit.circuit_id
-                    elif circuit.circuit_type == "Backhaul":
-                        ptp_row['Circuit ID'] = circuit.circuit_id.split("#")[-1]
-                    else:
-                        pass
-                except Exception as e:
-                    logger.info("Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # circuit type
-                try:
-                    ptp_row['Circuit Type'] = circuit.circuit_type
-                except Exception as e:
-                    logger.info("Circuit Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # customer name
-                try:
-                    ptp_row['Customer Name'] = customer.alias
-                except Exception as e:
-                    logger.info("Customer Name not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs address
-                try:
-                    ptp_row['BS Address'] = base_station.address
-                except Exception as e:
-                    logger.info("BS Address not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs name
-                try:
-                    ptp_row['BS Name'] = base_station.alias
-                except Exception as e:
-                    logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
-
-                # qos bandwidth
-                try:
-                    ptp_row['QOS (BW)'] = circuit.qos_bandwidth
-                except Exception as e:
-                    logger.info("QOS (BW) not exist for base station ({}).".format(base_station.name, e.message))
-
-                # latitude
-                try:
-                    ptp_row['Latitude'] = base_station.latitude
-                except Exception as e:
-                    logger.info("Latitude not exist for base station ({}).".format(base_station.name, e.message))
-
-                # longitude
-                try:
-                    ptp_row['Longitude'] = base_station.longitude
-                except Exception as e:
-                    logger.info("Longitude not exist for base station ({}).".format(base_station.name, e.message))
-
-                # antenna height
-                try:
-                    ptp_row['Antenna Height'] = sector.antenna.height
-                except Exception as e:
-                    logger.info("Antenna Height not exist for base station ({}).".format(base_station.name, e.message))
-
-                # polarization
-                try:
-                    ptp_row['Polarization'] = sector.antenna.polarization
-                except Exception as e:
-                    logger.info("Polarization not exist for base station ({}).".format(base_station.name, e.message))
-
-                # antenna type
-                try:
-                    ptp_row['Antenna Type'] = sector.antenna.antenna_type
-                except Exception as e:
-                    logger.info("Antenna Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # antenna gain
-                try:
-                    ptp_row['Antenna Gain'] = sector.antenna.gain
-                except Exception as e:
-                    logger.info("Antenna Gain not exist for base station ({}).".format(base_station.name, e.message))
-
-                # antenna mount type
-                try:
-                    ptp_row['Antenna Mount Type'] = sector.antenna.mount_type
-                except Exception as e:
-                    logger.info("Antenna Mount Type not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # ethernet extender
-                try:
-                    ptp_row['Ethernet Extender'] = sub_station.ethernet_extender
-                except Exception as e:
-                    logger.info("Ethernet Extender not exist for base station ({}).".format(base_station.name,
-                                                                                            e.message))
-
-                # building height
-                try:
-                    ptp_row['Building Height'] = base_station.building_height
-                except Exception as e:
-                    logger.info("Building Height not exist for base station ({}).".format(base_station.name, e.message))
-
-                # tower/pole height
-                try:
-                    ptp_row['Tower/Pole Height'] = base_station.tower_height
-                except Exception as e:
-                    logger.info("Tower/Pole Height not exist for base station ({}).".format(base_station.name,
-                                                                                            e.message))
-
-                # cable length
-                try:
-                    ptp_row['Cable Length'] = sub_station.cable_length
-                except Exception as e:
-                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-                # rssi during acceptance
-                try:
-                    ptp_row['RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
-                except Exception as e:
-                    logger.info("RSSI During Acceptance not exist for base station ({}).".format(base_station.name,
-                                                                                                 e.message))
-
-                # throughput during acceptance
-                try:
-                    ptp_row['Throughput During Acceptance'] = circuit.throughput_during_acceptance
-                except Exception as e:
-                    logger.info("Throughput During Acceptance not exist for base station ({}).".format(
-                        base_station.name,
-                        e.message))
-
-                # date of acceptance
-                try:
-                    ptp_row['Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
-                except Exception as e:
-                    logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # bh bso
-                try:
-                    ptp_row['BH BSO'] = base_station.bh_bso
-                except Exception as e:
-                    logger.info("BH BSO not exist for base station ({}).".format(base_station.name, e.message))
-
-                # ip
-                try:
-                    ptp_row['IP'] = sector.sector_configured_on.ip_address
-                except Exception as e:
-                    logger.info("IP not exist for base station ({}).".format(base_station.name, e.message))
-
-                # mac
-                try:
-                    ptp_row['MAC'] = sector.sector_configured_on.mac_address
-                except Exception as e:
-                    logger.info("MAC not exist for base station ({}).".format(base_station.name, e.message))
-
-                # hssu used
-                try:
-                    ptp_row['HSSU Used'] = base_station.hssu_used
-                except Exception as e:
-                    logger.info("HSSU Used not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs switch ip
-                try:
-                    ptp_row['BS Switch IP'] = base_station.bs_switch.ip_address
-                except Exception as e:
-                    logger.info("BS Switch IP not exist for base station ({}).".format(base_station.name, e.message))
-
-                # aggregation switch
-                try:
-                    ptp_row['Aggregation Switch'] = backhaul.aggregator.ip_address
-                except Exception as e:
-                    logger.info("Aggregation Switch not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # aggregation swith port
-                try:
-                    ptp_row['Aggregation Switch Port'] = backhaul.aggregator_port_name
-                except Exception as e:
-                    logger.info("Aggregation Switch Port not exist for base station ({}).".format(base_station.name,
-                                                                                                  e.message))
-
-                # bs conveter ip
-                try:
-                    ptp_row['BS Converter IP'] = backhaul.bh_switch.ip_address
-                except Exception as e:
-                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pop converter ip
-                try:
-                    ptp_row['POP Converter IP'] = backhaul.pop.ip_address
-                except Exception as e:
-                    logger.info("POP Converter IP not exist for base station ({}).".format(base_station.name,
-                                                                                           e.message))
-
-                # converter type
-                try:
-                    ptp_row['Converter Type'] = DeviceType.objects.get(pk=backhaul.bh_switch.device_type).alias
-                except Exception as e:
-                    logger.info("Converter Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bh configured switch or converter
-                try:
-                    ptp_row['BH Configured On Switch/Converter'] = backhaul.bh_configured_on.ip_address
-                except Exception as e:
-                    logger.info("BH Configured On Switch/Converter not exist for base station ({}).".format(
-                        base_station.name,
-                        e.message))
-
-                # bh configured switch or converter port
-                try:
-                    ptp_row['Switch/Converter Port'] = backhaul.bh_port_name
-                except Exception as e:
-                    logger.info("Switch/Converter Port not exist for base station ({}).".format(base_station.name,
-                                                                                                e.message))
-
-                # bh capacity
-                try:
-                    ptp_row['BH Capacity'] = backhaul.bh_capacity
-                except Exception as e:
-                    logger.info("BH Capacity not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bh offnet/onnet
-                try:
-                    ptp_row['BH Offnet/Onnet'] = backhaul.bh_connectivity
-                except Exception as e:
-                    logger.info("BH Offnet/Onnet not exist for base station ({}).".format(base_station.name, e.message))
-
-                # backhaul type
-                try:
-                    ptp_row['Backhaul Type'] = backhaul.bh_type
-                except Exception as e:
-                    logger.info("Backhaul Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bh circuit id
-                try:
-                    ptp_row['BH Circuit ID'] = backhaul.bh_circuit_id
-                except Exception as e:
-                    logger.info("BH Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pe hostname
-                try:
-                    ptp_row['PE Hostname'] = backhaul.pe_hostname
-                except Exception as e:
-                    logger.info("PE Hostname not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pe ip
-                try:
-                    ptp_row['PE IP'] = backhaul.pe_ip
-                except Exception as e:
-                    logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bso circuit id
-                try:
-                    ptp_row['BSO Circuit ID'] = backhaul.ttsl_circuit_id
-                except Exception as e:
-                    logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # ********************************* PTP BS Perf Info *************************************
-                # bs product type
-                try:
-                    ptp_row['BS Product Type'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                                data_source='producttype').using(
-                                                                                alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Product Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs frequency
-                try:
-                    ptp_row['BS Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                             data_source='frequency').using(
-                                                                             alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Frequency not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs uas
-                try:
-                    ptp_row['BS UAS'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                     data_source='uas').using(
-                                                                     alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS UAS not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs rssi
-                try:
-                    ptp_row['BS RSSI'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                      data_source='rssi').using(
-                                                                      alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS RSSI not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs estimated throughput
-                try:
-                    ptp_row['BS Estimated Throughput'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                        service_name='radwin_service_throughput',
-                                                                        data_source='service_throughput').using(
-                                                                        alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Estimated Throughput not exist for base station ({}).".format(base_station.name,
-                                                                                                  e.message))
-
-                # bs utilization dl
-                try:
-                    ptp_row['BS Utilisation DL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                        service_name='radwin_dl_utilization',
-                                                                        data_source='Management_Port_on_Odu').using(
-                                                                        alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Utilisation DL not exist for base station ({}).".format(base_station.name,
-                                                                                            e.message))
-
-                # bs utilization ul
-                try:
-                    ptp_row['BS Utilisation UL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                        service_name='radwin_ul_utilization',
-                                                                        data_source='Management_Port_on_Odu').using(
-                                                                        alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Utilisation UL not exist for base station ({}).".format(base_station.name,
-                                                                                            e.message))
-
-                # bs uptime
-                try:
-                    ptp_row['BS Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                        service_name='radwin_uptime',
-                                                                        data_source='uptime').using(
-                                                                        alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Uptime not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs link distance
-                try:
-                    ptp_row['BS Link Distance'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                                 data_source='link_distance').using(
-                                                                                 alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Link Distance not exist for base station ({}).".format(base_station.name,
-                                                                                           e.message))
-
-                # bs cbw
-                try:
-                    ptp_row['BS CBW'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                       data_source='cbw').using(
-                                                                       alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS CBW not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs latency
-                try:
-                    ptp_row['BS Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
-                                                                         data_source='rta').using(
-                                                                         alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Latency not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs pl/pd (packet loss/drop)
-                try:
-                    ptp_row['BS PD'] = NetworkStatus.objects.filter(device_name=bs_device_name,
-                                                                    data_source='pl').using(
-                                                                    alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS PD not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs auto negotiation
-                try:
-                    ptp_row['BS Auto Negotiation'] = Status.objects.filter(device_name=bs_device_name,
-                                                                           service_name='radwin_autonegotiation_status',
-                                                                           data_source='1').using(
-                                                                           alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Auto Negotiation not exist for base station ({}).".format(base_station.name,
-                                                                                              e.message))
-
-                # bs duplex
-                try:
-                    ptp_row['BS Duplex'] = Status.objects.filter(device_name=bs_device_name,
-                                                                 service_name='radwin_port_mode_status',
-                                                                 data_source='1').using(
-                                                                 alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Duplex not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs speed
-                try:
-                    ptp_row['BS Speed'] = Status.objects.filter(device_name=bs_device_name,
-                                                                service_name='radwin_port_speed_status',
-                                                                data_source='1').using(
-                                                                alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Speed not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs link
-                try:
-                    ptp_row['BS Link'] = Status.objects.filter(device_name=bs_device_name,
-                                                               service_name='radwin_link_ethernet_status',
-                                                               data_source='Management_Port_on_Odu').using(
-                                                               alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("BS Link not exist for base station ({}).".format(base_station.name, e.message))
-
-                # ********************************** PTP Far End (SS) ************************************
-
-                # ss city
-                try:
-                    ptp_row['SS City'] = City.objects.get(pk=sub_station.city).city_name
-                except Exception as e:
-                    logger.info("SS City not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss state
-                try:
-                    ptp_row['SS State'] = State.objects.get(pk=sub_station.state).state_name
-                except Exception as e:
-                    logger.info("SS State not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss circuit id
-                try:
-                    if circuit.circuit_type == "Customer":
-                        ptp_row['SS Circuit ID'] = circuit.circuit_id
-                    elif circuit.circuit_type == "Backhaul":
-                        ptp_row['SS Circuit ID'] = circuit.circuit_id.split("#")[0]
-                    else:
-                        pass
-                except Exception as e:
-                    logger.info("SS Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss customer name
-                try:
-                    ptp_row['SS Customer Name'] = customer.alias
-                except Exception as e:
-                    logger.info("SS Customer Name not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss customer address
-                try:
-                    ptp_row['SS Customer Address'] = customer.address
-                except Exception as e:
-                    logger.info("SS Customer Address not exist for sub station ({}).".format(sub_station.name,
-                                                                                             e.message))
-
-                # ss bs name
-                try:
-                    ptp_row['SS BS Name'] = base_station.alias
-                except Exception as e:
-                    logger.info("SS BS Name not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss qos bandwidth
-                try:
-                    ptp_row['SS QOS (BW)'] = circuit.qos_bandwidth
-                except Exception as e:
-                    logger.info("SS QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss latitude
-                try:
-                    ptp_row['SS Latitude'] = sub_station.latitude
-                except Exception as e:
-                    logger.info("SS Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss longitude
-                try:
-                    ptp_row['SS Longitude'] = sub_station.longitude
-                except Exception as e:
-                    logger.info("SS Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss antenna height
-                try:
-                    ptp_row['SS Antenna Height'] = sub_station.antenna.height
-                except Exception as e:
-                    logger.info("SS Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss antenna type
-                try:
-                    ptp_row['SS Antenna Type'] = sub_station.antenna.antenna_type
-                except Exception as e:
-                    logger.info("SS Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss antenna gain
-                try:
-                    ptp_row['SS Antenna Gain'] = sub_station.antenna.gain
-                except Exception as e:
-                    logger.info("SS Antenna Gain not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss antenna mount type
-                try:
-                    ptp_row['SS Antenna Mount Type'] = sub_station.antenna.mount_type
-                except Exception as e:
-                    logger.info("SS Antenna Mount Type not exist for sub station ({}).".format(sub_station.name,
-                                                                                               e.message))
-
-                # ss ethernet extender
-                try:
-                    ptp_row['SS Ethernet Extender'] = sub_station.ethernet_extender
-                except Exception as e:
-                    logger.info("SS Ethernet Extender not exist for sub station ({}).".format(sub_station.name,
-                                                                                              e.message))
-
-                # ss building height
-                try:
-                    ptp_row['SS Building Height'] = sub_station.building_height
-                except Exception as e:
-                    logger.info("SS Building Height not exist for sub station ({}).".format(sub_station.name,
-                                                                                            e.message))
-
-                # ss tower or pole height
-                try:
-                    ptp_row['SS Tower/Pole Height'] = sub_station.tower_height
-                except Exception as e:
-                    logger.info("SS Tower/Pole Height not exist for sub station ({}).".format(sub_station.name,
-                                                                                              e.message))
-
-                # ss cable length
-                try:
-                    ptp_row['SS Cable Length'] = sub_station.cable_length
-                except Exception as e:
-                    logger.info("SS Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss rssi during acceptance
-                try:
-                    ptp_row['SS RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
-                except Exception as e:
-                    logger.info("SS RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                                   e.message))
-
-                # ss throughput during acceptance
-                try:
-                    ptp_row['SS Throughput During Acceptance'] = circuit.throughput_during_acceptance
-                except Exception as e:
-                    logger.info("SS Throughput During Acceptance not exist for sub station ({}).".format(
-                        sub_station.name,
-                        e.message))
-
-                # ss date of acceptance
-                try:
-                    ptp_row['SS Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
-                except Exception as e:
-                    logger.info("SS Date Of Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                               e.message))
-
-                # ss bh bso
-                try:
-                    ptp_row['SS BH BSO'] = base_station.bh_bso
-                except Exception as e:
-                    logger.info("SS BH BSO not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss ip
-                try:
-                    ptp_row['SS IP'] = sub_station.device.ip_address
-                except Exception as e:
-                    logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss mac
-                try:
-                    ptp_row['SS MAC'] = sub_station.device.mac_address
-                except Exception as e:
-                    logger.info("SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss polarization
-                try:
-                    ptp_row['SS Polarization'] = sub_station.antenna.polarization
-                except Exception as e:
-                    logger.info("SS Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ********************************* PTP SS Perf Info *************************************
-                # ss product type
-                try:
-                    ptp_row['SS Product Type'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source='producttype').using(
-                                                                                alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Product Type not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss frequency
-                try:
-                    ptp_row['SS Frequency'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                             data_source='frequency').using(
-                                                                             alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss uas
-                try:
-                    ptp_row['SS UAS'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                     data_source='uas').using(
-                                                                     alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS UAS not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss rssi
-                try:
-                    ptp_row['SS RSSI'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                      data_source='rssi').using(
-                                                                      alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS RSSI not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss estimated throughput
-                try:
-                    ptp_row['SS Estimated Throughput'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                        service_name='radwin_service_throughput',
-                                                                        data_source='service_throughput').using(
-                                                                        alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Estimated Throughput not exist for sub station ({}).".format(sub_station.name,
-                                                                                                 e.message))
-
-                # ss utilization dl
-                try:
-                    ptp_row['SS Utilisation DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                        service_name='radwin_dl_utilization',
-                                                                        data_source='Management_Port_on_Odu').using(
-                                                                        alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Utilisation DL not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
-
-                # ss utilization ul
-                try:
-                    ptp_row['SS Utilisation UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                        service_name='radwin_ul_utilization',
-                                                                        data_source='Management_Port_on_Odu').using(
-                                                                        alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Utilisation UL not exist for sub station ({}).".format(sub_station.name,
-                                                                                           e.message))
-
-                # ss uptime
-                try:
-                    ptp_row['SS Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                        service_name='radwin_uptime',
-                                                                        data_source='uptime').using(
-                                                                        alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss link distance
-                try:
-                    ptp_row['SS Link Distance'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                                 data_source='link_distance').using(
-                                                                                 alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Link Distance not exist for sub station ({}).".format(sub_station.name,
-                                                                                          e.message))
-
-                # ss cbw
-                try:
-                    ptp_row['SS CBW'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                       data_source='cbw').using(
-                                                                       alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS CBW not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss latency
-                try:
-                    ptp_row['SS Latency'] = NetworkStatus.objects.filter(device_name=ss_device_name,
-                                                                         data_source='rta').using(
-                                                                         alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Latency not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss pl/pd (packet loss/drop)
-                try:
-                    ptp_row['SS PD'] = NetworkStatus.objects.filter(device_name=ss_device_name,
-                                                                    data_source='pl').using(
-                                                                    alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS PD not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss auto negotiation
-                try:
-                    ptp_row['SS Auto Negotiation'] = Status.objects.filter(device_name=ss_device_name,
-                                                                           service_name='radwin_autonegotiation_status',
-                                                                           data_source='1').using(
-                                                                           alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Auto Negotiation not exist for sub station ({}).".format(sub_station.name,
-                                                                                             e.message))
-
-                # ss duplex
-                try:
-                    ptp_row['SS Duplex'] = Status.objects.filter(device_name=ss_device_name,
-                                                                 service_name='radwin_port_mode_status',
-                                                                 data_source='1').using(
-                                                                 alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss speed
-                try:
-                    ptp_row['SS Speed'] = Status.objects.filter(device_name=ss_device_name,
-                                                                service_name='radwin_port_speed_status',
-                                                                data_source='1').using(
-                                                                alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Speed not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss link
-                try:
-                    ptp_row['SS Link'] = Status.objects.filter(device_name=ss_device_name,
-                                                               service_name='radwin_link_ethernet_status',
-                                                               data_source='Management_Port_on_Odu').using(
-                                                               alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("SS Link not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # filter 'ptp' and 'ptp bh' rows
-                if circuit.circuit_type == "Customer":
-                    ptp_rows.append(ptp_row)
-                elif circuit.circuit_type == "Backhaul":
-                    ptp_bh_rows.append(ptp_row)
-                else:
-                    pass
-
-        # insert 'ptp' rows in result dictionary
-        result['ptp'] = ptp_rows if ptp_rows else ""
-
-        # insert 'ptp bh' rows in result dictionary
-        result['ptp_bh'] = ptp_bh_rows if ptp_bh_rows else ""
-
-        print "****************************** ptp (result) - ", result
-        return result
-
-    def get_selected_pmp_inventory(self, base_station, sector):
-        # result dictionary (contains ptp and ptp bh inventory)
-        result = dict()
-
-        # base station device name
-        bs_device_name = ""
-        try:
-            bs_device_name = sector.sector_configured_on.device_name
-        except Exception as e:
-            logger.info("PMP BS Device not exist. Exception: ", e.message)
-
-        # base station machine
-        bs_machine_name = ""
-        try:
-            bs_machine_name = sector.sector_configured_on.machine.name
-        except Exception as e:
-            logger.info("PMP BS Machine not found.  Exception: ", e.message)
-
-        # pmp bs rows list
-        pmp_bs_rows = list()
-
-        # pmp sm rows list
-        pmp_sm_rows = list()
-
-        # circuits associated with current sector
-        circuits = sector.circuit_set.all()
-
-        # loop through circuits; if available to get inventory rows
-        if circuits:
-            for circuit in circuits:
-                # sub station
-                sub_station = circuit.sub_station
-
-                # sub station device name
-                ss_device_name = ""
-                try:
-                    ss_device_name = sub_station.device.device_name
-                except Exception as e:
-                    logger.info("PMP SS device not found. Exception: ", e.message)
-
-                # sub station machine
-                ss_machine_name = ""
-                try:
-                    ss_machine_name = sub_station.device.machine.name
-                except Exception as e:
-                    logger.info("PMP SS machine not found. Exception: ", e.message)
-
-                # backhaul
-                backhaul = base_station.backhaul
-
-                # customer
-                customer = circuit.customer
-
-                # ptp row dictionary
-                pmp_bs_row = dict()
-
-                # ptp row dictionary
-                pmp_sm_row = dict()
-
-                # *********************************** Near End (PMP BS) *********************************
-
-                # state
-                try:
-                    pmp_bs_row['State'] = State.objects.get(pk=base_station.state).state_name
-                except Exception as e:
-                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-                # city
-                try:
-                    pmp_bs_row['City'] = City.objects.get(pk=base_station.city).city_name
-                except Exception as e:
-                    logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
-
-                # address
-                try:
-                    pmp_bs_row['Address'] = base_station.address
-                except Exception as e:
-                    logger.info("Address not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs name
-                try:
-                    pmp_bs_row['BS Name'] = base_station.alias
-                except Exception as e:
-                    logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
-
-                # type of bs (technology)
-                try:
-                    pmp_bs_row['Type Of BS (Technology)'] = base_station.bs_type
-                except Exception as e:
-                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name,
-                                                                                                  e.message))
-
-                # site type
-                try:
-                    pmp_bs_row['Site Type'] = base_station.bs_site_type
-                except Exception as e:
-                    logger.info("Site Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # infra provider
-                try:
-                    pmp_bs_row['Infra Provider'] = base_station.infra_provider
-                except Exception as e:
-                    logger.info("Infra Provider not exist for base station ({}).".format(base_station.name, e.message))
-
-                # building height
-                try:
-                    pmp_bs_row['Building Height'] = base_station.building_height
-                except Exception as e:
-                    logger.info("Building Height not exist for base station ({}).".format(base_station.name, e.message))
-
-                # tower height
-                try:
-                    pmp_bs_row['Tower Height'] = base_station.tower_height
-                except Exception as e:
-                    logger.info("Tower Height not exist for base station ({}).".format(base_station.name, e.message))
-
-                # latitude
-                try:
-                    pmp_bs_row['Latitude'] = base_station.latitude
-                except Exception as e:
-                    logger.info("Latitude not exist for base station ({}).".format(base_station.name, e.message))
-
-                # longitude
-                try:
-                    pmp_bs_row['Longitude'] = base_station.longitude
-                except Exception as e:
-                    logger.info("Longitude not exist for base station ({}).".format(base_station.name, e.message))
-
-                # odu ip
-                try:
-                    pmp_bs_row['ODU IP'] = sector.sector_configured_on.ip_address
-                except Exception as e:
-                    logger.info("ODU IP not exist for base station ({}).".format(base_station.name, e.message))
-
-                # sector name
-                try:
-                    pmp_bs_row['Sector Name'] = sector.name.split("_")[-1]
-                except Exception as e:
-                    logger.info("Sector Name not exist for base station ({}).".format(base_station.name, e.message))
-
-                # make of antenna
-                try:
-                    pmp_bs_row['Make Of Antenna'] = sector.antenna.make_of_antenna
-                except Exception as e:
-                    logger.info("Make Of Antenna not exist for base station ({}).".format(base_station.name,
-                                                                                          e.message))
-
-                # polarization
-                try:
-                    pmp_bs_row['Polarization'] = sector.antenna.polarization
-                except Exception as e:
-                    logger.info("Polarization not exist for base station ({}).".format(base_station.name, e.message))
-
-                # antenna tilt
-                try:
-                    pmp_bs_row['Antenna Tilt'] = sector.antenna.tilt
-                except Exception as e:
-                    logger.info("Antenna Tilt not exist for base station ({}).".format(base_station.name, e.message))
-
-                # antenna height
-                try:
-                    pmp_bs_row['Antenna Height'] = sector.antenna.height
-                except Exception as e:
-                    logger.info("Antenna Height not exist for base station ({}).".format(base_station.name, e.message))
-
-                # antenna beamwidth
-                try:
-                    pmp_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
-                except Exception as e:
-                    logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name,
-                                                                                            e.message))
-
-                # azimuth
-                try:
-                    pmp_bs_row['Azimuth'] = sector.antenna.azimuth_angle
-                except Exception as e:
-                    logger.info("Azimuth not exist for base station ({}).".format(base_station.name, e.message))
-
-                # sync splitter used
-                try:
-                    pmp_bs_row['Sync Splitter Used'] = sector.antenna.sync_splitter_used
-                except Exception as e:
-                    logger.info("Sync Splitter Used not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # type of gps
-                try:
-                    pmp_bs_row['Type Of GPS'] = base_station.gps_type
-                except Exception as e:
-                    logger.info("Type Of GPS not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs switch ip
-                try:
-                    pmp_bs_row['BS Switch IP'] = base_station.bs_switch.ip_address
-                except Exception as e:
-                    logger.info("BS Switch IP not exist for base station ({}).".format(base_station.name, e.message))
-
-                # aggregation switch
-                try:
-                    pmp_bs_row['Aggregation Switch'] = backhaul.aggregator.ip_address
-                except Exception as e:
-                    logger.info("Aggregation Switch not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # aggregation swith port
-                try:
-                    pmp_bs_row['Aggregation Switch Port'] = backhaul.aggregator_port_name
-                except Exception as e:
-                    logger.info("Aggregation Switch Port not exist for base station ({}).".format(base_station.name,
-                                                                                                  e.message))
-
-                # bs conveter ip
-                try:
-                    pmp_bs_row['BS Converter IP'] = backhaul.bh_switch.ip_address
-                except Exception as e:
-                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pop converter ip
-                try:
-                    pmp_bs_row['POP Converter IP'] = backhaul.pop.ip_address
-                except Exception as e:
-                    logger.info("POP Converter IP not exist for base station ({}).".format(base_station.name,
-                                                                                           e.message))
-
-                # converter type
-                try:
-                    pmp_bs_row['Converter Type'] = DeviceType.objects.get(pk=backhaul.bh_switch.device_type).alias
-                except Exception as e:
-                    logger.info("Converter Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bh configured switch or converter
-                try:
-                    pmp_bs_row['BH Configured On Switch/Converter'] = backhaul.bh_configured_on.ip_address
-                except Exception as e:
-                    logger.info("BH Configured On Switch/Converter not exist for base station ({}).".format(
-                        base_station.name,
-                        e.message))
-
-                # bh configured switch or converter port
-                try:
-                    pmp_bs_row['Switch/Converter Port'] = backhaul.bh_port_name
-                except Exception as e:
-                    logger.info("Switch/Converter Port not exist for base station ({}).".format(base_station.name,
-                                                                                                e.message))
-
-                # bh capacity
-                try:
-                    pmp_bs_row['BH Capacity'] = backhaul.bh_capacity
-                except Exception as e:
-                    logger.info("BH Capacity not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bh offnet/onnet
-                try:
-                    pmp_bs_row['BH Offnet/Onnet'] = backhaul.bh_connectivity
-                except Exception as e:
-                    logger.info("BH Offnet/Onnet not exist for base station ({}).".format(base_station.name, e.message))
-
-                # backhaul type
-                try:
-                    pmp_bs_row['Backhaul Type'] = backhaul.bh_type
-                except Exception as e:
-                    logger.info("Backhaul Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bh circuit id
-                try:
-                    pmp_bs_row['BH Circuit ID'] = backhaul.bh_circuit_id
-                except Exception as e:
-                    logger.info("BH Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pe hostname
-                try:
-                    pmp_bs_row['PE Hostname'] = backhaul.pe_hostname
-                except Exception as e:
-                    logger.info("PE Hostname not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pe ip
-                try:
-                    pmp_bs_row['PE IP'] = backhaul.pe_ip
-                except Exception as e:
-                    logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bso circuit id
-                try:
-                    pmp_bs_row['BSO Circuit ID'] = backhaul.ttsl_circuit_id
-                except Exception as e:
-                    logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # dr site
-                try:
-                    pmp_bs_row['DR Site'] = sector.dr_site
-                except Exception as e:
-                    logger.info("DR Site not exist for base station ({}).".format(base_station.name, e.message))
-
-                # sector id
-                try:
-                    pmp_bs_row['Sector ID'] = sector.sector_id
-                except Exception as e:
-                    logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # ************************************* BS Perf Parameters **********************************
-                # frequency
-                try:
-                    pmp_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                             data_source='frequency').using(
-                                                                             alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
-
-                # cell radius
-                try:
-                    pmp_bs_row['Cell Radius'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                               data_source='cell_radius').using(
-                                                                               alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Cell Radius not exist for base station ({}).".format(base_station.name, e.message))
-
-                # dl utilization
-                try:
-                    pmp_bs_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                                data_source='dl_utilization').using(
-                                                                                alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Utilization DL not exist for base station ({}).".format(base_station.name, e.message))
-
-                # ul utilization
-                try:
-                    pmp_bs_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                                data_source='ul_utilization').using(
-                                                                                alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Utilization UL not exist for base station ({}).".format(base_station.name, e.message))
-
-                # uptime
-                try:
-                    pmp_bs_row['Sector Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                               data_source='uptime').using(
-                                                                               alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Sector Uptime not exist for base station ({}).".format(base_station.name, e.message))
-
-                # transmit power
-                try:
-                    pmp_bs_row['TX Power'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                            data_source='transmit_power').using(
-                                                                            alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("TX Power not exist for base station ({}).".format(base_station.name, e.message))
-
-                # frequency
-                try:
-                    pmp_bs_row['RX Power'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                            data_source='commanded_rx_power').using(
-                                                                            alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("RX Power not exist for base station ({}).".format(base_station.name, e.message))
-
-                # ********************************** Far End (PMP SM) ********************************
-
-                # customer name
-                try:
-                    pmp_sm_row['Customer Name'] = customer.alias
-                except Exception as e:
-                    logger.info("Customer Name not exist for base station ({}).".format(sub_station.name, e.message))
-
-                # circuit id
-                try:
-                    pmp_sm_row['Circuit ID'] = circuit.circuit_id
-                except Exception as e:
-                    logger.info("Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss ip
-                try:
-                    pmp_sm_row['SS IP'] = sub_station.device.ip_address
-                except Exception as e:
-                    logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # qos bandwidth
-                try:
-                    pmp_sm_row['QOS (BW)'] = circuit.qos_bandwidth
-                except Exception as e:
-                    logger.info("QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # latitude
-                try:
-                    pmp_sm_row['Latitude'] = sub_station.latitude
-                except Exception as e:
-                    logger.info("Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # longitude
-                try:
-                    pmp_sm_row['Longitude'] = sub_station.longitude
-                except Exception as e:
-                    logger.info("Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # mac address
-                try:
-                    pmp_sm_row['MAC'] = State.objects.get(pk=base_station.state).state_name
-                except Exception as e:
-                    logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # building height
-                try:
-                    pmp_sm_row['Building Height'] = sub_station.building_height
-                except Exception as e:
-                    logger.info("Building Height not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # tower/pole height
-                try:
-                    pmp_sm_row['Tower/Pole Height'] = sub_station.tower_height
-                except Exception as e:
-                    logger.info("Tower/Pole Height not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # antenna height
-                try:
-                    pmp_sm_row['Antenna Height'] = sub_station.antenna.height
-                except Exception as e:
-                    logger.info("Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # antenna beamwidth
-                try:
-                    pmp_sm_row['Antenna Beamwidth'] = sub_station.antenna.beam_width
-                except Exception as e:
-                    logger.info("Antenna Beamwidth not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # polarization
-                try:
-                    pmp_sm_row['Polarization'] = sub_station.antenna.polarization
-                except Exception as e:
-                    logger.info("Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # antenna type
-                try:
-                    pmp_sm_row['Antenna Type'] = sub_station.antenna.antenna_type
-                except Exception as e:
-                    logger.info("Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss mount type
-                try:
-                    pmp_sm_row['SS Mount Type'] = sub_station.antenna.mount_type
-                except Exception as e:
-                    logger.info("SS Mount Type not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ethernet extender
-                try:
-                    pmp_sm_row['Ethernet Extender'] = sub_station.ethernet_extender
-                except Exception as e:
-                    logger.info("Ethernet Extender not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # cable length
-                try:
-                    pmp_sm_row['Cable Length'] = sub_station.cable_length
-                except Exception as e:
-                    logger.info("Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # rssi during acceptance
-                try:
-                    pmp_sm_row['RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
-                except Exception as e:
-                    logger.info("RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                                e.message))
-
-                # cinr during acceptance
-                try:
-                    pmp_sm_row['CINR During Acceptance'] = circuit.dl_cinr_during_acceptance
-                except Exception as e:
-                    logger.info("CINR During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                                e.message))
-
-                # Customer Address
-                try:
-                    pmp_sm_row['Customer Address'] = customer.address
-                except Exception as e:
-                    logger.info("Customer Address not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # date of acceptance
-                try:
-                    pmp_sm_row['Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
-                except Exception as e:
-                    logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # ************************************* SS Perf Parameters **********************************
-                # frequency
-                try:
-                    pmp_sm_row['Frequency'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                             data_source='frequency').using(
-                                                                             alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # dl rssi
-                try:
-                    pmp_sm_row['RSSI DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                         data_source='dl_rssi').using(
-                                                                         alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ul rssi
-                try:
-                    pmp_sm_row['RSSI UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                         data_source='ul_rssi').using(
-                                                                         alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # dl jitter
-                try:
-                    pmp_sm_row['Jitter DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                           data_source='dl_jitter').using(
-                                                                           alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Jitter DL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ul jitter
-                try:
-                    pmp_sm_row['Jitter UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                           data_source='ul_jitter').using(
-                                                                           alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Jitter UL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # transmit power
-                try:
-                    pmp_sm_row['Transmit Power'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                                  data_source='transmit_power').using(
-                                                                                  alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Transmit Power not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # polles ss ip
-                try:
-                    pmp_sm_row['Polled SS IP'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source='ss_ip').using(
-                                                                                alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # polled ss mac
-                try:
-                    pmp_sm_row['Polled SS MAC'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                                 data_source='ss_mac').using(
-                                                                                 alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # polled bs ip
-                try:
-                    pmp_sm_row['Polled BS IP'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source='bs_ip').using(
-                                                                                alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Polled BS IP not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # polles bs mac
-                try:
-                    pmp_sm_row['Polled BS MAC'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                             data_source='ss_connected_bs_mac').using(
-                                                                             alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Polled BS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # uptime
-                try:
-                    pmp_sm_row['Session Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source='uptime').using(
-                                                                                alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # latency
-                try:
-                    pmp_sm_row['Latency'] = NetworkStatus.objects.filter(device_name=ss_device_name,
-                                                                         data_source='rta').using(
-                                                                         alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # pl
-                try:
-                    pmp_sm_row['PD'] = NetworkStatus.objects.filter(device_name=ss_device_name,
-                                                                    data_source='pl').using(
-                                                                    alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # dl utilization
-                try:
-                    pmp_sm_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source='dl_utilization').using(
-                                                                                alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ul utilization
-                try:
-                    pmp_sm_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source='ul_utilization').using(
-                                                                                alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # auto negotiation
-                try:
-                    pmp_sm_row['Auto Negotiation'] = Status.objects.filter(device_name=ss_device_name,
-                                                                           data_source='autonegotiation').using(
-                                                                           alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # duplex
-                try:
-                    pmp_sm_row['Duplex'] = Status.objects.filter(device_name=ss_device_name,
-                                                                 data_source='duplex').using(
-                                                                 alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # speed
-                try:
-                    pmp_sm_row['Speed'] = Status.objects.filter(device_name=ss_device_name,
-                                                                data_source='ss_speed').using(
-                                                                alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # link state
-                try:
-                    pmp_sm_row['Link'] = Status.objects.filter(device_name=ss_device_name,
-                                                               data_source='link_state').using(
-                                                               alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # append 'pmp_bs_row' dictionary in 'pmp_bs_rows'
-                pmp_bs_rows.append(pmp_bs_row)
-
-                # append 'pmp_sm_row' dictionary in 'pmp_sm_rows'
-                pmp_sm_rows.append(pmp_sm_row)
-
-        # insert 'pmp bs' rows in result dictionary
-        result['pmp_bs'] = pmp_bs_rows if pmp_bs_rows else ""
-
-        # insert 'pmp sm' rows in result dictionary
-        result['pmp_sm'] = pmp_sm_rows if pmp_sm_rows else ""
-
-        print "****************************** pmp (result) - ", result
-
-        return result
-
-    def get_selected_wimax_inventory(self, base_station, sector):
-        # result dictionary (contains ptp and ptp bh inventory)
-        result = dict()
-
-        # base station device name
-        bs_device_name = ""
-        try:
-            bs_device_name = sector.sector_configured_on.device_name
-        except Exception as e:
-            logger.info("BS Device not exist. Exception: ", e.message)
-
-        # base station machine
-        bs_machine_name = ""
-        try:
-            bs_machine_name = sector.sector_configured_on.machine.name
-        except Exception as e:
-            logger.info("BS Machine not found.  Exception: ", e.message)
-
-        # wimax bs rows list
-        wimax_bs_rows = list()
-
-        # wimax ss rows list
-        wimax_ss_rows = list()
-
-        # circuits associated with current sector
-        circuits = sector.circuit_set.all()
-
-        # loop through circuits; if available to get inventory rows
-        if circuits:
-            for circuit in circuits:
-                # sub station
-                sub_station = circuit.sub_station
-
-                # sub station device name
-                ss_device_name = ""
-                try:
-                    ss_device_name = sub_station.device.device_name
-                except Exception as e:
-                    logger.info("WiMAX SS device not found. Exception: ", e.message)
-
-                # sub station machine
-                ss_machine_name = ""
-                try:
-                    ss_machine_name = sub_station.device.machine.name
-                except Exception as e:
-                    logger.info("WiMAX SS machine not found. Exception: ", e.message)
-
-                # backhaul
-                backhaul = base_station.backhaul
-
-                # customer
-                customer = circuit.customer
-
-                # ptp row dictionary
-                wimax_bs_row = dict()
-
-                # ptp row dictionary
-                wimax_ss_row = dict()
-
-                # *********************************** Near End (Wimax BS) *********************************
-                # state
-                try:
-                    wimax_bs_row['State'] = State.objects.get(pk=base_station.state).state_name
-                except Exception as e:
-                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-                # city
-                try:
-                    wimax_bs_row['City'] = City.objects.get(pk=base_station.city).city_name
-                except Exception as e:
-                    logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
-
-                # address
-                try:
-                    wimax_bs_row['Address'] = base_station.address
-                except Exception as e:
-                    logger.info("Address not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs name
-                try:
-                    wimax_bs_row['BS Name'] = base_station.alias
-                except Exception as e:
-                    logger.info("BS Name not exist for base station ({}).".format(base_station.name, e.message))
-
-                # type of bs (technology)
-                try:
-                    wimax_bs_row['Type Of BS (Technology)'] = base_station.bs_type
-                except Exception as e:
-                    logger.info("Type Of BS (Technology) not exist for base station ({}).".format(base_station.name,
-                                                                                                  e.message))
-
-                # site type
-                try:
-                    wimax_bs_row['Site Type'] = base_station.bs_site_type
-                except Exception as e:
-                    logger.info("Site Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # infra provider
-                try:
-                    wimax_bs_row['Infra Provider'] = base_station.infra_provider
-                except Exception as e:
-                    logger.info("Infra Provider not exist for base station ({}).".format(base_station.name, e.message))
-
-                # building height
-                try:
-                    wimax_bs_row['Building Height'] = base_station.building_height
-                except Exception as e:
-                    logger.info("Building Height not exist for base station ({}).".format(base_station.name, e.message))
-
-                # tower height
-                try:
-                    wimax_bs_row['Tower Height'] = base_station.tower_height
-                except Exception as e:
-                    logger.info("Tower Height not exist for base station ({}).".format(base_station.name, e.message))
-
-                # latitude
-                try:
-                    wimax_bs_row['Latitude'] = base_station.latitude
-                except Exception as e:
-                    logger.info("Latitude not exist for base station ({}).".format(base_station.name, e.message))
-
-                # longitude
-                try:
-                    wimax_bs_row['Longitude'] = base_station.longitude
-                except Exception as e:
-                    logger.info("Longitude not exist for base station ({}).".format(base_station.name, e.message))
-
-                # idu ip
-                try:
-                    wimax_bs_row['IDU IP'] = sector.sector_configured_on.ip_address
-                except Exception as e:
-                    logger.info("IDU IP not exist for base station ({}).".format(base_station.name, e.message))
-
-                # sector name
-                try:
-                    wimax_bs_row['Sector Name'] = sector.name.split("_")[-1]
-                except Exception as e:
-                    logger.info("Sector Name not exist for base station ({}).".format(base_station.name, e.message))
-
-                # make of antenna
-                try:
-                    wimax_bs_row['Make Of Antenna'] = sector.antenna.make_of_antenna
-                except Exception as e:
-                    logger.info("Make Of Antenna not exist for base station ({}).".format(base_station.name,
-                                                                                          e.message))
-
-                # polarization
-                try:
-                    wimax_bs_row['Polarization'] = sector.antenna.polarization
-                except Exception as e:
-                    logger.info("Polarization not exist for base station ({}).".format(base_station.name, e.message))
-
-                # antenna tilt
-                try:
-                    wimax_bs_row['Antenna Tilt'] = sector.antenna.tilt
-                except Exception as e:
-                    logger.info("Antenna Tilt not exist for base station ({}).".format(base_station.name, e.message))
-
-                # antenna height
-                try:
-                    wimax_bs_row['Antenna Height'] = sector.antenna.height
-                except Exception as e:
-                    logger.info("Antenna Height not exist for base station ({}).".format(base_station.name, e.message))
-
-                # antenna beamwidth
-                try:
-                    wimax_bs_row['Antenna Beamwidth'] = sector.antenna.beam_width
-                except Exception as e:
-                    logger.info("Antenna Beamwidth not exist for base station ({}).".format(base_station.name, e.message))
-
-                # azimuth
-                try:
-                    wimax_bs_row['Azimuth'] = sector.antenna.azimuth_angle
-                except Exception as e:
-                    logger.info("Azimuth not exist for base station ({}).".format(base_station.name, e.message))
-
-                # installation of splitter
-                try:
-                    wimax_bs_row['Installation Of Splitter'] = sector.antenna.sync_splitter_used
-                except Exception as e:
-                    logger.info("Installation Of Splitter not exist for base station ({}).".format(base_station.name, e.message))
-
-                # type of gps
-                try:
-                    wimax_bs_row['Type Of GPS'] = base_station.gps_type
-                except Exception as e:
-                    logger.info("Type Of GPS not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bs switch ip
-                try:
-                    wimax_bs_row['BS Switch IP'] = base_station.bs_switch.ip_address
-                except Exception as e:
-                    logger.info("BS Switch IP not exist for base station ({}).".format(base_station.name, e.message))
-
-                # aggregation switch
-                try:
-                    wimax_bs_row['Aggregation Switch'] = backhaul.aggregator.ip_address
-                except Exception as e:
-                    logger.info("Aggregation Switch not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # aggregation switch port
-                try:
-                    wimax_bs_row['Aggregation Switch Port'] = backhaul.aggregator_port_name
-                except Exception as e:
-                    logger.info("Aggregation Switch Port not exist for base station ({}).".format(base_station.name,
-                                                                                                  e.message))
-
-                # bs converter ip
-                try:
-                    wimax_bs_row['BS Converter IP'] = backhaul.bh_switch.ip_address
-                except Exception as e:
-                    logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pop converter ip
-                try:
-                    wimax_bs_row['POP Converter IP'] = backhaul.pop.ip_address
-                except Exception as e:
-                    logger.info("POP Converter IP not exist for base station ({}).".format(base_station.name,
-                                                                                           e.message))
-
-                # converter type
-                try:
-                    wimax_bs_row['Converter Type'] = DeviceType.objects.get(pk=backhaul.bh_switch.device_type).alias
-                except Exception as e:
-                    logger.info("Converter Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bh configured switch or converter
-                try:
-                    wimax_bs_row['BH Configured On Switch/Converter'] = backhaul.bh_configured_on.ip_address
-                except Exception as e:
-                    logger.info("BH Configured On Switch/Converter not exist for base station ({}).".format(
-                        base_station.name,
-                        e.message))
-
-                # bh configured switch or converter port
-                try:
-                    wimax_bs_row['Switch/Converter Port'] = backhaul.bh_port_name
-                except Exception as e:
-                    logger.info("Switch/Converter Port not exist for base station ({}).".format(base_station.name,
-                                                                                                e.message))
-
-                # bh capacity
-                try:
-                    wimax_bs_row['BH Capacity'] = backhaul.bh_capacity
-                except Exception as e:
-                    logger.info("BH Capacity not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bh offnet/onnet
-                try:
-                    wimax_bs_row['BH Offnet/Onnet'] = backhaul.bh_connectivity
-                except Exception as e:
-                    logger.info("BH Offnet/Onnet not exist for base station ({}).".format(base_station.name, e.message))
-
-                # backhaul type
-                try:
-                    wimax_bs_row['Backhaul Type'] = backhaul.bh_type
-                except Exception as e:
-                    logger.info("Backhaul Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bh circuit id
-                try:
-                    wimax_bs_row['BH Circuit ID'] = backhaul.bh_circuit_id
-                except Exception as e:
-                    logger.info("BH Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pe hostname
-                try:
-                    wimax_bs_row['PE Hostname'] = backhaul.pe_hostname
-                except Exception as e:
-                    logger.info("PE Hostname not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pe ip
-                try:
-                    wimax_bs_row['PE IP'] = backhaul.pe_ip
-                except Exception as e:
-                    logger.info("PE IP not exist for base station ({}).".format(base_station.name, e.message))
-
-                # bso circuit id
-                try:
-                    wimax_bs_row['BSO Circuit ID'] = backhaul.ttsl_circuit_id
-                except Exception as e:
-                    logger.info("BSO Circuit ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # dr site
-                try:
-                    wimax_bs_row['DR Site'] = sector.dr_site
-                except Exception as e:
-                    logger.info("DR Site not exist for base station ({}).".format(base_station.name, e.message))
-
-                # sector id
-                try:
-                    wimax_bs_row['Sector ID'] = sector.sector_id
-                except Exception as e:
-                    logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pmp
-                try:
-                    wimax_bs_row['PMP'] = sector.name.split("_")[-1]
-                except Exception as e:
-                    logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # sector id
-                try:
-                    wimax_bs_row['Sector ID'] = sector.sector_id
-                except Exception as e:
-                    logger.info("Sector ID not exist for base station ({}).".format(base_station.name, e.message))
-
-                # ************************************* BS Perf Parameters **********************************
-                # sector utilization
-                try:
-                    # by splitting last string after underscore from sector name; we get pmp port number
-                    if sector.name.split("_")[-1] == '1':
-                        wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                        data_source='wimax_pmp1_utilization').using(
-                                                                        alias=bs_machine_name)[0].current_value
-                    elif sector.name.split("_")[-1] == '2':
-                        wimax_bs_row['Sector Utilization'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                        data_source='wimax_pmp2_utilization').using(
-                                                                        alias=bs_machine_name)[0].current_value
-                    else:
-                        pass
-                except Exception as e:
-                    logger.info("Sector Utilization not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # frequency
-                try:
-                    wimax_bs_row['Frequency'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                               data_source='frequency').using(
-                                                                               alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Frequency not exist for base station ({}).".format(base_station.name, e.message))
-
-                # mrc
-                try:
-                    # by splitting last string after underscore from sector name; we get pmp port number
-                    if sector.name.split("_")[-1] == '1':
-                        wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                             data_source='pmp1_mrc').using(
-                                                                             alias=bs_machine_name)[0].current_value
-                    elif sector.name.split("_")[-1] == '2':
-                        wimax_bs_row['MRC'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                             data_source='pmp2_mrc').using(
-                                                                             alias=bs_machine_name)[0].current_value
-                    else:
-                        pass
-                except Exception as e:
-                    logger.info("MRC not exist for base station ({}).".format(base_station.name, e.message))
-
-                # idu type
-                try:
-                    wimax_bs_row['IDU Type'] = InventoryStatus.objects.filter(device_name=bs_device_name,
-                                                                              data_source='idu_type').using(
-                                                                              alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("IDU Type not exist for base station ({}).".format(base_station.name, e.message))
-
-                # system uptime
-                try:
-                    wimax_bs_row['System Uptime'] = ServiceStatus.objects.filter(device_name=bs_device_name,
-                                                                                 data_source='bs_uptime').using(
-                                                                                 alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("System Uptime not exist for base station ({}).".format(base_station.name, e.message))
-
-                # latency
-                try:
-                    wimax_bs_row['Latency'] = NetworkStatus.objects.filter(device_name=bs_device_name,
-                                                                           data_source='rta').using(
-                                                                           alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Latency not exist for base station ({}).".format(base_station.name, e.message))
-
-                # pl
-                try:
-                    wimax_bs_row['PD'] = NetworkStatus.objects.filter(device_name=bs_device_name,
-                                                                      data_source='pl').using(
-                                                                      alias=bs_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("PD not exist for base station ({}).".format(base_station.name, e.message))
-
-                # ********************************** Far End (Wimax SS) ********************************
-
-                # customer name
-                try:
-                    wimax_ss_row['Customer Name'] = customer.alias
-                except Exception as e:
-                    logger.info("Customer Name not exist for base station ({}).".format(sub_station.name, e.message))
-
-                # circuit id
-                try:
-                    wimax_ss_row['Circuit ID'] = circuit.circuit_id
-                except Exception as e:
-                    logger.info("Circuit ID not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss ip
-                try:
-                    wimax_ss_row['SS IP'] = sub_station.device.ip_address
-                except Exception as e:
-                    logger.info("SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # qos bandwidth
-                try:
-                    wimax_ss_row['QOS (BW)'] = circuit.qos_bandwidth
-                except Exception as e:
-                    logger.info("QOS (BW) not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # latitude
-                try:
-                    wimax_ss_row['Latitude'] = sub_station.latitude
-                except Exception as e:
-                    logger.info("Latitude not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # longitude
-                try:
-                    wimax_ss_row['Longitude'] = sub_station.longitude
-                except Exception as e:
-                    logger.info("Longitude not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # mac address
-                try:
-                    wimax_ss_row['MAC'] = sub_station.device.mac_address
-                except Exception as e:
-                    logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # building height
-                try:
-                    wimax_ss_row['Building Height'] = sub_station.building_height
-                except Exception as e:
-                    logger.info("Building Height not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # tower/pole height
-                try:
-                    wimax_ss_row['Tower/Pole Height'] = sub_station.tower_height
-                except Exception as e:
-                    logger.info("Tower/Pole Height not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # antenna height
-                try:
-                    wimax_ss_row['Antenna Height'] = sub_station.antenna.height
-                except Exception as e:
-                    logger.info("Antenna Height not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # antenna beamwidth
-                try:
-                    wimax_ss_row['Antenna Beamwidth'] = sub_station.antenna.beam_width
-                except Exception as e:
-                    logger.info("Antenna Beamwidth not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # polarization
-                try:
-                    wimax_ss_row['Polarization'] = sub_station.antenna.polarization
-                except Exception as e:
-                    logger.info("Polarization not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # antenna type
-                try:
-                    wimax_ss_row['Antenna Type'] = sub_station.antenna.antenna_type
-                except Exception as e:
-                    logger.info("Antenna Type not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ss mount type
-                try:
-                    wimax_ss_row['SS Mount Type'] = sub_station.antenna.mount_type
-                except Exception as e:
-                    logger.info("SS Mount Type not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ethernet extender
-                try:
-                    wimax_ss_row['Ethernet Extender'] = sub_station.ethernet_extender
-                except Exception as e:
-                    logger.info("Ethernet Extender not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # cable length
-                try:
-                    wimax_ss_row['Cable Length'] = sub_station.cable_length
-                except Exception as e:
-                    logger.info("Cable Length not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # rssi during acceptance
-                try:
-                    wimax_ss_row['RSSI During Acceptance'] = circuit.dl_rssi_during_acceptance
-                except Exception as e:
-                    logger.info("RSSI During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                                e.message))
-
-                # cinr during acceptance
-                try:
-                    wimax_ss_row['CINR During Acceptance'] = circuit.dl_cinr_during_acceptance
-                except Exception as e:
-                    logger.info("CINR During Acceptance not exist for sub station ({}).".format(sub_station.name,
-                                                                                                e.message))
-
-                # Customer Address
-                try:
-                    wimax_ss_row['Customer Address'] = customer.address
-                except Exception as e:
-                    logger.info("Customer Address not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # date of acceptance
-                try:
-                    wimax_ss_row['Date Of Acceptance'] = circuit.date_of_acceptance.strftime('%d/%b/%Y')
-                except Exception as e:
-                    logger.info("Date Of Acceptance not exist for base station ({}).".format(base_station.name,
-                                                                                             e.message))
-
-                # ************************************* SS Perf Parameters **********************************
-                # frequency
-                try:
-                    wimax_ss_row['Frequency'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                             data_source='frequency').using(
-                                                                             alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Frequency not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # sector id
-                try:
-                    # by splitting last string after underscore from sector name; we get pmp port number
-                    if sector.name.split("_")[-1] == '1':
-                        wimax_ss_row['Sector ID'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                        data_source='sector_id_pmp1').using(
-                                                                        alias=ss_machine_name)[0].current_value
-                    elif sector.name.split("_")[-1] == '2':
-                        wimax_ss_row['Sector ID'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                        data_source='sector_id_pmp2').using(
-                                                                        alias=ss_machine_name)[0].current_value
-                    else:
-                        pass
-                except Exception as e:
-                    logger.info("Sector ID not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # polled ss ip
-                try:
-                    wimax_ss_row['Polled SS IP'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                                data_source='ss_ip').using(
-                                                                                alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Polled SS IP not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # polled ss mac
-                try:
-                    wimax_ss_row['Polled SS MAC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                             data_source='ss_mac').using(
-                                                                             alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Polled SS MAC not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # rssi dl
-                try:
-                    wimax_ss_row['RSSI DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                           data_source='dl_rssi').using(
-                                                                           alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("RSSI DL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # rssi ul
-                try:
-                    wimax_ss_row['RSSI UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                           data_source='ul_rssi').using(
-                                                                           alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("RSSI UL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # cinr dl
-                try:
-                    wimax_ss_row['CINR DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                           data_source='dl_cinr').using(
-                                                                           alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("CINR DL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # cinr ul
-                try:
-                    wimax_ss_row['CINR UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                           data_source='ul_cinr').using(
-                                                                           alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("CINR UL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # intrf dl
-                try:
-                    wimax_ss_row['INTRF DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                            data_source='dl_intrf').using(
-                                                                            alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("INTRF DL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # intrf ul
-                try:
-                    wimax_ss_row['INTRF UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                            data_source='ul_intrf').using(
-                                                                            alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("INTRF UL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # ptx
-                try:
-                    wimax_ss_row['PTX'] = InventoryStatus.objects.filter(device_name=ss_device_name,
-                                                                         data_source='ss_ptx').using(
-                                                                         alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("PTX not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # session uptime
-                try:
-                    wimax_ss_row['Session Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                              data_source='session_uptime').using(
-                                                                              alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Session Uptime not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # device uptime
-                try:
-                    wimax_ss_row['Device Uptime'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                              data_source='uptime').using(
-                                                                              alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Device Uptime  not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # modulation dl fec
-                try:
-                    wimax_ss_row['Modulation DL FEC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                            data_source='modulation_dl_fec').using(
-                                                                            alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Modulation DL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # modulation ul fec
-                try:
-                    wimax_ss_row['Modulation UL FEC'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                            data_source='modulation_ul_fec').using(
-                                                                            alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Modulation UL FEC not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # latency
-                try:
-                    wimax_ss_row['Latency'] = NetworkStatus.objects.filter(device_name=ss_device_name,
-                                                                           data_source='rta').using(
-                                                                           alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Latency not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # pl (packet loss)
-                try:
-                    wimax_ss_row['PD'] = NetworkStatus.objects.filter(device_name=ss_device_name,
-                                                                      data_source='pl').using(
-                                                                      alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("PD not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # utilization dl
-                try:
-                    wimax_ss_row['Utilization DL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                            data_source='dl_utilization').using(
-                                                                            alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Utilization DL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # utilization ul
-                try:
-                    wimax_ss_row['Utilization UL'] = ServiceStatus.objects.filter(device_name=ss_device_name,
-                                                                            data_source='ul_utilization').using(
-                                                                            alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Utilization UL not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # auto negotiation
-                try:
-                    wimax_ss_row['Auto Negotiation'] = Status.objects.filter(device_name=ss_device_name,
-                                                                             data_source='autonegotiation').using(
-                                                                             alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Auto Negotiation not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # duplex
-                try:
-                    wimax_ss_row['Duplex'] = Status.objects.filter(device_name=ss_device_name,
-                                                                   data_source='duplex').using(
-                                                                   alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Duplex not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # speed
-                try:
-                    wimax_ss_row['Speed'] = Status.objects.filter(device_name=ss_device_name,
-                                                                   data_source='ss_speed').using(
-                                                                   alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Speed not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # link
-                try:
-                    wimax_ss_row['Link'] = Status.objects.filter(device_name=ss_device_name,
-                                                                 data_source='link_state').using(
-                                                                 alias=ss_machine_name)[0].current_value
-                except Exception as e:
-                    logger.info("Link not exist for sub station ({}).".format(sub_station.name, e.message))
-
-                # append 'wimax_bs_row' dictionary in 'wimax_bs_rows'
-                wimax_bs_rows.append(wimax_bs_row)
-
-                # append 'wimax_ss_row' dictionary in 'wimax_ss_rows'
-                wimax_ss_rows.append(wimax_ss_row)
-
-        # insert 'wimax bs' rows in result dictionary
-        result['wimax_bs'] = wimax_bs_rows if wimax_bs_rows else ""
-
-        # insert 'wimax ss' rows in result dictionary
-        result['wimax_ss'] = wimax_ss_rows if wimax_ss_rows else ""
-
-        print "****************************** wimax (result) - ", result
-
-        return result
-
-
-def remove_duplicate_dict_from_list(input_list=None):
-    """ Remove duplicate dictionaries from list of dictionaries
-
-        :Parameters:
-            - 'input_list' (list) - list of dictionaries for e.g.
-                                        [
-                                            {
-                                                'City': u'Kolkata',
-                                                'AntennaHeight': 27.0,
-                                                'BHCircuitID': u'COPF-5712',
-                                                'PEIP': u'192.168.216.37',
-                                                'TypeOfBS(Technology)': u'WIMAX',
-                                                'Polarization': u'Vertical',
-                                                'State': u'WestBengal',
-                                                'InfraProvider': u'WTTIL',
-                                                'Latitude': 22.572833333333,
-                                                'SiteType': u'RTT',
-                                                'PMP': u'1',
-                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
-                                                'TypeOfGPS': u'AQtime',
-                                                'IDUIP': u'10.172.72.2',
-                                                'Address': u'35,
-                                                CollegeSt.Kolkata,
-                                                NearCalcuttaMedicalCollegeHospital',
-                                                'BHOffnet/Onnet': u'ONNET',
-                                                'MakeOfAntenna': u'Xhat',
-                                                'SectorName': u'1',
-                                                'BSName': u'BBGanguly',
-                                                'Longitude': 88.362472222222,
-                                                'TowerHeight': 13.0,
-                                                'Azimuth': 30.0,
-                                                'AntennaTilt': 2.0,
-                                                'BHCapacity': 1000L,
-                                                'AggregationSwitchPort': u'Ring',
-                                                'Switch/ConverterPort': u'Gi0/1',
-                                                'DRSite': u'No',
-                                                'BackhaulType': u'DarkFibre',
-                                                'BSOCircuitID': None,
-                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
-                                                'InstallationOfSplitter': None,
-                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
-                                                'BSSwitchIP': u'10.175.132.67',
-                                                'BuildingHeight': 18.0,
-                                                'AntennaBeamwidth': 60.0
-                                            },
-                                            {
-                                                'City': u'Kolkata',
-                                                'AntennaHeight': 27.0,
-                                                'BHCircuitID': u'COPF-5712',
-                                                'PEIP': u'192.168.216.37',
-                                                'TypeOfBS(Technology)': u'WIMAX',
-                                                'Polarization': u'Vertical',
-                                                'State': u'WestBengal',
-                                                'InfraProvider': u'WTTIL',
-                                                'Latitude': 22.572833333333,
-                                                'SiteType': u'RTT',
-                                                'PMP': u'1',
-                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
-                                                'TypeOfGPS': u'AQtime',
-                                                'IDUIP': u'10.172.72.2',
-                                                'Address': u'35,
-                                                CollegeSt.Kolkata,
-                                                NearCalcuttaMedicalCollegeHospital',
-                                                'BHOffnet/Onnet': u'ONNET',
-                                                'MakeOfAntenna': u'Xhat',
-                                                'SectorName': u'1',
-                                                'BSName': u'BBGanguly',
-                                                'Longitude': 88.362472222222,
-                                                'TowerHeight': 13.0,
-                                                'Azimuth': 30.0,
-                                                'AntennaTilt': 2.0,
-                                                'BHCapacity': 1000L,
-                                                'AggregationSwitchPort': u'Ring',
-                                                'Switch/ConverterPort': u'Gi0/1',
-                                                'DRSite': u'No',
-                                                'BackhaulType': u'DarkFibre',
-                                                'BSOCircuitID': None,
-                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
-                                                'InstallationOfSplitter': None,
-                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
-                                                'BSSwitchIP': u'10.175.132.67',
-                                                'BuildingHeight': 18.0,
-                                                'AntennaBeamwidth': 60.0
-                                            },
-                                            {
-                                                'City': u'Kolkata',
-                                                'AntennaHeight': 27.0,
-                                                'BHCircuitID': u'COPF-5712',
-                                                'PEIP': u'192.168.216.37',
-                                                'TypeOfBS(Technology)': u'WIMAX',
-                                                'Polarization': u'Vertical',
-                                                'State': u'WestBengal',
-                                                'InfraProvider': u'WTTIL',
-                                                'Latitude': 22.572833333333,
-                                                'SiteType': u'RTT',
-                                                'PMP': u'1',
-                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
-                                                'TypeOfGPS': u'AQtime',
-                                                'IDUIP': u'10.172.72.2',
-                                                'Address': u'35,
-                                                CollegeSt.Kolkata,
-                                                NearCalcuttaMedicalCollegeHospital',
-                                                'BHOffnet/Onnet': u'ONNET',
-                                                'MakeOfAntenna': u'Xhat',
-                                                'SectorName': u'1',
-                                                'BSName': u'BBGanguly',
-                                                'Longitude': 88.362472222222,
-                                                'TowerHeight': 13.0,
-                                                'Azimuth': 30.0,
-                                                'AntennaTilt': 2.0,
-                                                'BHCapacity': 1000L,
-                                                'AggregationSwitchPort': u'Ring',
-                                                'Switch/ConverterPort': u'Gi0/1',
-                                                'DRSite': u'No',
-                                                'BackhaulType': u'DarkFibre',
-                                                'BSOCircuitID': None,
-                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
-                                                'InstallationOfSplitter': None,
-                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
-                                                'BSSwitchIP': u'10.175.132.67',
-                                                'BuildingHeight': 18.0,
-                                                'AntennaBeamwidth': 60.0
-                                            }
-                                        ]
-
-        :Returns:
-           - 'result_list' (list) - list of dictionaries containing unique dictionaries for e.g.
-                                        [
-                                            {
-                                                'City': u'Kolkata',
-                                                'AntennaHeight': 27.0,
-                                                'BHCircuitID': u'COPF-5712',
-                                                'PEIP': u'192.168.216.37',
-                                                'TypeOfBS(Technology)': u'WIMAX',
-                                                'Polarization': u'Vertical',
-                                                'State': u'WestBengal',
-                                                'InfraProvider': u'WTTIL',
-                                                'Latitude': 22.572833333333,
-                                                'SiteType': u'RTT',
-                                                'PMP': u'1',
-                                                'BHConfiguredOnSwitch/Converter': u'10.175.132.67',
-                                                'TypeOfGPS': u'AQtime',
-                                                'IDUIP': u'10.172.72.2',
-                                                'Address': u'35,
-                                                CollegeSt.Kolkata,
-                                                NearCalcuttaMedicalCollegeHospital',
-                                                'BHOffnet/Onnet': u'ONNET',
-                                                'MakeOfAntenna': u'Xhat',
-                                                'SectorName': u'1',
-                                                'BSName': u'BBGanguly',
-                                                'Longitude': 88.362472222222,
-                                                'TowerHeight': 13.0,
-                                                'Azimuth': 30.0,
-                                                'AntennaTilt': 2.0,
-                                                'BHCapacity': 1000L,
-                                                'AggregationSwitchPort': u'Ring',
-                                                'Switch/ConverterPort': u'Gi0/1',
-                                                'DRSite': u'No',
-                                                'BackhaulType': u'DarkFibre',
-                                                'BSOCircuitID': None,
-                                                'SectorID': u'00: 0A: 10: 09: 00: 61',
-                                                'InstallationOfSplitter': None,
-                                                'PEHostname': u'kk-tcn-tcn-mi01-rt01',
-                                                'BSSwitchIP': u'10.175.132.67',
-                                                'BuildingHeight': 18.0,
-                                                'AntennaBeamwidth': 60.0
-                                            }
-                                        ]
+class DownloadSelectedBSInventoryList(ListView):
+    """
+    Generic Class based View to List the GISInventoryBulkImports.
     """
 
-    # list of dictionaries to be returned as a result
-    result_list = []
+    model = GISExcelDownload
+    template_name = 'gis_inventory_download/gis_inventory_download_list.html'
 
-    # temporary set containing dictionaries values in tuples for e.g
-    # set([((key, value), (key, value), (key, value)), ((key, value), (key, value), (key, value))]
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
 
-    temp_set = set()
+        """
+        context = super(DownloadSelectedBSInventoryList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'file_path', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto', },
+            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },
+            {'mData': 'downloaded_by', 'sTitle': 'Requested By', 'sWidth': 'auto', },
+            {'mData': 'added_on', 'sTitle': 'Requested On Timestamp', 'sWidth': 'auto', },
+            {'mData': 'modified_on', 'sTitle': 'Request Completion Timestamp', 'sWidth': 'auto', },
+        ]
 
-    # loop through input list (list of dictionaries which needs to be filtered)
-    for d in input_list:
-        # t is set of dictionary values tuple for e.g
-        # ((key, value), (key, value), (key, value), (key, value))
-        # (('City', u'Kolkata'), ('Antenna Height', 29.0), ('BH Circuit ID', u'COPF-571'), ('PE IP', u'192.168.216.37'))
-        t = tuple(d.items())
-        if t not in temp_set:
-            # adding tuple 't' to 'temp_set'
-            temp_set.add(t)
-            # append dictionary 'd' to 'result_list'
-            result_list.append(d)
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
 
-    return result_list
+
+class DownloadSelectedBSInventoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    """
+    A generic class based view for the gis inventory bulk import data table rendering.
+
+    """
+    model = GISExcelDownload
+    columns = ['file_path', 'status', 'description', 'downloaded_by', 'added_on', 'modified_on']
+    order_columns = ['file_path', 'status', 'description', 'downloaded_by', 'added_on', 'modified_on']
+    search_columns = ['file_path', 'status', 'description', 'downloaded_by']
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
+
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        # queryset
+        queryset = GISExcelDownload.objects.filter(downloaded_by=self.request.user.username).values(*self.columns+['id'])
+
+        # if self.request.user.is_superuser:
+        #     queryset = GISExcelDownload.objects.filter().values(*self.columns+['id'])
+        return queryset
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            try:
+                excel_green = static("img/ms-office-icons/excel_2013_green.png")
+                excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
+                excel_red = static("img/ms-office-icons/excel_2013_red.png")
+                excel_light_green = static("img/ms-office-icons/excel_2013_light_green.png")
+                # excel_blue = static("img/ms-office-icons/excel_2013_blue.png")
+
+                # show 'Success', 'Pending' and 'Failed' in upload status
+                try:
+                    if not dct.get('status'):
+                        dct.update(status='Pending')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 0:
+                        dct.update(status='Pending')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 1:
+                        dct.update(status='Success')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 2:
+                        dct.update(status='Failed')
+                except Exception as e:
+                    logger.info(e.message)
+
+                # show icon instead of url in data tables view
+                try:
+                    if dct.get('status') == "Success":
+                        dct.update(file_path='<a href="{}{}"><img src="{}" style="float:left; display:block; \
+                        height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('file_path'), excel_green))
+                    else:
+                        dct.update(file_path='<img src="{0}" style="float:left; display:block; \
+                        height:25px; width:25px;">'.format(excel_grey))
+                except Exception as e:
+                    logger.info(e.message)
+
+                # show user full name in uploded by field
+                try:
+                    if dct.get('downloaded_by'):
+                        user = User.objects.get(username=dct.get('downloaded_by'))
+                        dct.update(downloaded_by='{} {}'.format(user.first_name, user.last_name))
+                except Exception as e:
+                    logger.info(e.message)
+
+            except Exception as e:
+                logger.info(e)
+
+            # added on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            # modified on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['modified_on'] = convert_utc_to_local_timezone(dct['modified_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            dct.update(actions='<a href="/gis_downloaded_inventories/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="/gis_downloaded_inventories/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
+
+        return json_data
+
+
+class DownloadSelectedBSInventoryDelete(DeleteView):
+    """
+    Class based View to delete the GISInventoryBulkImport
+    """
+    model = GISExcelDownload
+    template_name = 'gis_inventory_download/gis_inventory_download_delete.html'
+    success_url = reverse_lazy('gis_selected_bs_inventories_list')
+
+    def delete(self, request, *args, **kwargs):
+        file_name = lambda x: MEDIA_ROOT + x
+        # gis excel download object
+        gis_excel_obj = self.get_object()
+
+        # remove inventory file if it exists
+        try:
+            os.remove(file_name(gis_excel_obj.file_path))
+        except Exception as e:
+            logger.info(e.message)
+
+        # delete entry from database
+        gis_excel_obj.delete()
+        return HttpResponseRedirect(DownloadSelectedBSInventoryDelete.success_url)
+
+
+class DownloadSelectedBSInventoryUpdate(UpdateView):
+    """
+    Class based view to update GISInventoryBulkImport .
+    """
+    template_name = 'gis_inventory_download/gis_inventory_download_update.html'
+    model = GISExcelDownload
+    form_class = DownloadSelectedBSInventoryEditForm
+    success_url = reverse_lazy('gis_selected_bs_inventories_list')
 
 
 #**************************************** GIS Wizard ****************************************#
@@ -6075,14 +3474,15 @@ class GisWizardListView(BaseStationList):
         """
         context = super(GisWizardListView, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'BS Name', 'sWidth': 'auto', },
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', },
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', },
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
-            {'mData': 'bs_switch__id', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
-            {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bs_switch__id', 'sTitle': 'BS Switch IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'backhaul__bh_configured_on__ip_address', 'sTitle': 'Backhaul IP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'sector_configured_on', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
         ]
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -6090,6 +3490,8 @@ class GisWizardListView(BaseStationList):
 
 
 class GisWizardListingTable(BaseStationListingTable):
+    columns = ['alias', 'city__city_name', 'state__state_name', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address', 'description']
+    order_columns = ['alias', 'city__city_name', 'state__state_name', 'bs_site_id', 'bs_switch__id', 'backhaul__bh_configured_on__ip_address']
 
     def prepare_results(self, qs):
         """
@@ -6097,16 +3499,22 @@ class GisWizardListingTable(BaseStationListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
+
             # modify device name format in datatable i.e. <device alias> (<device ip>)
             try:
                 if 'bs_switch__id' in dct:
-                    bs_device_alias = Device.objects.get(id=dct['bs_switch__id']).device_alias
                     bs_device_ip = Device.objects.get(id=dct['bs_switch__id']).ip_address
-                    dct['bs_switch__id'] = "{} ({})".format(bs_device_alias, bs_device_ip)
+                    dct['bs_switch__id'] = "{}".format(bs_device_ip)
             except Exception as e:
                 logger.info("BS Switch not present. Exception: ", e.message)
 
             device_id = dct.pop('id')
+
+            sector_configured_on = Sector.objects.filter(base_station_id=device_id, sector_configured_on__isnull=False,
+                    bs_technology__in=[3, 4]).distinct().values_list('sector_configured_on__ip_address', flat=True)
+            sector_configured_on = ', '.join(sector_configured_on)
+            dct.update(sector_configured_on=sector_configured_on)
+
             detail_action = '<a href="/gis-wizard/base-station/{0}/details/"><i class="fa fa-list-alt text-info"></i></a>&nbsp'.format(device_id)
             if self.request.user.has_perm('inventory.change_basestation'):
                 edit_action = '<a href="/gis-wizard/base-station/{0}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
@@ -6164,8 +3572,8 @@ class GisWizardBaseStationMixin(object):
 
     def form_valid(self, form):
         alias = re.compile(r'[^\w]').sub("_", form.cleaned_data['alias'])
-        city = City.objects.get(id=form.cleaned_data['city']).city_name[:3]
-        state = State.objects.get(id=form.cleaned_data['state']).state_name[:3]
+        city = form.cleaned_data['city'].city_name[:3]
+        state = form.cleaned_data['state'].state_name[:3]
         form.instance.name = alias + "_" + city + "_" + state
         return super(GisWizardBaseStationMixin, self).form_valid(form)
 
@@ -6273,28 +3681,54 @@ class GisWizardSectorListView(SectorList):
         base_station = BaseStation.objects.get(id=self.kwargs['bs_pk'])
         context['base_station'] = base_station
 
-        datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+        p2p_datatable_headers = [
+            {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Near End', 'sWidth': 'auto', },
+            {'mData': 'circuit__sub_station__device__ip_address', 'sTitle': 'Far End', 'sWidth': 'auto', },
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
-            {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'sector_configured_on__id', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
-            {'mData': 'sector_configured_on_port__alias', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
-             'sClass': 'hidden-xs'},
+            {'mData': 'circuit__customer__alias', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
         ]
 
-        context['datatable_headers'] = json.dumps(datatable_headers)
+        pmp_datatable_headers = [
+            {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
+            {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
+        ]
+
+        wimax_datatable_headers = [
+            {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on_port__alias', 'sTitle': 'PMP Port', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
+            {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
+            {'mData': 'dr_configured_on__ip_address', 'sTitle': 'DR Configured On', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
+        ]
+
+        context['p2p_datatable_headers'] = json.dumps(p2p_datatable_headers)
+        context['pmp_datatable_headers'] = json.dumps(pmp_datatable_headers)
+        context['wimax_datatable_headers'] = json.dumps(wimax_datatable_headers)
         return context
 
 
-class GisWizardSectorListing(SectorListingTable):
+class GisWizardSectorListingMixin(object):
 
     def get_initial_queryset(self):
-        qs = super(GisWizardSectorListing, self).get_initial_queryset()
+        qs = super(GisWizardSectorListingMixin, self).get_initial_queryset()
         qs = qs.filter(base_station_id=self.kwargs['bs_pk'], bs_technology_id=self.kwargs['selected_technology'])
         return qs
 
@@ -6308,14 +3742,6 @@ class GisWizardSectorListing(SectorListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            # modify device name format in datatable i.e. <device alias> (<device ip>)
-            try:
-                if 'sector_configured_on__id' in dct:
-                    sector_device_alias = Device.objects.get(id=dct['sector_configured_on__id']).device_alias
-                    sector_device_ip = Device.objects.get(id=dct['sector_configured_on__id']).ip_address
-                    dct['sector_configured_on__id'] = "{} ({})".format(sector_device_alias, sector_device_ip)
-            except Exception as e:
-                logger.info("Sector Configured On not present. Exception: ", e.message)
 
             sector_id = dct.pop('id')
             kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology']}
@@ -6328,6 +3754,27 @@ class GisWizardSectorListing(SectorListingTable):
                 edit_action = ''
             dct.update(actions=detail_action+edit_action)
         return json_data
+
+
+class GisWizardP2PSectorListing(GisWizardSectorListingMixin, SectorListingTable):
+    columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'bs_technology__alias',
+            'circuit__customer__alias', 'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'description']
+    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'bs_technology__alias',
+            'circuit__customer__alias', 'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'description']
+
+
+class GisWizardPMPSectorListing(GisWizardSectorListingMixin, SectorListingTable):
+    columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency__value', 'base_station__alias',
+            'antenna__polarization', 'description']
+    order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'frequency__value', 'base_station__alias',
+            'antenna__polarization', 'description']
+
+
+class GisWizardWiMAXSectorListing(GisWizardSectorListingMixin, SectorListingTable):
+    columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'sector_configured_on_port__alias',
+            'frequency__value', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
+    order_columns = ['sector_id', 'bs_technology__alias', 'sector_configured_on__ip_address', 'sector_configured_on_port__alias',
+            'frequency__value', 'base_station__alias', 'antenna__polarization', 'mrc', 'dr_configured_on__ip_address', 'description']
 
 
 class GisWizardSectorDetailView(SectorDetail):
@@ -6661,16 +4108,14 @@ class GisWizardSectorSubStationListView(SubStationList):
         context['selected_technology'] = self.kwargs['selected_technology']
 
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
-            {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
-            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'device__ip_address', 'sTitle': 'SS IP', 'sWidth': 'auto', },
+            {'mData': 'device__device_technology', 'sTitle': 'Device Technology', 'sWidth': 'auto', },
+            {'mData': 'circuit__customer__alias', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
+            {'mData': 'circuit__sector__sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto'},
+            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto'},
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
@@ -6683,10 +4128,15 @@ class GisWizardSubStationListing(SubStationListingTable):
     """
     Class based View to render Sub Station Data table.
     """
+    columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
+            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name', 'description']
+    order_columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
+            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name']
 
     def get_initial_queryset(self):
         qs = super(GisWizardSubStationListing, self).get_initial_queryset()
         qs = qs.filter(circuit__sector=self.kwargs['sector_pk'])
+        qs = qs.filter(device__device_technology=self.kwargs['selected_technology'])
         return qs
 
     def prepare_results(self, qs):
@@ -6698,17 +4148,10 @@ class GisWizardSubStationListing(SubStationListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            # modify device name format in datatable i.e. <device alias> (<device ip>)
-            try:
-                if 'device__id' in dct:
-                    ss_device_alias = Device.objects.get(id=dct['device__id']).device_alias
-                    ss_device_ip = Device.objects.get(id=dct['device__id']).ip_address
-                    dct['device__id'] = "{} ({})".format(ss_device_alias, ss_device_ip)
-            except Exception as e:
-                logger.info("Sub Station Device not present. Exception: ", e.message)
 
-            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+
+            #if dct['device__device_technology']: Always is 3 and 4 as in self.kwargs['selected_technology']
+            dct['device__device_technology'] = DeviceTechnology.objects.get(pk=int(dct['device__device_technology'])).alias
 
             sub_station_id = dct.pop('id')
             kwargs = {key: self.kwargs[key] for key in ['bs_pk', 'selected_technology', 'sector_pk']}
@@ -6798,9 +4241,9 @@ class GisWizardSubStationMixin(object):
         context['organization'] = BaseStation.objects.get(id=self.kwargs['bs_pk']).organization
         if self.object:
             form_kwargs = self.get_form_kwargs()
-            context['sub_station_antenna_id'] = self.object.antenna.id if self.object.antenna else 0
-            # context['sub_station_customer_id'] = self.object.customer.id if self.object.customer else 0
-            # context['sub_station_circuit_id'] = self.object.circuit.id if self.object.circuit else 0
+            context['sub_station_antenna_id'] = self.object.antenna.id if self.object.antenna else ''
+            # context['sub_station_customer_id'] = self.object.customer.id if self.object.customer else ''
+            # context['sub_station_circuit_id'] = self.object.circuit.id if self.object.circuit else ''
 
             ## If method is GET; Then provide antenna, circuit and customer forms in context.
             if self.request.method == 'GET':
@@ -6936,11 +4379,12 @@ class GisWizardPTPListView(SectorList):
         context = super(GisWizardPTPListView, self).get_context_data(**kwargs)
 
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on__ip_address', 'sTitle': 'Near End IP', 'sWidth': 'auto', },
+            {'mData': 'circuit__sub_station__device__ip_address', 'sTitle': 'Far End IP', 'sWidth': 'auto', },
+            {'mData': 'circuit__customer__alias', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
+            {'mData': 'frequency__value', 'sTitle': 'Frequency', 'sWidth': 'auto', },
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on__country', 'sTitle': 'Country', 'sWidth': 'auto', 'bSortable': False, },
             {'mData': 'sector_configured_on__state', 'sTitle': 'State', 'sWidth': 'auto', 'bSortable': False, },
             {'mData': 'sector_configured_on__city', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False, },
@@ -6953,14 +4397,16 @@ class GisWizardPTPListView(SectorList):
 
 
 class GisWizardPTPListingTable(SectorListingTable):
-    columns = ['alias', 'sector_configured_on__ip_address', 'base_station__alias', 'antenna__alias', 'mrc',
-            'sector_configured_on__country', 'sector_configured_on__state',
-            'sector_configured_on__city', 'description']
-    order_columns = ['alias', 'sector_configured_on__ip_address', 'base_station__alias', 'antenna__alias', 'mrc', 'description']
+    columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',
+            'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country',
+            'sector_configured_on__state', 'sector_configured_on__city', 'description']
+    order_columns = ['sector_configured_on__ip_address', 'circuit__sub_station__device__ip_address', 'circuit__customer__alias',
+            'circuit__circuit_id', 'frequency__value', 'base_station__alias', 'sector_configured_on__country',
+            'sector_configured_on__state', 'sector_configured_on__city', 'description']
 
     def get_initial_queryset(self):
         qs=super(GisWizardPTPListingTable, self).get_initial_queryset()
-        qs = qs.filter(bs_technology__name='p2p')
+        qs = qs.filter(bs_technology__name='P2P')
         return qs
 
     def prepare_results(self, qs):
@@ -6973,11 +4419,11 @@ class GisWizardPTPListingTable(SectorListingTable):
         """
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            if ['sector_configured_on__country']:
+            if dct['sector_configured_on__country']:
                 dct['sector_configured_on__country'] = Country.objects.get(id=dct['sector_configured_on__country']).country_name
-            if ['sector_configured_on__state']:
+            if dct['sector_configured_on__state']:
                 dct['sector_configured_on__state'] = State.objects.get(id=dct['sector_configured_on__state']).state_name
-            if ['sector_configured_on__city']:
+            if dct['sector_configured_on__city']:
                 dct['sector_configured_on__city'] = City.objects.get(id=dct['sector_configured_on__city']).city_name
 
             device_id = dct.pop('id')
@@ -6999,16 +4445,15 @@ class GisWizardSubStationListView(SubStationList):
         context = super(GisWizardSubStationListView, self).get_context_data(**kwargs)
 
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
-            {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
-            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'device__ip_address', 'sTitle': 'SS IP', 'sWidth': 'auto', },
+            {'mData': 'device__device_technology', 'sTitle': 'Device Technology', 'sWidth': 'auto', },
+            {'mData': 'circuit__customer__alias', 'sTitle': 'Customer Name', 'sWidth': 'auto',
+             'sClass': 'hidden-xs'},
+            {'mData': 'circuit__circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
+            {'mData': 'circuit__sector__sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto'},
+            {'mData': 'antenna__polarization', 'sTitle': 'Antenna Polarization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto'},
+            {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
@@ -7018,6 +4463,10 @@ class GisWizardSubStationListView(SubStationList):
 
 
 class GisWizardSubStationListingTable(SubStationListingTable):
+    columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
+            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name', 'description']
+    order_columns = ['device__ip_address', 'device__device_technology', 'circuit__customer__alias', 'circuit__circuit_id',
+            'circuit__sector__sector_id', 'antenna__polarization', 'city__city_name', 'state__state_name']
 
     def get_initial_queryset(self):
 
@@ -7043,8 +4492,8 @@ class GisWizardSubStationListingTable(SubStationListingTable):
             except Exception as e:
                 logger.info("Sub Station Device not present. Exception: ", e.message)
 
-            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            #if dct['device__device_technology']: Always is 3 and 4 as in get_initial_queryset
+            dct['device__device_technology'] = DeviceTechnology.objects.get(pk=int(dct['device__device_technology'])).alias
             device_id = dct.pop('id')
             sub_station = SubStation.objects.get(id=device_id)
             detail_action = ''

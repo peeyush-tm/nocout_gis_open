@@ -721,13 +721,15 @@ function get_page_status() {
 $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $.trim($(this).val());
     defaultIconSize= val;
+
+    current_icon_size = val;
+    $.cookie("markerIconSize", val, {path: '/', secure : true});
+    
     if(window.location.pathname.indexOf("white_background") > -1) {
         whiteMapClass.updateMarkersSize(val);
     } else if (window.location.pathname.indexOf("googleEarth") > -1) {
         earth_instance.updateAllMarkersWithNewIcon(val);
     } else {
-        current_icon_size = val;
-        $.cookie("markerIconSize", val, {path: '/', secure : true});
         networkMapInstance.updateAllMarkersWithNewIcon_gmap(val);
         
     }
@@ -743,7 +745,7 @@ function disableAdvanceButton(status) {
     var selectBoxes= ['technology', 'vendor', 'state', 'city'];
     var textBoxes= ['google_loc_search','lat_lon_search'];
     var disablingBit = false;
-    if(status=== undefined) {
+    if(!status) {
         disablingBit= true;
         for(var i=0; i< buttonEls.length; i++) {
             // $('#'+buttonEls[i]).prop('disabled', disablingBit);
@@ -800,7 +802,7 @@ function isLatLon(e) {
                     lng = +(entered_txt.split(",")[1]),
                     lat_check = (lat >= -90 && lat < 90),
                     lon_check = (lat >= -180 && lat < 180),
-                    dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['′:]?\s?(?:(\d+(?:\.\d+)?)["″]?)?)?\s?([NSEW])?/i;
+                    dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['':]?\s?(?:(\d+(?:\.\d+)?)["?]?)?)?\s?([NSEW])?/i;
                     dms_regex = new RegExp(dms_pattern);
                 
                 if((lat_check && lon_check) || (dms_regex.exec(entered_txt.split(",")[0]) && dms_regex.exec(entered_txt.split(",")[1]))) {
@@ -874,7 +876,7 @@ if (!Object.keys) {
         dontEnumsLength = dontEnums.length;
 
     return function (obj) {
-      if (typeof obj !== 'object' && (typeof obj !== 'function' || obj === null)) {
+      if (typeof obj !== 'object' && (typeof obj !== 'function' || obj == null)) {
         throw new TypeError('Object.keys called on non-object');
       }
 
@@ -919,7 +921,7 @@ if (!Array.prototype.indexOf) {
     var len = O.length >>> 0;
 
     // 4. If len is 0, return -1.
-    if (len === 0) {
+    if (len == 0) {
       return -1;
     }
 
@@ -927,7 +929,7 @@ if (!Array.prototype.indexOf) {
     //    ToInteger(fromIndex); else let n be 0.
     var n = +fromIndex || 0;
 
-    if (Math.abs(n) === Infinity) {
+    if (Math.abs(n) == Infinity) {
       n = 0;
     }
 
@@ -956,7 +958,7 @@ if (!Array.prototype.indexOf) {
       //        Strict Equality Comparison Algorithm to
       //        searchElement and elementK.
       //  iii.  If same is true, return k.
-      if (k in O && O[k] === searchElement) {
+      if (k in O && O[k] == searchElement) {
         return k;
       }
       k++;
@@ -1280,19 +1282,20 @@ $("#show_hide_label").click(function(e) {
                 labelsArray[x].hide();
             }
         } else {
-            var move_listener_obj = labelsArray[x].moveListener_;
-            if(move_listener_obj) {
-                var keys_array = Object.keys(move_listener_obj);
-                for(var z=0;z<keys_array.length;z++) {
-                    if(typeof move_listener_obj[keys_array[z]] === 'object') {
-                       if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-                            if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
-                                labelsArray[x].setVisible(e.currentTarget.checked);
-                            }
-                       }
-                    }
-                }
-            }
+            labelsArray[x].setVisible(e.currentTarget.checked);
+            // var move_listener_obj = labelsArray[x].moveListener_;
+            // if(move_listener_obj) {
+            //     var keys_array = Object.keys(move_listener_obj);
+            //     for(var z=0;z<keys_array.length;z++) {
+            //         if(typeof move_listener_obj[keys_array[z]] == 'object') {
+            //            if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+            //                 if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
+            //                     labelsArray[x].setVisible(e.currentTarget.checked);
+            //                 }
+            //            }
+            //         }
+            //     }
+            // }
         }
 
     }
@@ -1310,19 +1313,20 @@ $("#show_hide_label").click(function(e) {
                 tooltipInfoLabel[key].hide();
             }
         } else {
-            var move_listener_obj = tooltipInfoLabel[key].moveListener_;
-            if(move_listener_obj) {
-                var keys_array = Object.keys(move_listener_obj);
-                for(var z=0;z<keys_array.length;z++) {
-                    if(typeof move_listener_obj[keys_array[z]] === 'object') {
-                       if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-                            if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
-                                tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
-                            }
-                       }
-                    }
-                }
-            }
+            tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
+            // var move_listener_obj = tooltipInfoLabel[key].moveListener_;
+            // if(move_listener_obj) {
+            //     var keys_array = Object.keys(move_listener_obj);
+            //     for(var z=0;z<keys_array.length;z++) {
+            //         if(typeof move_listener_obj[keys_array[z]] == 'object') {
+            //            if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+            //                 if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
+            //                     tooltipInfoLabel[key].setVisible(e.currentTarget.checked);
+            //                 }
+            //            }
+            //         }
+            //     }
+            // }
         }
     }
 });
@@ -1373,7 +1377,9 @@ $("#point_icons_container li").click(function(e) {
 /*Close info window when close button is clicked*/
 $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
     $('#infoWindowContainer').html("");
-    $('#infoWindowContainer').addClass("hide");
+    if(!$('#infoWindowContainer').hasClass("hide")) {
+        $('#infoWindowContainer').addClass("hide");
+    }
 
     if($(".windowIFrame").length) {
         $(".windowIFrame").remove();
@@ -1389,14 +1395,16 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
             url: base_url+'/network_maps/l2_report/'+ckt_id+'/',
             type : "GET",
             success : function(response) {
+
                 var result = "";
-                if(typeof response === 'string') {
+                // Type check for response
+                if(typeof response == 'string') {
                     result = JSON.parse(response);
                 } else {
                     result = response;
                 }
-                if(result.success === 1) {
-                    if(result['data'].length === 0) {
+                if(result.success == 1) {
+                    if(result['data'].length == 0) {
                         bootbox.alert("No L2 Report Found.");
                     } else {
                         var url = base_url+"/"+result['data'][0]['url'];
@@ -1409,14 +1417,277 @@ $('#infoWindowContainer').delegate('.download_report_btn','click',function(e) {
                 }
             },
             error : function(err) {
-                // console.log(err);
+                // console.log(err)max-;
             }
         });
     }
 });
 
 /**
+ * This event triggers when any polled param name is clicked
+ * @event delegaate
+ */
+$('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
+    // Show the loader
+    showSpinner();
+
+    var api_url = e.currentTarget.attributes['url'] ? e.currentTarget.attributes['url'].value : "";
+    
+    // If api_url exist then fetch l2 report url
+    if(api_url) {
+        $.ajax({
+            url: base_url+"/"+api_url,
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+
+                var result = "";
+                // Type check of response
+                if(typeof response == 'string') {
+                    result = JSON.parse(response);
+                } else {
+                    result = response;
+                }
+
+                if (result.success == 1) {
+                    var contentHtml = "";
+                    contentHtml += "<div style='max-height:600px;overflow:auto;position:relative;z-index:9999;'>";
+                    if (result.data.objects.table_data_header) {
+
+                        contentHtml += createDataTableHtml_map(
+                            'other_perf_table',
+                            result.data.objects.table_data_header,
+                            result.data.objects.table_data
+                        );
+                        contentHtml += "</div>";
+                        /*Call the bootbox to show the popup with datatable*/
+                        bootbox.dialog({
+                            message: contentHtml,
+                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Performance    '
+                        });
+
+                        // Update Modal width to 90%;
+                        $(".modal-dialog").css("width","90%");
+
+                        $("#other_perf_table").DataTable({
+                            bPaginate: true,
+                            bDestroy: true,
+                            aaSorting : [[0,'desc']],
+                            sPaginationType: "full_numbers"
+                        });
+
+                    } else {
+                        contentHtml += "<div id='perf_chart' style='width:83%;'></div>";
+                        contentHtml += "<div class='divide-20'></div>";
+                        contentHtml += "<div id='perf_chart_table'></div>";
+                        contentHtml += createDataTableForChart_map(
+                            "perf_data_table",
+                            result.data.objects.chart_data
+                        );
+                        contentHtml += "</div>";
+                        contentHtml += "</div>";
+
+                        /*Call the bootbox to show the popup with datatable*/
+                        bootbox.dialog({
+                            message: contentHtml,
+                            title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Performance'
+                        });
+
+                        // Update Modal width to 90%;
+                        $(".modal-dialog").css("width","90%");
+
+                        $("#perf_data_table").DataTable({
+                            bPaginate: true,
+                            bDestroy: true,
+                            aaSorting : [[0,'desc']],
+                            sPaginationType: "full_numbers"
+                        });
+                        // Create Chart
+                        createHighChart_map('perf_chart',result.data.objects);
+                    }
+                }
+            },
+            error : function(err) {
+                // console.log(err.statusText);
+            },
+            complete : function() {
+                // hide the loader
+                hideSpinner();
+            }
+        });
+    } else {
+        // hide the loader
+        hideSpinner();
+    }
+});
+
+/**
+ * This function creates highchart as per given params
+ * @method createHighChart_map
+ * @param dom_id {String}, It contains the dom element id on which highchart is to be created
+ * @param config {Object}, It contains highchart configuration object
+ */
+function createHighChart_map(dom_id,config) {
+
+    var chart_instance = $('#' + dom_id).highcharts({
+        chart: {
+            events: {
+                load : function() {
+                    // Hide highcharts.com link from chart when chart is loaded
+                    var highcharts_link = $("#"+dom_id+" svg text:last-child");
+                    $.grep(highcharts_link,function(val) {
+                        if($.trim(val.innerHTML) == 'Highcharts.com') {
+                            val.innerHTML = "";
+                        }
+                    });
+                }
+            },
+            zoomType: 'x',
+            type: config.type
+        },
+        title: {
+            // text: config.name
+            text: ""
+        },
+        legend: {
+            align: 'right',
+            verticalAlign: 'top',
+            x: 0,
+            y: 0,
+            floating: true,
+            borderWidth: 1,
+            backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+        },
+        tooltip: {
+            pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
+            shared: true,
+            crosshairs: true,
+            useHTML: true,
+            valueSuffix: config.valuesuffix
+        },
+        xAxis: {
+            title: {
+                text: "time"
+            },
+            type: 'datetime',
+            minRange: 3600000,
+            dateTimeLabelFormats: {
+                millisecond: '%H:%M:%S.%L',
+                second: '%H:%M:%S',
+                minute: '%H:%M',
+                hour: '%H:%M',
+                day: '%e. %b',
+                week: '%e. %b',
+                month: '%b \'%y',
+                year: '%Y'
+            }
+        },
+        yAxis: {
+            title: {
+                text: config.valuetext
+            }
+        },
+        series: config.chart_data
+    });
+}
+
+/**
+ * This function adds data to created highchart
+ * @method createHighChart_map
+ * @param pointArray {Array}, It contains points data for highchart
+ */
+function addPointsToHighChart_map(pointArray) {
+    var highChartSeries = $('#' + service_id + '_chart').highcharts().series;
+    for (var i = 0; i < highChartSeries.length; i++) {
+        for (var j = 0; j < pointArray[i].data.length; j++) {
+            $('#' + service_id + '_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
+        }
+    }
+}
+
+/**
+ * This function creates datatable with chart data as per given params
+ * @method createDataTableForChart_map
+ * @param table_id {String}, It contains dom element id on which table is to be created
+ * @param data_obj {Object}, It contains chart data object array.
+ */
+function createDataTableForChart_map(table_id, data_obj) {
+
+    var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
+    /*Make table headers*/
+    for (var i = 0; i < data_obj.length; i++) {
+        data_in_table += '<td colspan="2" align="center"><b>' + data_obj[i].name + '</b></td>';
+    }
+    data_in_table += '</tr><tr>';
+
+    for (var i = 0; i < data_obj.length; i++) {
+        data_in_table += '<td><em>Time</em></td><td><em>Value</em></td>';
+    }
+
+    data_in_table += '</tr></thead><tbody>';
+    /*Table header creation end*/
+
+    var data = data_obj[0].data;
+
+    for (var j = 0; j < data.length; j++) {
+        data_in_table += '<tr>';
+        for (var i = 0; i < data_obj.length; i++) {
+            var inner_data = data_obj[i].data[j],
+                time_val = "",
+                val = "";
+            if (inner_data instanceof Array) {
+                time_val = new Date(inner_data[0]).toLocaleString();
+                val = inner_data[1];
+            } else {
+                time_val = new Date(inner_data.x).toLocaleString();
+                val = inner_data.y;
+            }
+            data_in_table += '<td>'+time_val+'</td><td>'+val+'</td>';
+        }
+        data_in_table += '</tr>';
+    }
+
+    data_in_table += '</tbody>';
+    data_in_table += '</table>';
+
+    return data_in_table;
+}
+
+/**
+ * This function creates datatable as per given params
+ * @method createDataTableHtml_map
+ * @param table_id {String}, It contains dom element id on which table is to be created
+ * @param table_headers {Array}, It is the grid headers array.
+ * @param table_data {Array}, It is the grid data array.
+ */
+function createDataTableHtml_map(table_id, table_headers,table_data) {
+
+    var table_string = "";
+    var grid_headers = table_headers;
+
+    table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
+    /*Table header creation start*/
+    for (var i = 0; i < grid_headers.length; i++) {
+        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+    }
+    table_string += '</thead><tbody>';
+    /*Table header creation end*/
+
+    for (var j = 0; j < table_data.length; j++) {
+        table_string += '<tr>';
+        for (var i = 0; i < grid_headers.length; i++) {
+            table_string += '<td>'+table_data[j][grid_headers[i]]+'</td>';
+        }
+        table_string += '</tr>';
+    }
+    table_string += '</tbody></table>';
+
+    return table_string;
+}
+
+/**
  * This event trigger when export data button is clicked
+ * @event click
  */
 $("#export_data_gmap").click(function(e) {
 
@@ -1441,6 +1712,10 @@ $("#export_data_gmap").click(function(e) {
     }
 });
 
+/**
+ * This event trigger when "Cancel Selection" button of export data is clicked
+ * @event click
+ */
 $("#clearExportDataBtn").click(function(e) {
     //disable the flag
     isExportDataActive = 0;
@@ -1448,12 +1723,22 @@ $("#clearExportDataBtn").click(function(e) {
     networkMapInstance.removeInventorySelection();
 });
 
+/**
+ * This event trigger when "Download Inventory" button on selected devices panel is clicked
+ * @event click
+ */
 $("#download_inventory").click(function(e) {
     //call function to download selected inventory.
     networkMapInstance.downloadInventory_gmap(); 
 });
 
 
+/**
+ * This function checks that the given point is in given polyon of not.
+ * @method isPointInPoly
+ * @param poly {Array}, It is the polygon data(lat-lon) array
+ * @param pt {Object}, It is point lat lon object
+ */
 function isPointInPoly(poly, pt) {
     if(poly && poly.length > 0) {
         for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
@@ -1492,30 +1777,6 @@ function showGoogleEarthInBounds(boundsArr, callback) {
     gexInstance.util.flyToObject(folder);
     isFromSearch = true;
     callback();
-    
-
-    
-
-    // 
-    // g_earth.clearOverlays();
-
-    // var totalBounds = new GLatLngBounds();
-
-    // var boundPolygonArray = [];
-
-    // for(var i=0; i< boundsArr.length; i++) {
-    //     (function(i) {
-    //         boundPolygonArray.push(new GLatLng(boundsArr[i].lat, boundsArr[i].lon));
-    //     }(i));
-    // }
-
-    // var globeBoundsPolygon = new GPolygon(boundPolygonArray, '#0000ff', 2, 1.00, '#0000ff',    0.25, { clickable: false });
-
-    // // g_earth.addOverlay(globeBoundsPolygon);
-
-    // var polyBounds = globeBoundsPolygon.getBounds();
-    // totalBounds.extend(polyBounds.getNorthEast());
-    // totalBounds.extend(polyBounds.getSouthWest());
 }
 
 function objectsAreSame(x, y) {
@@ -1531,7 +1792,7 @@ function objectsAreSame(x, y) {
 
 
 function arraysEqual(a, b) {
-  if (a === b) return true;
+  if (a == b) return true;
   if (a == null || b == null) return false;
   if (a.length != b.length) return false;
 
@@ -1667,9 +1928,10 @@ $("#static_label").change(function(e) {
  * @event click
  */
 $("#apply_label").click(function(e) {
-    var selected_val = $.trim($("#static_label").val());
+    var selected_val = $.trim($("#static_label").val()),
+        selected_text = $.trim($("#static_label option:selected").text());
 
-    if(last_selected_label != "" && selected_val == "") {
+    if(last_selected_label != "" && selected_val == "" && selected_text == 'Select Label') {
         // Call Function to remove ss param label from map & updates button and dropdown
         removeSSParamLabel();
 

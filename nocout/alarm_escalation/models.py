@@ -33,6 +33,7 @@ class EscalationLevel(models.Model):
         return '%s' % (self.get_name_display())
 
     def get_phones(self):
+        phones = self.phones.replace(' ','')
         phones = self.phones.split(',')
         return phones
 
@@ -40,14 +41,15 @@ class EscalationLevel(models.Model):
         return ",".join(value)
 
     def get_emails(self):
-        phones = self.phones.split(',')
-        return phones
+        emails = self.emails.replace(' ','')
+        emails = self.emails.split(',')
+        return emails
 
     def get_emails_field(value):
         return ",".join(value)
 
 
-class AlarmEscalation(models.Model):
+class EscalationStatus(models.Model):
     """
     Class to define model AlarmEscalation.
     """
@@ -56,23 +58,32 @@ class AlarmEscalation(models.Model):
         (1, 'Sent'),
     )
 
-    level = models.ManyToManyField(EscalationLevel)
-    technology = models.ForeignKey(DeviceTechnology)
-    base_station = models.ForeignKey(BaseStation)
-    ip = models.IPAddressField('IP Address')
-    l1_email_status = models.IntegerField('Level1 Email Status', default=0, choices=STATUS_CHOICES)
-    l1_phone_status = models.IntegerField('Level1 SMS Status', default=0, choices=STATUS_CHOICES)
-    l2_email_status = models.IntegerField('Level2 Email Status', default=0, choices=STATUS_CHOICES)
-    l2_phone_status = models.IntegerField('Level2 SMS Status', default=0, choices=STATUS_CHOICES)
-    l3_email_status = models.IntegerField('Level3 Email Status', default=0, choices=STATUS_CHOICES)
-    l3_phone_status = models.IntegerField('Level3 SMS Status', default=0, choices=STATUS_CHOICES)
-    l4_email_status = models.IntegerField('Level4 Email Status', default=0, choices=STATUS_CHOICES)
-    l4_phone_status = models.IntegerField('Level4 SMS Status', default=0, choices=STATUS_CHOICES)
-    l5_email_status = models.IntegerField('Level5 Email Status', default=0, choices=STATUS_CHOICES)
-    l5_phone_status = models.IntegerField('Level5 SMS Status', default=0, choices=STATUS_CHOICES)
-    l6_email_status = models.IntegerField('Level6 Email Status', default=0, choices=STATUS_CHOICES)
-    l6_phone_status = models.IntegerField('Level6 SMS Status', default=0, choices=STATUS_CHOICES)
-    l7_email_status = models.IntegerField('Level7 Email Status', default=0, choices=STATUS_CHOICES)
-    l7_phone_status = models.IntegerField('Level7 SMS Status', default=0, choices=STATUS_CHOICES)
-    alert_description = models.TextField('Alert Description', default='', blank=True)
-    is_closed = models.BooleanField(default=False)
+    PERFOEMANCE_CHOICES = (
+        (0, 'Bad'),
+        (1, 'Good')
+    )
+
+    organization = models.ForeignKey(Organization)
+    device_name = models.CharField(max_length=100, db_index=True)
+    device_type = models.CharField(max_length=100, db_index=True)
+    service = models.CharField(max_length=100, db_index=True)
+    service_data_source =  models.CharField(max_length=100, db_index=True)
+    ip = models.IPAddressField()
+    l1_email_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l1_phone_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l2_email_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l2_phone_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l3_email_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l3_phone_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l4_email_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l4_phone_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l5_email_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l5_phone_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l6_email_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l6_phone_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l7_email_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    l7_phone_status = models.IntegerField(default=0, choices=STATUS_CHOICES)
+    status_since = models.DateTimeField(auto_now_add=True)
+    severity = models.CharField(max_length=20)
+    old_status = models.IntegerField(choices=PERFOEMANCE_CHOICES)
+    new_status = models.IntegerField(choices=PERFOEMANCE_CHOICES)

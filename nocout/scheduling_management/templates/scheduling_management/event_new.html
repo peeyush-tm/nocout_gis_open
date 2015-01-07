@@ -5,6 +5,7 @@
 {% block content_description %}Add device type{% endblock %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/schedule_style.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/bootstrap-timepicker.min.css" %} >
 {% endblock %}
 {% block content %}
     <div class="row formContainer">
@@ -87,6 +88,19 @@
                                                 </div>
                                             </div>
                                             <div class="form-group">
+                                                <label for="duration" class="col-sm-3 control-label"><span class="mandatory">* </span>Duration: </label>
+                                                <div class="col-sm-9">
+                                                    <div class="col-md-8">
+                                                        <div class="bootstrap-timepicker col-md-5">
+                                                            From: {{ form.start_on_time }} {{ form.start_on_time.errors }}
+                                                        </div>
+                                                        <div class="bootstrap-timepicker col-md-5">
+                                                            To: {{ form.end_on_time }} {{ form.end_on_time.errors }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
                                                 <label for="{{ form.scheduling_type.id_for_label }}" class="col-sm-3 control-label"><span class="mandatory">* </span>{{ form.scheduling_type.label|title }}</label>
                                                 <div class="col-sm-9">
                                                     <div class="col-md-8">
@@ -94,6 +108,17 @@
                                                     </div>
                                                     <div class="col-md-4 help_text">
                                                         {{ form.scheduling_type.help_text }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="col-sm-3 control-label">Technology</label>
+                                                <div class="col-sm-9">
+                                                    <div class="col-md-8">
+                                                        {{ form.technology }} {{ form.technology.errors }}
+                                                    </div>
+                                                    <div class="col-md-4 help_text">
+                                                        {{ form.technology.help_text }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -113,7 +138,6 @@
                                             <div class="form-group">
                                                 <label class="col-sm-3 control-label"><span class="mandatory">* </span>Ends</label>
                                                 <div class="col-sm-9">
-                                                    <div class="col-sm-8">
                                                     <label class="radio-inline">
                                                         <input type="radio" id="id_ends" class="radioField" value="end_never" name="ends" checked> Never {{ form.end_never }}
                                                     </label><br>
@@ -125,7 +149,6 @@
                                                         <input type="radio" id="id_ends" class="radioField" value="end_on" name="ends">
                                                         On&nbsp;&nbsp;&nbsp;<div class="radio-inline">{{ form.end_on }}</div>
                                                     </label>
-                                                    </div>
                                                 </div>
                                             </div>
                                     </div>
@@ -134,7 +157,7 @@
                                         <div class="col-sm-offset-3 col-sm-9">
                                             <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
                                             &nbsp;
-                                            <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
+                                            <button type="reset" class="btn btn-warning" onclick="window.location.replace('/scheduling/new/')"><i class="fa fa-refresh"></i>Reset</button>
                                             &nbsp;
                                             <button type="reset" class="btn btn-warning" onclick="window.location.replace('/scheduling/')"><i class="fa fa-times"></i>Skip</button>
                                             &nbsp;
@@ -154,9 +177,14 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
         <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-timepicker.js" %}></script>
     {% endblock %}
     <script>
         $(document).ready(function(){
+            var title = '{{ title|safe }}'
+            if (title != 'None'){
+                $("#id_name").val(title)
+            }
             // Initialize the select2 selectbox.
             $(".select2select").select2();
             $('.tip-focus').tooltip({
@@ -173,27 +201,92 @@
                 navigationAsDateFormat: true,
             });
 
+            $('#id_start_on_time').timepicker({
+                minuteStep: 1,
+                showSeconds: false,
+                showMeridian: false,
+                disableFocus: true
+            });
+            $('#id_end_on_time').timepicker({
+                minuteStep: 1,
+                showSeconds: false,
+                showMeridian: false,
+                disableFocus: true
+            });
+
+            $('#id_start_on_time').timepicker().on('hide.timepicker', function(e) {
+                if (( Date.parse('01/01/2011 '+$('#id_start_on_time').val()) <
+                    Date.parse('01/01/2011 '+$('#id_end_on_time').val()) ) &&
+                    ($(this).val() != '') ){
+                    filter_selected_device()
+                }
+                else{
+                    $('#id_start_on_time').timepicker('setTime', $('#id_end_on_time').val());
+                    alert('Start time must be lesser than End time')
+                }
+            });
+            $('#id_end_on_time').timepicker().on('hide.timepicker', function(e) {
+                if (( Date.parse('01/01/2011 '+$('#id_start_on_time').val()) <
+                    Date.parse('01/01/2011 '+$('#id_end_on_time').val()) ) &&
+                    ($(this).val() != '') ){
+                    filter_selected_device()
+                }
+                else{
+                    $('#id_end_on_time').timepicker('setTime', $('#id_start_on_time').val());
+                    alert('End time must be greater than Start time')
+                }
+            });
+
+            // filter devices from the select2 on change of the duration of event.
+            function filter_selected_device(){
+                var start_on_time = $("#id_start_on_time").val();
+                var end_on_time = $("#id_end_on_time").val();
+                var device_ids = $("input[name='device']").val()
+                if (device_ids.length){
+                    $.ajax({
+                        url: '/device/filter/selected/device/',
+                        type: 'GET',
+                        dataType: 'json',
+                        contentType: 'application/json; charset=utf-8',
+                        data: {
+                            ids: device_ids,
+                            start_on_time: start_on_time,
+                            end_on_time: end_on_time,
+                        },
+                        success: function (response) {
+                            $("input[name='device']").select2("data", response.device_result)
+                        }
+                    });
+                }
+            }
+
             // handle the ends field of the form.
             var $radios = $('input:radio[name=ends]');
+            $("#id_end_never").val(true)
             $("#id_end_after").val('').prop('readonly',true)
-            $("#id_end_on").val('').prop('readonly',true)
+            $("#id_end_on").val('').prop('disabled',true)
             $radios.change(function(){
                 var x = $(this).val();
                 if (x=='end_after'){
-                    $("#id_end_after").val('0').prop('readonly',false).prop('required', true)
+                    $("#id_end_after").val('1').prop('readonly',false).prop('required', true)
                     $("#id_end_never").val(false)
-                    $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                    $("#id_end_on").val('').prop('disabled',true).prop('required', false)
                 }
                 else if(x=='end_on'){
-                    $("#id_end_on").val('').prop('readonly',false).prop('required', true)
+                    $("#id_end_on").val('').prop('disabled',false).prop('required', true)
                     $("#id_end_never").val(false)
                     $("#id_end_after").val('').prop('readonly',true).prop('required', false)
                 }
                 else{
                     $("#id_end_never").val(true)
                     $("#id_end_after").val('').prop('readonly',true).prop('required', false)
-                    $("#id_end_on").val('').prop('readonly',true).prop('required', false)
+                    $("#id_end_on").val('').prop('disabled',true).prop('required', false)
                 }
+            });
+
+            $("#id_end_after").change(function() {
+                var end_after_val = $(this).val();
+                if (end_after_val < 1){ alert('End after value should be positive integer.'); $(this).val('1'); }
             });
 
             if ($("#id_scheduling_type").val() == ''){
@@ -276,9 +369,15 @@
                     quietMillis: 250,
                     data: function (term, page) {
                         var scheduling_type = $("#id_scheduling_type").val()
+                        var start_on_time = $("#id_start_on_time").val()
+                        var end_on_time = $("#id_end_on_time").val()
+                        var technology_id = $("#id_technology").val()
                         return {
                             sSearch: term, // search term
                             scheduling_type: scheduling_type,
+                            start_on_time: start_on_time,
+                            end_on_time: end_on_time,
+                            technology_id: technology_id,
                         };
                     },
                     results: function (data, page) { // parse the results into the format expected by Select2.
@@ -286,7 +385,7 @@
                         return { results: data.items };
                     },
                     cache: false
-                },
+                }, // end ajax
                 initSelection: function(element, callback) {
                     // the input tag has a value attribute preloaded that points to a preselected repository's id
                     // this function resolves that id attribute to an object that select2 can render
@@ -307,11 +406,7 @@
                 },
                 formatResult: repoDeviceFormatResult, // omitted for brevity, see the source of this page
                 formatSelection: repoDeviceFormatSelection,  // omitted for brevity, see the source of this page
-            })
-            // .on("select2-selecting", function(el) {
-            //     console.log(el.val)
-            //     // location.href="/gis-wizard/base-station/" + el.val + "/";
-            // });
+            });
         });
         function repoDeviceFormatResult(device) {
           return device.device_alias;

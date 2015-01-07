@@ -5,7 +5,11 @@
 {% block content_description %}List of thematic settings{% endblock %}
 {% block content %}
         {% if user.is_superuser %}
-            <p><a href="/serv_thematic_settings/new"><i class="fa fa-plus">&nbsp;</i> Create Service Thematic Settings</a></p>
+           {% if is_admin %}
+               <p><a href="/serv_thematic_settings/admin/new"><i class="fa fa-plus">&nbsp;</i> Create Admin Service Thematic Settings</a></p>
+            {% else %}
+                <p><a href="/serv_thematic_settings/new"><i class="fa fa-plus">&nbsp;</i> Create Service Thematic Settings</a></p>
+            {% endif %}
         {% endif %}
 
     <div class="box border lite">
@@ -17,7 +21,7 @@
                 <ul class="nav nav-tabs">
                         <li><a href="#network_wifi_block" id="network_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
                         <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
-                        <li class="active"><a href="#network_p2p_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
+                        <li class="active"><a href="#network_p2p_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
                     <div class="tab-pane in active" id="network_p2p_block">

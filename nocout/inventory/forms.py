@@ -7,7 +7,7 @@ from django.core.validators import RegexValidator, MaxValueValidator, MinValueVa
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
 from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, \
-    GISInventoryBulkImport, PingThematicSettings
+    GISInventoryBulkImport, PingThematicSettings, GISExcelDownload
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
@@ -21,7 +21,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-#*************************************** Inventory ************************************
+# *************************************** Inventory ************************************
 class InventoryForm(forms.ModelForm):
     """
     Class Based View Inventory Model form to update and create.
@@ -112,7 +112,7 @@ class InventoryForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#*************************************** Antenna **************************************
+# *************************************** Antenna **************************************
 class AntennaForm(forms.ModelForm):
     """
     Class Based View Antenna Model form to update and create.
@@ -230,7 +230,7 @@ class AntennaForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#************************************* Backhaul ****************************************
+# ************************************* Backhaul ****************************************
 class BackhaulForm(forms.ModelForm):
     """
         Class Based View Backhaul Model form to update and create.
@@ -346,18 +346,11 @@ class BackhaulForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#************************************ Base Station ****************************************
+# ************************************ Base Station ****************************************
 class BaseStationForm(forms.ModelForm):
     """
     Class Based View Base Station Model form to update and create.
     """
-
-    country = IntReturnModelChoiceField(queryset=Country.objects.all(),
-                                        required=False)
-    state = IntReturnModelChoiceField(queryset=State.objects.all(),
-                                      required=False)
-    city = IntReturnModelChoiceField(queryset=City.objects.all(),
-                                     required=False)
 
     BS_TYPE = (
         ('', 'Select'),
@@ -371,7 +364,20 @@ class BaseStationForm(forms.ModelForm):
         ('GBT', 'GBT')
     )
 
+    MAINTENANCE_STATUS = (
+        ('Yes', 'Yes'),
+        ('No', 'No')
+    )
+
+    PROVISIONING_STATUS = (
+        ('Normal', 'Normal'),
+        ('Needs Provisioning', 'Needs Provisioning'),
+        ('Stop Provisioning', 'Stop Provisioning')
+    )
+
     bs_type = forms.TypedChoiceField(choices=BS_TYPE, required=False)
+    maintenance_status = forms.TypedChoiceField(choices=MAINTENANCE_STATUS, required=False, initial='No')
+    provisioning_status = forms.TypedChoiceField(choices=PROVISIONING_STATUS, required=False)
     bs_site_type = forms.TypedChoiceField(choices=BS_SITE_TYPE, required=False)
     building_height = forms.FloatField(label='Building Height', required=True, initial=0, help_text='(mtr) Enter a number.',
             validators=[MaxValueValidator(99), MinValueValidator(-1)])
@@ -465,7 +471,7 @@ class BaseStationForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#************************************* Sector *************************************
+# ************************************* Sector *************************************
 class SectorForm(forms.ModelForm):
     """
     Class Based View Sector Model form to update and create.
@@ -572,7 +578,7 @@ class SectorForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#************************************* Customer ***************************************
+# ************************************* Customer ***************************************
 class CustomerForm(forms.ModelForm):
     """
         Class Based View Customer Model form to update and create.
@@ -648,18 +654,11 @@ class CustomerForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#*********************************** Sub Station *************************************
+# *********************************** Sub Station *************************************
 class SubStationForm(forms.ModelForm):
     """
     Class Based View SubStation Model form to update and create.
     """
-
-    country = IntReturnModelChoiceField(queryset=Country.objects.all(),
-                                        required=False)
-    state = IntReturnModelChoiceField(queryset=State.objects.all(),
-                                      required=False)
-    city = IntReturnModelChoiceField(queryset=City.objects.all(),
-                                     required=False)
 
     ETHERNET_EXTENDER = (
         ('', 'Select'),
@@ -761,7 +760,7 @@ class SubStationForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#*********************************** Circuit ***************************************
+# *********************************** Circuit ***************************************
 class CircuitForm(forms.ModelForm):
     """
     Class Based View Circuit Model form to update and create.
@@ -851,7 +850,7 @@ class CircuitForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#******************************* Circuit L2 Reports Form **************************
+# ******************************* Circuit L2 Reports Form **************************
 class CircuitL2ReportForm(forms.ModelForm):
     """
     Class Based View CircuitL2Report Model form to update and create.
@@ -868,23 +867,23 @@ class CircuitL2ReportForm(forms.ModelForm):
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-            	if not(isinstance(field.widget, forms.widgets.CheckboxInput)):
-	                field.widget.attrs['class'] += ' tip-focus form-control'
-	                field.widget.attrs['data-toggle'] = 'tooltip'
-	                field.widget.attrs['data-placement'] = 'right'
-	                field.widget.attrs['title'] = field.help_text
-	                field.widget.attrs['style'] = 'padding:0px 12px;height:40px;'
+                if not (isinstance(field.widget, forms.widgets.CheckboxInput)):
+                    field.widget.attrs['class'] += ' tip-focus form-control'
+                    field.widget.attrs['data-toggle'] = 'tooltip'
+                    field.widget.attrs['data-placement'] = 'right'
+                    field.widget.attrs['title'] = field.help_text
+                    field.widget.attrs['style'] = 'padding:0px 12px;height:40px;'
                 else:
-                	field.widget.attrs['checked'] = "true"
+                    field.widget.attrs['checked'] = "true"
             else:
-            	if not(isinstance(field.widget, forms.widgets.CheckboxInput)):
-	                field.widget.attrs.update({'class': ' tip-focus form-control'})
-	                field.widget.attrs.update({'data-toggle': 'tooltip'})
-	                field.widget.attrs.update({'data-placement': 'right'})
-	                field.widget.attrs.update({'title': field.help_text})
-	                field.widget.attrs.update({'style' : 'padding:0px 12px;height:40px;'})
+                if not (isinstance(field.widget, forms.widgets.CheckboxInput)):
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
+                    field.widget.attrs.update({'style': 'padding:0px 12px;height:40px;'})
                 else:
-                	field.widget.attrs['checked'] = "true"
+                    field.widget.attrs['checked'] = "true"
 
     class Meta:
         """
@@ -898,7 +897,8 @@ class CircuitL2ReportForm(forms.ModelForm):
         input_excel = self.cleaned_data.get('file_name')
         extension = os.path.splitext(input_excel.name)[1]
         if not (extension in IMPORT_FILE_TYPES):
-            raise ValidationError( u'%s is not the supported file. Please make sure your input file is an excel(.xls) file.' % extension )
+            raise ValidationError(
+                u'%s is not the supported file. Please make sure your input file is an excel(.xls) file.' % extension )
         else:
             return input_excel
 
@@ -919,7 +919,7 @@ class CircuitL2ReportForm(forms.ModelForm):
         return name
 
 
-#*********************************** IconSettings ***************************************
+# *********************************** IconSettings ***************************************
 class IconSettingsForm(forms.ModelForm):
     """
     Class Based View IconSettings Model form to update and create.
@@ -983,7 +983,8 @@ class IconSettingsForm(forms.ModelForm):
             logger.info(e.message)
         return self.cleaned_data
 
-#*********************************** ServiceThresholdConfiguration *****************************
+
+# *********************************** ServiceThresholdConfiguration *****************************
 class ServiceThresholdConfigurationForm(forms.ModelForm):
 
     """
@@ -1007,8 +1008,6 @@ class ServiceThresholdConfigurationForm(forms.ModelForm):
 
             field.widget.attrs.update({'class': 'form-control col-md-4'})
         self.fields['service_type'].widget.attrs.update({'style': 'width:340px'})
-        #self.fields['service_type'].empty_label = 'Select'
-
 
     class Meta:
         """
@@ -1017,7 +1016,8 @@ class ServiceThresholdConfigurationForm(forms.ModelForm):
         model = ThresholdConfiguration
         exclude = ('name', 'alias', 'live_polling_template')
 
-#*********************************** ServiceLivePollingSettings ********************************
+
+# *********************************** ServiceLivePollingSettings ********************************
 class ServiceLivePollingSettingsForm(forms.ModelForm):
     """
     Class Based View ServiceLivePollingSettings Model form to update and create.
@@ -1055,7 +1055,8 @@ class ServiceLivePollingSettingsForm(forms.ModelForm):
         model = LivePollingSettings
         exclude = ('name', 'alias')
 
-#*********************************** LivePollingSettings ***************************************
+
+# *********************************** LivePollingSettings ***************************************
 class LivePollingSettingsForm(forms.ModelForm):
     """
     Class Based View LivePollingSettings Model form to update and create.
@@ -1123,7 +1124,7 @@ class LivePollingSettingsForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#*********************************** LivePollingSettings ***************************************
+# *********************************** LivePollingSettings ***************************************
 class ThresholdConfigurationForm(forms.ModelForm):
 
     """
@@ -1190,7 +1191,7 @@ class ThresholdConfigurationForm(forms.ModelForm):
         return self.cleaned_data
 
 
-#*********************************** LivePollingSettings ***************************************
+# *********************************** LivePollingSettings ***************************************
 class ThematicSettingsForm(forms.ModelForm):
     """
     Class Based View Thematic Settings Model form to update and create.
@@ -1254,7 +1255,7 @@ class ThematicSettingsForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-#*********************************** Service Thematic Settings *************************
+# *********************************** Service Thematic Settings *************************
 class ServiceThematicSettingsForm(forms.ModelForm):
     """
     Class Based View Service Thematic Settings Model form to update and create.
@@ -1294,13 +1295,17 @@ class ServiceThematicSettingsForm(forms.ModelForm):
         Name unique validation
         """
         name = self.cleaned_data['name']
-        names = ThematicSettings.objects.filter(name=name)
+        thematic_name = ThematicSettings.objects.filter(name=name)
+        threshold_name = ThresholdConfiguration.objects.filter(name=name)
+        live_polling_name = LivePollingSettings.objects.filter(name=name)
         try:
             if self.id:
-                names = names.exclude(pk=self.id)
+                thematic_name = thematic_name.exclude(pk=self.id)
+                threshold_name = list()
+                live_polling_name = list()
         except Exception as e:
             logger.info(e.message)
-        if names.count() > 0:
+        if thematic_name.count() > 0 or len(threshold_name) >0 or len(live_polling_name) > 0:
             raise ValidationError('This name is already in use.')
         return name
 
@@ -1319,7 +1324,7 @@ class ServiceThematicSettingsForm(forms.ModelForm):
             logger.info(e.message)
         return self.cleaned_data
 
-#*********************************** Bulk Import ***************************************
+# *********************************** Bulk Import ***************************************
 class GISInventoryBulkImportForm(forms.Form):
     IMPORT_FILE_TYPES = ['.xls']
     # SHEET_CHOICES = [('', 'Select')] + [(str(id), str(id)) for id in range(50)]
@@ -1331,12 +1336,14 @@ class GISInventoryBulkImportForm(forms.Form):
         ("PMP SM", "PMP SM"),
         ("Converter", "Converter"),
         ("PTP", "PTP"),
-        ("PTP BH", "PTP BH")
+        ("PTP BH", "PTP BH"),
+        ("Backhaul", "Backhaul")
     )
     file_upload = forms.FileField(label='Inventory Excel Sheet')
     bs_sheet = forms.ChoiceField(label='Wimax/PMP BS Sheet', choices=SHEET_CHOICES, required=False)
     ss_sheet = forms.ChoiceField(label='Wimax/PMP SS Sheet', choices=SHEET_CHOICES, required=False)
     ptp_sheet = forms.ChoiceField(label='PTP Sheet', choices=SHEET_CHOICES, required=False)
+    backhaul_sheet = forms.ChoiceField(label='Backhaul Sheet', choices=SHEET_CHOICES, required=False)
     description = forms.CharField(label='Description', widget=forms.Textarea, required=False)
 
     def __init__(self, *args, **kwargs):
@@ -1358,7 +1365,8 @@ class GISInventoryBulkImportForm(forms.Form):
         input_excel = self.cleaned_data['file_upload']
         extension = os.path.splitext(input_excel.name)[1]
         if not (extension in GISInventoryBulkImportForm.IMPORT_FILE_TYPES):
-            raise forms.ValidationError( u'%s is not the supported file. Please make sure your input file is an excel(.xls) file.' % extension )
+            raise forms.ValidationError(
+                u'%s is not the supported file. Please make sure your input file is an excel(.xls) file.' % extension )
         else:
             return input_excel
 
@@ -1371,7 +1379,7 @@ class GISInventoryBulkImportForm(forms.Form):
         return description
 
 
-#*********************************** LivePollingSettings ***************************************
+# ****************************** GIS Inventory Bulk Import Update ********************************
 class GISInventoryBulkImportEditForm(forms.ModelForm):
 
     """
@@ -1405,7 +1413,39 @@ class GISInventoryBulkImportEditForm(forms.ModelForm):
         exclude = ['status', 'uploaded_by', 'added_on', 'modified_on', 'upload_status']
 
 
-#************************************** Ping Thematic Settings **********************************
+# **************************** GIS Inventory Excel Download Update ******************************
+class DownloadSelectedBSInventoryEditForm(forms.ModelForm):
+    """
+    Class Based View GISInventoryBulkImport Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(DownloadSelectedBSInventoryEditForm, self).__init__(*args, **kwargs)
+        self.fields['file_path'].widget.attrs['readonly'] = True
+        self.fields['downloaded_by'].widget.attrs['readonly'] = True
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = GISExcelDownload
+        fields = ['file_path', 'downloaded_by', 'description']
+
+
+# ************************************** Ping Thematic Settings **********************************
 class PingThematicSettingsForm(forms.ModelForm):
     """
         Ping thematic settings form
@@ -1583,8 +1623,7 @@ class WizardSectorForm(SectorForm):
         self.technology = kwargs.pop('technology')
         super(WizardSectorForm, self).__init__(*args, **kwargs)
 
-        if self.technology == 'P2P':
-            self.fields['sector_configured_on'].label = 'Near End IP'
+        self.fields['dr_configured_on'].widget = forms.HiddenInput()
 
         self.fields.pop('organization')
         self.fields.pop('base_station')
@@ -1598,6 +1637,7 @@ class WizardSectorForm(SectorForm):
             self.fields.pop('sector_configured_on_port')
             self.fields.pop('dr_site')
             self.fields.pop('mrc')
+            self.fields.pop('dr_configured_on')
 
         if self.technology != 'PMP':
             self.fields.pop('rf_bandwidth')
@@ -1607,7 +1647,7 @@ class WizardSectorForm(SectorForm):
         Meta Information
         """
         model = Sector
-        fields = ('sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
+        fields = ('sector_id', 'sector_configured_on', 'sector_configured_on_port', 'dr_site', 'dr_configured_on', 'mrc', 'tx_power', 'rx_power', 'rf_bandwidth', 'frame_length', 'cell_radius', 'frequency', 'modulation', 'organization', 'base_station', 'bs_technology', 'antenna',)
 
     def clean_sector_id(self):
         """

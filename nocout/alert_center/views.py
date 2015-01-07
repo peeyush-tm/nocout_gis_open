@@ -21,7 +21,7 @@ from django.utils.dateformat import format
 from django.db.models import Q
 
 #nocout project settings
-from nocout.settings import P2P, WiMAX, PMP, DEBUG
+from nocout.settings import P2P, WiMAX, PMP, DEBUG, DATE_TIME_FORMAT
 
 #utilities core
 from nocout.utils import util as nocout_utils
@@ -44,31 +44,78 @@ def getCustomerAlertDetail(request):
     :return Http Response Object::
 
     """
-    datatable_headers = [
-        {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
+    # datatable_headers = [
+    #     {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
+    #     {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'bSortable': True},
+    #     {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True},
+    #     {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"},
+    #     {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+    #     {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+    #      'bSortable': False},
+    # ]
+
+    starting_headers = [
+      {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
+    ]
+
+    specific_headers = [
+      {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True}
+    ]
+
+    common_headers = [
+        {'mData': 'near_end_ip', 'sTitle': 'Near End IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+         'bSortable': True},
         {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"},
-        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': False},
+         'bSortable': True}
     ]
+
+    polled_headers = [
+      {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"}
+    ]
+
+    other_headers = [
+      {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+      {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': False}
+    ]
+
+    datatable_headers = starting_headers
+    datatable_headers += specific_headers
+    datatable_headers += common_headers
+    datatable_headers += polled_headers
+    datatable_headers += other_headers
 
     context = {'datatable_headers': json.dumps(datatable_headers)}
     return render(request, 'alert_center/customer_alert_details_list.html', context)
@@ -87,6 +134,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
     polled_columns = ["id",
                       "ip_address",
+                      "service_name",
                       "data_source",
                       "device_name",
                       "severity",
@@ -164,6 +212,8 @@ class GetCustomerAlertDetail(BaseDatatableView):
         after creating static inventory first
         """
 
+        device_tab_technology = self.request.GET.get('data_tab')
+
         search_table = "performance_servicestatus"
 
         data_sources_list = list()
@@ -188,6 +238,25 @@ class GetCustomerAlertDetail(BaseDatatableView):
             device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
 
             sorted_device_list += device_list
+
+        if device_tab_technology.strip().lower() in ['wimax']:
+            search_table = "performance_inventorystatus"
+            extra_query_condition = ' AND `{0}`.`severity` in ("down","warning","critical","warn","crit") '
+            for machine, machine_device_list in machine_dict.items():
+                device_list = list()
+                performance_data = list()
+                performance_data = alert_utils.raw_prepare_result(performance_data=performance_data,
+                                                                  machine=machine,
+                                                                  table_name=search_table,
+                                                                  devices=machine_device_list,
+                                                                  data_sources=data_sources_list,
+                                                                  columns=self.polled_columns,
+                                                                  condition=extra_query_condition if extra_query_condition else None
+                )
+
+                device_list = alert_utils.prepare_raw_alert_results(performance_data=performance_data)
+
+                sorted_device_list += device_list
 
         return sorted_device_list
 
@@ -267,25 +336,51 @@ def getNetworkAlertDetail(request):
     :params request object:
     :return Http Response Object:
     """
-    datatable_headers = [
-        {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
+
+    starting_headers = [
+      {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
+    ]
+
+    specific_headers = [
+      {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True}
+    ]
+
+    common_headers = [
         {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
-        {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"},
-        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
-        {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
+         'bSortable': True}
     ]
+
+    polled_headers = [
+      {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True},
+      {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"}
+    ]
+
+    other_headers = [
+      {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
+      {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+       'bSortable': False}
+    ]
+
+    datatable_headers = starting_headers
+    datatable_headers += specific_headers
+    datatable_headers += common_headers
+    datatable_headers += polled_headers
+    datatable_headers += other_headers
 
     context = {'datatable_headers': json.dumps(datatable_headers)}
     return render(request, 'alert_center/network_alert_details_list.html', context)
@@ -535,9 +630,18 @@ class AlertCenterListing(ListView):
 
         data_tab = self.kwargs.get('data_tab')
 
-        datatable_headers = [
-            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
+        # List of headers which are used in calculation but not shown in grid
+        hidden_headers = [
+            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True}
+        ]
+
+        # List of headers which are shown first in grid for all pages
+        starting_headers = [
+            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True}
+        ]
+
+        # List of common headers for all pages of alerts listing
+        common_headers = [
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'auto', 'sClass': 'hidden-xs',
             #  'bSortable': True},
@@ -545,62 +649,89 @@ class AlertCenterListing(ListView):
              'bSortable': True},
             # {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
             #  'bSortable': True},
+            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'bs_name', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True},
         ]
-        if data_tab == 'P2P' or data_tab is None:
-            datatable_headers += [
-                {'mData': 'circuit_id',
-                 'sTitle': 'Circuit ID',
-                 'sWidth': 'auto',
-                 'sClass': 'hidden-xs',
-                 'bSortable': True
-                },
-            ]
+
+        # Page specific & polled headers list initialization
+        specific_headers = []
+        polled_headers = []
+
+        # if data_tab == 'P2P' or data_tab is None:
+        #     specific_headers += [
+        #         {'mData': 'circuit_id',
+        #          'sTitle': 'Circuit ID',
+        #          'sWidth': 'auto',
+        #          'sClass': 'hidden-xs',
+        #          'bSortable': True
+        #         },
+        #     ]
 
         if data_tab != 'P2P' or data_tab is not None:
-            datatable_headers += [
+            specific_headers += [
                 {'mData': 'sector_id',
                  'sTitle': 'Sector ID',
                  'sWidth': 'auto',
                  'sClass': 'hidden-xs',
                  'bSortable': True
-                },
+                }
             ]
 
         if page_type == 'customer' or data_tab == 'P2P' or data_tab is None:
-            datatable_headers += [
+            specific_headers += [
+                {
+                  'mData': 'circuit_id',
+                  'sTitle': 'Circuit ID',
+                  'sWidth': 'auto',
+                  'sClass': 'hidden-xs',
+                  'bSortable': True
+                },
                 {
                     'mData': 'customer_name',
                     'sTitle': 'Customer Name',
                     'sWidth': 'auto',
                     'bSortable': True
+                }
+            ]
+
+        if page_type == 'customer':
+            specific_headers += [
+                {
+                  'mData': 'near_end_ip',
+                  'sTitle': 'Near End IP',
+                  'sWidth': 'auto',
+                  'sClass': 'hidden-xs',
+                  'bSortable': True
                 },
             ]
 
         if data_source == 'service':
-            datatable_headers += [
-                {'mData': 'data_source_name',
-                 'sTitle': 'Data Source',
-                 'sWidth': 'auto',
-                 'sClass': 'hidden-xs',
-                 'bSortable': True}
+            polled_headers += [
+              {
+                'mData': 'data_source_name',
+                'sTitle': 'Data Source',
+                'sWidth': 'auto',
+                'sClass': 'hidden-xs',
+                'bSortable': True
+              }
             ]
 
-        datatable_headers += [
-            {'mData': 'current_value',
-             'sTitle': '{0}'.format(data_source_title),
-             'sWidth': 'auto',
-             'sClass': 'hidden-xs',
-             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"},
+        polled_headers += [
+            {
+              'mData': 'current_value',
+              'sTitle': '{0}'.format(data_source_title),
+              'sWidth': 'auto',
+              'sClass': 'hidden-xs',
+              'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"
+            }
         ]
 
         if data_source == "latency":
-            datatable_headers += [
+            polled_headers += [
                 {
                     'mData': 'max_value',
                     'sTitle': 'Latency Max (ms)',
@@ -620,11 +751,18 @@ class AlertCenterListing(ListView):
                     "sType": "numeric"
                 }
             ]
-        datatable_headers += [
+        other_headers = [
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'Status Since', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
         ]
+
+        datatable_headers = hidden_headers
+        datatable_headers += starting_headers
+        datatable_headers += specific_headers
+        datatable_headers += common_headers
+        datatable_headers += polled_headers
+        datatable_headers += other_headers
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
@@ -646,6 +784,7 @@ class AlertListingTable(BaseDatatableView):
 
     polled_columns = ["id",
                       "ip_address",
+                      "service_name",
                       "data_source",
                       "device_name",
                       "severity",
@@ -921,6 +1060,9 @@ class SingleDeviceAlertDetails(View):
         device_id = device_id
         machine_name = device_obj.machine.name
 
+        device_technology_name = DeviceTechnology.objects.get(id=device_obj.device_technology).name
+
+
         data_list = None
         required_columns = [
             # "device_name",
@@ -1015,7 +1157,7 @@ class SingleDeviceAlertDetails(View):
             #     strftime("%I:%M %p")
             data["alert_date_time"] = datetime.datetime. \
                 fromtimestamp(float(data["sys_timestamp"])). \
-                strftime("%d/%B/%Y %I:%M %p")
+                strftime(DATE_TIME_FORMAT)
 
             del (data["sys_timestamp"])
 
@@ -1042,7 +1184,7 @@ class SingleDeviceAlertDetails(View):
                 for column in range(column_length):
                     worksheet.write(row, column, data_list[row][required_columns[column]], style=style)
 
-            response = HttpResponse(mimetype='application/vnd.ms-excel', content_type='text/plain')
+            response = HttpResponse(content_type='application/vnd.ms-excel')
             start_date_string = datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
             end_date_string = datetime.datetime.fromtimestamp(float(end_date)).strftime("%d/%B/%Y")
             response['Content-Disposition'] = 'attachment; filename=alert_report_{0}_{1}_to_{2}.xls' \
@@ -1088,6 +1230,7 @@ class SingleDeviceAlertDetails(View):
                            service_name=service_name,
                            start_date_object=start_date_object,
                            end_date_object=end_date_object,
+                           device_technology_name=device_technology_name
             )
 
             return render(request, 'alert_center/single_device_alert.html', context)
