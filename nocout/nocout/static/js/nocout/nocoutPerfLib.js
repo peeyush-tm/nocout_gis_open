@@ -586,6 +586,7 @@ function nocoutPerfLib() {
                 //    backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
                 //},
                 tooltip: {
+                    headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
                     pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
                     shared: true,
                     crosshairs: true,
