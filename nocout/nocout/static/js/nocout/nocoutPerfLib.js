@@ -21,8 +21,8 @@ var perf_that = "",
     red_color = "#b94a48",
     green_status_array = ['ok','success','up'],
     red_status_array = ['warning','critical','down'],
-    left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;",
-    right_block_style = "border:1px solid #CCC;padding: 3px 5px;";
+    left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;background:#FFF;",
+    right_block_style = "border:1px solid #CCC;padding: 3px 5px;background:#FFF;";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -324,7 +324,7 @@ function nocoutPerfLib() {
                                             perf = data_obj.perf ? data_obj.perf : "N/A",
                                             inner_status_html = '';
                                         
-                                        inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">';
+                                        inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
                                         inner_status_html += '<tr><td>Latest Performance Output : '+perf+'</td><td>Last Updated At : '+last_updated+'</td></tr>';
                                         inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
                                         $("#last_updated_"+tab_content_dom_id).html(inner_status_html);
@@ -383,7 +383,7 @@ function nocoutPerfLib() {
                                         perf = data_obj.perf ? data_obj.perf : "N/A",
                                         inner_status_html = '';
 
-                                    inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">';
+                                    inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
                                     inner_status_html += '<tr><td>Latest Performance Output : '+perf+'</td><td>Last Updated At : '+last_updated+'</td></tr>';
                                     inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
                                     
@@ -460,11 +460,12 @@ function nocoutPerfLib() {
                     }
 
                     status_html = "";
-                    status_html += '<i class="fa fa-circle" style="vertical-align: middle;color:'+txt_color+';"> </i>';
-                    // status_html += 'Device Status ';
-                    status_html += '<span style="'+left_block_style+'color:'+txt_color+';">Current Status : '+status+'</span>';
-                    status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Current Status Since : '+age+'</span>';
-                    status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Last Down Time : '+lastDownTime+'</span>';
+
+                    status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;"><tr>';
+                    status_html += '<td style="color:'+txt_color+';"><i class="fa fa-circle" style="vertical-align: middle;"> </i> <b>Current Status</b> : '+status+'</td>';
+                    status_html += '<td style="color:'+txt_color+';"><b>Current Status Since</b> : '+age+'</td>';
+                    status_html += '<td style="color:'+txt_color+';"><b>Last Down Time</b> : '+lastDownTime+'</td>';
+                    status_html += '</tr></table>';
 
                     // Update Status Block HTML as per the device status
                     $("#device_status_container").html(status_html);
@@ -628,11 +629,16 @@ function nocoutPerfLib() {
         }
 
         function createDataTableForChart(table_id, headers) {
-
+            var excel_columns = [];
             var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
             /*Make table headers*/
             for (var i = 0; i < headers.length; i++) {
                 data_in_table += '<td colspan="2" align="center"><b>' + headers[i].name + '</b></td>';
+                excel_columns.push(i);
+                if(headers.length <= i+1) {
+                    excel_columns.push(i+1);
+                }
+
             }
             data_in_table += '</tr><tr>';
 
@@ -646,6 +652,18 @@ function nocoutPerfLib() {
             $('#' + service_id + '_bottom_table').html(data_in_table);
 
             $("#" + table_id).DataTable({
+                sDom: 'T<"clear">lfrtip',
+                oTableTools: {
+                    sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                    aButtons: [
+                        {
+                            sExtends: "xls",
+                            sButtonText: "Download Excel",
+                            sFileName: "*.xls",
+                            mColumns: excel_columns
+                        }
+                    ]
+                },
                 bPaginate: true,
                 bDestroy: true,
                 aaSorting : [[0,'desc']],
@@ -693,13 +711,15 @@ function nocoutPerfLib() {
 
         function createDataTable(table_id, headers) {
 
-            var table_string = "";
-            var grid_headers = headers;
+            var table_string = "",
+                grid_headers = headers,
+                excel_columns = [];
 
             table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
             /*Table header creation start*/
             for (var i = 0; i < grid_headers.length; i++) {
                 table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+                excel_columns.push(i);
             }
             table_string += '</thead></table>';
             /*Table header creation end*/
@@ -707,6 +727,18 @@ function nocoutPerfLib() {
             $('#' + service_id + '_chart').html(table_string);
 
             $("#" + table_id).DataTable({
+                sDom: 'T<"clear">lfrtip',
+                oTableTools: {
+                    sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                    aButtons: [
+                        {
+                            sExtends: "xls",
+                            sButtonText: "Download Excel",
+                            sFileName: "*.xls",
+                            mColumns: excel_columns
+                        }
+                    ]
+                },
                 bPaginate: true,
                 bDestroy: true,
                 aaSorting : [[0,'desc']],

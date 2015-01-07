@@ -7,7 +7,9 @@
     <li><a href="/device/{{ current_device_id }}">{{ current_device_id }}</a></li>
     <li><b>{{ service_name }}</b></li>
 {% endblock %}
-{% block content_title %} {{ page_type | title }} Alert{% endblock %}
+{% block content_title %}
+    {{ page_type | title }} Alert <span style="font-size: 25px;">{{ device_alias }}</span>
+{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
@@ -27,11 +29,11 @@
     <!--Single Device Live Perf Start-->
     <div class='box border lite perfContainerBlock'>
     <div class='box-title'>
-        <h4><i class='fa fa-file-text'></i>{{ device_alias }}</h4>
+        <h4 class="hide"><i class='fa fa-file-text'></i>{{ device_alias }}</h4>
 
-        <div class="pull-right">
+        <div class="">
             <ul class="list-unstyled list-inline">
-                <li style="min-width: 320px;">
+                <li style="max-width: 320px;">
                     <div class="input-group">
                         <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text"
                                                                                                     name="reservation"
@@ -54,8 +56,7 @@
                         </button>
                     </div>
                 </li>
-                <li>
-                    <!--CSV or Excel download action. -->
+                <!-- <li>
                     <div class="btn-group dropdown col-xs-1">
                         <button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
                             Download Report
@@ -70,7 +71,7 @@
                             </li>
                         </ul>
                     </div>
-                </li>
+                </li> -->
             </ul>
         </div>
         <div class="clearfix"></div>
@@ -79,10 +80,6 @@
 
         <div class="box status_box">
             <div class="box-title" style="background:transparent;">
-                <h4 id="device_status_container">
-                    
-                </h4>
-
                 <div class="tools_status">
                     <a href="javascript:;" title="Hide Status" class="collapse">
                         <i class="fa fa-chevron-up"></i>
@@ -91,6 +88,9 @@
             </div>
             <div class="box-body status_body">
                 <div class="well well-sm" id="status_container" style="overflow:auto;">
+                    <div id="device_status_container">
+                        
+                    </div>
                     <table id="status_table" class="table table-responsive table-bordered"
                            style="background:#FFFFFF;">
                         <thead></thead>
@@ -226,7 +226,6 @@
                         {% endfor %}
                     {% endif %}
                 {% endif %}
-
                 </tbody>
             </table>
         </div>
@@ -248,9 +247,31 @@
             red_status_array = ['warning','critical','down'],
             left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;",
             right_block_style = "border:1px solid #CCC;padding: 3px 5px;",
-            device_technology = "";
+            device_technology = "",
+            excel_columns = [];
 
         $(document).ready(function (e) {
+            try {
+                var table_headers = "{{ table_header|safe }}";
+                if(typeof table_headers == 'object') {
+                    table_headers = JSON.stringify(table_headers);
+                }
+                // Excel column count loop
+                var count = 1;
+                for(var i=0;i<=table_headers.length;i++) {
+                    if(table_headers[i] == ',') {
+                        count++;
+                    }
+                }
+                // Add 1 to column count for extra column
+                count += 1;
+                for(var i=0;i<count;i++) {
+                    excel_columns.push(i);
+                }
+            } catch(e) {
+                excel_columns = [0,1,2,3,4,5,6,7];
+            }
+
 
             /*Set the base url of application for ajax calls*/
             if (window.location.origin) {
@@ -270,6 +291,18 @@
             var oldENdData = $.urlParam('end_date') ? new Date($.urlParam('end_date') * 1000) : new Date();
 
             $("#device_alert").DataTable({
+                sDom: 'T<"clear">lfrtip',
+                oTableTools: {
+                    sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
+                    aButtons: [
+                        {
+                            sExtends: "xls",
+                            sButtonText: "Download Excel",
+                            sFileName: "*.xls",
+                            mColumns: excel_columns
+                        }
+                    ]
+                },
                 bPaginate: true,
                 sPaginationType: "full_numbers",
                 aaSorting: [
@@ -549,11 +582,12 @@
                             }
 
                             status_html = "";
-                            status_html += '<i class="fa fa-circle" style="vertical-align: middle;color:'+txt_color+';"> </i>';
-                            // status_html += 'Device Status ';
-                            status_html += '<span style="'+left_block_style+'color:'+txt_color+';">Current Status : '+status+'</span>';
-                            status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Current Status Since : '+age+'</span>';
-                            status_html += '<span style="'+right_block_style+'color:'+txt_color+';">Last Down Time : '+lastDownTime+'</span>';
+                            
+                            status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;"><tr>';
+                            status_html += '<td style="color:'+txt_color+';"><i class="fa fa-circle" style="vertical-align: middle;"> </i> <b>Current Status</b> : '+status+'</td>';
+                            status_html += '<td style="color:'+txt_color+';"><b>Current Status Since</b> : '+age+'</td>';
+                            status_html += '<td style="color:'+txt_color+';"><b>Last Down Time</b> : '+lastDownTime+'</td>';
+                            status_html += '</tr></table>';
 
                             // Update Status Block HTML as per the device status
                             $("#device_status_container").html(status_html);
