@@ -97,7 +97,7 @@ function pmp_getChartData(counter) {
         var data_source_title = ds_list[counter] ? ds_list[counter].toUpperCase() : "";
 
         $.ajax({
-            url : "{% url 'main-sector-pmp' %}" + "?data_source=" + ds_list[counter],
+            url : "{% url 'sector-capacity-pmp' %}" + "?data_source=" + ds_list[counter],
             type : "GET",
             success : function(result) {
                 var response = "";
@@ -213,7 +213,7 @@ function wimax_getChartData(counter) {
         var data_source_title = ds_list[counter] ? ds_list[counter].toUpperCase() : "";
 
         $.ajax({
-            url : "{% url 'main-sector-wimax' %}" + "?data_source=" + ds_list[counter],
+            url : "{% url 'sector-capacity-wimax' %}" + "?data_source=" + ds_list[counter],
             type : "GET",
             success : function(result) {
                 var response = "";

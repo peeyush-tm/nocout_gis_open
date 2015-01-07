@@ -701,7 +701,7 @@ class MainDashboard(View):
         return {'categories': area_chart_categories, 'series': area_chart_series}
 
 
-class MainDashboardSectorMixin(object):
+class SectorCapacityMixin(object):
     """
     Provide common method get for Performance Dashboard.
 
@@ -757,7 +757,7 @@ class MainDashboardSectorMixin(object):
         return HttpResponse(json.dumps(response_dict))
 
 
-class Main_Dashboard_Sector(MainDashboardSectorMixin, View):
+class PMP_Sector_Capacity(SectorCapacityMixin, View):
     """
     The Class based View to get main dashboard page requested.
 
@@ -774,6 +774,28 @@ class Main_Dashboard_Sector(MainDashboardSectorMixin, View):
             'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
         }
         technology = 'PMP'
+        technology = DeviceTechnology.objects.get(name=technology).id
+        sector_method_to_call = organization_sectors
+        return data_source_config, technology, sector_method_to_call
+
+
+class WIMAX_Sector_Capacity(SectorCapacityMixin, View):
+    """
+    The Class based View to get main dashboard page requested.
+
+    """
+    # template_name = 'dashboard/main_dashboard.html'
+
+    def get_init_data(self):
+        """
+        Provide data for mixin's get method.
+        """
+
+        data_source_config = {
+            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
+            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
+        }
+        technology = 'WIMAX'
         technology = DeviceTechnology.objects.get(name=technology).id
         sector_method_to_call = organization_sectors
         return data_source_config, technology, sector_method_to_call
