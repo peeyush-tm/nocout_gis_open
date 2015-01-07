@@ -3,6 +3,7 @@ from django.views.generic.base import View
 from django.template import RequestContext
 
 from django.db.models import Q, Count
+from django.db.models.query import ValuesQuerySet
 
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -122,9 +123,9 @@ class SectorStatusListing(BaseDatatableView):
         'id',
         'sector',
         'sector_sector_id',
-        'sector__base_station__alias'
-        'sector__base_station__city__city_name'
-        'sector__base_station__state__state_name'
+        'sector__base_station__alias',
+        'sector__base_station__city__city_name',
+        'sector__base_station__state__state_name',
         'sector__sector_configured_on__ip_address',
         'sector__sector_configured_on__device_technology',
         'sector_capacity',
@@ -151,7 +152,8 @@ class SectorStatusListing(BaseDatatableView):
         'sector__base_station',
         'sector__base_station__city',
         'sector__base_station__state',
-        'sector__sector_configured_on'
+        'sector__sector_configured_on',
+        'organization'
     ]
 
     def filter_queryset(self, qs):
@@ -205,19 +207,17 @@ class SectorStatusListing(BaseDatatableView):
         """
         """
         # data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-        data = []
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         technology_object = DeviceTechnology.objects.all()
 
-        for item in qs:
+        for item in json_data:
             try:
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
                 item['sector__sector_configured_on__device_technology'] = techno_name
             except:
                 continue
 
-            data.append({key: val if val else "" for key, val in item.items()})
-
-        return data
+        return json_data
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -231,25 +231,30 @@ class SectorStatusListing(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.annotate(Count('sector_id'))
+        total_records = qs.annotate(Count('sector_sector_id')).count()
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.annotate(Count('id'))
+        total_display_records = qs.annotate(Count('id')).count()
 
-        #check if this has just initialised
-        #if so : process the results
+        if total_display_records and total_records:
 
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
+            #check if this has just initialised
+            #if so : process the results
 
-        # if the qs is empty then JSON is unable to serialize the empty
-        # ValuesQuerySet.Therefore changing its type to list.
-        if not qs:
-            qs = list(qs)
+            qs = self.ordering(qs)
+            qs = self.paging(qs)
 
-        aaData = self.prepare_results(qs)
+            # if the qs is empty then JSON is unable to serialize the empty
+            # ValuesQuerySet.Therefore changing its type to list.
+            if not qs and isinstance(qs, ValuesQuerySet):
+                qs = list(qs)
+
+            aaData = self.prepare_results(qs)
+        else:
+            aaData = list()
+
         ret = {
             'sEcho': int(request.REQUEST.get('sEcho', 0)),
             'iTotalRecords': total_records,

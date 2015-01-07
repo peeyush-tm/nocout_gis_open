@@ -24,7 +24,8 @@ def main():
     sql_passwd=configs.get(mongo_conf[0][0]).get('sql_passwd'),
     nosql_db=configs.get(mongo_conf[0][0]).get('nosql_db'),
     sql_port=configs.get(mongo_conf[0][0]).get('mysql_port'),
-    sql_db=configs.get(mongo_conf[0][0]).get('sql_db'), table_name=configs.get(mongo_conf[0][0]).get('service_event_status').get('table_name'), ip=configs.get(mongo_conf[0][0]).get('ip')
+    sql_db=configs.get(mongo_conf[0][0]).get('sql_db'), table_name=configs.get(mongo_conf[0][0]).get('service_event_status').get('table_name'), ip=configs.get(mongo_conf[0][0]).get('ip'),
+    machine=configs.get(mongo_conf[0][0]).get('machine')
     )
 	
     network_event_status_script = configs.get(mongo_conf[0][0]).get('network_event_status').get('script')
@@ -34,7 +35,8 @@ def main():
     sql_passwd=configs.get(mongo_conf[0][0]).get('sql_passwd'),
     nosql_db=configs.get(mongo_conf[0][0]).get('nosql_db'),
     sql_port=configs.get(mongo_conf[0][0]).get('mysql_port'),
-    sql_db=configs.get(mongo_conf[0][0]).get('sql_db'), table_name=configs.get(mongo_conf[0][0]).get('network_event_status').get('table_name'), ip=configs.get(mongo_conf[0][0]).get('ip')
+    sql_db=configs.get(mongo_conf[0][0]).get('sql_db'), table_name=configs.get(mongo_conf[0][0]).get('network_event_status').get('table_name'), ip=configs.get(mongo_conf[0][0]).get('ip'),
+    machine=configs.get(mongo_conf[0][0]).get('machine')
     )
 
 	

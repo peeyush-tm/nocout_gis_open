@@ -1381,6 +1381,24 @@ $('#infoWindowContainer').delegate('.close_info_window','click',function(e) {
         $('#infoWindowContainer').addClass("hide");
     }
 
+    // Set actual infowindow size -- START
+    if(!$("#infoWindowContainer").hasClass("col-md-4")) {
+        $("#infoWindowContainer").addClass("col-md-4")
+    }
+
+    if(!$("#infoWindowContainer").hasClass("col-md-offset-8")) {
+        $("#infoWindowContainer").addClass("col-md-offset-8")
+    }
+
+    if($("#infoWindowContainer").hasClass("col-md-3")) {
+        $("#infoWindowContainer").removeClass("col-md-3")
+    }
+
+    if($("#infoWindowContainer").hasClass("col-md-offset-9")) {
+        $("#infoWindowContainer").removeClass("col-md-offset-9")
+    }
+    // Set actual infowindow size -- END
+
     if($(".windowIFrame").length) {
         $(".windowIFrame").remove();
     }
