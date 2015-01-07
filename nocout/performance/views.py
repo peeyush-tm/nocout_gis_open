@@ -2536,18 +2536,38 @@ def device_current_status(device_object):
         device_name=inventory_device_name,
         service_name='ping',
         data_source__in=['pl', 'rta']
-    ).values('age', 'severity', 'current_value', 'sys_timestamp')
+    ).values('age', 'severity', 'current_value', 'sys_timestamp', 'data_source')
 
     device_nms_uptime = nocout_utils.nocout_query_results(
         query_set=device_nms_uptime_query_set,
         using=inventory_device_machine_name
     )
+    pl_value = None
+    pl_age = None
 
     if device_nms_uptime:
         for data in device_nms_uptime:
             severity[data['severity']] = data['age']
+            if data['data_source'].strip().lower() == 'pl':
+                pl_value = data['current_value']
+                pl_age = data['age']
+            else:
+                continue
     else:
         return None, None
+
+    try:
+        if pl_value and float(pl_value) == 100:
+            return 'Down', pl_age
+        else:
+            s, a = get_higher_severity(severity_dict=severity)
+            if s and s.strip().lower() == 'down':
+                s = 'critical'
+                return s, a
+            else:
+                return get_higher_severity(severity_dict=severity)
+    except:
+        pass
 
     return get_higher_severity(severity_dict=severity)
 
