@@ -11801,10 +11801,6 @@ def get_substations(sectors=None):
     polled_ss = SubStation.objects.filter(device__ip_address__in=connected_ip_list
                                 ).prefetch_related('device','circuit_set')
 
-    logger.debug("POLLED SS DATA")
-    logger.debug(polled_ss.values())
-    logger.debug("POLLED SS DATA")
-
     update_substation_devices.delay(polled_ss, connected_ip)
 
     return polled_ss
@@ -11817,9 +11813,7 @@ def get_circuits(substations=None):
     :return:
     """
     polled_circuits = Circuit.objects.filter(id__in=substations.values_list('circuit',flat=True))
-    logger.debug("POLLED CIRCUIT DATA")
-    logger.debug(polled_circuits.values())
-    logger.debug("POLLED CIRCUIT DATA")
+
     return polled_circuits
 
 
