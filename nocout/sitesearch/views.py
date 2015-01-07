@@ -528,6 +528,18 @@ def prepare_raw_sector(sectors):
                               'value': format_value(format_this=sector['SECTOR_ANTENNA_POLARIZATION'])
                             },
                             {
+                              'name': 'bh_bso',
+                              'title': 'BH BSO',
+                              'show': 1,
+                              'value': format_value(format_this=sector['BSBHBSO'])
+                            },
+                            {
+                              'name': 'hssu_used',
+                              'title': 'HSSU Used',
+                              'show': 1,
+                              'value': format_value(format_this=sector['BSHSSUUSED'])
+                            },
+                            {
                               'name': 'sector_id',
                               'title': 'Sector ID',
                               'show': 1 if sector['SECTOR_SECTOR_ID'] else 0,
@@ -729,6 +741,12 @@ def prepare_raw_ss_result(circuits, sector_id, frequency_color, frequency):
                                             'title': 'SS Name',
                                             'show': 0,
                                             'value': format_value(circuit['SS_NAME'])
+                                        },
+                                        {
+                                            'name': 'bh_bso',
+                                            'title': 'BH BSO',
+                                            'show': 1,
+                                            'value': format_value(circuit['BSBHBSO'])
                                         },
                                         {
                                             'name': 'cktid',
