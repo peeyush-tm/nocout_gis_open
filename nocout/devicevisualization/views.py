@@ -2026,6 +2026,13 @@ class GISPerfData(View):
                 except Exception as e:
                     logger.error("Sub station is not connected to any Base Station.", e.message)
 
+                # pe ip
+                pe_ip = ""
+                try:
+                    pe_ip = Circuit.objects.get(sub_station=substation).sector.base_station.backhaul.pe_ip
+                except Exception as e:
+                    logger.error("PE not exist in backhaul. Exception: ", e.message)
+
                 # substation technology
                 substation_technology = ""
                 try:
@@ -2180,6 +2187,12 @@ class GISPerfData(View):
                         'title': 'Technology',
                         'show': 1,
                         'value': format_value(substation_technology)
+                    },
+                    {
+                        'name': 'pe_ip',
+                        'title': 'PE IP',
+                        'show': 1,
+                        'value': format_value(pe_ip)
                     },
                     {
                         'name': 'building_height',
