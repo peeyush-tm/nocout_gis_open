@@ -19,7 +19,7 @@ var mapInstance = "",
     india_center_lat = 21.1500,
     posLink1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
 	posLink2 = "http://10.209.19.190:10080/ExternalLinksWSUI/JSP/ProvisioningDetails.faces?serviceId",
-	ptp_not_show_items = ['antenna_type','pe_ip'];
+	ptp_not_show_items = ['pe_ip'];
 
 /*Lazy loading API calling variables*/
 var hitCounter = 1,
@@ -2432,20 +2432,20 @@ function devicePlottingClass_gmap() {
 			// Reduce infowindow size in case of point & ruler line
 			if(this.startTitle && $.trim(this.startTitle.toLowerCase()) == 'point a') {
 
-				if($("#infoWindowContainer").hasClass("col-md-5")) {
-					$("#infoWindowContainer").removeClass("col-md-5")
+				if($("#infoWindowContainer").hasClass("col-md-4")) {
+					$("#infoWindowContainer").removeClass("col-md-4")
 				}
 
-				if($("#infoWindowContainer").hasClass("col-md-offset-7")) {
-					$("#infoWindowContainer").removeClass("col-md-offset-7")
+				if($("#infoWindowContainer").hasClass("col-md-offset-8")) {
+					$("#infoWindowContainer").removeClass("col-md-offset-8")
 				}
 
-				if(!$("#infoWindowContainer").hasClass("col-md-4")) {
-					$("#infoWindowContainer").addClass("col-md-4")
+				if(!$("#infoWindowContainer").hasClass("col-md-3")) {
+					$("#infoWindowContainer").addClass("col-md-3")
 				}
 
-				if(!$("#infoWindowContainer").hasClass("col-md-offset-8")) {
-					$("#infoWindowContainer").addClass("col-md-offset-8")
+				if(!$("#infoWindowContainer").hasClass("col-md-offset-9")) {
+					$("#infoWindowContainer").addClass("col-md-offset-9")
 				}
 			}
 

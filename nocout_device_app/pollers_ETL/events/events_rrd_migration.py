@@ -133,8 +133,8 @@ def service_perf_data_live_query(db,site,log_split, final_data=[]):
 
     # For this case we don't take service ds into consideration
     matching_criteria = {
-            'host': log_split[4],
-            'service': log_split[5]
+            'device_name': log_split[4],
+            'service_name': log_split[5]
             }
     # Mongo db updation
     mongo_module.mongo_db_update(db, matching_criteria, serv_event_dict, 'service_event_status')
@@ -185,10 +185,13 @@ def network_perf_data_live_query(db,site,log_split):
                 data_source=ds,warning_threshold=host_war,critical_threshold=host_crit,
                 check_timestamp=int(log_split[1]),
                 ip_address=host_ip,site_name=site,service_name='ping',age=age1)
+        # Check whether the host has breached RTA thresholds only, but not PL
+        if ds == 'pl' and eval(host_cur) < eval(host_crit) and log_split[7].lower() != 'up':
+            host_event_dict.update({'severity': 'UP'})
         matching_criteria = {
-                'host': log_split[4],
-                'service': 'ping',
-                'ds': ds
+                'device_name': log_split[4],
+                'service_name': 'ping',
+                'data_source': ds
                 }
         # Mongo db updation
         mongo_module.mongo_db_update(db, matching_criteria, host_event_dict, 'network_event_status')
