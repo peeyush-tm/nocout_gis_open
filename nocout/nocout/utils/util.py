@@ -233,35 +233,39 @@ def format_value(format_this, type_of=None):
     :param format_this:
     :return:
     """
-    try:
-        if not type_of:
-            return format_this if format_this else 'NA'
-        elif type_of == 'frequency_color':
-            return format_this if format_this else 'rgba(74,72,94,0.58)'
-        elif type_of == 'frequency_radius':
-            return format_this if format_this else 0.5
-        elif type_of == 'integer':
-            return format_this if format_this else 0
-        elif type_of == 'antenna':
-            return format_this if format_this else 'vertical'
-        elif type_of == 'random':
-            return format_this if format_this else randint(40,70)
-        elif type_of == 'icon':
-            if len(str(format_this)) > 5:
-                img_url = str("media/"+ str(format_this)) \
-                    if "uploaded" in str(format_this) \
-                    else "static/img/" + str(format_this)
-                return img_url
-            else:
-                return "static/img/icons/mobilephonetower10.png"
-        elif type_of == 'mac':
-            return format_this.upper() if format_this else 'NA'
-        elif type_of == 'date':
-            return str(format_this)
-        elif type_of == 'epoch':
-            return date_handler(format_this)
-    except:
+    if format_this:
+        try:
+            if not type_of:
+                return format_this if format_this else 'NA'
+            elif type_of == 'frequency_color':
+                return format_this if format_this else 'rgba(74,72,94,0.58)'
+            elif type_of == 'frequency_radius':
+                return format_this if format_this else 0.5
+            elif type_of == 'integer':
+                return format_this if format_this else 0
+            elif type_of == 'antenna':
+                return format_this if format_this else 'vertical'
+            elif type_of == 'random':
+                return format_this if format_this else randint(40,70)
+            elif type_of == 'icon':
+                if len(str(format_this)) > 5:
+                    img_url = str("media/"+ str(format_this)) \
+                        if "uploaded" in str(format_this) \
+                        else "static/img/" + str(format_this)
+                    return img_url
+                else:
+                    return "static/img/icons/mobilephonetower10.png"
+            elif type_of == 'mac':
+                return format_this.upper() if format_this else 'NA'
+            elif type_of == 'date':
+                return str(format_this)
+            elif type_of == 'epoch':
+                return date_handler(format_this)
+        except:
+            return 'NA'
+    else:
         return 'NA'
+
     return 'NA'
 
 ###caching
