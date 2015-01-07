@@ -158,7 +158,7 @@ def get_dashboard_status_sector_range_counter(service_status_results):
     for result in service_status_results:
         age_str_since_the_epoch = datetime.fromtimestamp(float(result['age'])).strftime(date_format)
         age_time_since_the_epoch = datetime.strptime(age_str_since_the_epoch, date_format)
-        if age_time_since_the_epoch > now:
+        if age_time_since_the_epoch >= now:
             if result['severity'] == 'warning':
                 range_counter['Needs Augmentation'] += 1
             elif result['severity'] == 'critical':
