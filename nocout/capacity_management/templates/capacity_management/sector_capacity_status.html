@@ -40,13 +40,6 @@
                             <th class="hide" style="width:auto;" aria-label=""></th>
                             <th class="hide" style="width:auto;" aria-label=""></th>
                             
-                            <th class="hide" style="width:auto;" aria-label=""></th>
-                            <th class="hide" style="width:auto;" aria-label=""></th>
-                            <th class="hide" style="width:auto;" aria-label=""></th>
-                            <th class="hide" style="width:auto;" aria-label=""></th>
-                            <th class="hide" style="width:auto;" aria-label=""></th>
-                            <th class="hide" style="width:auto;" aria-label=""></th>
-                            
                             <th colspan="6" style="text-align: center;">SECTOR</th>
                             
                             <th colspan="7" style="text-align: center;">IN</th>
@@ -98,17 +91,41 @@
 
 
 {% block jquery %}
-<!-- Custom script for data table-->
-<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
 <script type="text/javascript">
     var dataTableInstance = "";
     $(document).ready(function(e) {
         /*Show the spinner*/
         showSpinner();
-        /*Make a instance of ourDataTableWidget class */
-        dataTableInstance = new ourDataTableWidget();
+        var headers_list = headers = [
+            {'mData': 'id', 'sClass' : 'hide'},
+            {'mData': 'sector', 'sClass' : 'hide'},
+            {'mData': 'severity', 'sClass' : 'hide'},
+            {'mData': 'age', 'sClass' : 'hide'},
+            {'mData': 'organization__alias', 'sClass' : 'hide'},
+            {'mData': 'sector__sector_configured_on__device_technology', 'sClass' : 'hide'},
+            {'mData': 'sector_sector_id'},
+            {'mData': 'sector__base_station__alias'},
+            {'mData': 'sector__base_station__city__city_name'},
+            {'mData': 'sector__base_station__state__state_name'},
+            {'mData': 'sector__sector_configured_on__ip_address'},
+            {'mData': 'sector_capacity'},
+            {'mData': 'current_in_per'},
+            {'mData': 'current_in_val'},
+            {'mData': 'avg_in_per'},
+            {'mData': 'avg_in_val'},
+            {'mData': 'peak_in_per'},
+            {'mData': 'peak_in_val'},
+            {'mData': 'peak_in_timestamp'},
+            {'mData': 'current_out_per'},
+            {'mData': 'current_out_val'},
+            {'mData': 'avg_out_per'},
+            {'mData': 'avg_out_val'},
+            {'mData': 'peak_out_per'},
+            {'mData': 'peak_out_val'},
+            {'mData': 'peak_out_timestamp'}
+        ];
         /*Grid headers object*/
-        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+        // var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
         var ajax_url = '{% url "SectorStatusListingClass" %}';
         $("#sectorStatusTable").DataTable({
             bAutoWidth: false,
@@ -117,6 +134,7 @@
             bProcessing : true,
             bServerSide: true,
             sAjaxSource: ajax_url,
+            aoColumns : headers_list,
             /*This is the callback funtion for data ajax call*/
             fnInitComplete: function(oSettings) {
                 /*Hide the spinner*/
