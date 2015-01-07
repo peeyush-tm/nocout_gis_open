@@ -781,7 +781,7 @@ var ptp_sector_toolTip_polled = [
 	},
 	{
 		'name'  : 'radwin_uptime_uptime',
-        'title' : 'Uptime',
+        'title' : 'Device Uptime',
         'show'  : 1,
         'value' : '',
         'url'   : ''
