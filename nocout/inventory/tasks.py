@@ -11957,10 +11957,6 @@ def get_substations(sectors=None):
     polled_ss = SubStation.objects.filter(device__ip_address__in=connected_ip_list
                                 ).prefetch_related('device','circuit_set')
 
-    logger.debug("POLLED SS DATA")
-    logger.debug(polled_ss.values())
-    logger.debug("POLLED SS DATA")
-
     update_substation_devices.delay(polled_ss, connected_ip)
 
     return polled_ss
@@ -11973,9 +11969,7 @@ def get_circuits(substations=None):
     :return:
     """
     polled_circuits = Circuit.objects.filter(id__in=substations.values_list('circuit',flat=True))
-    logger.debug("POLLED CIRCUIT DATA")
-    logger.debug(polled_circuits.values())
-    logger.debug("POLLED CIRCUIT DATA")
+
     return polled_circuits
 
 
@@ -12057,12 +12051,16 @@ def get_topology(technology):
     machine_dict = {}
     #prepare_machines(device_list)
     machine_dict = prepare_machines(device_list)
-    topology = []
+    topology = None
     topology_old = []
     for machine in machine_dict:
-        #this is complete topology for the device set
-        topology = Topology.objects.filter(device_name__in=machine_dict[machine],
-                                           data_source='topology').using(alias=machine)
+        if topology:
+            #this is complete topology for the device set
+            topology |= Topology.objects.filter(device_name__in=machine_dict[machine],
+                                               data_source='topology').using(alias=machine)
+        else:
+            topology = Topology.objects.filter(device_name__in=machine_dict[machine],
+                                               data_source='topology').using(alias=machine)
 
         #topology fields
         # device_name
