@@ -68,7 +68,7 @@ class SectorStatusHeaders(ListView):
 
         hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
-            {'mData': 'sector', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'severity', 'sTitle': 'severity', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'age', 'sTitle': 'age', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
             {'mData': 'organization__alias', 'sTitle': 'organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
@@ -120,7 +120,7 @@ class SectorStatusListing(BaseDatatableView):
 
     columns = [
         'id',
-        'sector',
+        'sector__sector_id',
         'sector_sector_id',
         'sector__base_station__alias',
         'sector__base_station__city__city_name',
@@ -167,10 +167,10 @@ class SectorStatusListing(BaseDatatableView):
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec_query += ").values(*" + str(self.columns) + ")"
             exec exec_query
 
         return qs
