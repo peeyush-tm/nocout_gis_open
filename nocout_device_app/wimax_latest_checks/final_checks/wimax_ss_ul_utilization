@@ -104,6 +104,7 @@ def check_wimax_ss_ul_utilization(item, _no_params, info):
 			if host_ip[0][0]:
                 		ul_throughput =connection_telnet_for_ul_utilization(host_ip[0][0], 23,ss_mac)
 				if ul_throughput != None:
+					ul_throughput = ul_throughput/1024.0
 					infotext = "SS uplink throughput is %s" % ul_throughput
 					state = 0
     except ValueError:
