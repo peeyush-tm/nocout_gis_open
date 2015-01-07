@@ -11901,12 +11901,16 @@ def get_topology(technology):
     machine_dict = {}
     #prepare_machines(device_list)
     machine_dict = prepare_machines(device_list)
-    topology = []
+    topology = None
     topology_old = []
     for machine in machine_dict:
-        #this is complete topology for the device set
-        topology = Topology.objects.filter(device_name__in=machine_dict[machine],
-                                           data_source='topology').using(alias=machine)
+        if topology:
+            #this is complete topology for the device set
+            topology |= Topology.objects.filter(device_name__in=machine_dict[machine],
+                                               data_source='topology').using(alias=machine)
+        else:
+            topology = Topology.objects.filter(device_name__in=machine_dict[machine],
+                                               data_source='topology').using(alias=machine)
 
         #topology fields
         # device_name
