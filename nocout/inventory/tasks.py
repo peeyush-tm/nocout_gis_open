@@ -1841,7 +1841,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 alias = ""
 
                 # get device ip network i.e 'public' or 'private'
-                device_ip_network = get_ip_network(row['IP'] if 'IP' in row.keys() else "")
+                device_ip_network = get_ip_network(row['SS IP'] if 'SS IP' in row.keys() else "")
 
                 # get machine
                 machine = ""
@@ -3568,7 +3568,6 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
                     # device name
                     name = device_latest_id
-                    # name = special_chars_name_sanitizer_with_lower_case(row['Sector ID'] if 'Sector ID' in row.keys() else "")
 
                     # device alias
                     alias = circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else ""
@@ -3895,6 +3894,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'make_of_antenna': row['Make Of Antenna'] if 'Make Of Antenna' in row.keys() else "",
                     'description': 'Sector Antenna created on {}.'.format(full_time)
                 }
+
                 # sector antenna object
                 sector_antenna = create_antenna(sector_antenna_data)
 
@@ -6051,6 +6051,162 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 3
         gis_obj.save()
+
+
+def bulk_upload_error_logger(row=None, sheet=None):
+
+    # errors
+    errors = ""
+
+    if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs']:
+        # check for base station device
+        if 'IP' not in row.keys():
+            errors += "Base Station Device: Device can't be created without IP.\n"
+        elif row['IP'] in ['na', 'n/a', 'NA', 'N/A']:
+            errors += "Base Station Device: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+        elif not ip_sanitizer(row['IP']):
+            errors += "Base Station Device: Wrong Base Station Device IP.\n"
+        else:
+            pass
+
+    if sheet in ['ptp', 'ptp_bh', 'pmp_sm', 'wimax_ss']:
+        # check for sub station device
+        if 'SS IP' not in row.keys():
+            errors += "Sub Station Device: Device can't be created without IP.\n"
+        elif row['SS IP'] in ['na', 'n/a', 'NA', 'N/A']:
+            errors += "Sub Station Device: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+        elif not ip_sanitizer(row['SS IP']):
+            errors += "Sub Station Device: Wrong Sub Station Device IP.\n"
+        else:
+            pass
+
+    if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'pmp_sm', 'wimax_bs', 'wimax_ss', 'backhaul']:
+        # check for bs switch
+        if 'BS Switch IP' in row.keys():
+            if not row['BS Switch IP']:
+                errors += "BS Switch: Empty BS Switch IP.\n"
+            elif row['BS Switch IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "BS Switch: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['BS Switch IP']):
+                errors += "BS Switch: Wrong BS Switch IP.\n"
+            else:
+                pass
+
+        # check for aggregation switch
+        if 'Aggregation Switch' in row.keys():
+            if not row['Aggregation Switch']:
+                errors += "Aggregation Switch: Empty Aggregation Switch.\n"
+            elif row['Aggregation Switch'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Aggregation Switch: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['BS Switch IP']):
+                errors += "Aggregation Switch: Wrong Aggregation Switch IP.\n"
+            else:
+                pass
+
+        # check for bs converter
+        if 'BS Converter IP' in row.keys():
+            if not row['BS Converter IP']:
+                errors += "BS Converter: Empty BS Converter IP.\n"
+            elif row['BS Converter IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "BS Converter: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['BS Converter IP']):
+                errors += "BS Converter: Wrong BS Converter IP.\n"
+            else:
+                pass
+
+        # check for pop converter
+        if 'POP Converter IP' in row.keys():
+            if not row['POP Converter IP']:
+                errors += "POP Converter: Empty POP Converter IP.\n"
+            elif row['POP Converter IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "POP Converter: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['POP Converter IP']):
+                errors += "POP Converter: Wrong POP Converter IP.\n"
+            else:
+                pass
+
+        # check for sector antenna
+        if 'SS Circuit ID' in row.keys():
+            if not row['SS Circuit ID']:
+                errors += "Sector Antenna: Empty SS Circuit ID.\n"
+            elif row['SS Circuit ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sector Antenna: Antenna can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            else:
+                pass
+
+        # check for sub station antenna
+        if 'SS IP' in row.keys():
+            if not row['SS IP']:
+                errors += "Sub Station Antenna: Empty SS IP.\n"
+            elif row['SS IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                errors += "Sub Station Antenna: Antenna can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+            elif not ip_sanitizer(row['SS IP']):
+                errors += "Sub Station Antenna: Wrong SS IP.\n"
+            else:
+                pass
+
+        if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs']:
+            # check for backhaul
+            if 'BH Configured On Switch/Converter' in row.keys():
+                if not row['BH Configured On Switch/Converter']:
+                    errors += "Backhaul: Empty BH Configured On Switch/Converter.\n"
+                elif row['BH Configured On Switch/Converter'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Backhaul: Backhaul can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                elif not ip_sanitizer(row['BH Configured On Switch/Converter']):
+                    errors += "Backhaul: Wrong BH Configured On Switch/Converter.\n"
+                else:
+                    pass
+
+        if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs', 'backhaul']:
+            # check for base station
+            if 'BS Name' in row.keys():
+                if not row['BS Name']:
+                    errors += "Base Station: Empty BS Name.\n"
+                elif row['BS Name'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Base Station: Base Station can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                else:
+                    pass
+
+        if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs']:
+            # check for sector
+            if 'IP' in row.keys():
+                if not row['IP']:
+                    errors += "Sector: Empty IP.\n"
+                elif row['IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Sector: Sector can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                elif not ip_sanitizer(row['IP']):
+                    errors += "Sector: Wrong IP.\n"
+                else:
+                    pass
+
+        if sheet in ['ptp', 'ptp_bh', 'pmp_sm', 'wimax_ss']:
+            # check for sub station
+            if 'SS Circuit ID' in row.keys():
+                if not row['SS Circuit ID']:
+                    errors += "Sub Station: Empty SS Circuit ID.\n"
+                elif row['SS Circuit ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Sub Station: Sub Station can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                else:
+                    pass
+
+            # check for customer
+            if 'SS Customer Name' in row.keys():
+                if not row['SS Customer Name']:
+                    errors += "SS Customer: Empty SS Customer Name.\n"
+                elif row['SS Customer Name'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "SS Customer: SS Customer can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                else:
+                    pass
+
+            # check for circuit
+            if 'SS Circuit ID' in row.keys():
+                if not row['SS Circuit ID']:
+                    errors += "SS Circuit: Empty SS Circuit ID.\n"
+                elif row['SS Circuit ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "SS Circuit: SS Circuit can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                else:
+                    pass
+
 
 def create_device(device_payload):
     """ Create Device object
