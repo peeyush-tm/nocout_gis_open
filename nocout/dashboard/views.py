@@ -14,17 +14,18 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from nocout.utils import logged_in_user_organizations
 from device.models import DeviceTechnology, Device
-from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus
+from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, Topology
 
 #inventory utils
 from inventory.utils.util import organization_customer_devices, organization_network_devices,\
-    organization_sectors
+    organization_sectors, prepare_machines
 #inventory utils
 
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
-    get_dashboard_status_sector_range_counter, get_pie_chart_json_response_sector_dict
+    get_dashboard_status_sector_range_counter, get_pie_chart_json_response_sector_dict, \
+    get_topology_status_results, get_sales_opportunity_range_counter, get_pie_chart_json_response_sales_opp_dict
 from dashboard.config import dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -797,5 +798,81 @@ class WIMAX_Sector_Capacity(SectorCapacityMixin, View):
         }
         technology = 'WIMAX'
         technology = DeviceTechnology.objects.get(name=technology).id
+        sector_method_to_call = organization_sectors
+        return data_source_config, technology, sector_method_to_call
+
+
+class SalesOpportunityMixin(object):
+    """
+    Provide common method get for Performance Dashboard.
+
+    To use this Mixin set `template_name` and implement method get_init_data to provide following attributes:
+
+        - data_source_config
+        - technology
+        - sector_method_to_call
+        - devices_method_kwargs
+    """
+
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
+        data_source_config, technology, sector_method_to_call = self.get_init_data()
+
+        data_source = request.GET.get('data_source')
+        if not data_source:
+            return render(self.request, self.template_name, )
+
+        # Get Service Name from queried data_source
+        try:
+            service_name = data_source_config[data_source]['service_name']
+            model = data_source_config[data_source]['model']
+        except KeyError as e:
+            return render(self.request, self.template_name, )
+
+        # Get User's organizations
+        # (admin : organization + sub organization)
+        # (operator + viewer : same organization)
+        user_organizations = logged_in_user_organizations(self)
+
+        # Get Sector of User's Organizations. [and are Sub Station]
+        user_sector = sector_method_to_call(user_organizations, technology)
+
+        # Get device of User's Organizations. [and are Sub Station]
+        # network_devices = get_devices(technology)
+        network_devices = organization_network_devices(user_organizations, technology)
+
+        technology_status_results = get_topology_status_results(
+            network_devices, model=model, service_name=service_name, data_source=data_source
+        )
+
+        range_counter = get_sales_opportunity_range_counter(user_sector, technology_status_results)
+
+        response_dict = get_pie_chart_json_response_sales_opp_dict(data_source, range_counter)
+
+        return HttpResponse(json.dumps(response_dict))
+
+
+class PMP_Sales_Opportunity(SalesOpportunityMixin, View):
+    """
+    The Class based View to get main dashboard page requested.
+
+    """
+    # template_name = 'dashboard/main_dashboard.html'
+
+    def get_init_data(self):
+        """
+        Provide data for mixin's get method.
+        """
+
+        data_source_config = {
+            'topology': {'service_name': 'topology', 'model': Topology},
+        }
+        technology = 'PMP'
+        technology = DeviceTechnology.objects.get(name='PMP').id
         sector_method_to_call = organization_sectors
         return data_source_config, technology, sector_method_to_call

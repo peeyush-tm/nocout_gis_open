@@ -53,6 +53,17 @@
             </div>
         </div>
 
+        <div class="col-md-6 box-container ui-sortable">
+            <div class="box">
+                <div class="box-title" style="background-color: transparent;">
+                    <h3>PMP Sales Opportunity</h3>
+                </div>
+                <div class="box-body">
+                    <div id="pmp_sales_opportunity" class="rf_chart_style"></div>
+                </div>
+            </div>
+        </div>
+
     </div>
 {% endblock %}
 {% block load_js %}
@@ -80,6 +91,8 @@
         var data_sources = {{ data_sources|safe }};
         ds_list = {{ data_sources|safe }};
 
+        technology = ['pmp']
+
         if(ds_list.length > 0) {
             // start API calling
             wimax_getChartData(0);
@@ -87,6 +100,10 @@
         } else {
             /*hide spinner*/
             hideSpinner();
+        }
+
+        for (index in technology){
+            pmp_opportunity_getChartData(0)
         }
     });
 
@@ -318,6 +335,115 @@ function wimax_getChartData(counter) {
                         hideSpinner();
                     }
                 }
+            }
+        });
+    }
+}
+
+function pmp_opportunity_getChartData(counter) {
+    showSpinner();
+    if(ds_list[counter]) {
+        var data_source_title = 'Topology';
+
+        $.ajax({
+            url : "{% url 'sales-opportunity-pmp' %}" + "?data_source=topology",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+
+                if(response.success == 1) {
+                    var domElement = technology[counter]+'_sales_opportunity';
+                    var pie_chart = $('#' + domElement).highcharts({
+                        chart: {
+                            events: {
+                                load : function() {
+                                    // Hide highcharts.com link from chart when chart is loaded
+                                    var highcharts_link = $("#"+domElement+" svg text:last-child");
+                                    $.grep(highcharts_link,function(val) {
+                                        if($.trim(val.innerHTML) == 'Highcharts.com') {
+                                            val.innerHTML = "";
+                                        }
+                                    });
+                                }
+                            },
+                            plotBackgroundColor: null,
+                            plotBorderWidth: null,
+                            plotShadow: false
+                        },
+                        title: {
+                            text: response.data.objects.chart_data[0].name
+                            // text: '',
+                        },
+                        plotOptions: {
+                            pie: {
+                                allowPointSelect: true,
+                                cursor: 'pointer',
+                                dataLabels: {
+                                    enabled: false
+                                },
+                                showInLegend: true
+                            }
+                        },
+                        legend:{
+                            itemDistance : 15,
+                            itemMarginBottom : 5,
+                            itemWidth : 125,
+                            borderColor : "#CCCCCC",
+                            borderWidth : "1",
+                            borderRadius : "8",
+                            itemStyle: {
+                                color: '#555555',
+                                fontSize : '10px'
+                            }
+                        },
+                        colors: response.data.objects.colors,
+                        series: [{
+                            type: 'pie',
+                            name: response.data.objects.display_name,
+                            data: response.data.objects.chart_data[0].data
+                        }],
+                        events: {
+                            load : function() {
+                                console.log("DONE");
+                            }
+                        }
+                    });
+                } else {
+                    hideSpinner();
+                    var domElement = technology[counter]+'_sales_opportunity';
+                    $('#' + domElement).html("<b>"+response.message+"</b>");
+                    // console.log(data_source_title + " : " + response.message);
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Main Dashboard Performance - PMP',
+                        // (string | mandatory) the text inside the notification
+                        text: data_source_title + " : " + response.message,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false,
+                        // Time in ms after which the gritter will dissappear.
+                        time : 1500
+                    });
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'RF Performance Dashboard - PMP',
+                    // (string | mandatory) the text inside the notification
+                    text: data_source_title + " : " + err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+            complete : function() {
             }
         });
     }
