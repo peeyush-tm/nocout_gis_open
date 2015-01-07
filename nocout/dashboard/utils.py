@@ -4,6 +4,7 @@ Dashboard Utilities.
 from multiprocessing import Process, Queue
 
 from django.conf import settings
+from django.db.models import Count
 from datetime import datetime, timedelta
 
 import logging
@@ -150,6 +151,7 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
     return response_dict
 
 
+#**************************** Sector Capacity *********************#
 def get_dashboard_status_sector_range_counter(service_status_results):
     range_counter = {'Needs Augmentation': 0, 'Stop Provisioning': 0, 'Normal':0}
     date_format = '%Y-%m-%d %H:%M:%S'
@@ -184,6 +186,121 @@ def get_pie_chart_json_response_sector_dict(data_source, range_counter):
 
     response_dict = {
         "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
+        "data": {
+            "meta": {},
+            "objects": {
+                "plot_type": "charts",
+                "display_name": display_name,
+                "valuesuffix": "dB",
+                "colors": colors,
+                "chart_data": [{
+                    "type": 'pie',
+                    "name": display_name.upper(),
+                    "data": chart_data
+                }]
+            }
+        },
+        "success": 1
+    }
+    return response_dict
+
+
+#**************************** Sales Opportunity *********************#
+def get_topology_status_data(queue, machine_device_list, machine, model, service_name, data_source):
+    """
+    Consolidated Topology Status Data from the Data base.
+
+    :param machine:
+    :param model:
+    :param service_name:
+    :param data_source:
+    :param device_list:
+    :param queue:
+    :return:
+    """
+    topology_status_data = model.objects.filter(
+        device_name__in=machine_device_list,
+        service_name__icontains = service_name,
+        data_source = data_source,
+    ).using(machine)
+
+    if queue:
+        try:
+            queue.put(topology_status_data)
+        except Exception as e:
+            log.exception(e.message)
+    else:
+        return topology_status_data
+
+
+def get_topology_status_results(user_devices, model, service_name, data_source):
+
+    unique_device_machine_list = {device.machine.name: True for device in user_devices}.keys()
+
+    machine_dict = {}
+    #Creating the machine as a key and device_name as a list for that machine.
+    for machine in unique_device_machine_list:
+        machine_dict[machine] = [device.device_name for device in user_devices if device.machine.name == machine]
+
+    multi_proc = getattr(settings, 'MULTI_PROCESSING_ENABLED', False)
+
+    topology_status_results = model.objects.none()
+    if multi_proc:
+        queue = Queue()
+        jobs = [
+            Process(
+                target=get_service_status_data,
+                args=(queue, machine_device_list),
+                kwargs=dict(machine=machine, model=model, service_name=service_name, data_source=data_source)
+            ) for machine, machine_device_list in machine_dict.items()
+        ]
+
+        for job in jobs:
+            job.start()
+        for job in jobs:
+            job.join()
+
+        while True:
+            if not queue.empty():
+                topology_status_results += queue.get()
+            else:
+                break
+    else:
+        for machine, machine_device_list in machine_dict.items():
+            topology_status_results | get_topology_status_data(False, machine_device_list, machine=machine, model=model, service_name=service_name, data_source=data_source)
+
+    return topology_status_results
+
+
+def get_sales_opportunity_range_counter(user_sector, technology_status_results):
+    range_counter = dict()
+
+    for sector in user_sector:
+        # tops_count would be the count of the connected SS to the sector
+        tops_count = technology_status_results.filter(sector_id=sector.sector_id).\
+                                    annotate(ss_count=Count('connected_device_ip'))
+        range_counter[sector.alias] = int(tops_count.count())
+
+    return range_counter
+
+
+def get_pie_chart_json_response_sales_opp_dict(data_source, range_counter):
+
+    display_name = data_source.replace('_', ' ')
+    color_array = ["#FFE90D", "#FF0022","99CC00", "green", "blue", "grey", "aqua"]
+
+    chart_data = []
+    colors = []
+    counter = 0
+    for key,value in range_counter.items():
+        chart_data.append(['%s: %s' % (key, value), range_counter[key]])
+        colors.append(color_array[counter])
+        counter += 1
+        if counter == len(color_array):
+            counter = 0
+
+    response_dict = {
+        "message": "Sector Performance Data Fetched Successfully To Plot Graphs.",
         "data": {
             "meta": {},
             "objects": {
