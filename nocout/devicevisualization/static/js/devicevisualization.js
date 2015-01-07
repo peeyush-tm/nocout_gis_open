@@ -1547,6 +1547,9 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
  */
 function createHighChart_map(dom_id,config) {
 
+    // Is the y axis should be reversed or not
+    var is_y_inverted = config["is_inverted"] ? config["is_inverted"] : false;
+
     var chart_instance = $('#' + dom_id).highcharts({
         chart: {
             events: {
@@ -1603,7 +1606,8 @@ function createHighChart_map(dom_id,config) {
         yAxis: {
             title: {
                 text: config.valuetext
-            }
+            },
+            reversed : is_y_inverted
         },
         series: config.chart_data
     });
