@@ -238,18 +238,23 @@ class SectorStatusListing(BaseDatatableView):
         # number of records after filtering
         total_display_records = qs.annotate(Count('id')).count()
 
-        #check if this has just initialised
-        #if so : process the results
+        if total_display_records and total_records:
 
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
+            #check if this has just initialised
+            #if so : process the results
 
-        # if the qs is empty then JSON is unable to serialize the empty
-        # ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
-            qs = list(qs)
+            qs = self.ordering(qs)
+            qs = self.paging(qs)
 
-        aaData = self.prepare_results(qs)
+            # if the qs is empty then JSON is unable to serialize the empty
+            # ValuesQuerySet.Therefore changing its type to list.
+            if not qs and isinstance(qs, ValuesQuerySet):
+                qs = list(qs)
+
+            aaData = self.prepare_results(qs)
+        else:
+            aaData = list()
+
         ret = {
             'sEcho': int(request.REQUEST.get('sEcho', 0)),
             'iTotalRecords': total_records,
