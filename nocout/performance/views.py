@@ -2165,9 +2165,11 @@ class Get_Service_Type_Performance_Data(View):
                             if data.max_value else None])
 
                         sds_inverted = False
+                        self.result['data']['objects']['is_inverted'] = sds_inverted
 
                         if sds_name in SERVICE_DATA_SOURCE and SERVICE_DATA_SOURCE[sds_name]["is_inverted"]:
                             sds_inverted = SERVICE_DATA_SOURCE[sds_name]["is_inverted"]
+                            self.result['data']['objects']['is_inverted'] = sds_inverted
 
                         if not sds_inverted:
                             compare_point = lambda p1, p2, p3: chart_color \
@@ -2219,7 +2221,7 @@ class Get_Service_Type_Performance_Data(View):
                                        'type': self.result['data']['objects']['type'],
                                        'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                        'valuetext': self.result['data']['objects']['valuetext'],
-                                       'is_inverted': sds_inverted
+                                       'is_inverted': self.result['data']['objects']['is_inverted']
                                       }
                         ]
                         if len(min_data_list):
@@ -2515,7 +2517,7 @@ def get_higher_severity(severity_dict):
         else:
             continue
 
-    return s, float(a)
+    return s, a
 
 
 def device_current_status(device_object):
@@ -2534,18 +2536,38 @@ def device_current_status(device_object):
         device_name=inventory_device_name,
         service_name='ping',
         data_source__in=['pl', 'rta']
-    ).values('age', 'severity', 'current_value', 'sys_timestamp')
+    ).values('age', 'severity', 'current_value', 'sys_timestamp', 'data_source')
 
     device_nms_uptime = nocout_utils.nocout_query_results(
         query_set=device_nms_uptime_query_set,
         using=inventory_device_machine_name
     )
+    pl_value = None
+    pl_age = None
 
     if device_nms_uptime:
         for data in device_nms_uptime:
             severity[data['severity']] = data['age']
+            if data['data_source'].strip().lower() == 'pl':
+                pl_value = data['current_value']
+                pl_age = data['age']
+            else:
+                continue
     else:
         return None, None
+
+    try:
+        if pl_value and float(pl_value) == 100:
+            return 'Down', pl_age
+        else:
+            s, a = get_higher_severity(severity_dict=severity)
+            if s and s.strip().lower() == 'down':
+                s = 'critical'
+                return s, a
+            else:
+                return get_higher_severity(severity_dict=severity)
+    except:
+        pass
 
     return get_higher_severity(severity_dict=severity)
 
@@ -2576,7 +2598,7 @@ def device_last_down_time(device_object):
 
     if device_last_down and device_last_down.count():
         last_down_data = device_last_down[0]
-        age = float(last_down_data['age'])
+        age = float(last_down_data['sys_timestamp'])
 
     if not age:
         #device has never gone down

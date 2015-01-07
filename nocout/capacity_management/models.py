@@ -52,7 +52,7 @@ class SectorCapacityStatus(models.Model):
     age = models.IntegerField('Status Age', default=0)
 
     def __unicode__(self):
-        return self.sector_id
+        return self.sector_sector_id
 
     class Meta:
         ordering = ['-sys_timestamp']

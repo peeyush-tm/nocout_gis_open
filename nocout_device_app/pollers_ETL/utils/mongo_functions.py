@@ -28,7 +28,7 @@ def mongo_conn(**kwargs):
     	"""
     	DB = None
     	try:
-        	CONN = pymongo.Connection(host=kwargs.get('host'), port=kwargs.get('port'))
+        	CONN = pymongo.Connection(host=kwargs.get('host'), port=int(kwargs.get('port')))
         	DB = CONN[kwargs.get('db_name')]
     	except pymongo.errors.PyMongoError, e:
        		print 'Error in Mongo Connection'
@@ -70,27 +70,29 @@ def mongo_db_insert(db,event_dict,flag):
         success = 0
         failure = 1
         if db:
-                if flag == "serv_event":
-                        db.nocout_service_event_log.insert(event_dict)
-                elif flag == "host_event":
-                        db.nocout_host_event_log.insert(event_dict)
-                elif flag == "snmp_alarm_event":
-                        db.nocout_snmp_trap_log.insert(event_dict)
-		elif flag == "notification_event":
-			db.nocout_notification_log.insert(event_dict)
-		elif flag == "inventory_services":
-			db.nocout_inventory_service_perf_data.insert(event_dict)
-		elif flag == "serv_perf_data":
-			db.service_perf.insert(event_dict)
-		elif flag == "network_perf_data":
-			db.network_perf.insert(event_dict)
-		elif flag == "status_services":
-			db.status_perf.insert(event_dict)
-		elif flag == "availability":
-			db.device_availability.insert(event_dict)
-		elif flag == "kpi_services":
-			db.kpi_data.insert(event_dict)
-                return success
+            if flag == "serv_event":
+                db.nocout_service_event_log.insert(event_dict)
+                print 'Service Events Entries Inserted'
+            elif flag == "host_event":
+                db.nocout_host_event_log.insert(event_dict)
+                print 'Host Events Entries Inserted'
+            elif flag == "snmp_alarm_event":
+                db.nocout_snmp_trap_log.insert(event_dict)
+            elif flag == "notification_event":
+                db.nocout_notification_log.insert(event_dict)
+            elif flag == "inventory_services":
+                db.nocout_inventory_service_perf_data.insert(event_dict)
+            elif flag == "serv_perf_data":
+                db.service_perf.insert(event_dict)
+            elif flag == "network_perf_data":
+                db.network_perf.insert(event_dict)
+            elif flag == "status_services":
+                db.status_perf.insert(event_dict)
+            elif flag == "availability":
+                db.device_availability.insert(event_dict)
+            elif flag == "kpi_services":
+                db.kpi_data.insert(event_dict)
+            return success
         else:
                 print "Mongo_db insertion failed"
                 return failure
@@ -108,24 +110,28 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
         success = 0
         failure = 1
         if db:
-		try:
-			if flag == "inventory_services":
-				db.device_inventory_status.update(matching_criteria,event_dict,upsert=True)
-			elif flag == "serv_perf_data":
-				db.device_service_status.update(matching_criteria,event_dict,upsert=True)
-			elif flag == "network_perf_data":
-				db.device_network_status.update(matching_criteria,event_dict,upsert=True)
-			elif flag == "status_services":
-				db.device_status_services_status.update(matching_criteria,event_dict,upsert=True)
-			elif flag == "topology":
-				db.cambium_topology_data.update(matching_criteria,event_dict,upsert=True)
-                        elif flag == "wimax_topology":
-                                db.wimax_topology_data.update(matching_criteria,event_dict,upsert=True)
-                        elif flag == "kpi_services":
-                                db.device_kpi_status.update(matching_criteria,event_dict,upsert=True)
-                	return success
-		except Exception, ReferenceError:
-        		print "Mongodb updation failed"
+			try:
+				if flag == "inventory_services":
+					db.device_inventory_status.update(matching_criteria,event_dict,upsert=True)
+				elif flag == "serv_perf_data":
+					db.device_service_status.update(matching_criteria,event_dict,upsert=True)
+				elif flag == "network_perf_data":
+					db.device_network_status.update(matching_criteria,event_dict,upsert=True)
+				elif flag == "status_services":
+					db.device_status_services_status.update(matching_criteria,event_dict,upsert=True)
+				elif flag == "topology":
+					db.cambium_topology_data.update(matching_criteria,event_dict,upsert=True)
+				elif flag == "wimax_topology":
+					db.wimax_topology_data.update(matching_criteria,event_dict,upsert=True)
+				elif flag == "kpi_services":
+					db.kpi_data.update(matching_criteria,event_dict,upsert=True)
+				elif flag == 'network_event_status':
+					db.network_event_status.update(matching_criteria, event_dict, upsert=True)
+				elif flag == 'service_event_status':
+					db.service_event_status.update(matching_criteria, event_dict, upsert=True)
+				return success
+			except (Exception, ReferenceError):
+					print "Mongodb updation failed"
 
 				
         else:
@@ -158,13 +164,13 @@ def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None
 		except IndexError, e:
 			return latest_time
     elif db_type == 'mysql':
-        query = "SELECT MAX(id), check_timestamp FROM `%s` WHERE" % table_name +\
-            " `site_name` = '%s'" % (site)
+        query = "SELECT `check_timestamp` FROM `%s` WHERE" % table_name +\
+            " `site_name` = '%s' ORDER BY `id` DESC LIMIT 1" % (site)
         cursor = db.cursor()
         cursor.execute(query)
         entry = cursor.fetchone()
         try:
-            latest_time = entry[1]
+            latest_time = entry[0]
             latest_time = datetime.fromtimestamp(latest_time)
         except TypeError, e:
             cursor.close()
