@@ -911,3 +911,26 @@ def bulk_create(bulky, action='create'):
             return True
 
     return False
+
+#TODO: make this common
+@task()
+def bulk_update_create(bulky, action='update', model=None):
+    """
+
+    :param bulky: bulk object list
+    :param action: create or update?
+    :param model: model object
+    :return:
+    """
+    if bulky and len(bulky):
+        if action == 'update':
+            for update_this in bulky:
+                update_this.save()
+            return True
+
+        elif action == 'create':
+            if model:
+                model.objects.bulk_create(bulky)
+            return True
+
+    return False
