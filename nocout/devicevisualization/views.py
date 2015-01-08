@@ -1989,6 +1989,7 @@ class GISPerfData(View):
                                                         }
                                                     ]
         """
+
         # get device name
         device_name = device_obj.device_name
 
@@ -2036,9 +2037,13 @@ class GISPerfData(View):
                 connected_bs_ip = ""
                 try:
                     # if bs_connected_ip not exist in topology than get it from gis inventory
-                    connected_bs_ip = Topology.objects.filter(connected_device_ip=device_obj.ip_address)[0].ip_address
-                    if not connected_bs_ip:
+                    connected_bs_ip = Topology.objects.filter(connected_device_ip=device_obj.ip_address)
+                    if connected_bs_ip:
+                        connected_bs_ip = connected_bs_ip[0].ip_address
+                    elif not connected_bs_ip:
                         connected_bs_ip = Circuit.objects.get(sub_station=substation).sector.sector_configured_on.ip_address
+                    else:
+                        pass
                 except Exception as e:
                     logger.error("Sub station is not connected to any Base Station.", e.message)
 
@@ -2372,7 +2377,6 @@ class GISPerfData(View):
     def collect_performance(self, performance, device_id, processed):
         """
 
-
         :param performance:
         :param device_id:
         :param processed:
@@ -2411,30 +2415,37 @@ class GISPerfData(View):
                 sds_name = service_name + "_" + sds_name
 
             formula = SERVICE_DATA_SOURCE[sds_name]["formula"] \
-                            if sds_name in SERVICE_DATA_SOURCE \
-                            else None
+                if sds_name in SERVICE_DATA_SOURCE \
+                else None
+            try:
+                perf_info = {
+                    "name": name,
+                    "title": title,
+                    "show": show_gis,
+                    "url": "performance/service/" + service_name + "/service_data_source/" + perf[
+                        'data_source'].strip() + "/device/" + str(
+                        device_id) + "?start_date=&end_date=",
+                    "value": eval(str(formula) + "(" + str(perf['current_value']) + ")") if formula
+                    else perf['current_value'],
+                }
 
-            perf_info = {
-                "name": name,
-                "title": title,
-                "show": show_gis,
-                "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
-                    device_id) + "?start_date=&end_date=",
-                "value": eval(str(formula) + "(" + str(perf['current_value']) + ")") if formula
-                        else perf['current_value'],
-            }
+                device_info.append(perf_info)
+            except Exception as e:
+                logger.info("Something wrong with formula. Exception: ", e.message)
 
-            device_info.append(perf_info)
-
-            perf_info = {
-                "name": 'session_uptime',
-                "title": title,
-                "show": show_gis,
-                "url": "performance/service/" + service_name + "/service_data_source/" + perf['data_source'].strip() + "/device/" + str(
-                    device_id) + "?start_date=&end_date=",
-                "value": eval(str(formula) + "(" + str(perf['current_value']) + ")") if formula
-                        else perf['current_value'],
-            }
+            try:
+                perf_info = {
+                    "name": 'session_uptime',
+                    "title": title,
+                    "show": show_gis,
+                    "url": "performance/service/" + service_name + "/service_data_source/" + perf[
+                        'data_source'].strip() + "/device/" + str(
+                        device_id) + "?start_date=&end_date=",
+                    "value": eval(str(formula) + "(" + str(perf['current_value']) + ")") if formula
+                    else perf['current_value'],
+                }
+            except Exception as e:
+                logger.info("Something wrong with 'perf_info'. Exception: ", e.message)
 
         return device_info
 
@@ -2660,6 +2671,7 @@ class GISPerfData(View):
                                                         'lat': 26.9138611111111
                                                     }
         """
+
         # device name
         device_name = substation_device.device_name
         
@@ -2737,6 +2749,7 @@ class GISPerfData(View):
         far_end_inventory_url = ""
 
         techno_to_append = device_technology.name
+
         if substation.circuit_set.exists():
             c = substation.circuit_set.filter()[0]
             if c.circuit_type and c.circuit_type.strip().lower() in ['bh','backhaul']:
@@ -2760,6 +2773,7 @@ class GISPerfData(View):
         substation_info['link_color'] = device_link_color
         substation_info['show_link'] = 1
         substation_info['param'] = dict()
+
         # Fetch sub station static info
         substation_info['param']['sub_station'] = self.get_device_info(substation_device,
                                                                        machine_name,
@@ -2912,8 +2926,11 @@ class GISPerfData(View):
                 device_frequency = InventoryStatus.objects.filter(device_name=device_name, data_source='frequency')\
                                                               .using(alias=machine_name)\
                                                               .order_by('-sys_timestamp')[:1]
-            if len(device_frequency):
-                device_frequency = device_frequency[0].current_value
+            if device_frequency:
+                try:
+                    device_frequency = device_frequency[0].current_value
+                except Exception as e:
+                    logger.error("Device frequecy inner exception. Exception: ", e.message)
             else:
                 device_frequency = ""
         except Exception as e:
