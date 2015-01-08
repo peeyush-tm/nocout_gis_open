@@ -83,6 +83,12 @@ class Live_Performance(ListView):
         context = super(Live_Performance, self).get_context_data(**kwargs)
         page_type = self.kwargs['page_type']
 
+        hidden_headers = []
+        common_headers = []
+        polled_headers = []
+        action_headers = []
+        specific_headers = []
+
         hidden_headers = [
             {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
         ]
@@ -109,8 +115,8 @@ class Live_Performance(ListView):
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
 
-        if page_type in ["customer", "network"]:
-            specific_headers = [
+        if page_type in ["network"]:
+            specific_headers += [
                 {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
                  'bSortable': True},
                 {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
@@ -119,11 +125,17 @@ class Live_Performance(ListView):
                  'bSortable': True},
             ]
 
-        # elif page_type in ["network"]:
-        #     specific_headers = [
-        #         {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-        #          'bSortable': True},
-        #     ]
+        elif page_type in ["customer"]:
+            specific_headers += [
+                {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                 'bSortable': True},
+                {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                 'bSortable': True},
+                {'mData': 'customer_name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                 'bSortable': True},
+                {'mData': 'near_end_ip', 'sTitle': 'Near End Ip', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+                 'bSortable': True},
+            ]
 
         else:
             specific_headers = [
@@ -158,6 +170,7 @@ class LivePerformanceListing(BaseDatatableView):
         'circuit_id',
         'sector_id',
         'customer_name',
+        'near_end_ip',
         'ip_address',
         'device_type',
         'bs_name',
@@ -261,6 +274,7 @@ class LivePerformanceListing(BaseDatatableView):
                 'circuit_id',
                 'sector_id',
                 'customer_name',
+                'near_end_ip',
                 'ip_address',
                 'device_type',
                 'bs_name',
@@ -1780,6 +1794,9 @@ class Get_Service_Type_Performance_Data(View):
 
                         ss_lat = data.avg_value
                         rf_lat = float(ss_lat) - float(bs_lat)
+
+                        if rf_lat < 0:
+                            rf_lat = 0
 
                         if rf_prop['show_bs']:
                             bs_data_list.append([js_time, float(bs_lat)])

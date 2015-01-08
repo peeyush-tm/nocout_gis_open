@@ -474,7 +474,7 @@ function nocoutPerfLib() {
                     status_html += '</tr></table>';
 
                     // Update Status Block HTML as per the device status
-                    $("#device_status_container").html(status_html);
+                    $("#latestStatusContainer").html(status_html);
 
                     var response_obj = {
                         "last_updated" : last_updated,

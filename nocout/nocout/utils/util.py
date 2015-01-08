@@ -348,7 +348,7 @@ def cache_for(time):
     return decorator
 
 ## TODO: remove the duplicate code for GIS inventory data
-@cache_for(600)  #caching GIS inventory
+@cache_for(300)  #caching GIS inventory
 def cached_all_gis_inventory(query):
     """
 
