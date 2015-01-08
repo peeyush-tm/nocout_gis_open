@@ -5018,6 +5018,9 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 # sector alias
                 alias = row['Sector Name'].upper() if 'Sector Name' in row.keys() else ""
 
+                # mrc
+                mrc = row['MRC'] if 'MRC' in row.keys() else ""
+
                 # dr site
                 dr_site = row['DR Site'] if 'DR Site' in row.keys() else ""
 
@@ -5029,6 +5032,18 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
                 # slave device
                 slave_device = ""
+
+                # *********************************************************************************************
+                # ********************************* MRC Case Handling (Start) *********************************
+                # *********************************************************************************************
+
+                # if we get 'mrc' yes than only make one sector having pmp port 1
+                if mrc.lower() == "yes" and pmp == 2:
+                    continue
+
+                # *********************************************************************************************
+                # ********************************** MRC Case Handling (End) **********************************
+                # *********************************************************************************************
 
                 # *********************************************************************************************
                 # ************************ DR handling according to ip address (Start) ************************
