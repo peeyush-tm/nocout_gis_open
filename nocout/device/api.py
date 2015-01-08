@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 
-@cache_for(600)
+@cache_for(300)
 def prepare_raw_result(bs_dict = []):
     """
 
