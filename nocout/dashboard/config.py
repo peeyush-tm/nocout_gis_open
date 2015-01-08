@@ -146,4 +146,18 @@ dashboards = [
         "dashboard_type" : "numeric",
         "is_bh": False,
     },
+    {
+        "page_name": "main_dashboard",
+        "technology": "PMP",
+        "dashboard_name" : "topology-pmp",
+        "dashboard_type" : "numeric",
+        "is_bh": False,
+    },
+    {
+        "page_name": "main_dashboard",
+        "technology": "WiMAX",
+        "dashboard_name" : "topology-wimax",
+        "dashboard_type" : "numeric",
+        "is_bh": False,
+    },
 ]
