@@ -22,7 +22,7 @@ from nocout.settings import DATE_TIME_FORMAT
 
 from capacity_management.models import SectorCapacityStatus
 
-def get_daily_alerts(request, alert_type="default"):
+def get_daily_alerts(request):
     """
     get request to render daily alerts pages.
 
@@ -32,15 +32,11 @@ def get_daily_alerts(request, alert_type="default"):
 
     """
 
-    if(alert_type == "sector"):
-        alert_template = 'capacity_management/sector_capacity_alert.html'
-    elif(alert_type == "backhaul"):
-        alert_template = 'capacity_management/backhaul_capacity_alert.html'
-
+    alert_template = 'capacity_management/backhaul_capacity_alert.html'
     return render_to_response(alert_template,context_instance=RequestContext(request))
 
 
-def get_utilization_status(request, status_type="default"):
+def get_utilization_status(request):
     """
     get request to render utilization pages
 
@@ -48,11 +44,7 @@ def get_utilization_status(request, status_type="default"):
     :params status_type:
     :return Https response object:
     """
-    status_template = ""
-    if(status_type == "sector"):
-        status_template = 'capacity_management/sector_capacity_status.html'
-    else:
-        status_template = 'capacity_management/backhaul_capacity_status.html'
+    status_template = 'capacity_management/backhaul_capacity_status.html'
 
     return render_to_response(status_template, context_instance=RequestContext(request))
 
@@ -274,6 +266,46 @@ class SectorStatusListing(BaseDatatableView):
         }
         return ret
 
+# This class loads headers for Sector Augmentation Alerts Listing Table
+class SectorAugmentationAlertsHerders(ListView):
+    """
+    Headers for sector Augmentation Alerts
+    """
+    model = SectorCapacityStatus
+    template_name = 'capacity_management/sector_capacity_alert.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        """
+        context = super(SectorAugmentationAlertsHerders, self).get_context_data(**kwargs)
+
+        hidden_headers = [
+            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'sector__sector_id', 'sTitle': 'Sector', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'organization__alias', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+            {'mData': 'sector__base_station__state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hide', 'bSortable': True},
+        ]
+
+        common_headers = [
+            {'mData': 'sector__base_station__city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__sector_configured_on__ip_address', 'sTitle': 'BS IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__base_station__alias', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+        ]
+
+        datatable_headers = hidden_headers
+
+        datatable_headers += common_headers
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+# This class loads data for Sector Augmentation Alerts Listing Table
 class SectorAugmentationAlertsListing(SectorStatusListing):
     """
     Sector Augmentation Alerts Listing is subset for the Sector Capacity only
