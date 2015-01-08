@@ -324,7 +324,7 @@ function nocoutPerfLib() {
                                             perf = data_obj.perf ? data_obj.perf : "N/A",
                                             inner_status_html = '';
                                         
-                                        inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
+                                        inner_status_html += '<table id="perf_ourput_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
                                         inner_status_html += '<tr>';
                                         inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
                                         inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
@@ -386,7 +386,7 @@ function nocoutPerfLib() {
                                         perf = data_obj.perf ? data_obj.perf : "N/A",
                                         inner_status_html = '';
 
-                                    inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
+                                    inner_status_html += '<table id="perf_ourput_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
                                     inner_status_html += '<tr>';
                                     inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
                                     inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
@@ -467,7 +467,7 @@ function nocoutPerfLib() {
 
                     status_html = "";
 
-                    status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;"><tr>';
+                    status_html += '<table id="final_status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;"><tr>';
                     status_html += '<td style="color:'+txt_color+';"><i class="fa fa-circle" style="vertical-align: middle;"> </i> <b>Current Status</b> : '+status+'</td>';
                     status_html += '<td style="color:'+txt_color+';"><b>Current Status Since</b> : '+age+'</td>';
                     status_html += '<td style="color:'+txt_color+';"><b>Last Down Time</b> : '+lastDownTime+'</td>';
