@@ -3,6 +3,7 @@ from pprint import pformat
 from operator import itemgetter
 from nocout_logger import nocout_log
 from collections import namedtuple
+from itertools import izip_longest
 
 logger = nocout_log()
 
@@ -217,14 +218,20 @@ def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
     cambium_bs_devices = map(lambda e: (e[1], e[7]), filter(lambda e: e[11].lower() == 'pmp', data))
     T.wimax_bs_devices, T.cambium_bs_devices = wimax_bs_devices, cambium_bs_devices
 
+    final_radwin_devices_entry = []
     # Get the Radwin BS devices (We need them to generate active and static checks)
     # Ex entry : ('device_1', 'ospf4_slave_1', '5120')
     radwin_bs_devices = map(lambda e: (e[1], e[7], e[12]), filter(lambda e: e[11].lower() == 'p2p', data))
-    # Calculate the QoS, needed as input to static checks in form of warning/critical values
+ Calculate the QoS, needed as input to static checks in form of warning/critical values
     qos_values = eval_qos(map(lambda e: e[2], radwin_bs_devices))
     radwin_bs_devices = map(lambda e: (e[0], e[1]), radwin_bs_devices)
     radwin_bs_devices = zip(radwin_bs_devices, qos_values)
-    T.radwin_bs_devices = radwin_bs_devices
+    for e in radwin_bs_devices:
+        final_radwin_devices_entry.append((e[0][0], e[0][1], e[1]))
+    #for a, b in izip_longest(radwin_bs_devices, qos_values):
+    #    final_radwin_devices_entry.append((a[0], a[1], b))
+
+    T.radwin_bs_devices = final_radwin_devices_entry
 
     return T
 
@@ -362,19 +369,25 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
     #all_hosts = list(set(all_hosts))
     hosts_only.close()
 
+    final_radwin_devices_entry = []
     # Get Radwin SS devices, we need them for static n active checks
     radwin_ss_devices = filter(lambda e: e[14].lower() == 'p2p', data)
     radwin_ss_devices = map(lambda e: (e[4], e[8], e[15]), radwin_ss_devices)
     qos_values = eval_qos(map(lambda e: e[2], radwin_ss_devices))
     radwin_ss_devices = map(lambda e: (e[0], e[1]), radwin_ss_devices)
     radwin_ss_devices = zip(radwin_ss_devices, qos_values)
+    for e in radwin_ss_devices:
+        final_radwin_devices_entry.append((e[0][0], e[0][1], e[1]))
+    #for a, b in izip_longest(radwin_ss_devices, qos_values):
+    #    final_radwin_devices_entry.append((a[0], a[1], b))
+
     # Get Wimax SS devices, for active checks
     wimax_ss_devices = filter(lambda e: e[14].lower() == 'wimax', data)
     wimax_ss_devices = map(lambda e: (e[4], e[8]), wimax_ss_devices)
     #print wimax_ss_devices[0:10]
 
     T.all_hosts, T.ipaddresses, T.host_attributes = all_hosts, ipaddresses, host_attributes
-    T.radwin_ss_devices, T.wimax_ss_devices = radwin_ss_devices, wimax_ss_devices
+    T.radwin_ss_devices, T.wimax_ss_devices = final_radwin_devices_entry, wimax_ss_devices
 
     return T
 
@@ -700,7 +713,12 @@ def make_active_check_rows(container, devices, services, active_checks_threshold
                 war, crit = serv_specific_entry[0][1], serv_specific_entry[0][2]
             else:
                 war, crit = def_war, def_crit
-            container[service].append(((str(service), {'host': str(host_tuple[0]), 'site': str(host_tuple[1]), 'war': war, 'crit': crit}), [], [str(host_tuple[0])]))
+            if service in ['radwin_ul_util_kpi', 'radwin_dl_util_kpi']:
+                container[service].append(((str(service), {'host': str(host_tuple[0]), \
+                        'site': str(host_tuple[1]), 'qos': host_tuple[2], 'war': war, 'crit': crit}), [], [str(host_tuple[0])]))
+            else:
+                container[service].append(((str(service), {'host': str(host_tuple[0]), \
+                        'site': str(host_tuple[1]), 'war': war, 'crit': crit}), [], [str(host_tuple[0])]))
 
     return container
 
