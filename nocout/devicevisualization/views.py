@@ -1958,7 +1958,7 @@ class GISPerfData(View):
 
         return icon
 
-    def get_device_info(self, device_obj, machine_name, device_pl="", substation=False, is_static=False):
+    def get_device_info(self, device_obj, machine_name, device_pl="", ss=False, is_static=False):
         """ Get Sector/Sub Station device information
 
             Parameters:
@@ -1999,9 +1999,25 @@ class GISPerfData(View):
 
         # device info dictionary
         device_info = list()
+
+        # connected bs ip
+        connected_bs_ip = ""
+        try:
+            # if bs_connected_ip not exist in topology than get it from gis inventory
+            connected_bs_ip = Topology.objects.filter(connected_device_ip=device_obj.ip_address)
+            if connected_bs_ip:
+                connected_bs_ip = connected_bs_ip[0].ip_address
+            elif not connected_bs_ip:
+                substation = SubStation.objects.filter(device=device_obj)[0]
+                connected_bs_ip = Circuit.objects.get(sub_station=substation).sector.sector_configured_on.ip_address
+            else:
+                pass
+        except Exception as e:
+            logger.error("Sub station is not connected to any Base Station.", e.message)
+
         # is device is a substation device than add static inventory parameters in list
         if is_static:
-            if substation:
+            if ss:
                 # substation
                 substation = ""
                 try:
@@ -2333,10 +2349,20 @@ class GISPerfData(View):
                     "title": 'Session Uptime',
                     "show": 1,
                     "url": None,
-                    "value": None,
+                    "value": datetime.datetime.fromtimestamp(session_uptime).strftime('%Y-%m-%d %H:%M:%S')
                 }
 
                 device_info.append(session_uptime_info)
+
+                # bs connected ip
+                connected_bs_ip_info = {
+                    'name': 'connected_bs_ip',
+                    'title': 'Connected BS IP',
+                    'show': 1,
+                    'value': format_value(connected_bs_ip)
+                }
+
+                device_info.append(connected_bs_ip_info)
 
             # remove duplicate dictionaries in list
         device_info = remove_duplicate_dict_from_list(device_info)
