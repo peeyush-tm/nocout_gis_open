@@ -1795,6 +1795,9 @@ class Get_Service_Type_Performance_Data(View):
                         ss_lat = data.avg_value
                         rf_lat = float(ss_lat) - float(bs_lat)
 
+                        if rf_lat < 0:
+                            rf_lat = 0
+
                         if rf_prop['show_bs']:
                             bs_data_list.append([js_time, float(bs_lat)])
                         if rf_prop['show_ss']:
