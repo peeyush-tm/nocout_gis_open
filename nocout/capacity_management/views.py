@@ -380,9 +380,15 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             try:
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
                 item['sector__sector_configured_on__device_technology'] = techno_name
-                item['age'] = datetime.datetime.fromtimestamp(
-                    float(item['age'])
-                ).strftime(DATE_TIME_FORMAT)
+                item['age'] = float(item['age']) - float(item['sys_timestamp'])
+
+                if item['severity'].lower() == 'warning':
+                    item['severity'] = "Needs Augmentation"
+                elif item['severity'].lower() == 'critical':
+                    item['severity'] = "Stop Provisioning"
+                else:
+                    continue
+
             except:
                 continue
 
