@@ -262,7 +262,7 @@ def get_topology_status_results(user_devices, model, service_name, data_source):
 
         while True:
             if not queue.empty():
-                topology_status_results += queue.get()
+                topology_status_results | queue.get()
             else:
                 break
     else:
@@ -287,17 +287,10 @@ def get_sales_opportunity_range_counter(user_sector, technology_status_results):
 def get_pie_chart_json_response_sales_opp_dict(data_source, range_counter):
 
     display_name = data_source.replace('_', ' ')
-    color_array = ["#FFE90D", "#FF0022","99CC00", "green", "blue", "grey", "aqua"]
 
     chart_data = []
-    colors = []
-    counter = 0
     for key,value in range_counter.items():
         chart_data.append(['%s: %s' % (key, value), range_counter[key]])
-        colors.append(color_array[counter])
-        counter += 1
-        if counter == len(color_array):
-            counter = 0
 
     response_dict = {
         "message": "Sector Performance Data Fetched Successfully To Plot Graphs.",
@@ -307,7 +300,7 @@ def get_pie_chart_json_response_sales_opp_dict(data_source, range_counter):
                 "plot_type": "charts",
                 "display_name": display_name,
                 "valuesuffix": "dB",
-                "colors": colors,
+                "colors": ""
                 "chart_data": [{
                     "type": 'pie',
                     "name": display_name.upper(),
