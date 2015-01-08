@@ -29,6 +29,16 @@
     <div class="tabbable header-tabs">
         <div class="tab-content" style="overflow-y:auto;">
             <div class="col-md-12">
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>PMP Sector Capacity</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="pmp_sector_capacity" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="col-md-6 box-container ui-sortable">
                     <div class="box">
@@ -75,6 +85,7 @@
         App.init(); //Initialise plugins and elements
 
         sales_opportuniry_getChartData();
+        pmp_sector_getChartData();
     });
 
 
@@ -147,6 +158,56 @@ function sales_opportuniry_getChartData() {
     console.log('problem');
     {% endif %}
 }
+
+function pmp_sector_getChartData() {
+
+    $.ajax({
+        url : "{% url 'sector-capacity-pmp' %}",
+        type : "GET",
+        success : function(result) {
+            var response = "";
+            if(typeof result == 'string') {
+                response = JSON.parse(result);
+            } else {
+                response = result;
+            }
+
+            if(response.success == 1) {
+                var domElement = 'pmp_sector_capacity';
+                var pie_chart = $('#' + domElement).highcharts({
+                    chart: {
+                        plotBackgroundColor: null,
+                        plotBorderWidth: null,
+                        plotShadow: false
+                    },
+                    title: {
+                        text: response.data.objects.chart_data[0].name
+                        // text: ''
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: false,
+                            },
+                            showInLegend: true
+                        }
+                    },
+                    colors: response.data.objects.colors,
+                    series: [{
+                        type: 'pie',
+                        name: response.data.objects.display_name,
+                        data: response.data.objects.chart_data[0].data
+                    }],
+                });
+            } else {
+                console.log('unsuccess')
+            }
+        },
+    });
+}
+
 
 </script>
 {% endblock %}

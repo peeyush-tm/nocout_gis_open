@@ -722,34 +722,34 @@ class SectorCapacityMixin(object):
         :return Http response object:
         """
         data_source_config, technology, sector_method_to_call = self.get_init_data()
-        template_dict = {'data_sources': json.dumps(data_source_config.keys())}
 
-        data_source = request.GET.get('data_source')
-        if not data_source:
-            return render(self.request, self.template_name, dictionary=template_dict)
+        data_source_list = data_source_config.keys()
 
-        # Get Service Name from queried data_source
-        try:
-            service_name = data_source_config[data_source]['service_name']
-            model = data_source_config[data_source]['model']
-        except KeyError as e:
-            return render(self.request, self.template_name, dictionary=template_dict)
+        service_status_results = []
+        for data_source in data_source_list:
+            print(data_source)
+            # Get Service Name from queried data_source
+            try:
+                service_name = data_source_config[data_source]['service_name']
+                model = data_source_config[data_source]['model']
+            except KeyError as e:
+                continue
 
-        # Get User's organizations
-        # (admin : organization + sub organization)
-        # (operator + viewer : same organization)
-        user_organizations = logged_in_user_organizations(self)
+            # Get User's organizations
+            # (admin : organization + sub organization)
+            # (operator + viewer : same organization)
+            user_organizations = logged_in_user_organizations(self)
 
-        # Get Sector of User's Organizations. [and are Sub Station]
-        user_sector = sector_method_to_call(user_organizations, technology)
+            # Get Sector of User's Organizations. [and are Sub Station]
+            user_sector = sector_method_to_call(user_organizations, technology)
 
-        # Get Sector of User's Organizations. [and are Sub Station]
-        user_devices = Device.objects.filter(id__in=user_sector.\
-                        values_list('sector_configured_on', flat=True))
+            # Get Sector of User's Organizations. [and are Sub Station]
+            user_devices = Device.objects.filter(id__in=user_sector.\
+                            values_list('sector_configured_on', flat=True))
 
-        service_status_results = get_service_status_results(
-            user_devices, model=model, service_name=service_name, data_source=data_source
-        )
+            service_status_results += get_service_status_results(
+                user_devices, model=model, service_name=service_name, data_source=data_source
+            )
 
         range_counter = get_dashboard_status_sector_range_counter(service_status_results)
 
@@ -763,7 +763,6 @@ class PMP_Sector_Capacity(SectorCapacityMixin, View):
     The Class based View to get main dashboard page requested.
 
     """
-    template_name = 'dashboard/main_dashboard.html'
 
     def get_init_data(self):
         """
