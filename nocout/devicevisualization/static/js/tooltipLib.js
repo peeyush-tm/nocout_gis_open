@@ -566,8 +566,8 @@ var ptp_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'ss_ip',
-		'title': 'SS IP',
+		'name': 'idu_ip',
+		'title': 'Near End IP',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -615,7 +615,7 @@ var ptp_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'polarisation',
+		'name': 'antenna_polarization',
 		'title': 'Polarisation',
         'show'  : 1,
         'value' : '',
@@ -657,7 +657,7 @@ var ptp_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'ss_technology',
+		'name': 'technology',
 		'title': 'Technology',
         'show'  : 1,
         'value' : '',
@@ -678,7 +678,7 @@ var ptp_sector_toolTip_static = [
         'url'   : ''
 	},
 	{
-		'name': 'alias',
+		'name': 'sector_alias',
 		'title': 'Alias',
         'show'  : 1,
         'value' : '',
@@ -779,6 +779,13 @@ var ptp_sector_toolTip_polled = [
         'value' : '',
         'url'   : ''
 	},
+    {
+        'name'  : 'session_uptime',
+        'title' : 'Session Uptime',
+        'show'  : 1,
+        'value' : '',
+        'url'   : ''
+    },
 	{
 		'name'  : 'radwin_uptime_uptime',
         'title' : 'Device Uptime',
@@ -899,7 +906,7 @@ var pmp_ss_toolTip_polled = [
         'url'   : ''
 	},
     {
-        'name'  : '',
+        'name'  : 'session_uptime',
         'title' : 'Session Uptime',
         'show'  : 1,
         'value' : '',

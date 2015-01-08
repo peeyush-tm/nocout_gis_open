@@ -492,6 +492,12 @@ def prepare_raw_sector(sectors):
                               'value': format_value(format_this=sector['SECTOR_NAME'])
                             },
                             {
+                              'name': 'sector_alias',
+                              'title': 'Alias',
+                              'show': 0 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                              'value': format_value(format_this=sector['SECTOR_ALIAS']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
                               'name': 'city',
                               'title': 'City',
                               'show': 0,
@@ -502,6 +508,73 @@ def prepare_raw_sector(sectors):
                               'title': 'Building Height',
                               'show': 0,
                               'value': format_value(format_this=sector['BSBUILDINGHGT'])
+                            },
+                            {
+                              'name': 'cktid',
+                              'title': 'Circuit ID',
+                              'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                              'value': format_value(format_this=sector['CCID']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                              'name': 'customer_alias',
+                              'title': 'Customer Name',
+                              'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                              'value': format_value(format_this=sector['CUST']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                                'name': 'pe_ip',
+                                'title': 'PE IP',
+                                'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': format_value(format_this=sector['BH_PE_IP']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                                'name': 'qos_bandwidth',
+                                'title': 'QOS(BW)',
+                                'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': format_value(format_this=sector['QOS']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                                'name': 'mount_type',
+                                'title': 'SS MountType',
+                                'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': format_value(format_this=sector['SSANTENNAMOUNTTYPE']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                                'name': 'cable_length',
+                                'title': 'Cable Length',
+                                'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': format_value(format_this=sector['SS_CABLE_LENGTH']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                                'name': 'lat_lon',
+                                'title': 'Lat, Long',
+                                'show':1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': str(format_value(format_this=sector['BSLAT']))+","+str(format_value(sector['BSLONG'])) \
+                                if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                                'name': 'customer_address',
+                                'title': 'Customer Address',
+                                'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': format_value(format_this=sector['SS_CUST_ADDR']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                                'name': 'dl_rssi_during_acceptance',
+                                'title': 'RSSI During Acceptance',
+                                'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': format_value(format_this=sector['RSSI']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                                'name': 'date_of_acceptance',
+                                'title': 'Date of Acceptance',
+                                'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': format_value(format_this=sector['DATE_OF_ACCEPT']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                                'name': 'ethernet_extender',
+                                'title': 'Ethernet Extender',
+                                'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': format_value(format_this=sector['SS_ETH_EXT']) if sector['SECTOR_TECH'] == 'P2P' else ""
                             },
                             {
                               'name': 'technology',
