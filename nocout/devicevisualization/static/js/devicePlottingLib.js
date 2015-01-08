@@ -2099,7 +2099,7 @@ function devicePlottingClass_gmap() {
 					if(ptp_tech_list.indexOf(sector_tech) > -1) {
 						sector_Marker.setOptions({
 							"cktId" : ckt_id_val,
-							"tooltip_info" : ss_marker_obj.data.param.sub_station
+							// "tooltip_info" : ss_marker_obj.data.param.sub_station
 						});
 					}
 
@@ -3166,7 +3166,7 @@ function devicePlottingClass_gmap() {
 				nearend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
 				tools_html = "",
 				nearEndInfo = contentObject['deviceInfo'].concat(contentObject['deviceExtraInfo']),
-				static_info = !contentObject["tooltip_info"] ? nearEndInfo : rearrangeTooltipArray(ptp_sector_toolTip_static,contentObject["tooltip_info"]),
+				// static_info = !contentObject["tooltip_info"] ? nearEndInfo : rearrangeTooltipArray(ptp_sector_toolTip_static,contentObject["tooltip_info"]),
 				lat_lon_str = "";
 
 			/*Tab-content Start*/
@@ -3183,7 +3183,9 @@ function devicePlottingClass_gmap() {
 			// infoTable += "<table class='table table-bordered table-hover'><tbody>";
 			var sector_tech = contentObject.technology ? $.trim(contentObject.technology.toLowerCase()) : "";
 			if(!contentObject["tooltip_info"]) {
-				if(sector_tech == 'wimax') {
+				if(ptp_tech_list.indexOf(sector_tech) > -1) {
+					static_info = rearrangeTooltipArray(ptp_sector_toolTip_static,nearEndInfo);
+				} else if(sector_tech == 'wimax') {
 					static_info = rearrangeTooltipArray(wimax_sector_toolTip_static,nearEndInfo);
 				} else if(sector_tech == 'pmp') {
 					static_info = rearrangeTooltipArray(pmp_sector_toolTip_static,nearEndInfo);
@@ -3207,7 +3209,7 @@ function devicePlottingClass_gmap() {
 				pos1 = "",
 				pos2 = "";
 
-			if(contentObject["tooltip_info"]) {
+			if(ptp_tech_list.indexOf(sector_tech) > -1) {
 				circuit_id = gisPerformanceClass.getKeyValue(static_info,"cktid",true);	
 				if(circuit_id) {
 					pos1 = "<a href='"+posLink1+"="+circuit_id+"' class='text-warning' target='_blank'>"+circuit_id+"</a>";
@@ -3218,7 +3220,7 @@ function devicePlottingClass_gmap() {
 			for(var i=0; i< static_info.length; i++) {
 				var highlight_class = "";
 				// If ptp sector then update lat-lon value by sector lat-lon
-				if(contentObject["tooltip_info"]) {
+				if(ptp_tech_list.indexOf(sector_tech) > -1) {
 					if(static_info[i]["name"] == 'pos_link1') {
 						static_info[i]["value"] = pos1;
 					}
@@ -3349,6 +3351,10 @@ function devicePlottingClass_gmap() {
 					if(ptp_tech_list.indexOf(ss_tech) <= -1) {
 						if(ptp_not_show_items.indexOf(startPtInfo[i].name) > -1) {
 							startPtInfo[i].show = 0;
+						}
+					} else {
+						if(startPtInfo[i].name == 'ss_ip') {
+							startPtInfo[i].title = "Far End IP"
 						}
 					}
 

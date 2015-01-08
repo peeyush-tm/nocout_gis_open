@@ -1283,7 +1283,8 @@ class Get_Service_Type_Performance_Data(View):
                     alias=inventory_device_machine_name).order_by('sys_timestamp')
                 result = self.dr_performance_data_result(performance_data=performance_data,
                                                          sector_device=device,
-                                                         dr_device=dr_device
+                                                         dr_device=dr_device,
+                                                         availability=True
                                                          )
             else:
                 performance_data = NetworkAvailabilityDaily.objects.filter(device_name=inventory_device_name,
@@ -1826,7 +1827,7 @@ class Get_Service_Type_Performance_Data(View):
 
         return self.result
 
-    def dr_performance_data_result(self, performance_data, sector_device, dr_device):
+    def dr_performance_data_result(self, performance_data, sector_device, dr_device, availability=False):
         """
         specially for dr devices
         """
@@ -1839,10 +1840,17 @@ class Get_Service_Type_Performance_Data(View):
         dr_result = self.performance_data_result(performance_data=dr_performance_data)
         try:
             sector_result['data']['objects']['chart_data'][0]['name'] += " ( {0} )".format(sector_device.ip_address)
+            if availability:
+                sector_result['data']['objects']['chart_data'][1]['name'] += " ( {0} )".format(sector_device.ip_address)
+
             dr_result['data']['objects']['chart_data'][0]['name'] += " DR: ( {0} )".format(dr_device.ip_address)
 
             chart_data = sector_result['data']['objects']['chart_data']
             chart_data.append(dr_result['data']['objects']['chart_data'][0])
+            if availability:
+                dr_result['data']['objects']['chart_data'][1]['name'] += " DR: ( {0} )".format(dr_device.ip_address)
+                chart_data.append(dr_result['data']['objects']['chart_data'][1])
+
         except:
             chart_data = sector_result['data']['objects']['chart_data']
 
@@ -2044,7 +2052,7 @@ class Get_Service_Type_Performance_Data(View):
                         if data.current_value:
                             formatter_data_point = {
                                 "name": "Availability",
-                                "color": '#70AFC4',
+                                "color": '#90ee7e',
                                 "y": float(data.current_value),
                                 "x": js_time
                             }
@@ -2371,10 +2379,10 @@ class DeviceServiceDetail(View):
         #specially for DR devices
         technology = DeviceTechnology.objects.get(id=device.device_technology)
         dr_device = None
-        if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
-            dr_devices = device.sector_configured_on.filter()
-            for dr_d in dr_devices:
-                dr_device = dr_d.dr_configured_on
+        # if technology and technology.name.lower() in ['wimax'] and device.sector_configured_on.exists():
+        #     dr_devices = device.sector_configured_on.filter()
+        #     for dr_d in dr_devices:
+        #         dr_device = dr_d.dr_configured_on
         #specially for DR devices
 
         device_type = DeviceType.objects.get(id=device.device_type)
@@ -2397,7 +2405,7 @@ class DeviceServiceDetail(View):
             temp_s_name = s['name']
             sds_names.append(temp_sds_name)
             service_data_sources[temp_s_name, temp_sds_name] = \
-                s['alias'] + "[ " + s['servicespecificdatasource__service_data_sources__alias'] + " ]"
+                s['servicespecificdatasource__service_data_sources__alias']
 
         if dr_device:
             performance = PerformanceService.objects.filter(
@@ -2447,6 +2455,9 @@ class DeviceServiceDetail(View):
                             'color': SERVICE_DATA_SOURCE[
                                         data.service_name.strip() + "_" +data.data_source.strip()
                                     ]['chart_color'],
+                            'type': SERVICE_DATA_SOURCE[
+                                        data.service_name.strip() + "_" +data.data_source.strip()
+                                    ]['type']
                         }
                     js_time = data.sys_timestamp*1000
                     value = float(data.current_value)
@@ -2462,6 +2473,9 @@ class DeviceServiceDetail(View):
                             'color': SERVICE_DATA_SOURCE[
                                         data.service_name.strip() + "_" +data.data_source.strip()
                                     ]['chart_color'],
+                            'type': SERVICE_DATA_SOURCE[
+                                        data.service_name.strip() + "_" +data.data_source.strip()
+                                    ]['type']
                         }
                     js_time = data.sys_timestamp*1000
                     value = float(data.current_value)
@@ -2484,7 +2498,7 @@ class DeviceServiceDetail(View):
                     'plot_type': 'charts',
                     'display_name': service_name.strip().title(),
                     'valuesuffix': '  ',
-                    'type': 'area',
+                    'type': 'spline',
                     'chart_data': chart_data,
                     'valuetext': '  '
                 }
@@ -2558,7 +2572,7 @@ def device_current_status(device_object):
 
     try:
         if pl_value and float(pl_value) == 100:
-            return 'Down', pl_age
+            return 'down', pl_age
         else:
             s, a = get_higher_severity(severity_dict=severity)
             if s and s.strip().lower() == 'down':
@@ -2582,6 +2596,12 @@ def device_last_down_time(device_object):
     inventory_device_machine_name = device_object.machine.name
 
     age = None
+
+    #first check the current PL state of the device
+    s, a = device_current_status(device_object=device_object)
+    if s == 'down':
+        return a
+    #if the current status id down, return down
 
     device_last_down_query_set = PerformanceNetwork.objects.filter(
                 device_name=inventory_device_name,

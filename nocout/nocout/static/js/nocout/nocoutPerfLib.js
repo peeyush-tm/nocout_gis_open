@@ -266,7 +266,7 @@ function nocoutPerfLib() {
                                 var tabs_with_data = "";
                                 var service_tabs = '<div class="left_tabs_container '+left_section_class+'"><ul class="nav nav-tabs">';
 
-                                var service_tabs_data = '<div class="'+right_section_class+'">';
+                                var service_tabs_data = '<div class="'+right_section_class+'" style="padding:0px 0px 0px 10px;">';
                                 service_tabs_data += '<div class="tab-content">';
 
                                 var is_first_tab = 0;
@@ -325,7 +325,10 @@ function nocoutPerfLib() {
                                             inner_status_html = '';
                                         
                                         inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-                                        inner_status_html += '<tr><td>Latest Performance Output : '+perf+'</td><td>Last Updated At : '+last_updated+'</td></tr>';
+                                        inner_status_html += '<tr>';
+                                        inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
+                                        inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
+                                        inner_status_html += '</tr>';
                                         inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
                                         $("#last_updated_"+tab_content_dom_id).html(inner_status_html);
                                     } else {
@@ -384,7 +387,10 @@ function nocoutPerfLib() {
                                         inner_status_html = '';
 
                                     inner_status_html += '<table id="status_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-                                    inner_status_html += '<tr><td>Latest Performance Output : '+perf+'</td><td>Last Updated At : '+last_updated+'</td></tr>';
+                                    inner_status_html += '<tr>';
+                                    inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
+                                    inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
+                                    inner_status_html += '</tr>';
                                     inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
                                     
                                     $("#last_updated_"+active_tab_content_dom_id).html(inner_status_html);
@@ -576,16 +582,19 @@ function nocoutPerfLib() {
                     // text: config.name
                     text: ""
                 },
-                //legend: {
-                //    align: 'right',
-                //    verticalAlign: 'top',
-                //    x: 0,
-                //    y: 0,
-                //    floating: true,
-                //    borderWidth: 1,
-                //    backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
-                //},
+                legend:{
+                    itemDistance : 15,
+                    itemMarginBottom : 5,
+                    borderColor : "#FFF",
+                    borderWidth : "1",
+                    borderRadius : "8",
+                    itemStyle: {
+                        color: '#FFF',
+                        fontSize : '12px'
+                    }
+                },
                 tooltip: {
+                    headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
                     pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
                     shared: true,
                     crosshairs: true,

@@ -18,6 +18,25 @@
         .perfContainerBlock .box-title .pull-right .list-inline > li {
             max-width: 200px !important;
         }
+        .perfContainerBlock .left_tabs_container {
+            padding: 0px !important;
+        }
+        .inner_tab_container .panel-body {
+            padding: 10px !important;
+        }
+        #tableContainer {
+            padding: 0px;
+        }
+        .top_perf_tabs {
+            top:-44px;
+            float:left;
+            padding-left:15px;
+            margin-right:0px;
+        }
+        .top_perf_tab_content {
+            top: -44px;
+            position: relative;
+        }
     </style>
     <!--Single Device Live Perf Start-->
     <div class='box border lite perfContainerBlock'>
@@ -124,7 +143,7 @@
     {#					</div>#}
     <div id="tableContainer" class="box-body">
     <div class="tabbable header-tabs">
-        <ul class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
+        <ul class="nav nav-tabs top_perf_tabs">
             <li>
                 <a href="#utilization_top_tab" id="utilization_top" data-toggle="tab">
                     <span class="hidden-inline-mobile">Utilization</span>
@@ -161,11 +180,10 @@
                 </a>
             </li>
         </ul>
-
         <div class="clearfix"></div>
     </div>
     <div>
-        <div class="tab-content" style="overflow:auto;">
+        <div class="tab-content top_perf_tab_content" style="overflow:auto;">
             <div class="tab-pane active" id="network_perf_tab">
                 <div class="panel panel-default inner_tab_container">
                     <div class="panel-body" style="overflow:auto;">
@@ -574,11 +592,11 @@
                         timePicker: true,
                         timePickerIncrement: 1,
                         // format: 'd/m/Y H:M:S' ,
-                        opens: "left",
+                        opens: "right",
                         showDropdowns: true,
                         ranges: {
                             'Today': [moment().startOf('day'), moment()],
-                            'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
+                            'Last 24 Hours': [moment().subtract('days', 1), moment().subtract('days', 1)],
                             'Last 7 Days': [moment().subtract('days', 6), moment()],
                             'Last 30 Days': [moment().subtract('days', 29), moment()],
                             'This Month': [moment().startOf('month'), moment().endOf('month')],
