@@ -316,7 +316,7 @@
             var ajax_url_temp = '{% url "NetworkAlertDetails" %}' + '?data_source=Temperature';
             var ajax_url_con = '{% url "NetworkAlertDetails" %}' + '?data_source=Backhaul';
             var ajax_url_ul = '{% url "NetworkAlertDetails" %}' + '?data_source=ULIssue';
-            var ajax_url_sectorutil = '{% url "NetworkAlertDetails" %}' + '?data_source=SectorUtil';
+            var ajax_url_sectorutil = '{% url "SectorAugmentationAlertsListing" %}';
             var ajax_url_bhutil = '{% url "NetworkAlertDetails" %}' + '?data_source=BackhaulUtil';
 
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
@@ -325,7 +325,7 @@
             $("#network_bhUtil_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
             $("#network_sectorUtil_tab").attr("data_url", ajax_url_sectorutil);
-            $("#network_sectorUtil_tab").attr("data_header", '{{ datatable_headers|safe }}');
+            $("#network_sectorUtil_tab").attr("data_header", '{{ sector_utils_headers|safe }}');
 
             $("#network_ulIssue_tab").attr("data_url", ajax_url_ul);
             $("#network_ulIssue_tab").attr("data_header", '{{ datatable_headers|safe }}');

@@ -88,7 +88,7 @@
             </div>
             <div class="box-body status_body">
                 <div class="well well-sm" id="status_container" style="overflow:auto;">
-                    <div id="device_status_container">
+                    <div id="latestStatusContainer">
                         
                     </div>
                     <table id="status_table" class="table table-responsive table-bordered"
@@ -590,7 +590,7 @@
                             status_html += '</tr></table>';
 
                             // Update Status Block HTML as per the device status
-                            $("#device_status_container").html(status_html);
+                            $("#latestStatusContainer").html(status_html);
                         }
                     },
                     error: function (err) {
