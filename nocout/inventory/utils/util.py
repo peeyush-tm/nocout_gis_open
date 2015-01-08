@@ -262,18 +262,34 @@ def organization_sectors(organization, technology=None):
     :param technology:
     :return list of sector
     """
-    if not technology:
-        organisation_sectors = Sector.objects.filter(
-                                organization__in=organization,
-                                sector_id__isnull=False,
-                                sector_configured_on_port__isnull=True,
-                            ).annotate(total_sector=Count('sector_id'))
-    else:
+    if int(technology) == int(PMP.ID):
         organisation_sectors = Sector.objects.filter(
                                 organization__in=organization,
                                 sector_id__isnull=False,
                                 sector_configured_on_port__isnull=True,
                                 sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    elif int(technology) == int(WiMAX.ID):
+        organisation_sectors = Sector.objects.filter(
+                                organization__in=organization,
+                                sector_id__isnull=False,
+                                sector_configured_on_port__isnull=False,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    elif int(technology) == int(P2P.ID):
+        organisation_sectors = Sector.objects.filter(
+                                organization__in=organization,
+                                sector_id__isnull=False,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    else:
+        organisation_sectors = Sector.objects.filter(
+                                organization__in=organization,
+                                sector_id__isnull=False,
+                                sector_configured_on__isnull=False,
                             ).annotate(total_sector=Count('sector_id'))
 
     return organisation_sectors
