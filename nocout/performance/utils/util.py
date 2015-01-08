@@ -303,10 +303,10 @@ def prepare_gis_devices(devices, page_type):
                     port = bs_row['SECTOR_PORT']
                     if port:
                         apnd = "( " + port + " )"
-                    if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
-                            and bs_row['SECTOR_SECTOR_ID'] is not None:
-                        sector_id.append(bs_row['SECTOR_SECTOR_ID'])
-                        sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd.upper())
+                if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
+                        and bs_row['SECTOR_SECTOR_ID'] is not None:
+                    sector_id.append(bs_row['SECTOR_SECTOR_ID'])
+                    sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd.upper())
 
         for bs_row in raw_result:
             if device_name is not None:
