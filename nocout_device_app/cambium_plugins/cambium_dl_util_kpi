@@ -2,9 +2,10 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 def check_cambium_dl_util_kpi_arguments(params):
-    description, host,settings = params
+    description,settings = params
     args =''
-    args += ' %s ' % host
+    if "host" in settings:
+        args += '%s ' % quote_shell_string(settings['host'])
     if "site" in settings:
         args += '%s ' % quote_shell_string(settings['site'])
     if "war" in settings:
