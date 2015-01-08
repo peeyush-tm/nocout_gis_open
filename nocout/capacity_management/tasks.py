@@ -842,14 +842,15 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
 
     if len(bulk_create_scs):
         # SectorCapacityStatus.objects.bulk_create(bulk_create_scs)
-        return bulk_update_create(bulky=bulk_create_scs, action='create')
+        bulk_update_create.delay(bulky=bulk_create_scs, action='create')
 
     if len(bulk_update_scs):
-        return bulk_update_create(bulky=bulk_update_scs, action='update')
+        bulk_update_create.delay(bulky=bulk_update_scs, action='update')
 
-    return False
+    return True
 
 
+@task()
 def bulk_update_create(bulky, action='update'):
     """
 
