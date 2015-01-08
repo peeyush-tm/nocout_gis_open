@@ -5134,6 +5134,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'sector_configured_on_port': port,
                     'antenna': sector_antenna,
                     'dr_site': dr_site,
+                    'mrc': row['MRC'].strip() if 'MRC' in row.keys() else "",
                     'dr_configured_on': slave_device,
                     'description': 'Sector created on {}.'.format(full_time)
                 }
@@ -6207,6 +6208,8 @@ def bulk_upload_error_logger(row=None, sheet=None):
                     errors += "SS Circuit: SS Circuit can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
                 else:
                     pass
+
+    return errors
 
 
 def create_device(device_payload):
