@@ -12085,10 +12085,14 @@ def get_topology(technology):
         sectors = {}
         for topo_data in topology:
             try:
+                device_name = None
                 if topo_data.sector_id not in sectors:
                     device_name = topo_data.device_name
                     sectors[topo_data.sector_id] = {device_name: []}
-                sectors[topo_data.sector_id][device_name].append(topo_data)
+                if device_name:
+                    sectors[topo_data.sector_id][device_name].append(topo_data)
+                else:
+                    continue
             except Exception as e:
                 logger.exception(e)
                 continue

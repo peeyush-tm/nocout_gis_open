@@ -1,4 +1,4 @@
-from celery import task
+from celery import task, group
 
 from django.db.models import Count, Max, Avg #F, Max, Min, Q, Sum, Avg
 
@@ -103,6 +103,7 @@ def gather_sector_status(technology):
 
     if technology.lower() == 'wimax':
         sectors = Sector.objects.filter(sector_configured_on__device_technology=technology_object.id,
+                                        sector_configured_on__is_added_to_nms__in=[1,2],
                                         sector_id__isnull=False,
                                         sector_configured_on_port__isnull=False
                                         ).prefetch_related('sector_configured_on',
@@ -131,6 +132,7 @@ def gather_sector_status(technology):
 
     elif technology.lower() == 'pmp':
         sectors = Sector.objects.filter(sector_configured_on__device_technology=technology_object.id,
+                                        sector_configured_on__is_added_to_nms__in=[1,2],
                                         sector_id__isnull=False,
                                         sector_configured_on_port__isnull=True
                                         ).prefetch_related('sector_configured_on',
@@ -402,7 +404,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 if sector_capacity_s and len(sector_capacity_s):
                     sector_capacity = sector_capacity_s[0]
                 else:
-                    #we dont want to store any data till we get a CBW
+                    logger.exception(sector.sector_id)
+                    logger.exception("No Fucking CBW. Not Fucking Possible")
                     continue
 
                 #current in/out values
@@ -514,6 +517,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                     sector_capacity = sector_capacity_s[0]
                 else:
                     #we dont want to store any data till we get a CBW
+                    logger.exception(sector.sector_id)
+                    logger.exception("No Fucking CBW. Not Fucking Possible")
                     continue
                 #current in/out values
                 current_in_val_s = val.filter(
@@ -613,6 +618,8 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 )
             else:
                 #we dont give a f*** if we dont get a valid port
+                logger.exception(sector.sector_id)
+                logger.exception("No Fucking Port. Not Fucking Possible")
                 continue
 
             if scs:
@@ -641,6 +648,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 bulk_update_scs.append(scs)
 
             else:
+                logger.debug(bulk_create_scs)
                 bulk_create_scs.append(
                     SectorCapacityStatus
                     (
@@ -805,6 +813,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 bulk_update_scs.append(scs)
 
             else:
+                logger.debug(bulk_create_scs)
                 bulk_create_scs.append(
                     SectorCapacityStatus
                     (
@@ -840,24 +849,57 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
         else:
             return False
 
+    g_jobs = list()
+
     if len(bulk_create_scs):
         # SectorCapacityStatus.objects.bulk_create(bulk_create_scs)
-        bulk_update_create.delay(bulky=bulk_create_scs, action='create')
+        g_jobs.append(bulk_create.s(bulky=bulk_create_scs, action='create'))
 
     if len(bulk_update_scs):
-        bulk_update_create.delay(bulky=bulk_update_scs, action='update')
+        g_jobs.append(bulk_update.s(bulky=bulk_update_scs, action='update'))
 
-    return True
+    job = group(g_jobs)
+
+    result = job.apply_async()
+    ret = False
+
+    for r in result.get():
+        ret |= r
+
+    return ret
 
 
 @task()
-def bulk_update_create(bulky, action='update'):
+def bulk_update(bulky, action='update'):
     """
 
     :param bulky: bulk object list
     :param action: update or save
     :return: True
     """
+    logger.debug(bulky)
+    if bulky and len(bulky):
+        if action == 'update':
+            for update_this in bulky:
+                update_this.save()
+            return True
+
+        elif action == 'create':
+            SectorCapacityStatus.objects.bulk_create(bulky)
+            return True
+
+    return False
+
+
+@task()
+def bulk_create(bulky, action='create'):
+    """
+
+    :param bulky: bulk object list
+    :param action: update or save
+    :return: True
+    """
+    logger.debug(bulky)
     if bulky and len(bulky):
         if action == 'update':
             for update_this in bulky:
