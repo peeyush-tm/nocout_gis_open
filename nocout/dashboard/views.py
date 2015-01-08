@@ -25,7 +25,7 @@ from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRP
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
     get_dashboard_status_sector_range_counter, get_pie_chart_json_response_sector_dict, \
-    get_topology_status_results, get_sales_opportunity_range_counter, get_pie_chart_json_response_sales_opp_dict
+    get_topology_status_results
 from dashboard.config import dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -802,6 +802,8 @@ class WIMAX_Sector_Capacity(SectorCapacityMixin, View):
         return data_source_config, technology, sector_method_to_call
 
 
+#********************************************** main dashboard sales opportunity ************************************************
+
 class SalesOpportunityMixin(object):
     """
     Provide common method get for Performance Dashboard.
@@ -821,48 +823,57 @@ class SalesOpportunityMixin(object):
         :param request:
         :return Http response object:
         """
-        data_source_config, technology, sector_method_to_call = self.get_init_data()
+        is_bh = False
+        tech = ['PMP', 'WiMAX']
+        data_source_config, sector_method_to_call = self.get_init_data()
 
-        data_source = request.GET.get('data_source')
-        if not data_source:
-            return render(self.request, self.template_name, )
-
+        data_source = data_source_config.keys()[0]
         # Get Service Name from queried data_source
         try:
             service_name = data_source_config[data_source]['service_name']
             model = data_source_config[data_source]['model']
         except KeyError as e:
-            return render(self.request, self.template_name, )
+            return render(self.request, self.template_name, dictionary=dict(data_source="", pie_chart=""))
 
         # Get User's organizations
         # (admin : organization + sub organization)
         # (operator + viewer : same organization)
         user_organizations = logged_in_user_organizations(self)
 
-        # Get Sector of User's Organizations. [and are Sub Station]
-        user_sector = sector_method_to_call(user_organizations, technology)
+        result_dict = dict()
+        for tech_name in tech:
+            technology = DeviceTechnology.objects.get(name=tech_name).id
+            data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
+            try:
+                dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
+            except DashboardSetting.DoesNotExist as e:
+                dashboard_setting = DashboardSetting.objects.none()
 
-        # Get device of User's Organizations. [and are Sub Station]
-        # network_devices = get_devices(technology)
-        network_devices = organization_network_devices(user_organizations, technology)
+            # Get Sector of User's Organizations. [and are Sub Station]
+            user_sector = sector_method_to_call(user_organizations, technology)
+            # Get device of User's Organizations. [and are Sub Station]
+            sector_devices = Device.objects.filter(id__in=user_sector.\
+                            values_list('sector_configured_on', flat=True))
 
-        technology_status_results = get_topology_status_results(
-            network_devices, model=model, service_name=service_name, data_source=data_source
-        )
+            service_status_results = get_topology_status_results(
+                sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
+            )
+            if dashboard_setting:
+                range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
 
-        range_counter = get_sales_opportunity_range_counter(user_sector, technology_status_results)
-
-        response_dict = get_pie_chart_json_response_sales_opp_dict(data_source, range_counter)
-
-        return HttpResponse(json.dumps(response_dict))
+                response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
+                result_dict.update({tech_name: json.dumps(response_dict)})
 
 
-class PMP_Sales_Opportunity(SalesOpportunityMixin, View):
+        return render(self.request, self.template_name, dictionary=result_dict)
+
+
+class Main_Sales_Opportunity(SalesOpportunityMixin, View):
     """
     The Class based View to get main dashboard page requested.
 
     """
-    # template_name = 'dashboard/main_dashboard.html'
+    template_name = 'dashboard/sales_opportunity.html'
 
     def get_init_data(self):
         """
@@ -872,28 +883,6 @@ class PMP_Sales_Opportunity(SalesOpportunityMixin, View):
         data_source_config = {
             'topology': {'service_name': 'topology', 'model': Topology},
         }
-        technology = 'PMP'
-        technology = DeviceTechnology.objects.get(name='PMP').id
         sector_method_to_call = organization_sectors
-        return data_source_config, technology, sector_method_to_call
+        return data_source_config, sector_method_to_call
 
-
-class WIMAX_Sales_Opportunity(SalesOpportunityMixin, View):
-    """
-    The Class based View to get main dashboard page requested.
-
-    """
-    # template_name = 'dashboard/main_dashboard.html'
-
-    def get_init_data(self):
-        """
-        Provide data for mixin's get method.
-        """
-
-        data_source_config = {
-            'topology': {'service_name': 'topology', 'model': Topology},
-        }
-        technology = 'WiMAX'
-        technology = DeviceTechnology.objects.get(name='PMP').id
-        sector_method_to_call = organization_sectors
-        return data_source_config, technology, sector_method_to_call
