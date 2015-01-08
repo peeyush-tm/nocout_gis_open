@@ -296,24 +296,26 @@ def prepare_gis_devices(devices, page_type):
 
         if is_sector:
             for bs_row in raw_result:
-                mrc = bs_row['SECTOR_MRC']
-                if mrc and mrc.strip().lower() == 'yes':
-                    apnd = " MRC: (PMP 1, PMP 2) "
-                else:
-                    port = bs_row['SECTOR_PORT']
-                    if port:
-                        apnd = "( " + port + " )"
-                if bs_row['SECTOR_SECTOR_ID'] not in sector_id \
-                        and bs_row['SECTOR_SECTOR_ID'] is not None:
+                if bs_row['SECTOR_SECTOR_ID'] and bs_row['SECTOR_SECTOR_ID'] not in sector_id:
                     sector_id.append(bs_row['SECTOR_SECTOR_ID'])
-                    sector_details.append(bs_row['SECTOR_SECTOR_ID'] + apnd.upper())
+
+                    mrc = bs_row['SECTOR_MRC']
+
+                    if mrc and mrc.strip().lower() == 'yes':
+                        apnd = "MRC:</br>(PMP 1, PMP 2) "
+                    else:
+                        port = bs_row['SECTOR_PORT']
+                        if port:
+                            apnd = "(" + port + ")</br> "
+
+                    sector_details.append(apnd.upper() + bs_row['SECTOR_SECTOR_ID'])
 
         for bs_row in raw_result:
             if device_name is not None:
                 processed_device[device_name] = []
                 device.update({
                     "near_end_ip": format_value(bs_row['SECTOR_CONF_ON_IP']),
-                    "sector_id": ", ".join(sector_details),
+                    "sector_id": " ".join(sector_details),
                     "circuit_id": format_value(bs_row['CCID']),
                     "customer_name": format_value(bs_row['CUST']),
                     "bs_name": format_value(bs_row['BSALIAS']).upper(),
@@ -326,10 +328,10 @@ def prepare_gis_devices(devices, page_type):
                     mrc = bs_row['SECTOR_MRC']
                     port = bs_row['SECTOR_PORT']
                     if mrc and mrc.strip().lower() == 'yes':
-                        apnd = " MRC: (PMP 1, PMP 2) "
+                        apnd = "MRC:</br>(PMP 1, PMP 2) "
                     else:
                         if port:
-                            apnd = "( " + port + " )"
+                            apnd = "(" + port + ")</br>"
 
                     if bs_row['CIRCUIT_TYPE']:
                         if bs_row['CIRCUIT_TYPE'].lower().strip() in ['bh', 'backhaul']:
@@ -338,7 +340,7 @@ def prepare_gis_devices(devices, page_type):
                             })
 
                     device.update({
-                        "sector_id": format_value(bs_row['SECTOR_SECTOR_ID']) + apnd.upper(),
+                        "sector_id": apnd.upper() + format_value(bs_row['SECTOR_SECTOR_ID']),
                         "device_type": format_value(bs_row['SS_TYPE']),
                         "device_technology": format_value(bs_row['SECTOR_TECH'])
                     })
