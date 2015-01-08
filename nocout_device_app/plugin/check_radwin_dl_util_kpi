@@ -43,7 +43,7 @@ def extract_radwin_dl_util_from_live(hostname,site):
 		query_output = eval(query_output)
         	if query_output[0][0]:
 			try:
-				rad_dl = query_output[0][0].split('=')[1].split(';',1)[0]
+				rad_dl = query_output[0][0].split(' ')[0].split('=')[1].split(';',1)[0]
 			except:
 				rad_dl = None
 	except Exception ,e:
@@ -96,7 +96,7 @@ def  main():
         plugin_message += "radwin_dl_util_kpi %s - %s|%s" % (state_string,dl_util,perf)
         sys.exit((3))
 
-    live_query_radwin_dl_util_kpi(host_name,site,float(war),float(crit),qos)
+    live_query_radwin_dl_util_kpi(host_name,site,float(war),float(crit),float(qos))
 	
 
 if __name__ == '__main__':
