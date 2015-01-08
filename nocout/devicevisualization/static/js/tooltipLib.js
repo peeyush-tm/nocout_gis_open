@@ -1411,7 +1411,8 @@ var wimax_ss_toolTip_polled = [
         'url'   : ''
 	},
 	{
-		'name'  : 'wimax_bs_ip_invent_bs_ip',
+		// 'name'  : 'wimax_bs_ip_invent_bs_ip',
+        'name'  : 'connected_bs_ip',
         'title' : 'Connected BS IP',
         'show'  : 1,
         'value' : '',
