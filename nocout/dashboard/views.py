@@ -876,3 +876,24 @@ class PMP_Sales_Opportunity(SalesOpportunityMixin, View):
         technology = DeviceTechnology.objects.get(name='PMP').id
         sector_method_to_call = organization_sectors
         return data_source_config, technology, sector_method_to_call
+
+
+class WIMAX_Sales_Opportunity(SalesOpportunityMixin, View):
+    """
+    The Class based View to get main dashboard page requested.
+
+    """
+    # template_name = 'dashboard/main_dashboard.html'
+
+    def get_init_data(self):
+        """
+        Provide data for mixin's get method.
+        """
+
+        data_source_config = {
+            'topology': {'service_name': 'topology', 'model': Topology},
+        }
+        technology = 'WiMAX'
+        technology = DeviceTechnology.objects.get(name='PMP').id
+        sector_method_to_call = organization_sectors
+        return data_source_config, technology, sector_method_to_call

@@ -64,6 +64,17 @@
             </div>
         </div>
 
+        <div class="col-md-6 box-container ui-sortable">
+            <div class="box">
+                <div class="box-title" style="background-color: transparent;">
+                    <h3>WIMAX Sales Opportunity</h3>
+                </div>
+                <div class="box-body">
+                    <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
+                </div>
+            </div>
+        </div>
+
     </div>
 {% endblock %}
 {% block load_js %}
@@ -91,7 +102,7 @@
         var data_sources = {{ data_sources|safe }};
         ds_list = {{ data_sources|safe }};
 
-        technology = ['pmp']
+        technology = ['pmp', 'wimax']
 
         if(ds_list.length > 0) {
             // start API calling
@@ -102,9 +113,8 @@
             hideSpinner();
         }
 
-        for (index in technology){
-            pmp_opportunity_getChartData(0)
-        }
+        pmp_opportunity_getChartData(0)
+        pmp_opportunity_getChartData(1)
     });
 
 
@@ -255,6 +265,71 @@ function wimax_getChartData(counter) {
 }
 
 function pmp_opportunity_getChartData(counter) {
+    showSpinner();
+    if(ds_list[counter]) {
+        var data_source_title = 'Topology';
+
+        $.ajax({
+            url : "{% url 'sales-opportunity-pmp' %}" + "?data_source=topology",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+
+                if(response.success == 1) {
+                    var domElement = technology[counter]+'_sales_opportunity';
+                    var pie_chart = $('#' + domElement).highcharts({
+                        chart: {
+                            plotBackgroundColor: null,
+                            plotBorderWidth: null,
+                            plotShadow: false
+                        },
+                        title: {
+                            text: response.data.objects.chart_data[0].name
+                            // text: '',
+                        },
+                        plotOptions: {
+                            pie: {
+                                allowPointSelect: true,
+                                cursor: 'pointer',
+                                dataLabels: {
+                                    enabled: false
+                                },
+                                showInLegend: true
+                            }
+                        },
+                        // colors: response.data.objects.colors,
+                        series: [{
+                            type: 'pie',
+                            name: response.data.objects.display_name,
+                            data: response.data.objects.chart_data[0].data
+                        }],
+                        events: {
+                            load : function() {
+                                console.log("DONE");
+                            }
+                        }
+                    });
+                } else {
+                    hideSpinner();
+                    console.log('unsuccess')
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                console.log(err)
+            },
+            complete : function() {
+            }
+        });
+    }
+}
+
+function wimax_opportunity_getChartData(counter) {
     showSpinner();
     if(ds_list[counter]) {
         var data_source_title = 'Topology';
