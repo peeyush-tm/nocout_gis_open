@@ -153,22 +153,24 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
 
 #**************************** Sector Capacity *********************#
 def get_dashboard_status_sector_range_counter(service_status_results):
-    range_counter = {'Needs Augmentation': 0, 'Stop Provisioning': 0, 'Normal':0}
+    range_counter = {'Needs Augmentation': 0, 'Stop Provisioning': 0, 'Normal':0, 'Unknown':0}
     date_format = '%Y-%m-%d %H:%M:%S'
-    now = datetime.today() - timedelta(minutes=10)
+    # now = datetime.today() - timedelta(minutes=10)
 
     for result in service_status_results:
         age_str_since_the_epoch = datetime.fromtimestamp(float(result['age'])).strftime(date_format)
+        sys_timestamp_str_since_the_epoch = datetime.fromtimestamp(float(result['sys_timestamp'])).strftime(date_format)
         age_time_since_the_epoch = datetime.strptime(age_str_since_the_epoch, date_format)
-        if age_time_since_the_epoch >= now:
-            if result['severity'] == 'warning':
-                range_counter['Needs Augmentation'] += 1
-            elif result['severity'] == 'critical':
-                range_counter['Stop Provisioning'] += 1
-            elif result['severity'] == 'ok':
-                range_counter['Normal'] += 1
-            else:
-                range_counter['Normal'] += 1
+        sys_timestamp_str_since_the_epoch = datetime.strptime(sys_timestamp_str_since_the_epoch, date_format)
+        result_status =  age_time_since_the_epoch - sys_timestamp_str_since_the_epoch
+        if result['severity'] == 'warning' and result_status > timedelta(minutes=10):
+            range_counter['Needs Augmentation'] += 1
+        elif result['severity'] == 'critical' and result_status >= timedelta(minutes=10):
+            range_counter['Stop Provisioning'] += 1
+        elif result['severity'] == 'ok':
+            range_counter['Normal'] += 1
+        else:
+            range_counter['Unknown'] += 1
 
     return range_counter
 
@@ -176,7 +178,7 @@ def get_dashboard_status_sector_range_counter(service_status_results):
 def get_pie_chart_json_response_sector_dict(data_source, range_counter):
 
     display_name = data_source.replace('_', ' ')
-    color_array = {'Needs Augmentation': "#FFE90D", 'Stop Provisioning': "#FF0022", 'Normal':"#99CC00"}
+    color_array = {'Needs Augmentation': "#FFE90D", 'Stop Provisioning': "#FF0022", 'Normal':"#99CC00", 'Unknown':"#ACB3BA"}
 
     chart_data = []
     colors = []
