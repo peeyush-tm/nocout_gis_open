@@ -1,4 +1,4 @@
-from celery import task
+from celery import task, group
 from dateutil.parser import *
 from models import GISInventoryBulkImport
 from machine.models import Machine
@@ -8,6 +8,7 @@ from device.models import Device, DeviceTechnology, DevicePort, DeviceFrequency,
 from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit, GISExcelDownload
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
+from nocout.tasks import cache_clear_task
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, Status
 from IPy import IP
 import ipaddr
@@ -12085,10 +12086,14 @@ def get_topology(technology):
         sectors = {}
         for topo_data in topology:
             try:
+                device_name = None
                 if topo_data.sector_id not in sectors:
                     device_name = topo_data.device_name
                     sectors[topo_data.sector_id] = {device_name: []}
-                sectors[topo_data.sector_id][device_name].append(topo_data)
+                if device_name:
+                    sectors[topo_data.sector_id][device_name].append(topo_data)
+                else:
+                    continue
             except Exception as e:
                 logger.exception(e)
                 continue
@@ -12173,6 +12178,9 @@ def get_topology_with_substations(technology):
     :param technology: PMP or WiMAX
     :return:
     """
+
+    g_jobs = list()
+
     customer_devices = get_devices(technology=technology, type='customer')
     device_list = []
     for device in customer_devices:
@@ -12196,20 +12204,33 @@ def get_topology_with_substations(technology):
             data_source = 'ss_sector_id'
             service_name = 'cambium_ss_sector_id_invent'
 
-            connected_sectors = InventoryStatus.objects.filter(
-                device_name__in=machine_dict[machine],
-                service_name=service_name,
-                data_source=data_source).using(alias=machine)
+            if not connected_sectors:
+                connected_sectors = InventoryStatus.objects.filter(
+                    device_name__in=machine_dict[machine],
+                    service_name=service_name,
+                    data_source=data_source).using(alias=machine)
+            else:
+                connected_sectors |= InventoryStatus.objects.filter(
+                    device_name__in=machine_dict[machine],
+                    service_name=service_name,
+                    data_source=data_source).using(alias=machine)
 
-            connected_circuits = Circuit.objects.filter(
-                sub_station__device__device_name__in=machine_dict[machine]
-            )
+            if not connected_circuits:
+                connected_circuits = Circuit.objects.filter(
+                    sub_station__device__device_name__in=machine_dict[machine]
+                )
+            else:
+                connected_circuits |= Circuit.objects.filter(
+                    sub_station__device__device_name__in=machine_dict[machine]
+                )
 
-            if connected_sectors and connected_circuits:
-                return update_topology_with_substations.delay(
+        if connected_sectors and connected_circuits:
+            g_jobs.append(update_topology_with_substations.s(
                     polled_sectors=connected_sectors,
                     polled_circuits=connected_circuits
                 )
+            )
+
 
     elif technology and technology.strip().lower() in ['wimax']:
         for machine in machine_dict:
@@ -12217,25 +12238,46 @@ def get_topology_with_substations(technology):
             data_source = 'wimax_ss_sector_id'
             service_name = 'ss_sector_id'
 
-            connected_sectors = ServiceStatus.objects.filter(
-                device_name__in=machine_dict[machine],
-                service_name=service_name,
-                data_source=data_source).using(alias=machine)
+            if not connected_sectors:
+                connected_sectors = InventoryStatus.objects.filter(
+                    device_name__in=machine_dict[machine],
+                    service_name=service_name,
+                    data_source=data_source).using(alias=machine)
+            else:
+                connected_sectors |= InventoryStatus.objects.filter(
+                    device_name__in=machine_dict[machine],
+                    service_name=service_name,
+                    data_source=data_source).using(alias=machine)
 
-            connected_circuits = Circuit.objects.filter(
-                sub_station__device__device_name__in=machine_dict[machine]
-            )
+            if not connected_circuits:
+                connected_circuits = Circuit.objects.filter(
+                    sub_station__device__device_name__in=machine_dict[machine]
+                )
+            else:
+                connected_circuits |= Circuit.objects.filter(
+                    sub_station__device__device_name__in=machine_dict[machine]
+                )
 
-            if connected_sectors and connected_circuits:
-                return update_topology_with_substations.delay(
+        if connected_sectors and connected_circuits:
+            g_jobs.append(update_topology_with_substations.s(
                     polled_sectors=connected_sectors,
                     polled_circuits=connected_circuits
                 )
+            )
 
     else:
         return False
 
-    return True
+    job = group(g_jobs)
+
+    result = job.apply_async()
+
+    ret = False
+
+    for r in result.get():
+        ret |= r
+
+    return ret
 
 
 @task()
@@ -12248,6 +12290,9 @@ def update_topology_with_substations(polled_sectors, polled_circuits):
     :param sub_stations:
     :return:
     """
+    update_this = list()
+    g_jobs = list()
+
     count = 0
     for circuit in polled_circuits:
         try:
@@ -12257,7 +12302,8 @@ def update_topology_with_substations(polled_sectors, polled_circuits):
             sector_object = Sector.objects.filter(sector_id__icontains = sector_sector_id)[0]
             if circuit.sector_id != sector_object.id:
                 circuit.sector_id = sector_object.id
-                circuit.save()
+                update_this.append(circuit)
+                # circuit.save()
                 count += 1
             else:
                 continue
@@ -12265,12 +12311,40 @@ def update_topology_with_substations(polled_sectors, polled_circuits):
             logger.exception(e.message)
             continue
 
-    if bool(count):
-        from django.core.cache import cache
-        try:
-            cache.clear()
-            cache._cache.flush_all()
-        except Exception as e:
-            logger.exception(e.message)
 
-    return bool(count)
+    if len(update_this):
+        g_jobs.append(cache_clear_task.s())
+        g_jobs.append(bulk_update_create.s(bulky=update_this, action='update', model=Circuit))
+
+    job = group(g_jobs)
+
+    result = job.apply_async()
+    ret = False
+
+    for r in result.get():
+        ret |= r
+
+    return ret
+
+
+@task()
+def bulk_update_create(bulky, action='update', model=None):
+    """
+
+    :param bulky: bulk object list
+    :param action: create or update?
+    :param model: model object
+    :return:
+    """
+    if bulky and len(bulky):
+        if action == 'update':
+            for update_this in bulky:
+                update_this.save()
+            return True
+
+        elif action == 'create':
+            if model:
+                model.objects.bulk_create(bulky)
+            return True
+
+    return False
