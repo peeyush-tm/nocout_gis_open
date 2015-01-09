@@ -43,6 +43,17 @@
                 <div class="col-md-6 box-container ui-sortable">
                     <div class="box">
                         <div class="box-title" style="background-color: transparent;">
+                            <h3>WiMAX Sector Capacity</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="wimax_sector_capacity" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
                             <h3>PMP Sales Opportunity</h3>
                         </div>
                         <div class="box-body">
@@ -86,6 +97,7 @@
 
         sales_opportuniry_getChartData();
         pmp_sector_getChartData();
+        wimax_sector_getChartData();
     });
 
 
@@ -181,8 +193,57 @@ function pmp_sector_getChartData() {
                         plotShadow: false
                     },
                     title: {
-                        text: response.data.objects.chart_data[0].name
-                        // text: ''
+                        // text: response.data.objects.chart_data[0].name
+                        text: ''
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: false,
+                            },
+                            showInLegend: true
+                        }
+                    },
+                    colors: response.data.objects.colors,
+                    series: [{
+                        type: 'pie',
+                        name: response.data.objects.display_name,
+                        data: response.data.objects.chart_data[0].data
+                    }],
+                });
+            } else {
+                console.log('unsuccess')
+            }
+        },
+    });
+}
+
+function wimax_sector_getChartData() {
+
+    $.ajax({
+        url : "{% url 'sector-capacity-wimax' %}",
+        type : "GET",
+        success : function(result) {
+            var response = "";
+            if(typeof result == 'string') {
+                response = JSON.parse(result);
+            } else {
+                response = result;
+            }
+
+            if(response.success == 1) {
+                var domElement = 'wimax_sector_capacity';
+                var pie_chart = $('#' + domElement).highcharts({
+                    chart: {
+                        plotBackgroundColor: null,
+                        plotBorderWidth: null,
+                        plotShadow: false
+                    },
+                    title: {
+                        // text: response.data.objects.chart_data[0].name
+                        text: ''
                     },
                     plotOptions: {
                         pie: {

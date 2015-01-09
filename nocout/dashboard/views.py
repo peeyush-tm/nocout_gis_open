@@ -727,7 +727,6 @@ class SectorCapacityMixin(object):
 
         service_status_results = []
         for data_source in data_source_list:
-            print(data_source)
             # Get Service Name from queried data_source
             try:
                 service_name = data_source_config[data_source]['service_name']
@@ -743,7 +742,7 @@ class SectorCapacityMixin(object):
             # Get Sector of User's Organizations. [and are Sub Station]
             user_sector = sector_method_to_call(user_organizations, technology)
 
-            # Get Sector of User's Organizations. [and are Sub Station]
+            # Get device of User's Organizations. [and are Sub Station]
             user_devices = Device.objects.filter(id__in=user_sector.\
                             values_list('sector_configured_on', flat=True))
 
@@ -792,13 +791,67 @@ class WIMAX_Sector_Capacity(SectorCapacityMixin, View):
         """
 
         data_source_config = {
-            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
-            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
+            'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': Topology},
+            'pmp1_dl_util_kpi': {'service_name': 'wimax_pmp1_dl_util_kpi', 'model': Topology},
+            'pmp2_ul_util_kpi': {'service_name': 'wimax_pmp2_ul_util_kpi', 'model': Topology},
+            'pmp2_dl_util_kpi': {'service_name': 'wimax_pmp2_dl_util_kpi', 'model': Topology},
         }
         technology = 'WIMAX'
         technology = DeviceTechnology.objects.get(name=technology).id
         sector_method_to_call = organization_sectors
         return data_source_config, technology, sector_method_to_call
+
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
+        data_source_config, technology, sector_method_to_call = self.get_init_data()
+
+        port_dict = {
+            'pmp1': ['pmp1_ul_util_kpi', 'pmp1_dl_util_kpi'],
+            'pmp2': ['pmp2_ul_util_kpi', 'pmp2_dl_util_kpi'],
+        }
+
+        # Get User's organizations
+        # (admin : organization + sub organization)
+        # (operator + viewer : same organization)
+        user_organizations = logged_in_user_organizations(self)
+
+        # Get Sector of User's Organizations. [and are Sub Station]
+        user_sector_list = sector_method_to_call(user_organizations, technology)
+
+        service_status_results = []
+        for port in port_dict.keys():
+
+            data_source_list = port_dict[port]
+
+            user_sector = user_sector_list.filter(sector_configured_on_port__name__icontains=port)
+
+            for data_source in data_source_list:
+                # Get Service Name from queried data_source
+                try:
+                    service_name = data_source_config[data_source]['service_name']
+                    model = data_source_config[data_source]['model']
+                except KeyError as e:
+                    continue
+
+
+                # Get device of User's Organizations. [and are Sub Station]
+                user_devices = Device.objects.filter(id__in=user_sector.\
+                                values_list('sector_configured_on', flat=True))
+
+                service_status_results += get_service_status_results(
+                    user_devices, model=model, service_name=service_name, data_source=data_source
+                )
+
+        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+
+        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
+
+        return HttpResponse(json.dumps(response_dict))
 
 
 #********************************************** main dashboard sales opportunity ************************************************
