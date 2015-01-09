@@ -301,7 +301,7 @@ class SectorAugmentationAlertsHerders(ListView):
             {'mData': 'sector__sector_configured_on__device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sector_sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'severity', 'sTitle': 'Status', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'age', 'sTitle': 'Aging (seconds)', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
+            {'mData': 'age', 'sTitle': 'Aging', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': True},
         ]
 
         datatable_headers = hidden_headers
