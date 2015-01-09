@@ -577,6 +577,12 @@ def prepare_raw_sector(sectors):
                                 'value': format_value(format_this=sector['SS_ETH_EXT']) if sector['SECTOR_TECH'] == 'P2P' else ""
                             },
                             {
+                                'name': 'hssu_port',
+                                'title': 'HSSU Port',
+                                'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': format_value(format_this=sector['BSHSSUPORT']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
                               'name': 'technology',
                               'title': 'Technology',
                               'show': 1,
