@@ -8,6 +8,8 @@ from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 
 dajaxice_autodiscover()
 
+from dashboard.views import MainDashboard
+
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
 
@@ -19,7 +21,7 @@ handler403 = 'nocout.views.handler403'
 
 urlpatterns = patterns('',
                        url(r'^$', RedirectView.as_view(url='login/')),
-                       url(r'^home/', 'home.views.home'),
+                       url(r'^home/', MainDashboard.as_view(), name='home'),
                        url(r'^user/', include('user_profile.urls')),
                        url(r'^user_group/', include('user_group.urls')),
                        url(r'^device/', include('device.urls')),

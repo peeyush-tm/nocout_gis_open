@@ -1,4 +1,6 @@
 import json
+import datetime
+from dateutil import relativedelta
 
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.db.models import Q
@@ -18,7 +20,7 @@ from performance.models import ServiceStatus, NetworkAvailabilityDaily
 from inventory.utils.util import organization_customer_devices, organization_network_devices
 #inventory utils
 
-from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed
+from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
 from dashboard.config import dashboards
@@ -598,3 +600,100 @@ class MFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
     template_name = 'mfrdfr/mfr_dfr_reports_delete.html'
     success_url = reverse_lazy('mfr-reports-list')
     obj_alias = 'name'
+
+
+#**************************************** Main Dashbaord ***************************************#
+
+
+class MainDashboard(View):
+    """
+    The Class based View to return Main Dashboard.
+
+    Following are charts included in main-dashboard:
+
+        - WiMAX Sector Capicity
+        - PMP Sector Capicity
+        - WiMAX Sales Oppurtunity
+        - PMP Sales Oppurtunity
+        - WiMAX Backhaul Capicity
+        - PMP Backhaul Capicity
+        - Current Alarm (WiMAX, PMP, PTP BH and All)
+        - Network Latency (WiMAX, PMP, PTP BH and All)
+        - Packet Drop (WiMAX, PMP, PTP BH and All)
+        - Temperature (WiMAX, PMP, PTP BH and All)
+        - PTP RAP Backhaul
+        - City Charter
+        - MFR Cause Code
+        - MFR Processed
+    """
+    template_name = 'main_dashboard/home.html'
+
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
+        mfr_cause_code_chart = self.get_mfr_cause_code_chart_results()
+
+        mfr_processed_chart = self.get_mfr_processed_chart_results()
+
+        return render(self.request, self.template_name, dictionary=dict(
+                mfr_cause_code_chart = json.dumps(mfr_cause_code_chart),
+                mfr_processed_chart = json.dumps(mfr_processed_chart),
+            )
+        )
+
+    def get_mfr_cause_code_chart_results(self):
+
+        mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
+
+        if mfr_reports.exists():
+            last_mfr_report = mfr_reports[0]
+        else:
+            return []
+
+        chart_data = []
+        results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
+        for result in results:
+            chart_data.append([
+                "%s : %s" % (result['processed_key'], result['processed_value']),
+                int(result['processed_value'])
+            ])
+        return chart_data
+
+    def get_mfr_processed_chart_results(self):
+        # Start Calculations for MFR Processed.
+        # Last 12 Months
+        year_before = datetime.date.today() - datetime.timedelta(days=365)
+        year_before = datetime.date(year_before.year, year_before.month, 1)
+
+        mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
+                'processed_key', 'processed_value', 'processed_for__process_for')
+
+        day = year_before
+        area_chart_categories = []
+        processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
+
+        while day <= datetime.date.today():
+            area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
+
+            processed_keys = processed_key_dict.keys()
+            for result in mfr_processed_results:
+                result_date = result['processed_for__process_for']
+                if result_date.year == day.year and result_date.month == day.month:
+                    processed_key_dict[result['processed_key']].append(int(result['processed_value']))
+                    processed_keys.remove(result['processed_key'])
+
+            # If no result is available for a processed_key put its value zero for (day.month, day.year)
+            for key in processed_keys:
+                processed_key_dict[key].append(0)
+
+            day += relativedelta.relativedelta(months=1)
+
+        area_chart_series = []
+        for key, value in processed_key_dict.items():
+            area_chart_series.append({'name': key, 'data': value})
+
+        return {'categories': area_chart_categories, 'series': area_chart_series}

@@ -1,0 +1,199 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <a href="/home">Home</a> >
+    <li><a href="#">Main Dashboard</a></li>
+    <li><b>MFR</b></li>
+{% endblock %}
+{% load staticfiles %}
+{% block page_setting_block %} {% endblock %}
+{% block content_title %} Main Dashboard: MFR {% endblock %}
+{% block content_description %} Main Dashboard: MFR {% endblock %}
+
+{% block content %}
+
+<style type="text/css">
+    .box .header-tabs .nav-tabs {
+        top: -45px !important;
+    }
+    .rf_chart_style {
+        height: 400px;
+        /*width: 100%;
+        max-width: 100%;*/
+        margin: 0 auto;
+    }
+</style>
+
+<div class="box border lite">
+    <div id="tableContainer_div" class="box-title">
+        <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: WIMAX</h4>
+    </div>
+    <div class="tabbable header-tabs">
+        <div class="tab-content" style="overflow-y:auto;">
+            <div class="col-md-12">
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>MFR Cause Code</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="mfr_cause_code" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
+                {% comment %}
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>UL RSSI</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="ul_rssi" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>DL CINR</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="dl_cinr" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>UL CINR</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="ul_cinr" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endcomment %}
+                <div class="col-md-12 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>MFR Processed</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="id_mfr_processed" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block load_js %}
+
+<!--Highcharts Library-->
+<script src={% static "js/highcharts.js" %}></script>
+<!-- SPARKLINES -->
+<script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
+<!-- Dashboard Custom CSS-->
+<script src={% static "js/nocout_dashboard.js" %}></script>
+
+<script>
+    var ds_list = [];
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+
+        rf_getChartData();
+
+
+/* START Area Spline Chart */
+    var mfr_processed_chart = {{ mfr_processed_chart|safe }};
+
+    $('#id_mfr_processed').highcharts({
+        chart: {
+            type: 'areaspline'
+        },
+        title: {
+            text: 'MFR Processed'
+        },
+        legend: {
+            layout: 'vertical',
+            align: 'left',
+            verticalAlign: 'top',
+            x: 150,
+            y: 100,
+            floating: true,
+            borderWidth: 1,
+            backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+        },
+        xAxis: {
+            categories: mfr_processed_chart.categories,
+            plotBands: [{ // visualize the weekend
+                from: 4.5,
+                to: 6.5,
+                color: 'rgba(68, 170, 213, .2)'
+            }]
+        },
+        yAxis: {
+            title: {
+                text: 'Process Values'
+            }
+        },
+        tooltip: {
+            shared: true,
+            valueSuffix: ' seconds'
+        },
+        credits: {
+            enabled: false
+        },
+        plotOptions: {
+            areaspline: {
+                fillOpacity: 0.5
+            }
+        },
+        series: mfr_processed_chart.series
+    });
+/* End Area Spline Chart */
+
+    });
+
+
+/**
+ * This function draws pie chart for MFR Cause Code.
+ * @method rf_getChartData
+ */
+function rf_getChartData() {
+    {% if mfr_cause_code_chart %}
+    var chart_data = {{ mfr_cause_code_chart|safe }}
+    var pie_chart = $('#mfr_cause_code').highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false
+        },
+        title: {
+            // text: 'MFR Cause Code'
+            text: ''
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: false
+                },
+                showInLegend: true
+            }
+        },
+        series: [{
+            type: 'pie',
+            name: 'Processed Value',
+            data: chart_data
+        }]
+    });
+    {% endif %}
+}
+
+</script>
+{% endblock %}
