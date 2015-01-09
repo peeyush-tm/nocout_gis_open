@@ -8,6 +8,7 @@ import datetime, time
 PAGE_NAME_CHOICES = (
     ('rf_dashboard', 'RF Performance Dashboard'),
     ('sector_dashboard', 'Sector Dashboard'),
+    ('main_dashboard', 'Main Dashboard'),
 )
 
 

@@ -32,4 +32,5 @@ urlpatterns = patterns('',
     url(r'^mfr-reports/$', views.MFRReportsListView.as_view(), name='mfr-reports-list'),
     url(r'^mfr-reports/table/$', views.MFRReportsListingTable.as_view(), name='mfr-reports-table'),
     url(r'^mfr-reports/(?P<pk>\d+)/delete/$', views.MFRReportsDeleteView.as_view(), name='mfr-reports-delete'),
+
 )

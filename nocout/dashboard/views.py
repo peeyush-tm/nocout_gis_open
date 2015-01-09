@@ -13,16 +13,19 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from nocout.utils import logged_in_user_organizations
-from device.models import DeviceTechnology
-from performance.models import ServiceStatus, NetworkAvailabilityDaily
+from device.models import DeviceTechnology, Device
+from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, Topology
 
 #inventory utils
-from inventory.utils.util import organization_customer_devices, organization_network_devices
+from inventory.utils.util import organization_customer_devices, organization_network_devices,\
+    organization_sectors, prepare_machines
 #inventory utils
 
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
-from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
+from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
+    get_dashboard_status_sector_range_counter, get_pie_chart_json_response_sector_dict, \
+    get_topology_status_results
 from dashboard.config import dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -639,9 +642,12 @@ class MainDashboard(View):
 
         mfr_processed_chart = self.get_mfr_processed_chart_results()
 
+        sales_and_capacity_chart_result = self.get_sales_and_capacity_chart_result()
+
         return render(self.request, self.template_name, dictionary=dict(
                 mfr_cause_code_chart = json.dumps(mfr_cause_code_chart),
                 mfr_processed_chart = json.dumps(mfr_processed_chart),
+                sales_and_capacity_chart_result = sales_and_capacity_chart_result,
             )
         )
 
@@ -697,3 +703,137 @@ class MainDashboard(View):
             area_chart_series.append({'name': key, 'data': value})
 
         return {'categories': area_chart_categories, 'series': area_chart_series}
+
+    def get_sales_and_capacity_chart_result(self):
+        """
+        """
+        is_bh = False
+        tech = ['PMP', 'WiMAX']
+        data_source_config = {
+            'topology': {'service_name': 'topology', 'model': Topology},
+        }
+        sector_method_to_call = organization_sectors
+
+        data_source = data_source_config.keys()[0]
+        # Get Service Name from queried data_source
+        try:
+            service_name = data_source_config[data_source]['service_name']
+            model = data_source_config[data_source]['model']
+        except KeyError as e:
+            return render(self.request, self.template_name, dictionary=dict(data_source="", pie_chart=""))
+
+        # Get User's organizations
+        # (admin : organization + sub organization)
+        # (operator + viewer : same organization)
+        user_organizations = logged_in_user_organizations(self)
+
+        result_dict = dict()
+        for tech_name in tech:
+            technology = DeviceTechnology.objects.get(name=tech_name).id
+            # convert the data source in format topology_pmp/topology_wimax
+            data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
+            try:
+                dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
+            except DashboardSetting.DoesNotExist as e:
+                dashboard_setting = DashboardSetting.objects.none()
+
+            # Get Sector of User's Organizations. [and are Sub Station]
+            user_sector = sector_method_to_call(user_organizations, technology)
+            # Get device of User's Organizations. [and are Sub Station]
+            sector_devices = Device.objects.filter(id__in=user_sector.\
+                            values_list('sector_configured_on', flat=True))
+
+            service_status_results = get_topology_status_results(
+                sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
+            )
+            if dashboard_setting:
+                range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
+
+                response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
+                result_dict.update({'%s_sales_opportunity' %(tech_name.lower()): json.dumps(response_dict)})
+
+            if tech_name == 'PMP':
+                sector_capacity = self.get_pmp_sector_capacity(sector_devices)
+                if sector_capacity['success']:
+                    result_dict.update({'%s_sector_capacity' %(tech_name.lower()): json.dumps(sector_capacity)})
+
+            if tech_name == 'WiMAX':
+                sector_capacity = self.get_wimax_sector_capacity(user_sector)
+                if sector_capacity['success']:
+                    result_dict.update({'%s_sector_capacity' %(tech_name.lower()): json.dumps(sector_capacity)})
+
+        return result_dict
+
+    def get_pmp_sector_capacity(self, sector_devices):
+        """
+        """
+        pmp_data_source_config = {
+            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
+            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
+        }
+
+        data_source_list = pmp_data_source_config.keys()
+        user_devices = sector_devices
+
+        service_status_results = []
+        for data_source in data_source_list:
+            # Get Service Name from queried data_source
+            service_name = pmp_data_source_config[data_source]['service_name']
+            model = pmp_data_source_config[data_source]['model']
+
+            service_status_results += get_service_status_results(
+                user_devices, model=model, service_name=service_name, data_source=data_source
+            )
+
+        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+
+        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
+
+        return response_dict
+
+    def get_wimax_sector_capacity(self, user_sector):
+        """
+        """
+        wimax_data_source_config = {
+            'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': UtilizationStatus},
+            'pmp1_dl_util_kpi': {'service_name': 'wimax_pmp1_dl_util_kpi', 'model': UtilizationStatus},
+            'pmp2_ul_util_kpi': {'service_name': 'wimax_pmp2_ul_util_kpi', 'model': UtilizationStatus},
+            'pmp2_dl_util_kpi': {'service_name': 'wimax_pmp2_dl_util_kpi', 'model': UtilizationStatus},
+        }
+        # Get Sector of User's Organizations. [and are Sub Station]
+        user_sector_list = user_sector
+
+        port_dict = {
+            'pmp1': ['pmp1_ul_util_kpi', 'pmp1_dl_util_kpi'],
+            'pmp2': ['pmp2_ul_util_kpi', 'pmp2_dl_util_kpi'],
+        }
+
+        service_status_results = []
+        for port in port_dict.keys():
+
+            data_source_list = port_dict[port]
+            user_sector = user_sector_list.filter(sector_configured_on_port__name__icontains=port)
+
+            for data_source in data_source_list:
+                # Get Service Name from queried data_source
+                service_name = wimax_data_source_config[data_source]['service_name']
+                model = wimax_data_source_config[data_source]['model']
+
+                # Get device of User's Organizations. [and are Sub Station]
+                user_devices = Device.objects.filter(id__in=user_sector.\
+                                values_list('sector_configured_on', flat=True))
+
+                service_status_results += get_service_status_results(
+                    user_devices, model=model, service_name=service_name, data_source=data_source
+                )
+
+        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+
+        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
+
+        return response_dict
+
+
+#********************************************** main dashboard ************************************************
+
+
