@@ -16,13 +16,7 @@ var perf_that = "",
     getServiceDataUrl = "",
     chart_instance = "",
     old_table = "",
-    base_url = "",
-    green_color = "#468847",
-    red_color = "#b94a48",
-    green_status_array = ['ok','success','up'],
-    red_status_array = ['warning','critical','down'],
-    left_block_style = "border:1px solid #CCC;border-right:0px;padding: 3px 5px;background:#FFF;",
-    right_block_style = "border:1px solid #CCC;padding: 3px 5px;background:#FFF;";
+    base_url = "";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -313,27 +307,13 @@ function nocoutPerfLib() {
                             var serviceDataUrl = "/" + $.trim(e.currentTarget.attributes.url.value);
                             /*Reset Variables & counters */
                             clearTimeout(timeInterval);
-                            chart_instance = "";
                             $("#other_perf_table").remove();
                             $("#perf_data_table").remove();
                             // First get the service status then get the data for that service
                             perfInstance.getServiceStatus(serviceDataUrl,function(response_type,data_obj) {
                                 if(response_type == 'success') {
-                                    if($.trim(data_obj.last_updated) != "" || $.trim(data_obj.perf) != "") {
-                                        var last_updated = data_obj.last_updated ? data_obj.last_updated : "N/A",
-                                            perf = data_obj.perf ? data_obj.perf : "N/A",
-                                            inner_status_html = '';
-                                        
-                                        inner_status_html += '<table id="perf_ourput_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-                                        inner_status_html += '<tr>';
-                                        inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
-                                        inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
-                                        inner_status_html += '</tr>';
-                                        inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
-                                        $("#last_updated_"+tab_content_dom_id).html(inner_status_html);
-                                    } else {
-                                        $("#last_updated_"+tab_content_dom_id).html("");
-                                    }
+                                    // Call function to populate latest status for this service
+                                    populateServiceStatus_nocout("last_updated_"+tab_content_dom_id,data_obj);
                                 } else {
                                     $("#last_updated_"+tab_content_dom_id).html("");
                                 }
@@ -370,7 +350,6 @@ function nocoutPerfLib() {
                     /*Call getServiceData function to fetch the data for currently active service*/
                     /*Reset Variables & counters */
                     clearTimeout(timeInterval);
-                    chart_instance = "";
                     $("#other_perf_table").remove();
                     $("#perf_data_table").remove();
                     /*Get Last opened tab id from cookie*/
@@ -381,22 +360,8 @@ function nocoutPerfLib() {
                     } else {
                         perfInstance.getServiceStatus(active_tab_url,function(response_type,data_obj) {
                             if(response_type == 'success') {
-                                if($.trim(data_obj.last_updated) != "" || $.trim(data_obj.perf) != "") {
-                                    var last_updated = data_obj.last_updated ? data_obj.last_updated : "N/A",
-                                        perf = data_obj.perf ? data_obj.perf : "N/A",
-                                        inner_status_html = '';
-
-                                    inner_status_html += '<table id="perf_ourput_table" class="table table-responsive table-bordered" style="background:#F5F5F5;">';
-                                    inner_status_html += '<tr>';
-                                    inner_status_html += '<td><b>Latest Performance Output</b> : '+perf+'</td>';
-                                    inner_status_html += '<td><b>Last Updated At</b> : '+last_updated+'</td>';
-                                    inner_status_html += '</tr>';
-                                    inner_status_html += '</table><div class="clearfix"></div><div class="divide-20"></div>';
-                                    
-                                    $("#last_updated_"+active_tab_content_dom_id).html(inner_status_html);
-                                } else {
-                                    $("#last_updated_"+active_tab_content_dom_id).html("");
-                                }
+                                // Call function to populate latest status for this service
+                                populateServiceStatus_nocout("last_updated_"+active_tab_content_dom_id,data_obj);
                             } else {
                                 $("#last_updated_"+active_tab_content_dom_id).html("");
                             }
@@ -430,18 +395,14 @@ function nocoutPerfLib() {
             updated_url = updated_url.replace("/service/","/servicestatus/");
         }
 
+        // 
         $.ajax({
             url : base_url+""+updated_url,
             type : "GET",
             success : function(response) {
                 var result = "",
-                    age = "",
-                    lastDownTime = "",
                     last_updated = "",
-                    perf = "",
-                    status = "",
-                    txt_color = "",
-                    status_html = "";
+                    perf = "";
 
                 // Type check of response
                 if(typeof response == 'string') {
@@ -451,30 +412,12 @@ function nocoutPerfLib() {
                 }
 
                 if(result.data && result.data.objects) {
-                    age = result.data.objects.age ? result.data.objects.age : "Unknown";
-                    lastDownTime = result.data.objects.last_down_time ? result.data.objects.last_down_time : "Unknown";
-                    status = result.data.objects.status ? result.data.objects.status.toUpperCase() : "Unknown";
+
+                    // Call function to populate latest status info
+                    populateDeviceStatus_nocout("latestStatusContainer",result.data.objects);
+
                     last_updated = result.data.objects.last_updated ? result.data.objects.last_updated : "";
                     perf = result.data.objects.perf ? result.data.objects.perf : "";
-
-                    if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-                        txt_color = green_color;
-                    } else if(red_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
-                        txt_color = red_color;
-                    } else {
-                        txt_color = "";
-                    }
-
-                    status_html = "";
-
-                    status_html += '<table id="final_status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;"><tr>';
-                    status_html += '<td style="color:'+txt_color+';"><i class="fa fa-circle" style="vertical-align: middle;"> </i> <b>Current Status</b> : '+status+'</td>';
-                    status_html += '<td style="color:'+txt_color+';"><b>Current Status Since</b> : '+age+'</td>';
-                    status_html += '<td style="color:'+txt_color+';"><b>Last Down Time</b> : '+lastDownTime+'</td>';
-                    status_html += '</tr></table>';
-
-                    // Update Status Block HTML as per the device status
-                    $("#latestStatusContainer").html(status_html);
 
                     var response_obj = {
                         "last_updated" : last_updated,
@@ -482,6 +425,8 @@ function nocoutPerfLib() {
                     };
 
                     callback("success",response_obj);
+                } else {
+                    callback("error","");    
                 }
             },
             error : function(err) {
@@ -508,7 +453,6 @@ function nocoutPerfLib() {
         var start_date = "",
             end_date = "",
             get_url = "";
-        // base_url = window.location.origin ? window.location.origin : window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
 
         showSpinner();
 
@@ -527,11 +471,13 @@ function nocoutPerfLib() {
             sendAjax('', '');
         }
 
+        // This function returns date object as per given date string
         function getDate(date) {
             var dateSplittedString = date.split('-');
             return new Date(dateSplittedString[2], (parseInt(dateSplittedString[1], 10) - 1), dateSplittedString[0]);
         }
 
+        // This function returns next date as per given date
         function getTomorrowDate(date) {
             var tomorowDate = new Date(date);
             tomorowDate.setFullYear(date.getFullYear());
@@ -540,232 +486,23 @@ function nocoutPerfLib() {
             return tomorowDate;
         }
 
+        // This function return given date in DD-mm-YYYY format
         function getDateinStringFormat(date) {
-            if (date) {
+            if(date) {
                 return date.getDate() + "-" + (parseInt(date.getMonth(), 10) + 1) + "-" + date.getFullYear();
             } else {
                 return '';
             }
-
         }
 
 
+        // This function convert given date, time in epoch format.
         function getDateInEpochFormat(date, time) {
-
-            // var split_time = time.split(":");
-            // var new_date = moment(date).add(split_time[0], 'h').add(split_time[1], 'm').add(split_time[2], 's');
             new_date = new Date(date);
             return (new_date.getTime()) / 1000;
         }
 
-        function createHighChart(config) {
-            // Is the y axis should be reversed or not
-            var is_y_inverted = config["is_inverted"] ? config["is_inverted"] : false;
-
-            chart_instance = $('#' + service_id + '_chart').highcharts({
-                chart: {
-                    events: {
-                        load : function() {
-                            // Hide highcharts.com link from chart when chart is loaded
-                            var highcharts_link = $("#"+service_id+"_chart svg text:last-child");
-                            $.grep(highcharts_link,function(val) {
-                                if($.trim(val.innerHTML) == 'Highcharts.com') {
-                                    val.innerHTML = "";
-                                }
-                            });
-                        }
-                    },
-                    zoomType: 'x',
-                    type: config.type
-                },
-                title: {
-                    // text: config.name
-                    text: ""
-                },
-                legend:{
-                    itemDistance : 15,
-                    itemMarginBottom : 5,
-                    borderColor : "#FFF",
-                    borderWidth : "1",
-                    borderRadius : "8",
-                    itemStyle: {
-                        color: '#FFF',
-                        fontSize : '12px'
-                    }
-                },
-                tooltip: {
-                    headerFormat: '{point.x:%e/%m/%Y (%b)  %l:%M %p}<br>',
-                    pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
-                    shared: true,
-                    crosshairs: true,
-                    useHTML: true,
-                    valueSuffix: config.valuesuffix
-                },
-                xAxis: {
-                    title: {
-                        text: "time"
-                    },
-                    type: 'datetime',
-                    minRange: 3600000,
-                    dateTimeLabelFormats: {
-                        millisecond: '%H:%M:%S.%L',
-                        second: '%H:%M:%S',
-                        minute: '%H:%M',
-                        hour: '%H:%M',
-                        day: '%e. %b',
-                        week: '%e. %b',
-                        month: '%b \'%y',
-                        year: '%Y'
-                    }
-                },
-                yAxis: {
-                    title : {
-                        text : config.valuetext
-                    },
-                    reversed : is_y_inverted
-                },
-                series: config.chart_data
-            });
-        }
-
-        function addPointsToHighChart(pointArray) {
-            var highChartSeries = $('#' + service_id + '_chart').highcharts().series;
-            for (var i = 0; i < highChartSeries.length; i++) {
-                for (var j = 0; j < pointArray[i].data.length; j++) {
-                    $('#' + service_id + '_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
-                }
-            }
-        }
-
-        function createDataTableForChart(table_id, headers) {
-            var excel_columns = [];
-            var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
-            /*Make table headers*/
-            for (var i = 0; i < headers.length; i++) {
-                data_in_table += '<td colspan="2" align="center"><b>' + headers[i].name + '</b></td>';
-                excel_columns.push(i);
-                if(headers.length <= i+1) {
-                    excel_columns.push(i+1);
-                }
-
-            }
-            data_in_table += '</tr><tr>';
-
-            for (var i = 0; i < headers.length; i++) {
-                data_in_table += '<td><em>Time</em></td><td><em>Value</em></td>';
-            }
-
-            data_in_table += '</tr></thead></table>';
-            /*Table header creation end*/
-
-            $('#' + service_id + '_bottom_table').html(data_in_table);
-
-            $("#" + table_id).DataTable({
-                sDom: 'T<"clear">lfrtip',
-                oTableTools: {
-                    sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
-                    aButtons: [
-                        {
-                            sExtends: "xls",
-                            sButtonText: "Download Excel",
-                            sFileName: "*.xls",
-                            mColumns: excel_columns
-                        }
-                    ]
-                },
-                bPaginate: true,
-                bDestroy: true,
-                aaSorting : [[0,'desc']],
-                sPaginationType: "full_numbers"
-            });
-        }
-
-        function addDataToDataTableForChart(table_obj, table_id) {
-            var data = table_obj[0].data,
-                total_columns = table_obj.length * 2;
-
-            for (var i = 0; i < data.length; i++) {
-                var row_val = [];
-                for (var j = 0; j < table_obj.length; j++) {
-                    var inner_data = table_obj[j].data[i];
-
-                    if(inner_data) {
-                        if(inner_data.constructor == Array) {
-                            if(inner_data[0]) {
-                                row_val.push(new Date(inner_data[0]).toLocaleString());
-                                var chart_val = inner_data[1];
-                                row_val.push(chart_val);
-                            }
-                        } else if(inner_data.constructor == Object) {
-                            if(inner_data.x) {
-                                row_val.push(new Date(inner_data.x).toLocaleString());
-                                var chart_val = inner_data.y;
-                                row_val.push(chart_val);
-                            }
-                        }
-                    }
-                }
-                // If row are less than total columns then add blank fields
-                if(row_val.length < total_columns) {
-                    var val_diff = total_columns - row_val.length;
-                    for(var x=0;x<val_diff;x++) {
-                        row_val.push(" ");
-                    }
-                    $('#' + table_id).dataTable().fnAddData(row_val);
-                } else {
-                    $('#' + table_id).dataTable().fnAddData(row_val);
-                }
-            }
-        }
-
-        function createDataTable(table_id, headers) {
-
-            var table_string = "",
-                grid_headers = headers,
-                excel_columns = [];
-
-            table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
-            /*Table header creation start*/
-            for (var i = 0; i < grid_headers.length; i++) {
-                table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
-                excel_columns.push(i);
-            }
-            table_string += '</thead></table>';
-            /*Table header creation end*/
-
-            $('#' + service_id + '_chart').html(table_string);
-
-            $("#" + table_id).DataTable({
-                sDom: 'T<"clear">lfrtip',
-                oTableTools: {
-                    sSwfPath: base_url + "/static/js/datatables/extras/TableTools/media/swf/copy_csv_xls.swf",
-                    aButtons: [
-                        {
-                            sExtends: "xls",
-                            sButtonText: "Download Excel",
-                            sFileName: "*.xls",
-                            mColumns: excel_columns
-                        }
-                    ]
-                },
-                bPaginate: true,
-                bDestroy: true,
-                aaSorting : [[0,'desc']],
-                sPaginationType: "full_numbers"
-            });
-        }
-
-        function addDataToDataTable(table_data, table_headers, table_id) {
-            for (var j = 0; j < table_data.length; j++) {
-                var row_val = [];
-                for (var i = 0; i < table_headers.length; i++) {
-                    var insert_val = table_data[j][table_headers[i]] ? table_data[j][table_headers[i]] : "";
-                    row_val.push(insert_val);
-                }
-                $('#' + table_id).dataTable().fnAddData(row_val);
-            }
-        }
-
+        // This function send ajax call as per given param to get device service perf info. 
         function sendAjax(ajax_start_date, ajax_end_date) {
 
             var urlDataStartDate = '', urlDataEndDate = '';
@@ -806,22 +543,37 @@ function nocoutPerfLib() {
                     }
 
                     if(result.success == 1) {
-                        if (result.data.objects.table_data_header && result.data.objects.table_data_header.length > 0) {
-                            if ($("#other_perf_table").length == 0) {
-                                createDataTable('other_perf_table', result.data.objects.table_data_header);
+
+                        var table_headers = result.data.objects.table_data_header;
+
+                        if(table_headers && table_headers.length > 0) {
+                            var table_data = result.data.objects.table_data ? result.data.objects.table_data : [];
+                            if($("#other_perf_table").length == 0) {
+                                initNormalDataTable_nocout(
+                                    'other_perf_table',
+                                    table_headers,
+                                    service_id
+                                );
                             }
-                            addDataToDataTable(result.data.objects.table_data, result.data.objects.table_data_header, 'other_perf_table');
+
+                            // Call addDataToNormalTable_nocout (utilities) function to add data to initialize datatable
+                            addDataToNormalTable_nocout(
+                                table_data,
+                                table_headers,
+                                'other_perf_table'
+                            );
                         } else {
+                            var chart_config = result.data.objects;
                             // If any data available then plot chart & table
-                            if(result.data.objects.chart_data.length > 0) {
-                                if (chart_instance == "") {
-                                    createHighChart(result.data.objects);
-                                    createDataTableForChart("perf_data_table", result.data.objects.chart_data);
+                            if(chart_config.chart_data.length > 0) {
+                                if(!$('#'+service_id+'_chart').highcharts()) {
+                                    createHighChart_nocout(chart_config,service_id);
+                                    initChartDataTable_nocout("perf_data_table", chart_config.chart_data);
                                 } else {
-                                    addPointsToHighChart(result.data.objects.chart_data);
+                                    addPointsToChart_nocout(chart_config.chart_data,service_id);
                                 }
                                 if ($("#perf_data_table").length > 0) {
-                                    addDataToDataTableForChart(result.data.objects.chart_data, 'perf_data_table')
+                                    addDataToChartTable_nocout(chart_config.chart_data, 'perf_data_table')
                                 }
                             }
                         }
@@ -833,12 +585,12 @@ function nocoutPerfLib() {
                         //if last date
                         if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
 
-
-                            if ($('#' + service_id + '_chart').highcharts()) {
+                            if ($('#'+service_id+'_chart').highcharts()) {
                                 $('#' + service_id + '_chart').highcharts().redraw();
                             }
-                            if (chart_instance == "" && $("#other_perf_table").length == 0) {
-                                $('#' + service_id + '_chart').html(result.message);
+
+                            if (!$('#'+service_id+'_chart').highcharts() && $("#other_perf_table").length == 0) {
+                                $('#'+service_id+'_chart').html(result.message);
                             }
 
                             hideSpinner();
