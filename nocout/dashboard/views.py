@@ -836,12 +836,17 @@ class SalesOpportunityMixin(object):
                 if sector_capacity['success']:
                     result_dict.update({'%s_sector_capacity' %(tech_name.lower()): json.dumps(sector_capacity)})
 
+            if tech_name == 'WiMAX':
+                sector_capacity = self.get_wimax_sector_capacity(user_sector)
+                if sector_capacity['success']:
+                    result_dict.update({'%s_sector_capacity' %(tech_name.lower()): json.dumps(sector_capacity)})
+
         return render(self.request, self.template_name, dictionary=result_dict)
 
 
     def get_pmp_sector_capacity(self, sector_devices):
         """
-        retunr the pie chart data for the pmp sector capacity.
+        return the pie chart data for the pmp sector capacity.
         """
         pmp_data_source_config = {
             'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
@@ -854,15 +859,55 @@ class SalesOpportunityMixin(object):
         service_status_results = []
         for data_source in data_source_list:
             # Get Service Name from queried data_source
-            try:
-                service_name = pmp_data_source_config[data_source]['service_name']
-                model = pmp_data_source_config[data_source]['model']
-            except KeyError as e:
-                continue
+            service_name = pmp_data_source_config[data_source]['service_name']
+            model = pmp_data_source_config[data_source]['model']
 
             service_status_results += get_service_status_results(
                 user_devices, model=model, service_name=service_name, data_source=data_source
             )
+
+        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+
+        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
+
+        return response_dict
+
+    def get_wimax_sector_capacity(self, user_sector):
+        """
+        return the pie chart data for the pmp sector capacity.
+        """
+        wimax_data_source_config = {
+            'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': UtilizationStatus},
+            'pmp1_dl_util_kpi': {'service_name': 'wimax_pmp1_dl_util_kpi', 'model': UtilizationStatus},
+            'pmp2_ul_util_kpi': {'service_name': 'wimax_pmp2_ul_util_kpi', 'model': UtilizationStatus},
+            'pmp2_dl_util_kpi': {'service_name': 'wimax_pmp2_dl_util_kpi', 'model': UtilizationStatus},
+        }
+        # Get Sector of User's Organizations. [and are Sub Station]
+        user_sector_list = user_sector
+
+        port_dict = {
+            'pmp1': ['pmp1_ul_util_kpi', 'pmp1_dl_util_kpi'],
+            'pmp2': ['pmp2_ul_util_kpi', 'pmp2_dl_util_kpi'],
+        }
+
+        service_status_results = []
+        for port in port_dict.keys():
+
+            data_source_list = port_dict[port]
+            user_sector = user_sector_list.filter(sector_configured_on_port__name__icontains=port)
+
+            for data_source in data_source_list:
+                # Get Service Name from queried data_source
+                service_name = wimax_data_source_config[data_source]['service_name']
+                model = wimax_data_source_config[data_source]['model']
+
+                # Get device of User's Organizations. [and are Sub Station]
+                user_devices = Device.objects.filter(id__in=user_sector.\
+                                values_list('sector_configured_on', flat=True))
+
+                service_status_results += get_service_status_results(
+                    user_devices, model=model, service_name=service_name, data_source=data_source
+                )
 
         range_counter = get_dashboard_status_sector_range_counter(service_status_results)
 
