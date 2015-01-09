@@ -33,7 +33,6 @@ urlpatterns = patterns('',
     url(r'^mfr-reports/table/$', views.MFRReportsListingTable.as_view(), name='mfr-reports-table'),
     url(r'^mfr-reports/(?P<pk>\d+)/delete/$', views.MFRReportsDeleteView.as_view(), name='mfr-reports-delete'),
 
-    url(r'^sector-capacity/pmp/$', views.PMP_Sector_Capacity.as_view(), name='sector-capacity-pmp'),
     url(r'^sector-capacity/wimax/$', views.WIMAX_Sector_Capacity.as_view(), name='sector-capacity-wimax'),
     url(r'^main-sales-opportunity/$', views.Main_Sales_Opportunity.as_view(), name='main-sales-opportunity'),
 )

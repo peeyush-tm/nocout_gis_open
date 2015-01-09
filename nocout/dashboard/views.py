@@ -701,63 +701,6 @@ class MainDashboard(View):
 
         return {'categories': area_chart_categories, 'series': area_chart_series}
 
-
-class PMP_Sector_Capacity(View):
-    """
-    The Class based View to get main dashboard page requested.
-
-    """
-
-    def get(self, request):
-        """
-        Handles the get request
-
-        :param request:
-        :return Http response object:
-        """
-        technology = 'PMP'
-        data_source_config = {
-            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
-            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
-        }
-        technology = DeviceTechnology.objects.get(name=technology).id
-
-        sector_method_to_call = organization_sectors
-
-        # Get User's organizations
-        # (admin : organization + sub organization)
-        # (operator + viewer : same organization)
-        user_organizations = logged_in_user_organizations(self)
-
-        # Get Sector of User's Organizations. [and are Sub Station]
-        user_sector = sector_method_to_call(user_organizations, technology)
-
-        data_source_list = data_source_config.keys()
-
-        service_status_results = []
-        for data_source in data_source_list:
-            # Get Service Name from queried data_source
-            try:
-                service_name = data_source_config[data_source]['service_name']
-                model = data_source_config[data_source]['model']
-            except KeyError as e:
-                continue
-
-            # Get device of User's Organizations. [and are Sub Station]
-            user_devices = Device.objects.filter(id__in=user_sector.\
-                            values_list('sector_configured_on', flat=True))
-
-            service_status_results += get_service_status_results(
-                user_devices, model=model, service_name=service_name, data_source=data_source
-            )
-
-        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
-
-        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
-
-        return HttpResponse(json.dumps(response_dict))
-
-
 class WIMAX_Sector_Capacity(View):
     """
     The Class based View to get main dashboard page requested.
