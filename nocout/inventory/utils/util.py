@@ -252,3 +252,45 @@ def prepare_machines(device_list):
                                  device['device_machine'] == machine]
 
     return machine_dict
+
+
+def organization_sectors(organization, technology=None):
+    """
+    To result back the all the sector from the respective organization.
+
+    :param organization: organization list
+    :param technology:
+    :return list of sector
+    """
+    if int(technology) == int(PMP.ID):
+        organisation_sectors = Sector.objects.filter(
+                                organization__in=organization,
+                                sector_id__isnull=False,
+                                sector_configured_on_port__isnull=True,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    elif int(technology) == int(WiMAX.ID):
+        organisation_sectors = Sector.objects.filter(
+                                organization__in=organization,
+                                sector_id__isnull=False,
+                                sector_configured_on_port__isnull=False,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    elif int(technology) == int(P2P.ID):
+        organisation_sectors = Sector.objects.filter(
+                                organization__in=organization,
+                                sector_id__isnull=False,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    else:
+        organisation_sectors = Sector.objects.filter(
+                                organization__in=organization,
+                                sector_id__isnull=False,
+                                sector_configured_on__isnull=False,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    return organisation_sectors
+

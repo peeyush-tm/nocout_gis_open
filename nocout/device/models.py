@@ -233,6 +233,7 @@ class DeviceSyncHistory(models.Model):
     status = models.IntegerField('Status', null=True, blank=True)
     message = models.TextField('NMS Message', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    sync_by = models.CharField('Sync By', max_length=100, null=True, blank=True)
     added_on = models.DateTimeField('Applied On', null=True, blank=True)
     completed_on = models.DateTimeField('Completed On', null=True, blank=True)
 

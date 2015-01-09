@@ -8,6 +8,8 @@ from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 
 dajaxice_autodiscover()
 
+from dashboard.views import MainDashboard
+
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
 
@@ -19,7 +21,8 @@ handler403 = 'nocout.views.handler403'
 
 urlpatterns = patterns('',
                        url(r'^$', RedirectView.as_view(url='login/')),
-                       url(r'^home/', 'home.views.home'),
+                       url(r'^home/', MainDashboard.as_view(), name='home'),
+                       url(r'^speedometer/', 'home.views.dashboard'),
                        url(r'^user/', include('user_profile.urls')),
                        url(r'^user_group/', include('user_group.urls')),
                        url(r'^device/', include('device.urls')),
@@ -75,6 +78,7 @@ urlpatterns = patterns('',
                        url(r'^sm/', include('session_management.urls')),
                        url(r'^bulk_import/', include('inventory.bulk_import_urls')),
                        url(r'^gis_downloaded_inventories/', include('inventory.gis_selected_bs_inventories_urls')),
+                       url(r'^device_sync_history/', include('device.device_sync_history_urls')),
                        url(r'^api/', include('inventory.api_urls')),
                        url(r'^country/', include('device.country_urls')),
                        url(r'^state/', include('device.state_urls')),

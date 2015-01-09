@@ -21,6 +21,7 @@ class DashboardSettingForm(forms.ModelForm):
             logger.info(e.message)
 
         super(DashboardSettingForm, self).__init__(*args, **kwargs)
+        self.fields['technology'].choices = [(2, 'P2P'), (4, 'PMP'), (3, 'WiMAX'), ('', 'All')]
         for i in range(1, 11):
             self.fields['range%d_color_hex_value' %i].widget.attrs.update({'class':'colorpicker',\
                                                             'data-color-format':'rgba' })
