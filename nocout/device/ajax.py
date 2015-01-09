@@ -8,7 +8,7 @@ import urllib
 from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    DeviceTypeFieldsValue, Country, State
+    DeviceTypeFieldsValue, Country, State, DeviceSyncHistory
 from service.models import Service, ServiceParameters, DeviceServiceConfiguration, DevicePingConfiguration
 from inventory.models import SubStation
 from performance.models import Topology
@@ -1274,12 +1274,30 @@ def sync_device_with_nms_core(request):
                          }
 
     """
+
     result = dict()
     result['data'] = {}
     result['success'] = 0
     result['message'] = "Device activation for monitoring failed."
     result['data']['meta'] = ''
-    device_data = {'mode': 'sync'}
+
+    # current user's username
+    username = request.user.username
+
+    # create 'device sync history' entry
+    device_sync_history = DeviceSyncHistory()
+    device_sync_history.status = 0
+    device_sync_history.sync_by = username
+    device_sync_history.save()
+
+    # get 'device sync history' object
+    sync_obj_id = device_sync_history.id
+
+    device_data = {
+        'mode': 'sync',
+        'sync_obj_id': sync_obj_id
+    }
+
     # get device
     # device = Device.objects.get(pk=device_id)
     # site to which configuration needs to be pushed
@@ -1294,6 +1312,7 @@ def sync_device_with_nms_core(request):
                                                             master_site.name)
     # sending post request to device app for syncing configuration to associated sites
     r = requests.post(url, data=device_data)
+
     try:
         # converting string in 'r' to dictionary
         response_dict = ast.literal_eval(r.text)
