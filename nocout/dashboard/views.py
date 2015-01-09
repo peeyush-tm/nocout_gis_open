@@ -642,9 +642,12 @@ class MainDashboard(View):
 
         mfr_processed_chart = self.get_mfr_processed_chart_results()
 
+        sales_and_capacity_chart_result = self.get_sales_and_capacity_chart_result()
+
         return render(self.request, self.template_name, dictionary=dict(
                 mfr_cause_code_chart = json.dumps(mfr_cause_code_chart),
                 mfr_processed_chart = json.dumps(mfr_processed_chart),
+                sales_and_capacity_chart_result = sales_and_capacity_chart_result,
             )
         )
 
@@ -701,98 +704,15 @@ class MainDashboard(View):
 
         return {'categories': area_chart_categories, 'series': area_chart_series}
 
-class WIMAX_Sector_Capacity(View):
-    """
-    The Class based View to get main dashboard page requested.
-
-    """
-
-    def get(self, request):
+    def get_sales_and_capacity_chart_result(self):
         """
-        Handles the get request
-
-        :param request:
-        :return Http response object:
-        """
-        # data_source_config, technology, sector_method_to_call = self.get_wimax_init_data()
-        technology = 'WIMAX'
-        data_source_config = {
-            'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': UtilizationStatus},
-            'pmp1_dl_util_kpi': {'service_name': 'wimax_pmp1_dl_util_kpi', 'model': UtilizationStatus},
-            'pmp2_ul_util_kpi': {'service_name': 'wimax_pmp2_ul_util_kpi', 'model': UtilizationStatus},
-            'pmp2_dl_util_kpi': {'service_name': 'wimax_pmp2_dl_util_kpi', 'model': UtilizationStatus},
-        }
-        technology = DeviceTechnology.objects.get(name=technology).id
-        sector_method_to_call = organization_sectors
-
-        # Get User's organizations
-        # (admin : organization + sub organization)
-        # (operator + viewer : same organization)
-        user_organizations = logged_in_user_organizations(self)
-
-        # Get Sector of User's Organizations. [and are Sub Station]
-        user_sector_list = sector_method_to_call(user_organizations, technology)
-
-        port_dict = {
-            'pmp1': ['pmp1_ul_util_kpi', 'pmp1_dl_util_kpi'],
-            'pmp2': ['pmp2_ul_util_kpi', 'pmp2_dl_util_kpi'],
-        }
-
-        service_status_results = []
-        for port in port_dict.keys():
-
-            data_source_list = port_dict[port]
-
-            user_sector = user_sector_list.filter(sector_configured_on_port__name__icontains=port)
-
-            for data_source in data_source_list:
-                # Get Service Name from queried data_source
-                try:
-                    service_name = data_source_config[data_source]['service_name']
-                    model = data_source_config[data_source]['model']
-                except KeyError as e:
-                    continue
-
-                # Get device of User's Organizations. [and are Sub Station]
-                user_devices = Device.objects.filter(id__in=user_sector.\
-                                values_list('sector_configured_on', flat=True))
-
-                service_status_results += get_service_status_results(
-                    user_devices, model=model, service_name=service_name, data_source=data_source
-                )
-
-
-        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
-
-        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
-
-        return HttpResponse(json.dumps(response_dict))
-
-
-#********************************************** main dashboard ************************************************
-
-
-class MainDashboardMixin(object):
-    """
-    Provide common method get for Performance Dashboard.
-
-    To use this Mixin set `template_name` and implement method get_init_data to provide following attributes:
-
-        - data_source_config
-        - sector_method_to_call
-        - devices_method_kwargs
-    """
-
-    def get(self, request):
-        """
-        Handles the get request
-
-        :param request:
-        :return Http response object:
         """
         is_bh = False
         tech = ['PMP', 'WiMAX']
-        data_source_config, sector_method_to_call = self.get_init_data()
+        data_source_config = {
+            'topology': {'service_name': 'topology', 'model': Topology},
+        }
+        sector_method_to_call = organization_sectors
 
         data_source = data_source_config.keys()[0]
         # Get Service Name from queried data_source
@@ -842,12 +762,10 @@ class MainDashboardMixin(object):
                 if sector_capacity['success']:
                     result_dict.update({'%s_sector_capacity' %(tech_name.lower()): json.dumps(sector_capacity)})
 
-        return render(self.request, self.template_name, dictionary=result_dict)
-
+        return result_dict
 
     def get_pmp_sector_capacity(self, sector_devices):
         """
-        return the pie chart data for the pmp sector capacity.
         """
         pmp_data_source_config = {
             'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
@@ -875,7 +793,6 @@ class MainDashboardMixin(object):
 
     def get_wimax_sector_capacity(self, user_sector):
         """
-        return the pie chart data for the pmp sector capacity.
         """
         wimax_data_source_config = {
             'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': UtilizationStatus},
@@ -917,21 +834,6 @@ class MainDashboardMixin(object):
         return response_dict
 
 
-class Main_Dashboard(MainDashboardMixin, View):
-    """
-    The Class based View to get main dashboard page requested.
+#********************************************** main dashboard ************************************************
 
-    """
-    template_name = 'dashboard/sales_opportunity.html'
-
-    def get_init_data(self):
-        """
-        Provide data for mixin's get method.
-        """
-
-        data_source_config = {
-            'topology': {'service_name': 'topology', 'model': Topology},
-        }
-        sector_method_to_call = organization_sectors
-        return data_source_config, sector_method_to_call
 

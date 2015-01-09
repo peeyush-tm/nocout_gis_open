@@ -82,6 +82,46 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>PMP Sector Capacity</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="pmp_sector_capacity" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>WiMAX Sector Capacity</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="wimax_sector_capacity" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>PMP Sales Opportunity</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>WiMAX Sales Opportunity</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -105,6 +145,7 @@
         App.init(); //Initialise plugins and elements
 
         rf_getChartData();
+        sales_and_capacity_getChartData();
 
 
 /* START Area Spline Chart */
@@ -194,6 +235,143 @@ function rf_getChartData() {
     });
     {% endif %}
 }
+
+function sales_and_capacity_getChartData() {
+    {% if sales_and_capacity_chart_result.pmp_sales_opportunity %}
+    var response = {{ sales_and_capacity_chart_result.pmp_sales_opportunity|safe }}
+    var pie_chart = $('#pmp_sales_opportunity').highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false
+        },
+        title: {
+            // text: response.data.objects.chart_data[0].name
+            text: ''
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: false
+                },
+                showInLegend: true
+            }
+        },
+        series: [{
+            type: 'pie',
+            colors: response.data.objects.colors,
+            name: 'sales opportunity',
+            data: response.data.objects.chart_data[0].data
+        }]
+    });
+    {% else %}
+    $("#pmp_sales_opportunity").html('Corresponding dashboard setting is not available.');
+    console.log('pmp sales opportunity problem');
+    {% endif %}
+
+    {% if sales_and_capacity_chart_result.wimax_sales_opportunity %}
+    var response = {{ sales_and_capacity_chart_result.wimax_sales_opportunity|safe }}
+    var pie_chart = $('#wimax_sales_opportunity').highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false
+        },
+        title: {
+            // text: response.data.objects.chart_data[0].name
+            text: ''
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: false
+                },
+                showInLegend: true
+            }
+        },
+        series: [{
+            type: 'pie',
+            colors: response.data.objects.colors,
+            name: 'sales opportunity',
+            data: response.data.objects.chart_data[0].data
+        }]
+    });
+    {% else %}
+    $("#wimax_sales_opportunity").html('Corresponding dashboard setting is not available.');
+    console.log('wimax sales opportunity problem');
+    {% endif %}
+
+    {% if sales_and_capacity_chart_result.pmp_sector_capacity %}
+    var response = {{ sales_and_capacity_chart_result.pmp_sector_capacity|safe }}
+    var pie_chart = $('#pmp_sector_capacity').highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false
+        },
+        title: {
+            // text: response.data.objects.chart_data[0].name
+            text: ''
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: false
+                },
+                showInLegend: true
+            }
+        },
+        series: [{
+            type: 'pie',
+            colors: response.data.objects.colors,
+            name: 'sector capacity',
+            data: response.data.objects.chart_data[0].data
+        }]
+    });
+    {% else %}
+    console.log('pmp sector capacity problem');
+    {% endif %}
+
+    {% if sales_and_capacity_chart_result.wimax_sector_capacity %}
+    var response = {{ sales_and_capacity_chart_result.wimax_sector_capacity|safe }}
+    var pie_chart = $('#wimax_sector_capacity').highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false
+        },
+        title: {
+            // text: response.data.objects.chart_data[0].name
+            text: ''
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: false
+                },
+                showInLegend: true
+            }
+        },
+        series: [{
+            type: 'pie',
+            colors: response.data.objects.colors,
+            name: 'sector capacity',
+            data: response.data.objects.chart_data[0].data
+        }]
+    });
+    {% else %}
+    console.log('wimax sector capacity problem');
+    {% endif %}
+}
+
 
 </script>
 {% endblock %}
