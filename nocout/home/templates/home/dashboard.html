@@ -1,0 +1,1235 @@
+{% extends "nocout/base.html" %}
+{% load staticfiles %}
+{% block page_setting_block %} {% endblock %}
+{% block content_title %} Dashboard {% endblock %}
+{% block content_description %} Dashboard... {% endblock %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/nocout_dashboard.css" %}>
+{% endblock %}
+
+{% block content %}
+    <!--Dashboard Template Start-->
+    <div id="dashboardContainer">
+            <div id="latency-wimax" style="width: 300px; height: 200px; float: left"></div>
+            <div id="latency-pmp" style="width: 300px; height: 200px; float: left"></div>
+            <div id="latency-all" style="width: 300px; height: 200px; float: left"></div>
+            <div id="packet-loss-wimax" style="width: 300px; height: 200px; float: left"></div>
+            <div id="packet-loss-pmp" style="width: 300px; height: 200px; float: left"></div>
+            <div id="packet-loss-all" style="width: 300px; height: 200px; float: left"></div>
+            <div id="down-wimax" style="width: 300px; height: 200px; float: left"></div>
+            <div id="down-pmp" style="width: 300px; height: 200px; float: left"></div>
+            <div id="down-all" style="width: 300px; height: 200px; float: left"></div>
+            <div id="temperature-acb-wimax" style="width: 300px; height: 200px; float: left"></div>
+            <div id="temperature-fan-wimax" style="width: 300px; height: 200px; float: left"></div>
+            <div id="temperature-idu-wimax" style="width: 300px; height: 200px; float: left"></div>
+        <div class="clearfix"></div>
+    </div>
+    <!--Dashboard Template End-->
+{% endblock %}
+{% block load_js %}
+
+<!--Highcharts Library-->
+<script src={% static "js/highcharts.js" %}></script>
+<script src={% static "js/highcharts-more.js" %}></script>
+<script src={% static "js/solid-gauge.js" %}></script>
+<!-- SPARKLINES -->
+<script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
+<!-- Dashboard Custom CSS-->
+<script src={% static "js/nocout_dashboard.js" %}></script>
+
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+
+        $.ajax({
+            url : "{% url 'latency-wimax' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#latency-wimax').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Network Latency(WIMAX)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'latency_wimax',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Latency Wimax',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'latency-pmp' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']],
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#latency-pmp').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Network Latency(PMP)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'latency_pmp',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Latency PMP',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'latency-all' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#latency-all').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Network Latency(ALL)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'latency_all',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Latency ALL',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'packet-loss-wimax' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#packet-loss-wimax').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Network Packet Loss(WIMAX)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'packet_loss_wimax',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Packet Loss WIMAX',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'packet-loss-pmp' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#packet-loss-pmp').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Network Packet Loss(PMP)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'packet_loss_pmp',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Packet Loss PMP',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'packet-loss-all' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#packet-loss-all').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Network Packet Loss(ALL)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'packet_loss_all',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Packet Loss ALL',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'down-wimax' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#down-wimax').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Network Down(WIMAX)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'down_wimax',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Down WIMAX',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'down-pmp' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#down-pmp').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Network Down(PMP)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'down_pmp',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Down PMP',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'down-all' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#down-all').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Network Down(ALL)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'down_all',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Down ALL',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'temperatue-idu-wimax' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#temperature-idu-wimax').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Temperature IDU(WIMAX)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'temperature_idu_wimax',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Temperature IDU WIMAX',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'temperatue-acb-wimax' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#temperature-acb-wimax').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Temperature ACB(WIMAX)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'temperature_acb_wimax',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Temperature ACB WIMAX',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+        $.ajax({
+            url : "{% url 'temperatue-fan-wimax' %}",
+            type : "GET",
+            success : function(result) {
+                var response = "";
+                if(typeof result == 'string') {
+                    response = JSON.parse(result);
+                } else {
+                    response = result;
+                }
+                if(response.success == 1) {
+                    var gaugeOptions = {
+                        chart: {
+                            type: 'solidgauge'
+                        },
+                        title: null,
+                        pane: {
+                            center: ['50%', '85%'],
+                            size: '140%',
+                            startAngle: -90,
+                            endAngle: 90,
+                            background: {
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                innerRadius: '60%',
+                                outerRadius: '100%',
+                                shape: 'arc'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            stops: [
+                                [0.0, response['color']], // speedometer_color
+                            ],
+                            lineWidth: 0,
+                            minorTickInterval: null,
+                            tickPixelInterval: 400,
+                            tickWidth: 0,
+                            title: {
+                                y: -70
+                            },
+                            labels: {
+                                y: 16
+                            }
+                        },
+                        plotOptions: {
+                            solidgauge: {
+                                dataLabels: {
+                                    y: 5,
+                                    borderWidth: 0,
+                                    useHTML: true
+                                }
+                            }
+                        }
+                    };
+                    $('#temperature-fan-wimax').highcharts(Highcharts.merge(gaugeOptions, {
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+                            title: {
+                                text: 'Temperature FAN(WIMAX)'
+                            }
+                        },
+
+                        series: [{
+                            name: 'temperature_fan_wimax',
+                            data: [response['data']],
+                            dataLabels: {
+                            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                                '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            },
+                            tooltip: {
+                                valueSuffix: ' revolutions/min'
+                            }
+                        }]
+
+                    }));
+                }else {
+                     console.log(response.message);
+                }
+            },
+            error : function(err) {
+                hideSpinner();
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Main Dashboard Temperature FAN WIMAX',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false,
+                    // Time in ms after which the gritter will dissappear.
+                    time : 1500
+                });
+            },
+        });
+    });
+</script>
+{% endblock %}

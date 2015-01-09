@@ -3,7 +3,7 @@ import datetime
 from dateutil import relativedelta
 
 from django.core.urlresolvers import reverse_lazy, reverse
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
@@ -13,8 +13,9 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from nocout.utils import logged_in_user_organizations
+from inventory.models import Sector
 from device.models import DeviceTechnology, Device
-from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, Topology
+from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, Topology, NetworkStatus
 
 #inventory utils
 from inventory.utils.util import organization_customer_devices, organization_network_devices,\
@@ -124,6 +125,7 @@ class DashbaordSettingsCreateView(SuperUserRequiredMixin, CreateView):
         context = super(DashbaordSettingsCreateView, self).get_context_data(**kwargs)
         context['dashboards'] = json.dumps(dashboards)
         technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
         return context
 
@@ -149,6 +151,7 @@ class DashbaordSettingsUpdateView(SuperUserRequiredMixin, UpdateView):
         context = super(DashbaordSettingsUpdateView, self).get_context_data(**kwargs)
         context['dashboards'] = json.dumps(dashboards)
         technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
         return context
 
@@ -203,7 +206,7 @@ class PerformanceDashboardMixin(object):
             dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='rf_dashboard', name=data_source, is_bh=is_bh)
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
-                "message": "Corresponding dashboard seting is not available.",
+                "message": "Corresponding dashboard setting is not available.",
                 "success": 0
             }))
 
@@ -834,6 +837,283 @@ class MainDashboard(View):
         return response_dict
 
 
-#********************************************** main dashboard ************************************************
+class MainDashboardMixin(object):
+    """
+    Provide common method get for Performance Dashboard.
+
+    To use this Mixin set `template_name` and implement method get_init_data to provide following attributes:
+
+        - data_source_config
+        - technology
+        - devices_method_to_call
+        - devices_method_kwargs
+    """
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
+        technology = self.technology
+        count = 0
+        status_list = []
+        device_list = []
+        count_range = ''
+        count_color = ''
+
+        # Get User's organizations
+        # (admin : organization + sub organization)
+        # (operator + viewer : same organization)
+        user_organizations = logged_in_user_organizations(self)
+
+        # Get Devices of User's Organizations and/or Sub Organization.
+        user_devices = organization_network_devices(user_organizations, technology)
+        # Get Sectors of technology.Technology is PMP or WIMAX or None(For All: PMP+WIMAX )
+        if technology:
+            sector_list = Sector.objects.filter(bs_technology=technology, sector_configured_on__in=user_devices)
+        else:
+            sector_list = Sector.objects.filter(sector_configured_on__in=user_devices)
+        # Get Devices of sector_list.
+        for sector in sector_list:
+            device_list.append(sector.sector_configured_on)
+
+        # Make device_list distinct and remove duplicate devices from list.
+        device_list = list(set(device_list))
+        #Get dictionary of machine and device list.
+        machine_dict = self.prepare_machines(device_list)
+
+        if technology:
+            technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
+        else:
+            technology_name = 'network'
+
+        if self.temperature:
+            dashboard_name = 'temperature'
+            if self.temperature == 'IDU':
+                service_list = ['wimax_bs_temperature_acb', 'wimax_bs_temperature_fan']
+                data_source_list = ['acb_temp', 'fan_temp']
+                severity_list = ['warning', 'critical', 'ok', 'unknown']
+            elif self.temperature == 'ACB':
+                service_list = ['wimax_bs_temperature_acb']
+                data_source_list = ['acb_temp']
+                severity_list = ['warning', 'critical']
+            elif self.temperature == 'FAN':
+                service_list = ['wimax_bs_temperature_fan']
+                data_source_list = ['fan_temp']
+                severity_list = ['warning', 'critical']
+
+            for machine_name, device_list in machine_dict.items():
+                status_list += ServiceStatus.objects.filter(device_name__in=device_list,
+                                            service_name__in=service_list,
+                                            data_source__in=data_source_list,
+                                            severity__in=severity_list).using(machine_name).annotate(Count('device_name'))
+        elif self.packet_loss:
+            dashboard_name = 'packetloss-%s'%technology_name
+            for machine_name, device_list in machine_dict.items():
+                status_list += NetworkStatus.objects.filter(device_name__in=device_list,
+                                            service_name='ping',
+                                            data_source='pl',
+                                            severity__in=['warning', 'critical', 'down'],
+                                            current_value__lt=100).using(machine_name).annotate(Count('device_name'))
+        elif self.down:
+            dashboard_name = 'down-%s'%technology_name
+            for machine_name, device_list in machine_dict.items():
+                status_list += NetworkStatus.objects.filter(device_name__in=device_list,
+                                            service_name='ping',
+                                            data_source='pl',
+                                            severity__in=['down'],
+                                            current_value__gte=100).using(machine_name).annotate(Count('device_name'))
+        else:
+            dashboard_name = 'latency-%s'%technology_name
+            for machine_name, device_list in machine_dict.items():
+                status_list += NetworkStatus.objects.filter(device_name__in=device_list,
+                                            service_name='ping',
+                                            data_source='rta',
+                                            severity__in=['warning', 'critical', 'down']).using(machine_name).annotate(Count('device_name'))
+
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
+        except DashboardSetting.DoesNotExist as e:
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard setting is not available.",
+                "success": 0
+            }))
+        count = len(status_list)
+
+        for i in range(1, 11):
+            start_range = getattr(dashboard_setting, 'range%d_start' %i)
+            end_range = getattr(dashboard_setting, 'range%d_end' %i)
+
+            # dashboard type is numeric and start_range and end_range exists to compare result.
+            if start_range and end_range:
+                if float(start_range) <= float(count) <= float(end_range):
+                    count_range = 'range%d' %i
+
+            #dashboard type is string and start_range exists to compare result.
+            elif dashboard_setting.dashboard_type == 'STR' and start_range:
+                if str(count).lower() in start_range.lower():
+                    count_range = 'range%d' %i
+
+        # get color of range in which count exists.
+        if count_range:
+            count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
+        else:
+            count_color = '#CED5DB' # For Unknown Range.
+
+        response_dict = {
+                "message": "Dashboard setting is successfully fetched to plot the graph.",
+                'dashboard name': dashboard_name,
+                'data': count,
+                'technology': technology,
+                'color': count_color,
+                'success':1
+                }
+
+        return HttpResponse(json.dumps(response_dict))
+
+    def prepare_machines(self, device_list_qs):
+        """
+        Return dict of machine name keys containing values of related devices list.
+
+        :param device_list_qs:
+        :return machine_dict:
+        """
+        unique_device_machine_list = {device.machine.name: True for device in device_list_qs}.keys()
+
+        machine_dict = {}
+        for machine in unique_device_machine_list:
+            machine_dict[machine] = [device.device_name for device in device_list_qs if device.machine.name == machine]
+        return machine_dict
 
 
+class WiMAX_Latency(MainDashboardMixin, View):
+    """
+    The Class based View to get Latency of WIMAX.
+
+    """
+    packet_loss = False
+    down = False
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class PMP_Latency(MainDashboardMixin, View):
+    """
+    The Class based View to get Latency of PMP.
+
+    """
+    packet_loss = False
+    down = False
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='PMP').id
+
+
+class ALL_Latency(MainDashboardMixin, View):
+    """
+    The Class based View to get Latency of All(WIMAX and PMP).
+
+    """
+    packet_loss = False
+    down = False
+    temperature = ''
+    technology = None
+
+
+class WIMAX_Packet_Loss(MainDashboardMixin, View):
+    """
+    The Class based View to get Packet Loss of WIMAX.
+
+    """
+    packet_loss = True
+    down = False
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class PMP_Packet_Loss(MainDashboardMixin, View):
+    """
+    The Class based View to get Packet Loss of PMP.
+
+    """
+    packet_loss = True
+    down = False
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='PMP').id
+
+
+class ALL_Packet_Loss(MainDashboardMixin, View):
+    """
+    The Class based View to get Packet Loss of All(WIMAX and PMP).
+
+    """
+    packet_loss = True
+    down = False
+    temperature = ''
+    technology = None
+
+
+class WIMAX_Down(MainDashboardMixin, View):
+    """
+    The Class based View to get down of WIMAX.
+
+    """
+    packet_loss = False
+    down = True
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class PMP_Down(MainDashboardMixin, View):
+    """
+    The Class based View to get down of WIMAX.
+
+    """
+    packet_loss = False
+    down = True
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='PMP').id
+
+
+class ALL_Down(MainDashboardMixin, View):
+    """
+    The Class based View to get down of WIMAX.
+
+    """
+    packet_loss = False
+    down = True
+    temperature = ''
+    technology = None
+
+
+class WIMAX_Temperature_Idu(MainDashboardMixin, View):
+    """
+    The Class based View to get Temperature-IDU of WIMAX.
+
+    """
+    packet_loss = False
+    down = False
+    temperature = 'IDU'
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class WIMAX_Temperature_Acb(MainDashboardMixin, View):
+    """
+    The Class based View to get Temperature-ACB of WIMAX.
+
+    """
+    packet_loss = False
+    down = False
+    temperature = 'ACB'
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class WIMAX_Temperature_Fan(MainDashboardMixin, View):
+    """
+    The Class based View to get Temperature-FAN of WIMAX.
+
+    """
+    packet_loss = False
+    down = False
+    temperature = 'FAN'
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
