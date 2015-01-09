@@ -702,16 +702,10 @@ class MainDashboard(View):
         return {'categories': area_chart_categories, 'series': area_chart_series}
 
 
-class SectorCapacityMixin(object):
+class PMP_Sector_Capacity(View):
     """
-    Provide common method get for Performance Dashboard.
+    The Class based View to get main dashboard page requested.
 
-    To use this Mixin set `template_name` and implement method get_init_data to provide following attributes:
-
-        - data_source_config
-        - technology
-        - sector_method_to_call
-        - devices_method_kwargs
     """
 
     def get(self, request):
@@ -721,7 +715,22 @@ class SectorCapacityMixin(object):
         :param request:
         :return Http response object:
         """
-        data_source_config, technology, sector_method_to_call = self.get_init_data()
+        technology = 'PMP'
+        data_source_config = {
+            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
+            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
+        }
+        technology = DeviceTechnology.objects.get(name=technology).id
+
+        sector_method_to_call = organization_sectors
+
+        # Get User's organizations
+        # (admin : organization + sub organization)
+        # (operator + viewer : same organization)
+        user_organizations = logged_in_user_organizations(self)
+
+        # Get Sector of User's Organizations. [and are Sub Station]
+        user_sector = sector_method_to_call(user_organizations, technology)
 
         data_source_list = data_source_config.keys()
 
@@ -733,14 +742,6 @@ class SectorCapacityMixin(object):
                 model = data_source_config[data_source]['model']
             except KeyError as e:
                 continue
-
-            # Get User's organizations
-            # (admin : organization + sub organization)
-            # (operator + viewer : same organization)
-            user_organizations = logged_in_user_organizations(self)
-
-            # Get Sector of User's Organizations. [and are Sub Station]
-            user_sector = sector_method_to_call(user_organizations, technology)
 
             # Get device of User's Organizations. [and are Sub Station]
             user_devices = Device.objects.filter(id__in=user_sector.\
@@ -757,49 +758,11 @@ class SectorCapacityMixin(object):
         return HttpResponse(json.dumps(response_dict))
 
 
-class PMP_Sector_Capacity(SectorCapacityMixin, View):
+class WIMAX_Sector_Capacity(View):
     """
     The Class based View to get main dashboard page requested.
 
     """
-
-    def get_init_data(self):
-        """
-        Provide data for mixin's get method.
-        """
-
-        data_source_config = {
-            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
-            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
-        }
-        technology = 'PMP'
-        technology = DeviceTechnology.objects.get(name=technology).id
-        sector_method_to_call = organization_sectors
-        return data_source_config, technology, sector_method_to_call
-
-
-class WIMAX_Sector_Capacity(SectorCapacityMixin, View):
-    """
-    The Class based View to get main dashboard page requested.
-
-    """
-    # template_name = 'dashboard/main_dashboard.html'
-
-    def get_init_data(self):
-        """
-        Provide data for mixin's get method.
-        """
-
-        data_source_config = {
-            'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': Topology},
-            'pmp1_dl_util_kpi': {'service_name': 'wimax_pmp1_dl_util_kpi', 'model': Topology},
-            'pmp2_ul_util_kpi': {'service_name': 'wimax_pmp2_ul_util_kpi', 'model': Topology},
-            'pmp2_dl_util_kpi': {'service_name': 'wimax_pmp2_dl_util_kpi', 'model': Topology},
-        }
-        technology = 'WIMAX'
-        technology = DeviceTechnology.objects.get(name=technology).id
-        sector_method_to_call = organization_sectors
-        return data_source_config, technology, sector_method_to_call
 
     def get(self, request):
         """
@@ -808,12 +771,16 @@ class WIMAX_Sector_Capacity(SectorCapacityMixin, View):
         :param request:
         :return Http response object:
         """
-        data_source_config, technology, sector_method_to_call = self.get_init_data()
-
-        port_dict = {
-            'pmp1': ['pmp1_ul_util_kpi', 'pmp1_dl_util_kpi'],
-            'pmp2': ['pmp2_ul_util_kpi', 'pmp2_dl_util_kpi'],
+        # data_source_config, technology, sector_method_to_call = self.get_wimax_init_data()
+        technology = 'WIMAX'
+        data_source_config = {
+            'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': UtilizationStatus},
+            'pmp1_dl_util_kpi': {'service_name': 'wimax_pmp1_dl_util_kpi', 'model': UtilizationStatus},
+            'pmp2_ul_util_kpi': {'service_name': 'wimax_pmp2_ul_util_kpi', 'model': UtilizationStatus},
+            'pmp2_dl_util_kpi': {'service_name': 'wimax_pmp2_dl_util_kpi', 'model': UtilizationStatus},
         }
+        technology = DeviceTechnology.objects.get(name=technology).id
+        sector_method_to_call = organization_sectors
 
         # Get User's organizations
         # (admin : organization + sub organization)
@@ -822,6 +789,11 @@ class WIMAX_Sector_Capacity(SectorCapacityMixin, View):
 
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector_list = sector_method_to_call(user_organizations, technology)
+
+        port_dict = {
+            'pmp1': ['pmp1_ul_util_kpi', 'pmp1_dl_util_kpi'],
+            'pmp2': ['pmp2_ul_util_kpi', 'pmp2_dl_util_kpi'],
+        }
 
         service_status_results = []
         for port in port_dict.keys():
@@ -838,7 +810,6 @@ class WIMAX_Sector_Capacity(SectorCapacityMixin, View):
                 except KeyError as e:
                     continue
 
-
                 # Get device of User's Organizations. [and are Sub Station]
                 user_devices = Device.objects.filter(id__in=user_sector.\
                                 values_list('sector_configured_on', flat=True))
@@ -846,6 +817,7 @@ class WIMAX_Sector_Capacity(SectorCapacityMixin, View):
                 service_status_results += get_service_status_results(
                     user_devices, model=model, service_name=service_name, data_source=data_source
                 )
+
 
         range_counter = get_dashboard_status_sector_range_counter(service_status_results)
 
