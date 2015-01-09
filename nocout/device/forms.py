@@ -199,30 +199,33 @@ class DeviceForm(forms.ModelForm):
         #commented because of goes package is not supported for python 2.7 on centos 6.5
         # check whether lat log lies in state co-ordinates or not
         if latitude and longitude and state:
-            project = partial(
-                pyproj.transform,
-                pyproj.Proj(init='epsg:4326'),
-                pyproj.Proj(
-                    '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
+            try:
+                project = partial(
+                    pyproj.transform,
+                    pyproj.Proj(init='epsg:4326'),
+                    pyproj.Proj(
+                        '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
 
-            state_geo_info = StateGeoInfo.objects.filter(state_id=state)
-            state_lat_longs = list()
-            for geo_info in state_geo_info:
-                temp_lat_longs = list()
-                temp_lat_longs.append(geo_info.longitude)
-                temp_lat_longs.append(geo_info.latitude)
-                state_lat_longs.append(temp_lat_longs)
+                state_geo_info = StateGeoInfo.objects.filter(state_id=state)
+                state_lat_longs = list()
+                for geo_info in state_geo_info:
+                    temp_lat_longs = list()
+                    temp_lat_longs.append(geo_info.longitude)
+                    temp_lat_longs.append(geo_info.latitude)
+                    state_lat_longs.append(temp_lat_longs)
 
-            poly = Polygon(tuple(state_lat_longs))
-            point = Point(longitude, latitude)
+                poly = Polygon(tuple(state_lat_longs))
+                point = Point(longitude, latitude)
 
-            # Translate to spherical Mercator or Google projection
-            poly_g = transform(project, poly)
-            p1_g = transform(project, point)
-            if not poly_g.contains(p1_g):
-                self._errors["latitude"] = ErrorList(
-                    [u"Latitude, longitude specified doesn't exist within selected state."])
-        #commented because of goes package is not supported for python 2.7 on centos 6.5 @TODO: check another package
+                # Translate to spherical Mercator or Google projection
+                poly_g = transform(project, poly)
+                p1_g = transform(project, point)
+                if not poly_g.contains(p1_g):
+                    self._errors["latitude"] = ErrorList(
+                        [u"Latitude, longitude specified doesn't exist within selected state."])
+            #commented because of goes package is not supported for python 2.7 on centos 6.5 @TODO: check another package
+            except Exception as e:
+                logger.exception(e)
         # print self.cleaned_data
         return self.cleaned_data
 
