@@ -769,9 +769,10 @@ class WIMAX_Sector_Capacity(View):
         return HttpResponse(json.dumps(response_dict))
 
 
-#********************************************** main dashboard sales opportunity ************************************************
+#********************************************** main dashboard ************************************************
 
-class SalesOpportunityMixin(object):
+
+class MainDashboardMixin(object):
     """
     Provide common method get for Performance Dashboard.
 
@@ -916,7 +917,7 @@ class SalesOpportunityMixin(object):
         return response_dict
 
 
-class Main_Sales_Opportunity(SalesOpportunityMixin, View):
+class Main_Dashboard(MainDashboardMixin, View):
     """
     The Class based View to get main dashboard page requested.
 
