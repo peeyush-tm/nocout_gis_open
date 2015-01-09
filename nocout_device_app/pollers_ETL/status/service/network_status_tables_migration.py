@@ -78,32 +78,32 @@ def main(**configs):
     for doc in docs:
         local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
         check_time_epoch = utility_module.get_epoch_time(doc.get('check_time'))
-        t = (
-            #uuid,
-            doc.get('host'),
-            doc.get('service'),
-            machine_name,
-            doc.get('site'),
-            doc.get('ds'),
-            doc.get('data')[0].get('value'),
-            doc.get('data')[0].get('value'),
-            doc.get('data')[0].get('value'),
-            doc.get('data')[0].get('value'),
-            doc.get('meta').get('war'),
-            doc.get('meta').get('cric'),
-            local_time_epoch,
-            check_time_epoch,
-            doc.get('ip_address'),
-            doc.get('severity'),
-            doc.get('age')
-        )
-        data_values.append(t)
+	t = (
+		#uuid,
+		doc.get('host'),
+		doc.get('service'),
+		machine_name,
+		doc.get('site'),
+		doc.get('ds'),
+		doc.get('data')[0].get('value'),
+		doc.get('data')[0].get('value'),
+		doc.get('data')[0].get('value'),
+		doc.get('data')[0].get('value'),
+		doc.get('meta').get('war'),
+		doc.get('meta').get('cric'),
+		local_time_epoch,
+		check_time_epoch,
+		doc.get('ip_address'),
+		doc.get('severity'),
+		doc.get('age')
+	)
+	data_values.append(t)
 	t=()
     if data_values:
-    	insert_data(configs.get('table_name'), data_values,configs=configs)
-    	print "Data inserted into my mysql db"
+	insert_data(configs.get('table_name'), data_values,configs=configs)
+	print "Data inserted into my mysql db"
     else:
-    	print "No data in mongo db in this time frame for table %s" % (configs.get('table_name'))
+	print "No data in mongo db in this time frame for table %s" % (configs.get('table_name'))
 
 def read_data(start_time, end_time, **kwargs):
     """
@@ -137,54 +137,6 @@ def read_data(start_time, end_time, **kwargs):
             docs.append(doc)
     return docs
 
-def build_data(doc):
-    """
-    Function to make tuples out of python dict,
-    data would be stored in mysql db in the form of python tuples
-
-    Args:
-	doc (dict): Single mongodb entry
-
-    Kwargs:
-
-    Returns:
-        A list of tuples, one tuple corresponds to a single row in mysql db
-    """
-    values_list = []
-    configs = config_module.parse_config_obj()
-    for config, options in configs.items():
-	    machine_name = options.get('machine')
-    local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
-    # Advancing local_timestamp/sys_timetamp to next 5 mins time frame
-    #local_time_epoch += 300
-    for entry in doc.get('data'):
-	check_time_epoch = utility_module.get_epoch_time(entry.get('time'))
-	if doc.get('ds') == 'rta':
-                rtmin = entry.get('min_value')
-                rtmax = entry.get('max_value')
-        else:
-                rtmin=rtmax=entry.get('value')
-        t = (
-       		#uuid,
-                doc.get('host'),
-                doc.get('service'),
-                machine_name,
-                doc.get('site'),
-                doc.get('ds'),
-                entry.get('value'),
-                rtmin,
-                rtmax,
-                entry.get('value'),
-                doc.get('meta').get('war'),
-                doc.get('meta').get('cric'),
-                local_time_epoch,
-                check_time_epoch,
-		doc.get('ip_address'),
-		doc.get('severity')
-	)
-       	values_list.append(t)
-        t = ()
-    return values_list
 
 def insert_data(table, data_values,**kwargs):
 	"""

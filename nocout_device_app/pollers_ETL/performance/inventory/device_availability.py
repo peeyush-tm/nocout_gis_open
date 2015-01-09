@@ -61,9 +61,10 @@ def device_availability_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 		query_string = "GET statehist\nColumns: host_name host_down host_address current_host_state\n"+ \
 		"Filter: host_name = %s\nFilter: service_description = %s\n" %(str(host),serv) + \
 		"Filter: time >= %s\nFilter: time < %s\nStats: sum duration\n" % (start_epoch,end_epoch) + \
-		"Stats: sum duration_part\nOutputFormat: json\n"
+		"Stats: sum duration_part\nOutputFormat: python\n"
 		
-		query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
+		query_output = utility_module.get_from_socket(site,query_string).strip()
+		query_output  =eval(query_output)
 		try:
 			if query_output[0][1] == '0':
 				total_up = (query_output[0][5]  * 100)
@@ -79,7 +80,8 @@ def device_availability_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 			else:
 				host_state = "down"
 			ds="availability"
-		except:
+		except Exception ,e:
+			print e
 			continue
 		current_time = int(time.time())
 		availability_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host),
@@ -105,8 +107,8 @@ def device_availability_main():
 		mongo_host = desired_config.get('host')
 		mongo_port = desired_config.get('port')
 		mongo_db_name = desired_config.get('nosql_db')
-		query = "GET hosts\nColumns: host_name host_services\nOutputFormat: json\n"
-		output = json.loads(utility_module.get_from_socket(site,query))
+		query = "GET hosts\nColumns: host_name host_services\nOutputFormat: python\n"
+		output = eval(utility_module.get_from_socket(site,query))
 		device_availability_data(site,output,mongo_host,int(mongo_port),mongo_db_name)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))

@@ -17,20 +17,23 @@ def main(**configs):
 	inventory_tables = ['nocout_inventory_service_perf_data']
 	events_tables = ['nocout_service_event_log','nocout_host_event_log']
 	for i in range(len(configs.get('mongo_conf'))):
-		db = mongo_module.mongo_conn(
-		host=configs.get('mongo_conf')[i][1],
-		port=int(configs.get('mongo_conf')[i][2]),
-		db_name=configs.get('nosql_db')
-                )  
-		collections = db.collection_names()
-		end_time =datetime.today() + timedelta(days=-7)
+		try:
+			db = mongo_module.mongo_conn(
+			host=configs.get('mongo_conf')[i][1],
+			port=int(configs.get('mongo_conf')[i][2]),
+			db_name=configs.get('nosql_db')
+                	)  
+			collections = db.collection_names()
+		except Exception as e:
+			print e
+		end_time =datetime.today() + timedelta(days=-2)
 		#start_time =datetime.today() + datetime.timedelta(days=-2)
 		#start_epoch = int(time.mktime(start_time.timetuple()))
     		end_epoch = int(time.mktime(end_time.timetuple()))
 	        for table in service_tables:
 			if table in collections:
 				try:
-					db[table].remove({"data":{ "$elemMatch": { "time" : {"$lt": end_time}}}})
+					db[table].remove({ "check_time" : {"$lt": end_time}})
 				except Exception as e:
 					print e
 		for table in interface_tables:
