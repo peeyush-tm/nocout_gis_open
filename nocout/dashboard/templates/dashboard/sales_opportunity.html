@@ -96,7 +96,6 @@
         App.init(); //Initialise plugins and elements
 
         sales_opportuniry_getChartData();
-        pmp_sector_getChartData();
         wimax_sector_getChartData();
     });
 
@@ -106,8 +105,8 @@
  * @method sales_opportuniry_getChartData
  */
 function sales_opportuniry_getChartData() {
-    {% if PMP %}
-    var response = {{ PMP|safe }}
+    {% if pmp_sales_opportunity %}
+    var response = {{ pmp_sales_opportunity|safe }}
     var pie_chart = $('#pmp_sales_opportunity').highcharts({
         chart: {
             plotBackgroundColor: null,
@@ -138,8 +137,8 @@ function sales_opportuniry_getChartData() {
     console.log('problem');
     {% endif %}
 
-    {% if WiMAX %}
-    var response = {{ WiMAX|safe }}
+    {% if wimax_sales_opportunity %}
+    var response = {{ wimax_sales_opportunity|safe }}
     var pie_chart = $('#wimax_sales_opportunity').highcharts({
         chart: {
             plotBackgroundColor: null,
@@ -169,55 +168,39 @@ function sales_opportuniry_getChartData() {
     {% else %}
     console.log('problem');
     {% endif %}
-}
 
-function pmp_sector_getChartData() {
-
-    $.ajax({
-        url : "{% url 'sector-capacity-pmp' %}",
-        type : "GET",
-        success : function(result) {
-            var response = "";
-            if(typeof result == 'string') {
-                response = JSON.parse(result);
-            } else {
-                response = result;
-            }
-
-            if(response.success == 1) {
-                var domElement = 'pmp_sector_capacity';
-                var pie_chart = $('#' + domElement).highcharts({
-                    chart: {
-                        plotBackgroundColor: null,
-                        plotBorderWidth: null,
-                        plotShadow: false
-                    },
-                    title: {
-                        // text: response.data.objects.chart_data[0].name
-                        text: ''
-                    },
-                    plotOptions: {
-                        pie: {
-                            allowPointSelect: true,
-                            cursor: 'pointer',
-                            dataLabels: {
-                                enabled: false,
-                            },
-                            showInLegend: true
-                        }
-                    },
-                    colors: response.data.objects.colors,
-                    series: [{
-                        type: 'pie',
-                        name: response.data.objects.display_name,
-                        data: response.data.objects.chart_data[0].data
-                    }],
-                });
-            } else {
-                console.log('unsuccess')
+    {% if pmp_sector_capacity %}
+    var response = {{ pmp_sector_capacity|safe }}
+    var pie_chart = $('#pmp_sector_capacity').highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false
+        },
+        title: {
+            // text: response.data.objects.chart_data[0].name
+            text: ''
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: false
+                },
+                showInLegend: true
             }
         },
+        series: [{
+            type: 'pie',
+            colors: response.data.objects.colors,
+            name: response.data.objects.display_name,
+            data: response.data.objects.chart_data[0].data
+        }]
     });
+    {% else %}
+    console.log('problem');
+    {% endif %}
 }
 
 function wimax_sector_getChartData() {

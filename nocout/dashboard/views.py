@@ -835,7 +835,6 @@ class SalesOpportunityMixin(object):
     To use this Mixin set `template_name` and implement method get_init_data to provide following attributes:
 
         - data_source_config
-        - technology
         - sector_method_to_call
         - devices_method_kwargs
     """
@@ -867,6 +866,7 @@ class SalesOpportunityMixin(object):
         result_dict = dict()
         for tech_name in tech:
             technology = DeviceTechnology.objects.get(name=tech_name).id
+            # convert the data source in format topology_pmp/topology_wimax
             data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
             try:
                 dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
@@ -886,10 +886,46 @@ class SalesOpportunityMixin(object):
                 range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
 
                 response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
-                result_dict.update({tech_name: json.dumps(response_dict)})
+                result_dict.update({'%s_sales_opportunity' %(tech_name.lower()): json.dumps(response_dict)})
 
+            if tech_name == 'PMP':
+                sector_capacity = self.get_pmp_sector_capacity(sector_devices)
+                if sector_capacity['success']:
+                    result_dict.update({'%s_sector_capacity' %(tech_name.lower()): json.dumps(sector_capacity)})
 
         return render(self.request, self.template_name, dictionary=result_dict)
+
+
+    def get_pmp_sector_capacity(self, sector_devices):
+        """
+        retunr the pie chart data for the pmp sector capacity.
+        """
+        pmp_data_source_config = {
+            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
+            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
+        }
+
+        data_source_list = pmp_data_source_config.keys()
+        user_devices = sector_devices
+
+        service_status_results = []
+        for data_source in data_source_list:
+            # Get Service Name from queried data_source
+            try:
+                service_name = pmp_data_source_config[data_source]['service_name']
+                model = pmp_data_source_config[data_source]['model']
+            except KeyError as e:
+                continue
+
+            service_status_results += get_service_status_results(
+                user_devices, model=model, service_name=service_name, data_source=data_source
+            )
+
+        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+
+        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
+
+        return response_dict
 
 
 class Main_Sales_Opportunity(SalesOpportunityMixin, View):
