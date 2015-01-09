@@ -269,7 +269,7 @@ def get_time():
     end_date = format(datetime.datetime.now(), 'U')
     start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
 
-    return start_date, end_date
+    return float(start_date), float(end_date)
 
 
 def get_average_sector_util(device_object, service, data_source, getit='val'):

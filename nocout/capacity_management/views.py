@@ -22,6 +22,12 @@ from nocout.settings import DATE_TIME_FORMAT
 
 from capacity_management.models import SectorCapacityStatus
 
+from performance.formulae import display_time
+
+import logging
+logger = logging.getLogger(__name__)
+
+
 def get_daily_alerts(request):
     """
     get request to render daily alerts pages.
@@ -327,6 +333,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         'sector__sector_configured_on__device_technology',
         'organization__alias',
         'severity',
+        'sys_timestamp',
         'age'
     ]
 
@@ -364,7 +371,7 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
         sectors = self.model.objects.filter(
             Q(organization__in=kwargs['organizations']),
             Q(severity__in=['warning', 'critical']),
-            Q(age__gte = F('sys_timestamp') - 600)
+            Q(age__lte = F('sys_timestamp') - 600)
         ).prefetch_related(*self.related_columns).values(*self.columns)
 
         return sectors
@@ -380,17 +387,17 @@ class SectorAugmentationAlertsListing(SectorStatusListing):
             try:
                 techno_name = technology_object.get(id=item['sector__sector_configured_on__device_technology']).alias
                 item['sector__sector_configured_on__device_technology'] = techno_name
-                item['age'] = float(item['age']) - float(item['sys_timestamp'])
+                item['age'] = display_time(float(item['sys_timestamp']) - float(item['age']))
 
-                if item['severity'].lower() == 'warning':
+                if item['severity'].strip().lower() == 'warning':
                     item['severity'] = "Needs Augmentation"
-                elif item['severity'].lower() == 'critical':
+                elif item['severity'].strip().lower() == 'critical':
                     item['severity'] = "Stop Provisioning"
                 else:
                     continue
 
-            except:
-                continue
+            except Exception as e:
+                logger.exception(e)
 
         return json_data
 
