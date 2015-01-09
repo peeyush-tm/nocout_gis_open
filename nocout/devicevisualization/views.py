@@ -2465,7 +2465,8 @@ class GISPerfData(View):
         # fetch all data sources
         SERVICE_DATA_SOURCE = service_data_sources()
 
-        if data_source and data_source[:1].isalpha():
+        # if data_source and data_source[:1].isalpha():
+        if data_source:
             title = " ".join(data_source.split("_")).title()
 
             key_name = service_name.strip() + "_" +data_source.strip()
@@ -2475,7 +2476,7 @@ class GISPerfData(View):
                 key_name = data_source.strip()
             else:
                 name = key_name
-                
+
             show_gis = 0
             try:
                 if data_source.strip().lower() not in ['pl', 'rta']:
