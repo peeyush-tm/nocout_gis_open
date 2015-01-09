@@ -2360,6 +2360,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     'bh_port': 0,
                     'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
                     'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
+                    'hssu_port': row['HSSU Port'] if 'HSSU Port' in row.keys() else "",
                     'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
                     'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
                     'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
@@ -3248,6 +3249,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     'backhaul': backhaul,
                     'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
                     'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
+                    'hssu_port': row['HSSU Port'] if 'HSSU Port' in row.keys() else "",
                     'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
                     'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
                     'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
@@ -7255,7 +7257,7 @@ def create_basestation(basestation_payload):
     # dictionary containing base station payload
     basestation_payload = basestation_payload
     # initializing variables
-    name, alias, bs_site_id, bs_site_type, bs_switch, backhaul, bs_type, bh_bso, hssu_used = [''] * 9
+    name, alias, bs_site_id, bs_site_type, bs_switch, backhaul, bs_type, bh_bso, hssu_used, hssu_port = [''] * 10
     latitude, longitude, infra_provider, gps_type, building_height, tower_height, country, state, city = [''] * 9
     bh_port_name, bh_port, bh_capacity, address, description = [''] * 5
 
@@ -7282,6 +7284,10 @@ def create_basestation(basestation_payload):
         bs_type = basestation_payload['bs_type'] if basestation_payload['bs_type'] else ""
     if 'bh_bso' in basestation_payload.keys():
         bh_bso = basestation_payload['bh_bso'] if basestation_payload['bh_bso'] else ""
+    if 'hssu_used' in basestation_payload.keys():
+        hssu_used = basestation_payload['hssu_used'] if basestation_payload['hssu_used'] else ""
+    if 'hssu_port' in basestation_payload.keys():
+        hssu_port = basestation_payload['hssu_port'] if basestation_payload['hssu_port'] else ""
     if 'switch_port' in basestation_payload.keys():
         switch_port = basestation_payload['switch_port'] if isinstance(basestation_payload['switch_port'], (int, float)) else ""
     if 'latitude' in basestation_payload.keys():
@@ -7387,6 +7393,12 @@ def create_basestation(basestation_payload):
                         basestation.hssu_used = hssu_used
                     except Exception as e:
                         logger.info("HSSU Used: ({} - {})".format(hssu_used, e.message))
+                # hssu port
+                if hssu_port:
+                    try:
+                        basestation.hssu_port = hssu_port
+                    except Exception as e:
+                        logger.info("HSSU Port: ({} - {})".format(hssu_port, e.message))
                 # latitude
                 if re.match(regex_lat_long, str(latitude).strip()):
                     try:
@@ -7556,6 +7568,12 @@ def create_basestation(basestation_payload):
                         basestation.hssu_used = hssu_used
                     except Exception as e:
                         logger.info("HSSU Used: ({} - {})".format(hssu_used, e.message))
+                # hssu port
+                if hssu_port:
+                    try:
+                        basestation.hssu_port = hssu_port
+                    except Exception as e:
+                        logger.info("HSSU Port: ({} - {})".format(hssu_port, e.message))
                 # latitude
                 if re.match(regex_lat_long, str(latitude).strip()):
                     try:
