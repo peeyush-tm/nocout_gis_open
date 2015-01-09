@@ -1,6 +1,7 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency, DeviceTypeService, DeviceTypeServiceDataSource
+    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency, DeviceTypeService, DeviceTypeServiceDataSource, \
+    DeviceSyncHistory
 from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory,  BaseInlineFormSet
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
@@ -967,4 +968,38 @@ DeviceTypeServiceDataSourceCreateFormset = inlineformset_factory(DeviceTypeServi
     formset=BaseDTSDataSourceFormset, extra=1, widgets=widgets, can_delete=True)
 DeviceTypeServiceDataSourceUpdateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource,
     formset=BaseDTSDataSourceFormset, extra=0, widgets=widgets, can_delete=True)
+
+
+# **************************** GIS Inventory Excel Download Update ******************************
+class DeviceSyncHistoryEditForm(forms.ModelForm):
+    """
+    Class Based View DeviceSyncHistory Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(DeviceSyncHistoryEditForm, self).__init__(*args, **kwargs)
+        self.fields['sync_by'].widget.attrs['readonly'] = True
+        self.fields['message'].widget.attrs['readonly'] = True
+        self.fields['added_on'].widget.attrs['readonly'] = True
+        self.fields['completed_on'].widget.attrs['readonly'] = True
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = DeviceSyncHistory
+        fields = ['message', 'description', 'sync_by', 'added_on', 'completed_on']
 

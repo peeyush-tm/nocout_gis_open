@@ -1,8 +1,8 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
 
-{% block content_title %}Edit GIS Inventory Excel{% endblock %}
-{% block content_description %}Edit gis downloaded inventory excel{% endblock %}
+{% block content_title %}Edit Device Sync History{% endblock %}
+{% block content_description %}Edit device sync history{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -10,7 +10,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> GIS INVENTORY EXCEL : {{ object.name }}</h4>
+                            <h4><i class="fa fa-bars"></i> DEVICE SYNC HISTORY : {{ object.name }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br />
@@ -34,7 +34,7 @@
                                             <div class="col-sm-offset-3 col-sm-9">
                                                 <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/gis_downloaded_inventories/')"><i class="fa fa-times"></i> Cancel</button>
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/device_sync_history/')"><i class="fa fa-times"></i> Cancel</button>
                                             </div>
                                         </div>
                                     </form>
@@ -51,6 +51,8 @@
     {% endblock %}
     <script>
         $(document).ready(function() {
+            $("label[for=id_message]").text('NMS Message');
+
             // Initialize the select2 selectbox.
             $(".select2select").select2();
             $('.tip-focus').tooltip({

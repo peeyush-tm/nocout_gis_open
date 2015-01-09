@@ -1,17 +1,12 @@
 from django.conf.urls import patterns, url
-from inventory import views
-from django.contrib.auth.decorators import permission_required
-from django.views.decorators.csrf import csrf_exempt
-
+import views
 
 urlpatterns = patterns('',
-                       url(r'^$', views.DownloadSelectedBSInventoryList.as_view(), name='gis_selected_bs_inventories_list'),
-                       url(r'^gis_selected_bs_inventories/$', csrf_exempt(views.DownloadSelectedBSInventory.as_view()),
-                           name='gis_selected_bs_inventories'),
-                       url(r'^gis_selected_bs_inventorieslistingtable/', views.DownloadSelectedBSInventoryListingTable.as_view(),
-                           name='DownloadSelectedBSInventoryListingTable'),
-                       url(r'^(?P<pk>\d+)/delete/$', views.DownloadSelectedBSInventoryDelete.as_view(),
-                           name='gis_selected_bs_inventories_delete'),
-                       url(r'^(?P<pk>\d+)/edit/$', views.DownloadSelectedBSInventoryUpdate.as_view(),
-                           name='gis_selected_bs_inventories_edit')
+                       url(r'^$', views.DeviceSyncHistoryList.as_view(), name='device_sync_history_list'),
+                       url(r'^devicesynchistorylistingtable/', views.DeviceSyncHistoryListingTable.as_view(),
+                           name='DeviceSyncHistoryListingTable'),
+                       url(r'^(?P<pk>\d+)/delete/$', views.DeviceSyncHistoryDelete.as_view(),
+                           name='device_sync_history_delete'),
+                       url(r'^(?P<pk>\d+)/edit/$', views.DeviceSyncHistoryUpdate.as_view(),
+                           name='device_sync_history_edit'),
 )

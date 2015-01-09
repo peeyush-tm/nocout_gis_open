@@ -4,6 +4,7 @@ import json
 from operator import itemgetter
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.contrib.auth.models import User
 from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -13,13 +14,13 @@ from django.core.urlresolvers import reverse_lazy, reverse
 from datetime import datetime
 from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType, DevicePort, Country, State, City, \
-    DeviceFrequency, DeviceTypeServiceDataSource, DeviceTypeService
+    DeviceFrequency, DeviceTypeServiceDataSource, DeviceTypeService, DeviceSyncHistory
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DevicePortForm, DeviceFrequencyForm, \
     CountryForm, StateForm, CityForm, DeviceTypeServiceCreateFormset, DeviceTypeServiceUpdateFormset, \
     WizardDeviceTypeForm, WizardDeviceTypeServiceForm, DeviceTypeServiceDataSourceCreateFormset, \
-    DeviceTypeServiceDataSourceUpdateFormset
-from nocout.utils.util import DictDiffer
+    DeviceTypeServiceDataSourceUpdateFormset, DeviceSyncHistoryEditForm
+from nocout.utils.util import DictDiffer, convert_utc_to_local_timezone
 from django.http.response import HttpResponseRedirect, HttpResponse
 from organization.models import Organization
 from service.models import Service
@@ -33,7 +34,7 @@ from nocout.utils import logged_in_user_organizations
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin, SuperUserRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, ValuesQuerySetMixin
 from nocout.mixins.select2 import Select2Mixin
 from django.db.models import Q
 from service.forms import DTServiceDataSourceUpdateFormSet
@@ -3587,3 +3588,152 @@ def filter_selected_device(request):
     return HttpResponse(json.dumps({
         'device_result': device_result
         }) )
+
+
+class DeviceSyncHistoryList(ListView):
+    """
+    Generic Class based View to List the DeviceSyncHistory.
+    """
+
+    model = DeviceSyncHistory
+    template_name = 'device_sync_history/device_sync_history_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        """
+        context = super(DeviceSyncHistoryList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
+            {'mData': 'message', 'sTitle': 'NMS Message', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },
+            {'mData': 'sync_by', 'sTitle': 'Requested By', 'sWidth': 'auto', },
+            {'mData': 'added_on', 'sTitle': 'Synced On Timestamp', 'sWidth': 'auto', },
+            {'mData': 'completed_on', 'sTitle': 'Request Completion Timestamp', 'sWidth': 'auto', },
+        ]
+
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    """
+    A generic class based view for the gis inventory bulk import data table rendering.
+
+    """
+    model = DeviceSyncHistory
+    columns = ['status', 'message', 'description', 'sync_by', 'added_on', 'completed_on']
+    order_columns = ['status', 'message', 'description', 'sync_by', 'added_on', 'completed_on']
+    search_columns = ['status', 'message', 'description', 'sync_by']
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
+
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        # queryset
+        queryset = DeviceSyncHistory.objects.filter(sync_by=self.request.user.username).values(*self.columns+['id'])
+
+        # if self.request.user.is_superuser:
+        #     queryset = DeviceSyncHistory.objects.filter().values(*self.columns+['id'])
+        return queryset
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            try:
+                # show 'Success', 'Pending' and 'Failed' in upload status
+                try:
+                    if not dct.get('status'):
+                        status_icon_color = "grey-dot"
+                        dct.update(status='<i class="fa fa-circle {0}"></i> Pending'.format(status_icon_color))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 0:
+                        status_icon_color = "grey-dot"
+                        dct.update(status='<i class="fa fa-circle {0}"></i> Pending'.format(status_icon_color))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 1:
+                        status_icon_color = "green-dot"
+                        dct.update(status='<i class="fa fa-circle {0}"></i> Success'.format(status_icon_color))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 2:
+                        status_icon_color = "red-dot"
+                        dct.update(status='<i class="fa fa-circle {0}"></i> Failed'.format(status_icon_color))
+                except Exception as e:
+                    logger.info(e.message)
+
+                # show user full name in uploded by field
+                try:
+                    if dct.get('sync_by'):
+                        user = User.objects.get(username=dct.get('sync_by'))
+                        dct.update(sync_by='{} {}'.format(user.first_name, user.last_name))
+                except Exception as e:
+                    logger.info(e.message)
+
+            except Exception as e:
+                logger.info(e)
+
+            # added on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            # completed on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['completed_on'] = convert_utc_to_local_timezone(dct['completed_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            dct.update(actions='<a href="/device_sync_history/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="/device_sync_history/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
+
+        return json_data
+
+
+class DeviceSyncHistoryDelete(DeleteView):
+    """
+    Class based View to delete the GISInventoryBulkImport
+    """
+    model = DeviceSyncHistory
+    template_name = 'device_sync_history/device_sync_history_delete.html'
+    success_url = reverse_lazy('device_sync_history_list')
+
+    def delete(self, request, *args, **kwargs):
+        device_sync_obj = self.get_object()
+
+        # delete entry from database
+        device_sync_obj.delete()
+        return HttpResponseRedirect(DeviceSyncHistoryDelete.success_url)
+
+
+class DeviceSyncHistoryUpdate(UpdateView):
+    """
+    Class based view to update GISInventoryBulkImport .
+    """
+    template_name = 'device_sync_history/device_sync_history_update.html'
+    model = DeviceSyncHistory
+    form_class = DeviceSyncHistoryEditForm
+    success_url = reverse_lazy('device_sync_history_list')

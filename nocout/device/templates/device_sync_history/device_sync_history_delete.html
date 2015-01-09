@@ -1,7 +1,7 @@
 {% extends "inventory/inventory.html" %}
 
-{% block content_title %}Reports{% endblock %}
-{% block content_description %}Delete a report ....{% endblock %}
+{% block content_title %}Device Sync History{% endblock %}
+{% block content_description %}Delete device sync history ....{% endblock %}
 {% block content %}
     <form action="" method="post">{% csrf_token %}
         <p>Are you sure you want to delete "{{ object }}" ?</p>
