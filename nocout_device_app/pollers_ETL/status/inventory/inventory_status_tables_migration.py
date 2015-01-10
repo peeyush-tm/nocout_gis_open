@@ -223,6 +223,7 @@ def insert_data(table, data_values, **kwargs):
 				raise mysql.connector.Error, err
     		db.commit()
     		cursor.close()
+	        db.close()
 
 
 

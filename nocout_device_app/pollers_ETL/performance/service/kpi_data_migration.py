@@ -26,7 +26,7 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    db = utility_module.mysql_conn(configs=configs)
+    #db = utility_module.mysql_conn(configs=configs)
     """
     start_time variable would store the latest time uptill which mysql
     table has an entry, so the data having time stamp greater than start_time
