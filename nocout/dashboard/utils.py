@@ -221,8 +221,9 @@ def get_topology_status_data(machine_device_list, machine, model, service_name, 
     """
     topology_status_data = model.objects.filter(
         device_name__in=machine_device_list,
-        service_name__icontains = service_name,
-        data_source = data_source,
+        # service_name__icontains = service_name,
+        # data_source = data_source,
+        data_source = 'topology',
     ).using(machine)
 
     return topology_status_data
@@ -240,7 +241,7 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
     status_results = []
     topology_status_results = model.objects.none()
     for machine, machine_device_list in machine_dict.items():
-        topology_status_results | get_topology_status_data(machine_device_list, machine=machine, model=model, service_name=service_name, data_source=data_source)
+        topology_status_results |= get_topology_status_data(machine_device_list, machine=machine, model=model, service_name=service_name, data_source=data_source)
 
     for sector in user_sector:
         ss_qs = topology_status_results.filter(sector_id=sector.sector_id).\
