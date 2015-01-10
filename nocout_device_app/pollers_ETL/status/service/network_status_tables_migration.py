@@ -74,7 +74,7 @@ def main(**configs):
     docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
     configs1 = config_module.parse_config_obj()
     for conf, options in configs1.items():
-            machine_name = options.get('machine')
+	machine_name = options.get('machine')
     for doc in docs:
         local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
         check_time_epoch = utility_module.get_epoch_time(doc.get('check_time'))
