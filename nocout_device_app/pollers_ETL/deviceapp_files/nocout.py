@@ -216,7 +216,7 @@ def addhost():
                 "error_code": 4,
                 "error_message": "hosts.mk is locked or some other message"
         })
-    logger.error('host could not be saved, flag value :' + pprint.pformat(flag))
+        logger.error('host could not be saved, flag value :' + pprint.pformat(flag))
         return response
     logger.debug('[-- addhost finish --]')
     return response
@@ -280,7 +280,7 @@ def addservice():
         if payload.get('cmd_params'):
             try:
                 cmd_params = ast.literal_eval(payload.get('cmd_params'))
-        logger.debug("cmd_params : " + pprint.pformat(cmd_params))
+                logger.debug("cmd_params : " + pprint.pformat(cmd_params))
                 for param, thresholds in cmd_params.items():
                     t = ()
                     if thresholds.get('warning') and thresholds.get('critical'):
@@ -288,11 +288,11 @@ def addservice():
                         t += (int(thresholds.get('critical')),)
                     else:
                         t = None
-        # Add device interfaces as check items, if passed in HTTP request
-        check_tuple = ([device_name], payload.get('service'), payload.get('interface'), t)
-        g_service_vars['checks'].insert(0, check_tuple)
+                        # Add device interfaces as check items, if passed in HTTP request
+                        check_tuple = ([device_name], payload.get('service'), payload.get('interface'), t)
+                        g_service_vars['checks'].insert(0, check_tuple)
             except Exception, e:
-        logger.error('Error in cmd_params : ' + pprint.pformat(e))
+                logger.error('Error in cmd_params : ' + pprint.pformat(e))
                 response.update({
                     "success": 0,
                     "message": "Service not added",
@@ -303,9 +303,9 @@ def addservice():
         if payload.get('serv_params'):
             try:
                 serv_params = ast.literal_eval((payload.get('serv_params')))
-        logger.debug('serv_params : ' + pprint.pformat(serv_params))
+                logger.debug('serv_params : ' + pprint.pformat(serv_params))
             except Exception, e:
-        logger.error('Error in serv_params : ' + pprint.pformat(e))
+                logger.error('Error in serv_params : ' + pprint.pformat(e))
                 response.update({
                     "success": 0,
                     "message": "Service not added",
@@ -327,8 +327,8 @@ def addservice():
 
         snmp_port_tuple = None
         if payload.get('snmp_port'):
-        snmp_port_tuple = (int(payload.get('snmp_port')), [], [device_name])
-        g_service_vars['snmp_ports'].append(snmp_port_tuple)
+            snmp_port_tuple = (int(payload.get('snmp_port')), [], [device_name])
+            g_service_vars['snmp_ports'].append(snmp_port_tuple)
         
         snmp_community = None
         if payload.get('snmp_community'):
@@ -440,10 +440,10 @@ def editservice():
     # Check for edit service templates
     if html.var('edit_servicetemplate'):
         logger.debug('cmd_params: ' + pprint.pformat(html.var('cmd_params')))
-            for param, thresholds in ast.literal_eval(html.var('cmd_params')).items():
-                    t = ()
-                    t += (int(thresholds.get('warning')),)
-                    t += (int(thresholds.get('critical')),)
+        for param, thresholds in ast.literal_eval(html.var('cmd_params')).items():
+                t = ()
+                t += (int(thresholds.get('warning')),)
+                t += (int(thresholds.get('critical')),)
         delete_host_rules(servicename=html.var('service_name'),
                 thresholds=t)
         logger.debug('thresholds:' + pprint.pformat(thresholds))
@@ -512,9 +512,9 @@ def editservice():
                         t = ()
                         t += (int(thresholds.get('warning')),)
                         t += (int(thresholds.get('critical')),)
-            # Add device interfaces as check items, if passed in HTTP request
-            check_tuple = ([device_name], payload.get('service'), payload.get('interface'), t)
-            g_service_vars['checks'].append(check_tuple)
+                # Add device interfaces as check items, if passed in HTTP request
+                check_tuple = ([device_name], payload.get('service'), payload.get('interface'), t)
+                g_service_vars['checks'].append(check_tuple)
             except Exception, e:
                 response.update({
                     "success": 0,
@@ -526,20 +526,20 @@ def editservice():
         serv_params = None
         if payload.get('serv_params'):
             try:
-            serv_params = ast.literal_eval(payload.get('serv_params'))
-            logger.debug('serv_params : ' + pprint.pformat(serv_params))
+                serv_params = ast.literal_eval(payload.get('serv_params'))
+                logger.debug('serv_params : ' + pprint.pformat(serv_params))
             except Exception, e:
-            response.update({
-                "success": 0,
-                "message": "Service not added",
-                "error_message": "serv_params " + pprint.pformat(e)
-            })
-            logger.error('Error in serv_params : ' + pprint.pformat(e))
-            return response
+                response.update({
+                    "success": 0,
+                    "message": "Service not added",
+                    "error_message": "serv_params " + pprint.pformat(e)
+                })
+                logger.error('Error in serv_params : ' + pprint.pformat(e))
+                return response
             for param, val in serv_params.items():
-            t = (val, [], [device_name], payload.get('service'))
-            g_service_vars['extra_service_conf'][param].append(t)
-            t = ()
+                t = (val, [], [device_name], payload.get('service'))
+                g_service_vars['extra_service_conf'][param].append(t)
+                t = ()
 
         snmp_port_tuple = None
         if payload.get('snmp_port'):
@@ -609,20 +609,20 @@ def deletehost():
     new_host = nocout_find_host(payload.get('host'))
 
     if not new_host:
-    # Get parent
-    mac, parent = get_parent(host=payload.get('host'), db=False)
-    if parent:
-        interface = mac
-        device_name = parent
+        # Get parent
+        mac, parent = get_parent(host=payload.get('host'), db=False)
+        if parent:
+            interface = mac
+            device_name = parent
         delete_host_rules(hostname=device_name, interface=interface)
         flag = write_new_host_rules()
         if not flag:
             response.update({
-                    "success": 0,
-                    "message": "Device Couldn't be deleted",
-                    "error_code": None,
-                    "error_message": "rules.mk is locked or some other message"
-            })
+                "success": 0,
+                "message": "Device Couldn't be deleted",
+                "error_code": None,
+                "error_message": "rules.mk is locked or some other message"
+                })
             return response
 
         g_host_vars['all_hosts'] = filter(lambda t: not re.match(payload.get('host'), t), g_host_vars['all_hosts'])
@@ -633,11 +633,11 @@ def deletehost():
         flag = save_host(hosts_file)
         if not flag:
             response.update({
-                    "success": 0,
-                    "message": "Device Couldn't be deleted",
-                    "error_code": None,
-                    "error_message": "hosts.mk is locked or some other message"
-            })
+                "success": 0,
+                "message": "Device Couldn't be deleted",
+                "error_code": None,
+                "error_message": "hosts.mk is locked or some other message"
+                })
     else:
         response.update({
             "success": 0,
@@ -835,8 +835,8 @@ def set_ping_levels(host, ping_levels=None):
         g_service_vars['bulkwalk_hosts'] = v2_hosts
 
     if ping_levels:
-                # Delete existing ping rules for that host, first
-                g_service_vars['ping_levels'] = filter(lambda t: host not in t[2], g_service_vars['ping_levels'])
+        # Delete existing ping rules for that host, first
+        g_service_vars['ping_levels'] = filter(lambda t: host not in t[2], g_service_vars['ping_levels'])
 
         ping_rule_set = ({
             'loss': ping_levels.get('loss'),
@@ -917,7 +917,7 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
             "normal_check_interval": []
         },
         "static_checks": {},
-        "active_checks": {},
+    "active_checks": {},
         "ping_levels": [],
         "checks": [],
         "snmp_ports": [],
@@ -950,22 +950,26 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
     if hostname is None:
         return
     if not servicename:
-    if interface:
-        g_service_vars['checks'] = map(lambda x: x, ifilterfalse(lambda t: hostname in t[0] and interface in t[2], g_service_vars['checks']))
-    else:
-        g_service_vars['ping_levels'] = filter(lambda t: hostname not in t[2], g_service_vars['ping_levels'])
-        g_service_vars['checks'] = filter(lambda t: hostname not in t[0], g_service_vars['checks'])
+        if interface:
+            g_service_vars['checks'] = map(lambda x: x, ifilterfalse(lambda t: hostname in t[0] and interface in t[2], g_service_vars['checks']))
+        else:
+            g_service_vars['ping_levels'] = filter(lambda t: hostname not in t[2], g_service_vars['ping_levels'])
+            g_service_vars['checks'] = filter(lambda t: hostname not in t[0], g_service_vars['checks'])
 
-        for serv_param, param_vals in g_service_vars['extra_service_conf'].items():
-            g_service_vars['extra_service_conf'][serv_param] = filter(lambda t: hostname not in t[2], param_vals)
+            for serv_param, param_vals in g_service_vars['extra_service_conf'].items():
+                g_service_vars['extra_service_conf'][serv_param] = filter(lambda t: hostname not in t[2], param_vals)
 
-        g_service_vars['snmp_ports'] = filter(lambda t: hostname not in t[2], g_service_vars['snmp_ports'])
-        g_service_vars['snmp_communities'] = filter(lambda t: hostname not in t[-1], g_service_vars['snmp_communities'])
+            g_service_vars['snmp_ports'] = filter(lambda t: hostname not in t[2], g_service_vars['snmp_ports'])
+            g_service_vars['snmp_communities'] = filter(lambda t: hostname not in t[-1], g_service_vars['snmp_communities'])
 
-        for check, check_vals in g_service_vars['static_checks'].items():
-            g_service_vars['static_checks'][check] = filter(lambda t: hostname not in t[2], check_vals)
-        for check, check_vals in g_service_vars['active_checks'].items():
-            g_service_vars['active_checks'][check] = filter(lambda t: hostname not in t[2], check_vals)
+            logger.debug('Before static_checks')
+            for check, check_vals in g_service_vars['static_checks'].items():
+                g_service_vars['static_checks'][check] = filter(lambda t: hostname not in t[2], check_vals)
+            logger.debug('After static_checks')
+            logger.debug('Before active_checks')
+            for check, check_vals in g_service_vars['active_checks'].items():
+                g_service_vars['active_checks'][check] = filter(lambda t: hostname not in t[2], check_vals)
+            logger.debug('After active_checks')
     else:
         if servicename.strip().lower() == 'ping':
             g_service_vars['ping_levels'] = filter(lambda t: hostname not in t[2], g_service_vars['ping_levels'])
@@ -974,16 +978,16 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
                 iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1] and interface in t[2], g_service_vars['checks'])
                 g_service_vars['checks'] = map(lambda x: x, iter_func)
         else:
-        logger.debug('Removing existing checks')
+                logger.debug('Removing existing checks')
                 iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1], g_service_vars['checks'])
                 g_service_vars['checks'] = map(lambda x: x, iter_func)
-        logger.debug('g_service_vars["checks"]' + pprint.pformat(g_service_vars['checks']))
+                logger.debug('g_service_vars["checks"]' + pprint.pformat(g_service_vars['checks']))
         
 
     for serv_param, param_vals in g_service_vars['extra_service_conf'].items():
                 iter_func = ifilterfalse(lambda t: hostname in t[2] and servicename in t[3], param_vals)
                 g_service_vars['extra_service_conf'][serv_param] = map(lambda x: x, iter_func)
-        logger.debug('extra service conf: ' + pprint.pformat(g_service_vars['extra_service_conf']))
+                logger.debug('extra service conf: ' + pprint.pformat(g_service_vars['extra_service_conf']))
     if not flag:
                 g_service_vars['snmp_ports'] = filter(lambda t: hostname not in t[2], g_service_vars['snmp_ports'])
                 g_service_vars['snmp_communities'] = filter(lambda t: hostname not in t[-1], g_service_vars['snmp_communities'])
@@ -1062,7 +1066,7 @@ def sync():
     nocout_create_sync_snapshot()
     try:
         f = os.system('~/bin/cmk -R')
-    logger.debug('f : '  + pprint.pformat(f))
+        logger.debug('f : '  + pprint.pformat(f))
     except Exception, e:
         logger.error('[sync]' + pprint.pformat(e))
     # Some syntax error with hosts.mk or rules.mk
@@ -1072,17 +1076,19 @@ def sync():
         nocout_rollback_action(nocout_sites, response)
         return response
     for site, attrs in nocout_sites.items():
-    logger.debug('site :' + pprint.pformat(site))
+        logger.debug('site :' + pprint.pformat(site))
         response_text = nocout_synchronize_site(site, attrs, True)
         if response_text is True:
             sites_affected.append(site)
     logger.info('sites_affected: ' + pprint.pformat(sites_affected))
     if len(sites_affected) == len(nocout_sites):
-    # Update the configuration database
-    make_hosts.update_configuration_db()
         response.update({
             "message": "Config pushed to " + ','.join(sites_affected)
         })
+        # Update the configuration database
+        sync_log_id = int(html.var('sync_obj_id')) if html.var('sync_obj_id') else None
+        generate_deviceapp_config.update_configuration_db(update_id=sync_log_id,
+                status=1, sync_message='Successful', detailed_message=response.get('message'))
     else:
         logger.info("Length of sites_affected and nocout_sites doesn't match")
         nocout_rollback_action(nocout_sites, response)
@@ -1091,22 +1097,27 @@ def sync():
 
 
 def nocout_rollback_action(nocout_sites, response):
-        # Untar the backup archive
-        nocout_untar_backup_folder()
-        # Generate a fresh snapshot
-            nocout_create_sync_snapshot()
-            os.system('~/bin/cmk -R')
-            for site, attrs in nocout_sites.items():
-                nocout_synchronize_site(site, attrs, True)
-            response.update({
-                "message": "Problem with the new config, old config retained",
-                "success": 1
+    # Untar the backup archive
+    nocout_untar_backup_folder()
+    # Generate a fresh snapshot
+    nocout_create_sync_snapshot()
+    os.system('~/bin/cmk -R')
+    for site, attrs in nocout_sites.items():
+        nocout_synchronize_site(site, attrs, True)
+        response.update({
+            "message": "Problem with the new config, old config retained",
+            "success": 1
             })
+    # Update the sync log table
+    sync_log_id = int(html.var('sync_obj_id')) if html.var('sync_obj_id') else None
+    generate_deviceapp_config.update_configuration_db(update_device_table=False,
+            update_id=sync_log_id, sync_message='Not Successful', status=2, 
+            detailed_message=response.get('message'))
 
 
 def nocout_untar_backup_folder():
     # Clean the wato folder first
-        os.chdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
+    os.chdir('/omd/sites/master_UA/etc/check_mk/conf.d/wato/')
     for entry in os.listdir('.'):
         if entry not in ['..', '.']:
             if os.path.isdir(entry):
@@ -1123,11 +1134,11 @@ def nocout_untar_backup_folder():
 
 def toggle_sync_flag(mode=True):
     try:
-            db = mysql.connector.connect(
-                user='root',
-                password='root',
-                host='localhost',
-                db='nocout_dev_27_08_14')
+        db = mysql.connector.connect(
+            user='root',
+            password='root',
+            host='localhost',
+            db='nocout_dev_27_08_14')
         cur = db.cursor()
         query = 'UPDATE service_sync_flag SET '
         if mode:
@@ -1178,11 +1189,11 @@ def nocout_push_snapshot_to_site(site, site_attrs, restart):
             response_text = upload_file(url, sync_snapshot_file, '')
     except:
         logger.debug('Slave site ' + pprint.pformat(site) + ' not running')
-            return "Garbled response from automation"
+        return "Garbled response from automation"
 
     try:
         response = eval(response_text)
-    logger.debug('Push to site : ' + pprint.pformat(site) + ' response ' + pprint.pformat(response))
+        logger.debug('Push to site : ' + pprint.pformat(site) + ' response ' + pprint.pformat(response))
         return response
     except:
         return "Garbled response from automation"
@@ -1353,13 +1364,13 @@ def delete_devicetype_tag(hostname=None, devicetype_tag=None):
     }
     try:
         execfile(hosts_file, local_host_vars, local_host_vars)
-    desired_host_row = filter(lambda t: re.match(hostname, t), local_host_vars['all_hosts'])
-    if desired_host_row:
-        remaining_hosts = filter(lambda t: not re.match(hostname, t), local_host_vars['all_hosts'])
-        for tag in devicetype_tag:
-            desired_host_row[0].replace(tag, '')
-        remaining_hosts.extend(desired_host_row)
-        save_host(hosts_file)
+        desired_host_row = filter(lambda t: re.match(hostname, t), local_host_vars['all_hosts'])
+        if desired_host_row:
+            remaining_hosts = filter(lambda t: not re.match(hostname, t), local_host_vars['all_hosts'])
+            for tag in devicetype_tag:
+                desired_host_row[0].replace(tag, '')
+            remaining_hosts.extend(desired_host_row)
+            save_host(hosts_file)
     except IOError, e:
         logger.error('Could not read hosts.mk for delete devicetype tag: ' + pprint.pformat(e))
 
@@ -1381,8 +1392,8 @@ def nocout_find_host(host):
     }
     try:
         execfile(hosts_file, local_host_vars, local_host_vars)
-    if filter(lambda t: re.match(host, t), local_host_vars['all_hosts']):
-        new_host = False
+        if filter(lambda t: re.match(host, t), local_host_vars['all_hosts']):
+            new_host = False
     except IOError, e:
         pass
 
