@@ -241,7 +241,6 @@ class DeviceSyncHistory(models.Model):
         """ On save, update timestamps """
         if not self.id:
             self.added_on = datetime.now()
-        self.completed_on = datetime.now()
         return super(DeviceSyncHistory, self).save(*args, **kwargs)
 
     def __unicode__(self):

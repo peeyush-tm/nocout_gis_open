@@ -294,6 +294,41 @@ function sync_devices_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
 
+
+// remove sync deadlock
+function remove_sync_deadlock() {
+    bootbox.dialog({
+        message: "Remove sync deadlock.",
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Remove sync deadlock. </span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                    Dajaxice.device.remove_sync_deadlock(sync_deadlock_message);
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    $(".bootbox").modal("hide");
+                }
+            }
+        }
+    });
+}
+
+
+// show message for sync deadlock removal
+function sync_deadlock_message(responseResult) {
+    bootbox.alert(responseResult.result.message, function() {
+        // reload page after clicking "OK!"
+        location = window.location.origin + "/device_sync_history/";
+        location.reload();
+    });
+}
+
 /*
 // add service to nms core
 function get_service_add_form(content) {
