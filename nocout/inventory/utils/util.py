@@ -292,4 +292,3 @@ def organization_sectors(organization, technology=None):
         sector_list = sector_list.filter(organization__in=organization)
 
     return sector_list
-

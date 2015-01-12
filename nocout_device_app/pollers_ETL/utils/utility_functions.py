@@ -1,5 +1,6 @@
 import socket
 import re
+import sys
 import mysql.connector
 import os
 from datetime import datetime,timedelta
@@ -21,7 +22,7 @@ def get_from_socket(site_name, query):
     try:
     	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     	s.connect(socket_path)
-    except Exception e:
+    except Exception,e:
         raise e
     s.settimeout(60.0)
     s.send(query)

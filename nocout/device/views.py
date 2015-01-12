@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import json
 from operator import itemgetter
 from django.core.exceptions import ValidationError
@@ -11,7 +10,7 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.core.urlresolvers import reverse_lazy, reverse
-from datetime import datetime
+from datetime import datetime, timedelta
 from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType, DevicePort, Country, State, City, \
     DeviceFrequency, DeviceTypeServiceDataSource, DeviceTypeService, DeviceSyncHistory
@@ -3604,17 +3603,41 @@ class DeviceSyncHistoryList(ListView):
 
         """
         context = super(DeviceSyncHistoryList, self).get_context_data(**kwargs)
+
+        deadlock_status = 'no'
+        try:
+            device_history_obj = DeviceSyncHistory.objects.latest('id')
+            if device_history_obj:
+                # current timestamp (with 'utc' as timezone)
+                current_timstamp = datetime.utcnow().replace(tzinfo=None)
+                # 'added_on' timestamp of last run of sync (with 'utc' as timezone)
+                added_on_time = device_history_obj.added_on.replace(tzinfo=None)
+                # current timestamp and added on timestamp difference
+                time_difference = datetime.utcnow() - added_on_time
+                # status of last run of sync
+                last_sync_status = device_history_obj.status
+
+                print "*********************** current_timstamp - ", current_timstamp.replace(tzinfo=None)
+                print "*********************** added_on_time - ", added_on_time
+                print "*********************** difference - ", time_difference
+                print "*********************** timedelta() - ", timedelta(minutes=30, seconds=0)
+                if last_sync_status == 0 and time_difference > timedelta(minutes=35, seconds=0):
+                        deadlock_status = 'yes'
+        except Exception as e:
+            pass
+
         datatable_headers = [
             {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
-            {'mData': 'message', 'sTitle': 'NMS Message', 'sWidth': 'auto', },
+            {'mData': 'message', 'sTitle': 'Response Message', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },
-            {'mData': 'sync_by', 'sTitle': 'Requested By', 'sWidth': 'auto', },
+            {'mData': 'sync_by', 'sTitle': 'Synced By', 'sWidth': 'auto', },
             {'mData': 'added_on', 'sTitle': 'Synced On Timestamp', 'sWidth': 'auto', },
-            {'mData': 'completed_on', 'sTitle': 'Request Completion Timestamp', 'sWidth': 'auto', },
+            {'mData': 'completed_on', 'sTitle': 'Sync Completion Timestamp', 'sWidth': 'auto', },
         ]
 
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            context['deadlock_status'] = deadlock_status
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -3683,6 +3706,14 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
                         dct.update(status='<i class="fa fa-circle {0}"></i> Failed'.format(status_icon_color))
                 except Exception as e:
                     logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 3:
+                        status_icon_color = "orange-dot"
+                        dct.update(status='<i class="fa fa-circle {0}"></i> Deadlock'.format(status_icon_color))
+                except Exception as e:
+                    logger.info(e.message)
+
 
                 # show user full name in uploded by field
                 try:

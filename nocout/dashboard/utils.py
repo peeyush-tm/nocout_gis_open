@@ -22,11 +22,26 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
     :param queue:
     :return:
     """
+    required_severity = ['warning','critical']
+    required_values = ['id',
+                        'device_name',
+                        'service_name',
+                        'ip_address',
+                        'data_source',
+                        'severity',
+                        'current_value',
+                        'warning_threshold',
+                        'critical_threshold',
+                        'sys_timestamp',
+                        'check_timestamp',
+                        'age'
+    ]
     service_status_data = model.objects.filter(
         device_name__in=machine_device_list,
         service_name__icontains = service_name,
         data_source = data_source,
-    ).using(machine).values('id', 'device_name', 'service_name', 'ip_address', 'data_source', 'severity', 'current_value', 'warning_threshold', 'critical_threshold', 'sys_timestamp', 'check_timestamp', 'age')
+        severity__in=required_severity
+    ).using(machine).values(*required_values)
 
     if queue:
         try:
@@ -40,6 +55,8 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
 def get_service_status_results(user_devices, model, service_name, data_source):
 
     unique_device_machine_list = {device.machine.name: True for device in user_devices}.keys()
+
+    service_status_results = None
 
     machine_dict = {}
     #Creating the machine as a key and device_name as a list for that machine.
@@ -66,12 +83,30 @@ def get_service_status_results(user_devices, model, service_name, data_source):
 
         while True:
             if not queue.empty():
-                service_status_results += queue.get()
+                if service_status_results:
+                    service_status_results |= queue.get()
+                else:
+                    service_status_results = queue.get()
             else:
                 break
     else:
         for machine, machine_device_list in machine_dict.items():
-            service_status_results += get_service_status_data(False, machine_device_list, machine=machine, model=model, service_name=service_name, data_source=data_source)
+            if service_status_results:
+                service_status_results |= get_service_status_data(False,
+                                                                  machine_device_list,
+                                                                  machine=machine,
+                                                                  model=model,
+                                                                  service_name=service_name,
+                                                                  data_source=data_source
+                )
+            else:
+                service_status_results = get_service_status_data(False,
+                                                                  machine_device_list,
+                                                                  machine=machine,
+                                                                  model=model,
+                                                                  service_name=service_name,
+                                                                  data_source=data_source
+                )
 
     return service_status_results
 
@@ -189,8 +224,9 @@ def get_topology_status_data(machine_device_list, machine, model, service_name, 
     """
     topology_status_data = model.objects.filter(
         device_name__in=machine_device_list,
-        service_name__icontains = service_name,
-        data_source = data_source,
+        # service_name__icontains = service_name,
+        # data_source = data_source,
+        data_source = 'topology',
     ).using(machine)
 
     return topology_status_data
@@ -208,7 +244,7 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
     status_results = []
     topology_status_results = model.objects.none()
     for machine, machine_device_list in machine_dict.items():
-        topology_status_results | get_topology_status_data(machine_device_list, machine=machine, model=model, service_name=service_name, data_source=data_source)
+        topology_status_results |= get_topology_status_data(machine_device_list, machine=machine, model=model, service_name=service_name, data_source=data_source)
 
     for sector in user_sector:
         ss_qs = topology_status_results.filter(sector_id=sector.sector_id).\

@@ -3,6 +3,17 @@
 
 {% block content_title %}Device Sync History{% endblock %}
 {% block content_description %}List of device sync history{% endblock %}
+{% block page_setting_block %}
+    <span class="pull-right">
+        <div class="btn-group">
+            {% if deadlock_status == 'yes' %}
+                <i class="red-dot">Sync Status: </i><a class="" href="#" onclick="remove_sync_deadlock();"><i class="fa fa-times-circle red-dot" title="Remove deadlock in sync process."></i></a>
+            {% else %}
+                <i class="green-dot">Sync Status: </i><a class=""><i class="fa fa-check-circle green-dot " title="No deadlock exist in sync process."></i></a>
+            {% endif %}
+        </div>
+    </span>
+{% endblock %}
 {% block content %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
@@ -21,6 +32,8 @@
 
 {% block jquery %}
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Custom Script for soft delete-->
+    <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
 
         $(document).ready(function (e) {
