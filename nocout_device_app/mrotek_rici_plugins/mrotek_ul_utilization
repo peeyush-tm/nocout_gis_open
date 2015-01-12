@@ -62,7 +62,7 @@ def check_mrotek_ul_utilization(item, _no_params, info):
 		except MKCounterWrapped:
 			wrapped=True
                 status_list.append(("ul_utilization","%.4f" % rate))
-                infotext = "ul_utilization: %s" % (link_out_octets)
+                infotext = "ul_utilization: %s" % (rate)
     except ValueError:
         infotext = "type_mismatch_error"
     except:
