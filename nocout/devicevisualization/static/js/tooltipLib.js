@@ -927,21 +927,21 @@ var pmp_ss_toolTip_polled = [
         'url'   : ''
 	},
     {
-        'name'  : '',
+        'name'  : 'cambium_port_auto_status_autonegotiation',
         'title' : 'Auto Negotiation',
         'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
-        'name'  : '',
+        'name'  : 'cambium_port_duplex_status_duplex',
         'title' : 'Duplex',
         'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
-        'name'  : '',
+        'name'  : 'cambium_port_speed_status_ss_speed',
         'title' : 'Speed',
         'show'  : 1,
         'value' : '',
