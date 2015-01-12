@@ -3617,12 +3617,8 @@ class DeviceSyncHistoryList(ListView):
                 # status of last run of sync
                 last_sync_status = device_history_obj.status
 
-                print "*********************** current_timstamp - ", current_timstamp.replace(tzinfo=None)
-                print "*********************** added_on_time - ", added_on_time
-                print "*********************** difference - ", time_difference
-                print "*********************** timedelta() - ", timedelta(minutes=30, seconds=0)
-                if last_sync_status == 0 and time_difference > timedelta(minutes=35, seconds=0):
-                        deadlock_status = 'yes'
+                if last_sync_status == 0 and time_difference > timedelta(minutes=30, seconds=0):
+                    deadlock_status = 'yes'
         except Exception as e:
             pass
 
