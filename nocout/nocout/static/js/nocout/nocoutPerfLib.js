@@ -568,7 +568,7 @@ function nocoutPerfLib() {
                             if(chart_config.chart_data.length > 0) {
                                 if(!$('#'+service_id+'_chart').highcharts()) {
                                     createHighChart_nocout(chart_config,service_id);
-                                    initChartDataTable_nocout("perf_data_table", chart_config.chart_data);
+                                    initChartDataTable_nocout("perf_data_table", chart_config.chart_data,service_id);
                                 } else {
                                     addPointsToChart_nocout(chart_config.chart_data,service_id);
                                 }

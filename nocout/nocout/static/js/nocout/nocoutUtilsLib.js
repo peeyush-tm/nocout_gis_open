@@ -117,6 +117,11 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
         grid_headers = headers,
         excel_columns = [];
 
+    if($("#"+table_id).length > 0) {
+        $("#"+table_id).html("");
+        $("#"+table_id).remove();
+    }
+
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
@@ -160,8 +165,14 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
  */
 function initChartDataTable_nocout(table_id, headers, service_id) {
 
-	var excel_columns = [],
-		data_in_table = "<table id='"+table_id+"' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
+	var excel_columns = [];
+
+    if($("#"+table_id).length > 0) {
+        $("#"+table_id).html("");
+        $("#"+table_id).remove();
+    }
+
+	var data_in_table = "<table id='"+table_id+"' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
     /*Make table headers*/
     for (var i = 0; i < headers.length; i++) {
         data_in_table += '<td colspan="2" align="center"><b>' + headers[i].name + '</b></td>';
@@ -356,6 +367,11 @@ function createTableHtml_nocout(dom_id, table_headers, table_data) {
 		grid_headers = table_headers,
 		table_id = dom_id ? dom_id : "table1";
 
+    if($("#"+table_id).length > 0) {
+        $("#"+table_id).html("");
+        $("#"+table_id).remove();
+    }
+
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
@@ -389,8 +405,15 @@ function createTableHtml_nocout(dom_id, table_headers, table_data) {
  */
 function createChartDataTableHtml_nocout(dom_id, chartObj) {
 
-	var table_id = dom_id ? dom_id : "table1",
-		data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
+	var table_id = dom_id ? dom_id : "table1";
+
+    if($("#"+table_id).length > 0) {
+        $("#"+table_id).html("");
+        $("#"+table_id).remove();
+    }
+
+    var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
+
     /*Make table headers*/
     for (var i = 0; i < chartObj.length; i++) {
         data_in_table += '<td colspan="2" align="center"><b>' + chartObj[i].name + '</b></td>';
