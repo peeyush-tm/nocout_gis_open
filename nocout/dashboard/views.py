@@ -641,71 +641,13 @@ class MainDashboard(View):
         :param request:
         :return Http response object:
         """
-        mfr_cause_code_chart = self.get_mfr_cause_code_chart_results()
-
-        mfr_processed_chart = self.get_mfr_processed_chart_results()
-
         sales_and_capacity_chart_result = self.get_sales_and_capacity_chart_result()
 
-        return render(self.request, self.template_name, dictionary=dict(
-                mfr_cause_code_chart = json.dumps(mfr_cause_code_chart),
-                mfr_processed_chart = json.dumps(mfr_processed_chart),
+        return render(self.request, self.template_name,
+                dictionary=dict(
                 sales_and_capacity_chart_result = sales_and_capacity_chart_result,
-            )
+                )
         )
-
-    def get_mfr_cause_code_chart_results(self):
-
-        mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
-
-        if mfr_reports.exists():
-            last_mfr_report = mfr_reports[0]
-        else:
-            return []
-
-        chart_data = []
-        results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
-        for result in results:
-            chart_data.append([
-                "%s : %s" % (result['processed_key'], result['processed_value']),
-                int(result['processed_value'])
-            ])
-        return chart_data
-
-    def get_mfr_processed_chart_results(self):
-        # Start Calculations for MFR Processed.
-        # Last 12 Months
-        year_before = datetime.date.today() - datetime.timedelta(days=365)
-        year_before = datetime.date(year_before.year, year_before.month, 1)
-
-        mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
-                'processed_key', 'processed_value', 'processed_for__process_for')
-
-        day = year_before
-        area_chart_categories = []
-        processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
-
-        while day <= datetime.date.today():
-            area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
-
-            processed_keys = processed_key_dict.keys()
-            for result in mfr_processed_results:
-                result_date = result['processed_for__process_for']
-                if result_date.year == day.year and result_date.month == day.month:
-                    processed_key_dict[result['processed_key']].append(int(result['processed_value']))
-                    processed_keys.remove(result['processed_key'])
-
-            # If no result is available for a processed_key put its value zero for (day.month, day.year)
-            for key in processed_keys:
-                processed_key_dict[key].append(0)
-
-            day += relativedelta.relativedelta(months=1)
-
-        area_chart_series = []
-        for key, value in processed_key_dict.items():
-            area_chart_series.append({'name': key, 'data': value})
-
-        return {'categories': area_chart_categories, 'series': area_chart_series}
 
     def get_sales_and_capacity_chart_result(self):
         """
@@ -1117,3 +1059,68 @@ class WIMAX_Temperature_Fan(MainDashboardMixin, View):
     down = False
     temperature = 'FAN'
     technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class MFRCauseCodeView(View):
+    """
+    """
+
+    def get(self, request):
+        mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
+
+        chart_data = []
+        if mfr_reports.exists():
+            last_mfr_report = mfr_reports[0]
+        else:
+            return HttpResponse(json.dumps({'result': chart_data}))
+
+        results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
+        for result in results:
+            chart_data.append([
+                "%s : %s" % (result['processed_key'], result['processed_value']),
+                int(result['processed_value'])
+            ])
+
+        return HttpResponse(json.dumps({'series': chart_data}))
+
+
+class MFRProcesedView(View):
+    """
+    """
+    def get(self, request):
+        # Start Calculations for MFR Processed.
+        # Last 12 Months
+        year_before = datetime.date.today() - datetime.timedelta(days=365)
+        year_before = datetime.date(year_before.year, year_before.month, 1)
+
+        mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
+                'processed_key', 'processed_value', 'processed_for__process_for')
+
+        day = year_before
+        area_chart_categories = []
+        processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
+
+        while day <= datetime.date.today():
+            area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
+
+            processed_keys = processed_key_dict.keys()
+            for result in mfr_processed_results:
+                result_date = result['processed_for__process_for']
+                if result_date.year == day.year and result_date.month == day.month:
+                    processed_key_dict[result['processed_key']].append(int(result['processed_value']))
+                    processed_keys.remove(result['processed_key'])
+
+            # If no result is available for a processed_key put its value zero for (day.month, day.year)
+            for key in processed_keys:
+                processed_key_dict[key].append(0)
+
+            day += relativedelta.relativedelta(months=1)
+
+        area_chart_series = []
+        for key, value in processed_key_dict.items():
+            area_chart_series.append({'name': key, 'data': value})
+
+        return HttpResponse(json.dumps({
+                            'categories': area_chart_categories,
+                            'series': area_chart_series
+                        }))

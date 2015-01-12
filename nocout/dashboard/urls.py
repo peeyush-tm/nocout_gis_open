@@ -49,4 +49,6 @@ urlpatterns = patterns('',
     url(r'^temperature-acb/wimax/$', views.WIMAX_Temperature_Acb.as_view(), name='temperatue-acb-wimax'),
     url(r'^temperature-fan/wimax/$', views.WIMAX_Temperature_Fan.as_view(), name='temperatue-fan-wimax'),
 
+    url(r'^cause-code/mfr/$', views.MFRCauseCodeView.as_view(), name='cause-code-mfr'),
+    url(r'^processed/mfr/$', views.MFRProcesedView.as_view(), name='processed-mfr'),
 )
