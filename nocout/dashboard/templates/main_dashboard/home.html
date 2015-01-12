@@ -122,6 +122,126 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Latency WiMAX</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="latency-wimax" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Latency PMP</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="latency-pmp" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Latency ALL</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="latency-all" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Packet Loss WiMAX</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="packet-loss-wimax" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Packet Loss PMP</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="packet-loss-pmp" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Packet Loss ALL</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="packet-loss-all" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Down WiMAX</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="down-wimax" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Down PMP</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="down-pmp" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Down ALL</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="down-all" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Temperature FAN WiMAX</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="temperature-fan-wimax" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Temperature ACB WiMAX</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="temperature-acb-wimax" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 box-container ui-sortable">
+                    <div class="box">
+                        <div class="box-title" style="background-color: transparent;">
+                            <h3>Temperature IDU WiMAX</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="temperature-idu-wimax" style="width: 300px; height: 200px; float: left"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -133,6 +253,9 @@
 
 <!--Highcharts Library-->
 <script src={% static "js/highcharts.js" %}></script>
+<script src={% static "js/highcharts-more.js" %}></script>
+<script src={% static "js/solid-gauge.js" %}></script>
+<script src={% static "js/no-data-to-display.js" %}></script>
 <!-- SPARKLINES -->
 <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
 <!-- Dashboard Custom CSS-->
@@ -146,6 +269,31 @@
 
         rf_getChartData();
         sales_and_capacity_getChartData();
+
+        // Get chart for latency of wimax.
+        get_speedometer_chart('/dashboard/latency/wimax/','#latency-wimax','Latency WiMAX');
+        // Get chart for latency of pmp.
+        get_speedometer_chart('/dashboard/latency/pmp/','#latency-pmp','Latency PMP');
+        // Get chart for latency of all.
+        get_speedometer_chart('/dashboard/latency/all/','#latency-all','Latency ALL');
+        // Get chart for packet loss of wimax.
+        get_speedometer_chart('/dashboard/packet_loss/wimax/','#packet-loss-wimax','Packet Loss WiMAX');
+        // Get chart for packet loss of pmp.
+        get_speedometer_chart('/dashboard/packet_loss/pmp/','#packet-loss-pmp','Packet Loss PMP');
+        // Get chart for packet loss of all.
+        get_speedometer_chart('/dashboard/packet_loss/all/','#packet-loss-all','Packet Loss ALL');
+        // Get chart for down of wimax.
+        get_speedometer_chart('/dashboard/down/wimax/','#down-wimax','Down WiMAX');
+        // Get chart for down of pmp.
+        get_speedometer_chart('/dashboard/down/pmp/','#down-pmp','Down PMP');
+        // Get chart for down of all.
+        get_speedometer_chart('/dashboard/down/all/','#down-all','Down ALL');
+        // Get chart for temperature-idu of wimax.
+        get_speedometer_chart('/dashboard/temperature-idu/wimax/','#temperature-idu-wimax','Temperature IDU WiMAX');
+        // Get chart for temperature-acb of wimax.
+        get_speedometer_chart('/dashboard/temperature-acb/wimax/','#temperature-acb-wimax','Temperature ACB WiMAX');
+        // Get chart for temperature-fan of wimax.
+        get_speedometer_chart('/dashboard/temperature-fan/wimax/','#temperature-fan-wimax','Temperature FAN WiMAX');
 
 
 /* START Area Spline Chart */
@@ -372,6 +520,113 @@ function sales_and_capacity_getChartData() {
     {% endif %}
 }
 
+// function for getting speedometer charts through ajax request.
+function get_speedometer_chart(ajax_url, div_id, div_text){
+    $.ajax({
+        url : ajax_url,
+        type : "GET",
+        success : function(result) {
+            var response = "";
+            if(typeof result == 'string') {
+                response = JSON.parse(result);
+            } else {
+                response = result;
+            }
 
+            var gaugeOptions = {
+                chart: {
+                    type: 'solidgauge'
+                },
+                title: null,
+                pane: {
+                    center: ['50%', '85%'],
+                    size: '140%',
+                    startAngle: -90,
+                    endAngle: 90,
+                    background: {
+                        backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                        innerRadius: '60%',
+                        outerRadius: '100%',
+                        shape: 'arc'
+                    }
+                },
+                tooltip: {
+                    enabled: false
+                },
+
+                // the value axis
+                yAxis: {
+                    stops: [
+                        [0.0, response['color']], // speedometer_color
+                    ],
+                    lineWidth: 0,
+                    minorTickInterval: null,
+                    tickPixelInterval: 400,
+                    tickWidth: 0,
+                    title: {
+                        y: -70
+                    },
+                    labels: {
+                        y: 16
+                    }
+                },
+                plotOptions: {
+                    solidgauge: {
+                        dataLabels: {
+                            y: 5,
+                            borderWidth: 0,
+                            useHTML: true
+                        }
+                    }
+                }
+            };
+            $(div_id).highcharts(Highcharts.merge(gaugeOptions, {
+                yAxis: {
+                    min: 0,
+                    max: 200,
+                    title: {
+                        text: div_text
+                    }
+                },
+
+                series: [{
+                    name: div_text,
+                    data: [response['data']],
+                    dataLabels: {
+                    format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                        ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                        '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                    },
+                    tooltip: {
+                        valueSuffix: ' revolutions/min'
+                    }
+                }],
+                lang: {
+                    noData: "Dashboard Setting is not available."
+                },
+                noData: {
+                    style: {
+                        fontWeight: 'bold',
+                        fontSize: '15px',
+                        color: '#8A739D'
+                    }
+                }
+            }));
+        },
+        error : function(err) {
+            hideSpinner();
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: div_title,
+                // (string | mandatory) the text inside the notification
+                text: err.statusText,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1500
+            });
+        },
+    });
+}
 </script>
 {% endblock %}
