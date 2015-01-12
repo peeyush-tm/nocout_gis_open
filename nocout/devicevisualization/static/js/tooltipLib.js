@@ -472,7 +472,7 @@ var ptp_ss_toolTip_polled = [
 	},
     {
         'name'  : 'session_uptime',
-        'title' : 'Session Uptime',
+        'title' : 'Last Down',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -927,21 +927,21 @@ var pmp_ss_toolTip_polled = [
         'url'   : ''
 	},
     {
-        'name'  : '',
+        'name'  : 'cambium_port_auto_status_autonegotiation',
         'title' : 'Auto Negotiation',
         'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
-        'name'  : '',
+        'name'  : 'cambium_port_duplex_status_duplex',
         'title' : 'Duplex',
         'show'  : 1,
         'value' : '',
         'url'   : ''
     },
     {
-        'name'  : '',
+        'name'  : 'cambium_port_speed_status_ss_speed',
         'title' : 'Speed',
         'show'  : 1,
         'value' : '',
@@ -1631,7 +1631,7 @@ var wimax_sector_toolTip_polled = [
     },
 	{
 		'name'  : 'wimax_bs_uptime_uptime',
-		'title' : 'Sector Uptime',
+		'title' : 'IDU Uptime',
         'show'  : 1,
         'value' : '',
         'url'   : ''

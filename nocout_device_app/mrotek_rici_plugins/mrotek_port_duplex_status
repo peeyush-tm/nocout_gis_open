@@ -33,18 +33,27 @@ def extract_port_duplex_status_from_live(hostname):
         """
 	port_duplex_list = []
         query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 
-			% ("mrotek_port_values",hostname)
-        
-	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.connect(livestatus_unix_socket)
-	query_output = json.loads(s.send(query).strip())
+			"service_description = %s\nFilter: host_name = %s\nOutputFormat: python\n" % ("mrotek_port_values",hostname)
+
+	try:
+		s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+		s.connect(livestatus_unix_socket)
+		s.send(query_string)
+		s.shutdown(socket.SHUT_WR)
+		query_output = s.recv(100000000)
+		query_output.strip("\n")
+		query_output = eval(query_output)
+	except:
+		port_duplex_list = []
+		return port_duplex_list
 	if query_output:
-		query_output = [entry for entry in query_output.split()]
-		port_duplex_list=filter(lambda x: x.split('=')[0],query_output)		
-	
+		try:
+			query_output = [str(entry) for entry in query_output[0][0].split(' - ')[1].split()]
+			port_duplex_list=map(lambda x: x.split('=')[1].split(',')[0],query_output)
+		except:
+			port_duplex_list = []
 	return port_duplex_list
-                                
+
 
 def check_mrotek_port_duplex_status(item, _no_params, info):
     """
@@ -72,10 +81,10 @@ def check_mrotek_port_duplex_status(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     status_list = []
-    port_string = "FE_"
+    port_string = "fe_"
     try:
 	infotext = ""	
-	duplex_list =extract_port_duplex_status_from_live(g_hostname, 23,num_port)
+	duplex_list =extract_port_duplex_status_from_live(g_hostname)
 	if duplex_list:
 		for index in range(len(duplex_list)):
 			status_list.append((port_string + str(index + 1),duplex_list[index]))
