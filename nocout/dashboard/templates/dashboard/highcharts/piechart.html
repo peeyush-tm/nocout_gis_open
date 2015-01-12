@@ -10,34 +10,42 @@ function highcharts_piechart(url, domElement){
                 response = result;
             }
 
-            if(response.series.length) {
-                var pie_chart = $(domElement).highcharts({
-                    chart: {
-                        plotBackgroundColor: null,
-                        plotBorderWidth: null,
-                        plotShadow: false
-                    },
-                    title: {
-                        // text: response.data.objects.chart_data[0].name
-                        text: ''
-                    },
-                    plotOptions: {
-                        pie: {
-                            allowPointSelect: true,
-                            cursor: 'pointer',
-                            dataLabels: {
-                                enabled: false
-                            },
-                            showInLegend: true
-                        }
-                    },
-                    series: [{
-                        type: 'pie',
-                        name: 'Processed Value',
-                        data: response.series
-                    }],
-                });
-            }
+            var pie_chart = $(domElement).highcharts({
+                chart: {
+                    plotBackgroundColor: null,
+                    plotBorderWidth: null,
+                    plotShadow: false
+                },
+                title: {
+                    // text: response.data.objects.chart_data[0].name
+                    text: ''
+                },
+                plotOptions: {
+                    pie: {
+                        allowPointSelect: true,
+                        cursor: 'pointer',
+                        dataLabels: {
+                            enabled: false
+                        },
+                        showInLegend: true
+                    }
+                },
+                series: [{
+                    type: 'pie',
+                    name: '',
+                    data: response.series
+                }],
+                lang: {
+                    noData: 'Data is not available.'
+                },
+                noData: {
+                    style: {
+                        fontWeight: 'bold',
+                        fontSize: '20px',
+                        color: '#539fb8',
+                    }
+                },
+            });
         },
     }); // ajax
 }

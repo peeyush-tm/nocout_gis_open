@@ -10,52 +10,60 @@ function highcharts_areachart(url, domElement){
                 response = result;
             }
 
-            if(response.series.length || response.categories.length) {
-                $(domElement).highcharts({
-                    chart: {
-                        type: 'areaspline'
-                    },
+            $(domElement).highcharts({
+                chart: {
+                    type: 'areaspline'
+                },
+                title: {
+                    text: 'MFR Processed'
+                },
+                legend: {
+                    layout: 'vertical',
+                    align: 'left',
+                    verticalAlign: 'top',
+                    x: 150,
+                    y: 100,
+                    floating: true,
+                    borderWidth: 1,
+                    backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+                },
+                xAxis: {
+                    categories: response.categories,
+                    plotBands: [{ // visualize the weekend
+                        from: 4.5,
+                        to: 6.5,
+                        color: 'rgba(68, 170, 213, .2)'
+                    }]
+                },
+                yAxis: {
                     title: {
-                        text: 'MFR Processed'
-                    },
-                    legend: {
-                        layout: 'vertical',
-                        align: 'left',
-                        verticalAlign: 'top',
-                        x: 150,
-                        y: 100,
-                        floating: true,
-                        borderWidth: 1,
-                        backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
-                    },
-                    xAxis: {
-                        categories: response.categories,
-                        plotBands: [{ // visualize the weekend
-                            from: 4.5,
-                            to: 6.5,
-                            color: 'rgba(68, 170, 213, .2)'
-                        }]
-                    },
-                    yAxis: {
-                        title: {
-                            text: 'Process Values'
-                        }
-                    },
-                    tooltip: {
-                        shared: true,
-                        valueSuffix: ' seconds'
-                    },
-                    credits: {
-                        enabled: false
-                    },
-                    plotOptions: {
-                        areaspline: {
-                            fillOpacity: 0.5
-                        }
-                    },
-                    series: response.series
-                });
-            }
+                        text: 'Process Values'
+                    }
+                },
+                tooltip: {
+                    shared: true,
+                    valueSuffix: ' seconds'
+                },
+                credits: {
+                    enabled: false
+                },
+                plotOptions: {
+                    areaspline: {
+                        fillOpacity: 0.5
+                    }
+                },
+                series: response.series,
+                lang: {
+                    noData: 'Data is not available.'
+                },
+                noData: {
+                    style: {
+                        fontWeight: 'bold',
+                        fontSize: '20px',
+                        color: '#539fb8',
+                    }
+                },
+            });
         }
     });
 }
