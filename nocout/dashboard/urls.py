@@ -51,4 +51,7 @@ urlpatterns = patterns('',
 
     url(r'^cause-code/mfr/$', views.MFRCauseCodeView.as_view(), name='cause-code-mfr'),
     url(r'^processed/mfr/$', views.MFRProcesedView.as_view(), name='processed-mfr'),
+
+    url(r'^sector-capacity/pmp/$', views.PMPSectorCapacity.as_view(), name='sector-capacity-pmp'),
+    url(r'^sector-capacity/wimax/$', views.WiMAXSectorCapacity.as_view(), name='sector-capacity-wimax'),
 )
