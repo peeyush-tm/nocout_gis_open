@@ -281,7 +281,6 @@ def organization_sectors(organization, technology=None):
     elif int(technology) == int(P2P.ID):
         organisation_sectors = Sector.objects.filter(
                                 organization__in=organization,
-                                sector_id__isnull=False,
                                 sector_configured_on__device_technology=technology,
                             ).annotate(total_sector=Count('sector_id'))
 
