@@ -51,7 +51,7 @@ def check_rici_ul_utilization(item, _no_params, info):
     wrapped = False
     infotext = "unknown_value"
     status_list = []
-    port_string = "FE_"
+    port_string = "fe_"
     try:
 	if info:
 		infotext = ""
