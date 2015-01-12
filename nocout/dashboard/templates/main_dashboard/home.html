@@ -150,6 +150,10 @@
                             domElement='#mfr_cause_code');
         highcharts_areachart(url="{% url 'processed-mfr' %}",
                             domElement='#id_mfr_processed');
+        highcharts_piechart(url="{% url 'sector-capacity-pmp' %}",
+                            domElement='#pmp_sector_capacity');
+        highcharts_piechart(url="{% url 'sector-capacity-wimax' %}",
+                            domElement='#wimax_sector_capacity');
         sales_and_capacity_getChartData();
 
     });
@@ -231,72 +235,6 @@ function sales_and_capacity_getChartData() {
     {% else %}
     $("#wimax_sales_opportunity").html('Corresponding dashboard setting is not available.');
     console.log('wimax sales opportunity problem');
-    {% endif %}
-
-    {% if sales_and_capacity_chart_result.pmp_sector_capacity %}
-    var response = {{ sales_and_capacity_chart_result.pmp_sector_capacity|safe }}
-    var pie_chart = $('#pmp_sector_capacity').highcharts({
-        chart: {
-            plotBackgroundColor: null,
-            plotBorderWidth: null,
-            plotShadow: false
-        },
-        title: {
-            // text: response.data.objects.chart_data[0].name
-            text: ''
-        },
-        plotOptions: {
-            pie: {
-                allowPointSelect: true,
-                cursor: 'pointer',
-                dataLabels: {
-                    enabled: false
-                },
-                showInLegend: true
-            }
-        },
-        series: [{
-            type: 'pie',
-            colors: response.data.objects.colors,
-            name: 'sector capacity',
-            data: response.data.objects.chart_data[0].data
-        }]
-    });
-    {% else %}
-    console.log('pmp sector capacity problem');
-    {% endif %}
-
-    {% if sales_and_capacity_chart_result.wimax_sector_capacity %}
-    var response = {{ sales_and_capacity_chart_result.wimax_sector_capacity|safe }}
-    var pie_chart = $('#wimax_sector_capacity').highcharts({
-        chart: {
-            plotBackgroundColor: null,
-            plotBorderWidth: null,
-            plotShadow: false
-        },
-        title: {
-            // text: response.data.objects.chart_data[0].name
-            text: ''
-        },
-        plotOptions: {
-            pie: {
-                allowPointSelect: true,
-                cursor: 'pointer',
-                dataLabels: {
-                    enabled: false
-                },
-                showInLegend: true
-            }
-        },
-        series: [{
-            type: 'pie',
-            colors: response.data.objects.colors,
-            name: 'sector capacity',
-            data: response.data.objects.chart_data[0].data
-        }]
-    });
-    {% else %}
-    console.log('wimax sector capacity problem');
     {% endif %}
 }
 
