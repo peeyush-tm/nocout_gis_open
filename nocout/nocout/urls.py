@@ -20,7 +20,7 @@ handler500 = 'nocout.views.handler500'
 handler403 = 'nocout.views.handler403'
 
 urlpatterns = patterns('',
-                       url(r'^$', RedirectView.as_view(url='login/')),
+                       url(r'^$', RedirectView.as_view(url='home/')),
                        url(r'^home/', MainDashboard.as_view(), name='home'),
                        url(r'^speedometer/', 'home.views.dashboard'),
                        url(r'^user/', include('user_profile.urls')),
