@@ -641,64 +641,8 @@ class MainDashboard(View):
         :param request:
         :return Http response object:
         """
-        sales_and_capacity_chart_result = self.get_sales_and_capacity_chart_result()
 
-        return render(self.request, self.template_name,
-                dictionary=dict(
-                sales_and_capacity_chart_result = sales_and_capacity_chart_result,
-                )
-        )
-
-    def get_sales_and_capacity_chart_result(self):
-        """
-        """
-        is_bh = False
-        tech = ['PMP', 'WiMAX']
-        data_source_config = {
-            'topology': {'service_name': 'topology', 'model': Topology},
-        }
-        sector_method_to_call = organization_sectors
-
-        data_source = data_source_config.keys()[0]
-        # Get Service Name from queried data_source
-        try:
-            service_name = data_source_config[data_source]['service_name']
-            model = data_source_config[data_source]['model']
-        except KeyError as e:
-            return render(self.request, self.template_name, dictionary=dict(data_source="", pie_chart=""))
-
-        # Get User's organizations
-        # (admin : organization + sub organization)
-        # (operator + viewer : same organization)
-        user_organizations = logged_in_user_organizations(self)
-
-        result_dict = dict()
-        for tech_name in tech:
-            technology = DeviceTechnology.objects.get(name=tech_name).id
-            # convert the data source in format topology_pmp/topology_wimax
-            data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
-            try:
-                dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
-            except DashboardSetting.DoesNotExist as e:
-                dashboard_setting = DashboardSetting.objects.none()
-
-            # Get Sector of User's Organizations. [and are Sub Station]
-            user_sector = sector_method_to_call(user_organizations, technology)
-            # Get device of User's Organizations. [and are Sub Station]
-            sector_devices = Device.objects.filter(id__in=user_sector.\
-                            values_list('sector_configured_on', flat=True))
-
-            service_status_results = get_topology_status_results(
-                sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
-            )
-            if dashboard_setting:
-                range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
-
-                response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
-                result_dict.update({'%s_sales_opportunity' %(tech_name.lower()): json.dumps(response_dict)})
-
-        return result_dict
-
+        return render(self.request, self.template_name, )
 
 class MainDashboardMixin(object):
     """
