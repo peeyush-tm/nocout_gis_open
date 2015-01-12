@@ -10,7 +10,7 @@ all ports status are sent to device application
 """
 
 # ####################################################################################
-# Function : check_rici_line_1_port_state
+# Function : check_mrotek_line1_port_state
 #
 #Parameters: info (SNMP output ) _no_params ( No Parameters)
 #
@@ -26,9 +26,9 @@ def port_state_value(st):
     return names.get(st)
 
 
-def check_rici_line_1_port_state(item, _no_params, info):
+def check_mrotek_line1_port_state(item, _no_params, info):
     """
-                check_rici_line_1_port_state function calculates the link ethernet status of the port 
+                check_mrotek_line1_port_state function calculates the link ethernet status of the port 
 
                 Args:
                         item (str) Specific item on SNMP output on which we want to filter results
@@ -55,25 +55,19 @@ def check_rici_line_1_port_state(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     port_state_list = []
-    port1_string = "logical_port1"
-    port2_string = "logical_port2"
+    port_string = "line1_state"
     port_state = None
     try:
 	if info[0][0]:
-		port1_state = info[0][0]
-		port2_state = info[0][1]
-		port1_state = port_state_value(str(port1_state))
-		port2_state = port_state_value(str(port2_state))
-		if port1_state == None:
-			port1_state = "unknown_port_state"
-		if port2_state == None:
-			port2_state = "unknown_port_state"
-		port_state_list.append((port1_string, port1_state))
-		port_state_list.append((port2_string, port2_state))
+		port_state = info[0][0]
+		port_state = port_state_value(str(port_state))
+		if port_state == None:
+			port_state = "unknown_port_state"
+		port_state_list.append((port_string, port_state))
 		state = 0
-		if int(info[0][0]) == 2 or int(info[0][1]) == 2:
+		if int(info[0][0]) == 2:
 			state =2
-                infotext = "[%s] %s [%s] %s"  % (port1_string, port1_state,port2_string, port2_state)
+                infotext = "[port %s] %s" % (port_string, port_state)
 
     except ValueError :	
         infotext = "type_mismatch_value"
@@ -83,11 +77,11 @@ def check_rici_line_1_port_state(item, _no_params, info):
     return (state, infotext, port_state_list)
 
 
-check_info["rici_line_1_port_state"] = {
-    'check_function': check_rici_line_1_port_state,
-    'service_description': 'rici_line_1_port_state',
+check_info["mrotek_line1_port_state"] = {
+    'check_function': check_mrotek_line1_port_state,
+    'service_description': 'mrotek_line1_port_state',
     'has_perfdata': True,
-    'snmp_info': ( ".1.3.6.1.2.1.2.2.1.8", ["31","32"] ),
+    'snmp_info': ( ".1.3.6.1.4.1.8886.6.1.1.4.1.1", ["6.1"] ),
 }
 
 #####################################################################
