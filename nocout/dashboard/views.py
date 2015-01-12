@@ -1133,3 +1133,72 @@ class WiMAXSectorCapacity(View):
         return HttpResponse(json.dumps({
                             'series': chart_data
                         }))
+
+
+#********************************************** main dashboard sector capacity ************************************************
+
+class SalesOpportunityMixin(object):
+    """
+    """
+    def get(self, request):
+        '''
+        '''
+        is_bh = False
+        tech_name = self.get_technology()
+
+        data_source_config = {
+            'topology': {'service_name': 'topology', 'model': Topology},
+        }
+
+        data_source = data_source_config.keys()[0]
+        # Get Service Name from queried data_source
+        service_name = data_source_config[data_source]['service_name']
+        model = data_source_config[data_source]['model']
+
+        organization = []
+        technology = DeviceTechnology.objects.get(name=tech_name).id
+        # convert the data source in format topology_pmp/topology_wimax
+        data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
+        except DashboardSetting.DoesNotExist as e:
+            dashboard_setting = DashboardSetting.objects.none()
+
+        chart_data = []
+        if dashboard_setting:
+            # Get Sector of User's Organizations. [and are Sub Station]
+            user_sector = organization_sectors(organization, technology)
+            # Get device of User's Organizations. [and are Sub Station]
+            sector_devices = Device.objects.filter(id__in=user_sector.\
+                            values_list('sector_configured_on', flat=True))
+
+            service_status_results = get_topology_status_results(
+                sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
+            )
+
+            range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
+
+            response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
+            chart_data = response_dict['data']['objects']['chart_data'][0]['data']
+
+        return HttpResponse(json.dumps({
+                            'series': chart_data,
+                        }))
+
+
+class PMPSalesOpportunity(SalesOpportunityMixin, View):
+    """
+    """
+    def get_technology(self):
+        tech_name = 'PMP'
+
+        return tech_name
+
+
+class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
+    """
+    """
+    def get_technology(self):
+        tech_name = 'WiMAX'
+
+        return tech_name

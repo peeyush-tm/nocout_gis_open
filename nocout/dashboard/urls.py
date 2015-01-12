@@ -54,4 +54,7 @@ urlpatterns = patterns('',
 
     url(r'^sector-capacity/pmp/$', views.PMPSectorCapacity.as_view(), name='sector-capacity-pmp'),
     url(r'^sector-capacity/wimax/$', views.WiMAXSectorCapacity.as_view(), name='sector-capacity-wimax'),
+
+    url(r'^sales-opportunity/pmp/$', views.PMPSalesOpportunity.as_view(), name='sales-opportunity-pmp'),
+    url(r'^sales-opportunity/wimax/$', views.WiMAXSalesOpportunity.as_view(), name='sales-opportunity-wimax'),
 )
