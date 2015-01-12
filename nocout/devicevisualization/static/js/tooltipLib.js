@@ -472,7 +472,7 @@ var ptp_ss_toolTip_polled = [
 	},
     {
         'name'  : 'session_uptime',
-        'title' : 'Session Uptime',
+        'title' : 'Last Down',
         'show'  : 1,
         'value' : '',
         'url'   : ''
