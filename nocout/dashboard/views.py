@@ -25,7 +25,7 @@ from inventory.utils.util import organization_customer_devices, organization_net
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
-    get_dashboard_status_sector_range_counter, get_pie_chart_json_response_sector_dict, \
+    get_dashboard_status_sector_range_counter, \
     get_topology_status_results
 from dashboard.config import dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
@@ -641,201 +641,8 @@ class MainDashboard(View):
         :param request:
         :return Http response object:
         """
-        mfr_cause_code_chart = self.get_mfr_cause_code_chart_results()
 
-        mfr_processed_chart = self.get_mfr_processed_chart_results()
-
-        sales_and_capacity_chart_result = self.get_sales_and_capacity_chart_result()
-
-        return render(self.request, self.template_name, dictionary=dict(
-                mfr_cause_code_chart = json.dumps(mfr_cause_code_chart),
-                mfr_processed_chart = json.dumps(mfr_processed_chart),
-                sales_and_capacity_chart_result = sales_and_capacity_chart_result,
-            )
-        )
-
-    def get_mfr_cause_code_chart_results(self):
-
-        mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
-
-        if mfr_reports.exists():
-            last_mfr_report = mfr_reports[0]
-        else:
-            return []
-
-        chart_data = []
-        results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
-        for result in results:
-            chart_data.append([
-                "%s : %s" % (result['processed_key'], result['processed_value']),
-                int(result['processed_value'])
-            ])
-        return chart_data
-
-    def get_mfr_processed_chart_results(self):
-        # Start Calculations for MFR Processed.
-        # Last 12 Months
-        year_before = datetime.date.today() - datetime.timedelta(days=365)
-        year_before = datetime.date(year_before.year, year_before.month, 1)
-
-        mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
-                'processed_key', 'processed_value', 'processed_for__process_for')
-
-        day = year_before
-        area_chart_categories = []
-        processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
-
-        while day <= datetime.date.today():
-            area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
-
-            processed_keys = processed_key_dict.keys()
-            for result in mfr_processed_results:
-                result_date = result['processed_for__process_for']
-                if result_date.year == day.year and result_date.month == day.month:
-                    processed_key_dict[result['processed_key']].append(int(result['processed_value']))
-                    processed_keys.remove(result['processed_key'])
-
-            # If no result is available for a processed_key put its value zero for (day.month, day.year)
-            for key in processed_keys:
-                processed_key_dict[key].append(0)
-
-            day += relativedelta.relativedelta(months=1)
-
-        area_chart_series = []
-        for key, value in processed_key_dict.items():
-            area_chart_series.append({'name': key, 'data': value})
-
-        return {'categories': area_chart_categories, 'series': area_chart_series}
-
-    def get_sales_and_capacity_chart_result(self):
-        """
-        """
-        is_bh = False
-        tech = ['PMP', 'WiMAX']
-        data_source_config = {
-            'topology': {'service_name': 'topology', 'model': Topology},
-        }
-        sector_method_to_call = organization_sectors
-
-        data_source = data_source_config.keys()[0]
-        # Get Service Name from queried data_source
-        try:
-            service_name = data_source_config[data_source]['service_name']
-            model = data_source_config[data_source]['model']
-        except KeyError as e:
-            return render(self.request, self.template_name, dictionary=dict(data_source="", pie_chart=""))
-
-        # Get User's organizations
-        # (admin : organization + sub organization)
-        # (operator + viewer : same organization)
-        user_organizations = logged_in_user_organizations(self)
-
-        result_dict = dict()
-        for tech_name in tech:
-            technology = DeviceTechnology.objects.get(name=tech_name).id
-            # convert the data source in format topology_pmp/topology_wimax
-            data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
-            try:
-                dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
-            except DashboardSetting.DoesNotExist as e:
-                dashboard_setting = DashboardSetting.objects.none()
-
-            # Get Sector of User's Organizations. [and are Sub Station]
-            user_sector = sector_method_to_call(user_organizations, technology)
-            # Get device of User's Organizations. [and are Sub Station]
-            sector_devices = Device.objects.filter(id__in=user_sector.\
-                            values_list('sector_configured_on', flat=True))
-
-            service_status_results = get_topology_status_results(
-                sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
-            )
-            if dashboard_setting:
-                range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
-
-                response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
-                result_dict.update({'%s_sales_opportunity' %(tech_name.lower()): json.dumps(response_dict)})
-
-            if tech_name == 'PMP':
-                sector_capacity = self.get_pmp_sector_capacity(sector_devices)
-                if sector_capacity['success']:
-                    result_dict.update({'%s_sector_capacity' %(tech_name.lower()): json.dumps(sector_capacity)})
-
-            if tech_name == 'WiMAX':
-                sector_capacity = self.get_wimax_sector_capacity(user_sector)
-                if sector_capacity['success']:
-                    result_dict.update({'%s_sector_capacity' %(tech_name.lower()): json.dumps(sector_capacity)})
-
-        return result_dict
-
-    def get_pmp_sector_capacity(self, sector_devices):
-        """
-        """
-        pmp_data_source_config = {
-            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
-            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
-        }
-
-        data_source_list = pmp_data_source_config.keys()
-        user_devices = sector_devices
-
-        service_status_results = []
-        for data_source in data_source_list:
-            # Get Service Name from queried data_source
-            service_name = pmp_data_source_config[data_source]['service_name']
-            model = pmp_data_source_config[data_source]['model']
-
-            service_status_results += get_service_status_results(
-                user_devices, model=model, service_name=service_name, data_source=data_source
-            )
-
-        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
-
-        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
-
-        return response_dict
-
-    def get_wimax_sector_capacity(self, user_sector):
-        """
-        """
-        wimax_data_source_config = {
-            'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': UtilizationStatus},
-            'pmp1_dl_util_kpi': {'service_name': 'wimax_pmp1_dl_util_kpi', 'model': UtilizationStatus},
-            'pmp2_ul_util_kpi': {'service_name': 'wimax_pmp2_ul_util_kpi', 'model': UtilizationStatus},
-            'pmp2_dl_util_kpi': {'service_name': 'wimax_pmp2_dl_util_kpi', 'model': UtilizationStatus},
-        }
-        # Get Sector of User's Organizations. [and are Sub Station]
-        user_sector_list = user_sector
-
-        port_dict = {
-            'pmp1': ['pmp1_ul_util_kpi', 'pmp1_dl_util_kpi'],
-            'pmp2': ['pmp2_ul_util_kpi', 'pmp2_dl_util_kpi'],
-        }
-
-        service_status_results = []
-        for port in port_dict.keys():
-
-            data_source_list = port_dict[port]
-            user_sector = user_sector_list.filter(sector_configured_on_port__name__icontains=port)
-
-            for data_source in data_source_list:
-                # Get Service Name from queried data_source
-                service_name = wimax_data_source_config[data_source]['service_name']
-                model = wimax_data_source_config[data_source]['model']
-
-                # Get device of User's Organizations. [and are Sub Station]
-                user_devices = Device.objects.filter(id__in=user_sector.\
-                                values_list('sector_configured_on', flat=True))
-
-                service_status_results += get_service_status_results(
-                    user_devices, model=model, service_name=service_name, data_source=data_source
-                )
-
-        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
-
-        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
-
-        return response_dict
-
+        return render(self.request, self.template_name, )
 
 class MainDashboardMixin(object):
     """
@@ -1117,3 +924,225 @@ class WIMAX_Temperature_Fan(MainDashboardMixin, View):
     down = False
     temperature = 'FAN'
     technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class MFRCauseCodeView(View):
+    """
+    """
+
+    def get(self, request):
+        mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
+
+        chart_data = []
+        if mfr_reports.exists():
+            last_mfr_report = mfr_reports[0]
+        else:
+            return HttpResponse(json.dumps({'result': chart_data}))
+
+        results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
+        for result in results:
+            chart_data.append([
+                "%s : %s" % (result['processed_key'], result['processed_value']),
+                int(result['processed_value'])
+            ])
+
+        return HttpResponse(json.dumps({'series': chart_data}))
+
+
+class MFRProcesedView(View):
+    """
+    """
+    def get(self, request):
+        # Start Calculations for MFR Processed.
+        # Last 12 Months
+        year_before = datetime.date.today() - datetime.timedelta(days=365)
+        year_before = datetime.date(year_before.year, year_before.month, 1)
+
+        mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
+                'processed_key', 'processed_value', 'processed_for__process_for')
+
+        day = year_before
+        area_chart_categories = []
+        processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
+
+        while day <= datetime.date.today():
+            area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
+
+            processed_keys = processed_key_dict.keys()
+            for result in mfr_processed_results:
+                result_date = result['processed_for__process_for']
+                if result_date.year == day.year and result_date.month == day.month:
+                    processed_key_dict[result['processed_key']].append(int(result['processed_value']))
+                    processed_keys.remove(result['processed_key'])
+
+            # If no result is available for a processed_key put its value zero for (day.month, day.year)
+            for key in processed_keys:
+                processed_key_dict[key].append(0)
+
+            day += relativedelta.relativedelta(months=1)
+
+        area_chart_series = []
+        for key, value in processed_key_dict.items():
+            area_chart_series.append({'name': key, 'data': value})
+
+        return HttpResponse(json.dumps({
+                            'categories': area_chart_categories,
+                            'series': area_chart_series
+                        }))
+
+#********************************************** main dashboard sector capacity ************************************************
+
+class PMPSectorCapacity(View):
+    """
+    """
+    def get(self, sector_devices):
+        pmp_data_source_config = {
+            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
+            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
+        }
+
+        organization = []
+        technology = DeviceTechnology.objects.get(name='PMP').id
+        sector_list = organization_sectors(organization, technology=technology)
+        sector_devices = Device.objects.filter(id__in=sector_list.\
+                            values_list('sector_configured_on', flat=True))
+
+        data_source_list = pmp_data_source_config.keys()
+
+        service_status_results = []
+        for data_source in data_source_list:
+            # Get Service Name from queried data_source
+            service_name = pmp_data_source_config[data_source]['service_name']
+            model = pmp_data_source_config[data_source]['model']
+
+            service_status_results += get_service_status_results(
+                sector_devices, model=model, service_name=service_name, data_source=data_source
+            )
+
+        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+
+        chart_data = []
+        for key,value in range_counter.items():
+            chart_data.append(['%s: %s' % (key, value), range_counter[key]])
+
+        return HttpResponse(json.dumps({
+                            'series': chart_data
+                        }))
+
+
+class WiMAXSectorCapacity(View):
+    """
+    """
+    def get(self, request):
+        wimax_data_source_config = {
+            'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': UtilizationStatus},
+            'pmp1_dl_util_kpi': {'service_name': 'wimax_pmp1_dl_util_kpi', 'model': UtilizationStatus},
+            'pmp2_ul_util_kpi': {'service_name': 'wimax_pmp2_ul_util_kpi', 'model': UtilizationStatus},
+            'pmp2_dl_util_kpi': {'service_name': 'wimax_pmp2_dl_util_kpi', 'model': UtilizationStatus},
+        }
+
+        organization = []
+        technology = DeviceTechnology.objects.get(name='WiMAX').id
+        sector_list = organization_sectors(organization, technology=technology)
+
+        port_dict = {
+            'pmp1': ['pmp1_ul_util_kpi', 'pmp1_dl_util_kpi'],
+            'pmp2': ['pmp2_ul_util_kpi', 'pmp2_dl_util_kpi'],
+        }
+
+        service_status_results = []
+        for port in port_dict.keys():
+
+            data_source_list = port_dict[port]
+            user_sector = sector_list.filter(sector_configured_on_port__name__icontains=port)
+
+            for data_source in data_source_list:
+                # Get Service Name from queried data_source
+                service_name = wimax_data_source_config[data_source]['service_name']
+                model = wimax_data_source_config[data_source]['model']
+
+                sector_devices = Device.objects.filter(id__in=user_sector.\
+                                values_list('sector_configured_on', flat=True))
+
+                service_status_results += get_service_status_results(
+                    sector_devices, model=model, service_name=service_name, data_source=data_source
+                )
+
+        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+
+        chart_data = []
+        for key,value in range_counter.items():
+            chart_data.append(['%s: %s' % (key, value), range_counter[key]])
+
+        return HttpResponse(json.dumps({
+                            'series': chart_data
+                        }))
+
+
+#********************************************** main dashboard sector capacity ************************************************
+
+class SalesOpportunityMixin(object):
+    """
+    """
+    def get(self, request):
+        '''
+        '''
+        is_bh = False
+        tech_name = self.get_technology()
+
+        data_source_config = {
+            'topology': {'service_name': 'topology', 'model': Topology},
+        }
+
+        data_source = data_source_config.keys()[0]
+        # Get Service Name from queried data_source
+        service_name = data_source_config[data_source]['service_name']
+        model = data_source_config[data_source]['model']
+
+        organization = []
+        technology = DeviceTechnology.objects.get(name=tech_name).id
+        # convert the data source in format topology_pmp/topology_wimax
+        data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
+        except DashboardSetting.DoesNotExist as e:
+            dashboard_setting = DashboardSetting.objects.none()
+
+        chart_data = []
+        if dashboard_setting:
+            # Get Sector of User's Organizations. [and are Sub Station]
+            user_sector = organization_sectors(organization, technology)
+            # Get device of User's Organizations. [and are Sub Station]
+            sector_devices = Device.objects.filter(id__in=user_sector.\
+                            values_list('sector_configured_on', flat=True))
+
+            service_status_results = get_topology_status_results(
+                sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
+            )
+
+            range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
+
+            response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
+            chart_data = response_dict['data']['objects']['chart_data'][0]['data']
+
+        return HttpResponse(json.dumps({
+                            'series': chart_data,
+                        }))
+
+
+class PMPSalesOpportunity(SalesOpportunityMixin, View):
+    """
+    """
+    def get_technology(self):
+        tech_name = 'PMP'
+
+        return tech_name
+
+
+class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
+    """
+    """
+    def get_technology(self):
+        tech_name = 'WiMAX'
+
+        return tech_name
