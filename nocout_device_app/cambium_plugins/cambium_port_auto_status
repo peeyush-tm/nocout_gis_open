@@ -56,15 +56,15 @@ def check_cambium_port_auto_status(item, _no_params, info):
     port_autoneg_value = None
     infotext = "unknown_value"
     try:
-	if info:
-	    port_stats = info[0][0]
+        if info:
+            port_stats = info[0][0]
             port_stats = port_string(str(port_stats))
             if port_stats == None:
                 port_autoneg_value = "unknown"
-	    elif 'auto' in port_stats:
-		port_autoneg_value = "enabled"
-	    elif 'force' in port_stats:
-		port_autoneg_value = "disabled"
+            elif 'auto' in port_stats:
+                port_autoneg_value = "enabled"
+            elif 'force' in port_stats:
+                port_autoneg_value = "disabled"
 		
             state = 0
             infotext = "%s" % (port_autoneg_value)
