@@ -1508,7 +1508,6 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                         contentHtml += "<div class='divide-20'></div>";
                         contentHtml += "<div id='perf_chart_table'></div>";
                         var chartConfig = result.data.objects.chart_data;
-                        
 
                         contentHtml += createChartDataTableHtml_nocout(
                             "perf_data_table",
@@ -1533,9 +1532,10 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                             aaSorting : [[0,'desc']],
                             sPaginationType: "full_numbers"
                         });
-
-                        // Create Chart
-                        createHighChart_nocout(result.data.objects,'perf_chart');
+                        if(chartConfig.length > 0) {
+                            // Create Chart
+                            createHighChart_nocout(result.data.objects,'perf');
+                        }
                     }
                 }
             },

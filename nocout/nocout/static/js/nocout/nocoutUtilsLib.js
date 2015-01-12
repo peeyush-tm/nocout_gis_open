@@ -354,17 +354,12 @@ function createTableHtml_nocout(dom_id, table_headers, table_data) {
 
 	var table_string = "",
 		grid_headers = table_headers,
-		table_id = dom_id ? dom_id : "table1",
-		colSpanStr = "";
-
-	if(isChart) {
-		colSpanStr = 'colspan="2"'
-	}
+		table_id = dom_id ? dom_id : "table1";
 
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
-        table_string += '<td '+colSpanStr+'><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
     }
 
     table_string += '</thead><tbody>';
