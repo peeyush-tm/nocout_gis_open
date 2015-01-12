@@ -146,6 +146,8 @@ def auth_view(request):
     if user is not None and user.is_active and (not already_logged or password_expire) and not user.userprofile.is_deleted:
         auth.login(request, user)
         next_url = '/' + request.POST.get('next', 'home/')
+        if 'logout' in next_url:
+            next_url = settings.LOGIN_REDIRECT_URL
         key_from_cookie = request.session.session_key
         objects_values = dict(dialog=True, url=next_url, user_id=user.id, username=user.username)
 
@@ -169,6 +171,8 @@ def auth_view(request):
 
         auth.login(request, user)
         next_url = '/' + request.POST.get('next', 'home/')
+        if 'logout' in next_url:
+            next_url = settings.LOGIN_REDIRECT_URL
         key_from_cookie = request.session.session_key
         if hasattr(request.user, 'visitor'):
             session_key_in_visitor_db = request.user.visitor.session_key
