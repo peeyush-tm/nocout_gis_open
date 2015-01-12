@@ -472,7 +472,7 @@ var ptp_ss_toolTip_polled = [
 	},
     {
         'name'  : 'session_uptime',
-        'title' : 'Session Uptime',
+        'title' : 'Last Down',
         'show'  : 1,
         'value' : '',
         'url'   : ''
@@ -1631,7 +1631,7 @@ var wimax_sector_toolTip_polled = [
     },
 	{
 		'name'  : 'wimax_bs_uptime_uptime',
-		'title' : 'Sector Uptime',
+		'title' : 'IDU Uptime',
         'show'  : 1,
         'value' : '',
         'url'   : ''
