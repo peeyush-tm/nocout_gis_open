@@ -1,7 +1,9 @@
 import json
+import datetime
+from dateutil import relativedelta
 
 from django.core.urlresolvers import reverse_lazy, reverse
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
@@ -11,16 +13,20 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from nocout.utils import logged_in_user_organizations
-from device.models import DeviceTechnology
-from performance.models import ServiceStatus, NetworkAvailabilityDaily
+from inventory.models import Sector
+from device.models import DeviceTechnology, Device
+from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, Topology, NetworkStatus
 
 #inventory utils
-from inventory.utils.util import organization_customer_devices, organization_network_devices
+from inventory.utils.util import organization_customer_devices, organization_network_devices,\
+    organization_sectors, prepare_machines
 #inventory utils
 
-from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed
+from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
-from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
+from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
+    get_dashboard_status_sector_range_counter, get_pie_chart_json_response_sector_dict, \
+    get_topology_status_results
 from dashboard.config import dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -119,6 +125,7 @@ class DashbaordSettingsCreateView(SuperUserRequiredMixin, CreateView):
         context = super(DashbaordSettingsCreateView, self).get_context_data(**kwargs)
         context['dashboards'] = json.dumps(dashboards)
         technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
         return context
 
@@ -144,6 +151,7 @@ class DashbaordSettingsUpdateView(SuperUserRequiredMixin, UpdateView):
         context = super(DashbaordSettingsUpdateView, self).get_context_data(**kwargs)
         context['dashboards'] = json.dumps(dashboards)
         technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
         return context
 
@@ -198,7 +206,7 @@ class PerformanceDashboardMixin(object):
             dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='rf_dashboard', name=data_source, is_bh=is_bh)
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
-                "message": "Corresponding dashboard seting is not available.",
+                "message": "Corresponding dashboard setting is not available.",
                 "success": 0
             }))
 
@@ -598,3 +606,514 @@ class MFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
     template_name = 'mfrdfr/mfr_dfr_reports_delete.html'
     success_url = reverse_lazy('mfr-reports-list')
     obj_alias = 'name'
+
+
+#**************************************** Main Dashbaord ***************************************#
+
+
+class MainDashboard(View):
+    """
+    The Class based View to return Main Dashboard.
+
+    Following are charts included in main-dashboard:
+
+        - WiMAX Sector Capicity
+        - PMP Sector Capicity
+        - WiMAX Sales Oppurtunity
+        - PMP Sales Oppurtunity
+        - WiMAX Backhaul Capicity
+        - PMP Backhaul Capicity
+        - Current Alarm (WiMAX, PMP, PTP BH and All)
+        - Network Latency (WiMAX, PMP, PTP BH and All)
+        - Packet Drop (WiMAX, PMP, PTP BH and All)
+        - Temperature (WiMAX, PMP, PTP BH and All)
+        - PTP RAP Backhaul
+        - City Charter
+        - MFR Cause Code
+        - MFR Processed
+    """
+    template_name = 'main_dashboard/home.html'
+
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
+        mfr_cause_code_chart = self.get_mfr_cause_code_chart_results()
+
+        mfr_processed_chart = self.get_mfr_processed_chart_results()
+
+        sales_and_capacity_chart_result = self.get_sales_and_capacity_chart_result()
+
+        return render(self.request, self.template_name, dictionary=dict(
+                mfr_cause_code_chart = json.dumps(mfr_cause_code_chart),
+                mfr_processed_chart = json.dumps(mfr_processed_chart),
+                sales_and_capacity_chart_result = sales_and_capacity_chart_result,
+            )
+        )
+
+    def get_mfr_cause_code_chart_results(self):
+
+        mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
+
+        if mfr_reports.exists():
+            last_mfr_report = mfr_reports[0]
+        else:
+            return []
+
+        chart_data = []
+        results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
+        for result in results:
+            chart_data.append([
+                "%s : %s" % (result['processed_key'], result['processed_value']),
+                int(result['processed_value'])
+            ])
+        return chart_data
+
+    def get_mfr_processed_chart_results(self):
+        # Start Calculations for MFR Processed.
+        # Last 12 Months
+        year_before = datetime.date.today() - datetime.timedelta(days=365)
+        year_before = datetime.date(year_before.year, year_before.month, 1)
+
+        mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
+                'processed_key', 'processed_value', 'processed_for__process_for')
+
+        day = year_before
+        area_chart_categories = []
+        processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
+
+        while day <= datetime.date.today():
+            area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
+
+            processed_keys = processed_key_dict.keys()
+            for result in mfr_processed_results:
+                result_date = result['processed_for__process_for']
+                if result_date.year == day.year and result_date.month == day.month:
+                    processed_key_dict[result['processed_key']].append(int(result['processed_value']))
+                    processed_keys.remove(result['processed_key'])
+
+            # If no result is available for a processed_key put its value zero for (day.month, day.year)
+            for key in processed_keys:
+                processed_key_dict[key].append(0)
+
+            day += relativedelta.relativedelta(months=1)
+
+        area_chart_series = []
+        for key, value in processed_key_dict.items():
+            area_chart_series.append({'name': key, 'data': value})
+
+        return {'categories': area_chart_categories, 'series': area_chart_series}
+
+    def get_sales_and_capacity_chart_result(self):
+        """
+        """
+        is_bh = False
+        tech = ['PMP', 'WiMAX']
+        data_source_config = {
+            'topology': {'service_name': 'topology', 'model': Topology},
+        }
+        sector_method_to_call = organization_sectors
+
+        data_source = data_source_config.keys()[0]
+        # Get Service Name from queried data_source
+        try:
+            service_name = data_source_config[data_source]['service_name']
+            model = data_source_config[data_source]['model']
+        except KeyError as e:
+            return render(self.request, self.template_name, dictionary=dict(data_source="", pie_chart=""))
+
+        # Get User's organizations
+        # (admin : organization + sub organization)
+        # (operator + viewer : same organization)
+        user_organizations = logged_in_user_organizations(self)
+
+        result_dict = dict()
+        for tech_name in tech:
+            technology = DeviceTechnology.objects.get(name=tech_name).id
+            # convert the data source in format topology_pmp/topology_wimax
+            data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
+            try:
+                dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
+            except DashboardSetting.DoesNotExist as e:
+                dashboard_setting = DashboardSetting.objects.none()
+
+            # Get Sector of User's Organizations. [and are Sub Station]
+            user_sector = sector_method_to_call(user_organizations, technology)
+            # Get device of User's Organizations. [and are Sub Station]
+            sector_devices = Device.objects.filter(id__in=user_sector.\
+                            values_list('sector_configured_on', flat=True))
+
+            service_status_results = get_topology_status_results(
+                sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
+            )
+            if dashboard_setting:
+                range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
+
+                response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
+                result_dict.update({'%s_sales_opportunity' %(tech_name.lower()): json.dumps(response_dict)})
+
+            if tech_name == 'PMP':
+                sector_capacity = self.get_pmp_sector_capacity(sector_devices)
+                if sector_capacity['success']:
+                    result_dict.update({'%s_sector_capacity' %(tech_name.lower()): json.dumps(sector_capacity)})
+
+            if tech_name == 'WiMAX':
+                sector_capacity = self.get_wimax_sector_capacity(user_sector)
+                if sector_capacity['success']:
+                    result_dict.update({'%s_sector_capacity' %(tech_name.lower()): json.dumps(sector_capacity)})
+
+        return result_dict
+
+    def get_pmp_sector_capacity(self, sector_devices):
+        """
+        """
+        pmp_data_source_config = {
+            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
+            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
+        }
+
+        data_source_list = pmp_data_source_config.keys()
+        user_devices = sector_devices
+
+        service_status_results = []
+        for data_source in data_source_list:
+            # Get Service Name from queried data_source
+            service_name = pmp_data_source_config[data_source]['service_name']
+            model = pmp_data_source_config[data_source]['model']
+
+            service_status_results += get_service_status_results(
+                user_devices, model=model, service_name=service_name, data_source=data_source
+            )
+
+        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+
+        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
+
+        return response_dict
+
+    def get_wimax_sector_capacity(self, user_sector):
+        """
+        """
+        wimax_data_source_config = {
+            'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': UtilizationStatus},
+            'pmp1_dl_util_kpi': {'service_name': 'wimax_pmp1_dl_util_kpi', 'model': UtilizationStatus},
+            'pmp2_ul_util_kpi': {'service_name': 'wimax_pmp2_ul_util_kpi', 'model': UtilizationStatus},
+            'pmp2_dl_util_kpi': {'service_name': 'wimax_pmp2_dl_util_kpi', 'model': UtilizationStatus},
+        }
+        # Get Sector of User's Organizations. [and are Sub Station]
+        user_sector_list = user_sector
+
+        port_dict = {
+            'pmp1': ['pmp1_ul_util_kpi', 'pmp1_dl_util_kpi'],
+            'pmp2': ['pmp2_ul_util_kpi', 'pmp2_dl_util_kpi'],
+        }
+
+        service_status_results = []
+        for port in port_dict.keys():
+
+            data_source_list = port_dict[port]
+            user_sector = user_sector_list.filter(sector_configured_on_port__name__icontains=port)
+
+            for data_source in data_source_list:
+                # Get Service Name from queried data_source
+                service_name = wimax_data_source_config[data_source]['service_name']
+                model = wimax_data_source_config[data_source]['model']
+
+                # Get device of User's Organizations. [and are Sub Station]
+                user_devices = Device.objects.filter(id__in=user_sector.\
+                                values_list('sector_configured_on', flat=True))
+
+                service_status_results += get_service_status_results(
+                    user_devices, model=model, service_name=service_name, data_source=data_source
+                )
+
+        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+
+        response_dict = get_pie_chart_json_response_sector_dict(data_source, range_counter)
+
+        return response_dict
+
+
+class MainDashboardMixin(object):
+    """
+    Provide common method get for Performance Dashboard.
+
+    To use this Mixin set `template_name` and implement method get_init_data to provide following attributes:
+
+        - data_source_config
+        - technology
+        - devices_method_to_call
+        - devices_method_kwargs
+    """
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
+        technology = self.technology
+        count = 0
+        status_list = []
+        device_list = []
+        count_range = ''
+        count_color = ''
+
+        # Get User's organizations
+        # (admin : organization + sub organization)
+        # (operator + viewer : same organization)
+        user_organizations = logged_in_user_organizations(self)
+
+        # Get Devices of User's Organizations and/or Sub Organization.
+        user_devices = organization_network_devices(user_organizations, technology)
+        # Get Sectors of technology.Technology is PMP or WIMAX or None(For All: PMP+WIMAX )
+        if technology:
+            sector_list = Sector.objects.filter(bs_technology=technology, sector_configured_on__in=user_devices)
+        else:
+            sector_list = Sector.objects.filter(sector_configured_on__in=user_devices)
+        # Get Devices of sector_list.
+        for sector in sector_list:
+            device_list.append(sector.sector_configured_on)
+
+        # Make device_list distinct and remove duplicate devices from list.
+        device_list = list(set(device_list))
+        #Get dictionary of machine and device list.
+        machine_dict = self.prepare_machines(device_list)
+
+        if technology:
+            technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
+        else:
+            technology_name = 'network'
+
+        if self.temperature:
+            dashboard_name = 'temperature'
+            if self.temperature == 'IDU':
+                service_list = ['wimax_bs_temperature_acb', 'wimax_bs_temperature_fan']
+                data_source_list = ['acb_temp', 'fan_temp']
+                severity_list = ['warning', 'critical', 'ok', 'unknown']
+            elif self.temperature == 'ACB':
+                service_list = ['wimax_bs_temperature_acb']
+                data_source_list = ['acb_temp']
+                severity_list = ['warning', 'critical']
+            elif self.temperature == 'FAN':
+                service_list = ['wimax_bs_temperature_fan']
+                data_source_list = ['fan_temp']
+                severity_list = ['warning', 'critical']
+
+            for machine_name, device_list in machine_dict.items():
+                status_list += ServiceStatus.objects.filter(device_name__in=device_list,
+                                            service_name__in=service_list,
+                                            data_source__in=data_source_list,
+                                            severity__in=severity_list).using(machine_name).annotate(Count('device_name'))
+        elif self.packet_loss:
+            dashboard_name = 'packetloss-%s'%technology_name
+            for machine_name, device_list in machine_dict.items():
+                status_list += NetworkStatus.objects.filter(device_name__in=device_list,
+                                            service_name='ping',
+                                            data_source='pl',
+                                            severity__in=['warning', 'critical', 'down'],
+                                            current_value__lt=100).using(machine_name).annotate(Count('device_name'))
+        elif self.down:
+            dashboard_name = 'down-%s'%technology_name
+            for machine_name, device_list in machine_dict.items():
+                status_list += NetworkStatus.objects.filter(device_name__in=device_list,
+                                            service_name='ping',
+                                            data_source='pl',
+                                            severity__in=['down'],
+                                            current_value__gte=100).using(machine_name).annotate(Count('device_name'))
+        else:
+            dashboard_name = 'latency-%s'%technology_name
+            for machine_name, device_list in machine_dict.items():
+                status_list += NetworkStatus.objects.filter(device_name__in=device_list,
+                                            service_name='ping',
+                                            data_source='rta',
+                                            severity__in=['warning', 'critical', 'down']).using(machine_name).annotate(Count('device_name'))
+
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
+        except DashboardSetting.DoesNotExist as e:
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard setting is not available.",
+                "success": 0
+            }))
+        count = len(status_list)
+
+        for i in range(1, 11):
+            start_range = getattr(dashboard_setting, 'range%d_start' %i)
+            end_range = getattr(dashboard_setting, 'range%d_end' %i)
+
+            # dashboard type is numeric and start_range and end_range exists to compare result.
+            if start_range and end_range:
+                if float(start_range) <= float(count) <= float(end_range):
+                    count_range = 'range%d' %i
+
+            #dashboard type is string and start_range exists to compare result.
+            elif dashboard_setting.dashboard_type == 'STR' and start_range:
+                if str(count).lower() in start_range.lower():
+                    count_range = 'range%d' %i
+
+        # get color of range in which count exists.
+        if count_range:
+            count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
+        else:
+            count_color = '#CED5DB' # For Unknown Range.
+
+        response_dict = {
+                "message": "Dashboard setting is successfully fetched to plot the graph.",
+                'dashboard name': dashboard_name,
+                'data': count,
+                'technology': technology,
+                'color': count_color,
+                'success':1
+                }
+
+        return HttpResponse(json.dumps(response_dict))
+
+    def prepare_machines(self, device_list_qs):
+        """
+        Return dict of machine name keys containing values of related devices list.
+
+        :param device_list_qs:
+        :return machine_dict:
+        """
+        unique_device_machine_list = {device.machine.name: True for device in device_list_qs}.keys()
+
+        machine_dict = {}
+        for machine in unique_device_machine_list:
+            machine_dict[machine] = [device.device_name for device in device_list_qs if device.machine.name == machine]
+        return machine_dict
+
+
+class WiMAX_Latency(MainDashboardMixin, View):
+    """
+    The Class based View to get Latency of WIMAX.
+
+    """
+    packet_loss = False
+    down = False
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class PMP_Latency(MainDashboardMixin, View):
+    """
+    The Class based View to get Latency of PMP.
+
+    """
+    packet_loss = False
+    down = False
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='PMP').id
+
+
+class ALL_Latency(MainDashboardMixin, View):
+    """
+    The Class based View to get Latency of All(WIMAX and PMP).
+
+    """
+    packet_loss = False
+    down = False
+    temperature = ''
+    technology = None
+
+
+class WIMAX_Packet_Loss(MainDashboardMixin, View):
+    """
+    The Class based View to get Packet Loss of WIMAX.
+
+    """
+    packet_loss = True
+    down = False
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class PMP_Packet_Loss(MainDashboardMixin, View):
+    """
+    The Class based View to get Packet Loss of PMP.
+
+    """
+    packet_loss = True
+    down = False
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='PMP').id
+
+
+class ALL_Packet_Loss(MainDashboardMixin, View):
+    """
+    The Class based View to get Packet Loss of All(WIMAX and PMP).
+
+    """
+    packet_loss = True
+    down = False
+    temperature = ''
+    technology = None
+
+
+class WIMAX_Down(MainDashboardMixin, View):
+    """
+    The Class based View to get down of WIMAX.
+
+    """
+    packet_loss = False
+    down = True
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class PMP_Down(MainDashboardMixin, View):
+    """
+    The Class based View to get down of WIMAX.
+
+    """
+    packet_loss = False
+    down = True
+    temperature = ''
+    technology = DeviceTechnology.objects.get(name__icontains='PMP').id
+
+
+class ALL_Down(MainDashboardMixin, View):
+    """
+    The Class based View to get down of WIMAX.
+
+    """
+    packet_loss = False
+    down = True
+    temperature = ''
+    technology = None
+
+
+class WIMAX_Temperature_Idu(MainDashboardMixin, View):
+    """
+    The Class based View to get Temperature-IDU of WIMAX.
+
+    """
+    packet_loss = False
+    down = False
+    temperature = 'IDU'
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class WIMAX_Temperature_Acb(MainDashboardMixin, View):
+    """
+    The Class based View to get Temperature-ACB of WIMAX.
+
+    """
+    packet_loss = False
+    down = False
+    temperature = 'ACB'
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
+
+
+class WIMAX_Temperature_Fan(MainDashboardMixin, View):
+    """
+    The Class based View to get Temperature-FAN of WIMAX.
+
+    """
+    packet_loss = False
+    down = False
+    temperature = 'FAN'
+    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id

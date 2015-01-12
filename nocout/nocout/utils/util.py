@@ -375,6 +375,7 @@ def query_all_gis_inventory_improved(monitored_only=False):
                         basestation.bs_type as BSTYPE,
                         basestation.bh_bso as BSBHBSO,
                         basestation.hssu_used as BSHSSUUSED,
+                        basestation.hssu_port as BSHSSUPORT,
                         basestation.latitude as BSLAT,
                         basestation.longitude as BSLONG,
 
@@ -689,6 +690,7 @@ def query_all_gis_inventory(monitored_only=False):
                         basestation.bs_type as BSTYPE,
                         basestation.bh_bso as BSBHBSO,
                         basestation.hssu_used as BSHSSUUSED,
+                        basestation.hssu_port as BSHSSUPORT,
                         basestation.latitude as BSLAT,
                         basestation.longitude as BSLONG,
 

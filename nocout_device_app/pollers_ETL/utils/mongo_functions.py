@@ -124,7 +124,7 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 				elif flag == "wimax_topology":
 					db.wimax_topology_data.update(matching_criteria,event_dict,upsert=True)
 				elif flag == "kpi_services":
-					db.kpi_data.update(matching_criteria,event_dict,upsert=True)
+					db.device_kpi_status.update(matching_criteria,event_dict,upsert=True)
 				elif flag == 'network_event_status':
 					db.network_event_status.update(matching_criteria, event_dict, upsert=True)
 				elif flag == 'service_event_status':

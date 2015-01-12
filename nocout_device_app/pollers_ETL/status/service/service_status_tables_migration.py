@@ -74,7 +74,7 @@ def main(**configs):
     docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
     configs1 = config_module.parse_config_obj()
     for conf, options in configs1.items():
-            machine_name = options.get('machine')
+	machine_name = options.get('machine')
     for doc in docs:
 	local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
     	# Advancing loca_timestamp/sys_timestamp to next 5 mins time frame
@@ -98,7 +98,7 @@ def main(**configs):
             doc.get('severity'),
 	    doc.get('age')
         )
-        data_values.append(t)
+	data_values.append(t)
 	t=()
 
     if data_values:
@@ -137,51 +137,6 @@ def read_data(start_time, end_time, **kwargs):
             docs.append(doc)
     return docs
 
-def build_data(doc):
-    """
-    Function to make tuples out of python dict,
-    data would be stored in mysql db in the form of python tuples
-
-    Args:
-	doc (dict): Single mongodb entry
-
-    Returns:
-        A list of tuples, one tuple corresponds to a single row in mysql db
-    """
-    values_list = []
-    #uuid = get_machineid()
-    configs = config_module.parse_config_obj()
-    for config, options in configs.items():
-	    machine_name = options.get('machine')
-    local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
-    # Advancing loca_timestamp/sys_timestamp to next 5 mins time frame
-
-    for entry in doc.get('data'):
-	if not entry:
-		continue
-	check_time_epoch = utility_module.get_epoch_time(entry.get('time'))
-    	local_time_epoch = check_time_epoch
-        t = (
-            #uuid,
-            doc.get('host'),
-            doc.get('service'),
-            machine_name,
-            doc.get('site'),
-            doc.get('ds'),
-            entry.get('value'),
-            entry.get('value'),
-            entry.get('value'),
-            entry.get('value'),
-            doc.get('meta').get('war'),
-            doc.get('meta').get('cric'),
-            local_time_epoch,
-            check_time_epoch,
-	    doc.get('ip_address'),
-	    doc.get('severity'),
-	)
-        values_list.append(t)
-        t = ()
-    return values_list
 
 def insert_data(table, data_values, **kwargs):
 	"""

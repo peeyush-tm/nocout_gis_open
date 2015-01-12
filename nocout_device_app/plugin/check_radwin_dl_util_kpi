@@ -74,7 +74,7 @@ def live_query_radwin_dl_util_kpi(hostname,site,war,crit,qos):
 			state = 1
 			state_string = "warning"
 		
-	perf += 'rad_dl_util_kpi' + "=%s;%s;%s " % (dl_kpi,war,crit)
+	perf += 'rad_dl_util_kpi' + "=%s;%s;%s;%s " % (dl_kpi,war,crit,qos)
     except Exception ,e:
 	perf = '' 
     plugin_message += "radwin_dl_util_kpi %s - %s|%s" % (state_string,dl_kpi,perf)
@@ -92,7 +92,7 @@ def  main():
         crit = sys.argv[4]
 	qos = sys.argv[5]
     except:
-        perf =''
+        perf =';;;%s ' % qos
         plugin_message += "radwin_dl_util_kpi %s - %s|%s" % (state_string,dl_util,perf)
         sys.exit((3))
 
