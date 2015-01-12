@@ -137,6 +137,8 @@
 <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
 <!-- Dashboard Custom CSS-->
 <script src={% static "js/nocout_dashboard.js" %}></script>
+<!-- no data for hicharts -->
+<script src="http://code.highcharts.com/modules/no-data-to-display.js"></script>
 
 <script>
     var ds_list = [];
@@ -144,97 +146,23 @@
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
 
-        rf_getChartData();
+        highcharts_piechart(url="{% url 'cause-code-mfr' %}",
+                            domElement='#mfr_cause_code');
+        highcharts_areachart(url="{% url 'processed-mfr' %}",
+                            domElement='#id_mfr_processed');
         sales_and_capacity_getChartData();
 
-
-/* START Area Spline Chart */
-    var mfr_processed_chart = {{ mfr_processed_chart|safe }};
-
-    $('#id_mfr_processed').highcharts({
-        chart: {
-            type: 'areaspline'
-        },
-        title: {
-            text: 'MFR Processed'
-        },
-        legend: {
-            layout: 'vertical',
-            align: 'left',
-            verticalAlign: 'top',
-            x: 150,
-            y: 100,
-            floating: true,
-            borderWidth: 1,
-            backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
-        },
-        xAxis: {
-            categories: mfr_processed_chart.categories,
-            plotBands: [{ // visualize the weekend
-                from: 4.5,
-                to: 6.5,
-                color: 'rgba(68, 170, 213, .2)'
-            }]
-        },
-        yAxis: {
-            title: {
-                text: 'Process Values'
-            }
-        },
-        tooltip: {
-            shared: true,
-            valueSuffix: ' seconds'
-        },
-        credits: {
-            enabled: false
-        },
-        plotOptions: {
-            areaspline: {
-                fillOpacity: 0.5
-            }
-        },
-        series: mfr_processed_chart.series
-    });
-/* End Area Spline Chart */
-
     });
 
+/* method for pie Chart
+highcharts_piechart(url, domElement); */
+{% include "dashboard/highcharts/piechart.html" %}
+/* End of method pie Chart */
 
-/**
- * This function draws pie chart for MFR Cause Code.
- * @method rf_getChartData
- */
-function rf_getChartData() {
-    {% if mfr_cause_code_chart %}
-    var chart_data = {{ mfr_cause_code_chart|safe }}
-    var pie_chart = $('#mfr_cause_code').highcharts({
-        chart: {
-            plotBackgroundColor: null,
-            plotBorderWidth: null,
-            plotShadow: false
-        },
-        title: {
-            // text: 'MFR Cause Code'
-            text: ''
-        },
-        plotOptions: {
-            pie: {
-                allowPointSelect: true,
-                cursor: 'pointer',
-                dataLabels: {
-                    enabled: false
-                },
-                showInLegend: true
-            }
-        },
-        series: [{
-            type: 'pie',
-            name: 'Processed Value',
-            data: chart_data
-        }]
-    });
-    {% endif %}
-}
+/* method for Area Spline Chart
+highcharts_areachart(url, domElement); */
+{% include "dashboard/highcharts/areachart.html" %}
+/* End of method Area Spline Chart */
 
 function sales_and_capacity_getChartData() {
     {% if sales_and_capacity_chart_result.pmp_sales_opportunity %}
@@ -264,7 +192,7 @@ function sales_and_capacity_getChartData() {
             colors: response.data.objects.colors,
             name: 'sales opportunity',
             data: response.data.objects.chart_data[0].data
-        }]
+        }],
     });
     {% else %}
     $("#pmp_sales_opportunity").html('Corresponding dashboard setting is not available.');

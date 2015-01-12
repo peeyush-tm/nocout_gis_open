@@ -1,0 +1,43 @@
+function highcharts_piechart(url, domElement){
+    $.ajax({
+        url : url,
+        type : "GET",
+        success : function(result) {
+            var response = "";
+            if(typeof result == 'string') {
+                response = JSON.parse(result);
+            } else {
+                response = result;
+            }
+
+            if(response.series.length) {
+                var pie_chart = $(domElement).highcharts({
+                    chart: {
+                        plotBackgroundColor: null,
+                        plotBorderWidth: null,
+                        plotShadow: false
+                    },
+                    title: {
+                        // text: response.data.objects.chart_data[0].name
+                        text: ''
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: false
+                            },
+                            showInLegend: true
+                        }
+                    },
+                    series: [{
+                        type: 'pie',
+                        name: 'Processed Value',
+                        data: response.series
+                    }],
+                });
+            }
+        },
+    }); // ajax
+}
