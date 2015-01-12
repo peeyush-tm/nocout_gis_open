@@ -37,15 +37,15 @@ def connection_telnet_for_mrotek_port_state(hostip, port):
 		plugin_message = ""
 		return plugin_message
 	tn.read_until("Login:")
-        tn.write("switch" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("switch" + "\r\n")
-        tn.write("enable" + "\r\n")
-        tn.read_until("Password:")
-        tn.write("switch" + "\r\n")
+	tn.write("switch" + "\r\n")
+	tn.read_until("Password:")
+	tn.write("switch" + "\r\n")
+	tn.write("enable" + "\r\n")
+	tn.read_until("Password:")
+	tn.write("switch" + "\r\n")
 	tn.write("show interface client \r\n" )
-        tn.write("exit\r\n")
-        data = tn.read_all()
+	tn.write("exit\r\n")
+	data = tn.read_all()
 	plugin_message = ""
 	index = 0
 	try:
