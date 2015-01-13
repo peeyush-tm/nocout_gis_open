@@ -335,8 +335,7 @@ function highcharts_piechart(url, domElement){
                     plotShadow: false
                 },
                 title: {
-                    // text: response.data.objects.chart_data[0].name
-                    text: ''
+                    text: response.data.objects.chart_data[0].title
                 },
                 plotOptions: {
                     pie: {
@@ -350,8 +349,8 @@ function highcharts_piechart(url, domElement){
                 },
                 series: [{
                     type: 'pie',
-                    name: '',
-                    data: response.series
+                    name: response.data.objects.chart_data[0].name,
+                    data: response.data.objects.chart_data[0].data
                 }],
                 lang: {
                     noData: 'Data is not available.'
