@@ -666,7 +666,7 @@ class MainDashboardMixin(object):
         status_list = []
         device_list = []
         count_range = ''
-        count_color = ''
+        count_color = '#CED5DB' # For Unknown Range.
 
         # Get User's organizations
         # (admin : organization + sub organization)
@@ -677,8 +677,10 @@ class MainDashboardMixin(object):
         user_devices = organization_network_devices(user_organizations, technology)
         # Get Sectors of technology.Technology is PMP or WIMAX or None(For All: PMP+WIMAX )
         if technology:
+            technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
             sector_list = Sector.objects.filter(bs_technology=technology, sector_configured_on__in=user_devices)
         else:
+            technology_name = 'network'
             sector_list = Sector.objects.filter(sector_configured_on__in=user_devices)
         # Get Devices of sector_list.
         for sector in sector_list:
@@ -688,11 +690,6 @@ class MainDashboardMixin(object):
         device_list = list(set(device_list))
         #Get dictionary of machine and device list.
         machine_dict = self.prepare_machines(device_list)
-
-        if technology:
-            technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
-        else:
-            technology_name = 'network'
 
         if self.temperature:
             dashboard_name = 'temperature'
@@ -752,7 +749,7 @@ class MainDashboardMixin(object):
             end_range = getattr(dashboard_setting, 'range%d_end' %i)
 
             # dashboard type is numeric and start_range and end_range exists to compare result.
-            if start_range and end_range:
+            if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
                 if float(start_range) <= float(count) <= float(end_range):
                     count_range = 'range%d' %i
 
@@ -764,8 +761,6 @@ class MainDashboardMixin(object):
         # get color of range in which count exists.
         if count_range:
             count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
-        else:
-            count_color = '#CED5DB' # For Unknown Range.
 
         dictionary = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
         response = get_highchart_response(dictionary)
