@@ -172,17 +172,20 @@ class AuthView(View):
             next_url = settings.LOGIN_REDIRECT_URL
         key_from_cookie = self.request.session.session_key
 
+        # get the user's auth token.
+        auth_token = self.get_auth_token(user)
+
         profile_status = self.userprofile_status(user)
         if profile_status['password_expire'] or not profile_status['already_logged']:
             objects_values = dict(dialog=True, url=next_url, user_id=user.id,
-                                username=user.username,)
+                                username=user.username, auth_token=auth_token)
             result = self.get_result(success=3, objects_values=objects_values,
                                     message="Logged in successfully.")
         else:
             pwd_exp_alert = profile_status['password_expire_alert']
             pwd_exp_on = profile_status['password_expires_on']
 
-            objects_values = dict(  url=next_url,
+            objects_values = dict(  url=next_url, auth_token=auth_token,
                                     password_expire_alert=pwd_exp_alert,
                                     password_expires_on=unicode(pwd_exp_on.date()) )
 
@@ -223,6 +226,19 @@ class AuthView(View):
 
         return {'already_logged': already_logged, 'password_expire': password_expire,
                 'password_expires_on': password_expires_on, 'password_expire_alert': password_expire_alert}
+
+    def get_auth_token(self, user):
+        '''
+        '''
+        obj, created = AuthToken.objects.get_or_create(user=user)
+        if created:
+            auth_token = obj.key
+        else:
+            AuthToken.objects.get(user=user).delete()
+            user_obj = AuthToken.objects.create(user=user)
+            auth_token = user_obj.key
+
+        return auth_token
 
     def update_userprofile(self, user_profile):
         '''
