@@ -743,7 +743,7 @@ class MainDashboardMixin(object):
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
                 "message": "Corresponding dashboard setting is not available.",
-                "success": 0
+                "success":0
             }))
         count = len(status_list)
 
@@ -767,16 +767,9 @@ class MainDashboardMixin(object):
         else:
             count_color = '#CED5DB' # For Unknown Range.
 
-        response_dict = {
-                "message": "Dashboard setting is successfully fetched to plot the graph.",
-                'dashboard name': dashboard_name,
-                'data': count,
-                'technology': technology,
-                'color': count_color,
-                'success':1
-                }
-
-        return HttpResponse(json.dumps(response_dict))
+        dictionary = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
+        response = get_highchart_response(dictionary)
+        return HttpResponse(response)
 
     def prepare_machines(self, device_list_qs):
         """
