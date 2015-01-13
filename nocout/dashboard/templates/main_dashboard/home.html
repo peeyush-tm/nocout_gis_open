@@ -316,12 +316,131 @@
 
 /* method for pie Chart
 highcharts_piechart(url, domElement); */
-{% include "dashboard/highcharts/piechart.html" %}
+function highcharts_piechart(url, domElement){
+    $.ajax({
+        url : url,
+        type : "GET",
+        success : function(result) {
+            var response = "";
+            if(typeof result == 'string') {
+                response = JSON.parse(result);
+            } else {
+                response = result;
+            }
+
+            var pie_chart = $(domElement).highcharts({
+                chart: {
+                    plotBackgroundColor: null,
+                    plotBorderWidth: null,
+                    plotShadow: false
+                },
+                title: {
+                    // text: response.data.objects.chart_data[0].name
+                    text: ''
+                },
+                plotOptions: {
+                    pie: {
+                        allowPointSelect: true,
+                        cursor: 'pointer',
+                        dataLabels: {
+                            enabled: false
+                        },
+                        showInLegend: true
+                    }
+                },
+                series: [{
+                    type: 'pie',
+                    name: '',
+                    data: response.series
+                }],
+                lang: {
+                    noData: 'Data is not available.'
+                },
+                noData: {
+                    style: {
+                        fontWeight: 'bold',
+                        fontSize: '20px',
+                        color: '#539fb8',
+                    }
+                },
+            });
+        },
+    }); // ajax
+}
+
 /* End of method pie Chart */
 
 /* method for Area Spline Chart
 highcharts_areachart(url, domElement); */
-{% include "dashboard/highcharts/areachart.html" %}
+function highcharts_areachart(url, domElement){
+    $.ajax({
+        url : url,
+        type : "GET",
+        success : function(result) {
+            var response = "";
+            if(typeof result == 'string') {
+                response = JSON.parse(result);
+            } else {
+                response = result;
+            }
+
+            $(domElement).highcharts({
+                chart: {
+                    type: 'areaspline'
+                },
+                title: {
+                    text: 'MFR Processed'
+                },
+                legend: {
+                    layout: 'vertical',
+                    align: 'left',
+                    verticalAlign: 'top',
+                    x: 150,
+                    y: 100,
+                    floating: true,
+                    borderWidth: 1,
+                    backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+                },
+                xAxis: {
+                    categories: response.categories,
+                    plotBands: [{ // visualize the weekend
+                        from: 4.5,
+                        to: 6.5,
+                        color: 'rgba(68, 170, 213, .2)'
+                    }]
+                },
+                yAxis: {
+                    title: {
+                        text: 'Process Values'
+                    }
+                },
+                tooltip: {
+                    shared: true,
+                    valueSuffix: ' seconds'
+                },
+                credits: {
+                    enabled: false
+                },
+                plotOptions: {
+                    areaspline: {
+                        fillOpacity: 0.5
+                    }
+                },
+                series: response.series,
+                lang: {
+                    noData: 'Data is not available.'
+                },
+                noData: {
+                    style: {
+                        fontWeight: 'bold',
+                        fontSize: '20px',
+                        color: '#539fb8',
+                    }
+                },
+            });
+        }
+    });
+}
 /* End of method Area Spline Chart */
 
 // function for getting speedometer charts through ajax request.
