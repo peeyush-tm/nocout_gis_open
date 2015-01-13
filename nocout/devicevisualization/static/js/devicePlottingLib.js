@@ -3309,17 +3309,17 @@ function devicePlottingClass_gmap() {
 						text_class = "";
 					if(actual_polled_info[i]["show"]) {
 
-						if(mbps_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
-							if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
-								actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" Mbps";
-							}
-						}
+						// if(mbps_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+						// 	if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
+						// 		actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" Mbps";
+						// 	}
+						// }
 
-						if(meter_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
-							if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
-								actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" m";
-							}
-						}
+						// if(meter_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+						// 	if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
+						// 		actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" m";
+						// 	}
+						// }
 
 						// Url
 						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
@@ -3445,17 +3445,17 @@ function devicePlottingClass_gmap() {
 						text_class = "";
 					if(actual_polled_info[i]["show"]) {
 						
-						if(mbps_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
-							if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
-								actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" Mbps";
-							}
-						}
+						// if(mbps_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+						// 	if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
+						// 		actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" Mbps";
+						// 	}
+						// }
 
-						if(meter_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
-							if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
-								actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" m";
-							}
-						}
+						// if(meter_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+						// 	if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
+						// 		actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" m";
+						// 	}
+						// }
 
 						// Url
 						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
