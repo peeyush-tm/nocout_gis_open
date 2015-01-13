@@ -1,5 +1,6 @@
 import json
 import datetime
+import calendar
 from dateutil import relativedelta
 
 from django.core.urlresolvers import reverse_lazy, reverse
@@ -21,6 +22,8 @@ from performance.models import ServiceStatus, NetworkAvailabilityDaily, Utilizat
 from inventory.utils.util import organization_customer_devices, organization_network_devices,\
     organization_sectors, prepare_machines
 #inventory utils
+
+from performance.utils.util import color_picker
 
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
@@ -954,22 +957,34 @@ class MFRProcesedView(View):
                 'processed_key', 'processed_value', 'processed_for__process_for')
 
         day = year_before
-        area_chart_categories = []
+        # area_chart_categories = []
         processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
-
+        processed_key_color = {result['processed_key']: color_picker() for result in mfr_processed_results}
         while day <= datetime.date.today():
-            area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
+            #area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
 
             processed_keys = processed_key_dict.keys()
             for result in mfr_processed_results:
                 result_date = result['processed_for__process_for']
                 if result_date.year == day.year and result_date.month == day.month:
-                    processed_key_dict[result['processed_key']].append(int(result['processed_value']))
+                    processed_key_dict[result['processed_key']].append({
+                        "color": processed_key_color[result['processed_key']],
+                        "y": int(result['processed_value']),
+                        "name": result['processed_key'],
+                        # "x": datetime.date.strftime(day, '%b %y'),
+                        "x": calendar.timegm(day.timetuple()),
+                    })
                     processed_keys.remove(result['processed_key'])
 
             # If no result is available for a processed_key put its value zero for (day.month, day.year)
             for key in processed_keys:
-                processed_key_dict[key].append(0)
+                processed_key_dict[key].append({
+                    "color": processed_key_color[key],
+                    "y": 0,
+                    "name": key,
+                    # "x": datetime.date.strftime(day, '%b %y'),
+                    "x": calendar.timegm(day.timetuple()),
+                })
 
             day += relativedelta.relativedelta(months=1)
 
@@ -977,10 +992,10 @@ class MFRProcesedView(View):
         for key, value in processed_key_dict.items():
             area_chart_series.append({'name': key, 'data': value})
 
-        return HttpResponse(json.dumps({
-                            'categories': area_chart_categories,
-                            'series': area_chart_series
-                        }))
+        response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
+            'title': 'MFR Processed', 'valuesuffix': 'seconds'})
+
+        return HttpResponse(response)
 
 #********************************************** main dashboard sector capacity ************************************************
 

@@ -403,22 +403,30 @@ function highcharts_areachart(url, domElement){
                         borderWidth: 1,
                         backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
                     },
-                    xAxis: {
-                        categories: response.categories,
-                        plotBands: [{ // visualize the weekend
-                            from: 4.5,
-                            to: 6.5,
-                            color: 'rgba(68, 170, 213, .2)'
-                        }]
-                    },
                     yAxis: {
                         title: {
                             text: 'Process Values'
                         }
                     },
+                    xAxis: {
+                        title: {
+                            text: "Month"
+                        },
+                        type: 'datetime',
+                        dateTimeLabelFormats: {
+                            millisecond: '%H:%M:%S.%L',
+                            second: '%H:%M:%S',
+                            minute: '%H:%M',
+                            hour: '%H:%M',
+                            day: '%e. %b',
+                            week: '%e. %b',
+                            month: '%b \'%y',
+                            year: '%Y'
+                        }
+                    },
                     tooltip: {
                         shared: true,
-                        valueSuffix: ' seconds'
+                        valueSuffix: response.data.objects.chart_data[0].valuesuffix
                     },
                     credits: {
                         enabled: false
@@ -428,7 +436,7 @@ function highcharts_areachart(url, domElement){
                             fillOpacity: 0.5
                         }
                     },
-                    series: response.series,
+                    series: response.data.objects.chart_data[0].data,
                     lang: {
                         noData: 'Data is not available.'
                     },
@@ -440,9 +448,9 @@ function highcharts_areachart(url, domElement){
                         }
                     },
                 });
-            }else{
-                $(domElement).html("<h4>Dashboard Setting is not available.</h4>");
-            }
+                }else{
+                    $(domElement).html("<h4>Dashboard Setting is not available.</h4>");
+                }
         }
     });
 }

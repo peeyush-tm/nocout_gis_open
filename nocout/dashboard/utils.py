@@ -283,6 +283,13 @@ def get_highchart_response(dictionary={}):
             "type": "gauge",
             "valuetext": ""
         }
+    elif dictionary['type'] == 'areaspline':
+        chart_data = {
+            'type': 'areaspline',
+            'title': dictionary['title'],
+            'valuesuffix': dictionary['valuesuffix'],
+            'data': dictionary['chart_series']
+        }
 
     return json.dumps({
         "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
