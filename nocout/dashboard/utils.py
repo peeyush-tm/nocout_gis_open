@@ -210,38 +210,6 @@ def get_dashboard_status_sector_range_counter(service_status_results):
     return range_counter
 
 
-def get_pie_chart_json_response_sector_dict(data_source, range_counter):
-
-    display_name = data_source.replace('_', ' ')
-    color_array = {'Needs Augmentation': "#FFE90D", 'Stop Provisioning': "#FF0022", 'Normal':"#99CC00", 'Unknown':"#ACB3BA"}
-
-    chart_data = []
-    colors = []
-    for key,value in range_counter.items():
-        chart_data.append(['%s: %s' % (key, value), range_counter[key]])
-        colors.append(color_array[key])
-
-    response_dict = {
-        "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
-        "data": {
-            "meta": {},
-            "objects": {
-                "plot_type": "charts",
-                "display_name": display_name,
-                "valuesuffix": "dB",
-                "colors": colors,
-                "chart_data": [{
-                    "type": 'pie',
-                    "name": display_name.upper(),
-                    "data": chart_data
-                }]
-            }
-        },
-        "success": 1
-    }
-    return response_dict
-
-
 #**************************** Sales Opportunity *********************#
 def get_topology_status_data(machine_device_list, machine, model, service_name, data_source):
     """

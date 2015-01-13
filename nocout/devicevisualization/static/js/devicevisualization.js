@@ -72,7 +72,17 @@ if(window.location.pathname.indexOf("white_background") > -1) {
     }
     
 }
-//$.cookie("isLabelChecked", 1, {path: '/', secure : true});
+
+// Set Global Option for Highcharts after 1.5 seconds
+setTimeout(function() {
+    if(window.Highcharts) {
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
+    }
+},1500);
 
 /*Call get_page_status function to show the current status*/
 get_page_status();
@@ -1508,7 +1518,6 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                         contentHtml += "<div class='divide-20'></div>";
                         contentHtml += "<div id='perf_chart_table'></div>";
                         var chartConfig = result.data.objects.chart_data;
-                        
 
                         contentHtml += createChartDataTableHtml_nocout(
                             "perf_data_table",
@@ -1533,9 +1542,10 @@ $('#infoWindowContainer').delegate('td.text-primary','click',function(e) {
                             aaSorting : [[0,'desc']],
                             sPaginationType: "full_numbers"
                         });
-
-                        // Create Chart
-                        createHighChart_nocout(result.data.objects,'perf_chart');
+                        if(chartConfig.length > 0) {
+                            // Create Chart
+                            createHighChart_nocout(result.data.objects,'perf');
+                        }
                     }
                 }
             },

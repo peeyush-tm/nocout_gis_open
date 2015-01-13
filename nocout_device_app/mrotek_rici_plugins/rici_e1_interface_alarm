@@ -59,7 +59,7 @@ def check_rici_e1_interface_alarm(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     interface_status_list = []
-    interface_string = "E1_"
+    interface_string = "e1_"
     try:
 	interface_status_list = []
         infotext = ""
