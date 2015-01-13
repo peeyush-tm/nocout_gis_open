@@ -316,12 +316,144 @@
 
 /* method for pie Chart
 highcharts_piechart(url, domElement); */
-{% include "dashboard/highcharts/piechart.html" %}
+function highcharts_piechart(url, domElement){
+    $.ajax({
+        url : url,
+        type : "GET",
+        success : function(result) {
+            var response = "";
+            if(typeof result == 'string') {
+                response = JSON.parse(result);
+            } else {
+                response = result;
+            }
+            if (response.success==1){
+                var pie_chart = $(domElement).highcharts({
+                    chart: {
+                        plotBackgroundColor: null,
+                        plotBorderWidth: null,
+                        plotShadow: false
+                    },
+                    title: {
+                        text: response.data.objects.chart_data[0].title
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: false
+                            },
+                            showInLegend: true
+                        }
+                    },
+                    series: [{
+                        type: 'pie',
+                        name: response.data.objects.chart_data[0].name,
+                        data: response.data.objects.chart_data[0].data
+                    }],
+                    lang: {
+                        noData: 'Data is not available.'
+                    },
+                    noData: {
+                        style: {
+                            fontWeight: 'bold',
+                            fontSize: '20px',
+                            color: '#539fb8',
+                        }
+                    },
+                });
+            }else{
+                $(domElement).html("<h4>Dashboard Setting is not available.</h4>");
+            }
+        },
+    }); // ajax
+}
+
 /* End of method pie Chart */
 
 /* method for Area Spline Chart
 highcharts_areachart(url, domElement); */
-{% include "dashboard/highcharts/areachart.html" %}
+function highcharts_areachart(url, domElement){
+    $.ajax({
+        url : url,
+        type : "GET",
+        success : function(result) {
+            var response = "";
+            if(typeof result == 'string') {
+                response = JSON.parse(result);
+            } else {
+                response = result;
+            }
+            if (response.success==1){
+                $(domElement).highcharts({
+                    chart: {
+                        type: 'areaspline'
+                    },
+                    title: {
+                        text: 'MFR Processed'
+                    },
+                    legend: {
+                        layout: 'vertical',
+                        align: 'left',
+                        verticalAlign: 'top',
+                        x: 150,
+                        y: 100,
+                        floating: true,
+                        borderWidth: 1,
+                        backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Process Values'
+                        }
+                    },
+                    xAxis: {
+                        title: {
+                            text: "Month"
+                        },
+                        type: 'datetime',
+                        dateTimeLabelFormats: {
+                            millisecond: '%H:%M:%S.%L',
+                            second: '%H:%M:%S',
+                            minute: '%H:%M',
+                            hour: '%H:%M',
+                            day: '%e. %b',
+                            week: '%e. %b',
+                            month: '%b \'%y',
+                            year: '%Y'
+                        }
+                    },
+                    tooltip: {
+                        shared: true,
+                        valueSuffix: response.data.objects.chart_data[0].valuesuffix
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    plotOptions: {
+                        areaspline: {
+                            fillOpacity: 0.5
+                        }
+                    },
+                    series: response.data.objects.chart_data[0].data,
+                    lang: {
+                        noData: 'Data is not available.'
+                    },
+                    noData: {
+                        style: {
+                            fontWeight: 'bold',
+                            fontSize: '20px',
+                            color: '#539fb8',
+                        }
+                    },
+                });
+                }else{
+                    $(domElement).html("<h4>Dashboard Setting is not available.</h4>");
+                }
+        }
+    });
+}
 /* End of method Area Spline Chart */
 
 // function for getting speedometer charts through ajax request.
@@ -336,86 +468,80 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
             } else {
                 response = result;
             }
-
-            var gaugeOptions = {
-                chart: {
-                    type: 'solidgauge'
-                },
-                title: null,
-                pane: {
-                    center: ['50%', '85%'],
-                    size: '140%',
-                    startAngle: -90,
-                    endAngle: 90,
-                    background: {
-                        backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
-                        innerRadius: '60%',
-                        outerRadius: '100%',
-                        shape: 'arc'
-                    }
-                },
-                tooltip: {
-                    enabled: false
-                },
-
-                // the value axis
-                yAxis: {
-                    stops: [
-                        [0.0, response['color']], // speedometer_color
-                    ],
-                    lineWidth: 0,
-                    minorTickInterval: null,
-                    tickPixelInterval: 400,
-                    tickWidth: 0,
-                    title: {
-                        y: -70
+            if (response.success==1){
+                var gaugeOptions = {
+                    chart: {
+                        type: 'solidgauge'
                     },
-                    labels: {
-                        y: 16
-                    }
-                },
-                plotOptions: {
-                    solidgauge: {
-                        dataLabels: {
-                            y: 5,
-                            borderWidth: 0,
-                            useHTML: true
+                    title: null,
+                    pane: {
+                        center: ['50%', '85%'],
+                        size: '140%',
+                        startAngle: -90,
+                        endAngle: 90,
+                        background: {
+                            backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                            innerRadius: '60%',
+                            outerRadius: '100%',
+                            shape: 'arc'
                         }
-                    }
-                }
-            };
-            $(div_id).highcharts(Highcharts.merge(gaugeOptions, {
-                yAxis: {
-                    min: 0,
-                    max: 200,
-                    title: {
-                        text: div_text
-                    }
-                },
-
-                series: [{
-                    name: div_text,
-                    data: [response['data']],
-                    dataLabels: {
-                    format: '<div style="text-align:center"><span style="font-size:25px;color:' +
-                        ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
-                        '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
                     },
                     tooltip: {
-                        valueSuffix: ' revolutions/min'
+                        enabled: false
+                    },
+
+                    // the value axis
+                    yAxis: {
+                        stops: [
+                            [0.0, response.data.objects.chart_data[0].data[0].color], // speedometer_color
+                        ],
+                        lineWidth: 0,
+                        minorTickInterval: null,
+                        tickPixelInterval: 400,
+                        tickWidth: 0,
+                        title: {
+                            y: -70
+                        },
+                        labels: {
+                            y: 16
+                        }
+                    },
+                    plotOptions: {
+                        solidgauge: {
+                            dataLabels: {
+                                y: 5,
+                                borderWidth: 0,
+                                useHTML: true
+                            }
+                        }
                     }
-                }],
-                lang: {
-                    noData: "Dashboard Setting is not available."
-                },
-                noData: {
-                    style: {
-                        fontWeight: 'bold',
-                        fontSize: '15px',
-                        color: '#8A739D'
-                    }
-                }
-            }));
+                };
+                $(div_id).highcharts(Highcharts.merge(gaugeOptions, {
+                    yAxis: {
+                        min: 0,
+                        max: 200,
+                        title: {
+                            text: div_text
+                        }
+                    },
+
+                    series: [{
+                        name: div_text,
+                        data: [response.data.objects.chart_data[0].data[0].count],
+                        dataLabels: {
+                        format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                            ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                            '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                        },
+                        tooltip: {
+                            valueSuffix: ' revolutions/min'
+                        }
+                    }]
+                }));
+            }else{
+                $(div_id).html("<h4>Dashboard Setting is not available.</h4>");
+
+            }
         },
         error : function(err) {
             hideSpinner();
