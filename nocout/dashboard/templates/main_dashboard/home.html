@@ -454,86 +454,80 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
             } else {
                 response = result;
             }
-
-            var gaugeOptions = {
-                chart: {
-                    type: 'solidgauge'
-                },
-                title: null,
-                pane: {
-                    center: ['50%', '85%'],
-                    size: '140%',
-                    startAngle: -90,
-                    endAngle: 90,
-                    background: {
-                        backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
-                        innerRadius: '60%',
-                        outerRadius: '100%',
-                        shape: 'arc'
-                    }
-                },
-                tooltip: {
-                    enabled: false
-                },
-
-                // the value axis
-                yAxis: {
-                    stops: [
-                        [0.0, response.data.objects.chart_data[0].data[0].color], // speedometer_color
-                    ],
-                    lineWidth: 0,
-                    minorTickInterval: null,
-                    tickPixelInterval: 400,
-                    tickWidth: 0,
-                    title: {
-                        y: -70
+            if (response.success==1){
+                var gaugeOptions = {
+                    chart: {
+                        type: 'solidgauge'
                     },
-                    labels: {
-                        y: 16
-                    }
-                },
-                plotOptions: {
-                    solidgauge: {
-                        dataLabels: {
-                            y: 5,
-                            borderWidth: 0,
-                            useHTML: true
+                    title: null,
+                    pane: {
+                        center: ['50%', '85%'],
+                        size: '140%',
+                        startAngle: -90,
+                        endAngle: 90,
+                        background: {
+                            backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                            innerRadius: '60%',
+                            outerRadius: '100%',
+                            shape: 'arc'
                         }
-                    }
-                }
-            };
-            $(div_id).highcharts(Highcharts.merge(gaugeOptions, {
-                yAxis: {
-                    min: 0,
-                    max: 200,
-                    title: {
-                        text: div_text
-                    }
-                },
-
-                series: [{
-                    name: div_text,
-                    data: [response.data.objects.chart_data[0].data[0].count],
-                    dataLabels: {
-                    format: '<div style="text-align:center"><span style="font-size:25px;color:' +
-                        ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
-                        '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
                     },
                     tooltip: {
-                        valueSuffix: ' revolutions/min'
+                        enabled: false
+                    },
+
+                    // the value axis
+                    yAxis: {
+                        stops: [
+                            [0.0, response.data.objects.chart_data[0].data[0].color], // speedometer_color
+                        ],
+                        lineWidth: 0,
+                        minorTickInterval: null,
+                        tickPixelInterval: 400,
+                        tickWidth: 0,
+                        title: {
+                            y: -70
+                        },
+                        labels: {
+                            y: 16
+                        }
+                    },
+                    plotOptions: {
+                        solidgauge: {
+                            dataLabels: {
+                                y: 5,
+                                borderWidth: 0,
+                                useHTML: true
+                            }
+                        }
                     }
-                }],
-                lang: {
-                    noData: "Dashboard Setting is not available."
-                },
-                noData: {
-                    style: {
-                        fontWeight: 'bold',
-                        fontSize: '15px',
-                        color: '#8A739D'
-                    }
-                }
-            }));
+                };
+                $(div_id).highcharts(Highcharts.merge(gaugeOptions, {
+                    yAxis: {
+                        min: 0,
+                        max: 200,
+                        title: {
+                            text: div_text
+                        }
+                    },
+
+                    series: [{
+                        name: div_text,
+                        data: [response.data.objects.chart_data[0].data[0].count],
+                        dataLabels: {
+                        format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                            ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                            '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                        },
+                        tooltip: {
+                            valueSuffix: ' revolutions/min'
+                        }
+                    }]
+                }));
+            }else{
+                $(div_id).html("Dashboard Setting is not available.");
+
+            }
         },
         error : function(err) {
             hideSpinner();
