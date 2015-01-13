@@ -204,7 +204,7 @@ def dialog_action(request):
             # Above doesn't remove existing Visitor object. So removing it below.
             Visitor.objects.filter(user=request.user).delete()
         Visitor.objects.create(session_key=session_key, user=request.user)
-        if request.POST.get('password_alert'):
+        if request.POST.get('password_alert') == 'true':
             result = {
                 "success": 1,  # 0 - fail, 1 - success, 2 - exception
                 "message": "Success/Fail message.",

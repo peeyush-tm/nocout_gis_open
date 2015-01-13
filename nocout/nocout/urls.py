@@ -8,6 +8,7 @@ from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 
 dajaxice_autodiscover()
 
+from nocout.views import AuthView
 from dashboard.views import MainDashboard
 
 # Uncomment the next two lines to enable the admin:
@@ -59,7 +60,7 @@ urlpatterns = patterns('',
                        url(r'^circuit/', include('inventory.circuit_urls')),
                        url(r'^gis-wizard/', include('inventory.gis_wizard_urls')),
                        url(r'^login/$', 'nocout.views.login'),
-                       url(r'^auth/$', 'nocout.views.auth_view'),
+                       url(r'^auth/$', AuthView.as_view(), name='auth-view'),
                        url(r'^logout/$', 'nocout.views.logout'),
                        url(r'^reset-cache/$', 'nocout.views.reset_cache'),
                        url(r'^site/', include('site_instance.urls')),
