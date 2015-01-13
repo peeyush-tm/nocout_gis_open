@@ -273,6 +273,7 @@ def get_highchart_response(dictionary={}):
         chart_data = {
             "is_inverted": False,
             "name": dictionary['name'],
+            "title": '',
             "data": [{
                 "color": dictionary['color'],
                 "name": dictionary['name'],
