@@ -2797,6 +2797,7 @@ class GISInventoryBulkImportList(ListView):
             {'mData': 'original_filename', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto', },
             {'mData': 'valid_filename', 'sTitle': 'Valid Sheet', 'sWidth': 'auto', },
             {'mData': 'invalid_filename', 'sTitle': 'Invalid Sheet', 'sWidth': 'auto', },
+            {'mData': 'error_filename', 'sTitle': 'Error Sheet', 'sWidth': 'auto', },
             {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
             {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'auto', },
             {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'auto', },
@@ -2834,12 +2835,15 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
+            # add error_filename in dct
+            dct['error_filename'] = ""
+
             try:
                 excel_green = static("img/ms-office-icons/excel_2013_green.png")
                 excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
                 excel_red = static("img/ms-office-icons/excel_2013_red.png")
                 excel_light_green = static("img/ms-office-icons/excel_2013_light_green.png")
-                # excel_blue = static("img/ms-office-icons/excel_2013_blue.png")
+                excel_blue = static("img/ms-office-icons/excel_2013_blue.png")
 
                 # show 'Success', 'Pending' and 'Failed' in upload status
                 try:
@@ -2897,11 +2901,31 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 except Exception as e:
                     logger.info(e.message)
 
+                # get logger file path
+                error_filename = ""
+
+                try:
+                    error_file = dct['valid_filename'].replace('valid', 'bulk_upload_errors')
+                    # if directory for bulk upload excel sheets didn't exist than create one
+                    if os.path.exists(MEDIA_ROOT + error_file):
+                        error_filename = error_file
+                except Exception as e:
+                    logger.info(e.message)
+
                 # show icon instead of url in data tables view
                 try:
                     dct.update(original_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('original_filename'), excel_light_green))
                 except Exception as e:
                     logger.info(e.message)
+
+                try:
+                    if error_filename:
+                        dct.update(error_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, error_filename, excel_red))
+                    else:
+                        dct.update(error_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
+                except Exception as e:
+                    logger.info(e.message)
+
                 try:
                     if dct.get('status') == "Success":
                         dct.update(valid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('valid_filename'), excel_green))

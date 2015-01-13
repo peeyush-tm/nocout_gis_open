@@ -920,6 +920,25 @@ function devicePlottingClass_gmap() {
             prepare_oms_object(oms);
             prepare_oms_object(oms_ss);
 
+            // Update The usual n highlihted colors of OverlappingMarkerSpiderfier
+            var oms_legends = oms.legColors,
+            	oms_ss_legends = oms_ss.legColors;
+
+        	// For BS OMS
+            for(key1 in oms_legends) {
+            	var MapTypes = oms_legends[key1];
+            	for(key2 in MapTypes) {
+            		MapTypes[key2] = "";
+            	}
+            }
+            // For SS OMS
+            for(key1 in oms_ss_legends) {
+            	var MapTypes = oms_ss_legends[key1];
+            	for(key2 in MapTypes) {
+            		MapTypes[key2] = "";
+            	}
+            }
+
 			/*Create a instance of google map info window*/
 			infowindow = new google.maps.InfoWindow({zIndex:800});
 		} else {

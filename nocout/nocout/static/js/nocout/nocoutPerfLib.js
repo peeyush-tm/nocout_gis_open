@@ -307,8 +307,28 @@ function nocoutPerfLib() {
                             var serviceDataUrl = "/" + $.trim(e.currentTarget.attributes.url.value);
                             /*Reset Variables & counters */
                             clearTimeout(timeInterval);
-                            $("#other_perf_table").remove();
-                            $("#perf_data_table").remove();
+                            if($("#other_perf_table").length > 0) {
+                                $("#other_perf_table").dataTable().fnDestroy();
+                                $("#other_perf_table").remove();
+                            }
+
+
+                            if($("#perf_data_table").length > 0) {
+                                $("#perf_data_table").dataTable().fnDestroy();
+                                $("#perf_data_table").remove();
+                            }
+
+                            if($('#'+serviceId+'_chart').highcharts()) {
+                                $('#'+serviceId+'_chart').highcharts().destroy();
+                            }
+
+                            for(var i=0;i<Highcharts.charts.length;i++) {
+                                if(Highcharts.charts[i]) {
+                                    Highcharts.charts[i].destroy();
+                                }
+                            }
+                            Highcharts.charts = [];
+
                             // First get the service status then get the data for that service
                             perfInstance.getServiceStatus(serviceDataUrl,function(response_type,data_obj) {
                                 if(response_type == 'success') {
@@ -346,15 +366,23 @@ function nocoutPerfLib() {
                 hideSpinner();
             },
             complete: function () {
-                if (active_tab_url && active_tab_id) {
-                    /*Call getServiceData function to fetch the data for currently active service*/
+                if(active_tab_url && active_tab_id) {
                     /*Reset Variables & counters */
                     clearTimeout(timeInterval);
-                    $("#other_perf_table").remove();
-                    $("#perf_data_table").remove();
+
+                    if($("#other_perf_table").length > 0) {
+                        $("#other_perf_table").dataTable().fnDestroy();
+                        $("#other_perf_table").remove();
+                    }
+
+                    if($("#perf_data_table").length > 0) {
+                        $("#perf_data_table").dataTable().fnDestroy();
+                        $("#perf_data_table").remove();
+                    }
+
                     /*Get Last opened tab id from cookie*/
                     var parent_tab_id = $.cookie('parent_tab_id');
-                    //If parent Tab id is there & parent tab el exist in the dom.
+                    //If parent Tab id is there & parent tab element exist in the dom.
                     if(parent_tab_id && $('#'+parent_tab_id).length) {
                         $('#'+parent_tab_id).trigger('click');
                     } else {
@@ -365,6 +393,7 @@ function nocoutPerfLib() {
                             } else {
                                 $("#last_updated_"+active_tab_content_dom_id).html("");
                             }
+                            /*Call getServiceData function to fetch the data for currently active service*/
                             perf_that.getServiceData(active_tab_url, active_tab_id, device_id, data_obj);
                         });
                     }
@@ -430,7 +459,6 @@ function nocoutPerfLib() {
                 }
             },
             error : function(err) {
-                // console.log(err.statusText);
                 callback("error","");
             }
         });
@@ -566,9 +594,9 @@ function nocoutPerfLib() {
                             var chart_config = result.data.objects;
                             // If any data available then plot chart & table
                             if(chart_config.chart_data.length > 0) {
-                                if(!$('#'+service_id+'_chart').highcharts()) {
+                                if(!$('#'+service_id+'_chart').data('highchartsChart')) {
                                     createHighChart_nocout(chart_config,service_id);
-                                    initChartDataTable_nocout("perf_data_table", chart_config.chart_data);
+                                    initChartDataTable_nocout("perf_data_table", chart_config.chart_data,service_id);
                                 } else {
                                     addPointsToChart_nocout(chart_config.chart_data,service_id);
                                 }
@@ -585,11 +613,11 @@ function nocoutPerfLib() {
                         //if last date
                         if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
 
-                            if ($('#'+service_id+'_chart').highcharts()) {
+                            if ($('#'+service_id+'_chart').data('highchartsChart')) {
                                 $('#' + service_id + '_chart').highcharts().redraw();
                             }
 
-                            if (!$('#'+service_id+'_chart').highcharts() && $("#other_perf_table").length == 0) {
+                            if (!$('#'+service_id+'_chart').data('highchartsChart') && $("#other_perf_table").length == 0) {
                                 $('#'+service_id+'_chart').html(result.message);
                             }
 
