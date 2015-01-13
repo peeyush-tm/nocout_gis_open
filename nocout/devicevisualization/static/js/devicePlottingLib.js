@@ -455,7 +455,7 @@ function devicePlottingClass_gmap() {
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.HYBRID/*google.maps.MapTypeId.SATELLITE*/,
 					mapTypeControl : true,
-					styles 	  : gmap_styles_array[0], 
+					styles 	  : gmap_styles_array[1],
 					mapTypeControlOptions: {
 						mapTypeIds: [google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID],
 						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
@@ -467,7 +467,7 @@ function devicePlottingClass_gmap() {
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
 					mapTypeControl : true,
-					styles 	  : gmap_styles_array[0], 
+					styles 	  : gmap_styles_array[1],
 					mapTypeControlOptions: {
 						mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.TERRAIN,google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID],
 						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
