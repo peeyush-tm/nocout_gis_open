@@ -258,7 +258,7 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
 def get_highchart_response(dictionary={}):
     if 'type' not in dictionary:
         return json.dumps({
-            "message": "Corresponding dashboard setting is not available.",
+            "message": "No Data To Display.",
             "success": 0
         })
 
@@ -268,6 +268,19 @@ def get_highchart_response(dictionary={}):
             'name': dictionary['name'],
             'title': dictionary['title'],
             'data': dictionary['chart_series'],
+        }
+    elif dictionary['type'] == 'gauge':
+        chart_data = {
+            "is_inverted": False,
+            "name": dictionary['name'],
+            "data": [{
+                "color": dictionary['color'],
+                "name": dictionary['name'],
+                "count": dictionary['count']
+            }],
+            "valuesuffix": "",
+            "type": "gauge",
+            "valuetext": ""
         }
 
     return json.dumps({
