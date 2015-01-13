@@ -57,7 +57,7 @@ def main(**configs):
     """
 
     end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=5)
+    start_time = end_time - timedelta(minutes=2)
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
     # Get site specific mongo conf
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
@@ -176,7 +176,7 @@ def insert_data(table, data_values,**kwargs):
                 x[12], x[13], x[14], x[15]) + (x[0], x[1], x[4]), insert_dict.get('1'))
             cursor.executemany(query, data_values)
         except mysql.connector.Error as err:
-                    raise mysql.connector.Error, err
+                raise mysql.connector.Error, err
         db.commit()
         cursor.close()
 

@@ -57,7 +57,7 @@ def main(**configs):
     """
 
     end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=5)
+    start_time = end_time - timedelta(minutes=2)
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
     # Get site specific mongo conf
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
