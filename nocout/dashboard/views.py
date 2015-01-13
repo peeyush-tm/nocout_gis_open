@@ -1025,13 +1025,14 @@ class PMPSectorCapacity(View):
 
         range_counter = get_dashboard_status_sector_range_counter(service_status_results)
 
-        chart_data = []
+        chart_series = []
         for key,value in range_counter.items():
-            chart_data.append(['%s: %s' % (key, value), range_counter[key]])
+            chart_series.append(['%s: %s' % (key, value), range_counter[key]])
 
-        return HttpResponse(json.dumps({
-                            'series': chart_data
-                        }))
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': 'PMP Sector Capacity', 'name': ''})
+
+        return HttpResponse(response)
 
 
 class WiMAXSectorCapacity(View):
@@ -1074,13 +1075,14 @@ class WiMAXSectorCapacity(View):
 
         range_counter = get_dashboard_status_sector_range_counter(service_status_results)
 
-        chart_data = []
+        chart_series = []
         for key,value in range_counter.items():
-            chart_data.append(['%s: %s' % (key, value), range_counter[key]])
+            chart_series.append(['%s: %s' % (key, value), range_counter[key]])
 
-        return HttpResponse(json.dumps({
-                            'series': chart_data
-                        }))
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': 'WiMAX Sector Capacity', 'name': ''})
+
+        return HttpResponse(response)
 
 
 #********************************************** main dashboard sector capacity ************************************************
@@ -1110,28 +1112,30 @@ class SalesOpportunityMixin(object):
         try:
             dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
         except DashboardSetting.DoesNotExist as e:
-            dashboard_setting = DashboardSetting.objects.none()
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard setting is not available.",
+                "success": 0
+            }))
 
-        chart_data = []
-        if dashboard_setting:
-            # Get Sector of User's Organizations. [and are Sub Station]
-            user_sector = organization_sectors(organization, technology)
-            # Get device of User's Organizations. [and are Sub Station]
-            sector_devices = Device.objects.filter(id__in=user_sector.\
-                            values_list('sector_configured_on', flat=True))
+        # Get Sector of User's Organizations. [and are Sub Station]
+        user_sector = organization_sectors(organization, technology)
+        # Get device of User's Organizations. [and are Sub Station]
+        sector_devices = Device.objects.filter(id__in=user_sector.\
+                        values_list('sector_configured_on', flat=True))
 
-            service_status_results = get_topology_status_results(
-                sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
-            )
+        service_status_results = get_topology_status_results(
+            sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
+        )
 
-            range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
+        range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
 
-            response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
-            chart_data = response_dict['data']['objects']['chart_data'][0]['data']
+        response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
+        chart_series = response_dict['data']['objects']['chart_data'][0]['data']
 
-        return HttpResponse(json.dumps({
-                            'series': chart_data,
-                        }))
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': tech_name + ' Sales Oppurtunity', 'name': ''})
+
+        return HttpResponse(response)
 
 
 class PMPSalesOpportunity(SalesOpportunityMixin, View):
