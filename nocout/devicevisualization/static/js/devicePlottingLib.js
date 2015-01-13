@@ -3309,14 +3309,14 @@ function devicePlottingClass_gmap() {
 						text_class = "";
 					if(actual_polled_info[i]["show"]) {
 
-						if(mbps_unit_fields.indexOf(actual_polled_info[i]['name'] > -1)) {
-							if(actual_polled_info[i]['value']) {
+						if(mbps_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+							if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
 								actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" Mbps";
 							}
 						}
 
-						if(meter_unit_fields.indexOf(actual_polled_info[i]['name'] > -1)) {
-							if(actual_polled_info[i]['value']) {
+						if(meter_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+							if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
 								actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" M";
 							}
 						}
@@ -3445,14 +3445,14 @@ function devicePlottingClass_gmap() {
 						text_class = "";
 					if(actual_polled_info[i]["show"]) {
 						
-						if(mbps_unit_fields.indexOf(actual_polled_info[i]['name'] > -1)) {
-							if(actual_polled_info[i]['value']) {
+						if(mbps_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+							if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
 								actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" Mbps";
 							}
 						}
 
-						if(meter_unit_fields.indexOf(actual_polled_info[i]['name'] > -1)) {
-							if(actual_polled_info[i]['value']) {
+						if(meter_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+							if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
 								actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" M";
 							}
 						}
