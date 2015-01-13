@@ -10,12 +10,12 @@ import mysql.connector
 from datetime import datetime
 from datetime import timedelta
 from events_rrd_migration import get_latest_event_entry
-import socket
 import imp
-import time
+
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+
 
 def main(**configs):
     """
@@ -31,25 +31,20 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    db = utility_module.mysql_conn(configs=configs)
-    for i in range(len(configs.get('mongo_conf'))):
-	end_time = datetime.now()
-    	start_time = get_latest_event_entry(
-		    db_type='mysql',
-		    db=db,
-		    site=configs.get('mongo_conf')[i][0],
-		    table_name=configs.get('table_name')
-    	)
-    	if start_time is None:
-		start_time = end_time - timedelta(minutes=15)
-    	start_time = utility_module.get_epoch_time(start_time)
-    	end_time = utility_module.get_epoch_time(end_time)
+
+    end_time = datetime.now()
+    start_time = end_time - timedelta(minutes=2)
+    start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
+
+    # Get site specific configurations for Mongodb connection
+    # Ex conf : ('ospf4_slave_1', 'localhost', 27018)
+    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
    
-   	 # Read data function reads the data from mongodb and insert into mysql
-    	docs = read_data(start_time, end_time,configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
-    	for doc in docs:
-        	values_list = build_data(doc)
-        	data_values.extend(values_list)
+    # Read data function reads the data from mongodb and insert into mysql
+    docs = read_data(start_time, end_time,configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
+    for doc in docs:
+        values_list = build_data(doc)
+        data_values.extend(values_list)
     if data_values:
         insert_data(configs.get('table_name'), data_values, configs=configs)
         print "Data inserted into mysql db"
@@ -76,72 +71,72 @@ def read_data(start_time, end_time, **kwargs):
     )
     if db:
             cur = db.nocout_host_event_log.find({
-                "check_timestamp": {"$gt": start_time, "$lt": end_time}
+                "sys_timestamp": {"$gt": start_time, "$lt": end_time}
             })
-	    for doc in cur:
-            	docs.append(doc)
+    for doc in cur:
+        docs.append(doc)
     return docs
 
 def build_data(doc):
-        """
-	Function builds the data collected from mongodb for events according to mysql table schema and return the formatted record
-	Args: doc (document fetched from the mongodb database for specific time interval)
-	Kwargs: None
-	Return : formatted document containing data for multiple devices
-	Raise : No exception
-
-        """
-	values_list = []
-	configs = config_module.parse_config_obj()
-	for config, options in configs.items():
-		machine_name = options.get('machine')
-	t = (
+    """
+    Function builds the data collected from mongodb for events according to mysql table schema and return the formatted record
+    Args: doc (document fetched from the mongodb database for specific time interval)
+    Kwargs: None
+    Return : formatted document containing data for multiple devices
+    Raise : No exception
+    """
+    values_list = []
+    configs = config_module.parse_config_obj()
+    for config, options in configs.items():
+        machine_name = options.get('machine')
+    t = (
         doc.get('device_name'),
-	doc.get('service_name'),
+    doc.get('service_name'),
         doc.get('sys_timestamp'),
-	doc.get('check_timestamp'),
-	doc.get('current_value'),
-	doc.get('min_value'),
-	doc.get('max_value'),
-	doc.get('avg_value'),
+    doc.get('check_timestamp'),
+    doc.get('current_value'),
+    doc.get('min_value'),
+    doc.get('max_value'),
+    doc.get('avg_value'),
         doc.get('warning_threshold'),
-	doc.get('critical_threshold'),	
+    doc.get('critical_threshold'),    
         doc.get('description'),
         doc.get('severity'),
         doc.get('site_name'),
-	doc.get('data_source'),
-	doc.get('ip_address'),
-	machine_name
-	)
-	values_list.append(t)
-	t = ()
-	return values_list
+    doc.get('data_source'),
+    doc.get('ip_address'),
+    machine_name
+    )
+    values_list.append(t)
+    t = ()
+    return values_list
 
 def insert_data(table,data_values,**kwargs):
-        """
-	Function insert the formatted record into mysql table for multiple devices
-	Args: table (mysql table on which we have to insert the data.table information is fetched from config.ini)
-	Kwargs: data_values (list of formatted doc )
-	Return : None
-	Raise : MYSQLdb.error
+    """
+    Function insert the formatted record into mysql table for multiple devices
+    Args: table (mysql table on which we have to insert the data.table information is fetched from config.ini)
+    Kwargs: data_values (list of formatted doc )
+    Return : None
+    Raise : MYSQLdb.error
 
-        """
-	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
-	query = 'INSERT INTO `%s` ' % table
-	query += """
-		(device_name,service_name,sys_timestamp,check_timestamp,
-		current_value,min_value,max_value,avg_value,warning_threshold,
-		critical_threshold,description,severity,site_name,data_source,
-		ip_address,machine_name)
-		VALUES(%s,%s, %s, %s, %s, %s, %s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    		"""
-	cursor = db.cursor()
-    	try:
-        	cursor.executemany(query, data_values)
-  	except mysql.connector.Error as err:
-        	raise mysql.connector.Error, err
-    	db.commit()
-    	cursor.close()
+    """
+    db = utility_module.mysql_conn(configs=kwargs.get('configs'))
+    query = 'INSERT INTO `%s` ' % table
+    query += """
+        (device_name,service_name,sys_timestamp,check_timestamp,
+        current_value,min_value,max_value,avg_value,warning_threshold,
+        critical_threshold,description,severity,site_name,data_source,
+        ip_address,machine_name)
+        VALUES(%s,%s, %s, %s, %s, %s, %s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """
+    cursor = db.cursor()
+    try:
+        cursor.executemany(query, data_values)
+    except mysql.connector.Error as err:
+	raise mysql.connector.Error, err
+    db.commit()
+    cursor.close()
+    db.close()
 
 
 if __name__ == '__main__':
