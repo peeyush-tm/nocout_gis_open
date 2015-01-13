@@ -25,8 +25,7 @@ from inventory.utils.util import organization_customer_devices, organization_net
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
-    get_dashboard_status_sector_range_counter, \
-    get_topology_status_results
+    get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response
 from dashboard.config import dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -933,20 +932,25 @@ class MFRCauseCodeView(View):
     def get(self, request):
         mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
 
-        chart_data = []
+        chart_series = []
         if mfr_reports.exists():
             last_mfr_report = mfr_reports[0]
         else:
-            return HttpResponse(json.dumps({'result': chart_data}))
+            response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+                'title': 'MFR Cause Code', 'name': ''})
+            return HttpResponse(response)
 
         results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
         for result in results:
-            chart_data.append([
+            chart_series.append([
                 "%s : %s" % (result['processed_key'], result['processed_value']),
                 int(result['processed_value'])
             ])
 
-        return HttpResponse(json.dumps({'series': chart_data}))
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': 'MFR Cause Code', 'name': ''})
+
+        return HttpResponse(response)
 
 
 class MFRProcesedView(View):

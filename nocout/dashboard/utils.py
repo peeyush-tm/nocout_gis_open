@@ -252,3 +252,31 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
         # current value define the total ss connected to the sector
         status_results.append({'sector_id': sector.id, 'current_value': ss_qs.count()})
     return status_results
+
+
+def get_highchart_response(dictionary={}):
+    if 'type' not in dictionary:
+        return json.dumps({
+            "message": "Corresponding dashboard setting is not available.",
+            "success": 0
+        })
+
+    if dictionary['type'] == 'pie':
+        chart_data = {
+            'type': 'pie',
+            'name': dictionary['name'],
+            'title': dictionary['title'],
+            'data': dictionary['chart_series'],
+        }
+
+    return json.dumps({
+        "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
+        "data": {
+            "meta": {
+            },
+            "objects": {
+                "chart_data": [chart_data]
+            }
+        },
+        "success": 1
+    })
