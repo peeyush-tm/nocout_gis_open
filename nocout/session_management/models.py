@@ -39,7 +39,7 @@ class AuthToken(models.Model):
 
     def save(self, *args, **kwargs):
         self.key = self.generate_key()
-        return super(Token, self).save(*args, **kwargs)
+        return super(AuthToken, self).save(*args, **kwargs)
 
     def generate_key(self):
         return binascii.hexlify(os.urandom(20)).decode()
