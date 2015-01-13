@@ -479,7 +479,7 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
                 // the value axis
                 yAxis: {
                     stops: [
-                        [0.0, response['color']], // speedometer_color
+                        [0.0, response.data.objects.chart_data[0].data[0].color], // speedometer_color
                     ],
                     lineWidth: 0,
                     minorTickInterval: null,
@@ -513,7 +513,7 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
 
                 series: [{
                     name: div_text,
-                    data: [response['data']],
+                    data: [response.data.objects.chart_data[0].data[0].count],
                     dataLabels: {
                     format: '<div style="text-align:center"><span style="font-size:25px;color:' +
                         ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
