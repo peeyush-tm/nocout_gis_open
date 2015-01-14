@@ -109,7 +109,7 @@ class AuthView(View):
                 result = response['result']
                 user_audit = response['user_audit']
             else:
-                auth.login(request, user)
+
                 result = self.valid_user(user)
                 user_audit = self.get_user_audit(user_id=user.id, action="Logged in successfully.")
 
@@ -170,7 +170,6 @@ class AuthView(View):
         next_url = '/' + self.request.POST.get('next', 'home/')
         if 'logout' in next_url:
             next_url = settings.LOGIN_REDIRECT_URL
-        key_from_cookie = self.request.session.session_key
 
         # get the user's auth token.
         auth_token = self.get_auth_token(user)
@@ -189,14 +188,15 @@ class AuthView(View):
                                     password_expire_alert=pwd_exp_alert,
                                     password_expires_on=unicode(pwd_exp_on.date()) )
 
-            if hasattr(self.request.user, 'visitor'):
-                session_key_in_visitor_db = self.request.user.visitor.session_key
+            if hasattr(user, 'visitor'):
+                session_key_in_visitor_db = user.visitor.session_key
 
-                if session_key_in_visitor_db != key_from_cookie:
+                if session_key_in_visitor_db:
                     objects_values.update({'dialog': True})
 
             else:
-                Visitor.objects.create(user=self.request.user, session_key=key_from_cookie)
+                auth.login(self.request, user)
+                Visitor.objects.create(user=self.request.user, session_key=self.request.session.session_key)
                 UserProfile.objects.filter(id=user.id).update(user_invalid_attempt=0)   # empty the user invalid attempts on successful login
 
             result = self.get_result(success=1, message="Logged in successfully.",
