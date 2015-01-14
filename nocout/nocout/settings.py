@@ -203,6 +203,11 @@ INSTALLED_APPS = (
     'alarm_escalation',
 )
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'session_management.backends.TokenAuthBackend',
+)
+
 ##TODO: dynamically populate cache
 #
 # def get_cache():
