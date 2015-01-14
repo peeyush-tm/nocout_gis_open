@@ -206,6 +206,7 @@ def dialog_action(request):
             Visitor.objects.filter(user=user).delete()
         auth.login(request, user)
         Visitor.objects.create(session_key=request.session.session_key, user=request.user)
+        UserProfile.objects.filter(id=user.id).update(user_invalid_attempt=0)   # empty the user invalid attempts on successful login
         result = {
             "success": 1,  # 0 - fail, 1 - success, 2 - exception
             "message": "Success/Fail message.",

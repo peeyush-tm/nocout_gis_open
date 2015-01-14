@@ -109,7 +109,6 @@ class AuthView(View):
                 result = response['result']
                 user_audit = response['user_audit']
             else:
-
                 result = self.valid_user(user)
                 user_audit = self.get_user_audit(user_id=user.id, action="Logged in successfully.")
 
@@ -137,7 +136,7 @@ class AuthView(View):
     def check_visitor_limit(self):
         '''
         '''
-        if Visitor.objects.all().__len__() > settings.MAX_USER_LOGIN_LIMIT:
+        if Visitor.objects.count() > settings.MAX_USER_LOGIN_LIMIT:
             objects_values = dict(data={
                             "reason": "Maximum number of concurrent users logged in have exceeded, Please Wait.",
                             "user_limit_exceed": True
