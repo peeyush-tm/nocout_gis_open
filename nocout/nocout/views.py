@@ -211,6 +211,7 @@ class AuthView(View):
         password_expire = True
         password_expire_alert = False
         lock_time = user.userprofile.user_invalid_attempt_at
+        password_expires_on = already_logged
         if already_logged:
             password_expires_on = already_logged + timedelta(days=30)
             password_expire = password_expires_on < timezone.now()
