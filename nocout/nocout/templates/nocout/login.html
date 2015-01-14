@@ -236,22 +236,22 @@ iframe {
                                     auth_token: data.data.objects.auth_token,
                                    },
                                    dataType: "json",
-                                   success: function (data) {
-                                       if (data.success == 0){
+                                   success: function (pwd_data) {
+                                       if (pwd_data.success == 0){
                                             $("#password").val('');
                                             var unique_gritter = $.gritter.add({
-                                                title: data.message,
-                                                text: data.reason,
+                                                title: pwd_data.message,
+                                                text: pwd_data.data.objects.reason,
                                                 sticky: false,
                                                 time : 2000,
                                                 after_close: function () {
                                                     $.gritter.removeAll();
-                                                    window.location.replace(data.data.objects.url)
+                                                    window.location.replace(pwd_data.data.objects.url)
                                                 }
                                             });
                                         }
                                         else{
-                                            window.location.replace(data.data.objects.url)
+                                            window.location.replace(pwd_data.data.objects.url)
                                         }
                                    }//success
                                });//ajax
