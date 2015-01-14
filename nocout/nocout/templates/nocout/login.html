@@ -233,6 +233,7 @@ iframe {
                                     user_id: data.data.objects.user_id,
                                     new_pwd: $("#id_new_password").val(),
                                     confirm_pwd: $("#id_confirm_password").val(),
+                                    auth_token: data.data.objects.auth_token,
                                    },
                                    dataType: "json",
                                    success: function (data) {
@@ -300,7 +301,7 @@ iframe {
                                    type: "POST",
                                    data: { action: 'continue', url:data.data.objects.url,
                                     'password_alert':data.data.objects.password_expire_alert,
-                                    'password_expires_on': data.data.objects.password_expires_on },
+                                    'password_expires_on': data.data.objects.password_expires_on, auth_token: data.data.objects.auth_token },
                                    dataType: "json",
                                    success: function (data) {
                                         if (data.data.objects.password_expires_on == null){
