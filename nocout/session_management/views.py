@@ -206,29 +206,16 @@ def dialog_action(request):
             Visitor.objects.filter(user=user).delete()
         auth.login(request, user)
         Visitor.objects.create(session_key=request.session.session_key, user=request.user)
-        if request.POST.get('password_alert') == 'true':
-            result = {
-                "success": 1,  # 0 - fail, 1 - success, 2 - exception
-                "message": "Success/Fail message.",
-                "data": {
-                    "meta": {},
-                    "objects": {
-                        'url': url,
-                        'password_expires_on': request.POST.get('password_expires_on')
-                    }
+        result = {
+            "success": 1,  # 0 - fail, 1 - success, 2 - exception
+            "message": "Success/Fail message.",
+            "data": {
+                "meta": {},
+                "objects": {
+                    'url': url,
                 }
             }
-        else:
-            result = {
-                "success": 1,  # 0 - fail, 1 - success, 2 - exception
-                "message": "Success/Fail message.",
-                "data": {
-                    "meta": {},
-                    "objects": {
-                        'url': url,
-                    }
-                }
-            }
+        }
         return HttpResponse(json.dumps(result), content_type='application/json')
 
     elif request.POST.get('action') == 'logout':

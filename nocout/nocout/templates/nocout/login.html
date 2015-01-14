@@ -300,19 +300,19 @@ iframe {
                                    url: "/sm/dialog_action/",
                                    type: "POST",
                                    data: { action: 'continue', url:data.data.objects.url,
-                                    'password_alert':data.data.objects.password_expire_alert,
-                                    'password_expires_on': data.data.objects.password_expires_on, auth_token: data.data.objects.auth_token },
+                                            auth_token: data.data.objects.auth_token },
                                    dataType: "json",
-                                   success: function (data) {
-                                        if (data.data.objects.password_expires_on == null){
-                                            window.location.replace(data.data.objects.url);
+                                   success: function (sm_data) {
+                                        if (data.data.objects.password_expire_alert){
+                                            bootbox.alert(
+                                                "Change your password, password will expire on " +
+                                                data.data.objects.password_expires_on,
+                                                function() {
+                                                        window.location.replace(sm_data.data.objects.url);
+                                                });
                                         }
                                         else{
-                                            bootbox.alert("Change your password, password will " +
-                                            "expire on " +
-                                            data.data.objects.password_expires_on, function() {
-                                            window.location.replace(data.data.objects.url);
-                                            });
+                                            window.location.replace(sm_data.data.objects.url);
                                         }
                                    }//success
                                });//ajax
