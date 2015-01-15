@@ -338,7 +338,7 @@ def change_password(request):
             user.userprofile.save()
             user.set_password(form.data['confirm_pwd'])
             user.save()
-            UserPasswordRecord.objects.create(user_id=user.id, password_used=form.data['confirm_pwd'])
+            UserPasswordRecord.objects.create(user_id=user.id, password_used=user.password)
 
             success = 1     # 0 - fail, 1 - success, 2 - exception
             message = "Success/Fail message.",
