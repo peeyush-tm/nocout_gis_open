@@ -1000,7 +1000,7 @@ class MFRProcesedView(View):
 class PMPSectorCapacity(View):
     """
     """
-    def get(self, sector_devices):
+    def get(self, request):
         pmp_data_source_config = {
             'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
             'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
