@@ -988,7 +988,7 @@ class MFRProcesedView(View):
 
         area_chart_series = []
         for key, value in processed_key_dict.items():
-            area_chart_series.append({'name': key, 'data': value})
+            area_chart_series.append({'name': key, 'data': value, 'color': processed_key_color[key]})
 
         response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
             'title': 'MFR Processed', 'valuesuffix': 'seconds'})
