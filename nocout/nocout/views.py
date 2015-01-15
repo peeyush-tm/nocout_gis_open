@@ -149,6 +149,8 @@ class AuthView(View):
         '''
         '''
         if not user.is_active:
+            # if user locked due to invalid attempts then unlock user after 30 minutes.
+            self.userprofile_status(user)
             user_reason = 'locked'
 
         elif user.userprofile.is_deleted:
