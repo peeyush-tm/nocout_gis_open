@@ -1911,7 +1911,8 @@ class Get_Service_Type_Performance_Data(View):
                     #time in javascript format
                     sds_name = str(data.data_source).strip()
                     if sds_name not in ['availability']:
-                        sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
+                        if sds_name not in ['pl','rta']:
+                            sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
 
                     sds_display_name = \
                         SERVICE_DATA_SOURCE[sds_name]["display_name"] \
@@ -2140,7 +2141,8 @@ class Get_Service_Type_Performance_Data(View):
 
                     sds_name = str(data.data_source).strip()
                     if sds_name not in ['availability']:
-                        sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
+                        if sds_name not in ['pl','rta']:
+                            sds_name = str(data.service_name).strip() + "_" + str(data.data_source).strip()
 
                     sds_display_name = \
                         SERVICE_DATA_SOURCE[sds_name]["display_name"] \
