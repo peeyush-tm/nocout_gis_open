@@ -31,15 +31,15 @@
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
             <div id="down-all" style="height: 180px;"></div>
-            <h5>Down All</h5>
+            <h5>Down</h5>
         </div>        
         <div class="col-md-3" align="center">
             <div id="latency-all" style="height: 180px;"></div>            
-            <h5>Latency All</h5>
+            <h5>Latency</h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="packet-loss-all" style="height: 180px;"></div>            
-            <h5>Packet Loss All</h5>
+            <h5>Packet Drop</h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="temperature-idu-wimax" style="height: 180px;"></div>            
@@ -53,12 +53,12 @@
         <!-- ********** SECOND ROW START **********-->
 
         <!-- Capacity pie Charts & city table Start -->
-        <div class="col-md-4">
-            <h4>Wimax Sector Capacity</h4>
-            <div id="wimax_sector_capacity" class="rf_chart_style"></div>
+        <div class="col-md-3" align="center">
+            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>            
+            <h5>Wimax Sales Opportunity</h5>
         </div>
-        <div class="col-md-4">
-            <h4>Customer Experience Monitoring</h4>
+        <div class="col-md-6">
+            <h5>Customer Experience Monitoring</h5>
             <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="city_ranking_table">
                 <thead>
                     <tr>
@@ -72,9 +72,9 @@
                 </tbody>
             </table>
         </div>
-        <div class="col-md-4">
-            <h4>PMP Sector Capacity</h4>
-            <div id="pmp_sector_capacity" class="rf_chart_style"></div>
+        <div class="col-md-3" align="center">
+            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>    
+            <h5>PMP Sales Opportunity</h5>
         </div>
         <!-- Capacity pie Charts & city table End -->
 
@@ -84,29 +84,49 @@
 
 
         <!-- ********** THIRD ROW START **********-->
-        <div class="col-md-4">
-            <h4>MFR Caused Code</h4>
-            <div id="mfr_cause_code" class="rf_chart_style"></div>    
+        <div class="col-md-3" align="center">
+            <div id="wimax_sector_capacity" class="rf_chart_style"></div>
+            <h5>Wimax Sector Capacity</h5>
         </div>
-        <div class="col-md-4">
-            <h4>Wimax Sales Opportunity</h4>
-            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>            
+        <div class="col-md-3" align="center">
+            <div id="pmp_sector_capacity" class="rf_chart_style"></div>
+            <h5>PMP Sector Capacity</h5>
         </div>
-        <div class="col-md-4">
-            <h4>PMP Sales Opportunity</h4>
-            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>    
+        <div class="col-md-3" align="center">
+            <div id="wimax_backhaul_capacity" class="rf_chart_style"></div>
+            <h5>Wimax Backhaul Capacity</h5>
         </div>
-
+        <div class="col-md-3" align="center">
+            <div id="pmp_backhaul_capacity" class="rf_chart_style"></div>
+            <h5>PMP Backhaul Capacity</h5>
+        </div>
         <div class="clearfix"></div>
         <!-- ********** THIRD ROW END **********-->
         <hr/>
 
-         <!-- ********** FOURTH ROW START **********-->
+        <!-- ********** FOURTH ROW START **********-->
+        <div class="col-md-9">
+            <h4>MFR Processed</h4>
+            <div id="id_mfr_processed" class="rf_chart_style"></div>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="mfr_cause_code" class="rf_chart_style"></div>    
+            <h5>MFR Caused Code</h5>
+        </div>
 
+        <div class="clearfix"></div>
+        <!-- ********** FOURTH ROW END **********-->
+        <hr/>
+
+        <!-- ********** FIFTH ROW START **********-->
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
-            <div id="packet-loss-pmp" style="height: 180px;"></div>
-            <h5>Packet Loss PMP</h5>
+            <div id="down-wimax" style="height: 180px;"></div>            
+            <h5>Down Wimax</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="down-pmp" style="height: 180px;"></div>            
+            <h5>Down PMP</h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="latency-wimax" style="height: 180px;"></div>
@@ -116,29 +136,7 @@
             <div id="latency-pmp" style="height: 180px;"></div>            
             <h5>Latency PMP</h5>
         </div>
-        <div class="col-md-3" align="center">
-            <div id="packet-loss-wimax" style="height: 180px;"></div>            
-            <h5>Packet Loss Wimax</h5>
-        </div>
-        
-        <div class="col-md-3" align="center">
-            <div id="down-wimax" style="height: 180px;"></div>            
-            <h5>Down Wimax</h5>
-        </div>
-        <div class="col-md-3" align="center">
-            <div id="down-pmp" style="height: 180px;"></div>            
-            <h5>Down PMP</h5>
-        </div>
         <!-- Speedometers (Gauge) Charts End -->
-        <div class="clearfix"></div>
-        <!-- ********** FOURTH ROW END **********-->
-        <hr/>
-
-        <!-- ********** FIFTH ROW START **********-->
-        <div class="col-md-12">
-            <h4>MFR Processed</h4>
-            <div id="id_mfr_processed" class="rf_chart_style"></div>
-        </div>
         <div class="clearfix"></div>
         <!-- ********** FIFTH ROW END **********-->
         <hr/>
@@ -146,7 +144,14 @@
         <!-- ********** SIXTH ROW START **********-->
 
         <!-- Speedometers (Gauge) Charts Start -->
-        
+        <div class="col-md-3" align="center">
+            <div id="packet-loss-wimax" style="height: 180px;"></div>            
+            <h5>Packet Drop Wimax</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="packet-loss-pmp" style="height: 180px;"></div>
+            <h5>Packet Drop PMP</h5>
+        </div>
         <div class="col-md-3" align="center">
             <div id="temperature-fan-wimax" style="height: 180px;"></div>            
             <h5>Temperature Fan Wimax</h5>
@@ -192,7 +197,7 @@
             // SEARCH - Add the placeholder for Search and Turn this into in-line form control
             var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
             search_input.attr('placeholder', 'Search');
-            search_input.css("max-width","100px");
+            // search_input.css("max-width","150px");
             search_input.addClass('form-control input-sm');
             // LENGTH - Inline-Form control
             var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
