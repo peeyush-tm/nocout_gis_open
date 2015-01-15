@@ -971,8 +971,7 @@ class MFRProcesedView(View):
                         "color": processed_key_color[result['processed_key']],
                         "y": int(result['processed_value']),
                         "name": result['processed_key'],
-                        # "x": datetime.date.strftime(day, '%b %y'),
-                        "x": calendar.timegm(day.timetuple()),
+                        "x": calendar.timegm(day.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
                     })
                     processed_keys.remove(result['processed_key'])
 
@@ -982,15 +981,14 @@ class MFRProcesedView(View):
                     "color": processed_key_color[key],
                     "y": 0,
                     "name": key,
-                    # "x": datetime.date.strftime(day, '%b %y'),
-                    "x": calendar.timegm(day.timetuple()),
+                    "x": calendar.timegm(day.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
                 })
 
             day += relativedelta.relativedelta(months=1)
 
         area_chart_series = []
         for key, value in processed_key_dict.items():
-            area_chart_series.append({'name': key, 'data': value})
+            area_chart_series.append({'name': key, 'data': value, 'color': processed_key_color[key]})
 
         response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
             'title': 'MFR Processed', 'valuesuffix': 'seconds'})
@@ -1002,7 +1000,7 @@ class MFRProcesedView(View):
 class PMPSectorCapacity(View):
     """
     """
-    def get(self, sector_devices):
+    def get(self, request):
         pmp_data_source_config = {
             'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
             'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
@@ -1134,9 +1132,10 @@ class SalesOpportunityMixin(object):
 
         response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
         chart_series = response_dict['data']['objects']['chart_data'][0]['data']
+        colors = response_dict['data']['objects']['colors']
 
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-            'title': tech_name + ' Sales Oppurtunity', 'name': ''})
+            'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors})
 
         return HttpResponse(response)
 
