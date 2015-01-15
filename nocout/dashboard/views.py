@@ -971,8 +971,7 @@ class MFRProcesedView(View):
                         "color": processed_key_color[result['processed_key']],
                         "y": int(result['processed_value']),
                         "name": result['processed_key'],
-                        # "x": datetime.date.strftime(day, '%b %y'),
-                        "x": calendar.timegm(day.timetuple()),
+                        "x": calendar.timegm(day.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
                     })
                     processed_keys.remove(result['processed_key'])
 
@@ -982,8 +981,7 @@ class MFRProcesedView(View):
                     "color": processed_key_color[key],
                     "y": 0,
                     "name": key,
-                    # "x": datetime.date.strftime(day, '%b %y'),
-                    "x": calendar.timegm(day.timetuple()),
+                    "x": calendar.timegm(day.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
                 })
 
             day += relativedelta.relativedelta(months=1)
