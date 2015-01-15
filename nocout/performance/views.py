@@ -223,7 +223,7 @@ class LivePerformanceListing(BaseDatatableView):
                                                  page_type=page_type,
                                                  required_value_list=required_value_list
         )
-
+        
         return devices
 
     def filter_queryset(self, qs):
@@ -698,39 +698,48 @@ class Inventory_Device_Status(View):
                 sector_id = 'N/A'
                 pmp_port = 'N/A'
                 dr_ip = None
-
-                base_station = sector.base_station
-                planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
-                frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
-                planned_frequency = ",".join(planned_frequency)
-                frequency = ",".join(frequency)
-                if technology.name.lower() in ['ptp', 'p2p']:
-                    try:
-                        circuits = sector.circuit_set.get()
-                        customer_name = circuits.customer.alias
-                    except Exception as no_circuit:
-                        log.exception(no_circuit)
-
-                else:
-                    sector_id = sector.sector_id
-                    if technology.name.lower() in ['wimax']:
+                base_station = 'N/A'
+                frequency = 'N/A'
+                planned_frequency = 'N/A'
+                if sector:
+                    base_station = sector.base_station
+                    planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
+                    frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
+                    planned_frequency = ",".join(planned_frequency)
+                    frequency = ",".join(frequency)
+                    if technology.name.lower() in ['ptp', 'p2p']:
                         try:
-                            pmp_port = sector.sector_configured_on_port.alias
-                            pmp_port = pmp_port.upper()
-                        except Exception as no_port:
-                            log.exception(no_port)
-                        try:
-                            dr_ip = sector.dr_configured_on.ip_address
-                        except Exception as no_dr:
-                            dr_ip = None
-                            log.exception(no_dr.message)
+                            circuits = sector.circuit_set.get()
+                            customer_name = circuits.customer.alias
+                        except Exception as no_circuit:
+                            log.exception(no_circuit)
 
-                city_name = base_station.city.city_name if base_station.city else "N/A"
-                state_name = base_station.state.state_name if base_station.state else "N/A"
+                    else:
+                        sector_id = sector.sector_id
+                        if technology.name.lower() in ['wimax']:
+                            try:
+                                pmp_port = sector.sector_configured_on_port.alias
+                                pmp_port = pmp_port.upper()
+                            except Exception as no_port:
+                                log.exception(no_port)
+                            try:
+                                dr_ip = sector.dr_configured_on.ip_address
+                            except Exception as no_dr:
+                                dr_ip = None
+                                log.exception(no_dr.message)
+                
+                display_bs_name = 'N/A'
+                city_name = 'N/A'
+                state_name = 'N/A'
 
-                display_bs_name = base_station.alias
-                if display_bs_name:
-                    display_bs_name = display_bs_name.upper()
+                if base_station and base_station != 'N/A':
+
+                    city_name = base_station.city.city_name if base_station.city else "N/A"
+                    state_name = base_station.state.state_name if base_station.state else "N/A"
+
+                    display_bs_name = base_station.alias
+                    if display_bs_name:
+                        display_bs_name = display_bs_name.upper()
 
                 if technology.name.lower() in ['ptp', 'p2p']:
                     result['data']['objects']['values'].append([display_bs_name,
@@ -793,6 +802,7 @@ class Inventory_Device_Status(View):
                                                     'Circuit ID',
                                                     'Customer Name',
                                                     'Technology',
+                                                    'Type',
                                                     # 'Building Height',
                                                     # 'Tower Height',
                                                     'City',
@@ -802,6 +812,8 @@ class Inventory_Device_Status(View):
                                                     # 'Planned Frequency',
                                                     'Frequency'
             ]
+
+
             result['data']['objects']['values'] = []
             substation_objects = device.substation_set.filter()
             if len(substation_objects):
@@ -811,41 +823,78 @@ class Inventory_Device_Status(View):
                     customer_id = Circuit.objects.filter(sub_station_id=substation.id).values('customer_id')
                     customer_name = Customer.objects.filter(id=customer_id[0]["customer_id"])
                     circuit = substation.circuit_set.get()
+
                     # customer_name = Customer.objects.filter(id=circuit.customer_id)
                     sector = circuit.sector
-                    base_station = sector.base_station
+                    base_station = 'N/A'
+                    planned_frequency = 'N/A'
+                    frequency = 'N/A'
 
-                    planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
-                    frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
-                    planned_frequency = ",".join(planned_frequency)
-                    frequency = ",".join(frequency)
+                    if sector:
+                        base_station = sector.base_station
+                        planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
+                        frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
+                        planned_frequency = ",".join(planned_frequency)
+                        frequency = ",".join(frequency)
 
+                    #Device Technology
+                    ss_type = ""
                     try:
-                        city_name = City.objects.get(id=base_station.city).city_name \
-                            if base_station.city \
-                            else "N/A"
-                    except Exception as no_city:
-                        city_name = "N/A"
+                        ss_type = type.alias
+                    except Exception, e:
+                        ss_type = 'N/A'
+
+                    # Handling for city name
                     try:
-                        state_name = State.objects.get(id=base_station.state).state_name \
-                            if base_station.state \
-                            else "N/A"
-                    except Exception as no_state:
-                        state_name = "N/A"
+                        city_name = base_station.city.city_name if base_station.city else "N/A"
+                    except Exception, e:
+                        city_name = 'N/A'
+
+                    # Handling for state name
+                    try:
+                        state_name = base_station.state.state_name if base_station.state else "N/A"
+                    except Exception, e:
+                        state_name = 'N/A'
+
+                    # try:
+                    #     city_name = City.objects.get(id=base_station.city).city_name \
+                    #         if base_station.city \
+                    #         else "N/A"
+                    # except Exception as no_city:
+                    #     city_name = "N/A"
+                    # try:
+                    #     state_name = State.objects.get(id=base_station.state).state_name \
+                    #         if base_station.state \
+                    #         else "N/A"
+                    # except Exception as no_state:
+                    #     state_name = "N/A"
 
                     display_mac_address = device.mac_address
                     if display_mac_address:
                         display_mac_address = display_mac_address.upper()
 
-                    display_bs_name = base_station.alias
+                    display_bs_name = "N/A"
+
+                    if base_station and base_station != 'N/A':
+                        display_bs_name = base_station.alias
+
+                    # Condition to show Customer name as BS Name in case of backhaul
+                    if circuit.circuit_type:
+                        if circuit.circuit_type.lower().strip() in ['bh', 'backhaul']:
+                            display_bs_name = customer_name[0].alias
+                        else:
+                            display_bs_name = base_station.alias
+
                     if display_bs_name:
                         display_bs_name = display_bs_name.upper()
+
 
                     result['data']['objects']['values'].append([display_bs_name,
                                                                 substation.alias,
                                                                 circuit.circuit_id,
                                                                 customer_name[0].alias,
                                                                 technology.alias,
+                                                                ss_type,
                                                                 # substation.building_height,
                                                                 # substation.tower_height,
                                                                 city_name,
