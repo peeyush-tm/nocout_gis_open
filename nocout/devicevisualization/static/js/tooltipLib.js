@@ -1024,20 +1024,20 @@ var pmp_ss_toolTip_polled = [
         'value' : '',
         'url'   : ''
 	},
-    {
-        'name'  : '',
-        'title' : 'If Out Errors',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-    },
-    {
-        'name'  : '',
-        'title' : 'If In Errors',
-        'show'  : 1,
-        'value' : '',
-        'url'   : ''
-    },
+    // {
+    //     'name'  : '',
+    //     'title' : 'If Out Errors',
+    //     'show'  : 1,
+    //     'value' : '',
+    //     'url'   : ''
+    // },
+    // {
+    //     'name'  : '',
+    //     'title' : 'If In Errors',
+    //     'show'  : 1,
+    //     'value' : '',
+    //     'url'   : ''
+    // },
 	{
 		'name'  : 'cambium_ss_frequency_invent_frequency',
         'title' : 'Frequency',
