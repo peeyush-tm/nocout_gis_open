@@ -1,6 +1,7 @@
 """
 Dashboard Utilities.
 """
+import json
 from multiprocessing import Process, Queue
 
 from django.conf import settings
@@ -210,38 +211,6 @@ def get_dashboard_status_sector_range_counter(service_status_results):
     return range_counter
 
 
-def get_pie_chart_json_response_sector_dict(data_source, range_counter):
-
-    display_name = data_source.replace('_', ' ')
-    color_array = {'Needs Augmentation': "#FFE90D", 'Stop Provisioning': "#FF0022", 'Normal':"#99CC00", 'Unknown':"#ACB3BA"}
-
-    chart_data = []
-    colors = []
-    for key,value in range_counter.items():
-        chart_data.append(['%s: %s' % (key, value), range_counter[key]])
-        colors.append(color_array[key])
-
-    response_dict = {
-        "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
-        "data": {
-            "meta": {},
-            "objects": {
-                "plot_type": "charts",
-                "display_name": display_name,
-                "valuesuffix": "dB",
-                "colors": colors,
-                "chart_data": [{
-                    "type": 'pie',
-                    "name": display_name.upper(),
-                    "data": chart_data
-                }]
-            }
-        },
-        "success": 1
-    }
-    return response_dict
-
-
 #**************************** Sales Opportunity *********************#
 def get_topology_status_data(machine_device_list, machine, model, service_name, data_source):
     """
@@ -284,3 +253,52 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
         # current value define the total ss connected to the sector
         status_results.append({'sector_id': sector.id, 'current_value': ss_qs.count()})
     return status_results
+
+
+def get_highchart_response(dictionary={}):
+    if 'type' not in dictionary:
+        return json.dumps({
+            "message": "No Data To Display.",
+            "success": 0
+        })
+
+    if dictionary['type'] == 'pie':
+        chart_data = {
+            'type': 'pie',
+            'name': dictionary['name'],
+            'title': dictionary['title'],
+            'data': dictionary['chart_series'],
+        }
+    elif dictionary['type'] == 'gauge':
+        chart_data = {
+            "is_inverted": False,
+            "name": dictionary['name'],
+            "title": '',
+            "data": [{
+                "color": dictionary['color'],
+                "name": dictionary['name'],
+                "count": dictionary['count']
+            }],
+            "valuesuffix": "",
+            "type": "gauge",
+            "valuetext": ""
+        }
+    elif dictionary['type'] == 'areaspline':
+        chart_data = {
+            'type': 'areaspline',
+            'title': dictionary['title'],
+            'valuesuffix': dictionary['valuesuffix'],
+            'data': dictionary['chart_series']
+        }
+
+    return json.dumps({
+        "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
+        "data": {
+            "meta": {
+            },
+            "objects": {
+                "chart_data": [chart_data]
+            }
+        },
+        "success": 1
+    })

@@ -55,7 +55,7 @@ def check_mrotek_fe_port_state(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     port_state_list = []
-    port_string = "FE_"
+    port_string = "fe_"
     try:
 	port_state_list = []
         infotext = ""

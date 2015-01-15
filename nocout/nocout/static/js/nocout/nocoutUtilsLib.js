@@ -24,12 +24,12 @@ var green_color = "#468847",
  */
 function populateDeviceStatus_nocout(domElement,info) {
 
-	var fa_icon_class = "fa-circle",
+    var fa_icon_class = "fa-circle",
         txt_color = "",
         status_html = "",
-		age = info.age ? info.age : "Unknown",
-    	lastDownTime = info.last_down_time ? info.last_down_time : "Unknown",
-    	status = info.status ? info.status.toUpperCase() : "Unknown";
+        age = info.age ? info.age : "Unknown",
+        lastDownTime = info.last_down_time ? info.last_down_time : "Unknown",
+        status = info.status ? info.status.toUpperCase() : "Unknown";
 
     if(green_status_array.indexOf($.trim(status.toLowerCase()))  > -1) {
         txt_color = green_color;
@@ -67,7 +67,7 @@ function populateDeviceStatus_nocout(domElement,info) {
  */
 function populateServiceStatus_nocout(domElement,info) {
 
-	if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
+    if($.trim(info.last_updated) != "" || $.trim(info.perf) != "") {
         var last_updated = info.last_updated ? info.last_updated : "N/A",
             perf = info.perf ? info.perf : "N/A",
             inner_status_html = '';
@@ -113,9 +113,14 @@ function addDataToNormalTable_nocout(table_data, table_headers, table_id) {
  */
 function initNormalDataTable_nocout(table_id, headers, service_id) {
 
-	var table_string = "",
+    var table_string = "",
         grid_headers = headers,
         excel_columns = [];
+
+    if($('#'+table_id).length > 0) {
+        $("#"+table_id).dataTable().fnDestroy();
+        $("#"+table_id).remove();
+    }
 
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
@@ -128,7 +133,7 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
 
 
     if(service_id) {
-    	$('#'+service_id+'_chart').html(table_string);
+        $('#'+service_id+'_chart').html(table_string);
     }
 
     $("#" + table_id).DataTable({
@@ -160,8 +165,14 @@ function initNormalDataTable_nocout(table_id, headers, service_id) {
  */
 function initChartDataTable_nocout(table_id, headers, service_id) {
 
-	var excel_columns = [],
-		data_in_table = "<table id='"+table_id+"' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
+    var excel_columns = [];
+
+    if($('#'+table_id).length > 0) {
+        $("#"+table_id).dataTable().fnDestroy();
+        $("#"+table_id).remove();
+    }
+
+    var data_in_table = "<table id='"+table_id+"' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
     /*Make table headers*/
     for (var i = 0; i < headers.length; i++) {
         data_in_table += '<td colspan="2" align="center"><b>' + headers[i].name + '</b></td>';
@@ -179,9 +190,8 @@ function initChartDataTable_nocout(table_id, headers, service_id) {
 
     data_in_table += '</tr></thead></table>';
     /*Table header creation end*/
-
     if(service_id) {
-    	$('#'+service_id+'_bottom_table').html(data_in_table);
+        $('#'+service_id+'_bottom_table').html(data_in_table);
     }
 
     $("#"+table_id).DataTable({
@@ -257,7 +267,7 @@ function addDataToChartTable_nocout(table_obj, table_id) {
  */
 function addPointsToChart_nocout(pointArray, dom_id) {
 
-	var highChartSeries = $('#'+dom_id+'_chart').highcharts().series;
+    var highChartSeries = $('#'+dom_id+'_chart').highcharts().series;
 
     for (var i = 0; i < highChartSeries.length; i++) {
         for (var j = 0; j < pointArray[i].data.length; j++) {
@@ -274,7 +284,7 @@ function addPointsToChart_nocout(pointArray, dom_id) {
  */
 function createHighChart_nocout(chartConfig,dom_id) {
 
-	// Is the y axis should be reversed or not
+    // Is the y axis should be reversed or not
     var is_y_inverted = chartConfig["is_inverted"] ? chartConfig["is_inverted"] : false;
 
     var chart_instance = $('#'+dom_id+'_chart').highcharts({
@@ -352,19 +362,19 @@ function createHighChart_nocout(chartConfig,dom_id) {
  */
 function createTableHtml_nocout(dom_id, table_headers, table_data) {
 
-	var table_string = "",
-		grid_headers = table_headers,
-		table_id = dom_id ? dom_id : "table1",
-		colSpanStr = "";
+    var table_string = "",
+        grid_headers = table_headers,
+        table_id = dom_id ? dom_id : "table1";
 
-	if(isChart) {
-		colSpanStr = 'colspan="2"'
-	}
+    if($("#"+table_id).length > 0) {
+        $("#"+table_id).dataTable().fnDestroy();
+        $("#"+table_id).remove();
+    }
 
     table_string += '<table id="' + table_id + '" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
     /*Table header creation start*/
     for (var i = 0; i < grid_headers.length; i++) {
-        table_string += '<td '+colSpanStr+'><b>' + grid_headers[i].toUpperCase() + '</b></td>';
+        table_string += '<td><b>' + grid_headers[i].toUpperCase() + '</b></td>';
     }
 
     table_string += '</thead><tbody>';
@@ -394,8 +404,15 @@ function createTableHtml_nocout(dom_id, table_headers, table_data) {
  */
 function createChartDataTableHtml_nocout(dom_id, chartObj) {
 
-	var table_id = dom_id ? dom_id : "table1",
-		data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
+    var table_id = dom_id ? dom_id : "table1";
+
+    if($("#"+table_id).length > 0) {
+        $("#"+table_id).dataTable().fnDestroy();
+        $("#"+table_id).remove();
+    }
+
+    var data_in_table = "<table id='" + table_id + "' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
+
     /*Make table headers*/
     for (var i = 0; i < chartObj.length; i++) {
         data_in_table += '<td colspan="2" align="center"><b>' + chartObj[i].name + '</b></td>';
