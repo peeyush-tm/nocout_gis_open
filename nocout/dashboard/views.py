@@ -1132,9 +1132,10 @@ class SalesOpportunityMixin(object):
 
         response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
         chart_series = response_dict['data']['objects']['chart_data'][0]['data']
+        colors = response_dict['data']['objects']['colors']
 
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-            'title': tech_name + ' Sales Oppurtunity', 'name': ''})
+            'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors})
 
         return HttpResponse(response)
 

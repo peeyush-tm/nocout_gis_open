@@ -269,6 +269,8 @@ def get_highchart_response(dictionary={}):
             'title': dictionary['title'],
             'data': dictionary['chart_series'],
         }
+        if 'colors' in dictionary:
+            chart_data.update({'color': dictionary['colors']})
     elif dictionary['type'] == 'gauge':
         chart_data = {
             "is_inverted": False,
