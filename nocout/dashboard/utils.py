@@ -1,6 +1,7 @@
 """
 Dashboard Utilities.
 """
+import json
 from multiprocessing import Process, Queue
 
 from django.conf import settings
@@ -252,3 +253,52 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
         # current value define the total ss connected to the sector
         status_results.append({'sector_id': sector.id, 'current_value': ss_qs.count()})
     return status_results
+
+
+def get_highchart_response(dictionary={}):
+    if 'type' not in dictionary:
+        return json.dumps({
+            "message": "No Data To Display.",
+            "success": 0
+        })
+
+    if dictionary['type'] == 'pie':
+        chart_data = {
+            'type': 'pie',
+            'name': dictionary['name'],
+            'title': dictionary['title'],
+            'data': dictionary['chart_series'],
+        }
+    elif dictionary['type'] == 'gauge':
+        chart_data = {
+            "is_inverted": False,
+            "name": dictionary['name'],
+            "title": '',
+            "data": [{
+                "color": dictionary['color'],
+                "name": dictionary['name'],
+                "count": dictionary['count']
+            }],
+            "valuesuffix": "",
+            "type": "gauge",
+            "valuetext": ""
+        }
+    elif dictionary['type'] == 'areaspline':
+        chart_data = {
+            'type': 'areaspline',
+            'title': dictionary['title'],
+            'valuesuffix': dictionary['valuesuffix'],
+            'data': dictionary['chart_series']
+        }
+
+    return json.dumps({
+        "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
+        "data": {
+            "meta": {
+            },
+            "objects": {
+                "chart_data": [chart_data]
+            }
+        },
+        "success": 1
+    })
