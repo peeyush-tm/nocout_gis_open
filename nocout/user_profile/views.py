@@ -330,13 +330,15 @@ def change_password(request):
                 # Above doesn't remove existing Visitor object. So removing it below.
                 Visitor.objects.filter(user=user).delete()
 
-            kwargs=dict(password=make_password(form.data['confirm_pwd']),
-                        password_changed_at=timezone.now(), user_invalid_attempt=0)
-            UserProfile.objects.filter(id=user.id).update(**kwargs)
-            UserPasswordRecord.objects.create(user_id=user.id, password_used=kwargs['password'])
-
             auth.login(request, user)   # Login the request user.
             Visitor.objects.create(session_key=request.session.session_key, user=request.user)
+
+            user.userprofile.password_changed_at = timezone.now()
+            user.userprofile.user_invalid_attempt = 0
+            user.userprofile.save()
+            user.set_password(form.data['confirm_pwd'])
+            user.save()
+            UserPasswordRecord.objects.create(user_id=user.id, password_used=form.data['confirm_pwd'])
 
             success = 1     # 0 - fail, 1 - success, 2 - exception
             message = "Success/Fail message.",
