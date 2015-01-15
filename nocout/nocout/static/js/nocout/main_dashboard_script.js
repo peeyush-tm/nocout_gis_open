@@ -13,7 +13,10 @@ function highcharts_piechart(url, domElement) {
                 response = result;
             }
 
-            if(response.success==1){
+            if(response.success==1) {
+                // Pie Chart Color(Use default colors if API doesn't pass any color list)
+                var default_chart_colors = window.Highcharts.getOptions().colors,
+                    colors_list = response.data.objects.chart_data[0].color ? response.data.objects.chart_data[0].color : default_chart_colors;
 
                 var pie_chart = $(domElement).highcharts({
                     chart: {
@@ -61,6 +64,7 @@ function highcharts_piechart(url, domElement) {
                     series: [{
                         type: 'pie',
                         name: response.data.objects.chart_data[0].name,
+                        colors: colors_list,
                         data: response.data.objects.chart_data[0].data
                     }],
                     lang: {
@@ -98,6 +102,7 @@ function highcharts_areachart(url, domElement) {
             }
 
             if(response.success == 1) {
+
                 $(domElement).highcharts({
                     chart: {
                         events: {
