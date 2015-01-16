@@ -664,121 +664,10 @@ class MainDashboardMixin(object):
         :return Http response object:
         """
         technology = self.technology
-        count = 0
-        status_list = []
-        device_list = []
-        count_range = ''
-        count_color = '#CED5DB' # For Unknown Range.
-
-        # Get User's organizations
-        # (admin : organization + sub organization)
-        # (operator + viewer : same organization)
         user_organizations = logged_in_user_organizations(self)
-
-        # Get Devices of User's Organizations and/or Sub Organization.
-        user_devices = organization_network_devices(user_organizations, technology)
-        # Get Sectors of technology.Technology is PMP or WIMAX or None(For All: PMP+WIMAX )
-        if technology:
-            technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
-            sector_list = Sector.objects.filter(bs_technology=technology, sector_configured_on__in=user_devices)
-        else:
-            technology_name = 'network'
-            sector_list = Sector.objects.filter(sector_configured_on__in=user_devices)
-        # Get Devices of sector_list.
-        for sector in sector_list:
-            device_list.append(sector.sector_configured_on)
-
-        # Make device_list distinct and remove duplicate devices from list.
-        device_list = list(set(device_list))
-        #Get dictionary of machine and device list.
-        machine_dict = self.prepare_machines(device_list)
-
-        if self.temperature:
-            dashboard_name = 'temperature'
-            severity_list = ['warning', 'critical']
-            if self.temperature == 'IDU':
-                service_list = ['wimax_bs_temperature_acb', 'wimax_bs_temperature_fan']
-                data_source_list = ['acb_temp', 'fan_temp']
-            elif self.temperature == 'ACB':
-                service_list = ['wimax_bs_temperature_acb']
-                data_source_list = ['acb_temp']
-            elif self.temperature == 'FAN':
-                service_list = ['wimax_bs_temperature_fan']
-                data_source_list = ['fan_temp']
-
-            for machine_name, device_list in machine_dict.items():
-                status_list += ServiceStatus.objects.filter(device_name__in=device_list,
-                                            service_name__in=service_list,
-                                            data_source__in=data_source_list,
-                                            severity__in=severity_list).using(machine_name).annotate(Count('device_name'))
-        elif self.packet_loss:
-            dashboard_name = 'packetloss-%s'%technology_name
-            for machine_name, device_list in machine_dict.items():
-                status_list += NetworkStatus.objects.filter(device_name__in=device_list,
-                                            service_name='ping',
-                                            data_source='pl',
-                                            severity__in=['warning', 'critical', 'down'],
-                                            current_value__lt=100).using(machine_name).annotate(Count('device_name'))
-        elif self.down:
-            dashboard_name = 'down-%s'%technology_name
-            for machine_name, device_list in machine_dict.items():
-                status_list += NetworkStatus.objects.filter(device_name__in=device_list,
-                                            service_name='ping',
-                                            data_source='pl',
-                                            severity__in=['down'],
-                                            current_value__gte=100).using(machine_name).annotate(Count('device_name'))
-        else:
-            dashboard_name = 'latency-%s'%technology_name
-            for machine_name, device_list in machine_dict.items():
-                status_list += NetworkStatus.objects.filter(device_name__in=device_list,
-                                            service_name='ping',
-                                            data_source='rta',
-                                            severity__in=['warning', 'critical', 'down']).using(machine_name).annotate(Count('device_name'))
-
-        try:
-            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
-        except DashboardSetting.DoesNotExist as e:
-            return HttpResponse(json.dumps({
-                "message": "Corresponding dashboard setting is not available.",
-                "success":0
-            }))
-        count = len(status_list)
-
-        for i in range(1, 11):
-            start_range = getattr(dashboard_setting, 'range%d_start' %i)
-            end_range = getattr(dashboard_setting, 'range%d_end' %i)
-
-            # dashboard type is numeric and start_range and end_range exists to compare result.
-            if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
-                if float(start_range) <= float(count) <= float(end_range):
-                    count_range = 'range%d' %i
-
-            #dashboard type is string and start_range exists to compare result.
-            elif dashboard_setting.dashboard_type == 'STR' and start_range:
-                if str(count).lower() in start_range.lower():
-                    count_range = 'range%d' %i
-
-        # get color of range in which count exists.
-        if count_range:
-            count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
-
-        dictionary = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
-        response = get_highchart_response(dictionary)
+        chart_data_dict = get_gauge_chart_status_data(user_organizations, self.packet_loss, self.down, self.temperature, technology)
+        response = get_highchart_response(chart_data_dict)
         return HttpResponse(response)
-
-    def prepare_machines(self, device_list_qs):
-        """
-        Return dict of machine name keys containing values of related devices list.
-
-        :param device_list_qs:
-        :return machine_dict:
-        """
-        unique_device_machine_list = {device.machine.name: True for device in device_list_qs}.keys()
-
-        machine_dict = {}
-        for machine in unique_device_machine_list:
-            machine_dict[machine] = [device.device_name for device in device_list_qs if device.machine.name == machine]
-        return machine_dict
 
 
 class WiMAX_Latency(MainDashboardMixin, View):
@@ -1153,3 +1042,118 @@ class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
         tech_name = 'WiMAX'
 
         return tech_name
+
+
+def get_gauge_chart_status_data(organizations, packet_loss, down, temperature, technology):
+    """
+    """
+    count = 0
+    status_list = []
+    device_list = []
+    count_range = ''
+    count_color = '#CED5DB' # For Unknown Range.
+
+    # Get Devices of User's Organizations and/or Sub Organization.
+    user_devices = organization_network_devices(organizations, technology)
+    # Get Sectors of technology.Technology is PMP or WIMAX or None(For All: PMP+WIMAX )
+    if technology:
+        technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
+        sector_list = Sector.objects.filter(bs_technology=technology, sector_configured_on__in=user_devices)
+    else:
+        technology_name = 'network'
+        sector_list = Sector.objects.filter(sector_configured_on__in=user_devices)
+    # Get Devices of sector_list.
+    for sector in sector_list:
+        device_list.append(sector.sector_configured_on)
+
+    # Make device_list distinct and remove duplicate devices from list.
+    device_list = list(set(device_list))
+    #Get dictionary of machine and device list.
+    machine_dict = prepare_machines(device_list)
+
+    if temperature:
+        dashboard_name = 'temperature'
+        severity_list = ['warning', 'critical']
+        if temperature == 'IDU':
+            service_list = ['wimax_bs_temperature_acb', 'wimax_bs_temperature_fan']
+            data_source_list = ['acb_temp', 'fan_temp']
+        elif temperature == 'ACB':
+            service_list = ['wimax_bs_temperature_acb']
+            data_source_list = ['acb_temp']
+        elif temperature == 'FAN':
+            service_list = ['wimax_bs_temperature_fan']
+            data_source_list = ['fan_temp']
+
+        for machine_name, device_list in machine_dict.items():
+            status_list += ServiceStatus.objects.filter(device_name__in=device_list,
+                                        service_name__in=service_list,
+                                        data_source__in=data_source_list,
+                                        severity__in=severity_list).using(machine_name).annotate(Count('device_name'))
+    elif packet_loss:
+        dashboard_name = 'packetloss-%s'%technology_name
+        for machine_name, device_list in machine_dict.items():
+            status_list += NetworkStatus.objects.filter(device_name__in=device_list,
+                                        service_name='ping',
+                                        data_source='pl',
+                                        severity__in=['warning', 'critical', 'down'],
+                                        current_value__lt=100).using(machine_name).annotate(Count('device_name'))
+    elif down:
+        dashboard_name = 'down-%s'%technology_name
+        for machine_name, device_list in machine_dict.items():
+            status_list += NetworkStatus.objects.filter(device_name__in=device_list,
+                                        service_name='ping',
+                                        data_source='pl',
+                                        severity__in=['down'],
+                                        current_value__gte=100).using(machine_name).annotate(Count('device_name'))
+    else:
+        dashboard_name = 'latency-%s'%technology_name
+        for machine_name, device_list in machine_dict.items():
+            status_list += NetworkStatus.objects.filter(device_name__in=device_list,
+                                        service_name='ping',
+                                        data_source='rta',
+                                        severity__in=['warning', 'critical', 'down']).using(machine_name).annotate(Count('device_name'))
+
+    try:
+        dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
+    except DashboardSetting.DoesNotExist as e:
+        return HttpResponse(json.dumps({
+            "message": "Corresponding dashboard setting is not available.",
+            "success":0
+        }))
+    count = len(status_list)
+
+    for i in range(1, 11):
+        start_range = getattr(dashboard_setting, 'range%d_start' %i)
+        end_range = getattr(dashboard_setting, 'range%d_end' %i)
+
+        # dashboard type is numeric and start_range and end_range exists to compare result.
+        if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
+            if float(start_range) <= float(count) <= float(end_range):
+                count_range = 'range%d' %i
+
+        #dashboard type is string and start_range exists to compare result.
+        elif dashboard_setting.dashboard_type == 'STR' and start_range:
+            if str(count).lower() in start_range.lower():
+                count_range = 'range%d' %i
+
+    # get color of range in which count exists.
+    if count_range:
+        count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
+
+    dictionary = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
+    return dictionary
+
+
+def prepare_machines(device_list_qs):
+    """
+    Return dict of machine name keys containing values of related devices list.
+
+    :param device_list_qs:
+    :return machine_dict:
+    """
+    unique_device_machine_list = {device.machine.name: True for device in device_list_qs}.keys()
+
+    machine_dict = {}
+    for machine in unique_device_machine_list:
+        machine_dict[machine] = [device.device_name for device in device_list_qs if device.machine.name == machine]
+    return machine_dict
