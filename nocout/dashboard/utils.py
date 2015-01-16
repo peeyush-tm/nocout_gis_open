@@ -1,6 +1,7 @@
 """
 Dashboard Utilities.
 """
+import copy
 import json
 from multiprocessing import Process, Queue
 
@@ -8,8 +9,41 @@ from django.conf import settings
 from django.db.models import Count
 from datetime import datetime, timedelta
 
+from dashboard.models import DashboardSetting
+from dashboard.config import dashboards
+
 import logging
 log = logging.getLogger(__name__)
+
+
+def get_unused_dashboards(dashboard_setting_id=None):
+    """
+    """
+    dashboard_settings = DashboardSetting.objects.all()
+    if dashboard_setting_id:
+
+        dashboard_settings = dashboard_settings.exclude(id=dashboard_setting_id)
+
+    technologies = {
+        'P2P': 2,
+        'PMP': 4,
+        'WiMAX': 3,
+        'All': None,
+    }
+
+    types = {
+        'numeric': 'INT',
+        'string': 'String',
+    }
+
+    unused_dashboards = copy.copy(dashboards)
+
+    for dashboard_setting in dashboard_settings:
+        setting_technology = dashboard_setting.technology.id if dashboard_setting.technology else None
+        for i, dashboard_conf in enumerate(unused_dashboards):
+            if dashboard_conf['page_name'] == dashboard_setting.page_name and technologies[dashboard_conf['technology']] == setting_technology and dashboard_conf['is_bh'] == dashboard_setting.is_bh and dashboard_conf['dashboard_name'] == dashboard_setting.name and types[dashboard_conf['dashboard_type']] == dashboard_setting.dashboard_type:
+                unused_dashboards.pop(i)
+    return json.dumps(unused_dashboards)
 
 def get_service_status_data(queue, machine_device_list, machine, model, service_name, data_source):
     """

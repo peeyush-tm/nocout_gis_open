@@ -28,8 +28,7 @@ from performance.utils.util import color_picker
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
-    get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response
-from dashboard.config import dashboards
+    get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response, get_unused_dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
@@ -125,7 +124,7 @@ class DashbaordSettingsCreateView(SuperUserRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(DashbaordSettingsCreateView, self).get_context_data(**kwargs)
-        context['dashboards'] = json.dumps(dashboards)
+        context['dashboards'] = get_unused_dashboards()
         technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
         technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
@@ -151,7 +150,7 @@ class DashbaordSettingsUpdateView(SuperUserRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(DashbaordSettingsUpdateView, self).get_context_data(**kwargs)
-        context['dashboards'] = json.dumps(dashboards)
+        context['dashboards'] = get_unused_dashboards(dashboard_setting_id=self.object.id)
         technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
         technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
