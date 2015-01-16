@@ -300,6 +300,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'capacity_management.tasks.gather_sector_status',
         'schedule': timedelta(seconds=300),
         'args': ['WiMAX']
+    },
+    'create_dashboard_status_timely': {
+        'task': 'dashboard.tasks.create_dashboard_status_timely',
+        'schedule': timedelta(seconds=300),
     }
 }
 
