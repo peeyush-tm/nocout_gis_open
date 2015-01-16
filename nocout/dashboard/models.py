@@ -148,3 +148,53 @@ class MFRCauseCode(models.Model):
 
     def __unicode__(self):
         return self.processed_for.name
+
+
+class DashboardStatus(models.Model):
+    """
+    """
+    dashboard_name = models.CharField(max_length=50)
+    created_on = models.DateField(auto_now_add=False, auto_now=False)
+    range_type = models.CharField(max_length=3, choices=(('INT', 'Numeric'), ('STR', 'String')))
+    start_range = models.CharField(max_length=128)
+    end_range = models.CharField(max_length=128, default='')
+    range_color = models.CharField(max_length=100, default='')
+    range_count = models.CharField(max_length=64)
+
+    class Meta:
+        abstract = True
+
+class DashboardStatusTimely(DashboardStatus):
+    """
+    """
+    pass
+
+
+class DashboardStatusHourly(DashboardStatus):
+    """
+    """
+    pass
+
+
+class DashboardStatusDaily(DashboardStatus):
+    """
+    """
+    pass
+
+
+class DashboardStatusWeekly(DashboardStatus):
+    """
+    """
+    pass
+
+
+class DashboardStatusMonthly(DashboardStatus):
+    """
+    """
+    pass
+
+
+class DashboardStatusYearly(DashboardStatus):
+    """
+    """
+    pass
