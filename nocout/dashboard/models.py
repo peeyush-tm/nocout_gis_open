@@ -154,7 +154,7 @@ class DashboardStatus(models.Model):
     """
     """
     dashboard_name = models.CharField(max_length=50)
-    created_on = models.DateField(auto_now_add=False, auto_now=False)
+    created_on = models.DateTimeField(auto_now_add=False, auto_now=False)
     range_type = models.CharField(max_length=3, choices=(('INT', 'Numeric'), ('STR', 'String')))
     start_range = models.CharField(max_length=128)
     end_range = models.CharField(max_length=128, default='')
