@@ -695,18 +695,16 @@ class MainDashboardMixin(object):
 
         if self.temperature:
             dashboard_name = 'temperature'
+            severity_list = ['warning', 'critical']
             if self.temperature == 'IDU':
                 service_list = ['wimax_bs_temperature_acb', 'wimax_bs_temperature_fan']
                 data_source_list = ['acb_temp', 'fan_temp']
-                severity_list = ['warning', 'critical', 'ok', 'unknown']
             elif self.temperature == 'ACB':
                 service_list = ['wimax_bs_temperature_acb']
                 data_source_list = ['acb_temp']
-                severity_list = ['warning', 'critical']
             elif self.temperature == 'FAN':
                 service_list = ['wimax_bs_temperature_fan']
                 data_source_list = ['fan_temp']
-                severity_list = ['warning', 'critical']
 
             for machine_name, device_list in machine_dict.items():
                 status_list += ServiceStatus.objects.filter(device_name__in=device_list,
