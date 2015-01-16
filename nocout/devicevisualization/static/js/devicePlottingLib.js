@@ -554,6 +554,33 @@ function devicePlottingClass_gmap() {
             // Google maps mousemove event, triggers when map mouse move on google maps
             google.maps.event.addListener(mapInstance, 'mousemove', function (event) {
                 displayCoordinates(event.latLng);
+
+                if(is_ruler_active === 1) {
+					if(ruler_pt_count == 1) {
+						if(!temp_line) {
+							var line_path = [
+								ruler_array[0].getPosition(),
+								event.latLng,
+							];
+							temp_line = new google.maps.Polyline({
+								path 			: 	line_path,
+								clickable 		: 	false,
+								strokeColor 	: 	ruler_line_color,
+								strokeOpacity	: 	1.0,
+								strokeWeight	: 	3,
+								pointType 		: 	"path",
+								geodesic		: 	true,
+								map 			: 	mapInstance
+							});
+						} else {
+							var line_path = [
+								ruler_array[0].getPosition(),
+								event.latLng,
+							];
+							temp_line.setPath(line_path);
+						}	
+					}
+	        	}
             });
 
             // Google maps dragend event, triggers when map drags
@@ -827,36 +854,6 @@ function devicePlottingClass_gmap() {
 				}
             });
 
-	        google.maps.event.addListener(mapInstance,'mousemove',function(e) {
-
-	        	if(is_ruler_active === 1) {
-					if(ruler_pt_count == 1) {
-						if(!temp_line) {
-							var line_path = [
-								ruler_array[0].getPosition(),
-								e.latLng,
-							];
-							temp_line = new google.maps.Polyline({
-								path 			: 	line_path,
-								clickable 		: 	false,
-								strokeColor 	: 	ruler_line_color,
-								strokeOpacity	: 	1.0,
-								strokeWeight	: 	3,
-								pointType 		: 	"path",
-								geodesic		: 	true,
-								map 			: 	mapInstance
-							});
-						} else {
-							var line_path = [
-								ruler_array[0].getPosition(),
-								e.latLng,
-							];
-							temp_line.setPath(line_path);
-						}	
-					}
-	        	}
-	    	});
-
 			/*Search text box object*/
 			var searchTxt = document.getElementById('google_loc_search');
 
@@ -930,9 +927,6 @@ function devicePlottingClass_gmap() {
 			oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
             oms_ss = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
 
-            prepare_oms_object(oms);
-            prepare_oms_object(oms_ss);
-
             // Update The usual n highlihted colors of OverlappingMarkerSpiderfier
             var oms_legends = oms.legColors,
             	oms_ss_legends = oms_ss.legColors;
@@ -951,6 +945,10 @@ function devicePlottingClass_gmap() {
             		MapTypes[key2] = "";
             	}
             }
+            
+            prepare_oms_object(oms);
+            prepare_oms_object(oms_ss);
+
 
 			/*Create a instance of google map info window*/
 			infowindow = new google.maps.InfoWindow({zIndex:800});
