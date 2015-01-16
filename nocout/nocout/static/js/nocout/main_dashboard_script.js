@@ -497,8 +497,8 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
                 data: [val_count],
                 dataLabels: {
                 format: '<div style="text-align:center"><span style="'+gauge_chart_val_style+'color:' +
-                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || gauge_val_default_color) + '">{y:1f}</span><br/>'
-                    // '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || gauge_val_default_color) + '">{y:1f}</span><br/>'+
+                    '<span style="font-size:12px;color:silver">Hosts</span></div>'
                 },
                 tooltip: {
                     valueSuffix: ' revolutions/min'
