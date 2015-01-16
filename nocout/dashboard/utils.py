@@ -40,8 +40,8 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
     service_status_data = model.objects.filter(
         device_name__in=machine_device_list,
         service_name__icontains = service_name,
-        data_source = data_source,
-        severity__in=required_severity
+        data_source = data_source#,
+        # severity__in=required_severity
     ).using(machine).values(*required_values)
 
     if queue:
@@ -269,6 +269,8 @@ def get_highchart_response(dictionary={}):
             'title': dictionary['title'],
             'data': dictionary['chart_series'],
         }
+        if 'colors' in dictionary:
+            chart_data.update({'color': dictionary['colors']})
     elif dictionary['type'] == 'gauge':
         chart_data = {
             "is_inverted": False,

@@ -594,7 +594,7 @@ function nocoutPerfLib() {
                             var chart_config = result.data.objects;
                             // If any data available then plot chart & table
                             if(chart_config.chart_data.length > 0) {
-                                if(!$('#'+service_id+'_chart').data('highchartsChart')) {
+                                if(!$('#'+service_id+'_chart').highcharts()) {
                                     createHighChart_nocout(chart_config,service_id);
                                     initChartDataTable_nocout("perf_data_table", chart_config.chart_data,service_id);
                                 } else {
@@ -613,11 +613,11 @@ function nocoutPerfLib() {
                         //if last date
                         if(moment(ajax_start_date).date() == moment(ajax_end_date).date() && moment(ajax_start_date).dayOfYear() == moment(ajax_end_date).dayOfYear()) {
 
-                            if ($('#'+service_id+'_chart').data('highchartsChart')) {
+                            if ($('#'+service_id+'_chart').highcharts()) {
                                 $('#' + service_id + '_chart').highcharts().redraw();
                             }
 
-                            if (!$('#'+service_id+'_chart').data('highchartsChart') && $("#other_perf_table").length == 0) {
+                            if (!$('#'+service_id+'_chart').highcharts() && $("#other_perf_table").length == 0) {
                                 $('#'+service_id+'_chart').html(result.message);
                             }
 

@@ -15,6 +15,19 @@ var mapInstance = "",
     red_status_array = ['critical','down'],
     orange_status_array = ['warning'],
     ptp_tech_list = ['ptp','p2p','ptp bh'],
+    meter_unit_fields = [
+    	'radwin_link_distance_invent_link_distance'
+	],
+    mbps_unit_fields = [
+    	'radwin_ul_utilization_Management_Port_on_Odu',
+    	'radwin_dl_utilization_Management_Port_on_Odu',
+    	'cambium_ul_utilization_ul_utilization',
+    	'cambium_dl_utilization_dl_utilization',
+    	'wimax_ss_ul_utilization_ul_utilization',
+    	'wimax_ss_dl_utilization_dl_utilization',
+    	'wimax_pmp1_utilization_pmp1_utilization',
+    	'wimax_pmp2_utilization_pmp2_utilization'
+	],
     india_center_lon = 79.0900,
     india_center_lat = 21.1500,
     posLink1 = "http://10.209.19.190:10080/ISCWebServiceUI/JSP/types/ISCType.faces?serviceId",
@@ -455,7 +468,7 @@ function devicePlottingClass_gmap() {
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.HYBRID/*google.maps.MapTypeId.SATELLITE*/,
 					mapTypeControl : true,
-					styles 	  : gmap_styles_array[0], 
+					styles 	  : gmap_styles_array[1],
 					mapTypeControlOptions: {
 						mapTypeIds: [google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID],
 						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
@@ -467,7 +480,7 @@ function devicePlottingClass_gmap() {
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
 					mapTypeControl : true,
-					styles 	  : gmap_styles_array[0], 
+					styles 	  : gmap_styles_array[1],
 					mapTypeControlOptions: {
 						mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.TERRAIN,google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID],
 						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
@@ -3182,6 +3195,7 @@ function devicePlottingClass_gmap() {
 			}
 
 		} else if (clickedType == 'sector_Marker' || clickedType == 'sector') {
+
 			var sectorWindowTitle = contentObject.windowTitle ? contentObject.windowTitle : "Base Station Device",
 				nearend_perf_url = contentObject.perf_url ? base_url+""+contentObject.perf_url : "",
 				nearend_inventory_url = contentObject.inventory_url ? base_url+""+contentObject.inventory_url : "",
@@ -3270,6 +3284,7 @@ function devicePlottingClass_gmap() {
 			
 
 			if(contentObject['poll_info'] != undefined) {
+
 				var backend_polled_info = contentObject['poll_info'],
 					actual_polled_info = backend_polled_info;
 
@@ -3293,6 +3308,19 @@ function devicePlottingClass_gmap() {
 					var url = "",
 						text_class = "";
 					if(actual_polled_info[i]["show"]) {
+
+						// if(mbps_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+						// 	if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
+						// 		actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" Mbps";
+						// 	}
+						// }
+
+						// if(meter_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+						// 	if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
+						// 		actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" m";
+						// 	}
+						// }
+
 						// Url
 						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
 						text_class = "text-primary";
@@ -3416,6 +3444,19 @@ function devicePlottingClass_gmap() {
 					var url = "",
 						text_class = "";
 					if(actual_polled_info[i]["show"]) {
+						
+						// if(mbps_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+						// 	if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
+						// 		actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" Mbps";
+						// 	}
+						// }
+
+						// if(meter_unit_fields.indexOf(actual_polled_info[i]['name']) > -1) {
+						// 	if(actual_polled_info[i]['value'] && actual_polled_info[i]['value'] != 'NA') {
+						// 		actual_polled_info[i]['value'] = actual_polled_info[i]['value']+" m";
+						// 	}
+						// }
+
 						// Url
 						url = actual_polled_info[i]["url"] ? actual_polled_info[i]["url"] : "";
 						text_class = "text-primary";
