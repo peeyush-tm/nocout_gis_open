@@ -246,27 +246,6 @@ def get_dashboard_status_sector_range_counter(service_status_results):
 
 
 #**************************** Sales Opportunity *********************#
-def get_topology_status_data(machine_device_list, machine, model, service_name, data_source):
-    """
-    Consolidated Topology Status Data from the Data base.
-
-    :param machine:
-    :param model:
-    :param service_name:
-    :param data_source:
-    :param device_list:
-    :return:
-    """
-    topology_status_data = model.objects.filter(
-        device_name__in=machine_device_list,
-        # service_name__icontains = service_name,
-        # data_source = data_source,
-        data_source = 'topology',
-    ).using(machine)
-
-    return topology_status_data
-
-
 def get_topology_status_results(user_devices, model, service_name, data_source, user_sector):
 
     unique_device_machine_list = {device.machine.name: True for device in user_devices}.keys()
@@ -279,13 +258,17 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
     status_results = []
     topology_status_results = model.objects.none()
     for machine, machine_device_list in machine_dict.items():
-        topology_status_results |= get_topology_status_data(machine_device_list, machine=machine, model=model, service_name=service_name, data_source=data_source)
+        topology_status_results |= model.objects.filter(
+                                        device_name__in=machine_device_list,
+                                        # service_name__icontains = service_name,
+                                        data_source = 'topology',
+                                    ).using(machine)
 
     for sector in user_sector:
         ss_qs = topology_status_results.filter(sector_id=sector.sector_id).\
                         annotate(Count('connected_device_ip'))
         # current value define the total ss connected to the sector
-        status_results.append({'sector_id': sector.id, 'current_value': ss_qs.count()})
+        status_results.append({'id': sector.id, 'name': sector.name, 'current_value': ss_qs.count()})
     return status_results
 
 
