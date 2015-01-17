@@ -56,6 +56,7 @@ def format_kpi_data(site,output,output1,mongo_host,mongo_port,mongo_db_name):
 	matching_criteria = {}
 	utilization_ds = None
 	kpi_update =[]
+	device_sector_id = ""
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 
 	for entry in output:
@@ -65,8 +66,8 @@ def format_kpi_data(site,output,output1,mongo_host,mongo_port,mongo_db_name):
 		host = str(entry[0])
 		host_ip = entry[1]
 		service = str(entry[3])
-		last_state_change  = entry[5]
-                age = last_state_change
+		last_state_change  = entry[6]
+		age = last_state_change
 		perf_data = entry[-1]
 		if service_state == 0:
 			service_state = "ok"
@@ -78,15 +79,19 @@ def format_kpi_data(site,output,output1,mongo_host,mongo_port,mongo_db_name):
 			service_state = "unknown"
 
 		try:
-			if 'pmp1' in service:
-				service_for_sector = "wimax_pmp1_sector_id_invent"
-			elif 'pmp2' in service:
-				service_for_sector = "wimax_pmp2_sector_id_invent"
-			else:
-				service_for_sector = "cambium_bs_sector_id_invent"
+			if 'radwin' not in service:
+				if 'pmp1' in service:
+					service_for_sector = "wimax_pmp1_sector_id_invent"
+				elif 'pmp2' in service:
+					service_for_sector = "wimax_pmp2_sector_id_invent"
+				else:
+					service_for_sector = "cambium_bs_sector_id_invent"
 		
-			device_sector_id = filter(lambda x: host in x and service_for_sector in x,output1)
-			device_sector_id = str(device_sector_id[0][2].split('- ')[1]) 
+				device_sector_id = filter(lambda x: host in x and service_for_sector in x,output1)
+				device_sector_id = str(device_sector_id[0][2].split('- ')[1])
+			if 'radwin' in service:
+				if entry[-1]:
+					device_sector_id= entry[-1].split('=')[1].split(';')[3]  
 		except:
 			device_sector_id = ""
 		try:
@@ -166,7 +171,9 @@ def kpi_data_data_main():
                         "Filter: service_description ~ wimax_pmp2_ul_util_kpi\n"+\
                         "Filter: service_description ~ cambium_dl_util_kpi\n"+\
                         "Filter: service_description ~ cambium_ul_util_kpi\n"+\
-                        "Or: 6\nOutputFormat: python\n"
+                        "Filter: service_description ~ radwin_dl_util_kpi\n"+\
+                        "Filter: service_description ~ radwin_ul_util_kpi\n"+\
+                        "Or: 8\nOutputFormat: python\n"
                 query1= "GET services\nColumns: host_name service_description plugin_output\n" +\
                         "Filter: service_description ~ wimax_pmp1_sector_id_invent\n"+\
                         "Filter: service_description ~ wimax_pmp2_sector_id_invent\n"+ \

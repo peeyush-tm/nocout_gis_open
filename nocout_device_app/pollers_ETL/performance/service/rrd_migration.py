@@ -460,7 +460,9 @@ def get_host_services_name(site_name=None, db=None):
                             "Filter: service_description ~ wimax_pmp2_ul_util_kpi\n"+\
                             "Filter: service_description ~ cambium_ul_util_kpi\n"+\
                             "Filter: service_description ~ cambium_dl_util_kpi\n"+\
-                            "Or: 10\nNegate:\nOutputFormat: python\n"
+                            "Filter: service_description ~ radwin_dl_util_kpi\n"+\
+                            "Filter: service_description ~ radwin_ul_util_kpi\n"+\
+                            "Or: 12\nNegate:\nOutputFormat: python\n"
 	    device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
 				"And: 2\nOutputFormat: python\n"
 
@@ -512,8 +514,8 @@ def get_from_socket(site_name, query):
     #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     machine = site_name[:-8]
-    socket_ip = _LIVESTATUS[machine]['host']
-    socket_port = _LIVESTATUS[machine][site_name]['port']
+    #socket_ip = _LIVESTATUS[machine]['host']
+    #socket_port = _LIVESTATUS[machine][site_name]['port']
     #s.connect((socket_ip, socket_port))
     s.connect(socket_path)
     s.settimeout(60.0)
