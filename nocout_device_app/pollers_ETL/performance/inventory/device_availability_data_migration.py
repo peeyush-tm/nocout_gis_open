@@ -66,11 +66,11 @@ def main(**configs):
 
     print start_time,end_time
     
-    for i in range(len(configs.get('mongo_conf'))):
-    	docs = read_data(start_epoch, end_epoch, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
-    	for doc in docs:
-        	values_list = build_data(doc)
-        	data_values.extend(values_list)
+    #for i in range(len(configs.get('mongo_conf'))):
+    docs = read_data(start_epoch, end_epoch, configs=configs.get('mongo_conf')[0], db_name=configs.get('nosql_db'))
+    for doc in docs:
+	values_list = build_data(doc)
+	data_values.extend(values_list)
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
     	print "Data inserted into my mysql db"
@@ -169,6 +169,7 @@ def insert_data(table, data_values, **kwargs):
 		raise mysql.connector.Error, err
     	db.commit()
     	cursor.close()
+	db.close()
 
 
 

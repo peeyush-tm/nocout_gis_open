@@ -130,6 +130,7 @@ def check_wimax_dl_modulation_change_invent(item, params, info):
 			host_ip = extract_hostip_from_wimax_topology(ss_mac)
 			if host_ip[0][0]:
                 		dl_modulation_change =connection_telnet_dl_mod_change(host_ip[0][0], 23)
+				dl_modulation_change = dl_modulation_change.strip()
 				if dl_modulation_change:
                                         if int(dl_modulation_change) > crit:
                                                 state = 2
