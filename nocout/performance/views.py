@@ -2700,7 +2700,7 @@ def device_last_down_time(device_object):
                     device_name=inventory_device_name,
                     service_name='ping',
                     data_source='pl',
-                ).order_by('sys_timestamp')[0]
+                ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')[0]
             age = float(always_up.sys_timestamp)
         except:
             pass
