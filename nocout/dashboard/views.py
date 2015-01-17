@@ -25,7 +25,7 @@ from inventory.utils.util import organization_customer_devices, organization_net
 
 from performance.utils.util import color_picker
 
-from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode
+from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
     get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response, get_unused_dashboards
@@ -1157,3 +1157,63 @@ def prepare_machines(device_list_qs):
     for machine in unique_device_machine_list:
         machine_dict[machine] = [device.device_name for device in device_list_qs if device.machine.name == machine]
     return machine_dict
+
+
+def get_dashboard_status_data(organizations, packet_loss, down, temperature, technology):
+
+    data_list = []
+    if technology:
+        technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
+    else:
+        technology_name = 'network'
+
+    if packet_loss:
+        dashboard_name = 'packetloss-%s'%technology_name
+    elif down:
+        dashboard_name = 'down-%s'%technology_name
+    elif temperature:
+        dashboard_name = 'temperature'
+    else:
+        dashboard_name = 'latency-%s'%technology_name
+
+    try:
+        dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
+    except DashboardSetting.DoesNotExist as e:
+        return None
+
+    user_devices = organization_network_devices(organizations, technology)
+    # Get Sectors of technology.Technology is PMP or WIMAX or None(For All: PMP+WIMAX )
+    if technology:
+        device_id_list = Sector.objects.filter(bs_technology=technology, sector_configured_on__in=user_devices).values_list('sector_configured_on', flat=True)
+
+    else:
+        device_id_list = Sector.objects.filter(sector_configured_on__in=user_devices)
+
+    # Make device_list distinct and remove duplicate devices from list.
+    device_id_list = list(set(device_id_list))
+    device_name_list = Device.objects.filter(id__in=device_id_list).values_list('device_name', flat=True)
+
+    if dashboard_setting:
+        status_dict_list = NetworkStatus.objects.order_by('device_name').filter(device_name__in=device_name_list,
+                service_name__in=['ping'],
+                data_source__in=['rta'],
+                severity__in=['warning','critical','down']
+            ).values()
+        device_name = ''
+        device_result = []
+        created_on = timezone.now()
+        for result_dict in status_dict_list:
+            if device_name == result_dict['device_name']:
+                device_result.append(result_dict)
+            else:
+                dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
+                dashboard_data_dict.update({'device_name': result_dict['device_name'],
+                   'dashboard_name': dashboard_setting.name, 'created_on': created_on})
+                data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
+
+                device_name = result_dict['device_name']
+                device_result = []
+            # dashboard_data_dict = get_dashboard_range_status(dashboard_setting, result)
+            # dashboard_data_dict.update({'device_name': result['device_name'], 'dashboard_name': dashboard_setting.name})
+
+        DashboardRangeStatusTimely.objects.bulk_create(data_list)
