@@ -106,7 +106,7 @@ def read_data(start_time, end_time, **kwargs):
                 machine_name = options.get('machine')
         for doc in cur:
 	    time = doc.get('time')
-            t = (
+            	t = (
             	doc.get('device_name'),
         	doc.get('service_name'),
         	machine_name,
@@ -122,9 +122,9 @@ def read_data(start_time, end_time, **kwargs):
         	doc.get('check_timestamp'),
         	doc.get('ip_address'),
         	doc.get('severity'),
-           )
-	   docs.append(t)
-           t = ()
+           	)
+	   	docs.append(t)
+           	t = ()
      
     return docs
 

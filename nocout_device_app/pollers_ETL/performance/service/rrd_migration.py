@@ -514,8 +514,8 @@ def get_from_socket(site_name, query):
     #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     machine = site_name[:-8]
-    socket_ip = _LIVESTATUS[machine]['host']
-    socket_port = _LIVESTATUS[machine][site_name]['port']
+    #socket_ip = _LIVESTATUS[machine]['host']
+    #socket_port = _LIVESTATUS[machine][site_name]['port']
     #s.connect((socket_ip, socket_port))
     s.connect(socket_path)
     s.settimeout(60.0)

@@ -222,7 +222,7 @@ def insert_data(table, data_values, **kwargs):
     Kwargs:
         kwargs (dict): Python dict to store connection variables
     """
-    db = mysql_conn(configs=kwargs.get('configs')
+    db = mysql_conn(configs=kwargs.get('configs'))
     query = "INSERT INTO `%s` " % table
     query += """
             (device_name, service_name, machine_name, 
