@@ -47,8 +47,9 @@ def check_radwin_ssid_invent(item, _no_params, info):
         if info:
             if info[0][0]:
 		ssid = info[0][0]
-		ssid = ssid[7:]
+		ssid = ssid[8:]
 		state = 0
+		ssid= ssid.replace(' ','_')
 		infotext = "%s" % ssid
     except:
 	infotext = "unknown_value"
