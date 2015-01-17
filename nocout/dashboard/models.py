@@ -150,51 +150,59 @@ class MFRCauseCode(models.Model):
         return self.processed_for.name
 
 
-class DashboardStatus(models.Model):
+class DashboardRangeStatus(models.Model):
     """
+    Class to store dashboard status  count range wise.
     """
-    dashboard_name = models.CharField(max_length=50)
+    dashboard_name = models.CharField(max_length=100)
+    device_name = models.CharField(max_length=100)
     created_on = models.DateTimeField(auto_now_add=False, auto_now=False)
-    range_type = models.CharField(max_length=3, choices=(('INT', 'Numeric'), ('STR', 'String')))
-    start_range = models.CharField(max_length=128)
-    end_range = models.CharField(max_length=128, default='')
-    range_color = models.CharField(max_length=100, default='')
-    range_count = models.CharField(max_length=64)
+    range1 = models.IntegerField(default=0)
+    range2 = models.IntegerField(default=0)
+    range3 = models.IntegerField(default=0)
+    range4 = models.IntegerField(default=0)
+    range5 = models.IntegerField(default=0)
+    range6 = models.IntegerField(default=0)
+    range7 = models.IntegerField(default=0)
+    range8 = models.IntegerField(default=0)
+    range9 = models.IntegerField(default=0)
+    range10 = models.IntegerField(default=0)
+    unknown = models.IntegerField(default=0)
 
     class Meta:
         abstract = True
 
-class DashboardStatusTimely(DashboardStatus):
+class DashboardRangeStatusTimely(DashboardRangeStatus):
     """
     """
     pass
 
 
-class DashboardStatusHourly(DashboardStatus):
+class DashboardRangeStatusHourly(DashboardRangeStatus):
     """
     """
     pass
 
 
-class DashboardStatusDaily(DashboardStatus):
+class DashboardRangeStatusDaily(DashboardRangeStatus):
     """
     """
     pass
 
 
-class DashboardStatusWeekly(DashboardStatus):
+class DashboardRangeStatusWeekly(DashboardRangeStatus):
     """
     """
     pass
 
 
-class DashboardStatusMonthly(DashboardStatus):
+class DashboardRangeStatusMonthly(DashboardRangeStatus):
     """
     """
     pass
 
 
-class DashboardStatusYearly(DashboardStatus):
+class DashboardRangeStatusYearly(DashboardRangeStatus):
     """
     """
     pass
