@@ -206,3 +206,56 @@ class DashboardRangeStatusYearly(DashboardRangeStatus):
     """
     """
     pass
+
+
+class DashboardSeverityStatus(models.Model):
+    """
+    Class to store dashboard sector status count severity wise.
+    """
+    dashboard_name = models.CharField(max_length=100)
+    sector_name = models.CharField(max_length=100)
+    created_on = models.DateTimeField(auto_now_add=False, auto_now=False)
+    warning = models.IntegerField(default=0)
+    critical = models.IntegerField(default=0)
+    ok = models.IntegerField(default=0)
+    down = models.IntegerField(default=0)
+    unknown = models.IntegerField(default=0)
+
+    class Meta:
+        abstract = True
+
+
+class DashboardSeverityStatusTimely(DashboardSeverityStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatusHourly(DashboardSeverityStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatusDaily(DashboardSeverityStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatusWeekly(DashboardSeverityStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatusMonthly(DashboardSeverityStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatusYearly(DashboardSeverityStatus):
+    """
+    """
+    pass
