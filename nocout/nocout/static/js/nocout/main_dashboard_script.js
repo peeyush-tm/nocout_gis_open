@@ -113,7 +113,7 @@ function initDashboard() {
     // Recursive calling after 5 min.
     setTimeout(function() {
         initDashboard();
-    },30000);
+    },300000);
 }
 
 
