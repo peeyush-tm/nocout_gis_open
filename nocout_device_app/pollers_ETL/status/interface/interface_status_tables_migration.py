@@ -105,7 +105,7 @@ def read_data(start_time, end_time, **kwargs):
         for config, options in configs.items():
                 machine_name = options.get('machine')
         for doc in cur:
-	    time = doc.get('time')
+	   	time = doc.get('time')
             	t = (
             	doc.get('device_name'),
         	doc.get('service_name'),
