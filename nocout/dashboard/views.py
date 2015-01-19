@@ -25,7 +25,7 @@ from inventory.utils.util import organization_customer_devices, organization_net
 
 from performance.utils.util import color_picker
 
-from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely
+from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
     get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response, get_unused_dashboards
@@ -887,34 +887,22 @@ class PMPSectorCapacity(View):
     """
     """
     def get(self, request):
-        pmp_data_source_config = {
-            'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
-            'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
-        }
 
+        tech_name = 'PMP'
         organization = []
-        technology = DeviceTechnology.objects.get(name='PMP').id
-        sector_list = organization_sectors(organization, technology=technology)
-        sector_devices = Device.objects.filter(id__in=sector_list.\
-                            values_list('sector_configured_on', flat=True))
-
-        data_source_list = pmp_data_source_config.keys()
-
-        service_status_results = []
-        for data_source in data_source_list:
-            # Get Service Name from queried data_source
-            service_name = pmp_data_source_config[data_source]['service_name']
-            model = pmp_data_source_config[data_source]['model']
-
-            service_status_results += get_service_status_results(
-                sector_devices, model=model, service_name=service_name, data_source=data_source
-            )
-
-        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+        user_sector = organization_sectors(organization, technology=technology)
 
         chart_series = []
-        for key,value in range_counter.items():
-            chart_series.append(['%s: %s' % (key, value), range_counter[key]])
+        dashboard_name = '%s_sector_capacity' % (tech_name.lower())
+        tech_qs = DashboardSeverityStatusTimely.objects.filter(dashboard_name=dashboard_name, sector_name__in=user_sector.values_list('name', flat=True)).order_by('-created_on')
+        if tech_qs.exists():
+            qs = tech_qs.filter(created_on=tech_qs[0].created_on)
+            range_counter = qs.aggregate(Normal=Sum('ok'), Needs_Augmentation=Sum('warning'),
+                                        Stop_Provisioning=Sum('critical'), Unknown=Sum('unknown'))
+
+            for key,value in range_counter.items():
+                chart_series.append(['%s: %s' % (key.replace('_', ' '), value), range_counter[key]])
 
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
             'title': 'PMP Sector Capacity', 'name': ''})
@@ -926,45 +914,22 @@ class WiMAXSectorCapacity(View):
     """
     """
     def get(self, request):
-        wimax_data_source_config = {
-            'pmp1_ul_util_kpi': {'service_name': 'wimax_pmp1_ul_util_kpi', 'model': UtilizationStatus},
-            'pmp1_dl_util_kpi': {'service_name': 'wimax_pmp1_dl_util_kpi', 'model': UtilizationStatus},
-            'pmp2_ul_util_kpi': {'service_name': 'wimax_pmp2_ul_util_kpi', 'model': UtilizationStatus},
-            'pmp2_dl_util_kpi': {'service_name': 'wimax_pmp2_dl_util_kpi', 'model': UtilizationStatus},
-        }
 
+        tech_name = 'WiMAX'
         organization = []
-        technology = DeviceTechnology.objects.get(name='WiMAX').id
-        sector_list = organization_sectors(organization, technology=technology)
-
-        port_dict = {
-            'pmp1': ['pmp1_ul_util_kpi', 'pmp1_dl_util_kpi'],
-            'pmp2': ['pmp2_ul_util_kpi', 'pmp2_dl_util_kpi'],
-        }
-
-        service_status_results = []
-        for port in port_dict.keys():
-
-            data_source_list = port_dict[port]
-            user_sector = sector_list.filter(sector_configured_on_port__name__icontains=port)
-
-            for data_source in data_source_list:
-                # Get Service Name from queried data_source
-                service_name = wimax_data_source_config[data_source]['service_name']
-                model = wimax_data_source_config[data_source]['model']
-
-                sector_devices = Device.objects.filter(id__in=user_sector.\
-                                values_list('sector_configured_on', flat=True))
-
-                service_status_results += get_service_status_results(
-                    sector_devices, model=model, service_name=service_name, data_source=data_source
-                )
-
-        range_counter = get_dashboard_status_sector_range_counter(service_status_results)
+        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+        user_sector = organization_sectors(organization, technology=technology)
 
         chart_series = []
-        for key,value in range_counter.items():
-            chart_series.append(['%s: %s' % (key, value), range_counter[key]])
+        dashboard_name = '%s_sector_capacity' % (tech_name.lower())
+        tech_qs = DashboardSeverityStatusTimely.objects.filter(dashboard_name=dashboard_name, sector_name__in=user_sector.values_list('name', flat=True)).order_by('-created_on')
+        if tech_qs.exists():
+            qs = tech_qs.filter(created_on=tech_qs[0].created_on)
+            range_counter = qs.aggregate(Normal=Sum('ok'), Needs_Augmentation=Sum('warning'),
+                                        Stop_Provisioning=Sum('critical'), Unknown=Sum('unknown'))
+
+            for key,value in range_counter.items():
+                chart_series.append(['%s: %s' % (key.replace('_', ' '), value), range_counter[key]])
 
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
             'title': 'WiMAX Sector Capacity', 'name': ''})
