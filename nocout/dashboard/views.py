@@ -981,7 +981,7 @@ class SalesOpportunityMixin(object):
         '''
         '''
         is_bh = False
-        tech_name = self.get_technology()
+        tech_name = self.tech_name
 
         data_source_config = {
             'topology': {'service_name': 'topology', 'model': Topology},
@@ -1006,19 +1006,21 @@ class SalesOpportunityMixin(object):
 
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology)
-        # Get device of User's Organizations. [and are Sub Station]
-        sector_devices = Device.objects.filter(id__in=user_sector.\
-                        values_list('sector_configured_on', flat=True))
 
-        service_status_results = get_topology_status_results(
-            sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
-        )
-
-        range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
-
-        response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
-        chart_series = response_dict['data']['objects']['chart_data'][0]['data']
-        colors = response_dict['data']['objects']['colors']
+        dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
+        tech_qs = DashboardRangeStatusTimely.objects.filter(dashboard_name=dashboard_name, device_name__in=user_sector.values_list('name', flat=True)).order_by('-created_on')
+        if tech_qs.exists():
+            qs = tech_qs.filter(created_on=tech_qs[0].created_on)
+            range_counter = qs.aggregate(range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
+                                range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
+                                range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
+                                range10=Sum('range10'), unknown=Sum('unknown'))
+            response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
+            chart_series = response_dict['data']['objects']['chart_data'][0]['data']
+            colors = response_dict['data']['objects']['colors']
+        else:
+            chart_series = []
+            colors = []
 
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
             'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors})
@@ -1029,19 +1031,13 @@ class SalesOpportunityMixin(object):
 class PMPSalesOpportunity(SalesOpportunityMixin, View):
     """
     """
-    def get_technology(self):
-        tech_name = 'PMP'
-
-        return tech_name
+    tech_name = 'PMP'
 
 
 class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
     """
     """
-    def get_technology(self):
-        tech_name = 'WiMAX'
-
-        return tech_name
+    tech_name = 'WiMAX'
 
 
 def get_gauge_chart_status_data(organizations, packet_loss, down, temperature, technology):
