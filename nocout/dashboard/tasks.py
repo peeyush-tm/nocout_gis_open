@@ -137,7 +137,7 @@ def calculate_timely_latency(organizations, dashboard_name, technology=None):
 
     technology_id = technology.ID if technology else None
     sector_devices = organization_network_devices(organizations, technology_id)
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine__name', 'device_name')
+    sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
@@ -146,7 +146,7 @@ def calculate_timely_latency(organizations, dashboard_name, technology=None):
                 service_name='ping',
                 data_source='rta',
                 severity__in=['warning', 'critical', 'down']
-            ).exclude(current_value=100).using(machine_name).values()
+            ).using(machine_name).values()
 
     calculate_timely_network_alert(dashboard_name, technology, status_dict_list)
 
@@ -154,7 +154,7 @@ def calculate_timely_latency(organizations, dashboard_name, technology=None):
 def calculate_timely_packet_drop(organizations, dashboard_name, technology=None):
     technology_id = technology.ID if technology else None
     sector_devices = organization_network_devices(organizations, technology_id)
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine__name', 'device_name')
+    sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
@@ -172,7 +172,7 @@ def calculate_timely_packet_drop(organizations, dashboard_name, technology=None)
 def calculate_timely_down_status(organizations, dashboard_name, technology=None):
     technology_id = technology.ID if technology else None
     sector_devices = organization_network_devices(organizations, technology_id)
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine__name', 'device_name')
+    sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
@@ -191,7 +191,7 @@ def calculate_timely_temperature(organizations, chart_type='IDU'):
 
     technology_id = 3
     sector_devices = organization_network_devices(organizations, technology_id)
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine__name', 'device_name')
+    sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
     if chart_type == 'IDU':
         service_list = ['wimax_bs_temperature_acb', 'wimax_bs_temperature_fan']
