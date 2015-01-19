@@ -120,7 +120,7 @@ class AuthView(View):
             user_audit = self.get_user_audit(action="login attempt failed from IP address")
 
             user_profile = UserProfile.objects.filter(username=username)
-            if user_profile.exists() and not user_profile[0].is_superuser:
+            if user_profile.exists() and not user_profile[0].is_superuser and user_profile[0].is_active:
                 result = self.update_userprofile(user_profile)
 
         try:
@@ -221,7 +221,7 @@ class AuthView(View):
         # unlock the user after 30 minutes if user locked due to invalid password attempt.
         if lock_time and (user.userprofile.user_invalid_attempt >= 5 ):
             unlock_time = lock_time + timedelta(minutes=30)
-            if timezone.now().time() > unlock_time.time():
+            if timezone.now() > unlock_time:
                 user_profile = UserProfile.objects.filter(id=user.id)
                 user_profile.update(user_invalid_attempt=0, is_active=True)
                 user.is_active = True
@@ -256,7 +256,7 @@ class AuthView(View):
             result = self.get_result(success=0, message="Two Attempts Remaining",
                                     objects_values=objects_values)
 
-        elif user_profile[0].user_invalid_attempt >= 5:
+        elif user_profile[0].user_invalid_attempt == 5:
             user_profile.update(is_active=False, user_invalid_attempt_at=timezone.now())
 
             objects_values=dict(reason="The account has been locked by the application administrator. \
