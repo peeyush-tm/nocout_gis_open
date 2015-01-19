@@ -78,6 +78,33 @@ def main(**configs):
 	print "Data is not present in mongodb in this time frame in %s" % (configs.get('table_name') )
     
 
+
+def mysql_connection(db=None, **kwargs):
+    """
+    Function to create connection to mysql database
+
+    Args:
+        db (dict): Mysqldb connection object
+
+    Kwargs:
+        kwargs (dict): Dict to store mysql connection variables
+    """
+    try:
+        db = mysql.connector.connect(
+                user=kwargs.get('configs').get('historical_user'),
+                passwd=kwargs.get('configs').get('sql_passwd'),
+                host=kwargs.get('configs').get('historical_ip'),
+                db=kwargs.get('configs').get('historical_db'),
+                port=kwargs.get('configs').get('sql_port'),
+                buffered=True
+        )
+    except mysql.connector.Error as err:
+        raise mysql.connector.Error, err
+
+    return db
+
+
+
 def read_data(start_time, end_time, **kwargs):
     """
     Function to read data from mongodb
@@ -152,7 +179,7 @@ def insert_data(table, data_values, **kwargs):
 	Kwargs (dict): Dictionary to hold connection variables
 	"""
 	insert_dict = {'0':[],'1':[]}
-	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
+	db = mysql_connection(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
 		query = "SELECT * FROM %s " % table +\
                 	"WHERE `device_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][1])

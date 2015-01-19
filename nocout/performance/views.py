@@ -1186,8 +1186,9 @@ class Get_Service_Status(View):
             )
 
         if performance_data_query_set:
-            performance_data = nocout_utils.nocout_query_results(query_set=performance_data_query_set,
-                                                                 using=inventory_device_machine_name)
+            performance_data = performance_data_query_set.using(alias=inventory_device_machine_name)
+                                                           #nocout_utils.nocout_query_results(query_set=performance_data_query_set,
+                                                           #      using=inventory_device_machine_name)
             try:
                 current_value = self.formulate_data(performance_data[0].current_value,
                                                     service_data_source_type)
@@ -2618,12 +2619,13 @@ def device_current_status(device_object):
         device_name=inventory_device_name,
         service_name='ping',
         data_source__in=['pl', 'rta']
-    ).values('age', 'severity', 'current_value', 'sys_timestamp', 'data_source')
+    ).using(alias=inventory_device_machine_name).values('age', 'severity', 'current_value', 'sys_timestamp', 'data_source')
 
-    device_nms_uptime = nocout_utils.nocout_query_results(
-        query_set=device_nms_uptime_query_set,
-        using=inventory_device_machine_name
-    )
+    device_nms_uptime = device_nms_uptime_query_set
+    #nocout_utils.nocout_query_results(
+    #    query_set=device_nms_uptime_query_set,
+    #    using=inventory_device_machine_name
+    #)
     pl_value = None
     pl_age = None
 
@@ -2677,12 +2679,13 @@ def device_last_down_time(device_object):
                 data_source='pl',
                 current_value=100,
                 severity__in=['down']
-            ).values('age', 'severity', 'current_value', 'sys_timestamp')
+            ).using(alias=inventory_device_machine_name).values('age', 'severity', 'current_value', 'sys_timestamp')
 
-    device_last_down = nocout_utils.nocout_query_results(
-                query_set=device_last_down_query_set,
-                using=inventory_device_machine_name
-            )
+    device_last_down = device_last_down_query_set
+            #nocout_utils.nocout_query_results(
+            #    query_set=device_last_down_query_set,
+            #    using=inventory_device_machine_name
+            #)
 
     if device_last_down and device_last_down.count():
         last_down_data = device_last_down[0]
@@ -2697,7 +2700,7 @@ def device_last_down_time(device_object):
                     device_name=inventory_device_name,
                     service_name='ping',
                     data_source='pl',
-                ).order_by('sys_timestamp')[0]
+                ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')[0]
             age = float(always_up.sys_timestamp)
         except:
             pass

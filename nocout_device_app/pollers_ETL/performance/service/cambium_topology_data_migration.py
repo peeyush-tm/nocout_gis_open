@@ -141,6 +141,35 @@ def build_data(doc):
 		t = ()
 	return values_list
 
+
+
+
+def mysql_connection(db=None, **kwargs):
+    """
+    Function to create connection to mysql database
+
+    Args:
+        db (dict): Mysqldb connection object
+
+    Kwargs:
+        kwargs (dict): Dict to store mysql connection variables
+    """
+    try:
+        db = mysql.connector.connect(
+                user=kwargs.get('configs').get('historical_user'),
+                passwd=kwargs.get('configs').get('sql_passwd'),
+                host=kwargs.get('configs').get('historical_ip'),
+                db=kwargs.get('configs').get('historical_db'),
+                port=kwargs.get('configs').get('sql_port'),
+                buffered=True
+        )
+    except mysql.connector.Error as err:
+        raise mysql.connector.Error, err
+
+    return db
+
+
+
 def insert_data(table, data_values, **kwargs):
 	"""
         Function to bulk insert data into mysqldb
@@ -152,7 +181,7 @@ def insert_data(table, data_values, **kwargs):
 	Kwargs (dict): Dictionary to hold connection variables
 	"""
 	insert_dict = {'0':[],'1':[]}
-	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
+	db = mysql_connection(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
 		query = "SELECT * FROM %s " % table +\
                 	"WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][3],data_values[i][1])
@@ -204,7 +233,7 @@ def insert_data(table, data_values, **kwargs):
     		db.commit()
     		cursor.close()
 
-
+	db.close()
 
 if __name__ == '__main__':
     main()
