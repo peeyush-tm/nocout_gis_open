@@ -25,32 +25,32 @@ def calculate_timely_main_dashboard():
     '''
     created_on = timezone.now()
 
-    calculate_sector_capacity(technology=PMP, model=DashboardSeverityStatusTimely, created_on=created_on)
-    calculate_sector_capacity(technology=WiMAX, model=DashboardSeverityStatusTimely, created_on=created_on)
+    calculate_timely_sector_capacity(technology=PMP, model=DashboardSeverityStatusTimely, created_on=created_on)
+    calculate_timely_sector_capacity(technology=WiMAX, model=DashboardSeverityStatusTimely, created_on=created_on)
 
-    calculate_sales_opportunity(technology=PMP, model=DashboardRangeStatusTimely, created_on=created_on)
-    calculate_sales_opportunity(technology=WiMAX, model=DashboardRangeStatusTimely, created_on=created_on)
+    calculate_timely_sales_opportunity(technology=PMP, model=DashboardRangeStatusTimely, created_on=created_on)
+    calculate_timely_sales_opportunity(technology=WiMAX, model=DashboardRangeStatusTimely, created_on=created_on)
 
     user_organizations = Organization.objects.all()
 
-    pmp_latency_data = calculate_timely_network_alert(user_organizations, False, False, '', 4)
-    wimax_latency_data = calculate_timely_network_alert(user_organizations, False, False, '', 3)
-    all_latency_data = calculate_timely_network_alert(user_organizations, False, False, '', None)
+    calculate_timely_network_alert(user_organizations, dashboard_name='latency-pmp', technology=PMP)
+    calculate_timely_network_alert(user_organizations, dashboard_name='latency-wimax', technology=WiMAX)
+    calculate_timely_network_alert(user_organizations, dashboard_name='latency-network')
 
-    pmp_packet_loss_data = calculate_timely_network_alert(user_organizations, True, False, '', 4)
-    wimax_packet_loss_data = calculate_timely_network_alert(user_organizations, True, False, '', 3)
-    all_packet_loss_data = calculate_timely_network_alert(user_organizations, True, False, '', None)
+    calculate_timely_network_alert(user_organizations, dashboard_name='packetloss-pmp', technology=PMP)
+    calculate_timely_network_alert(user_organizations, dashboard_name='packetloss-wimax', technology=WiMAX)
+    calculate_timely_network_alert(user_organizations, dashboard_name='packetloss-network')
 
-    pmp_down_data = calculate_timely_network_alert(user_organizations, False, True, '', 4)
-    wimax_down_data = calculate_timely_network_alert(user_organizations, False, True, '', 3)
-    all_down_data = calculate_timely_network_alert(user_organizations, False, True, '', None)
+    calculate_timely_network_alert(user_organizations, dashboard_name='down-pmp', technology=PMP)
+    calculate_timely_network_alert(user_organizations, dashboard_name='down-wimax', technology=WiMAX)
+    calculate_timely_network_alert(user_organizations, dashboard_name='down-network')
 
-    idu_temperature_data = calculate_timely_network_alert(user_organizations, False, False, 'IDU', 3)
-    acb_temperature_data = calculate_timely_network_alert(user_organizations, False, False, 'ACB', 3)
-    fan_temperature_data = calculate_timely_network_alert(user_organizations, False, False, 'FAN', 3)
+    calculate_timely_network_alert(user_organizations, dashboard_name='temperature', technology=PMP)
+    calculate_timely_network_alert(user_organizations, dashboard_name='temperature', technology=WiMAX)
+    calculate_timely_network_alert(user_organizations, dashboard_name='temperature')
 
 
-def calculate_sector_capacity(technology, model, created_on):
+def calculate_timely_sector_capacity(technology, model, created_on):
     '''
     :param technology: Named Tuple
     :param model: Dashboard Model to store timely dashboard data.
@@ -59,9 +59,9 @@ def calculate_sector_capacity(technology, model, created_on):
     '''
     dashboard_name = '%s_sector_capacity' % (technology.NAME.lower())
     range_counter = dict(
-            dashboard_name = dashboard_name,
-            sector_name = '',
-            created_on = created_on,
+            dashboard_name=dashboard_name,
+            sector_name='',
+            created_on=created_on,
             ok=0,
             warning=0,
             critical=0,
@@ -86,14 +86,14 @@ def calculate_sector_capacity(technology, model, created_on):
         range_counter['sector_name'] = item['sector__name']
 
         try:
-            data_list.append( model(**(range_counter)) )
+            data_list.append(model(**range_counter))
         except Exception as e:
             pass
 
     model.objects.bulk_create(data_list)
 
 
-def calculate_sales_opportunity(technology, model, created_on):
+def calculate_timely_sales_opportunity(technology, model, created_on):
     '''
     :param technology: Named Tuple
     :param model: Dashboard Model to store timely dashboard data.
@@ -127,66 +127,42 @@ def calculate_sales_opportunity(technology, model, created_on):
             }
         )
 
-        data_list.append( model(**(range_counter)) )
+        data_list.append(model(**range_counter))
 
     model.objects.bulk_create(data_list)
 
 
-def calculate_timely_network_alert(organizations, packet_loss, down, temperature, technology):
-
-    data_list = []
-    if technology:
-        technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
-    else:
-        technology_name = 'network'
-
-    if packet_loss:
-        dashboard_name = 'packetloss-%s'%technology_name
-    elif down:
-        dashboard_name = 'down-%s'%technology_name
-    elif temperature:
-        dashboard_name = 'temperature'
-    else:
-        dashboard_name = 'latency-%s'%technology_name
+def calculate_timely_network_alert(organizations, dashboard_name, technology=None):
 
     try:
-        dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
+        dashboard_setting = DashboardSetting.objects.get(technology_id=technology.ID,
+                page_name='main_dashboard', name=dashboard_name, is_bh=False)
     except DashboardSetting.DoesNotExist as e:
         return None
 
-    user_devices = organization_network_devices(organizations, technology)
-    # Get Sectors of technology.Technology is PMP or WIMAX or None(For All: PMP+WIMAX )
-    if technology:
-        device_id_list = Sector.objects.filter(bs_technology=technology, sector_configured_on__in=user_devices).values_list('sector_configured_on', flat=True)
+    sector_devices = organization_network_devices(organizations, technology.ID)
+    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values_list('device_name', flat=True)
 
-    else:
-        device_id_list = Sector.objects.filter(sector_configured_on__in=user_devices)
+    status_dict_list = NetworkStatus.objects.order_by('device_name').filter(device_name__in=sector_devices,
+            service_name__in=['ping'],
+            data_source__in=['rta'],
+            severity__in=['warning', 'critical', 'down']
+        ).values()
 
-    # Make device_list distinct and remove duplicate devices from list.
-    device_id_list = list(set(device_id_list))
-    device_name_list = Device.objects.filter(id__in=device_id_list).values_list('device_name', flat=True)
+    data_list = []
+    device_name = ''
+    device_result = []
+    created_on = timezone.now()
+    for result_dict in status_dict_list:
+        if device_name == result_dict['device_name']:
+            device_result.append(result_dict)
+        else:
+            dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
+            dashboard_data_dict.update({'device_name': result_dict['device_name'],
+               'dashboard_name': dashboard_setting.name, 'created_on': created_on})
+            data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
-    if dashboard_setting:
-        status_dict_list = NetworkStatus.objects.order_by('device_name').filter(device_name__in=device_name_list,
-                service_name__in=['ping'],
-                data_source__in=['rta'],
-                severity__in=['warning','critical','down']
-            ).values()
-        device_name = ''
-        device_result = []
-        created_on = timezone.now()
-        for result_dict in status_dict_list:
-            if device_name == result_dict['device_name']:
-                device_result.append(result_dict)
-            else:
-                dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
-                dashboard_data_dict.update({'device_name': result_dict['device_name'],
-                   'dashboard_name': dashboard_setting.name, 'created_on': created_on})
-                data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
+            device_name = result_dict['device_name']
+            device_result = []
 
-                device_name = result_dict['device_name']
-                device_result = []
-            # dashboard_data_dict = get_dashboard_range_status(dashboard_setting, result)
-            # dashboard_data_dict.update({'device_name': result['device_name'], 'dashboard_name': dashboard_setting.name})
-
-        DashboardRangeStatusTimely.objects.bulk_create(data_list)
+    DashboardRangeStatusTimely.objects.bulk_create(data_list)
