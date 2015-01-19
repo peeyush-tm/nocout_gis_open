@@ -72,7 +72,17 @@ if(window.location.pathname.indexOf("white_background") > -1) {
     }
     
 }
-//$.cookie("isLabelChecked", 1, {path: '/', secure : true});
+
+// Set globl options of highcharts after 1.5 sec of page loading
+setTimeout(function() {
+    if(window.Highcharts) {
+        Highcharts.setOptions({
+            global : {
+                useUTC : false
+            }
+        });
+    }
+},1500);
 
 /*Call get_page_status function to show the current status*/
 get_page_status();
