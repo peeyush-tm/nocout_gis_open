@@ -2279,7 +2279,8 @@ function devicePlottingClass_gmap() {
 		    		// ss_info["antenna_height"] = ss_marker_obj.data.antenna_height;
 
 		    		/*Link color object*/
-		    		linkColor = ss_marker_obj.data.link_color ? ss_marker_obj.data.link_color : 'rgba(74,72,94,0.58)';
+		    		linkColor = ss_marker_obj.data.link_color;
+			    	linkColor = linkColor && linkColor != 'NA' ? linkColor : 'rgba(74,72,94,0.58)';
 		    			
 	    			// base_info["info"] = bs_ss_devices[i].data.param.base_station;
 	    			// base_info["antenna_height"] = bs_ss_devices[i].data.antenna_height;
@@ -4459,7 +4460,17 @@ function devicePlottingClass_gmap() {
 			isApiResponse = 0;
 
     	} else if (window.location.pathname.indexOf('white_background') > -1) {
-			ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);    		
+			// ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+			ccpl_map.setCenter(
+				new OpenLayers.LonLat(
+					whiteMapSettings.mapCenter[0],
+					whiteMapSettings.mapCenter[1]
+				),
+				1,
+				true,
+				true
+			);
+			ccpl_map.zoomTo(1);
     	} else {
             /*Clear Existing Labels & Reset Counters*/
             gmap_self.clearStateCounters();
@@ -5181,7 +5192,17 @@ function devicePlottingClass_gmap() {
 		    	whiteMapClass.clearStateCounters_wmaps();
 		    	isCallCompleted = 1;
 		    	if(ccpl_map.getZoom() != 1) {
-		    		ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+		    		// ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+		    		ccpl_map.setCenter(
+						new OpenLayers.LonLat(
+							whiteMapSettings.mapCenter[0],
+							whiteMapSettings.mapCenter[1]
+						),
+						1,
+						true,
+						true
+					);
+					ccpl_map.zoomTo(1);
 	    		}
 		    	data_for_filter_wmap = JSON.parse(JSON.stringify(all_devices_loki_db.data));
 		    	isApiResponse= 0;
@@ -5310,9 +5331,10 @@ function devicePlottingClass_gmap() {
     		}
 
 			if(data_to_plot_1.length > 0) {
+				isCallCompleted = 1;
+				isApiResponse = 0;
 				if(window.location.pathname.indexOf("googleEarth") > -1) {
 					data_for_filters_earth = data_to_plot_1;
-					isCallCompleted = 1;
 					/*Set current position of google earth to india*/
 					var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
 					lookAt.setLatitude(21.0000);
@@ -5320,16 +5342,21 @@ function devicePlottingClass_gmap() {
 					lookAt.setRange(5492875.865539902);
 					// Update the view in Google Earth 
 					ge.getView().setAbstractView(lookAt); 
-
-					isApiResponse = 0;
 					earth_self.showStateWiseData_earth(data_to_plot_1);
 				} else if (window.location.pathname.indexOf("white_background") > -1) {
 					data_for_filter_wmap = data_to_plot_1;
-					isCallCompleted = 1;
 					if(ccpl_map.getZoom() != 1) {
-						ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+						ccpl_map.setCenter(
+							new OpenLayers.LonLat(
+								whiteMapSettings.mapCenter[0],
+								whiteMapSettings.mapCenter[1]
+							),
+							1,
+							true,
+							true
+						);
+						ccpl_map.zoomTo(1);
 					}
-					isApiResponse = 0;
 					whiteMapClass.showStateWiseData_wmap(data_to_plot_1);
 				} else {
 					data_for_filters = data_to_plot_1;
@@ -5349,10 +5376,8 @@ function devicePlottingClass_gmap() {
 				    }
 
 
-					isCallCompleted = 1;
 					mapInstance.fitBounds(new google.maps.LatLngBounds(new google.maps.LatLng(india_center_lat,india_center_lon)));
 					mapInstance.setZoom(5);
-					isApiResponse = 0;
 					gmap_self.showStateWiseData_gmap(data_to_plot_1);
 				}
 			} else {
