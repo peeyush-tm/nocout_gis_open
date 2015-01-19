@@ -193,7 +193,6 @@ def dialog_action(request):
     The Action of the Dialog box appears on the screen.
     If the action is continue then the user will get logged off from the current logged in session
     and the same session key will be used to login the user.
-
     """
     url = request.POST.get('url', '/home/')
     user = auth.authenticate(token=request.POST.get('auth_token', None))
@@ -207,30 +206,20 @@ def dialog_action(request):
         auth.login(request, user)
         Visitor.objects.create(session_key=request.session.session_key, user=request.user)
         UserProfile.objects.filter(id=user.id).update(user_invalid_attempt=0)   # empty the user invalid attempts on successful login
-        result = {
-            "success": 1,  # 0 - fail, 1 - success, 2 - exception
-            "message": "Success/Fail message.",
-            "data": {
-                "meta": {},
-                "objects": {
-                    'url': url,
-                }
-            }
-        }
-        return HttpResponse(json.dumps(result), content_type='application/json')
+        object_values = dict(url=url)
 
-    elif request.POST.get('action') == 'logout':
-        result = {
-            "success": 1,  # 0 - fail, 1 - success, 2 - exception
-            "message": "Success/Fail message.",
-            "data": {
-                "meta": {},
-                "objects": {
-                    'url': '/login/'
-                }
-            }
+    else:
+        object_values = dict(url='/login/')
+
+    result = {
+        "success": 1,  # 0 - fail, 1 - success, 2 - exception
+        "message": "Success/Fail message.",
+        "data": {
+            "meta": {},
+            "objects": object_values,
         }
-        return HttpResponse(json.dumps(result), content_type='application/json')
+    }
+    return HttpResponse(json.dumps(result), content_type='application/json')
 
 @csrf_exempt
 def change_user_status(request):
