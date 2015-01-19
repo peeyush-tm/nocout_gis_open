@@ -202,6 +202,7 @@ def calculate_timely_temperature(organizations, chart_type='IDU'):
     elif chart_type == 'FAN':
         service_list = ['wimax_bs_temperature_fan']
         data_source_list = ['fan_temp']
+    status_dashboard_name = 'temperature-' + chart_type.lower()
 
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
@@ -212,10 +213,10 @@ def calculate_timely_temperature(organizations, chart_type='IDU'):
                 severity__in=['warning', 'critical']
             ).using(machine_name).values()
 
-    calculate_timely_network_alert('temperature', WiMAX, status_dict_list)
+    calculate_timely_network_alert('temperature', WiMAX, status_dict_list, status_dashboard_name)
 
 
-def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_list=[]):
+def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_list=[], status_dashboard_name=None ):
 
     technology_id = technology.ID if technology else None
     try:
@@ -228,13 +229,15 @@ def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_
     device_name = ''
     device_result = []
     created_on = timezone.now()
+    if status_dashboard_name is None:
+        status_dashboard_name = dashboard_name
     for result_dict in status_dict_list:
         if device_name == result_dict['device_name']:
             device_result.append(result_dict)
         else:
             dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
             dashboard_data_dict.update({'device_name': result_dict['device_name'],
-               'dashboard_name': dashboard_setting.name, 'created_on': created_on})
+               'dashboard_name': status_dashboard_name, 'created_on': created_on})
             data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
             device_name = result_dict['device_name']
