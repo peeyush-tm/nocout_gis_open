@@ -261,3 +261,45 @@ def prepare_machines(device_list):
                                  device['machine__name'] == machine]
 
     return machine_dict
+
+
+@task
+def calculate_hourly_main_dashboard():
+    now = timezone.now()
+
+    last_hour_timely_severity_status = DashboardSeverityStatusTimely.objects.order_by('dashboard_name',
+            'sector_name').filter(created_on__lt=now)
+
+    hourly_severity_status_list = []
+    hourly_severity_status = None
+    dashboard_name = ''
+    sector_name = ''
+    for timely_severity_status in last_hour_timely_severity_status:
+        if dashboard_name == timely_severity_status.dashboard_name and sector_name == timely_severity_status.sector_name:
+            hourly_severity_status = sum_severity_status(hourly_severity_status, timely_severity_status)
+        else:
+            hourly_severity_status = DashboardSeverityStatusHourly(
+                dashboard_name=timely_severity_status.dashboard_name,
+                sector_name=timely_severity_status.sector_name,
+                created_on=now,
+                warning=timely_severity_status.warning,
+                critical=timely_severity_status.critical,
+                ok=timely_severity_status.ok,
+                down=timely_severity_status.down,
+                unknown=timely_severity_status.unknown
+            )
+            hourly_severity_status_list.append(hourly_severity_status)
+
+    DashboardSeverityStatusHourly.objects.bulk_create(hourly_severity_status_list)
+
+    last_hour_timely_severity_status.delete()
+
+
+def sum_severity_status(parent, child):
+    parent.warning += child.warning
+    parent.critical += child.critical
+    parent.ok += child.ok
+    parent.down += child.down
+    parent.unknown += child.unknown
+
+    return parent
