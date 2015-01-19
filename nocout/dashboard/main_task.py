@@ -1,20 +1,15 @@
 from celery import task
 
-from django.utils import timezone
 from django.db.models import Q, Count, F
+from django.utils import timezone
 
 from device.models import DeviceTechnology, Device
 from capacity_management.models import SectorCapacityStatus
-from dashboard.models import DashboardSetting, DashboardSeverityStatusTimely, DashboardRangeStatus
 from performance.models import Topology
+from dashboard.models import DashboardSetting, DashboardSeverityStatusTimely, DashboardRangeStatus
 
-#inventory utils
 from inventory.utils.util import organization_sectors
-#inventory utils
-
-#dashboard utils
 from dashboard.utils import get_topology_status_results
-#dashboard utils
 
 
 @task()

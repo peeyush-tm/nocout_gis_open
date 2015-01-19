@@ -1,8 +1,10 @@
+import datetime
 from celery import task, group
+
 from dashboard.models import DashboardStatusTimely
 from dashboard.views import get_gauge_chart_status_data
+
 from organization.models import Organization
-import datetime
 
 
 @task()
