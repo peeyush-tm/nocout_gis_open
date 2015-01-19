@@ -113,7 +113,7 @@ function initDashboard() {
     // Recursive calling after 5 min.
     setTimeout(function() {
         initDashboard();
-    },300000);
+    },30000);
 }
 
 
@@ -415,96 +415,87 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
 
     var val_count = chartData.chart_data[0].data[0].count,
         val_color = chartData.chart_data[0].data[0].color;
-    // In case of update
+
+    // If chart is created on given dom element then destriy chart n then create again
     if($(div_id).highcharts()) {
-        var chart = $(div_id).highcharts(),
-            point = $(div_id).highcharts().series[0].points[0];
+        $(div_id).highcharts().destroy();
+    }
 
-        try {
-            // Update Gauge Chart Val & Color
-            point.update(val_count);
-            chart["userOptions"]["yAxis"]["stops"][0][1] = val_color;
-        } catch(e) {
-            // console.log(e);
-        }
-
-    // In case of create
-    } else {
-        var gaugeOptions = {
-            chart: {
-                type: 'solidgauge'
+    // Create New Solid Gauge Chart
+    var gaugeOptions = {
+        chart: {
+            type: 'solidgauge'
+        },
+        // title: null,
+        title: "",
+        pane: {
+            center: ['50%', '85%'],
+            size: '140%',
+            startAngle: -90,
+            endAngle: 90,
+            background: {
+                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                innerRadius: '60%',
+                outerRadius: '100%',
+                shape: 'arc'
+            }
+        },
+        tooltip: {
+            enabled: false
+        },
+        credits: {
+            enabled: false
+        },
+        // the value axis
+        yAxis: {
+            stops: [
+                [0, val_color], // speedometer_color
+            ],
+            lineWidth: 0,
+            minorTickInterval: null,
+            tickPixelInterval: 400,
+            tickWidth: 0,
+            title: {
+                y: -70
             },
-            // title: null,
-            title: "",
-            pane: {
-                center: ['50%', '85%'],
-                size: '140%',
-                startAngle: -90,
-                endAngle: 90,
-                background: {
-                    backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
-                    innerRadius: '60%',
-                    outerRadius: '100%',
-                    shape: 'arc'
-                }
-            },
-            tooltip: {
-                enabled: false
-            },
-            credits: {
-                enabled: false
-            },
-            // the value axis
-            yAxis: {
-                stops: [
-                    [0, chartData.chart_data[0].data[0].color], // speedometer_color
-                ],
-                lineWidth: 0,
-                minorTickInterval: null,
-                tickPixelInterval: 400,
-                tickWidth: 0,
-                title: {
-                    y: -70
-                },
-                labels: {
-                    y: 16
-                }
-            },
-            plotOptions: {
-                solidgauge: {
-                    dataLabels: {
-                        y: 5,
-                        borderWidth: 0,
-                        useHTML: true
-                    }
+            labels: {
+                y: 16
+            }
+        },
+        plotOptions: {
+            solidgauge: {
+                dataLabels: {
+                    y: 5,
+                    borderWidth: 0,
+                    useHTML: true
                 }
             }
-        };
+        }
+    };
 
-        gauge_val_default_color = val_count != 0 ? val_color : "#333333";
+    gauge_val_default_color = val_count != 0 ? val_color : "#333333";
 
-        $(div_id).highcharts(Highcharts.merge(gaugeOptions, {
-            yAxis: {
-                min: 0,
-                max: 10,
-                title: {
-                    // text: div_text
-                    text: ""
-                }
+    $(div_id).highcharts(Highcharts.merge(gaugeOptions, {
+        yAxis: {
+            min: 0,
+            max: 10,
+            title: {
+                // text: div_text
+                text: ""
+            }
+        },
+        series: [{
+            name: div_text,
+            data: [val_count],
+            dataLabels: {
+            format: '<div style="text-align:center"><span style="'+gauge_chart_val_style+'color:' +
+                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || gauge_val_default_color) + '">{y:1f}</span><br/>'+
+                '<span style="font-size:12px;color:silver">Hosts</span></div>'
             },
-            series: [{
-                name: div_text,
-                data: [val_count],
-                dataLabels: {
-                format: '<div style="text-align:center"><span style="'+gauge_chart_val_style+'color:' +
-                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || gauge_val_default_color) + '">{y:1f}</span><br/>'+
-                    '<span style="font-size:12px;color:silver">Hosts</span></div>'
-                },
-                tooltip: {
-                    valueSuffix: ' revolutions/min'
-            
-                }
-            }]
-        }));
-    }
+            tooltip: {
+                valueSuffix: ' revolutions/min'
+        
+            }
+        }]
+    }));
 }
