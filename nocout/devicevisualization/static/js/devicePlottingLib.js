@@ -2279,7 +2279,8 @@ function devicePlottingClass_gmap() {
 		    		// ss_info["antenna_height"] = ss_marker_obj.data.antenna_height;
 
 		    		/*Link color object*/
-		    		linkColor = ss_marker_obj.data.link_color ? ss_marker_obj.data.link_color : 'rgba(74,72,94,0.58)';
+		    		linkColor = ss_marker_obj.data.link_color;
+			    	linkColor = linkColor && linkColor != 'NA' ? linkColor : 'rgba(74,72,94,0.58)';
 		    			
 	    			// base_info["info"] = bs_ss_devices[i].data.param.base_station;
 	    			// base_info["antenna_height"] = bs_ss_devices[i].data.antenna_height;
