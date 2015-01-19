@@ -24,6 +24,7 @@ def display_time(seconds, granularity=4):
     :param granularity:
     :return:
     """
+    seconds = float(seconds)
     intervals = (
         ('weeks', 604800),
         ('days', 86400),
