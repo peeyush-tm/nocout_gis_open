@@ -46,7 +46,8 @@ def update_sector_frequency_per_day():
         try:
             machine_name = sector_configured_on.machine.name
         except Exception as e:
-            logger.info("Sector configured on machine not found. Exception: ", e.message)
+            continue
+            # logger.info("Sector configured on machine not found. Exception: ", e.message)
 
         # polled frequency
         polled_frequency = None
@@ -73,8 +74,8 @@ def update_sector_frequency_per_day():
                                                               data_source='frequency').using(
                                                               alias=machine_name)[0].current_value
         except Exception as e:
-            logger.exception("Frequency not exist for sector configured on device ({}).".format(sector_configured_on,
-                                                                                           e.message))
+            # logger.exception("Frequency not exist for sector configured on device ({}).".format(sector_configured_on,
+            #                                                                                e.message))
             continue
 
         frequency_obj = None
@@ -88,7 +89,7 @@ def update_sector_frequency_per_day():
                     sector.frequency = frequency_obj
                     sector.save()
             except:
-                logger.exception("No Frequency Found ({})".format(frequency_obj))
+                # logger.exception("No Frequency Found ({})".format(frequency_obj))
                 continue
         else:
             continue
