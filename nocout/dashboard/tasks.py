@@ -342,6 +342,39 @@ def calculate_hourly_range_status(now):
     last_hour_timely_range_status.delete()
 
 
+def calculate_weekly_range_status(now):
+    last_week_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
+            'device_name').filter(created_on__lt=now)
+
+    daily_range_status_list = []
+    weekly_range_status = None
+    dashboard_name = ''
+    device_name = ''
+    for daily_range_status in last_week_daily_range_status:
+        if dashboard_name == daily_range_status.dashboard_name and device_name == daily_range_status.device_name:
+            weekly_range_status = sum_range_status(weekly_range_status, daily_range_status)
+        else:
+            weekly_range_status = DashboardRangeStatusWeekly(
+                dashboard_name=daily_range_status.dashboard_name,
+                device_name=daily_range_status.device_name,
+                created_on=now,
+                range1=daily_range_status.range1,
+                range2=daily_range_status.range2,
+                range3=daily_range_status.range3,
+                range4=daily_range_status.range4,
+                range5=daily_range_status.range5,
+                range6=daily_range_status.range6,
+                range7=daily_range_status.range7,
+                range8=daily_range_status.range8,
+                range9=daily_range_status.range9,
+                range10=daily_range_status.range10,
+                unknown=daily_range_status.unknown
+            )
+            daily_range_status_list.append(daily_range_status)
+
+    DashboardRangeStatusWeekly.objects.bulk_create(daily_range_status_list)
+
+
 def sum_severity_status(parent, child):
     parent.warning += child.warning
     parent.critical += child.critical
