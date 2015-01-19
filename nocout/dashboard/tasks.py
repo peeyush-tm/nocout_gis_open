@@ -270,8 +270,15 @@ def prepare_machines(device_list):
 
 @task
 def calculate_hourly_main_dashboard():
+    '''
+    '''
     now = timezone.now()
 
+    calculate_hourly_severity_status(now)
+    calculate_hourly_range_status(now)
+
+
+def calculate_hourly_severity_status(now):
     last_hour_timely_severity_status = DashboardSeverityStatusTimely.objects.order_by('dashboard_name',
             'sector_name').filter(created_on__lt=now)
 
@@ -300,11 +307,62 @@ def calculate_hourly_main_dashboard():
     last_hour_timely_severity_status.delete()
 
 
+def calculate_hourly_range_status(now):
+    last_hour_timely_range_status = DashboardRangeStatusTimely.objects.order_by('dashboard_name',
+            'device_name').filter(created_on__lt=now)
+
+    hourly_range_status_list = []
+    hourly_range_status = None
+    dashboard_name = ''
+    device_name = ''
+    for timely_range_status in last_hour_timely_range_status:
+        if dashboard_name == timely_range_status.dashboard_name and device_name == timely_range_status.device_name:
+            hourly_range_status = sum_range_status(hourly_range_status, timely_range_status)
+        else:
+            hourly_range_status = DashboardRangeStatusHourly(
+                dashboard_name=timely_range_status.dashboard_name,
+                device_name=timely_range_status.device_name,
+                created_on=now,
+                range1=timely_range_status.range1,
+                range2=timely_range_status.range2,
+                range3=timely_range_status.range3,
+                range4=timely_range_status.range4,
+                range5=timely_range_status.range5,
+                range6=timely_range_status.range6,
+                range7=timely_range_status.range7,
+                range8=timely_range_status.range8,
+                range9=timely_range_status.range9,
+                range10=timely_range_status.range10,
+                unknown=timely_range_status.unknown
+            )
+            hourly_range_status_list.append(hourly_range_status)
+
+    DashboardRangeStatusHourly.objects.bulk_create(hourly_range_status_list)
+
+    last_hour_timely_range_status.delete()
+
+
 def sum_severity_status(parent, child):
     parent.warning += child.warning
     parent.critical += child.critical
     parent.ok += child.ok
     parent.down += child.down
+    parent.unknown += child.unknown
+
+    return parent
+
+
+def sum_range_status(parent, child):
+    parent.range1 += child.range1
+    parent.range2 += child.range2
+    parent.range3 += child.range3
+    parent.range4 += child.range4
+    parent.range5 += child.range5
+    parent.range6 += child.range6
+    parent.range7 += child.range7
+    parent.range8 += child.range8
+    parent.range9 += child.range9
+    parent.range10 += child.range10
     parent.unknown += child.unknown
 
     return parent
