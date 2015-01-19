@@ -342,39 +342,6 @@ def calculate_hourly_range_status(now):
     last_hour_timely_range_status.delete()
 
 
-def calculate_weekly_range_status(now):
-    last_week_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
-            'device_name').filter(created_on__lt=now)
-
-    daily_range_status_list = []
-    weekly_range_status = None
-    dashboard_name = ''
-    device_name = ''
-    for daily_range_status in last_week_daily_range_status:
-        if dashboard_name == daily_range_status.dashboard_name and device_name == daily_range_status.device_name:
-            weekly_range_status = sum_range_status(weekly_range_status, daily_range_status)
-        else:
-            weekly_range_status = DashboardRangeStatusWeekly(
-                dashboard_name=daily_range_status.dashboard_name,
-                device_name=daily_range_status.device_name,
-                created_on=now,
-                range1=daily_range_status.range1,
-                range2=daily_range_status.range2,
-                range3=daily_range_status.range3,
-                range4=daily_range_status.range4,
-                range5=daily_range_status.range5,
-                range6=daily_range_status.range6,
-                range7=daily_range_status.range7,
-                range8=daily_range_status.range8,
-                range9=daily_range_status.range9,
-                range10=daily_range_status.range10,
-                unknown=daily_range_status.unknown
-            )
-            daily_range_status_list.append(daily_range_status)
-
-    DashboardRangeStatusWeekly.objects.bulk_create(daily_range_status_list)
-
-
 def sum_severity_status(parent, child):
     parent.warning += child.warning
     parent.critical += child.critical
@@ -473,3 +440,73 @@ def calculate_daily_range_status(now):
     DashboardRangeStatusDaily.objects.bulk_create(daily_range_status_list)
 
     last_day_hourly_range_status.delete()
+
+
+@task
+def calculate_weekly_main_dashboard():
+    '''
+    '''
+    now = timezone.now()
+
+    calculate_weekly_severity_status(now)
+    calculate_weekly_range_status(now)
+
+
+def calculate_weekly_severity_status(now):
+    last_week_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
+            'sector_name').filter(created_on__lt=now)
+
+    weekly_severity_status_list = []
+    weekly_severity_status = None
+    dashboard_name = ''
+    sector_name = ''
+    for daily_severity_status in last_week_daily_severity_status:
+        if dashboard_name == daily_severity_status.dashboard_name and sector_name == daily_severity_status.sector_name:
+            weekly_severity_status = sum_severity_status(weekly_severity_status, daily_severity_status)
+        else:
+            weekly_severity_status = DashboardSeverityStatusWeekly(
+                dashboard_name=daily_severity_status.dashboard_name,
+                sector_name=daily_severity_status.sector_name,
+                created_on=now,
+                warning=daily_severity_status.warning,
+                critical=daily_severity_status.critical,
+                ok=daily_severity_status.ok,
+                down=daily_severity_status.down,
+                unknown=daily_severity_status.unknown
+            )
+            weekly_severity_status_list.append(weekly_severity_status)
+
+    DashboardSeverityStatusWeekly.objects.bulk_create(weekly_severity_status_list)
+
+
+def calculate_weekly_range_status(now):
+    last_week_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
+            'device_name').filter(created_on__lt=now)
+
+    weekly_range_status_list = []
+    weekly_range_status = None
+    dashboard_name = ''
+    device_name = ''
+    for daily_range_status in last_week_daily_range_status:
+        if dashboard_name == daily_range_status.dashboard_name and device_name == daily_range_status.device_name:
+            weekly_range_status = sum_range_status(weekly_range_status, daily_range_status)
+        else:
+            weekly_range_status = DashboardRangeStatusWeekly(
+                dashboard_name=daily_range_status.dashboard_name,
+                device_name=daily_range_status.device_name,
+                created_on=now,
+                range1=daily_range_status.range1,
+                range2=daily_range_status.range2,
+                range3=daily_range_status.range3,
+                range4=daily_range_status.range4,
+                range5=daily_range_status.range5,
+                range6=daily_range_status.range6,
+                range7=daily_range_status.range7,
+                range8=daily_range_status.range8,
+                range9=daily_range_status.range9,
+                range10=daily_range_status.range10,
+                unknown=daily_range_status.unknown
+            )
+            weekly_range_status_list.append(daily_range_status)
+
+    DashboardRangeStatusWeekly.objects.bulk_create(weekly_range_status_list)
