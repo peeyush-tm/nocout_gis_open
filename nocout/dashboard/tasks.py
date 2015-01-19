@@ -15,7 +15,7 @@ from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, D
         DashboardRangeStatusWeekly, DashboardRangeStatusMonthly, DashboardRangeStatusYearly,
     )
 
-from inventory.utils.util import organization_sectors, organization_network_devices, prepare_machines
+from inventory.utils.util import organization_sectors, organization_network_devices
 from dashboard.utils import get_topology_status_results, get_dashboard_status_range_counter
 
 
@@ -104,12 +104,13 @@ def calculate_timely_sales_opportunity(technology, model, created_on):
     # convert the data source in format topology_pmp/topology_wimax
     data_source = '%s-%s' % ('topology', technology.NAME.lower())
 
+    technology_id = technology.ID if technology else None
     try:
-        dashboard_setting = DashboardSetting.objects.get(technology_id=technology.ID, page_name='main_dashboard', name=data_source, is_bh=False)
+        dashboard_setting = DashboardSetting.objects.get(technology_id=technology_id, page_name='main_dashboard', name=data_source, is_bh=False)
     except DashboardSetting.DoesNotExist as e:
         return
 
-    user_sector = organization_sectors(organization, technology.ID)
+    user_sector = organization_sectors(organization, technology_id)
     sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
 
     service_status_results = get_topology_status_results(
@@ -134,8 +135,9 @@ def calculate_timely_sales_opportunity(technology, model, created_on):
 
 def calculate_timely_latency(organizations, dashboard_name, technology=None):
 
-    sector_devices = organization_network_devices(organizations, technology.ID)
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine_name', 'device_name')
+    technology_id = technology.ID if technology else None
+    sector_devices = organization_network_devices(organizations, technology_id)
+    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine__name', 'device_name')
 
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
@@ -150,9 +152,9 @@ def calculate_timely_latency(organizations, dashboard_name, technology=None):
 
 
 def calculate_timely_packet_drop(organizations, dashboard_name, technology=None):
-
-    sector_devices = organization_network_devices(organizations, technology.ID)
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine_name', 'device_name')
+    technology_id = technology.ID if technology else None
+    sector_devices = organization_network_devices(organizations, technology_id)
+    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine__name', 'device_name')
 
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
@@ -168,9 +170,9 @@ def calculate_timely_packet_drop(organizations, dashboard_name, technology=None)
 
 
 def calculate_timely_down_status(organizations, dashboard_name, technology=None):
-
-    sector_devices = organization_network_devices(organizations, technology.ID)
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine_name', 'device_name')
+    technology_id = technology.ID if technology else None
+    sector_devices = organization_network_devices(organizations, technology_id)
+    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine__name', 'device_name')
 
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
@@ -187,8 +189,9 @@ def calculate_timely_down_status(organizations, dashboard_name, technology=None)
 
 def calculate_timely_temperature(organizations, chart_type='IDU'):
 
-    sector_devices = organization_network_devices(organizations, WiMAX.ID)
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine_name', 'device_name')
+    technology_id = 3
+    sector_devices = organization_network_devices(organizations, technology_id)
+    sector_devices = sector_devices.filter(sector_configured_on__isnull=True).values('machine__name', 'device_name')
 
     if chart_type == 'IDU':
         service_list = ['wimax_bs_temperature_acb', 'wimax_bs_temperature_fan']
@@ -212,10 +215,11 @@ def calculate_timely_temperature(organizations, chart_type='IDU'):
     calculate_timely_network_alert('temperature', WiMAX, status_dict_list)
 
 
-def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_list):
+def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_list=[]):
 
+    technology_id = technology.ID if technology else None
     try:
-        dashboard_setting = DashboardSetting.objects.get(technology_id=technology.ID,
+        dashboard_setting = DashboardSetting.objects.get(technology_id=technology_id,
                 page_name='main_dashboard', name=dashboard_name, is_bh=False)
     except DashboardSetting.DoesNotExist as e:
         return None
@@ -237,3 +241,20 @@ def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_
             device_result = []
 
     DashboardRangeStatusTimely.objects.bulk_create(data_list)
+
+
+def prepare_machines(device_list):
+    """
+
+    :return:
+    """
+    # Unique machine from the device_list
+    unique_device_machine_list = {device['machine__name']: True for device in device_list}.keys()
+
+    machine_dict = {}
+    #Creating the machine as a key and device_name as a list for that machine.
+    for machine in unique_device_machine_list:
+        machine_dict[machine] = [device['device_name'] for device in device_list if
+                                 device['machine__name'] == machine]
+
+    return machine_dict
