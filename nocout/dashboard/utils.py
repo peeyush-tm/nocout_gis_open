@@ -168,6 +168,8 @@ def get_dashboard_status_range_counter(dashboard_setting, service_status_results
                     range_counter['unknown'] += 1
                     is_unknown_range = False
                     break
+                except TypeError as type_error:
+                    pass
 
             # dashboard type is string and start_range exists to compare result.
             elif dashboard_setting.dashboard_type == 'STR' and start_range:

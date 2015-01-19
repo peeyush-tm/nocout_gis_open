@@ -241,7 +241,12 @@ def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_
             data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
             device_name = result_dict['device_name']
-            device_result = []
+            device_result = [result_dict]
+    if device_result:
+        dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
+        dashboard_data_dict.update({'device_name': result_dict['device_name'],
+            'dashboard_name': status_dashboard_name, 'created_on': created_on})
+        data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
     DashboardRangeStatusTimely.objects.bulk_create(data_list)
 
