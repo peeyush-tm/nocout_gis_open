@@ -1092,7 +1092,8 @@ def get_gauge_chart_status_data(organizations, packet_loss, down, temperature, t
     )
 
     if dashboard_status_dict.exists():
-        dashboard_status_dict = dashboard_status_dict.aggregate(Sum('range1'), Sum('range2'), Sum('range3'), Sum('range4'), Sum('range5'), Sum('range6'), Sum('range7'), Sum('range8'), Sum('range9'), Sum('range10'), Sum('unknown'))
+        created_on = dashboard_status_dict[0].created_on
+        dashboard_status_dict = dashboard_status_dict.filter(created_on=created_on).aggregate(Sum('range1'), Sum('range2'), Sum('range3'), Sum('range4'), Sum('range5'), Sum('range6'), Sum('range7'), Sum('range8'), Sum('range9'), Sum('range10'), Sum('unknown'))
 
     count = sum(dashboard_status_dict.values())
 
