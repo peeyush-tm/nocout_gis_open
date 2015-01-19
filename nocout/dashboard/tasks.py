@@ -366,3 +366,77 @@ def sum_range_status(parent, child):
     parent.unknown += child.unknown
 
     return parent
+
+
+@task
+def calculate_daily_main_dashboard():
+    '''
+    '''
+    now = timezone.now()
+
+    calculate_daily_severity_status(now)
+    calculate_daily_range_status(now)
+
+
+def calculate_daily_severity_status(now):
+    last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by('dashboard_name',
+            'sector_name').filter(created_on__lt=now)
+
+    daily_severity_status_list = []
+    daily_severity_status = None
+    dashboard_name = ''
+    sector_name = ''
+    for hourly_severity_status in last_day_timely_severity_status:
+        if dashboard_name == hourly_severity_status.dashboard_name and sector_name == hourly_severity_status.sector_name:
+            daily_severity_status = sum_severity_status(daily_severity_status, hourly_severity_status)
+        else:
+            daily_severity_status = DashboardSeverityStatusDaily(
+                dashboard_name=hourly_severity_status.dashboard_name,
+                sector_name=hourly_severity_status.sector_name,
+                created_on=now,
+                warning=hourly_severity_status.warning,
+                critical=hourly_severity_status.critical,
+                ok=hourly_severity_status.ok,
+                down=hourly_severity_status.down,
+                unknown=hourly_severity_status.unknown
+            )
+            daily_severity_status_list.append(daily_severity_status)
+
+    DashboardSeverityStatusDaily.objects.bulk_create(daily_severity_status_list)
+
+    last_day_timely_severity_status.delete()
+
+
+def calculate_daily_range_status(now):
+    last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by('dashboard_name',
+            'device_name').filter(created_on__lt=now)
+
+    daily_range_status_list = []
+    daily_range_status = None
+    dashboard_name = ''
+    device_name = ''
+    for hourly_range_status in last_day_hourly_range_status:
+        if dashboard_name == hourly_range_status.dashboard_name and device_name == hourly_range_status.device_name:
+            daily_range_status = sum_range_status(daily_range_status, hourly_range_status)
+        else:
+            daily_range_status = DashboardRangeStatusDaily(
+                dashboard_name=hourly_range_status.dashboard_name,
+                device_name=hourly_range_status.device_name,
+                created_on=now,
+                range1=hourly_range_status.range1,
+                range2=hourly_range_status.range2,
+                range3=hourly_range_status.range3,
+                range4=hourly_range_status.range4,
+                range5=hourly_range_status.range5,
+                range6=hourly_range_status.range6,
+                range7=hourly_range_status.range7,
+                range8=hourly_range_status.range8,
+                range9=hourly_range_status.range9,
+                range10=hourly_range_status.range10,
+                unknown=hourly_range_status.unknown
+            )
+            daily_range_status_list.append(daily_range_status)
+
+    DashboardRangeStatusDaily.objects.bulk_create(daily_range_status_list)
+
+    last_day_hourly_range_status.delete()
