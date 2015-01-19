@@ -4,7 +4,7 @@ import calendar
 from dateutil import relativedelta
 
 from django.core.urlresolvers import reverse_lazy, reverse
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
@@ -1048,70 +1048,34 @@ def get_gauge_chart_status_data(organizations, packet_loss, down, temperature, t
     """
     """
     count = 0
-    status_list = []
-    device_list = []
     count_range = ''
     count_color = '#CED5DB' # For Unknown Range.
 
-    # Get Devices of User's Organizations and/or Sub Organization.
+    technology_name = DeviceTechnology.objects.get(id=technology).name.lower() if technology else 'network'
     user_devices = organization_network_devices(organizations, technology)
-    # Get Sectors of technology.Technology is PMP or WIMAX or None(For All: PMP+WIMAX )
-    if technology:
-        technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
-        sector_list = Sector.objects.filter(bs_technology=technology, sector_configured_on__in=user_devices)
-    else:
-        technology_name = 'network'
-        sector_list = Sector.objects.filter(sector_configured_on__in=user_devices)
-    # Get Devices of sector_list.
-    for sector in sector_list:
-        device_list.append(sector.sector_configured_on)
-
-    # Make device_list distinct and remove duplicate devices from list.
-    device_list = list(set(device_list))
-    #Get dictionary of machine and device list.
-    machine_dict = prepare_machines(device_list)
+    sector_devices = user_devices.filter(sector_configured_on__isnull=False)
+    sector_devices = sector_devices.values_list('device_name',flat=True)
 
     if temperature:
         dashboard_name = 'temperature'
-        severity_list = ['warning', 'critical']
         if temperature == 'IDU':
-            service_list = ['wimax_bs_temperature_acb', 'wimax_bs_temperature_fan']
-            data_source_list = ['acb_temp', 'fan_temp']
+            dashboard_status_name = 'temperature-idu'
         elif temperature == 'ACB':
-            service_list = ['wimax_bs_temperature_acb']
-            data_source_list = ['acb_temp']
+            dashboard_status_name = 'temperature-acb'
         elif temperature == 'FAN':
-            service_list = ['wimax_bs_temperature_fan']
-            data_source_list = ['fan_temp']
+            dashboard_status_name = 'temperature-fan'
 
-        for machine_name, device_list in machine_dict.items():
-            status_list += ServiceStatus.objects.filter(device_name__in=device_list,
-                                        service_name__in=service_list,
-                                        data_source__in=data_source_list,
-                                        severity__in=severity_list).using(machine_name).annotate(Count('device_name'))
     elif packet_loss:
         dashboard_name = 'packetloss-%s'%technology_name
-        for machine_name, device_list in machine_dict.items():
-            status_list += NetworkStatus.objects.filter(device_name__in=device_list,
-                                        service_name='ping',
-                                        data_source='pl',
-                                        severity__in=['warning', 'critical', 'down'],
-                                        current_value__lt=100).using(machine_name).annotate(Count('device_name'))
+        dashboard_status_name = dashboard_name
+
     elif down:
         dashboard_name = 'down-%s'%technology_name
-        for machine_name, device_list in machine_dict.items():
-            status_list += NetworkStatus.objects.filter(device_name__in=device_list,
-                                        service_name='ping',
-                                        data_source='pl',
-                                        severity__in=['down'],
-                                        current_value__gte=100).using(machine_name).annotate(Count('device_name'))
+        dashboard_status_name = dashboard_name
+
     else:
         dashboard_name = 'latency-%s'%technology_name
-        for machine_name, device_list in machine_dict.items():
-            status_list += NetworkStatus.objects.filter(device_name__in=device_list,
-                                        service_name='ping',
-                                        data_source='rta',
-                                        severity__in=['warning', 'critical', 'down']).using(machine_name).annotate(Count('device_name'))
+        dashboard_status_name = dashboard_name
 
     try:
         dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
@@ -1120,8 +1084,19 @@ def get_gauge_chart_status_data(organizations, packet_loss, down, temperature, t
             "message": "Corresponding dashboard setting is not available.",
             "success":0
         }))
-    count = len(status_list)
 
+
+    dashboard_status_dict = DashboardRangeStatusTimely.objects.order_by('-created_on').filter(
+        dashboard_name=dashboard_status_name,
+        device_name__in=sector_devices
+    )
+
+    if dashboard_status_dict.exists():
+        dashboard_status_dict = dashboard_status_dict.aggregate(Sum('range1'), Sum('range2'), Sum('range3'), Sum('range4'), Sum('range5'), Sum('range6'), Sum('range7'), Sum('range8'), Sum('range9'), Sum('range10'), Sum('unknown'))
+
+    count = sum(dashboard_status_dict.values())
+
+    # print 'count...',count
     for i in range(1, 11):
         start_range = getattr(dashboard_setting, 'range%d_start' %i)
         end_range = getattr(dashboard_setting, 'range%d_end' %i)
@@ -1142,18 +1117,3 @@ def get_gauge_chart_status_data(organizations, packet_loss, down, temperature, t
 
     dictionary = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
     return dictionary
-
-
-def prepare_machines(device_list_qs):
-    """
-    Return dict of machine name keys containing values of related devices list.
-
-    :param device_list_qs:
-    :return machine_dict:
-    """
-    unique_device_machine_list = {device.machine.name: True for device in device_list_qs}.keys()
-
-    machine_dict = {}
-    for machine in unique_device_machine_list:
-        machine_dict[machine] = [device.device_name for device in device_list_qs if device.machine.name == machine]
-    return machine_dict
