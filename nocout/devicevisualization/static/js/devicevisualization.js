@@ -257,8 +257,16 @@ $("#resetFilters").click(function(e) {
             whiteMapClass.clearStateCounters_wmaps();
 
             isApiResponse = 0;
-
-            ccpl_map.setCenter(new OpenLayers.LonLat(whiteMapSettings.mapCenter[0], whiteMapSettings.mapCenter[1]), 1, true, true);
+            ccpl_map.setCenter(
+                new OpenLayers.LonLat(
+                    whiteMapSettings.mapCenter[0],
+                    whiteMapSettings.mapCenter[1]
+                ),
+                1,
+                true,
+                true
+            );
+            ccpl_map.zoomTo(1);
             // Load all counters
             networkMapInstance.updateStateCounter_gmaps();
         } else {
