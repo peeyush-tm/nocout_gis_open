@@ -882,13 +882,12 @@ class MFRProcesedView(View):
         return HttpResponse(response)
 
 #********************************************** main dashboard sector capacity ************************************************
-
-class PMPSectorCapacity(View):
-    """
-    """
+class SectorCapacityMixin(object):
+    '''
+    '''
     def get(self, request):
 
-        tech_name = 'PMP'
+        tech_name = self.tech_name
         organization = []
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
         user_sector = organization_sectors(organization, technology=technology)
@@ -905,36 +904,22 @@ class PMPSectorCapacity(View):
                 chart_series.append(['%s: %s' % (key.replace('_', ' '), value), range_counter[key]])
 
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-            'title': 'PMP Sector Capacity', 'name': ''})
+            'title': '%s Sector Capacity' % tech_name.upper(), 'name': ''})
 
         return HttpResponse(response)
 
 
-class WiMAXSectorCapacity(View):
+
+class PMPSectorCapacity(SectorCapacityMixin, View):
     """
     """
-    def get(self, request):
+    tech_name = 'PMP'
 
-        tech_name = 'WiMAX'
-        organization = []
-        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
-        user_sector = organization_sectors(organization, technology=technology)
 
-        chart_series = []
-        dashboard_name = '%s_sector_capacity' % (tech_name.lower())
-        tech_qs = DashboardSeverityStatusTimely.objects.filter(dashboard_name=dashboard_name, sector_name__in=user_sector.values_list('name', flat=True)).order_by('-created_on')
-        if tech_qs.exists():
-            qs = tech_qs.filter(created_on=tech_qs[0].created_on)
-            range_counter = qs.aggregate(Normal=Sum('ok'), Needs_Augmentation=Sum('warning'),
-                                        Stop_Provisioning=Sum('critical'), Unknown=Sum('unknown'))
-
-            for key,value in range_counter.items():
-                chart_series.append(['%s: %s' % (key.replace('_', ' '), value), range_counter[key]])
-
-        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
-            'title': 'WiMAX Sector Capacity', 'name': ''})
-
-        return HttpResponse(response)
+class WiMAXSectorCapacity(SectorCapacityMixin, View):
+    """
+    """
+    tech_name = 'WiMAX'
 
 
 #********************************************** main dashboard sector capacity ************************************************
