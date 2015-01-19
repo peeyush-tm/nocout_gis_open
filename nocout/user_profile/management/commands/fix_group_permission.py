@@ -1,6 +1,7 @@
 import os, time
 
 from django.core.management.base import BaseCommand, CommandError
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Group, Permission
 
 from user_profile.permissions import admin_perms, operator_perms, viewer_perms
@@ -14,10 +15,10 @@ class Command(BaseCommand):
     help = 'Adds Permissions to each group according to permissions list provided.'
 
     def handle(self, *args, **options):
-    
+
         def fix_group_permissions(group, perms):
             """
-              Add permissions to group from permission list 
+              Add permissions to group from permission list
                 and delete permissions from group which is not in permission list.
             """
 
@@ -30,9 +31,16 @@ class Command(BaseCommand):
             for perm in group.permissions.exclude(id__in=perm_list):
                 group.permissions.remove(perm)
 
+        def create_view_permissions():
+            for content_type in ContentType.objects.all():
+                codename = "view_%s" % content_type.model
+                Permission.objects.get_or_create(content_type=content_type, codename=codename, defaults={'name': "Can view %s" % content_type.name})
+
+        create_view_permissions()
+
         group_admin = Group.objects.get(name='group_admin')
         fix_group_permissions(group_admin, admin_perms)
-        
+
         group_operator = Group.objects.get(name='group_operator')
         fix_group_permissions(group_operator, operator_perms)
 
