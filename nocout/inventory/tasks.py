@@ -55,13 +55,15 @@ def update_sector_frequency_per_day():
         try:
             if sector.sector_configured_on_port and sector.sector_configured_on_port.name:
                 port_based_frequency = True
-            if 'pmp1' in sector.sector_configured_on_port.name.strip().lower():
-                service_name = 'wimax_pmp1_frequency_invent'
-            elif 'pmp2' in sector.sector_configured_on_port.name.strip().lower():
-                service_name = 'wimax_pmp2_frequency_invent'
             else:
                 port_based_frequency = False
+
             if port_based_frequency:
+                if 'pmp1' in sector.sector_configured_on_port.name.strip().lower():
+                    service_name = 'wimax_pmp1_frequency_invent'
+                elif 'pmp2' in sector.sector_configured_on_port.name.strip().lower():
+                    service_name = 'wimax_pmp2_frequency_invent'
+
                 polled_frequency = InventoryStatus.objects.filter(device_name=sector_configured_on.device_name,
                                                               service_name=service_name,
                                                               data_source='frequency').using(
