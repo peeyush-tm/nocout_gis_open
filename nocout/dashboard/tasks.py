@@ -212,7 +212,7 @@ def calculate_timely_temperature(organizations, chart_type='IDU'):
     calculate_timely_network_alert('temperature', WiMAX, status_dict_list)
 
 
-def calculate_timely_network_alert(dashboard_name, technology=None):
+def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_list):
 
     try:
         dashboard_setting = DashboardSetting.objects.get(technology_id=technology.ID,
