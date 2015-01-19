@@ -1375,11 +1375,10 @@ function WhiteMapClass() {
 				if(allMarkersObject_wmap['path'].hasOwnProperty(key)) {
 			    	var current_line = allMarkersObject_wmap['path'][key];
 			    	if(current_line) {
-					    var nearEndVisible = global_this.checkIfPointLiesInside({lat: current_line.nearLat, lon: current_line.nearLon}),
-					      	farEndVisible = global_this.checkIfPointLiesInside({lat: current_line.ss_lat, lon: current_line.ss_lon}),
-					      	connected_bs = allMarkersObject_wmap['base_station']['bs_'+current_line.filter_data.bs_name],
-					      	connected_ss = allMarkersObject_wmap['sub_station']['ss_'+current_line.filter_data.ss_name];
-
+					    var connected_bs = allMarkersObject_wmap['base_station']['bs_'+current_line.filter_data.bs_name],
+					      	connected_ss = allMarkersObject_wmap['sub_station']['ss_'+current_line.filter_data.ss_name],
+					    	nearEndVisible = global_this.checkIfPointLiesInside({lat: connected_bs["ptLat"], lon: connected_bs["ptLon"]}),
+					      	farEndVisible = global_this.checkIfPointLiesInside({lat: connected_ss["ptLat"], lon: connected_ss["ptLon"]});
 					    if((nearEndVisible || farEndVisible) && ((connected_bs && connected_ss) && (connected_bs.isActive != 0 && connected_ss.isActive != 0))) {
 					    	// If polyline not shown then show the polyline
 					    	if(!current_line.map) {
@@ -2004,15 +2003,31 @@ function WhiteMapClass() {
 							/*Call createSectorData function to get the points array to plot the sector on google maps.*/
 							gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
 							
-								var halfPt = Math.floor(pointsArray.length / (+2));
+								var halfPt = Math.floor(pointsArray.length / (+2)),
+									polyStartLat = "",
+									polyStartLon = "";
+
+								if(halfPt == 1) {
+									var latLonArray = [
+										pointsArray[0],
+										pointsArray[1]
+									];
+									var centerPosition = gmap_self.getMiddlePoint(latLonArray);
+
+									polyStartLat = centerPosition.lat * 180 / Math.PI;
+									polyStartLon = centerPosition.lon * 180 / Math.PI;
+								} else {
+									polyStartLat = pointsArray[halfPt].lat;
+									polyStartLon = pointsArray[halfPt].lon;
+								}
 
 								/*Plot sector on map with the retrived points*/
 								whiteMapClass.plotSector_wmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation,rad,azimuth,beam_width);
 
-								startEndObj["startLat"] = pointsArray[halfPt].lat;
-								startEndObj["startLon"] = pointsArray[halfPt].lon;
-								startEndObj["sectorLat"] = pointsArray[halfPt].lat;
-								startEndObj["sectorLon"] = pointsArray[halfPt].lon;
+								startEndObj["startLat"] = polyStartLat;
+								startEndObj["startLon"] = polyStartLon;
+								startEndObj["sectorLat"] = polyStartLat;
+								startEndObj["sectorLon"] = polyStartLon;
 							});
 						// }
 
