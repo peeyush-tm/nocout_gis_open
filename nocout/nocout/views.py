@@ -149,8 +149,21 @@ class AuthView(View):
         '''
         '''
         if not user.is_active:
-            # if user locked due to invalid attempts then unlock user after 30 minutes.
-            self.userprofile_status(user)
+            # unlock user after 30 minutes if user locked due to invalid password attempt.
+            lock_time = user.userprofile.user_invalid_attempt_at
+            if lock_time and (user.userprofile.user_invalid_attempt >= 5 ):
+                unlock_time = lock_time + timedelta(minutes=30)
+                if timezone.now() > unlock_time:
+                    user.userprofile.user_invalid_attempt = 0
+                    user.userprofile.user_invalid_attempt_at = None
+                    user.userprofile.save()
+                    user.is_active = True
+                    user.save()
+
+                    result = self.valid_user(user) # now login the request user.
+                    user_audit = self.get_user_audit(user_id=user.id, action="Logged in successfully.")
+                    return {'result': result, 'user_audit': user_audit}
+
             user_reason = 'locked'
 
         elif user.userprofile.is_deleted:
@@ -211,20 +224,11 @@ class AuthView(View):
         already_logged = user.userprofile.password_changed_at
         password_expire = True
         password_expire_alert = False
-        lock_time = user.userprofile.user_invalid_attempt_at
         password_expires_on = already_logged
         if already_logged:
             password_expires_on = already_logged + timedelta(days=30)
             password_expire = password_expires_on < timezone.now()
             password_expire_alert = already_logged + timedelta(days=20) < timezone.now()
-
-        # unlock the user after 30 minutes if user locked due to invalid password attempt.
-        if lock_time and (user.userprofile.user_invalid_attempt >= 5 ):
-            unlock_time = lock_time + timedelta(minutes=30)
-            if timezone.now() > unlock_time:
-                user_profile = UserProfile.objects.filter(id=user.id)
-                user_profile.update(user_invalid_attempt=0, is_active=True)
-                user.is_active = True
 
         return {'already_logged': already_logged, 'password_expire': password_expire,
                 'password_expires_on': password_expires_on, 'password_expire_alert': password_expire_alert}
