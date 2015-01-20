@@ -6,6 +6,7 @@ var mapInstance = "",
 	gisPerformanceClass = {},
 	infowindow = "",
 	drawingManager = "",
+	drawingManager_livePoll = "",
 	masterClusterInstance = "",
 	base_url = "",
 	defaultIconSize = 'medium',
@@ -542,7 +543,7 @@ function devicePlottingClass_gmap() {
 			state_lat_lon_db.insert({"name" : "Andaman and Nicobar Islands","lat" : 11.6800,"lon" : 92.7700});
 			state_lat_lon_db.insert({"name" : "Lakshadweep","lat" : 10.5700,"lon" : 72.6300});
 			state_lat_lon_db.insert({"name" : "Pondicherry","lat" : 11.9300,"lon" : 79.8300});
-			state_lat_lon_db.insert({"name" : "Dadra And Nagar Haveli","lat" : 20.2700,"lon" : 73.0200});
+			state_lat_lon_db.insert({"name" : "Dadra and Nagar Haveli","lat" : 20.2700,"lon" : 73.0200});
 
 			/*Show The loading Icon*/
 			$("#loadingIcon").show();
@@ -5479,8 +5480,8 @@ function devicePlottingClass_gmap() {
 	    	}
 
 			/*Reset the drawing object if exist*/
-			if(drawingManager && drawingManager.getDrawingMode()) {
-				drawingManager.setDrawingMode(null);
+			if(drawingManager_livePoll && drawingManager_livePoll.getMap()) {
+				drawingManager_livePoll.setMap(null);
 			}
 
 			/*Remove the polygon if exists*/
@@ -5625,17 +5626,10 @@ function devicePlottingClass_gmap() {
 						}
 
     					$("#tech_send").button("complete");
-
     					/*Initialize create Polygon functionality*/
-    					drawingManager = new google.maps.drawing.DrawingManager({
+    					drawingManager_livePoll = new google.maps.drawing.DrawingManager({
 							drawingMode: google.maps.drawing.OverlayType.POLYGON,
 							drawingControl: false,
-							drawingControlOptions: {
-								position: google.maps.ControlPosition.TOP_CENTER,
-								drawingModes: [
-									google.maps.drawing.OverlayType.POLYGON,
-								]
-							},
                             polygonOptions: {
                               fillColor: '#ffffff',
                               fillOpacity: 0,
@@ -5643,18 +5637,12 @@ function devicePlottingClass_gmap() {
                               clickable: false,
                               editable: true,
                               zIndex: 1
-                            },
-							map : mapInstance
+                            }
 						});
 
-						drawingManager.setMap(mapInstance);
+						drawingManager_livePoll.setMap(mapInstance);
 
-						google.maps.event.addListener(drawingManager, 'overlaycomplete', function(e) {
-
-							/*Remove drawing mode*/
-							if(drawingManager && drawingManager.getDrawingMode()) {
-								drawingManager.setDrawingMode(null);
-							}
+						google.maps.event.addListener(drawingManager_livePoll, 'overlaycomplete', function(e) {
 
 							pathArray = e.overlay.getPath().getArray();
 							polygon = new google.maps.Polygon({"path" : pathArray});
@@ -5714,15 +5702,6 @@ function devicePlottingClass_gmap() {
 
 							if(polygonSelectedDevices.length == 0) {
 
-								if(drawingManager && drawingManager.getDrawingMode()) {
-									drawingManager.setDrawingMode(null);
-								}
-
-								if(Object.keys(currentPolygon).length > 0) {
-									/*Remove the current polygon from the map*/
-									currentPolygon.setMap(null);
-								}
-
 								/*Remove current polygon from map*/
 								gmap_self.initLivePolling();
 
@@ -5732,15 +5711,6 @@ function devicePlottingClass_gmap() {
 								bootbox.alert("No SS found under the selected area.");
 
 							} else if(polygonSelectedDevices.length > 200) {
-
-								if(drawingManager && drawingManager.getDrawingMode()) {
-									drawingManager.setDrawingMode(null);
-								}
-
-								if(Object.keys(currentPolygon).length > 0) {
-									/*Remove the current polygon from the map*/
-									currentPolygon.setMap(null);
-								}
 
 								/*Remove current polygon from map*/
 								gmap_self.initLivePolling();
@@ -5757,7 +5727,7 @@ function devicePlottingClass_gmap() {
 								for(var i=0;i<polygonSelectedDevices.length;i++) {
 									
 									var new_device_name = "";
-									var current_technology = $.trim(polygonSelectedDevices[i].technology.toLowerCase());
+									var current_technology = polygonSelectedDevices[i].technology ? $.trim(polygonSelectedDevices[i].technology.toLowerCase()) : "";
 									
 									if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
 										new_device_name = polygonSelectedDevices[i].device_name.split(".");
@@ -5778,7 +5748,7 @@ function devicePlottingClass_gmap() {
 	                                    if(!polled_device_count[devices_counter]) {
 											polled_device_count[devices_counter]  = 1;
 										} else {
-											polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
+											polled_device_count[devices_counter] += 1;
 										}
 									}
 
@@ -5811,8 +5781,8 @@ function devicePlottingClass_gmap() {
 										var device_end_txt = "",
 											point_name = "";
 
-										if(ptp_tech_list.indexOf(current_technology) > -1) {
-	                                        if(polled_device_count[devices_counter] <= 1) {
+                                        if(polled_device_count[devices_counter] == 1) {
+											if(ptp_tech_list.indexOf(current_technology) > -1) {
 												if(polygonSelectedDevices[i].pointType == 'sub_station') {
 													device_end_txt = "Far End";
 													point_name = polygonSelectedDevices[i].cktId+" - "+polygonSelectedDevices[i].ss_ip;
@@ -5841,6 +5811,11 @@ function devicePlottingClass_gmap() {
 								devicesTemplate += "</div>";
 
 								$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html(devicesTemplate);
+							}
+
+							/*Remove drawing mode*/
+							if(drawingManager_livePoll && drawingManager_livePoll.getMap()) {
+								drawingManager_livePoll.setMap(null);
 							}
 						});
 
@@ -6363,8 +6338,8 @@ function devicePlottingClass_gmap() {
 	this.clearPolygon = function() {
 		
 		/*Reset drawing object if exists*/
-		if(drawingManager && drawingManager.getDrawingMode()) {
-			drawingManager.setDrawingMode(null);
+		if(drawingManager_livePoll && drawingManager_livePoll.getMap()) {
+			drawingManager_livePoll.setMap(null);
 		}
 
 		/*Clear polygon if exist*/
@@ -7306,7 +7281,7 @@ function devicePlottingClass_gmap() {
 	            	}
 	        	});
 			} catch(e) {
-				console.log(e);
+				// console.log(e);
 			}
 		}
 	}
@@ -8220,12 +8195,6 @@ function devicePlottingClass_gmap() {
 		drawingManager = new google.maps.drawing.DrawingManager({
 			drawingMode: google.maps.drawing.OverlayType.POLYGON,
 			drawingControl: false,
-			drawingControlOptions: {
-				position: google.maps.ControlPosition.TOP_CENTER,
-				drawingModes: [
-					google.maps.drawing.OverlayType.POLYGON,
-				]
-			},
             polygonOptions: {
               fillColor: '#ffffff',
               fillOpacity: 0,
@@ -8233,18 +8202,12 @@ function devicePlottingClass_gmap() {
               clickable: false,
               editable: true,
               zIndex: 1
-            },
-			map : mapInstance
+            }
 		});
 		
 		drawingManager.setMap(mapInstance);
 
 		google.maps.event.addListener(drawingManager, 'overlaycomplete', function(e) {
-
-			/*Remove drawing mode*/
-			if(drawingManager && drawingManager.getDrawingMode()) {
-				drawingManager.setDrawingMode(null);
-			}
 
 			var pathArray = e.overlay.getPath().getArray(),
 				polygon = new google.maps.Polygon({"path" : pathArray});
@@ -8450,6 +8413,11 @@ function devicePlottingClass_gmap() {
 					bootbox.alert("No BS found in the selected area.");	
         		}
 			}
+
+			/*Remove drawing mode*/
+			if(drawingManager && drawingManager.getMap()) {
+				drawingManager.setMap(null);
+			}
 		});
 	};
 
@@ -8532,8 +8500,9 @@ function devicePlottingClass_gmap() {
 				ccpl_map.getLayersByName('export_Polling')[0].setVisibility(false);
 			}
 		} else {
-			if(drawingManager && drawingManager.getDrawingMode()) {
-				drawingManager.setDrawingMode(null);
+			/*Remove drawing mode*/
+			if(drawingManager && drawingManager.getMap()) {
+				drawingManager.setMap(null);
 			}
 		}
 
