@@ -2,6 +2,7 @@ from celery import task
 
 from django.db.models import Q, Count, F
 from django.utils import timezone
+import datetime
 
 from nocout.settings import PMP, WiMAX
 
@@ -226,19 +227,23 @@ def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_
         return None
 
     data_list = []
-    device_name = ''
+    device_name = 'xx'
     device_result = []
     created_on = timezone.now()
+
     if status_dashboard_name is None:
         status_dashboard_name = dashboard_name
+
     for result_dict in status_dict_list:
         if device_name == result_dict['device_name']:
             device_result.append(result_dict)
         else:
-            dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
-            dashboard_data_dict.update({'device_name': result_dict['device_name'],
-               'dashboard_name': status_dashboard_name, 'created_on': created_on})
-            data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
+            if device_result:
+                dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
+
+                dashboard_data_dict.update({'device_name': device_name,
+                    'dashboard_name': status_dashboard_name, 'created_on': created_on})
+                data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
             device_name = result_dict['device_name']
             device_result = [result_dict]
@@ -379,9 +384,11 @@ def calculate_daily_main_dashboard():
 
 
 def calculate_daily_severity_status(now):
+    today = datetime.date.today()
+    previous_day = datetime.date.today().day - 1
     last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by('dashboard_name',
-            'sector_name').filter(created_on__lt=now)
-
+            'sector_name').filter(created_on__day=previous_day,
+            created_on__month=today.month, created_on__year=today.year)
     daily_severity_status_list = []
     daily_severity_status = None
     dashboard_name = ''
@@ -408,8 +415,11 @@ def calculate_daily_severity_status(now):
 
 
 def calculate_daily_range_status(now):
+    today = datetime.date.today()
+    previous_day = datetime.date.today().day - 1
     last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by('dashboard_name',
-            'device_name').filter(created_on__lt=now)
+            'device_name').filter(created_on__day=previous_day,
+            created_on__month=today.month, created_on__year=today.year)
 
     daily_range_status_list = []
     daily_range_status = None
@@ -510,3 +520,209 @@ def calculate_weekly_range_status(now):
             weekly_range_status_list.append(daily_range_status)
 
     DashboardRangeStatusWeekly.objects.bulk_create(weekly_range_status_list)
+
+
+def calculate_monthly_main_dashboard():
+    """
+    """
+    now = timezone.now()
+
+    calculate_monthly_severity_status(now)
+    calculate_monthly_range_status(now)
+
+
+def calculate_monthly_range_status(now):
+    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
+    first_day = timezone.datetime(previous_day.year, previous_day.month, 1)
+    last_month_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
+            'device_name').filter(created_on__month=previous_day.month,
+             created_on__year=previous_day.year)
+
+    monthly_range_status_list = []
+    monthly_range_status = None
+    dashboard_name = ''
+    device_name = ''
+    day01 = True if previous_day.day == 1 else False
+    for daily_range_status in last_month_daily_range_status:
+        if dashboard_name == daily_range_status.dashboard_name and device_name == daily_range_status.device_name:
+            monthly_range_status = sum_range_status(monthly_range_status, daily_range_status)
+        else:
+            if not day01:
+                monthly_range_status, created = DashboardRangeStatusMonthly.objects.get_or_create(
+                    dashboard_name=daily_range_status.dashboard_name,
+                    device_name=daily_range_status.device_name,
+                    created_on=first_day
+                )
+                monthly_range_status = sum_range_status(monthly_range_status, daily_range_status)
+                # monthly_range_status.save() # Save later so current process doesn't slow.
+            else:
+                monthly_range_status = DashboardRangeStatusMonthly(
+                    dashboard_name=daily_range_status.dashboard_name,
+                    device_name=daily_range_status.device_name,
+                    created_on=first_day,
+                    range1=daily_range_status.range1,
+                    range2=daily_range_status.range2,
+                    range3=daily_range_status.range3,
+                    range4=daily_range_status.range4,
+                    range5=daily_range_status.range5,
+                    range6=daily_range_status.range6,
+                    range7=daily_range_status.range7,
+                    range8=daily_range_status.range8,
+                    range9=daily_range_status.range9,
+                    range10=daily_range_status.range10,
+                    unknown=daily_range_status.unknown
+                )
+            monthly_range_status_list.append(monthly_range_status)
+
+    if day01:
+        DashboardRangeStatusMonthly.objects.bulk_create(monthly_range_status_list)
+    else:
+        for monthly_range_status in monthly_range_status_list:
+            monthly_range_status.save()
+
+
+
+def calculate_monthly_severity_status(now):
+    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
+    first_day = timezone.datetime(previous_day.year, previous_day.month, 1)
+    last_month_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
+            'sector_name').filter(
+            created_on__month=previous_day.month,
+            created_on__year=previous_day.year)
+
+    monthly_severity_status_list = []
+    monthly_severity_status = None
+    dashboard_name = ''
+    sector_name = ''
+    day01 = True if previous_day.day == 1 else False
+    for daily_severity_status in last_month_daily_severity_status:
+        if dashboard_name == daily_severity_status.dashboard_name and sector_name == daily_severity_status.sector_name:
+            monthly_severity_status = sum_severity_status(monthly_severity_status, daily_severity_status)
+        else:
+            if not day01:
+                monthly_severity_status, created = DashboardSeverityStatusMonthly.objects.get_or_create(
+                    dashboard_name=daily_range_status.dashboard_name,
+                    device_name=daily_range_status.device_name,
+                    created_on=first_day
+                )
+                monthly_severity_status = sum_range_status(monthly_severity_status, daily_range_status)
+                # monthly_severity_status.save() # Save later so current process doesn't slow.
+            else:
+                monthly_severity_status = DashboardSeverityStatusMonthly(
+                    dashboard_name=daily_severity_status.dashboard_name,
+                    sector_name=daily_severity_status.sector_name,
+                    created_on=first_day,
+                    warning=daily_severity_status.warning,
+                    critical=daily_severity_status.critical,
+                    ok=daily_severity_status.ok,
+                    down=daily_severity_status.down,
+                    unknown=daily_severity_status.unknown
+                )
+            monthly_severity_status_list.append(monthly_severity_status)
+    if day01:
+        DashboardSeverityStatusMonthly.objects.bulk_create(monthly_severity_status_list)
+    else:
+        for monthly_severity_status in monthly_severity_status_list:
+            monthly_severity_status.save()
+
+
+def calculate_yearly_main_dashboard():
+    """
+    """
+    now = timezone.now()
+
+    calculate_yearly_severity_status(now)
+    calculate_yearly_range_status(now)
+
+
+def calculate_yearly_range_status(now):
+    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
+    first_month = timezone.datetime(previous_day.year, 1, previous_day.day)
+    last_year_monthly_range_status = DashboardRangeStatusMonthly.objects.order_by('dashboard_name',
+            'device_name').filter(created_on__year=previous_day.year)
+
+    yearly_range_status_list = []
+    yearly_range_status = None
+    dashboard_name = ''
+    device_name = ''
+    month01 = True if previous_day.month == 1 else False
+    for monthly_range_status in last_year_monthly_range_status:
+        if dashboard_name == monthly_range_status.dashboard_name and device_name == monthly_range_status.device_name:
+            yearly_range_status = sum_range_status(yearly_range_status, monthly_range_status)
+        else:
+            if not month01:
+                yearly_range_status, created = DashboardRangeStatusYearly.objects.get_or_create(
+                    dashboard_name=monthly_range_status.dashboard_name,
+                    device_name=monthly_range_status.device_name,
+                    created_on=first_month
+                )
+                yearly_range_status = sum_range_status(yearly_range_status, monthly_range_status)
+                # yearly_range_status.save() # Save later so current process doesn't slow.
+            else:
+                yearly_range_status = DashboardRangeStatusYearly(
+                    dashboard_name=monthly_range_status.dashboard_name,
+                    device_name=monthly_range_status.device_name,
+                    created_on=first_month,
+                    range1=monthly_range_status.range1,
+                    range2=monthly_range_status.range2,
+                    range3=monthly_range_status.range3,
+                    range4=monthly_range_status.range4,
+                    range5=monthly_range_status.range5,
+                    range6=monthly_range_status.range6,
+                    range7=monthly_range_status.range7,
+                    range8=monthly_range_status.range8,
+                    range9=monthly_range_status.range9,
+                    range10=monthly_range_status.range10,
+                    unknown=monthly_range_status.unknown
+                )
+            yearly_range_status_list.append(yearly_range_status)
+
+    if month01:
+        DashboardRangeStatusYearly.objects.bulk_create(yearly_range_status_list)
+
+    else:
+        for yearly_range_status in yearly_range_status_list:
+            yearly_range_status.save()
+
+
+def calculate_yearly_severity_status(now):
+    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
+    first_day = timezone.datetime(previous_day.year, previous_day.month, 1)
+    last_year_monthly_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
+            'sector_name').filter(created_on__year=previous_day.year)
+
+    yearly_severity_status_list = []
+    yearly_severity_status = None
+    dashboard_name = ''
+    sector_name = ''
+    month01 = True if previous_day.month == 1 else False
+    for monthly_severity_status in last_year_monthly_severity_status:
+        if dashboard_name == monthly_severity_status.dashboard_name and sector_name == monthly_severity_status.sector_name:
+            yearly_severity_status = sum_severity_status(yearly_severity_status, monthly_severity_status)
+        else:
+            if not month01:
+                yearly_severity_status, created = DashboardSeverityStatusYearly.objects.get_or_create(
+                    dashboard_name=monthly_severity_status.dashboard_name,
+                    device_name=monthly_severity_status.device_name,
+                    created_on=first_day
+                )
+                yearly_severity_status = sum_range_status(yearly_severity_status, monthly_severity_status)
+                # yearly_severity_status.save() # Save later so current process doesn't slow.
+            else:
+                yearly_severity_status = DashboardSeverityStatusYearly(
+                    dashboard_name=monthly_severity_status.dashboard_name,
+                    sector_name=monthly_severity_status.sector_name,
+                    created_on=first_day,
+                    warning=monthly_severity_status.warning,
+                    critical=monthly_severity_status.critical,
+                    ok=monthly_severity_status.ok,
+                    down=monthly_severity_status.down,
+                    unknown=monthly_severity_status.unknown
+                )
+            yearly_severity_status_list.append(yearly_severity_status)
+
+    if month01:
+        DashboardSeverityStatusYearly.objects.bulk_create(yearly_severity_status_list)
+    else:
+        for yearly_severity_status in yearly_severity_status_list:
+            yearly_severity_status.save()
