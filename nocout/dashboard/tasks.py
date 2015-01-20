@@ -34,21 +34,21 @@ def calculate_timely_main_dashboard():
 
     user_organizations = Organization.objects.all()
 
-    calculate_timely_latency(user_organizations, dashboard_name='latency-pmp', technology=PMP)
-    calculate_timely_latency(user_organizations, dashboard_name='latency-wimax', technology=WiMAX)
-    calculate_timely_latency(user_organizations, dashboard_name='latency-network')
+    calculate_timely_latency(user_organizations, dashboard_name='latency-pmp', created_on=created_on,technology=PMP)
+    calculate_timely_latency(user_organizations, dashboard_name='latency-wimax', created_on=created_on,technology=WiMAX)
+    calculate_timely_latency(user_organizations, dashboard_name='latency-network', created_on=created_on)
 
-    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-pmp', technology=PMP)
-    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-wimax', technology=WiMAX)
-    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-network')
+    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-pmp', created_on=created_on, technology=PMP)
+    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-wimax', created_on=created_on, technology=WiMAX)
+    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-network', created_on=created_on)
 
-    calculate_timely_down_status(user_organizations, dashboard_name='down-pmp', technology=PMP)
-    calculate_timely_down_status(user_organizations, dashboard_name='down-wimax', technology=WiMAX)
-    calculate_timely_down_status(user_organizations, dashboard_name='down-network')
+    calculate_timely_down_status(user_organizations, dashboard_name='down-pmp', created_on=created_on, technology=PMP)
+    calculate_timely_down_status(user_organizations, dashboard_name='down-wimax', created_on=created_on, technology=WiMAX)
+    calculate_timely_down_status(user_organizations, dashboard_name='down-network', created_on=created_on)
 
-    calculate_timely_temperature(user_organizations, chart_type='IDU')
-    calculate_timely_temperature(user_organizations, chart_type='ACB')
-    calculate_timely_temperature(user_organizations, chart_type='FAN')
+    calculate_timely_temperature(user_organizations, created_on=created_on, chart_type='IDU')
+    calculate_timely_temperature(user_organizations, created_on=created_on, chart_type='ACB')
+    calculate_timely_temperature(user_organizations, created_on=created_on, chart_type='FAN')
 
 
 def calculate_timely_sector_capacity(technology, model, created_on):
@@ -134,8 +134,8 @@ def calculate_timely_sales_opportunity(technology, model, created_on):
     model.objects.bulk_create(data_list)
 
 
-def calculate_timely_latency(organizations, dashboard_name, technology=None):
-
+def calculate_timely_latency(organizations, dashboard_name, created_on ,technology=None):
+    created_on = created_on
     technology_id = technology.ID if technology else None
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
@@ -149,10 +149,11 @@ def calculate_timely_latency(organizations, dashboard_name, technology=None):
                 severity__in=['warning', 'critical', 'down']
             ).using(machine_name).values()
 
-    calculate_timely_network_alert(dashboard_name, technology, status_dict_list)
+    calculate_timely_network_alert(dashboard_name, created_on, technology, status_dict_list)
 
 
-def calculate_timely_packet_drop(organizations, dashboard_name, technology=None):
+def calculate_timely_packet_drop(organizations, dashboard_name, created_on, technology=None):
+    created_on = created_on
     technology_id = technology.ID if technology else None
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
@@ -167,10 +168,11 @@ def calculate_timely_packet_drop(organizations, dashboard_name, technology=None)
                 current_value__lt=100
             ).using(machine_name).values()
 
-    calculate_timely_network_alert(dashboard_name, technology, status_dict_list)
+    calculate_timely_network_alert(dashboard_name, created_on, technology, status_dict_list)
 
 
-def calculate_timely_down_status(organizations, dashboard_name, technology=None):
+def calculate_timely_down_status(organizations, dashboard_name, created_on, technology=None):
+    created_on = created_on
     technology_id = technology.ID if technology else None
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
@@ -185,12 +187,13 @@ def calculate_timely_down_status(organizations, dashboard_name, technology=None)
                 current_value__gte=100
             ).using(machine_name).values()
 
-    calculate_timely_network_alert(dashboard_name, technology, status_dict_list)
+    calculate_timely_network_alert(dashboard_name, created_on, technology, status_dict_list)
 
 
-def calculate_timely_temperature(organizations, chart_type='IDU'):
+def calculate_timely_temperature(organizations, created_on, chart_type='IDU'):
 
     technology_id = 3
+    created_on=created_on
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
@@ -214,10 +217,10 @@ def calculate_timely_temperature(organizations, chart_type='IDU'):
                 severity__in=['warning', 'critical']
             ).using(machine_name).values()
 
-    calculate_timely_network_alert('temperature', WiMAX, status_dict_list, status_dashboard_name)
+    calculate_timely_network_alert('temperature', created_on, WiMAX, status_dict_list, status_dashboard_name)
 
 
-def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_list=[], status_dashboard_name=None ):
+def calculate_timely_network_alert(dashboard_name, created_on, technology=None, status_dict_list=[], status_dashboard_name=None):
 
     technology_id = technology.ID if technology else None
     try:
@@ -229,7 +232,7 @@ def calculate_timely_network_alert(dashboard_name, technology=None, status_dict_
     data_list = []
     device_name = 'xx'
     device_result = []
-    created_on = timezone.now()
+    created_on = created_on
 
     if status_dashboard_name is None:
         status_dashboard_name = dashboard_name
@@ -384,11 +387,10 @@ def calculate_daily_main_dashboard():
 
 
 def calculate_daily_severity_status(now):
-    today = datetime.date.today()
-    previous_day = datetime.date.today().day - 1
+    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by('dashboard_name',
             'sector_name').filter(created_on__day=previous_day,
-            created_on__month=today.month, created_on__year=today.year)
+            created_on__month=previous_day.month, created_on__year=previous_day.year)
     daily_severity_status_list = []
     daily_severity_status = None
     dashboard_name = ''
@@ -415,11 +417,10 @@ def calculate_daily_severity_status(now):
 
 
 def calculate_daily_range_status(now):
-    today = datetime.date.today()
-    previous_day = datetime.date.today().day - 1
+    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by('dashboard_name',
             'device_name').filter(created_on__day=previous_day,
-            created_on__month=today.month, created_on__year=today.year)
+            created_on__month=previous_day.month, created_on__year=previous_day.year)
 
     daily_range_status_list = []
     daily_range_status = None
@@ -687,8 +688,8 @@ def calculate_yearly_range_status(now):
 
 def calculate_yearly_severity_status(now):
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
-    first_day = timezone.datetime(previous_day.year, previous_day.month, 1)
-    last_year_monthly_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
+    first_month = timezone.datetime(previous_day.year, 1, previous_day.day)
+    last_year_monthly_severity_status = DashboardSeverityStatusMonthly.objects.order_by('dashboard_name',
             'sector_name').filter(created_on__year=previous_day.year)
 
     yearly_severity_status_list = []
@@ -704,7 +705,7 @@ def calculate_yearly_severity_status(now):
                 yearly_severity_status, created = DashboardSeverityStatusYearly.objects.get_or_create(
                     dashboard_name=monthly_severity_status.dashboard_name,
                     device_name=monthly_severity_status.device_name,
-                    created_on=first_day
+                    created_on=first_month
                 )
                 yearly_severity_status = sum_range_status(yearly_severity_status, monthly_severity_status)
                 # yearly_severity_status.save() # Save later so current process doesn't slow.
@@ -712,7 +713,7 @@ def calculate_yearly_severity_status(now):
                 yearly_severity_status = DashboardSeverityStatusYearly(
                     dashboard_name=monthly_severity_status.dashboard_name,
                     sector_name=monthly_severity_status.sector_name,
-                    created_on=first_day,
+                    created_on=first_month,
                     warning=monthly_severity_status.warning,
                     critical=monthly_severity_status.critical,
                     ok=monthly_severity_status.ok,
