@@ -19,7 +19,7 @@ import time
 import socket
 import json
 from itertools import groupby
-
+import sys
 try:
         import nocout_settings
         from nocout_settings import _LIVESTATUS, _DATABASES
