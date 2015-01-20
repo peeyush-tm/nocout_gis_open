@@ -517,7 +517,7 @@ function devicePlottingClass_gmap() {
 			state_lat_lon_db.insert({"name" : "Delhi","lat" : 28.65,"lon" : 77.73});
 			state_lat_lon_db.insert({"name" : "NCR","lat" : 28.57,"lon" : 76.42});
 			state_lat_lon_db.insert({"name" : "Goa","lat" : 15.4989,"lon" : 73.8278});
-			state_lat_lon_db.insert({"name" : "Gujrat","lat" : 23.2167,"lon" : 72.6833});
+			state_lat_lon_db.insert({"name" : "Gujarat","lat" : 23.2167,"lon" : 72.6833});
 			state_lat_lon_db.insert({"name" : "Haryana","lat" : 30.73,"lon" : 76.78});
 			state_lat_lon_db.insert({"name" : "Himachal Pradesh","lat" : 31.1033,"lon" : 77.1722});
 			state_lat_lon_db.insert({"name" : "Jammu and Kashmir","lat" : 33.45,"lon" : 76.24});
@@ -1940,6 +1940,7 @@ function devicePlottingClass_gmap() {
 			// }
 			/*Plot Sector*/
 			for(var j=sector_array.length;j--;) {
+
 				var azimuth = sector_array[j].azimuth_angle,
 					beam_width = sector_array[j].beam_width,
 					sector_color = sector_array[j].color,
@@ -1962,7 +1963,8 @@ function devicePlottingClass_gmap() {
 					rad = 4,
 					sectorRadius = (+sector_array[j].radius),
 					startLon = "",
-					startLat = "";
+					startLat = "",
+					sect_height = gisPerformanceClass.getKeyValue(sector_array[j].info,"antenna_height",true);
 
 				/*If radius is greater than 4 Kms then set it to 4.*/
 				if(sectorRadius && (sectorRadius > 0)) {
@@ -1994,7 +1996,7 @@ function devicePlottingClass_gmap() {
 								polyStartLon = pointsArray[halfPt].lon;
 							}
 							/*Plot sector on map with the retrived points*/
-							gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation,rad,azimuth,beam_width);
+							gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation,rad,azimuth,beam_width,sect_height);
 
 							startEndObj["startLat"] = polyStartLat;
 							startEndObj["startLon"] = polyStartLon;
@@ -2049,8 +2051,6 @@ function devicePlottingClass_gmap() {
 							windowTitle 	    : "Base Station Device"
 	                    }
 	                }
-
-	                var sect_height = sector_array[j].antenna_height;
 
 					/*Create Sector Marker*/
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
@@ -2125,6 +2125,7 @@ function devicePlottingClass_gmap() {
 
 					var ss_marker_obj = sector_child[k],
 						ss_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+ss_marker_obj.data.markerUrl,"other"),
+						ss_antenna_height =  gisPerformanceClass.getKeyValue(ss_marker_obj.data.param.sub_station,"antenna_height",true),
 						ckt_id_val = gisPerformanceClass.getKeyValue(ss_marker_obj.data.param.sub_station,"cktid",true),
 						ss_perf_url = ss_marker_obj.data.perf_page_url ? ss_marker_obj.data.perf_page_url : "",
 						ss_inventory_url = ss_marker_obj.data.inventory_url ? ss_marker_obj.data.inventory_url : "";
@@ -2260,11 +2261,10 @@ function devicePlottingClass_gmap() {
 
 					var ss_info = {
 							"info" : ss_marker_obj.data.param.sub_station,
-							"antenna_height" : ss_marker_obj.data.antenna_height
+							"antenna_height" : ss_antenna_height
 						},
 						base_info = {
-							"info" : bs_ss_devices[i].data.param.base_station,
-							"antenna_height" : bs_ss_devices[i].data.antenna_height
+							"info" : bs_ss_devices[i].data.param.base_station
 						};
 
 					startEndObj["nearEndLat"] = bs_ss_devices[i].data.lat;
@@ -2282,7 +2282,8 @@ function devicePlottingClass_gmap() {
 		    		// ss_info["antenna_height"] = ss_marker_obj.data.antenna_height;
 
 		    		/*Link color object*/
-		    		linkColor = ss_marker_obj.data.link_color ? ss_marker_obj.data.link_color : 'rgba(74,72,94,0.58)';
+		    		var link_color = ss_marker_obj.data.link_color;
+		    		linkColor = link_color && link_color != 'NA' ? link_color : 'rgba(74,72,94,0.58)';
 		    			
 	    			// base_info["info"] = bs_ss_devices[i].data.param.base_station;
 	    			// base_info["antenna_height"] = bs_ss_devices[i].data.antenna_height;
@@ -2399,27 +2400,28 @@ function devicePlottingClass_gmap() {
 		link_path_color = linkColor;
 
 		var ss_info_obj = "",
-			ss_height = 40;
+			ss_height = "";
 
-		if(ss_info != undefined || ss_info == "") {
+		if(ss_info) {
 			ss_info_obj = ss_info.info ? ss_info.info : ss_info;
-			ss_height = ss_info.antenna_height;
+			ss_height = ss_info.antenna_height && ss_info.antenna_height != 'NA' ? ss_info.antenna_height : 40;
 		} else {
 			ss_info_obj = "";
 			ss_height = 40;
 		}
 
 		var bs_info_obj = "",
-			bs_height = 40;
-		if(bs_info != undefined || bs_info == "") {
+			bs_height = "";
+
+		if(bs_info) {
 			bs_info_obj = bs_info.info ? bs_info.info : bs_info;
-			bs_height = bs_info.antenna_height;
+			bs_height = bs_info.antenna_height && bs_info.antenna_height != 'NA' ? bs_info.antenna_height : 40;
 		} else {
 			bs_info_obj = "";
 			bs_height = 40;
 		}
 
-        if (sect_height == undefined || sect_height == ""){
+        if (!sect_height || sect_height == 'NA'){
             sect_height = 47;
         }
 
@@ -2436,11 +2438,11 @@ function devicePlottingClass_gmap() {
 			windowTitle 	: startEndObj.windowTitle,
 			startTitle 		: startEndObj.startTitle,
 			endTitle 		: startEndObj.endTitle,
-			bs_height 		: ss_height,
+			bs_height 		: sect_height,
 			bs_lat 			: startEndObj.startLat,
 			bs_info 		: bs_info_obj,
 			bs_lon 			: startEndObj.startLon,
-			ss_height 		: sect_height,
+			ss_height 		: ss_height,
 			sector_lat 		: startEndObj.sectorLat,
 			sector_lon 		: startEndObj.sectorLon,
 			filter_data 	: {"bs_name" : bs_name, "sector_name" : sector_name, "ss_name" : ss_name, "bs_id" : bs_id, "sector_id" : sector_id},
@@ -2931,7 +2933,7 @@ function devicePlottingClass_gmap() {
 	 * @param technology {String}, It contains the technology of sector device.
 	 * @param polarisation {String}, It contains the polarisation(horizontal or vertical) of sector device.
 	 */
-	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology,polarisation,rad,azimuth,beam_width) {
+	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology,polarisation,rad,azimuth,beam_width,antennaHeight) {
 		if(isDebug) {
 			console.log("Plot Sector Polygon");
 			console.log("Plot Sector Polygon Start Time :- "+ new Date().toLocaleString());
@@ -2970,6 +2972,7 @@ function devicePlottingClass_gmap() {
 			radius 			 : rad,
 			azimuth 		 : azimuth,
 			beam_width 		 : beam_width,
+			antenna_height 	 : antennaHeight,
 			technology 		 : sectorInfo.technology,
 			vendor 			 : sectorInfo.vendor,
 			deviceExtraInfo  : sectorInfo.info,
@@ -3167,14 +3170,16 @@ function devicePlottingClass_gmap() {
 				}
 
 				var sect_alias = gisPerformanceClass.getKeyValue(contentObject.bs_info,"alias",true),
-					ss_custName = gisPerformanceClass.getKeyValue(contentObject.ss_info,"customer_name",true),
+					ss_custName = gisPerformanceClass.getKeyValue(contentObject.ss_info,"customer_alias",true),
+					ss_ip = gisPerformanceClass.getKeyValue(contentObject.ss_info,"ss_ip",true),
+					sector_ip = contentObject.sectorName,
 					// circuit_id = gisPerformanceClass.getKeyValue(contentObject.ss_info,"cktid",true),
 					sector_ss_name_obj = {
 						sector_title : sector_title,
 						sector_Alias : sect_alias ? sect_alias : "",
-						sector_name : contentObject.sectorName ? contentObject.sectorName : "",
+						sector_name : sector_ip ? sector_ip : "",
 						ss_title : ss_title,
-						ss_name : contentObject.ssName ? contentObject.ssName : " ",
+						ss_name : ss_ip ? ss_ip : " ",
 						ss_customerName : ss_custName ? ss_custName : "",
 						ss_circuitId : path_circuit_id ? path_circuit_id : "",
 						isBSLeft : isBSLeft
@@ -3890,12 +3895,13 @@ function devicePlottingClass_gmap() {
 		}
 
 		if(isDialogOpen) {
-			
-			var left_str = '<div class="col-md-12"><b>'+fresnelData.bts1_title+'</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>',
-				right_str = '<div class="col-md-12"><b>'+fresnelData.bts2_title+'</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
+			var left_str = '<div class="col-md-12"><b>'+fresnelData.bts1_title+'</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>';
+				// right_str = '<div class="col-md-12"><b>'+fresnelData.bts2_title+'</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
+			var right_str = '<div class="col-md-12"><b>'+fresnelData.bts2_title+'</b><br/>'+fresnelData.bts2_circuitId+'<br />(Height)</div>';
 			
 			if(fresnel_isBSLeft == 0) {
-				left_str = '<div class="col-md-12"><b>'+fresnelData.bts2_title+'</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
+				// left_str = '<div class="col-md-12"><b>'+fresnelData.bts2_title+'</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
+				left_str = '<div class="col-md-12"><b>'+fresnelData.bts2_title+'</b><br/>'+fresnelData.bts2_circuitId+ '<br/> (Height)</div>';
 				right_str = '<div class="col-md-12"><b>'+fresnelData.bts1_title+'</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>';
 			}
 
@@ -4877,7 +4883,9 @@ function devicePlottingClass_gmap() {
 		    	var onlyCityCondition = selected_bs_alias.length === 0 && selected_ip_address.length === 0 && selected_circuit_id.length === 0;
 
 		    	if(onlyCityCondition) {
-		    		var city_condition = selected_bs_city.indexOf(data_to_plot[i].data.city.toLowerCase()) > -1;
+
+		    		var city_val = data_to_plot[i].data.city ? data_to_plot[i].data.city : "",
+		    			city_condition = selected_bs_city.indexOf(city_val.toLowerCase()) > -1;
 		    		if(city_condition) {
 			    		if(window.location.pathname.indexOf("googleEarth") > -1) {
 							folderBoundArray.push({lat: data_to_plot[i].data.lat, lon: data_to_plot[i].data.lon});
@@ -5471,7 +5479,7 @@ function devicePlottingClass_gmap() {
 	    	}
 
 			/*Reset the drawing object if exist*/
-			if(drawingManager) {
+			if(drawingManager && drawingManager.getDrawingMode()) {
 				drawingManager.setDrawingMode(null);
 			}
 
@@ -5638,13 +5646,15 @@ function devicePlottingClass_gmap() {
                             },
 							map : mapInstance
 						});
-						
+
 						drawingManager.setMap(mapInstance);
 
 						google.maps.event.addListener(drawingManager, 'overlaycomplete', function(e) {
 
 							/*Remove drawing mode*/
-							drawingManager.setDrawingMode(null);
+							if(drawingManager && drawingManager.getDrawingMode()) {
+								drawingManager.setDrawingMode(null);
+							}
 
 							pathArray = e.overlay.getPath().getArray();
 							polygon = new google.maps.Polygon({"path" : pathArray});
@@ -5654,7 +5664,9 @@ function devicePlottingClass_gmap() {
 							currentPolygon.type = e.type;
 
 							var allSS = pollableDevices;
+							// Reset Global Variables
 							allSSIds = [];
+							polygonSelectedDevices = [];
 
 							var selected_polling_technology = $("#polling_tech option:selected").text(),
 								polling_technology_condition = $.trim(selected_polling_technology.toLowerCase());
@@ -5674,26 +5686,24 @@ function devicePlottingClass_gmap() {
 								}
 
 								if(point) {
-									if(google.maps.geometry.poly.containsLocation(point, polygon)) {
-										if(allSS[k].technology) {
-											if(point_tech == polling_technology_condition) {
-												if(ptp_tech_list.indexOf(point_tech) > -1) {
-													if(allSSIds.indexOf(allSS[k].device_name) < 0) {
-														if(allSS[k].pointType == 'sub_station') {
-															if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
-																allSSIds.push(allSS[k].bs_sector_device);
-																polygonSelectedDevices.push(allMarkersObject_gmap['sector_device']['sector_'+allSS[k].sector_ip]);
-															}
+									if(point_tech == polling_technology_condition) {
+										if(google.maps.geometry.poly.containsLocation(point, polygon)) {
+											if(ptp_tech_list.indexOf(point_tech) > -1) {
+												if(allSSIds.indexOf(allSS[k].device_name) < 0) {
+													if(allSS[k].pointType == 'sub_station') {
+														if(allSSIds.indexOf(allSS[k].bs_sector_device) < 0) {
+															allSSIds.push(allSS[k].bs_sector_device);
+															polygonSelectedDevices.push(allMarkersObject_gmap['sector_device']['sector_'+allSS[k].sector_ip]);
 														}
+													}
+													allSSIds.push(allSS[k].device_name);
+													polygonSelectedDevices.push(allSS[k]);
+												}
+											} else {
+												if(allSS[k].pointType == 'sub_station') {
+													if(allSSIds.indexOf(allSS[k].device_name) < 0) {
 														allSSIds.push(allSS[k].device_name);
 														polygonSelectedDevices.push(allSS[k]);
-													}
-												} else {
-													if(allSS[k].pointType == 'sub_station') {
-														if(allSSIds.indexOf(allSS[k].device_name) < 0) {
-															allSSIds.push(allSS[k].device_name);
-															polygonSelectedDevices.push(allSS[k]);
-														}
 													}
 												}
 											}
@@ -5704,7 +5714,7 @@ function devicePlottingClass_gmap() {
 
 							if(polygonSelectedDevices.length == 0) {
 
-								if(drawingManager) {
+								if(drawingManager && drawingManager.getDrawingMode()) {
 									drawingManager.setDrawingMode(null);
 								}
 
@@ -5723,7 +5733,7 @@ function devicePlottingClass_gmap() {
 
 							} else if(polygonSelectedDevices.length > 200) {
 
-								if(drawingManager) {
+								if(drawingManager && drawingManager.getDrawingMode()) {
 									drawingManager.setDrawingMode(null);
 								}
 
@@ -6353,7 +6363,7 @@ function devicePlottingClass_gmap() {
 	this.clearPolygon = function() {
 		
 		/*Reset drawing object if exists*/
-		if(drawingManager) {
+		if(drawingManager && drawingManager.getDrawingMode()) {
 			drawingManager.setDrawingMode(null);
 		}
 
@@ -8232,7 +8242,9 @@ function devicePlottingClass_gmap() {
 		google.maps.event.addListener(drawingManager, 'overlaycomplete', function(e) {
 
 			/*Remove drawing mode*/
-			drawingManager.setDrawingMode(null);
+			if(drawingManager && drawingManager.getDrawingMode()) {
+				drawingManager.setDrawingMode(null);
+			}
 
 			var pathArray = e.overlay.getPath().getArray(),
 				polygon = new google.maps.Polygon({"path" : pathArray});
@@ -8520,7 +8532,7 @@ function devicePlottingClass_gmap() {
 				ccpl_map.getLayersByName('export_Polling')[0].setVisibility(false);
 			}
 		} else {
-			if(drawingManager) {
+			if(drawingManager && drawingManager.getDrawingMode()) {
 				drawingManager.setDrawingMode(null);
 			}
 		}

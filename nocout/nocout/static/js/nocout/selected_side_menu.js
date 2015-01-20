@@ -616,7 +616,8 @@ $("form").submit(function(e) {
         if(isFormSubmit === 0) {
 
             var alias = $("form input[name*='alias']").val(),
-                action = "A new "+module_name.toLowerCase()+" is created - "+alias,
+                shown_val = alias ? alias : $("form input[name*='name']").val(),
+                action = "A new "+module_name.toLowerCase()+" is created - "+shown_val,
                 action_response = "";
 
             /*Call function to save user action*/
