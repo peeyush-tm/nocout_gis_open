@@ -1836,8 +1836,8 @@ class Get_Service_Type_Performance_Data(View):
                 if data.avg_value:
                     try:
                         ##in between 5 minutes the bs result will come before ss result
-                        valid_end_time = data.sys_timestamp
-                        valid_start_time = data.sys_timestamp - 300
+                        valid_end_time = data.sys_timestamp + 30 #30 seconds buffer added
+                        valid_start_time = data.sys_timestamp - 330 #30 seconds buffer added
                         ##in between 5 minutes the bs result will come before ss result
                         bs_lat = performance_data_bs.filter(sys_timestamp__gte=valid_start_time,
                                                             sys_timestamp__lte=valid_end_time
