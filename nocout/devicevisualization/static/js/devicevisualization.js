@@ -276,6 +276,28 @@ $("#resetFilters").click(function(e) {
             networkMapInstance.updateStateCounter_gmaps();
         }
     }
+
+    // Reset Location Search if exists
+    if($("#lat_lon_search").val()) {
+        $("#lat_lon_search").val("");
+    }
+    if(lastSearchedPt && lastSearchedPt.map) {
+        lastSearchedPt.setMap(null);
+        lastSearchedPt = {};
+    }
+
+    if($("#google_loc_search").val()) {
+        $("#google_loc_search").val("");
+    }
+
+    if(place_markers && place_markers.length > 0) {
+        for(var i=0;i<place_markers.length;i++) {
+            if(place_markers[i] && place_markers[i].map) {
+                place_markers[i].setMap(null);
+            }
+        }
+        place_markers = [];
+    }
 });
 
 function showAdvSearch() {
