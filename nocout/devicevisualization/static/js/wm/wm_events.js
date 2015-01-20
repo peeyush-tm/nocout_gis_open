@@ -157,18 +157,18 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 						for(key in polylines) {
 							var current_line = polylines[key];
 							// If shown
-							if(current_line.map) {
+							// if(current_line.map) {
 								hideOpenLayerFeature(current_line);
-							}
+							// }
 						}
 						// alert();
 						// Hide polygons if shown
 						for(key in polygons) {
 							var current_polygons = polygons[key];
 							// If shown
-							if(current_polygons.map) {
+							// if(current_polygons.map) {
 								hideOpenLayerFeature(current_polygons);
-							}
+							// }
 						}
 					} else {
 						if(ccpl_map.getZoom() > 7) {
