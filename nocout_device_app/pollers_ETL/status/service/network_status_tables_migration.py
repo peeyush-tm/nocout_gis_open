@@ -78,6 +78,11 @@ def main(**configs):
     for doc in docs:
         local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
         check_time_epoch = utility_module.get_epoch_time(doc.get('check_time'))
+	if doc.get('ds') == 'rta':
+		rtmin = doc.get('data')[0].get('min_value')
+		rtmax = doc.get('data')[0].get('max_value')
+	else:
+		rtmin=rtmax=doc.get('data')[0].get('value')
 	t = (
 		#uuid,
 		doc.get('host'),
@@ -86,8 +91,8 @@ def main(**configs):
 		doc.get('site'),
 		doc.get('ds'),
 		doc.get('data')[0].get('value'),
-		doc.get('data')[0].get('value'),
-		doc.get('data')[0].get('value'),
+		rtmin,
+		rtmax,
 		doc.get('data')[0].get('value'),
 		doc.get('meta').get('war'),
 		doc.get('meta').get('cric'),
