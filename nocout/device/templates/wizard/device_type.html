@@ -103,6 +103,8 @@
         var dts_value = []
         var dts_value = $('form input[type="hidden"][id|="id_dts"][name|="dts"][name$="id"][value]')
 
+        ser_dict = {{ service_dict|safe }}
+
         // if service is already selected
         if ($("#id_service").find("option:selected").val()){
             var service = $("form").find(".row").find("#id_service").slice(dts_value.length)
@@ -120,6 +122,7 @@
             var parameter = $(this).parent(".row .inline").find("#id_parameter")
 
             get_attribute_of_service(service_id, parameter)
+            update_service()
         });
 
         function get_attribute_of_service(service_id, parameter){
@@ -147,6 +150,37 @@
 
                 return false;
             }
+        }
+
+        function update_service(){
+            var result = jQuery.extend(true, {}, ser_dict);
+            selector = $("form").find(".row").find("#id_service");
+            var exclude = selector.find('select option:selected');
+            exclude.each(function(index){
+                var val = exclude[index].value
+                result[val].select = false
+                result[val].remove = true
+            });
+
+            selector.each(function(){
+                var final_result = jQuery.extend(true, {}, result);
+                var service_id = $(this).find('select option:selected').val()
+                if (service_id != null){
+                    final_result[service_id].select = true
+                    final_result[service_id].remove = false
+                }
+                opt_array = '';
+                opt_array2 = '';
+                for(var key in final_result) {
+                    if (!final_result[key].remove){
+                        opt_array += "<option value="+key+">"+ final_result[key].text +"</option>";
+                        opt_array2 += key + ' , ';
+                    }
+                }
+
+                $(this).find('select option').remove()
+                $(this).find('select').html(opt_array)
+            });
         }
 
     </script>
