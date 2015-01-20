@@ -40,8 +40,7 @@ def main(**configs):
     "network_event_status": {
         "nosql_db": "nocout" # Mongodb database name
         "sql_db": "nocout_dev" # Sql database name
-        # Script which would do all the migrations
-        "script": "network_events_status_mongo_migration"
+        "script": "network_events_status_mongo_migration" # Script which would do all the migrations
         "table_name": "performance_eventnetworkstatus" # Sql table name
 
         }
@@ -59,10 +58,10 @@ def main(**configs):
 
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=2)
+    start_time, end_time = start_time.replace(second=0), end_time.replace(second=0)
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
     # Get site specific mongo conf
-    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, 
-            configs.get('mongo_conf'))[0]
+    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
     # Get all the entries from mongodb having timestam0p greater than start_time
     docs = read_data(start_time, end_time, configs=site_spec_mongo_conf, 
             db_name=configs.get('nosql_db'))
@@ -94,8 +93,7 @@ def main(**configs):
         insert_data(configs.get('table_name'), data_values,configs=configs)
         print "Data inserted into %s" % configs.get('table_name')
     else:
-        print "No data in mongo db in this time frame for table %s" \
-                % (configs.get('table_name'))
+        print "No data in mongo db in this time frame for table %s" % (configs.get('table_name'))
 
 def read_data(start_time, end_time, **kwargs):
     """
@@ -153,8 +151,8 @@ def insert_data(table, data_values,**kwargs):
         try:
             cursor.execute(query)
             result = cursor.fetchone()
-            #print '-- result --'
-            #print result
+            print '-- result --'
+            print result
         except mysql.connector.Error as err:
             raise mysql.connector.Error, err
 
@@ -173,8 +171,8 @@ def insert_data(table, data_values,**kwargs):
         WHERE `device_name`=%s AND `service_name`=%s
         """
         try:
-            data_values = map(lambda x: ( x[3], x[2], x[9], x[10], x[11], x[12], 
-                x[13], x[14], x[15]) + (x[0], x[1]), insert_dict.get('1'))
+            data_values = map(lambda x: ( x[3], x[2], x[9], x[10], x[11], x[12], x[13], x[14], x[15]) + (x[0], x[1]), 
+                    insert_dict.get('1'))
             cursor.executemany(query, data_values)
         except mysql.connector.Error as err:
                     raise mysql.connector.Error, err

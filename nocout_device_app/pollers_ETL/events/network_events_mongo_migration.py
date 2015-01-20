@@ -19,8 +19,7 @@ config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configpars
 def main(**configs):
     """
 
-    Main function for the migrating the data from mongodb to mysql db.
-    Latest record time in mysql is carried out and from latest record time to
+    Main function for the migrating the data from mongodb to mysql db.Latest record time in mysql is carried out and from latest record time to
     current time all records are migrated from mongodb to mysql.
     Args: Multiple arguments for configuration
     Kwargs: None
@@ -34,31 +33,28 @@ def main(**configs):
 
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=2)
+    start_time, end_time = start_time.replace(second=0), end_time.replace(second=0)
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
 
     # Get site specific configurations for Mongodb connection
     # Ex conf : ('ospf4_slave_1', 'localhost', 27018)
-    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, 
-            configs.get('mongo_conf'))[0]
+    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
    
     # Read data function reads the data from mongodb and insert into mysql
-    docs = read_data(start_time, end_time,configs=site_spec_mongo_conf, 
-            db_name=configs.get('nosql_db'))
+    docs = read_data(start_time, end_time,configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
     for doc in docs:
         values_list = build_data(doc)
         data_values.extend(values_list)
     if data_values:
         insert_data(configs.get('table_name'), data_values, configs=configs)
-        print "Data inserted into mysql db"
+        print "Data inserted into mysql table %s between %s -- %s" % (configs.get('table_name'), start_time, end_time)
     else:
-        print "No data in the mongo db in this time frame"
+        print "No data in the mongo db between %s -- %s" % (start_time, end_time)
 
 def read_data(start_time, end_time, **kwargs):
     """
-    Function reads the data from mongodb specific event tables for 
-    ping services and return the document
-    Args: start_time(check_timestamp field in mongodb record is checked 
-    with start_time and end_time and data is extracted only
+    Function reads the data from mongodb specific event tables for ping services and return the document
+    Args: start_time(check_timestamp field in mongodb record is checked with start_time and end_time and data is extracted only
           for time interval)
     Kwargs: end_time (time till to collect the data)
     Return : document containing data for this time interval
@@ -75,7 +71,7 @@ def read_data(start_time, end_time, **kwargs):
     )
     if db:
             cur = db.nocout_host_event_log.find({
-                "sys_timestamp": {"$gt": start_time, "$lt": end_time}
+                "sys_timestamp": {"$gte": start_time, "$lt": end_time}
             })
     for doc in cur:
         docs.append(doc)
@@ -83,8 +79,7 @@ def read_data(start_time, end_time, **kwargs):
 
 def build_data(doc):
     """
-    Function builds the data collected from mongodb for events according 
-    to mysql table schema and return the formatted record
+    Function builds the data collected from mongodb for events according to mysql table schema and return the formatted record
     Args: doc (document fetched from the mongodb database for specific time interval)
     Kwargs: None
     Return : formatted document containing data for multiple devices
@@ -119,8 +114,7 @@ def build_data(doc):
 def insert_data(table,data_values,**kwargs):
     """
     Function insert the formatted record into mysql table for multiple devices
-    Args: table (mysql table on which we have to insert the data.table information 
-    is fetched from config.ini)
+    Args: table (mysql table on which we have to insert the data.table information is fetched from config.ini)
     Kwargs: data_values (list of formatted doc )
     Return : None
     Raise : MYSQLdb.error

@@ -126,7 +126,7 @@ def service_perf_data_live_query(site, log_split, service_events_data, service_e
     #    except:
     #        current_value =None
 
-    # Forward the time stamp, with `seconds` attribute equal to zero
+    # Forward the time stamp, with `second` attribute equal to zero
     t_stmp = datetime.fromtimestamp(float(log_split[1]))
     altered_timestamp = (t_stmp.replace(second=0)).strftime('%s')
 
@@ -253,6 +253,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
     #start_epoch = get_latest_event_entry(db_type = 'mongodb',db=db)
     #if start_epoch == None:
     start_time = datetime.now() - timedelta(minutes=1)
+    start_time = start_time.replace(second=0)
     start_epoch = int(time.mktime(start_time.timetuple()))
 
     end_time = datetime.now()
