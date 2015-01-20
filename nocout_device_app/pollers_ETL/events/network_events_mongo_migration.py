@@ -9,7 +9,6 @@ from nocout_site_name import *
 import mysql.connector
 from datetime import datetime
 from datetime import timedelta
-from events_rrd_migration import get_latest_event_entry
 import imp
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -34,6 +33,7 @@ def main(**configs):
 
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=2)
+    start_time, end_time = start_time.replace(second=0), end_time.replace(second=0)
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
 
     # Get site specific configurations for Mongodb connection
@@ -47,9 +47,9 @@ def main(**configs):
         data_values.extend(values_list)
     if data_values:
         insert_data(configs.get('table_name'), data_values, configs=configs)
-        print "Data inserted into mysql db"
+        print "Data inserted into mysql table %s between %s -- %s" % (configs.get('table_name'), start_time, end_time)
     else:
-        print "No data in the mongo db in this time frame"
+        print "No data in the mongo db between %s -- %s" % (start_time, end_time)
 
 def read_data(start_time, end_time, **kwargs):
     """
@@ -71,7 +71,7 @@ def read_data(start_time, end_time, **kwargs):
     )
     if db:
             cur = db.nocout_host_event_log.find({
-                "sys_timestamp": {"$gt": start_time, "$lt": end_time}
+                "sys_timestamp": {"$gte": start_time, "$lt": end_time}
             })
     for doc in cur:
         docs.append(doc)
