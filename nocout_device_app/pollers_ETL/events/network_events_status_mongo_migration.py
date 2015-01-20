@@ -58,6 +58,7 @@ def main(**configs):
 
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=2)
+    start_time, end_time = start_time.replace(second=0), end_time.replace(second=0)
     start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
     # Get site specific mongo conf
     site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
@@ -138,8 +139,8 @@ def insert_data(table, data_values,**kwargs):
 
     Kwargs (dict): Dictionary to hold connection variables
     """
-    print 'Len Data Values'
-    print len(data_values)
+    #print 'Len Data Values'
+    #print len(data_values)
     insert_dict = {'0':[],'1':[]}
     db = utility_module.mysql_conn(configs=kwargs.get('configs'))
     for index, entry in enumerate(data_values):
@@ -155,8 +156,8 @@ def insert_data(table, data_values,**kwargs):
             raise mysql.connector.Error, err
 
         if result:
-            print 'result'
-            print result
+            #print 'result'
+            #print result
             # Add the entry for updation
             insert_dict['1'].append(entry)
         else:

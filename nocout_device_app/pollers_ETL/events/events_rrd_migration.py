@@ -126,7 +126,7 @@ def service_perf_data_live_query(site, log_split, service_events_data, service_e
     #    except:
     #        current_value =None
 
-    # Forward the time stamp, with `seconds` attribute equal to zero
+    # Forward the time stamp, with `second` attribute equal to zero
     t_stmp = datetime.fromtimestamp(float(log_split[1]))
     altered_timestamp = (t_stmp.replace(second=0)).strftime('%s')
 
@@ -175,8 +175,8 @@ def network_perf_data_live_query(site, log_split, network_events_data, network_e
     age1 = int(perf_data[0][1])
     perf_data1 = perf_data[0][0]
     host_perf_data = utility_module.get_threshold(perf_data1)
-    print 'age1', age1
-    print 'host_perf_data', host_perf_data
+    #print 'age1', age1
+    #print 'host_perf_data', host_perf_data
 
     # Forward the time stamp, with `seconds` attribute equal to zero
     t_stmp = datetime.fromtimestamp(float(log_split[1]))
@@ -253,6 +253,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
     #start_epoch = get_latest_event_entry(db_type = 'mongodb',db=db)
     #if start_epoch == None:
     start_time = datetime.now() - timedelta(minutes=1)
+    start_time = start_time.replace(second=0)
     start_epoch = int(time.mktime(start_time.timetuple()))
 
     end_time = datetime.now()
@@ -285,7 +286,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
         "Filter: log_time > %s\nFilter: log_type !~ FLAPPING\nFilter: service_description !~ Check_MK\nFilter: class = 0\n" % start_epoch +\
         "Filter: class = 1\nFilter: class = 2\nFilter: class = 3\nFilter: class = 4\nFilter: class = 6\nOr: 6\n"
     output = utility_module.get_from_socket(site, query)
-    print output
+    #print output
 
     network_events_data = []
     service_events_data = []
@@ -294,8 +295,8 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 
     for log_attr in output.split('\n'):
         log_split = [log_split for log_split in log_attr.split(';')]
-        print '---------------- log_split '
-        print log_split
+        #print '---------------- log_split '
+        #print log_split
         try:
             if log_split[0] == 'HOST ALERT' or log_split[0] == 'INITIAL HOST STATE':
                 network_events_data, network_events_update_criteria = network_perf_data_live_query(site,log_split, 
