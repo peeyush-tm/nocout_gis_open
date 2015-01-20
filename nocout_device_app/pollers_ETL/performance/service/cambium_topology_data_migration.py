@@ -156,10 +156,10 @@ def mysql_connection(db=None, **kwargs):
     """
     try:
         db = mysql.connector.connect(
-                user=kwargs.get('configs').get('historical_user'),
+                user=kwargs.get('configs').get('user'),
                 passwd=kwargs.get('configs').get('sql_passwd'),
-                host=kwargs.get('configs').get('historical_ip'),
-                db=kwargs.get('configs').get('historical_db'),
+                host=kwargs.get('configs').get('ip'),
+                db=kwargs.get('configs').get('sql_db'),
                 port=kwargs.get('configs').get('sql_port'),
                 buffered=True
         )

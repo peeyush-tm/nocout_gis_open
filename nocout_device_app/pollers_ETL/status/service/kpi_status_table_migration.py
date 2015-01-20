@@ -181,9 +181,7 @@ def insert_data(table, data_values, **kwargs):
 	Kwargs (dict): Dictionary to hold connection variables
 	"""
 	insert_dict = {'0':[],'1':[]}
-	print kwargs.get('configs')
 	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
-	print table
 	for i in range(len(data_values)):
 		query = "SELECT COUNT(1) FROM %s " % table +\
                 	"WHERE `device_name`='%s' AND `service_name`='%s' AND `data_source`='%s'" %(str(data_values[i][0]),data_values[i][1],data_values[i][4])
@@ -206,7 +204,6 @@ def insert_data(table, data_values, **kwargs):
 		`ip_address`=%s,`severity`=%s,`age`=%s,`refer`=%s 
 		WHERE `device_name`=%s AND `service_name`=%s AND `data_source`=%s
 		""" 
-		print query
 		try:
 			data_values=map(lambda x: ( x[2],x[3],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14],x[15],x[16]) + (x[0],x[1],x[4]),insert_dict.get('1'))
 
@@ -227,7 +224,6 @@ def insert_data(table, data_values, **kwargs):
            	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s,%s,%s)
 		"""
     		cursor = db.cursor()
-		print query
     		try:
         		cursor.executemany(query, insert_dict.get('0'))
     		except mysql.connector.Error as err:
