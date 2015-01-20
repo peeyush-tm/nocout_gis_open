@@ -1,9 +1,12 @@
 """
 Dashboard Utilities.
 """
+import json
 from multiprocessing import Process, Queue
 
 from django.conf import settings
+from django.db.models import Count
+from datetime import datetime, timedelta
 
 import logging
 log = logging.getLogger(__name__)
@@ -20,11 +23,26 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
     :param queue:
     :return:
     """
+    required_severity = ['warning','critical']
+    required_values = ['id',
+                        'device_name',
+                        'service_name',
+                        'ip_address',
+                        'data_source',
+                        'severity',
+                        'current_value',
+                        'warning_threshold',
+                        'critical_threshold',
+                        'sys_timestamp',
+                        'check_timestamp',
+                        'age'
+    ]
     service_status_data = model.objects.filter(
         device_name__in=machine_device_list,
         service_name__icontains = service_name,
-        data_source = data_source,
-    ).using(machine).values('id', 'device_name', 'service_name', 'ip_address', 'data_source', 'severity', 'current_value', 'warning_threshold', 'critical_threshold', 'sys_timestamp', 'check_timestamp')
+        data_source = data_source#,
+        # severity__in=required_severity
+    ).using(machine).values(*required_values)
 
     if queue:
         try:
@@ -38,6 +56,8 @@ def get_service_status_data(queue, machine_device_list, machine, model, service_
 def get_service_status_results(user_devices, model, service_name, data_source):
 
     unique_device_machine_list = {device.machine.name: True for device in user_devices}.keys()
+
+    service_status_results = None
 
     machine_dict = {}
     #Creating the machine as a key and device_name as a list for that machine.
@@ -64,12 +84,30 @@ def get_service_status_results(user_devices, model, service_name, data_source):
 
         while True:
             if not queue.empty():
-                service_status_results += queue.get()
+                if service_status_results:
+                    service_status_results |= queue.get()
+                else:
+                    service_status_results = queue.get()
             else:
                 break
     else:
         for machine, machine_device_list in machine_dict.items():
-            service_status_results += get_service_status_data(False, machine_device_list, machine=machine, model=model, service_name=service_name, data_source=data_source)
+            if service_status_results:
+                service_status_results |= get_service_status_data(False,
+                                                                  machine_device_list,
+                                                                  machine=machine,
+                                                                  model=model,
+                                                                  service_name=service_name,
+                                                                  data_source=data_source
+                )
+            else:
+                service_status_results = get_service_status_data(False,
+                                                                  machine_device_list,
+                                                                  machine=machine,
+                                                                  model=model,
+                                                                  service_name=service_name,
+                                                                  data_source=data_source
+                )
 
     return service_status_results
 
@@ -147,3 +185,122 @@ def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_count
         "success": 1
     }
     return response_dict
+
+
+#**************************** Sector Capacity *********************#
+def get_dashboard_status_sector_range_counter(service_status_results):
+    range_counter = {'Needs Augmentation': 0, 'Stop Provisioning': 0, 'Normal':0, 'Unknown':0}
+    date_format = '%Y-%m-%d %H:%M:%S'
+    # now = datetime.today() - timedelta(minutes=10)
+
+    for result in service_status_results:
+        age_str_since_the_epoch = datetime.fromtimestamp(float(result['age'])).strftime(date_format)
+        sys_timestamp_str_since_the_epoch = datetime.fromtimestamp(float(result['sys_timestamp'])).strftime(date_format)
+        age_time_since_the_epoch = datetime.strptime(age_str_since_the_epoch, date_format)
+        sys_timestamp_str_since_the_epoch = datetime.strptime(sys_timestamp_str_since_the_epoch, date_format)
+        result_status =  age_time_since_the_epoch - sys_timestamp_str_since_the_epoch
+        if result['severity'] == 'warning' and result_status > timedelta(minutes=10):
+            range_counter['Needs Augmentation'] += 1
+        elif result['severity'] == 'critical' and result_status >= timedelta(minutes=10):
+            range_counter['Stop Provisioning'] += 1
+        elif result['severity'] == 'ok':
+            range_counter['Normal'] += 1
+        else:
+            range_counter['Unknown'] += 1
+
+    return range_counter
+
+
+#**************************** Sales Opportunity *********************#
+def get_topology_status_data(machine_device_list, machine, model, service_name, data_source):
+    """
+    Consolidated Topology Status Data from the Data base.
+
+    :param machine:
+    :param model:
+    :param service_name:
+    :param data_source:
+    :param device_list:
+    :return:
+    """
+    topology_status_data = model.objects.filter(
+        device_name__in=machine_device_list,
+        # service_name__icontains = service_name,
+        # data_source = data_source,
+        data_source = 'topology',
+    ).using(machine)
+
+    return topology_status_data
+
+
+def get_topology_status_results(user_devices, model, service_name, data_source, user_sector):
+
+    unique_device_machine_list = {device.machine.name: True for device in user_devices}.keys()
+
+    machine_dict = {}
+    #Creating the machine as a key and device_name as a list for that machine.
+    for machine in unique_device_machine_list:
+        machine_dict[machine] = [device.device_name for device in user_devices if device.machine.name == machine]
+
+    status_results = []
+    topology_status_results = model.objects.none()
+    for machine, machine_device_list in machine_dict.items():
+        topology_status_results |= get_topology_status_data(machine_device_list, machine=machine, model=model, service_name=service_name, data_source=data_source)
+
+    for sector in user_sector:
+        ss_qs = topology_status_results.filter(sector_id=sector.sector_id).\
+                        annotate(Count('connected_device_ip'))
+        # current value define the total ss connected to the sector
+        status_results.append({'sector_id': sector.id, 'current_value': ss_qs.count()})
+    return status_results
+
+
+def get_highchart_response(dictionary={}):
+    if 'type' not in dictionary:
+        return json.dumps({
+            "message": "No Data To Display.",
+            "success": 0
+        })
+
+    if dictionary['type'] == 'pie':
+        chart_data = {
+            'type': 'pie',
+            'name': dictionary['name'],
+            'title': dictionary['title'],
+            'data': dictionary['chart_series'],
+        }
+        if 'colors' in dictionary:
+            chart_data.update({'color': dictionary['colors']})
+    elif dictionary['type'] == 'gauge':
+        chart_data = {
+            "is_inverted": False,
+            "name": dictionary['name'],
+            "title": '',
+            "data": [{
+                "color": dictionary['color'],
+                "name": dictionary['name'],
+                "count": dictionary['count']
+            }],
+            "valuesuffix": "",
+            "type": "gauge",
+            "valuetext": ""
+        }
+    elif dictionary['type'] == 'areaspline':
+        chart_data = {
+            'type': 'areaspline',
+            'title': dictionary['title'],
+            'valuesuffix': dictionary['valuesuffix'],
+            'data': dictionary['chart_series']
+        }
+
+    return json.dumps({
+        "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
+        "data": {
+            "meta": {
+            },
+            "objects": {
+                "chart_data": [chart_data]
+            }
+        },
+        "success": 1
+    })

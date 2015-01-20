@@ -32,4 +32,29 @@ urlpatterns = patterns('',
     url(r'^mfr-reports/$', views.MFRReportsListView.as_view(), name='mfr-reports-list'),
     url(r'^mfr-reports/table/$', views.MFRReportsListingTable.as_view(), name='mfr-reports-table'),
     url(r'^mfr-reports/(?P<pk>\d+)/delete/$', views.MFRReportsDeleteView.as_view(), name='mfr-reports-delete'),
+
+    url(r'^latency/wimax/$', views.WiMAX_Latency.as_view(), name='latency-wimax'),
+    url(r'^latency/pmp/$', views.PMP_Latency.as_view(), name='latency-pmp'),
+    url(r'^latency/all/$', views.ALL_Latency.as_view(), name='latency-all'),
+
+    url(r'^packet_loss/wimax/$', views.WIMAX_Packet_Loss.as_view(), name='packet-loss-wimax'),
+    url(r'^packet_loss/pmp/$', views.PMP_Packet_Loss.as_view(), name='packet-loss-pmp'),
+    url(r'^packet_loss/all/$', views.ALL_Packet_Loss.as_view(), name='packet-loss-all'),
+
+    url(r'^down/wimax/$', views.WIMAX_Down.as_view(), name='down-wimax'),
+    url(r'^down/pmp/$', views.PMP_Down.as_view(), name='down-pmp'),
+    url(r'^down/all/$', views.ALL_Down.as_view(), name='down-all'),
+
+    url(r'^temperature-idu/wimax/$', views.WIMAX_Temperature_Idu.as_view(), name='temperatue-idu-wimax'),
+    url(r'^temperature-acb/wimax/$', views.WIMAX_Temperature_Acb.as_view(), name='temperatue-acb-wimax'),
+    url(r'^temperature-fan/wimax/$', views.WIMAX_Temperature_Fan.as_view(), name='temperatue-fan-wimax'),
+
+    url(r'^cause-code/mfr/$', views.MFRCauseCodeView.as_view(), name='cause-code-mfr'),
+    url(r'^processed/mfr/$', views.MFRProcesedView.as_view(), name='processed-mfr'),
+
+    url(r'^sector-capacity/pmp/$', views.PMPSectorCapacity.as_view(), name='sector-capacity-pmp'),
+    url(r'^sector-capacity/wimax/$', views.WiMAXSectorCapacity.as_view(), name='sector-capacity-wimax'),
+
+    url(r'^sales-opportunity/pmp/$', views.PMPSalesOpportunity.as_view(), name='sales-opportunity-pmp'),
+    url(r'^sales-opportunity/wimax/$', views.WiMAXSalesOpportunity.as_view(), name='sales-opportunity-wimax'),
 )

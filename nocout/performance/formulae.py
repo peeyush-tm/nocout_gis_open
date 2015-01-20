@@ -32,12 +32,17 @@ def display_time(seconds, granularity=4):
         ('minutes', 60),
         ('seconds', 1),
     )
-    result = []
-    for name, count in intervals:
-        value = seconds // count
-        if value:
-            seconds -= value * count
-            if value == 1:
-                name = name.rstrip('s')
-            result.append("{} {}".format(value, name))
-    return ', '.join(result[:granularity])
+
+    try:
+        result = []
+        for name, count in intervals:
+            value = seconds // count
+            if value:
+                seconds -= value * count
+                if value == 1:
+                    name = name.rstrip('s')
+                result.append("{} {}".format(value, name))
+        return ', '.join(result[:granularity])
+
+    except Exception as e:
+        return None

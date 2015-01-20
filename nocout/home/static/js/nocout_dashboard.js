@@ -174,18 +174,10 @@ function createAreaChart(domElement,chartData) {
 
     $('#'+domElement).highcharts({
         chart: {
-            events: {
-                load : function() {
-                    // Hide highcharts.com link from chart when chart is loaded
-                    var highcharts_link = $("#"+domElement+" svg text:last-child");
-                    $.grep(highcharts_link,function(val) {
-                        if($.trim(val.innerHTML) == 'Highcharts.com') {
-                            val.innerHTML = "";
-                        }
-                    });
-                }
-            },
             type: 'areaspline'
+        },
+        credits: {
+            enabled: false
         },
         title: {
             text: ''
@@ -229,17 +221,6 @@ function createPieChart(domElement,chartData) {
 
     $('#'+domElement).highcharts({
         chart: {
-            events: {
-                load : function() {
-                    // Hide highcharts.com link from chart when chart is loaded
-                    var highcharts_link = $("#"+domElement+" svg text:last-child");
-                    $.grep(highcharts_link,function(val) {
-                        if($.trim(val.innerHTML) == 'Highcharts.com') {
-                            val.innerHTML = "";
-                        }
-                    });
-                }
-            },
             plotBackgroundColor: null,
             plotBorderWidth: null,
             plotShadow: true
@@ -248,6 +229,9 @@ function createPieChart(domElement,chartData) {
             type: 'pie',
             data: chartData
         }],
+        credits: {
+            enabled: false
+        },
         legend:{
             enabled: true,
             x : '-20',

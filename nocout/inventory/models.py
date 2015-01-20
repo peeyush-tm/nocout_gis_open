@@ -131,6 +131,7 @@ class BaseStation(models.Model):
     bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True)
     bh_bso = models.CharField('BH BSO', max_length=40, null=True, blank=True)
     hssu_used = models.CharField('HSSU Used', max_length=40, null=True, blank=True)
+    hssu_port = models.CharField('HSSU Port', max_length=40, null=True, blank=True)
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     infra_provider = models.CharField('Infra Provider', max_length=100, null=True, blank=True)

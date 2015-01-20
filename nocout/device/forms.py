@@ -1,6 +1,7 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency, DeviceTypeService, DeviceTypeServiceDataSource
+    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency, DeviceTypeService, DeviceTypeServiceDataSource, \
+    DeviceSyncHistory
 from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory,  BaseInlineFormSet
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
@@ -199,30 +200,33 @@ class DeviceForm(forms.ModelForm):
         #commented because of goes package is not supported for python 2.7 on centos 6.5
         # check whether lat log lies in state co-ordinates or not
         if latitude and longitude and state:
-            project = partial(
-                pyproj.transform,
-                pyproj.Proj(init='epsg:4326'),
-                pyproj.Proj(
-                    '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
+            try:
+                project = partial(
+                    pyproj.transform,
+                    pyproj.Proj(init='epsg:4326'),
+                    pyproj.Proj(
+                        '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
 
-            state_geo_info = StateGeoInfo.objects.filter(state_id=state)
-            state_lat_longs = list()
-            for geo_info in state_geo_info:
-                temp_lat_longs = list()
-                temp_lat_longs.append(geo_info.longitude)
-                temp_lat_longs.append(geo_info.latitude)
-                state_lat_longs.append(temp_lat_longs)
+                state_geo_info = StateGeoInfo.objects.filter(state_id=state)
+                state_lat_longs = list()
+                for geo_info in state_geo_info:
+                    temp_lat_longs = list()
+                    temp_lat_longs.append(geo_info.longitude)
+                    temp_lat_longs.append(geo_info.latitude)
+                    state_lat_longs.append(temp_lat_longs)
 
-            poly = Polygon(tuple(state_lat_longs))
-            point = Point(longitude, latitude)
+                poly = Polygon(tuple(state_lat_longs))
+                point = Point(longitude, latitude)
 
-            # Translate to spherical Mercator or Google projection
-            poly_g = transform(project, poly)
-            p1_g = transform(project, point)
-            if not poly_g.contains(p1_g):
-                self._errors["latitude"] = ErrorList(
-                    [u"Latitude, longitude specified doesn't exist within selected state."])
-        #commented because of goes package is not supported for python 2.7 on centos 6.5 @TODO: check another package
+                # Translate to spherical Mercator or Google projection
+                poly_g = transform(project, poly)
+                p1_g = transform(project, point)
+                if not poly_g.contains(p1_g):
+                    self._errors["latitude"] = ErrorList(
+                        [u"Latitude, longitude specified doesn't exist within selected state."])
+            #commented because of goes package is not supported for python 2.7 on centos 6.5 @TODO: check another package
+            except Exception as e:
+                logger.exception(e)
         # print self.cleaned_data
         return self.cleaned_data
 
@@ -967,4 +971,38 @@ DeviceTypeServiceDataSourceCreateFormset = inlineformset_factory(DeviceTypeServi
     formset=BaseDTSDataSourceFormset, extra=1, widgets=widgets, can_delete=True)
 DeviceTypeServiceDataSourceUpdateFormset = inlineformset_factory(DeviceTypeService, DeviceTypeServiceDataSource,
     formset=BaseDTSDataSourceFormset, extra=0, widgets=widgets, can_delete=True)
+
+
+# **************************** GIS Inventory Excel Download Update ******************************
+class DeviceSyncHistoryEditForm(forms.ModelForm):
+    """
+    Class Based View DeviceSyncHistory Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(DeviceSyncHistoryEditForm, self).__init__(*args, **kwargs)
+        self.fields['sync_by'].widget.attrs['readonly'] = True
+        self.fields['message'].widget.attrs['readonly'] = True
+        self.fields['added_on'].widget.attrs['readonly'] = True
+        self.fields['completed_on'].widget.attrs['readonly'] = True
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = DeviceSyncHistory
+        fields = ['message', 'description', 'sync_by', 'added_on', 'completed_on']
 

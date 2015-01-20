@@ -253,3 +253,43 @@ def prepare_machines(device_list):
                                  device['device_machine'] == machine]
 
     return machine_dict
+
+
+def organization_sectors(organization, technology=None):
+    """
+    To result back the all the sector from the respective organization.
+
+    :param organization: organization list
+    :param technology:
+    :return list of sector
+    """
+    if int(technology) == int(PMP.ID):
+        sector_list = Sector.objects.filter(
+                                sector_id__isnull=False,
+                                sector_configured_on_port__isnull=True,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    elif int(technology) == int(WiMAX.ID):
+        sector_list = Sector.objects.filter(
+                                sector_id__isnull=False,
+                                sector_configured_on_port__isnull=False,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    elif int(technology) == int(P2P.ID):
+        sector_list = Sector.objects.filter(
+                                sector_id__isnull=False,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    else:
+        sector_list = Sector.objects.filter(
+                                sector_id__isnull=False,
+                                sector_configured_on__isnull=False,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    if organization:
+        sector_list = sector_list.filter(organization__in=organization)
+
+    return sector_list
