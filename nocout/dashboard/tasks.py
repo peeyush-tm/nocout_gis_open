@@ -24,45 +24,45 @@ from dashboard.utils import get_topology_status_results, get_dashboard_status_ra
 def calculate_timely_main_dashboard():
     '''
     '''
-    created_on = timezone.now()
+    processed_for = timezone.now()
 
-    calculate_timely_sector_capacity(technology=PMP, model=DashboardSeverityStatusTimely, created_on=created_on)
-    calculate_timely_sector_capacity(technology=WiMAX, model=DashboardSeverityStatusTimely, created_on=created_on)
+    calculate_timely_sector_capacity(technology=PMP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
+    calculate_timely_sector_capacity(technology=WiMAX, model=DashboardSeverityStatusTimely, processed_for=processed_for)
 
-    calculate_timely_sales_opportunity(technology=PMP, model=DashboardRangeStatusTimely, created_on=created_on)
-    calculate_timely_sales_opportunity(technology=WiMAX, model=DashboardRangeStatusTimely, created_on=created_on)
+    calculate_timely_sales_opportunity(technology=PMP, model=DashboardRangeStatusTimely, processed_for=processed_for)
+    calculate_timely_sales_opportunity(technology=WiMAX, model=DashboardRangeStatusTimely, processed_for=processed_for)
 
     user_organizations = Organization.objects.all()
 
-    calculate_timely_latency(user_organizations, dashboard_name='latency-pmp', created_on=created_on,technology=PMP)
-    calculate_timely_latency(user_organizations, dashboard_name='latency-wimax', created_on=created_on,technology=WiMAX)
-    calculate_timely_latency(user_organizations, dashboard_name='latency-network', created_on=created_on)
+    calculate_timely_latency(user_organizations, dashboard_name='latency-pmp', processed_for=processed_for,technology=PMP)
+    calculate_timely_latency(user_organizations, dashboard_name='latency-wimax', processed_for=processed_for,technology=WiMAX)
+    calculate_timely_latency(user_organizations, dashboard_name='latency-network', processed_for=processed_for)
 
-    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-pmp', created_on=created_on, technology=PMP)
-    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-wimax', created_on=created_on, technology=WiMAX)
-    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-network', created_on=created_on)
+    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-pmp', processed_for=processed_for, technology=PMP)
+    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-wimax', processed_for=processed_for, technology=WiMAX)
+    calculate_timely_packet_drop(user_organizations, dashboard_name='packetloss-network', processed_for=processed_for)
 
-    calculate_timely_down_status(user_organizations, dashboard_name='down-pmp', created_on=created_on, technology=PMP)
-    calculate_timely_down_status(user_organizations, dashboard_name='down-wimax', created_on=created_on, technology=WiMAX)
-    calculate_timely_down_status(user_organizations, dashboard_name='down-network', created_on=created_on)
+    calculate_timely_down_status(user_organizations, dashboard_name='down-pmp', processed_for=processed_for, technology=PMP)
+    calculate_timely_down_status(user_organizations, dashboard_name='down-wimax', processed_for=processed_for, technology=WiMAX)
+    calculate_timely_down_status(user_organizations, dashboard_name='down-network', processed_for=processed_for)
 
-    calculate_timely_temperature(user_organizations, created_on=created_on, chart_type='IDU')
-    calculate_timely_temperature(user_organizations, created_on=created_on, chart_type='ACB')
-    calculate_timely_temperature(user_organizations, created_on=created_on, chart_type='FAN')
+    calculate_timely_temperature(user_organizations, processed_for=processed_for, chart_type='IDU')
+    calculate_timely_temperature(user_organizations, processed_for=processed_for, chart_type='ACB')
+    calculate_timely_temperature(user_organizations, processed_for=processed_for, chart_type='FAN')
 
 
-def calculate_timely_sector_capacity(technology, model, created_on):
+def calculate_timely_sector_capacity(technology, model, processed_for):
     '''
     :param technology: Named Tuple
     :param model: Dashboard Model to store timely dashboard data.
-    :param created_on:
+    :param processed_for:
     return
     '''
     dashboard_name = '%s_sector_capacity' % (technology.NAME.lower())
     range_counter = dict(
             dashboard_name=dashboard_name,
             sector_name='',
-            created_on=created_on,
+            processed_for=processed_for,
             ok=0,
             warning=0,
             critical=0,
@@ -94,11 +94,11 @@ def calculate_timely_sector_capacity(technology, model, created_on):
     bulk_update_create.delay(data_list, action='create', model=model)
 
 
-def calculate_timely_sales_opportunity(technology, model, created_on):
+def calculate_timely_sales_opportunity(technology, model, processed_for):
     '''
     :param technology: Named Tuple
     :param model: Dashboard Model to store timely dashboard data.
-    :param created_on:
+    :param processed_for:
     return
     '''
     organization = []
@@ -125,7 +125,7 @@ def calculate_timely_sales_opportunity(technology, model, created_on):
         range_counter.update(
             {'dashboard_name': dashboard_name,
                 'device_name': result['name'], # Store sector name as device_name
-                'created_on': created_on
+                'processed_for': processed_for
             }
         )
 
@@ -134,8 +134,8 @@ def calculate_timely_sales_opportunity(technology, model, created_on):
     bulk_update_create.delay(data_list, action='create', model=model)
 
 
-def calculate_timely_latency(organizations, dashboard_name, created_on ,technology=None):
-    created_on = created_on
+def calculate_timely_latency(organizations, dashboard_name, processed_for ,technology=None):
+    processed_for = processed_for
     technology_id = technology.ID if technology else None
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
@@ -149,11 +149,11 @@ def calculate_timely_latency(organizations, dashboard_name, created_on ,technolo
                 severity__in=['warning', 'critical', 'down']
             ).using(machine_name).values()
 
-    calculate_timely_network_alert(dashboard_name, created_on, technology, status_dict_list)
+    calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
 
 
-def calculate_timely_packet_drop(organizations, dashboard_name, created_on, technology=None):
-    created_on = created_on
+def calculate_timely_packet_drop(organizations, dashboard_name, processed_for, technology=None):
+    processed_for = processed_for
     technology_id = technology.ID if technology else None
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
@@ -168,11 +168,11 @@ def calculate_timely_packet_drop(organizations, dashboard_name, created_on, tech
                 current_value__lt=100
             ).using(machine_name).values()
 
-    calculate_timely_network_alert(dashboard_name, created_on, technology, status_dict_list)
+    calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
 
 
-def calculate_timely_down_status(organizations, dashboard_name, created_on, technology=None):
-    created_on = created_on
+def calculate_timely_down_status(organizations, dashboard_name, processed_for, technology=None):
+    processed_for = processed_for
     technology_id = technology.ID if technology else None
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
@@ -187,13 +187,13 @@ def calculate_timely_down_status(organizations, dashboard_name, created_on, tech
                 current_value__gte=100
             ).using(machine_name).values()
 
-    calculate_timely_network_alert(dashboard_name, created_on, technology, status_dict_list)
+    calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
 
 
-def calculate_timely_temperature(organizations, created_on, chart_type='IDU'):
+def calculate_timely_temperature(organizations, processed_for, chart_type='IDU'):
 
     technology_id = 3
-    created_on=created_on
+    processed_for=processed_for
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
@@ -217,10 +217,10 @@ def calculate_timely_temperature(organizations, created_on, chart_type='IDU'):
                 severity__in=['warning', 'critical']
             ).using(machine_name).values()
 
-    calculate_timely_network_alert('temperature', created_on, WiMAX, status_dict_list, status_dashboard_name)
+    calculate_timely_network_alert('temperature', processed_for, WiMAX, status_dict_list, status_dashboard_name)
 
 
-def calculate_timely_network_alert(dashboard_name, created_on, technology=None, status_dict_list=[], status_dashboard_name=None):
+def calculate_timely_network_alert(dashboard_name, processed_for, technology=None, status_dict_list=[], status_dashboard_name=None):
 
     technology_id = technology.ID if technology else None
     try:
@@ -232,7 +232,7 @@ def calculate_timely_network_alert(dashboard_name, created_on, technology=None, 
     data_list = []
     device_name = ''
     device_result = []
-    created_on = created_on
+    processed_for = processed_for
 
     if status_dashboard_name is None:
         status_dashboard_name = dashboard_name
@@ -245,7 +245,7 @@ def calculate_timely_network_alert(dashboard_name, created_on, technology=None, 
                 dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
 
                 dashboard_data_dict.update({'device_name': device_name,
-                    'dashboard_name': status_dashboard_name, 'created_on': created_on})
+                    'dashboard_name': status_dashboard_name, 'processed_for': processed_for})
                 data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
             device_name = result_dict['device_name']
@@ -253,7 +253,7 @@ def calculate_timely_network_alert(dashboard_name, created_on, technology=None, 
     if device_result:
         dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
         dashboard_data_dict.update({'device_name': result_dict['device_name'],
-            'dashboard_name': status_dashboard_name, 'created_on': created_on})
+            'dashboard_name': status_dashboard_name, 'processed_for': processed_for})
         data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
     bulk_update_create.delay(data_list, action='create', model=DashboardRangeStatusTimely)
@@ -288,7 +288,7 @@ def calculate_hourly_main_dashboard():
 
 def calculate_hourly_severity_status(now):
     last_hour_timely_severity_status = DashboardSeverityStatusTimely.objects.order_by('dashboard_name',
-            'sector_name').filter(created_on__lt=now)
+            'sector_name').filter(processed_for__lt=now)
 
     hourly_severity_status_list = []
     hourly_severity_status = None
@@ -301,7 +301,7 @@ def calculate_hourly_severity_status(now):
             hourly_severity_status = DashboardSeverityStatusHourly(
                 dashboard_name=timely_severity_status.dashboard_name,
                 sector_name=timely_severity_status.sector_name,
-                created_on=now,
+                processed_for=now,
                 warning=timely_severity_status.warning,
                 critical=timely_severity_status.critical,
                 ok=timely_severity_status.ok,
@@ -317,7 +317,7 @@ def calculate_hourly_severity_status(now):
 
 def calculate_hourly_range_status(now):
     last_hour_timely_range_status = DashboardRangeStatusTimely.objects.order_by('dashboard_name',
-            'device_name').filter(created_on__lt=now)
+            'device_name').filter(processed_for__lt=now)
 
     hourly_range_status_list = []
     hourly_range_status = None
@@ -330,7 +330,7 @@ def calculate_hourly_range_status(now):
             hourly_range_status = DashboardRangeStatusHourly(
                 dashboard_name=timely_range_status.dashboard_name,
                 device_name=timely_range_status.device_name,
-                created_on=now,
+                processed_for=now,
                 range1=timely_range_status.range1,
                 range2=timely_range_status.range2,
                 range3=timely_range_status.range3,
@@ -389,8 +389,8 @@ def calculate_daily_main_dashboard():
 def calculate_daily_severity_status(now):
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by('dashboard_name',
-            'sector_name').filter(created_on__day=previous_day,
-            created_on__month=previous_day.month, created_on__year=previous_day.year)
+            'sector_name').filter(processed_for__day=previous_day,
+            processed_for__month=previous_day.month, processed_for__year=previous_day.year)
     daily_severity_status_list = []
     daily_severity_status = None
     dashboard_name = ''
@@ -402,7 +402,7 @@ def calculate_daily_severity_status(now):
             daily_severity_status = DashboardSeverityStatusDaily(
                 dashboard_name=hourly_severity_status.dashboard_name,
                 sector_name=hourly_severity_status.sector_name,
-                created_on=now,
+                processed_for=now,
                 warning=hourly_severity_status.warning,
                 critical=hourly_severity_status.critical,
                 ok=hourly_severity_status.ok,
@@ -419,8 +419,8 @@ def calculate_daily_severity_status(now):
 def calculate_daily_range_status(now):
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by('dashboard_name',
-            'device_name').filter(created_on__day=previous_day,
-            created_on__month=previous_day.month, created_on__year=previous_day.year)
+            'device_name').filter(processed_for__day=previous_day,
+            processed_for__month=previous_day.month, processed_for__year=previous_day.year)
 
     daily_range_status_list = []
     daily_range_status = None
@@ -433,7 +433,7 @@ def calculate_daily_range_status(now):
             daily_range_status = DashboardRangeStatusDaily(
                 dashboard_name=hourly_range_status.dashboard_name,
                 device_name=hourly_range_status.device_name,
-                created_on=now,
+                processed_for=now,
                 range1=hourly_range_status.range1,
                 range2=hourly_range_status.range2,
                 range3=hourly_range_status.range3,
@@ -467,7 +467,7 @@ def calculate_weekly_main_dashboard():
 
 def calculate_weekly_severity_status(day, first_day):
     last_week_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
-            'sector_name').filter(created_on__year=day.year, created_on__month=day.month, created_on__day=day.day)
+            'sector_name').filter(processed_for__year=day.year, processed_for__month=day.month, processed_for__day=day.day)
 
     weekly_severity_status_list = []
     weekly_severity_status = None
@@ -482,7 +482,7 @@ def calculate_weekly_severity_status(day, first_day):
                 weekly_severity_status = DashboardSeverityStatusWeekly(
                     dashboard_name=daily_severity_status.dashboard_name,
                     sector_name=daily_severity_status.sector_name,
-                    created_on=first_day,
+                    processed_for=first_day,
                     warning=daily_severity_status.warning,
                     critical=daily_severity_status.critical,
                     ok=daily_severity_status.ok,
@@ -493,7 +493,7 @@ def calculate_weekly_severity_status(day, first_day):
                 weekly_severity_status = DashboardSeverityStatusWeekly(
                     dashboard_name=daily_severity_status.dashboard_name,
                     sector_name=daily_severity_status.sector_name,
-                    created_on=first_day
+                    processed_for=first_day
                 )
                 weekly_severity_status = sum_severity_status(weekly_severity_status, daily_severity_status)
             weekly_severity_status_list.append(weekly_severity_status)
@@ -506,7 +506,7 @@ def calculate_weekly_severity_status(day, first_day):
 
 def calculate_weekly_range_status(day, first_day):
     last_week_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
-            'device_name').filter(created_on__year=day.year, created_on__month=day.month, created_on__day=day.day)
+            'device_name').filter(processed_for__year=day.year, processed_for__month=day.month, processed_for__day=day.day)
 
     weekly_range_status_list = []
     weekly_range_status = None
@@ -521,7 +521,7 @@ def calculate_weekly_range_status(day, first_day):
                 weekly_range_status = DashboardRangeStatusWeekly(
                     dashboard_name=daily_range_status.dashboard_name,
                     device_name=daily_range_status.device_name,
-                    created_on=first_day,
+                    processed_for=first_day,
                     range1=daily_range_status.range1,
                     range2=daily_range_status.range2,
                     range3=daily_range_status.range3,
@@ -538,7 +538,7 @@ def calculate_weekly_range_status(day, first_day):
                 weekly_range_status, created = DashboardRangeStatusWeekly.objects.get_or_create(
                     dashboard_name=daily_range_status.dashboard_name,
                     device_name=daily_range_status.device_name,
-                    created_on=first_day,
+                    processed_for=first_day,
                 )
                 weekly_range_status = sum_range_status(weekly_range_status, daily_range_status)
             weekly_range_status_list.append(daily_range_status)
@@ -562,8 +562,8 @@ def calculate_monthly_range_status(now):
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     first_day = timezone.datetime(previous_day.year, previous_day.month, 1)
     last_month_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
-            'device_name').filter(created_on__month=previous_day.month,
-             created_on__year=previous_day.year)
+            'device_name').filter(processed_for__month=previous_day.month,
+             processed_for__year=previous_day.year)
 
     monthly_range_status_list = []
     monthly_range_status = None
@@ -578,7 +578,7 @@ def calculate_monthly_range_status(now):
                 monthly_range_status, created = DashboardRangeStatusMonthly.objects.get_or_create(
                     dashboard_name=daily_range_status.dashboard_name,
                     device_name=daily_range_status.device_name,
-                    created_on=first_day
+                    processed_for=first_day
                 )
                 monthly_range_status = sum_range_status(monthly_range_status, daily_range_status)
                 # monthly_range_status.save() # Save later so current process doesn't slow.
@@ -586,7 +586,7 @@ def calculate_monthly_range_status(now):
                 monthly_range_status = DashboardRangeStatusMonthly(
                     dashboard_name=daily_range_status.dashboard_name,
                     device_name=daily_range_status.device_name,
-                    created_on=first_day,
+                    processed_for=first_day,
                     range1=daily_range_status.range1,
                     range2=daily_range_status.range2,
                     range3=daily_range_status.range3,
@@ -613,8 +613,8 @@ def calculate_monthly_severity_status(now):
     first_day = timezone.datetime(previous_day.year, previous_day.month, 1)
     last_month_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
             'sector_name').filter(
-            created_on__month=previous_day.month,
-            created_on__year=previous_day.year)
+            processed_for__month=previous_day.month,
+            processed_for__year=previous_day.year)
 
     monthly_severity_status_list = []
     monthly_severity_status = None
@@ -629,7 +629,7 @@ def calculate_monthly_severity_status(now):
                 monthly_severity_status, created = DashboardSeverityStatusMonthly.objects.get_or_create(
                     dashboard_name=daily_range_status.dashboard_name,
                     device_name=daily_range_status.device_name,
-                    created_on=first_day
+                    processed_for=first_day
                 )
                 monthly_severity_status = sum_range_status(monthly_severity_status, daily_range_status)
                 # monthly_severity_status.save() # Save later so current process doesn't slow.
@@ -637,7 +637,7 @@ def calculate_monthly_severity_status(now):
                 monthly_severity_status = DashboardSeverityStatusMonthly(
                     dashboard_name=daily_severity_status.dashboard_name,
                     sector_name=daily_severity_status.sector_name,
-                    created_on=first_day,
+                    processed_for=first_day,
                     warning=daily_severity_status.warning,
                     critical=daily_severity_status.critical,
                     ok=daily_severity_status.ok,
@@ -665,7 +665,7 @@ def calculate_yearly_range_status(now):
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     first_month = timezone.datetime(previous_day.year, 1, previous_day.day)
     last_year_monthly_range_status = DashboardRangeStatusMonthly.objects.order_by('dashboard_name',
-            'device_name').filter(created_on__year=previous_day.year)
+            'device_name').filter(processed_for__year=previous_day.year)
 
     yearly_range_status_list = []
     yearly_range_status = None
@@ -680,7 +680,7 @@ def calculate_yearly_range_status(now):
                 yearly_range_status, created = DashboardRangeStatusYearly.objects.get_or_create(
                     dashboard_name=monthly_range_status.dashboard_name,
                     device_name=monthly_range_status.device_name,
-                    created_on=first_month
+                    processed_for=first_month
                 )
                 yearly_range_status = sum_range_status(yearly_range_status, monthly_range_status)
                 # yearly_range_status.save() # Save later so current process doesn't slow.
@@ -688,7 +688,7 @@ def calculate_yearly_range_status(now):
                 yearly_range_status = DashboardRangeStatusYearly(
                     dashboard_name=monthly_range_status.dashboard_name,
                     device_name=monthly_range_status.device_name,
-                    created_on=first_month,
+                    processed_for=first_month,
                     range1=monthly_range_status.range1,
                     range2=monthly_range_status.range2,
                     range3=monthly_range_status.range3,
@@ -713,7 +713,7 @@ def calculate_yearly_severity_status(now):
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     first_month = timezone.datetime(previous_day.year, 1, previous_day.day)
     last_year_monthly_severity_status = DashboardSeverityStatusMonthly.objects.order_by('dashboard_name',
-            'sector_name').filter(created_on__year=previous_day.year)
+            'sector_name').filter(processed_for__year=previous_day.year)
 
     yearly_severity_status_list = []
     yearly_severity_status = None
@@ -728,7 +728,7 @@ def calculate_yearly_severity_status(now):
                 yearly_severity_status, created = DashboardSeverityStatusYearly.objects.get_or_create(
                     dashboard_name=monthly_severity_status.dashboard_name,
                     device_name=monthly_severity_status.device_name,
-                    created_on=first_month
+                    processed_for=first_month
                 )
                 yearly_severity_status = sum_range_status(yearly_severity_status, monthly_severity_status)
                 # yearly_severity_status.save() # Save later so current process doesn't slow.
@@ -736,7 +736,7 @@ def calculate_yearly_severity_status(now):
                 yearly_severity_status = DashboardSeverityStatusYearly(
                     dashboard_name=monthly_severity_status.dashboard_name,
                     sector_name=monthly_severity_status.sector_name,
-                    created_on=first_month,
+                    processed_for=first_month,
                     warning=monthly_severity_status.warning,
                     critical=monthly_severity_status.critical,
                     ok=monthly_severity_status.ok,
