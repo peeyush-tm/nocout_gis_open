@@ -569,12 +569,12 @@ def calculate_monthly_range_status(now):
     monthly_range_status = None
     dashboard_name = ''
     device_name = ''
-    day01 = True if previous_day.day == 1 else False
+    is_first_day_of_month = True if previous_day.day == 1 else False
     for daily_range_status in last_month_daily_range_status:
         if dashboard_name == daily_range_status.dashboard_name and device_name == daily_range_status.device_name:
             monthly_range_status = sum_range_status(monthly_range_status, daily_range_status)
         else:
-            if not day01:
+            if not is_first_day_of_month:
                 monthly_range_status, created = DashboardRangeStatusMonthly.objects.get_or_create(
                     dashboard_name=daily_range_status.dashboard_name,
                     device_name=daily_range_status.device_name,
@@ -601,7 +601,7 @@ def calculate_monthly_range_status(now):
                 )
             monthly_range_status_list.append(monthly_range_status)
 
-    if day01:
+    if is_first_day_of_month:
         bulk_update_create.delay(monthly_range_status_list, action='create', model=DashboardRangeStatusMonthly)
     else:
         bulk_update_create.delay(monthly_range_status_list)
@@ -620,12 +620,12 @@ def calculate_monthly_severity_status(now):
     monthly_severity_status = None
     dashboard_name = ''
     sector_name = ''
-    day01 = True if previous_day.day == 1 else False
+    is_first_day_of_month = True if previous_day.day == 1 else False
     for daily_severity_status in last_month_daily_severity_status:
         if dashboard_name == daily_severity_status.dashboard_name and sector_name == daily_severity_status.sector_name:
             monthly_severity_status = sum_severity_status(monthly_severity_status, daily_severity_status)
         else:
-            if not day01:
+            if not is_first_day_of_month:
                 monthly_severity_status, created = DashboardSeverityStatusMonthly.objects.get_or_create(
                     dashboard_name=daily_range_status.dashboard_name,
                     device_name=daily_range_status.device_name,
@@ -646,7 +646,7 @@ def calculate_monthly_severity_status(now):
                 )
             monthly_severity_status_list.append(monthly_severity_status)
 
-    if day01:
+    if is_first_day_of_month:
         bulk_update_create.delay(monthly_severity_status_list, action='create', model=DashboardSeverityStatusMonthly)
     else:
         bulk_update_create.delay(monthly_severity_status_list)
@@ -671,12 +671,12 @@ def calculate_yearly_range_status(now):
     yearly_range_status = None
     dashboard_name = ''
     device_name = ''
-    month01 = True if previous_day.month == 1 else False
+    is_january = True if previous_day.month == 1 else False
     for monthly_range_status in last_year_monthly_range_status:
         if dashboard_name == monthly_range_status.dashboard_name and device_name == monthly_range_status.device_name:
             yearly_range_status = sum_range_status(yearly_range_status, monthly_range_status)
         else:
-            if not month01:
+            if not is_january:
                 yearly_range_status, created = DashboardRangeStatusYearly.objects.get_or_create(
                     dashboard_name=monthly_range_status.dashboard_name,
                     device_name=monthly_range_status.device_name,
@@ -703,7 +703,7 @@ def calculate_yearly_range_status(now):
                 )
             yearly_range_status_list.append(yearly_range_status)
 
-    if month01:
+    if is_january:
         bulk_update_create.delay(yearly_range_status_list, action='create', model=DashboardRangeStatusYearly)
     else:
         bulk_update_create.delay(yearly_range_status_list)
@@ -719,12 +719,12 @@ def calculate_yearly_severity_status(now):
     yearly_severity_status = None
     dashboard_name = ''
     sector_name = ''
-    month01 = True if previous_day.month == 1 else False
+    is_january = True if previous_day.month == 1 else False
     for monthly_severity_status in last_year_monthly_severity_status:
         if dashboard_name == monthly_severity_status.dashboard_name and sector_name == monthly_severity_status.sector_name:
             yearly_severity_status = sum_severity_status(yearly_severity_status, monthly_severity_status)
         else:
-            if not month01:
+            if not is_january:
                 yearly_severity_status, created = DashboardSeverityStatusYearly.objects.get_or_create(
                     dashboard_name=monthly_severity_status.dashboard_name,
                     device_name=monthly_severity_status.device_name,
@@ -745,7 +745,7 @@ def calculate_yearly_severity_status(now):
                 )
             yearly_severity_status_list.append(yearly_severity_status)
 
-    if month01:
+    if is_january:
         bulk_update_create.delay(yearly_severity_status_list, action='create', model=DashboardSeverityStatusYearly)
     else:
         bulk_update_create.delay(yearly_severity_status_list)
