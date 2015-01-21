@@ -60,13 +60,13 @@
                     }
                     var row = $(this).parents('.' + options.formCssClass),
                         del = row.find('input:hidden[id $= "-DELETE"]');
-                    if (del.length) {
-                        // We're dealing with an inline formset; rather than remove
-                        // this form from the DOM, we'll mark it as deleted and hide
-                        // it, then let Django handle the deleting:
-                        del.val('on');
-                        row.hide();
-                    } else {
+                    // if (del.length) {
+                    //     // We're dealing with an inline formset; rather than remove
+                    //     // this form from the DOM, we'll mark it as deleted and hide
+                    //     // it, then let Django handle the deleting:
+                    //     del.val('on');
+                    //     row.hide();
+                    // } else {
                         row.remove();
                         // Update the TOTAL_FORMS form count.
                         // Also update names and IDs for all remaining form controls so they remain in sequence:
@@ -78,9 +78,12 @@
                                 updateElementIndex($(this), options.prefix, i);
                             });
                         }
-                    }
+                    // }
                     // If a post-delete callback was provided, call it with the deleted form:
-                    if (options.removed) options.removed(row);
+                    if (options.removed){
+                        // options.removed(row);
+                        update_service();    // remove already selected services
+                    }
                     return false;
                 });
             };
@@ -169,8 +172,10 @@
                 $(":checkbox").uniform();
                 $('#id_' + options.prefix + '-TOTAL_FORMS').val(formCount + 1);
                 // If a post-add callback was supplied, call it with the added form:
-                if (options.added) options.added(row);
-
+                if (options.added){
+                    // options.added(row);
+                    update_service();    // remove already selected services
+                }
 
                 return false;
             });
@@ -190,7 +195,7 @@
         buttonCssClass: 'btn button',    // CSS button class applied to the delete link
         formCssClass: 'dynamic-form',    // CSS class applied to each form in a formset
         extraClasses: [],                // Additional CSS classes, which will be applied to each form in turn
-        added: null,                     // Function called each time a new form is added
-        removed: null                    // Function called each time a form is deleted
+        added: true,                     // Function called each time a new form is added
+        removed: true                    // Function called each time a form is deleted
     };
 })(jQuery)
