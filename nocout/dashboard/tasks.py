@@ -91,7 +91,7 @@ def calculate_timely_sector_capacity(technology, model, created_on):
         except Exception as e:
             pass
 
-    model.objects.bulk_create(data_list)
+    bulk_update_create.delay(data_list, action='create', model=model)
 
 
 def calculate_timely_sales_opportunity(technology, model, created_on):
@@ -131,7 +131,7 @@ def calculate_timely_sales_opportunity(technology, model, created_on):
 
         data_list.append(model(**range_counter))
 
-    model.objects.bulk_create(data_list)
+    bulk_update_create.delay(data_list, action='create', model=model)
 
 
 def calculate_timely_latency(organizations, dashboard_name, created_on ,technology=None):
@@ -256,7 +256,7 @@ def calculate_timely_network_alert(dashboard_name, created_on, technology=None, 
             'dashboard_name': status_dashboard_name, 'created_on': created_on})
         data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
-    DashboardRangeStatusTimely.objects.bulk_create(data_list)
+    bulk_update_create.delay(data_list, action='create', model=DashboardRangeStatusTimely)
 
 
 def prepare_machines(device_list):
@@ -310,7 +310,7 @@ def calculate_hourly_severity_status(now):
             )
             hourly_severity_status_list.append(hourly_severity_status)
 
-    DashboardSeverityStatusHourly.objects.bulk_create(hourly_severity_status_list)
+    bulk_update_create.delay(hourly_severity_status_list, action='create', model=DashboardSeverityStatusHourly)
 
     last_hour_timely_severity_status.delete()
 
@@ -345,7 +345,7 @@ def calculate_hourly_range_status(now):
             )
             hourly_range_status_list.append(hourly_range_status)
 
-    DashboardRangeStatusHourly.objects.bulk_create(hourly_range_status_list)
+    bulk_update_create.delay(hourly_range_status_list, action='create', model=DashboardRangeStatusHourly)
 
     last_hour_timely_range_status.delete()
 
@@ -411,7 +411,7 @@ def calculate_daily_severity_status(now):
             )
             daily_severity_status_list.append(daily_severity_status)
 
-    DashboardSeverityStatusDaily.objects.bulk_create(daily_severity_status_list)
+    bulk_update_create.delay(daily_severity_status_list, action='create', model=DashboardSeverityStatusDaily)
 
     last_day_timely_severity_status.delete()
 
@@ -448,7 +448,7 @@ def calculate_daily_range_status(now):
             )
             daily_range_status_list.append(daily_range_status)
 
-    DashboardRangeStatusDaily.objects.bulk_create(daily_range_status_list)
+    bulk_update_create.delay(daily_range_status_list, action='create', model=DashboardRangeStatusDaily)
 
     last_day_hourly_range_status.delete()
 
@@ -499,10 +499,9 @@ def calculate_weekly_severity_status(day, first_day):
             weekly_severity_status_list.append(weekly_severity_status)
 
     if is_monday:
-        DashboardSeverityStatusWeekly.objects.bulk_create(weekly_severity_status_list)
+        bulk_update_create.delay(weekly_severity_status_list, action='create', model=DashboardSeverityStatusWeekly)
     else:
-        for weekly_severity_status in weekly_severity_status_list:
-            weekly_severity_status.save()
+        bulk_update_create.delay(weekly_severity_status_list)
 
 
 def calculate_weekly_range_status(day, first_day):
@@ -545,10 +544,9 @@ def calculate_weekly_range_status(day, first_day):
             weekly_range_status_list.append(daily_range_status)
 
     if is_monday:
-        DashboardRangeStatusWeekly.objects.bulk_create(weekly_range_status_list)
+        bulk_update_create.delay(weekly_range_status_list, action='create', model=DashboardRangeStatusWeekly)
     else:
-        for weekly_range_status in weekly_range_status_list:
-            weekly_range_status.save()
+        bulk_update_create.delay(weekly_range_status_list)
 
 
 def calculate_monthly_main_dashboard():
@@ -604,10 +602,9 @@ def calculate_monthly_range_status(now):
             monthly_range_status_list.append(monthly_range_status)
 
     if day01:
-        DashboardRangeStatusMonthly.objects.bulk_create(monthly_range_status_list)
+        bulk_update_create.delay(monthly_range_status_list, action='create', model=DashboardRangeStatusMonthly)
     else:
-        for monthly_range_status in monthly_range_status_list:
-            monthly_range_status.save()
+        bulk_update_create.delay(monthly_range_status_list)
 
 
 
@@ -648,11 +645,11 @@ def calculate_monthly_severity_status(now):
                     unknown=daily_severity_status.unknown
                 )
             monthly_severity_status_list.append(monthly_severity_status)
+
     if day01:
-        DashboardSeverityStatusMonthly.objects.bulk_create(monthly_severity_status_list)
+        bulk_update_create.delay(monthly_severity_status_list, action='create', model=DashboardSeverityStatusMonthly)
     else:
-        for monthly_severity_status in monthly_severity_status_list:
-            monthly_severity_status.save()
+        bulk_update_create.delay(monthly_severity_status_list)
 
 
 def calculate_yearly_main_dashboard():
@@ -707,11 +704,9 @@ def calculate_yearly_range_status(now):
             yearly_range_status_list.append(yearly_range_status)
 
     if month01:
-        DashboardRangeStatusYearly.objects.bulk_create(yearly_range_status_list)
-
+        bulk_update_create.delay(yearly_range_status_list, action='create', model=DashboardRangeStatusYearly)
     else:
-        for yearly_range_status in yearly_range_status_list:
-            yearly_range_status.save()
+        bulk_update_create.delay(yearly_range_status_list)
 
 
 def calculate_yearly_severity_status(now):
@@ -751,7 +746,29 @@ def calculate_yearly_severity_status(now):
             yearly_severity_status_list.append(yearly_severity_status)
 
     if month01:
-        DashboardSeverityStatusYearly.objects.bulk_create(yearly_severity_status_list)
+        bulk_update_create.delay(yearly_severity_status_list, action='create', model=DashboardSeverityStatusYearly)
     else:
-        for yearly_severity_status in yearly_severity_status_list:
-            yearly_severity_status.save()
+        bulk_update_create.delay(yearly_severity_status_list)
+
+
+@task()
+def bulk_update_create(bulky, action='update', model=None):
+    """
+
+    :param bulky: bulk object list
+    :param action: create or update?
+    :param model: model object
+    :return:
+    """
+    if bulky and len(bulky):
+        if action == 'update':
+            for update_this in bulky:
+                update_this.save()
+            return True
+
+        elif action == 'create':
+            if model:
+                model.objects.bulk_create(bulky)
+            return True
+
+    return False
