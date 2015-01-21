@@ -230,7 +230,7 @@ def calculate_timely_network_alert(dashboard_name, created_on, technology=None, 
         return None
 
     data_list = []
-    device_name = 'xx'
+    device_name = ''
     device_result = []
     created_on = created_on
 
@@ -457,70 +457,98 @@ def calculate_daily_range_status(now):
 def calculate_weekly_main_dashboard():
     '''
     '''
-    now = timezone.now()
+    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
+    first_day = previous_day - timezone.timedelta(day.weekday()) # First Day of Week [Date of Monday]
+    first_day = timezone.datetime(first_day.year, first_day.month, first_day.day) # Reset to 12 o'clock
 
-    calculate_weekly_severity_status(now)
-    calculate_weekly_range_status(now)
+    calculate_weekly_severity_status(previous_day, first_day)
+    calculate_weekly_range_status(previous_day, first_day)
 
 
-def calculate_weekly_severity_status(now):
+def calculate_weekly_severity_status(day, first_day):
     last_week_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
-            'sector_name').filter(created_on__lt=now)
+            'sector_name').filter(created_on__year=day.year, created_on__month=day.month, created_on__day=day.day)
 
     weekly_severity_status_list = []
     weekly_severity_status = None
     dashboard_name = ''
     sector_name = ''
+    is_monday = True if day.weekday() == 0 else False
     for daily_severity_status in last_week_daily_severity_status:
         if dashboard_name == daily_severity_status.dashboard_name and sector_name == daily_severity_status.sector_name:
             weekly_severity_status = sum_severity_status(weekly_severity_status, daily_severity_status)
         else:
-            weekly_severity_status = DashboardSeverityStatusWeekly(
-                dashboard_name=daily_severity_status.dashboard_name,
-                sector_name=daily_severity_status.sector_name,
-                created_on=now,
-                warning=daily_severity_status.warning,
-                critical=daily_severity_status.critical,
-                ok=daily_severity_status.ok,
-                down=daily_severity_status.down,
-                unknown=daily_severity_status.unknown
-            )
+            if is_monday:
+                weekly_severity_status = DashboardSeverityStatusWeekly(
+                    dashboard_name=daily_severity_status.dashboard_name,
+                    sector_name=daily_severity_status.sector_name,
+                    created_on=first_day,
+                    warning=daily_severity_status.warning,
+                    critical=daily_severity_status.critical,
+                    ok=daily_severity_status.ok,
+                    down=daily_severity_status.down,
+                    unknown=daily_severity_status.unknown
+                )
+            else:
+                weekly_severity_status = DashboardSeverityStatusWeekly(
+                    dashboard_name=daily_severity_status.dashboard_name,
+                    sector_name=daily_severity_status.sector_name,
+                    created_on=first_day
+                )
+                weekly_severity_status = sum_severity_status(weekly_severity_status, daily_severity_status)
             weekly_severity_status_list.append(weekly_severity_status)
 
-    DashboardSeverityStatusWeekly.objects.bulk_create(weekly_severity_status_list)
+    if is_monday:
+        DashboardSeverityStatusWeekly.objects.bulk_create(weekly_severity_status_list)
+    else:
+        for weekly_severity_status in weekly_severity_status_list:
+            weekly_severity_status.save()
 
 
-def calculate_weekly_range_status(now):
+def calculate_weekly_range_status(day, first_day):
     last_week_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
-            'device_name').filter(created_on__lt=now)
+            'device_name').filter(created_on__year=day.year, created_on__month=day.month, created_on__day=day.day)
 
     weekly_range_status_list = []
     weekly_range_status = None
     dashboard_name = ''
     device_name = ''
+    is_monday = True if day.weekday() == 0 else False
     for daily_range_status in last_week_daily_range_status:
         if dashboard_name == daily_range_status.dashboard_name and device_name == daily_range_status.device_name:
             weekly_range_status = sum_range_status(weekly_range_status, daily_range_status)
         else:
-            weekly_range_status = DashboardRangeStatusWeekly(
-                dashboard_name=daily_range_status.dashboard_name,
-                device_name=daily_range_status.device_name,
-                created_on=now,
-                range1=daily_range_status.range1,
-                range2=daily_range_status.range2,
-                range3=daily_range_status.range3,
-                range4=daily_range_status.range4,
-                range5=daily_range_status.range5,
-                range6=daily_range_status.range6,
-                range7=daily_range_status.range7,
-                range8=daily_range_status.range8,
-                range9=daily_range_status.range9,
-                range10=daily_range_status.range10,
-                unknown=daily_range_status.unknown
-            )
+            if is_monday:
+                weekly_range_status = DashboardRangeStatusWeekly(
+                    dashboard_name=daily_range_status.dashboard_name,
+                    device_name=daily_range_status.device_name,
+                    created_on=first_day,
+                    range1=daily_range_status.range1,
+                    range2=daily_range_status.range2,
+                    range3=daily_range_status.range3,
+                    range4=daily_range_status.range4,
+                    range5=daily_range_status.range5,
+                    range6=daily_range_status.range6,
+                    range7=daily_range_status.range7,
+                    range8=daily_range_status.range8,
+                    range9=daily_range_status.range9,
+                    range10=daily_range_status.range10,
+                    unknown=daily_range_status.unknown
+                )
+            else:
+                weekly_range_status, created = DashboardRangeStatusWeekly.objects.get_or_create(
+                    dashboard_name=daily_range_status.dashboard_name,
+                    device_name=daily_range_status.device_name,
+                    created_on=first_day,
+                )
+                weekly_range_status = sum_range_status(weekly_range_status, daily_range_status)
             weekly_range_status_list.append(daily_range_status)
 
-    DashboardRangeStatusWeekly.objects.bulk_create(weekly_range_status_list)
+    if is_monday:
+        DashboardRangeStatusWeekly.objects.bulk_create(weekly_range_status_list)
+    else:
+        for weekly_range_status in weekly_range_status_list:
+            weekly_range_status.save()
 
 
 def calculate_monthly_main_dashboard():
