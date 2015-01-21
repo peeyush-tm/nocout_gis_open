@@ -137,13 +137,13 @@ class UserForm(forms.ModelForm):
         if 'username' in self.cleaned_data:
             password1 = self.cleaned_data['password1']
             username = self.cleaned_data['username']
-            tknzr, enchant_obj = get_tokenizer("en_US"), enchant.Dict("en_US")
+            # tknzr, enchant_obj = get_tokenizer("en_US"), enchant.Dict("en_US")
             # filter the words from the password1 field of length greater than 2.
-            words = list(filter(lambda x: len(x)>2, [word[0] for word in tknzr(password1.lower())] ))
-            check_word = [enchant_obj.check(w) for w in words]  # check if the words are dictionary common word or not.
+            # words = list(filter(lambda x: len(x)>2, [word[0] for word in tknzr(password1.lower())] ))
+            # check_word = [enchant_obj.check(w) for w in words]  # check if the words are dictionary common word or not.
             if password1 == username:
                 raise forms.ValidationError("User ID and password should not be identical")
-            elif check_word.count(True) > 0:    # if contain any dictionay common word.
+            elif 0 > 0:#check_word.count(True) > 0:    # if contain any dictionay common word.
                 raise forms.ValidationError("Ignore dictionay common words")
             if password1:
                 user = UserProfile.objects.filter(username=username)
