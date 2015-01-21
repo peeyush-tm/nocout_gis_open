@@ -67,7 +67,7 @@ def live_query_ul_rssi(mac):
                         query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string).strip())
                         if query_output[0][0]:
                                 plugin_output = str(query_output[0][0].split('- ')[1])
-                                plugin_output = [mac for mac in plugin_output.split(' ')]
+                                plugin_output = [entry for entry in plugin_output.split(' ')]
                                 ss_params = filter(lambda x: '/' in x,plugin_output)
                                 ss_matched_params = filter(lambda x: mac in x,ss_params)
                                 ul_rssi= map(lambda x: x.split('/')[2],ss_matched_params)
