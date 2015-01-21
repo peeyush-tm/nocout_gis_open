@@ -116,7 +116,7 @@ def check_cambium_ul_rssi(item, params, info):
                 ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		if ss_mac:
 			ul_rssi = live_query_ul_rssi(ss_mac )
-			if isinstance(ul_rssi,int):
+			if ul_rssi != None:
 				if ul_rssi < crit:
 					state  = 2
 				elif ul_rssi >= crit and ul_rssi <= warn:
