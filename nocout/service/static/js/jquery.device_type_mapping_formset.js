@@ -60,13 +60,13 @@
                     }
                     var row = $(this).parents('.' + options.formCssClass),
                         del = row.find('input:hidden[id $= "-DELETE"]');
-                    // if (del.length) {
-                    //     // We're dealing with an inline formset; rather than remove
-                    //     // this form from the DOM, we'll mark it as deleted and hide
-                    //     // it, then let Django handle the deleting:
-                    //     del.val('on');
-                    //     row.hide();
-                    // } else {
+                    if (del.length) {
+                        // We're dealing with an inline formset; rather than remove
+                        // this form from the DOM, we'll mark it as deleted and hide
+                        // it, then let Django handle the deleting:
+                        del.val('on');
+                        row.hide();
+                    } else {
                         row.remove();
                         // Update the TOTAL_FORMS form count.
                         // Also update names and IDs for all remaining form controls so they remain in sequence:
@@ -78,7 +78,7 @@
                                 updateElementIndex($(this), options.prefix, i);
                             });
                         }
-                    // }
+                    }
                     // If a post-delete callback was provided, call it with the deleted form:
                     if (options.removed){
                         // options.removed(row);
