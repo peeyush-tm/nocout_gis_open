@@ -3309,6 +3309,11 @@ class GisWizardDeviceTypeMixin(object):
         else: # Create View
             save_text = 'Save'
 
+        service_dict = dict()
+        qs = Service.objects.all()
+        for obj in qs:
+            service_dict.update( {obj.id: {'text': '%s(%s)'%(obj.alias, obj.name), 'select': False, 'remove': False}} )
+        context['service_dict'] = json.dumps(service_dict)
         context['save_text'] = save_text
         return context
 
