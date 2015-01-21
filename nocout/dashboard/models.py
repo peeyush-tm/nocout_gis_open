@@ -154,9 +154,9 @@ class DashboardRangeStatus(models.Model):
     """
     Class to store dashboard status  count range wise.
     """
-    dashboard_name = models.CharField(max_length=100)
-    device_name = models.CharField(max_length=100)
-    created_on = models.DateTimeField(auto_now_add=False, auto_now=False)
+    dashboard_name = models.CharField(max_length=100, db_index=True)
+    device_name = models.CharField(max_length=100, db_index=True)
+    processed_for = models.DateTimeField(auto_now_add=False, auto_now=False)
     range1 = models.IntegerField(default=0)
     range2 = models.IntegerField(default=0)
     range3 = models.IntegerField(default=0)
@@ -212,9 +212,9 @@ class DashboardSeverityStatus(models.Model):
     """
     Class to store dashboard sector status count severity wise.
     """
-    dashboard_name = models.CharField(max_length=100)
-    sector_name = models.CharField(max_length=100)
-    created_on = models.DateTimeField(auto_now_add=False, auto_now=False)
+    dashboard_name = models.CharField(max_length=100, db_index=True)
+    sector_name = models.CharField(max_length=100, db_index=True)
+    processed_for = models.DateTimeField(auto_now_add=False, auto_now=False)
     warning = models.IntegerField(default=0)
     critical = models.IntegerField(default=0)
     ok = models.IntegerField(default=0)
