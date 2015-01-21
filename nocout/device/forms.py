@@ -7,12 +7,14 @@ from django.forms.models import inlineformset_factory,  BaseInlineFormSet
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
 from service.models import Service, ServiceDataSource
-import pyproj
-# commented because of goes package is not supported for python 2.7 on centos 6.5
-from shapely.geometry import Polygon, Point
-from shapely.ops import transform
-# commented because of goes package is not supported for python 2.7 on centos 6.5
-from functools import partial
+
+# # commented because of goes package is not supported for python 2.7 on centos 6.5
+# import pyproj
+# from shapely.geometry import Polygon, Point
+# from shapely.ops import transform
+# # commented because of goes package is not supported for python 2.7 on centos 6.5
+# from functools import partial
+
 from django.forms.util import ErrorList
 from nocout.utils import logged_in_user_organizations
 import re
