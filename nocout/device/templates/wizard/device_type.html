@@ -71,7 +71,7 @@
     {% block content_js %}
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
-        <script type="text/javascript" src={% static "js/jquery.formset.js" %}></script>
+        <script type="text/javascript" src={% static "js/jquery.device_type_mapping_formset.js" %}></script>
     {% endblock %}
     <script>
         $(document).ready(function(){
@@ -103,6 +103,8 @@
         var dts_value = []
         var dts_value = $('form input[type="hidden"][id|="id_dts"][name|="dts"][name$="id"][value]')
 
+        ser_dict = {{ service_dict|safe }}
+
         // if service is already selected
         if ($("#id_service").find("option:selected").val()){
             var service = $("form").find(".row").find("#id_service").slice(dts_value.length)
@@ -112,6 +114,7 @@
 
               get_attribute_of_service(service_id, parameter)
             });
+            update_service();    // remove already selected services
         }
 
         // if service is changed by the user
@@ -120,6 +123,7 @@
             var parameter = $(this).parent(".row .inline").find("#id_parameter")
 
             get_attribute_of_service(service_id, parameter)
+            update_service();    // remove already selected services
         });
 
         function get_attribute_of_service(service_id, parameter){
@@ -147,6 +151,42 @@
 
                 return false;
             }
+        }
+
+        function update_service(){
+            var result = jQuery.extend(true, {}, ser_dict);
+            selector = $("form").find(".row").find("#id_service");
+            var exclude = selector.find('select option:selected');
+            exclude.each(function(index){
+                var val = exclude[index].value;
+                if (val != ""){
+                    result[val].select = false
+                    result[val].remove = true
+                }
+            });
+
+            selector.each(function(){
+                var final_result = jQuery.extend(true, {}, result);
+                var service_id = $(this).find('select option:selected').val()
+                if (service_id != null){
+                    final_result[service_id].select = true
+                    final_result[service_id].remove = false
+                }
+                opt_array = '';
+                for(var key in final_result) {
+                    if (!final_result[key].remove){
+                        if (final_result[key].select){
+                            opt_array += "<option value="+key+" selected='selected'>"+ final_result[key].text +"</option>";
+                        }
+                        else{
+                            opt_array += "<option value="+key+">"+ final_result[key].text +"</option>";
+                        }
+                    }
+                }
+
+                $(this).find('select option').remove();
+                $(this).find('select').html(opt_array);
+            });
         }
 
     </script>
