@@ -307,6 +307,20 @@ function nocoutPerfLib() {
                                         service_tabs_data += '<div id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_bottom_table"></div></div></div>';
                                     }
                                     count++;
+
+
+                                    // if (is_first_tab == 1 && count == 0) {
+                                    //     active_tab_id = value.name;
+                                    //     active_tab_content_dom_id = value.name + "_" + device_services_tab[i] + '_block';
+                                    //     active_tab_url = "/" + value.url;
+                                    //     count++;
+                                    //     service_tabs += '<li class="active" style="' + li_style + '"><a href="#' + value.name + "_" + device_services_tab[i] + '_block" url="' + value.url + '" id="' + value.name + '_tab" data-toggle="tab" style="' + li_a_style + '">' + value.title + '</a></li>';
+                                    //     service_tabs_data += '<div class="tab-pane active" id="' + value.name + "_" + device_services_tab[i] + '_block"><div align="center" id="last_updated_' + value.name + "_" + device_services_tab[i] + '_block"></div><div class="chart_container"><div id="' + value.name + '_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="' + value.name + '_bottom_table"></div></div></div>';
+                                    // } else {
+                                    //     service_tabs += '<li class="" style="' + li_style + '"><a href="#' + value.name + "_" + device_services_tab[i] + '_block" url="' + value.url + '" id="' + value.name + '_tab" data-toggle="tab" style="' + li_a_style + '">' + value.title + '</a></li>';
+                                    //     service_tabs_data += '<div class="tab-pane" id="' + value.name + "_" + device_services_tab[i] + '_block"><div align="center" id="last_updated_' + value.name + "_" + device_services_tab[i] + '_block"></div><div class="chart_container" style="width:100%;"><div id="' + value.name + '_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="' + value.name + '_bottom_table"></div></div></div>';
+                                    // }
+
                                 });
 
                                 service_tabs += '</ul></div>';

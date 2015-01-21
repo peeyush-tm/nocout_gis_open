@@ -26,6 +26,7 @@ def main(**configs):
 			collections = db.collection_names()
 		except Exception as e:
 			print e
+			continue
 		end_time =datetime.today() + timedelta(days=-2)
 		#start_time =datetime.today() + datetime.timedelta(days=-2)
 		#start_epoch = int(time.mktime(start_time.timetuple()))

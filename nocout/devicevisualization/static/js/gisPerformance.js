@@ -741,7 +741,7 @@ function GisPerformance() {
                                         "info" : bs_object.data.param.base_station ? bs_object.data.param.base_station : [],
                                         "antenna_height" : bs_object.data.antenna_height
                                     },
-                                    sect_height = sector_marker ? sector_marker.antenna_height : 0;
+                                    sect_height = sector_marker ? sector_marker.antenna_height : sector_polygon.antenna_height;
 
 
                                 startEndObj["nearEndLat"] = bs_lat;

@@ -1153,7 +1153,7 @@ class Get_Service_Status(View):
             performance_data_query_set = NetworkStatus.objects.filter(device_name=inventory_device_name,
                                                             service_name=service_name,
                                                             data_source=service_data_source_type,
-            )
+            ).using(alias=inventory_device_machine_name)
 
         elif "rf" == service_name and "rf" == service_data_source_type:
             performance_data_query_set = None
@@ -1165,29 +1165,31 @@ class Get_Service_Status(View):
             performance_data_query_set = Status.objects.filter(device_name=inventory_device_name,
                                                      service_name=service_name,
                                                      data_source=service_data_source_type,
-            )
+            ).using(alias=inventory_device_machine_name)
 
         elif '_invent' in service_name:
             performance_data_query_set = InventoryStatus.objects.filter(device_name=inventory_device_name,
                                                               service_name=service_name,
                                                               data_source=service_data_source_type
-            )
+            ).using(alias=inventory_device_machine_name)
 
         elif '_kpi' in service_name:
             performance_data_query_set = UtilizationStatus.objects.filter(device_name=inventory_device_name,
                                                               service_name=service_name,
                                                               data_source=service_data_source_type
-            )
+            ).using(alias=inventory_device_machine_name)
 
         else:
             performance_data_query_set = ServiceStatus.objects.filter(device_name=inventory_device_name,
                                                             service_name=service_name,
                                                             data_source=service_data_source_type,
-            )
+            ).using(alias=inventory_device_machine_name)
 
         if performance_data_query_set:
-            performance_data = nocout_utils.nocout_query_results(query_set=performance_data_query_set,
-                                                                 using=inventory_device_machine_name)
+            performance_data = performance_data_query_set #.using(alias=inventory_device_machine_name)
+            #log.debug(performance_data)
+                                                           #nocout_utils.nocout_query_results(query_set=performance_data_query_set,
+                                                           #      using=inventory_device_machine_name)
             try:
                 current_value = self.formulate_data(performance_data[0].current_value,
                                                     service_data_source_type)
@@ -1384,8 +1386,8 @@ class Get_Service_Type_Performance_Data(View):
                                                            # service_name=service_name,
                                                            data_source='topology',  #service_data_source_type,
                                                            sys_timestamp__gte=start_date,
-                                                           sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name)
+                                                           sys_timestamp__lte=end_date)#.using(
+                    #alias=inventory_device_machine_name)
                 result = self.get_topology_result(performance_data,
                                                   dr_ip=dr_device.ip_address,
                                                   technology=technology,
@@ -1396,8 +1398,8 @@ class Get_Service_Type_Performance_Data(View):
                                                            # service_name=service_name,
                                                            data_source='topology',  #service_data_source_type,
                                                            sys_timestamp__gte=start_date,
-                                                           sys_timestamp__lte=end_date).using(
-                    alias=inventory_device_machine_name)
+                                                           sys_timestamp__lte=end_date)#.using(
+                    #alias=inventory_device_machine_name)
 
                 result = self.get_topology_result(performance_data,
                                                   technology=technology,
@@ -1834,8 +1836,8 @@ class Get_Service_Type_Performance_Data(View):
                 if data.avg_value:
                     try:
                         ##in between 5 minutes the bs result will come before ss result
-                        valid_end_time = data.sys_timestamp
-                        valid_start_time = data.sys_timestamp - 300
+                        valid_end_time = data.sys_timestamp + 30 #30 seconds buffer added
+                        valid_start_time = data.sys_timestamp - 330 #30 seconds buffer added
                         ##in between 5 minutes the bs result will come before ss result
                         bs_lat = performance_data_bs.filter(sys_timestamp__gte=valid_start_time,
                                                             sys_timestamp__lte=valid_end_time
@@ -2618,12 +2620,13 @@ def device_current_status(device_object):
         device_name=inventory_device_name,
         service_name='ping',
         data_source__in=['pl', 'rta']
-    ).values('age', 'severity', 'current_value', 'sys_timestamp', 'data_source')
+    ).using(alias=inventory_device_machine_name).values('age', 'severity', 'current_value', 'sys_timestamp', 'data_source')
 
-    device_nms_uptime = nocout_utils.nocout_query_results(
-        query_set=device_nms_uptime_query_set,
-        using=inventory_device_machine_name
-    )
+    device_nms_uptime = device_nms_uptime_query_set
+    #nocout_utils.nocout_query_results(
+    #    query_set=device_nms_uptime_query_set,
+    #    using=inventory_device_machine_name
+    #)
     pl_value = None
     pl_age = None
 
@@ -2677,12 +2680,13 @@ def device_last_down_time(device_object):
                 data_source='pl',
                 current_value=100,
                 severity__in=['down']
-            ).values('age', 'severity', 'current_value', 'sys_timestamp')
+            ).using(alias=inventory_device_machine_name).values('age', 'severity', 'current_value', 'sys_timestamp')
 
-    device_last_down = nocout_utils.nocout_query_results(
-                query_set=device_last_down_query_set,
-                using=inventory_device_machine_name
-            )
+    device_last_down = device_last_down_query_set
+            #nocout_utils.nocout_query_results(
+            #    query_set=device_last_down_query_set,
+            #    using=inventory_device_machine_name
+            #)
 
     if device_last_down and device_last_down.count():
         last_down_data = device_last_down[0]
@@ -2697,7 +2701,7 @@ def device_last_down_time(device_object):
                     device_name=inventory_device_name,
                     service_name='ping',
                     data_source='pl',
-                ).order_by('sys_timestamp')[0]
+                ).using(alias=inventory_device_machine_name).order_by('sys_timestamp')[0]
             age = float(always_up.sys_timestamp)
         except:
             pass

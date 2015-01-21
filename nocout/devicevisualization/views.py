@@ -1561,7 +1561,8 @@ class GISPerfData(View):
                     bs_dict['message'] = "Successfully fetched performance data."
                     performance_data.append(bs_dict)
         except Exception as e:
-            logger.error("Last Exception - ", e.message)
+            logger.error("Last Exception :")
+            logger.error(e)
             performance_data = {'message': "No Base Station to fetch performance data."}
 
         return HttpResponse(json.dumps(eval(str(performance_data))))
@@ -1686,10 +1687,11 @@ class GISPerfData(View):
         performance_data['pl'] = ""
         performance_data['perf_value'] = ""
         performance_data['icon'] = ""
+        performance_data['perf_info'] = ''
         try:
             performance_data['perf_info'] = self.get_device_info(device, machine_name)
         except Exception as e:
-            logger.error(e.message)
+            logger.error(e)
 
         # freeze time (data fetched from freeze time to latest time)
         freeze_time = self.request.GET.get('freeze_time', '0')
@@ -1894,7 +1896,7 @@ class GISPerfData(View):
                                 image_partial = str(icon_setting[icon_key])
                                 break
                 except Exception as e:
-                    logger.exception(e.message)
+                    #logger.exception(e.message)
                     continue
 
         # image url
@@ -1946,7 +1948,7 @@ class GISPerfData(View):
                                 image_partial = str(icon_setting[icon_key])
                                 break
                 except Exception as e:
-                    logger.exception(e.message)
+                    #logger.exception(e.message)
                     continue
 
         # image url
@@ -2003,18 +2005,19 @@ class GISPerfData(View):
 
         # connected bs ip
         connected_bs_ip = ""
-        try:
-            # if bs_connected_ip not exist in topology than get it from gis inventory
-            connected_bs_ip = Topology.objects.filter(connected_device_ip=device_obj.ip_address)
-            if connected_bs_ip:
-                connected_bs_ip = connected_bs_ip[0].ip_address
-            elif not connected_bs_ip:
-                substation = SubStation.objects.filter(device=device_obj)[0]
-                connected_bs_ip = Circuit.objects.get(sub_station=substation).sector.sector_configured_on.ip_address
-            else:
-                pass
-        except Exception as e:
-            logger.error("Sub station is not connected to any Base Station.", e.message)
+        #try:
+        #    # if bs_connected_ip not exist in topology than get it from gis inventory
+        #    connected_bs_ip = Topology.objects.filter(connected_device_ip=device_obj.ip_address)
+        #    if connected_bs_ip:
+        #        connected_bs_ip = connected_bs_ip[0].ip_address
+        #    elif not connected_bs_ip:
+        #        substation = SubStation.objects.filter(device=device_obj)[0]
+        #        connected_bs_ip = Circuit.objects.get(sub_station=substation).sector.sector_configured_on.ip_address
+        #    else:
+        #        pass
+        #except Exception as e:
+        #    logger.error(e)
+        #    logger.error("Sub station is not connected to any Base Station.")
 
         # is device is a substation device than add static inventory parameters in list
         if is_static:
@@ -2115,7 +2118,8 @@ class GISPerfData(View):
                 try:
                     ss_sector_frequency = substation.circuit_set.all()[0].sector.frequency.value
                 except Exception as e:
-                    logger.error("SS Sector Frequency not exist. Exception: ", e.message)
+                    logger.error("SS Sector Frequency not exist. Exception:")
+                    pass
 
                 # antenna height
                 antenna_height = ""
@@ -2432,21 +2436,6 @@ class GISPerfData(View):
                 device_info.append(perf_info)
             except Exception as e:
                 logger.info("Something wrong with formula. Exception: ", e.message)
-
-            try:
-                perf_info = {
-                    "name": 'session_uptime',
-                    "title": title,
-                    "show": show_gis,
-                    "url": "performance/service/" + service_name + "/service_data_source/" + perf[
-                        'data_source'].strip() + "/device/" + str(
-                        device_id) + "?start_date=&end_date=",
-                    "value": eval(str(formula) + "(" + str(perf['current_value']) + ")") if formula
-                    else perf['current_value'],
-                }
-            except Exception as e:
-                logger.info("Something wrong with 'perf_info'. Exception: ", e.message)
-
         return device_info
 
     def sanatize_datasource(self, data_source, service_name):
@@ -2487,7 +2476,9 @@ class GISPerfData(View):
 
                 show_gis = SERVICE_DATA_SOURCE[key_name]['show_gis']
             except Exception as e:
-                logger.info("Something wrong with fetching data sources information. Exception: ", e.message)
+                #logger.info("Something wrong with fetching data sources information. Exception")
+                #logger.info(e)
+                pass
 
             return True, name, title, show_gis
         return False, False, False, 0
@@ -2935,7 +2926,8 @@ class GISPerfData(View):
             else:
                 device_frequency = ""
         except Exception as e:
-            logger.error("Device frequency not exist. Exception: ", e.message)
+            logger.error("Device frequency not exist.")
+            pass
 
         return device_frequency
 

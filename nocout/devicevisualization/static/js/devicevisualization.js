@@ -73,12 +73,12 @@ if(window.location.pathname.indexOf("white_background") > -1) {
     
 }
 
-// Set Global Option for Highcharts after 1.5 seconds
+// Set globl options of highcharts after 1.5 sec of page loading
 setTimeout(function() {
     if(window.Highcharts) {
         Highcharts.setOptions({
-            global: {
-                useUTC: false
+            global : {
+                useUTC : false
             }
         });
     }
@@ -283,6 +283,28 @@ $("#resetFilters").click(function(e) {
             // gmap_self.showStateWiseData_gmap(all_devices_loki_db.data);
             networkMapInstance.updateStateCounter_gmaps();
         }
+    }
+
+    // Reset Location Search if exists
+    if($("#lat_lon_search").val()) {
+        $("#lat_lon_search").val("");
+    }
+    if(lastSearchedPt && lastSearchedPt.map) {
+        lastSearchedPt.setMap(null);
+        lastSearchedPt = {};
+    }
+
+    if($("#google_loc_search").val()) {
+        $("#google_loc_search").val("");
+    }
+
+    if(place_markers && place_markers.length > 0) {
+        for(var i=0;i<place_markers.length;i++) {
+            if(place_markers[i] && place_markers[i].map) {
+                place_markers[i].setMap(null);
+            }
+        }
+        place_markers = [];
     }
 });
 
