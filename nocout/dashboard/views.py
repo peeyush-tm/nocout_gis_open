@@ -894,9 +894,9 @@ class SectorCapacityMixin(object):
 
         chart_series = []
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
-        tech_qs = DashboardSeverityStatusTimely.objects.filter(dashboard_name=dashboard_name, sector_name__in=user_sector.values_list('name', flat=True)).order_by('-created_on')
+        tech_qs = DashboardSeverityStatusTimely.objects.filter(dashboard_name=dashboard_name, sector_name__in=user_sector.values_list('name', flat=True)).order_by('-processed_for')
         if tech_qs.exists():
-            qs = tech_qs.filter(created_on=tech_qs[0].created_on)
+            qs = tech_qs.filter(processed_for=tech_qs[0].processed_for)
             range_counter = qs.aggregate(Normal=Sum('ok'), Needs_Augmentation=Sum('warning'),
                                         Stop_Provisioning=Sum('critical'), Unknown=Sum('unknown'))
 
@@ -958,9 +958,9 @@ class SalesOpportunityMixin(object):
         user_sector = organization_sectors(organization, technology)
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
-        tech_qs = DashboardRangeStatusTimely.objects.filter(dashboard_name=dashboard_name, device_name__in=user_sector.values_list('name', flat=True)).order_by('-created_on')
+        tech_qs = DashboardRangeStatusTimely.objects.filter(dashboard_name=dashboard_name, device_name__in=user_sector.values_list('name', flat=True)).order_by('-processed_for')
         if tech_qs.exists():
-            qs = tech_qs.filter(created_on=tech_qs[0].created_on)
+            qs = tech_qs.filter(processed_for=tech_qs[0].processed_for)
             range_counter = qs.aggregate(range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
                                 range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
                                 range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
@@ -1032,14 +1032,14 @@ def get_gauge_chart_status_data(organizations, packet_loss, down, temperature, t
         }))
 
 
-    dashboard_status_dict = DashboardRangeStatusTimely.objects.order_by('-created_on').filter(
+    dashboard_status_dict = DashboardRangeStatusTimely.objects.order_by('-processed_for').filter(
         dashboard_name=dashboard_status_name,
         device_name__in=sector_devices
     )
 
     if dashboard_status_dict.exists():
-        created_on = dashboard_status_dict[0].created_on
-        dashboard_status_dict = dashboard_status_dict.filter(created_on=created_on).aggregate(Sum('range1'), Sum('range2'), Sum('range3'), Sum('range4'), Sum('range5'), Sum('range6'), Sum('range7'), Sum('range8'), Sum('range9'), Sum('range10'), Sum('unknown'))
+        processed_for = dashboard_status_dict[0].processed_for
+        dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(Sum('range1'), Sum('range2'), Sum('range3'), Sum('range4'), Sum('range5'), Sum('range6'), Sum('range7'), Sum('range8'), Sum('range9'), Sum('range10'), Sum('unknown'))
 
     count = sum(dashboard_status_dict.values())
 
