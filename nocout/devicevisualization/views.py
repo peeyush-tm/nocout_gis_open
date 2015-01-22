@@ -1603,12 +1603,14 @@ class GISPerfData(View):
         pl_dict = dict()
         pl_dict['name'] = "pl"
         pl_dict['show'] = 1
+        pl_dict['url'] = "performance/service/ping/service_data_source/pl/device/" + str(bh_device.id) + "?start_date=&end_date=",
         pl_dict['title'] = "Packet Drop"
 
         # backhaul rta dictionary
         rta_dict = dict()
         rta_dict['name'] = "rta"
         rta_dict['show'] = 1
+        rta_dict['url'] = "performance/service/ping/service_data_source/rta/device/" + str(bh_device.id) + "?start_date=&end_date=",
         rta_dict['title'] = "Latency"
 
         # pl
