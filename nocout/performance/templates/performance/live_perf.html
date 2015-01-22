@@ -41,7 +41,7 @@
                                 {% endif %}
                                 </span></a></li>
                     </ul>
-                    <div class="tab-content Tbl_FixHeight" style="overflow-y:auto;">
+                    <div class="tab-content" style="overflow-y:auto;">
                         <div class="tab-pane" id="{{ page_type|slugify|lower }}_wifi_block">
                             <table id="{{ page_type|slugify|lower }}_wifi_performancelistingtable" cellpadding="0"
                                    cellspacing="0" border="0"
@@ -102,8 +102,7 @@
             if (ajax_url_get_parameter == "other") {
                 var ajax_url_bh = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter;
                 dataTableInstance.createDataTable("PerformanceLiveTable", gridHeadersObj, ajax_url_bh, destroy);
-            }
-            else {
+            } else {
 
                 ///for network and cusotmer devices
                 var ajax_url_wifi = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX';
