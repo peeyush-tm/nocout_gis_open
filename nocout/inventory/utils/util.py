@@ -13,7 +13,7 @@ from django.db.models import Count, Q
 from device.models import Device, DeviceTechnology
 
 #inventory specific functions
-from inventory.models import Sector, Circuit, SubStation
+from inventory.models import Sector, Circuit, SubStation, Backhaul
 
 #nocout utilities
 from nocout.utils.util import cache_for
@@ -167,7 +167,7 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
 
 
 # @cache_for(300)
-def organization_backhaul_devices(organizations, technology = None):
+def organization_backhaul_devices(organizations, technology=None, others=False):
     """
     To result back the all the network devices from the respective organization..
 
@@ -177,12 +177,33 @@ def organization_backhaul_devices(organizations, technology = None):
     :return list of network devices
     """
 
-    return  Device.objects.filter(
-                                    backhaul__isnull=False,
-                                    is_added_to_nms=1,
-                                    is_deleted=0,
-                                    organization__in= organizations
+    backhaul_devices = Device.objects.filter(
+                                backhaul__isnull=False,
+                                is_added_to_nms=1,
+                                is_deleted=0,
+                                organization__in=organizations
     )
+
+
+    if others:
+        backhaul_objects = Backhaul.objects.filter(bh_configured_on_id__in=backhaul_devices.values_list('id', flat=True))
+
+        backhaul_devices = Device.objects.filter(
+            ~Q(id__in=backhaul_devices.values_list('id', flat=True)),
+            (
+                Q(id__in=backhaul_objects.filter(pop__isnull=False).values_list('pop', flat=True))
+                |
+                Q(id__in=backhaul_objects.filter(aggregator__isnull=False).values_list('aggregator', flat=True))
+                |
+                Q(id__in=backhaul_objects.filter(bh_switch__isnull=False).values_list('bh_switch', flat=True))
+            ),
+            is_added_to_nms=1,
+            is_deleted=0,
+            organization__in=organizations
+        )
+
+
+    return backhaul_devices.annotate(dcount=Count('id'))
 
 
 @cache_for(300)
