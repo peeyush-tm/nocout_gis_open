@@ -3513,17 +3513,34 @@ function devicePlottingClass_gmap() {
 			}
 
 			if(clickedType == "base_station" && contentObject.bhInfo) {
-				var severity_symbol = "";
-				if(contentObject.bhSeverity) {
-					var bhSeverity = contentObject.bhSeverity ? $.trim(contentObject.bhSeverity.toLowerCase()) : "";
-					if(red_status_array.indexOf(bhSeverity)  > -1) {
-						severity_symbol = "<i class='fa fa-circle text-danger' style='margin-left:10px;'>&nbsp;</i>";
-					} else if(green_status_array.indexOf(bhSeverity)  > -1) {
-						severity_symbol = "<i class='fa fa-circle text-success' style='margin-left:10px;'>&nbsp;</i>";
-					} else if(orange_status_array.indexOf(bhSeverity)  > -1) {
-						severity_symbol = "<i class='fa fa-circle text-warning' style='margin-left:10px;'>&nbsp;</i>";
-					}
+				var severity_symbol = "",
+					bhSeverity = contentObject.bhSeverity ? $.trim(contentObject.bhSeverity.toLowerCase()) : "",
+					severity_title = bhSeverity ? bhSeverity.toUpperCase() : "",
+					txt_color = "",
+					fa_icon_class = "fa-circle";
+
+				if(bhSeverity) {
+					if(green_status_array.indexOf(bhSeverity)  > -1) {
+				        txt_color = green_color ? green_color : "#468847";
+				        fa_icon_class = "fa-check-circle";
+				    } else if(red_status_array.indexOf(bhSeverity)  > -1) {
+				        txt_color = red_color ? red_color : "#b94a48";
+				        fa_icon_class = "fa-times-circle";
+				    } else if(orange_status_array.indexOf(bhSeverity)  > -1) {
+				        txt_color = orange_color ? orange_color : "#f0ad4e";
+				        fa_icon_class = "fa-warning";
+				    } else if(down_status_array.indexOf(bhSeverity)  > -1) {
+				        txt_color = red_color ? red_color : "#b94a48";
+				        fa_icon_class = "fa-warning";
+				    } else {
+				        // pass
+				    }
 				}
+				
+				severity_symbol = '';
+			    severity_symbol += '<i title = "'+severity_title+'" class="fa '+fa_icon_class+'" ';
+			    severity_symbol += 'style="color:'+txt_color+';vertical-align: middle;margin-left:5px;">&nbsp;</i>';
+
 				infoTable += "<tr><td colspan='2'><b>Backhaul Info "+severity_symbol+"</b></td></tr>";
 
 				// Rearrange BS tootip info as per actual sequence
@@ -3535,10 +3552,9 @@ function devicePlottingClass_gmap() {
 					}
 				}
 
-				// if(contentObject.bhInfo_polled) {
-
 				var backend_BH_polled_info = contentObject.bhInfo_polled ? contentObject.bhInfo_polled : [],
 					actual_polled_params = rearrangeTooltipArray(bh_toolTip_polled,backend_BH_polled_info);
+
 				for(var i=0;i<actual_polled_params.length;i++) {
 					var text_class = "",
 						url = "";
@@ -3549,7 +3565,6 @@ function devicePlottingClass_gmap() {
 						infoTable += "<tr><td class='"+text_class+"' url='"+url+"'>"+actual_polled_params[i].title+"</td><td>"+actual_polled_params[i].value+"</td></tr>";
 					}
 				}
-				// }
 			}
 
 			infoTable += "</tbody></table>";

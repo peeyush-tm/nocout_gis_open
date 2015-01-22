@@ -6078,7 +6078,7 @@ def bulk_upload_error_logger(row=None, sheet=None):
 
     # errors
     errors = ""
-
+    
     # ************************************ DEVICES CHECK ***********************************
     if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs']:
         # check for base station device
@@ -9793,13 +9793,13 @@ def get_selected_ptp_inventory(base_station, sector):
 
             # state
             try:
-                ptp_row['State'] = State.objects.get(pk=base_station.state).state_name
+                ptp_row['State'] = base_station.state.state_name
             except Exception as e:
                 logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
 
             # city
             try:
-                ptp_row['City'] = City.objects.get(pk=base_station.city).city_name
+                ptp_row['City'] = base_station.city.city_name
             except Exception as e:
                 logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -10201,13 +10201,13 @@ def get_selected_ptp_inventory(base_station, sector):
 
             # ss city
             try:
-                ptp_row['SS City'] = City.objects.get(pk=sub_station.city).city_name
+                ptp_row['SS City'] = sub_station.city.city_name
             except Exception as e:
                 logger.info("SS City not exist for sub station ({}).".format(sub_station.name, e.message))
 
             # ss state
             try:
-                ptp_row['SS State'] = State.objects.get(pk=sub_station.state).state_name
+                ptp_row['SS State'] = sub_station.state.state_name
             except Exception as e:
                 logger.info("SS State not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -10578,13 +10578,13 @@ def get_selected_pmp_inventory(base_station, sector):
 
             # state
             try:
-                pmp_bs_row['State'] = State.objects.get(pk=base_station.state).state_name
+                pmp_bs_row['State'] = base_station.state.state_name
             except Exception as e:
                 logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
 
             # city
             try:
-                pmp_bs_row['City'] = City.objects.get(pk=base_station.city).city_name
+                pmp_bs_row['City'] = base_station.city.city_name
             except Exception as e:
                 logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -10911,7 +10911,7 @@ def get_selected_pmp_inventory(base_station, sector):
 
             # mac address
             try:
-                pmp_sm_row['MAC'] = State.objects.get(pk=base_station.state).state_name
+                pmp_sm_row['MAC'] = sub_station.mac_address
             except Exception as e:
                 logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -11225,13 +11225,13 @@ def get_selected_wimax_inventory(base_station, sector):
             # *********************************** Near End (Wimax BS) *********************************
             # state
             try:
-                wimax_bs_row['State'] = State.objects.get(pk=base_station.state).state_name
+                wimax_bs_row['State'] = base_station.state.state_name
             except Exception as e:
                 logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
 
             # city
             try:
-                wimax_bs_row['City'] = City.objects.get(pk=base_station.city).city_name
+                wimax_bs_row['City'] = base_station.city.city_name
             except Exception as e:
                 logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
 
