@@ -182,7 +182,7 @@ def organization_backhaul_devices(organizations, technology=None, others=False):
                                 is_added_to_nms=1,
                                 is_deleted=0,
                                 organization__in=organizations
-    )
+    ).prefetch_related('backhaul')
 
 
     if others:
@@ -210,7 +210,8 @@ def organization_backhaul_devices(organizations, technology=None, others=False):
 def filter_devices(organizations=[],
                    data_tab=None,
                    page_type="customer",
-                   required_value_list=[]
+                   required_value_list=[],
+                   other_bh=False
                    ):
 
     """
@@ -241,7 +242,9 @@ def filter_devices(organizations=[],
         device_list = organization_network_devices(organizations, device_technology_id
         ).values(*device_value_list)
     elif page_type == "other":
-        device_list = organization_backhaul_devices(organizations).values(*device_value_list)
+        device_list = organization_backhaul_devices(organizations,
+                                                    technology=None,
+                                                    others=other_bh).values(*device_value_list)
     else:
         device_list = []
     # get the devices in an organisation which are added for monitoring
