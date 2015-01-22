@@ -6078,7 +6078,7 @@ def bulk_upload_error_logger(row=None, sheet=None):
 
     # errors
     errors = ""
-
+    
     # ************************************ DEVICES CHECK ***********************************
     if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs']:
         # check for base station device
