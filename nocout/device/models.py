@@ -1,10 +1,14 @@
 from django.db import models
+from django.db.models.signals import post_save
+
 from machine.models import Machine
 from organization.models import Organization
 from site_instance.models import SiteInstance
 from service.models import Service, ServiceParameters, ServiceDataSource
 from mptt.models import MPTTModel
 from datetime import datetime
+
+from device import signals as device_signals
 
 
 # ************************************ Device Inventory**************************************
@@ -229,6 +233,7 @@ class DeviceTypeFieldsValue(models.Model):
     device_id = models.IntegerField()
 
 
+
 class DeviceSyncHistory(models.Model):
     status = models.IntegerField('Status', null=True, blank=True)
     message = models.TextField('NMS Message', null=True, blank=True)
@@ -245,3 +250,8 @@ class DeviceSyncHistory(models.Model):
 
     def __unicode__(self):
         return self.status
+
+#********************* Connect Device Signals *******************
+
+post_save.connect(device_signals.update_device_type_service, sender=DeviceTypeService)
+
