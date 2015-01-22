@@ -309,6 +309,8 @@ def calculate_hourly_severity_status(now):
                 unknown=timely_severity_status.unknown
             )
             hourly_severity_status_list.append(hourly_severity_status)
+            dashboard_name = timely_severity_status.dashboard_name
+            sector_name = timely_severity_status.sector_name
 
     bulk_update_create.delay(hourly_severity_status_list, action='create', model=DashboardSeverityStatusHourly)
 
@@ -344,6 +346,8 @@ def calculate_hourly_range_status(now):
                 unknown=timely_range_status.unknown
             )
             hourly_range_status_list.append(hourly_range_status)
+            dashboard_name = timely_range_status.dashboard_name
+            device_name = timely_range_status.device_name
 
     bulk_update_create.delay(hourly_range_status_list, action='create', model=DashboardRangeStatusHourly)
 
@@ -389,7 +393,7 @@ def calculate_daily_main_dashboard():
 def calculate_daily_severity_status(now):
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by('dashboard_name',
-            'sector_name').filter(processed_for__day=previous_day,
+            'sector_name').filter(processed_for__day=previous_day.day,
             processed_for__month=previous_day.month, processed_for__year=previous_day.year)
     daily_severity_status_list = []
     daily_severity_status = None
@@ -417,10 +421,12 @@ def calculate_daily_severity_status(now):
 
 
 def calculate_daily_range_status(now):
-    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
+    tzinfo = timezone.get_current_timezone()
+    today = timezone.datetime(now.year, now.month, now.day, tzinfo=tzinfo)
+    previous_day = now - timezone.timedelta(days=1)
+    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo)
     last_day_hourly_range_status = DashboardRangeStatusHourly.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__day=previous_day,
-            processed_for__month=previous_day.month, processed_for__year=previous_day.year)
+            'device_name').filter(processed_for__gte=yesterday, processed_for__lt=today)
 
     daily_range_status_list = []
     daily_range_status = None
@@ -433,7 +439,7 @@ def calculate_daily_range_status(now):
             daily_range_status = DashboardRangeStatusDaily(
                 dashboard_name=hourly_range_status.dashboard_name,
                 device_name=hourly_range_status.device_name,
-                processed_for=now,
+                processed_for=yesterday,
                 range1=hourly_range_status.range1,
                 range2=hourly_range_status.range2,
                 range3=hourly_range_status.range3,
@@ -447,6 +453,8 @@ def calculate_daily_range_status(now):
                 unknown=hourly_range_status.unknown
             )
             daily_range_status_list.append(daily_range_status)
+            dashboard_name = hourly_range_status.dashboard_name
+            device_name = hourly_range_status.device_name
 
     bulk_update_create.delay(daily_range_status_list, action='create', model=DashboardRangeStatusDaily)
 
@@ -457,9 +465,11 @@ def calculate_daily_range_status(now):
 def calculate_weekly_main_dashboard():
     '''
     '''
+    tzinfo = timezone.get_current_timezone()
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
-    first_day = previous_day - timezone.timedelta(day.weekday()) # First Day of Week [Date of Monday]
-    first_day = timezone.datetime(first_day.year, first_day.month, first_day.day) # Reset to 12 o'clock
+    previous_day = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
+    first_day = previous_day - timezone.timedelta(previous_day.weekday()) # First Day of Week [Date of Monday]
+    first_day = timezone.datetime(first_day.year, first_day.month, first_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
 
     calculate_weekly_severity_status(previous_day, first_day)
     calculate_weekly_range_status(previous_day, first_day)
@@ -506,42 +516,37 @@ def calculate_weekly_severity_status(day, first_day):
 
 def calculate_weekly_range_status(day, first_day):
     last_week_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__year=day.year, processed_for__month=day.month, processed_for__day=day.day)
+            'device_name').filter(processed_for=day)
 
     weekly_range_status_list = []
     weekly_range_status = None
-    dashboard_name = ''
-    device_name = ''
     is_monday = True if day.weekday() == 0 else False
     for daily_range_status in last_week_daily_range_status:
-        if dashboard_name == daily_range_status.dashboard_name and device_name == daily_range_status.device_name:
-            weekly_range_status = sum_range_status(weekly_range_status, daily_range_status)
+        if is_monday:
+            weekly_range_status = DashboardRangeStatusWeekly(
+                dashboard_name=daily_range_status.dashboard_name,
+                device_name=daily_range_status.device_name,
+                processed_for=first_day,
+                range1=daily_range_status.range1,
+                range2=daily_range_status.range2,
+                range3=daily_range_status.range3,
+                range4=daily_range_status.range4,
+                range5=daily_range_status.range5,
+                range6=daily_range_status.range6,
+                range7=daily_range_status.range7,
+                range8=daily_range_status.range8,
+                range9=daily_range_status.range9,
+                range10=daily_range_status.range10,
+                unknown=daily_range_status.unknown
+            )
         else:
-            if is_monday:
-                weekly_range_status = DashboardRangeStatusWeekly(
-                    dashboard_name=daily_range_status.dashboard_name,
-                    device_name=daily_range_status.device_name,
-                    processed_for=first_day,
-                    range1=daily_range_status.range1,
-                    range2=daily_range_status.range2,
-                    range3=daily_range_status.range3,
-                    range4=daily_range_status.range4,
-                    range5=daily_range_status.range5,
-                    range6=daily_range_status.range6,
-                    range7=daily_range_status.range7,
-                    range8=daily_range_status.range8,
-                    range9=daily_range_status.range9,
-                    range10=daily_range_status.range10,
-                    unknown=daily_range_status.unknown
-                )
-            else:
-                weekly_range_status, created = DashboardRangeStatusWeekly.objects.get_or_create(
-                    dashboard_name=daily_range_status.dashboard_name,
-                    device_name=daily_range_status.device_name,
-                    processed_for=first_day,
-                )
-                weekly_range_status = sum_range_status(weekly_range_status, daily_range_status)
-            weekly_range_status_list.append(daily_range_status)
+            weekly_range_status, created = DashboardRangeStatusWeekly.objects.get_or_create(
+                dashboard_name=daily_range_status.dashboard_name,
+                device_name=daily_range_status.device_name,
+                processed_for=first_day,
+            )
+            weekly_range_status = sum_range_status(weekly_range_status, daily_range_status)
+        weekly_range_status_list.append(weekly_range_status)
 
     if is_monday:
         bulk_update_create.delay(weekly_range_status_list, action='create', model=DashboardRangeStatusWeekly)
@@ -553,53 +558,48 @@ def calculate_monthly_main_dashboard():
     """
     """
     now = timezone.now()
+    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
+    previous_day = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
+    first_day = timezone.datetime(previous_day.year, previous_day.month, 1, tzinfo=timezone.get_current_timezone())
 
     calculate_monthly_severity_status(now)
-    calculate_monthly_range_status(now)
+    calculate_monthly_range_status(previous_day, first_day)
 
 
-def calculate_monthly_range_status(now):
-    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
-    first_day = timezone.datetime(previous_day.year, previous_day.month, 1)
+def calculate_monthly_range_status(day, first_day):
     last_month_daily_range_status = DashboardRangeStatusDaily.objects.order_by('dashboard_name',
-            'device_name').filter(processed_for__month=previous_day.month,
-             processed_for__year=previous_day.year)
+            'device_name').filter(processed_for=day)
 
     monthly_range_status_list = []
     monthly_range_status = None
-    dashboard_name = ''
-    device_name = ''
-    is_first_day_of_month = True if previous_day.day == 1 else False
+    is_first_day_of_month = True if day.day == 1 else False
     for daily_range_status in last_month_daily_range_status:
-        if dashboard_name == daily_range_status.dashboard_name and device_name == daily_range_status.device_name:
+        if not is_first_day_of_month:
+            monthly_range_status, created = DashboardRangeStatusMonthly.objects.get_or_create(
+                dashboard_name=daily_range_status.dashboard_name,
+                device_name=daily_range_status.device_name,
+                processed_for=first_day
+            )
             monthly_range_status = sum_range_status(monthly_range_status, daily_range_status)
+            # monthly_range_status.save() # Save later so current process doesn't slow.
         else:
-            if not is_first_day_of_month:
-                monthly_range_status, created = DashboardRangeStatusMonthly.objects.get_or_create(
-                    dashboard_name=daily_range_status.dashboard_name,
-                    device_name=daily_range_status.device_name,
-                    processed_for=first_day
-                )
-                monthly_range_status = sum_range_status(monthly_range_status, daily_range_status)
-                # monthly_range_status.save() # Save later so current process doesn't slow.
-            else:
-                monthly_range_status = DashboardRangeStatusMonthly(
-                    dashboard_name=daily_range_status.dashboard_name,
-                    device_name=daily_range_status.device_name,
-                    processed_for=first_day,
-                    range1=daily_range_status.range1,
-                    range2=daily_range_status.range2,
-                    range3=daily_range_status.range3,
-                    range4=daily_range_status.range4,
-                    range5=daily_range_status.range5,
-                    range6=daily_range_status.range6,
-                    range7=daily_range_status.range7,
-                    range8=daily_range_status.range8,
-                    range9=daily_range_status.range9,
-                    range10=daily_range_status.range10,
-                    unknown=daily_range_status.unknown
-                )
-            monthly_range_status_list.append(monthly_range_status)
+            monthly_range_status = DashboardRangeStatusMonthly(
+                dashboard_name=daily_range_status.dashboard_name,
+                device_name=daily_range_status.device_name,
+                processed_for=first_day,
+                range1=daily_range_status.range1,
+                range2=daily_range_status.range2,
+                range3=daily_range_status.range3,
+                range4=daily_range_status.range4,
+                range5=daily_range_status.range5,
+                range6=daily_range_status.range6,
+                range7=daily_range_status.range7,
+                range8=daily_range_status.range8,
+                range9=daily_range_status.range9,
+                range10=daily_range_status.range10,
+                unknown=daily_range_status.unknown
+            )
+        monthly_range_status_list.append(monthly_range_status)
 
     if is_first_day_of_month:
         bulk_update_create.delay(monthly_range_status_list, action='create', model=DashboardRangeStatusMonthly)
