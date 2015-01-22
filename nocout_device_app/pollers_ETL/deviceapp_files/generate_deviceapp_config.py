@@ -74,7 +74,7 @@ def prepare_hosts_file():
     #except Exception, exp:
     #   logger.error('Exception in make_SS_data: ' + pformat(exp))
     # Final Devices
-    all_hosts, ipaddresses, host_attributes = make_Converter_data(ss_devices.all_hosts,
+    all_hosts, ipaddresses, host_attributes = make_Backhaul_data(ss_devices.all_hosts,
             ss_devices.ipaddresses, ss_devices.host_attributes)
     T.wimax_bs_devices, T.cambium_bs_devices = bs_devices.wimax_bs_devices, bs_devices.cambium_bs_devices
     T.radwin_bs_devices, T.radwin_ss_devices = bs_devices.radwin_bs_devices, ss_devices.radwin_ss_devices
@@ -86,8 +86,8 @@ def prepare_hosts_file():
     return T
 
 
-def make_Converter_data(all_hosts, ipaddresses, host_attributes):
-    db = mysql_conn()
+def make_Backhaul_data(all_hosts, ipaddresses, host_attributes):
+    # Query for Backhaul entities
     query = """
     select 
     DISTINCT(device_device.ip_address),
@@ -98,32 +98,39 @@ def make_Converter_data(all_hosts, ipaddresses, host_attributes):
     device_devicetype.agent_tag,
     site_instance_siteinstance.name,
     device_device.device_alias,
-    device_devicetechnology.name as techno_name
-    from device_device inner join (device_devicetechnology, device_devicetype, machine_machine, site_instance_siteinstance)
-    on (
+    device_devicetechnology.name as techno_name,
+    inventory_backhaul.bh_configured_on_id as bh_conf_id
+    from device_device 
+    inner join
+    (device_devicetechnology, device_devicetype, 
+    machine_machine, site_instance_siteinstance, inventory_backhaul)
+    on 
+    (
     device_devicetype.id = device_device.device_type and
     device_devicetechnology.id = device_device.device_technology and
     machine_machine.id = device_device.machine_id and
-    site_instance_siteinstance.id = device_device.site_instance_id
+    site_instance_siteinstance.id = device_device.site_instance_id and 
+    inventory_backhaul.bh_configured_on_id = device_device.id
     )
-    where device_device.is_deleted=0 and device_devicetype.name in 
-    ('Converter', 'PINE', 'RiCi');
+    where 
+    device_device.is_deleted=0 and 
+    device_devicetype.name in ('Switch', 'RiCi', 'PINE')
+    ;
     """
 
-    cur = db.cursor() 
-    cur.execute(query) 
-    data = cur.fetchall() 
-    # Removing duplicate entries for devices having more than one Ckt-ids
-    unq_device_data = []
-    device_ips = set(map(lambda e: e[0], data))
-    for i, e in enumerate(data):
-        if e[0] in device_ips:
-            unq_device_data.append(e)
-            device_ips.remove(e[0])
-    data = unq_device_data
-    cur.close() 
-    db.close()
-    
+    db = mysql_conn()
+    try:
+        cur = db.cursor() 
+        cur.execute(query) 
+    except Exception, exp:
+        logger.error('Backhaul devices data: ' + pformat(exp))
+    else:
+        data = cur.fetchall() 
+    finally:
+        cur.close() 
+        db.close()
+
+    # Processing backhaul configured on devices
     processed = []
     hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
     for device in data:
@@ -141,6 +148,7 @@ def make_Converter_data(all_hosts, ipaddresses, host_attributes):
             'site': str(device[6]),
             'tag_agent': str(device[5])
             }})
+
     hosts_only.close()
 
     return (all_hosts, ipaddresses, host_attributes)
@@ -486,7 +494,7 @@ def update_configuration_db(update_device_table=True, update_id=None, status=Non
             cur.close()
     except Exception, exp:
         logger.error('Sync Log Updation failed: ' + pformat(exp))
-
+    finally:
         db.close()
 
 
