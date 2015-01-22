@@ -182,7 +182,7 @@ def organization_backhaul_devices(organizations, technology=None, others=False):
                                 is_added_to_nms=1,
                                 is_deleted=0,
                                 organization__in=organizations
-    )
+    ).prefetch_related('backhaul')
 
 
     if others:
