@@ -18,40 +18,52 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
     ],
     solid_gauge_url_obj = {
         "down-all" : {
-            "url" : "/dashboard/down/all/"
+            "url" : "/dashboard/down/all/",
+            "text" : "Down"
         },
         "latency-all" : {
-            "url" : "/dashboard/latency/all/"
+            "url" : "/dashboard/latency/all/",
+            "text" : "Latency"
         },
         "packet-loss-all" : {
-            "url" : "/dashboard/packet_loss/all/"
+            "url" : "/dashboard/packet_loss/all/",
+            "text" : "Packet Drop"
         },
         "temperature-idu-wimax" : {
-            "url" : "/dashboard/temperature-idu/wimax/"
+            "url" : "/dashboard/temperature-idu/wimax/",
+            "text" : "Temperature IDU WiMAX"
         },
         "down-wimax" : {
-            "url" : "/dashboard/down/wimax/"
+            "url" : "/dashboard/down/wimax/",
+            "text" : "Down WiMAX"
         },
         "down-pmp" : {
-            "url" : "/dashboard/down/pmp/"
+            "url" : "/dashboard/down/pmp/",
+            "text" : "Down PMP"
         },
         "latency-wimax" : {
-            "url" : "/dashboard/latency/wimax/"
+            "url" : "/dashboard/latency/wimax/",
+            "text" : "Latency WiMAX"
         },
         "latency-pmp" : {
-            "url" : "/dashboard/latency/pmp/"
+            "url" : "/dashboard/latency/pmp/",
+            "text" : "Latency PMP"
         },
         "packet-loss-wimax" : {
-            "url" : "/dashboard/packet_loss/wimax/"
+            "url" : "/dashboard/packet_loss/wimax/",
+            "text" : "Packet Drop WiMAX"
         },
         "packet-loss-pmp" : {
-            "url" : "/dashboard/packet_loss/pmp/"
+            "url" : "/dashboard/packet_loss/pmp/",
+            "text" : "Packet Drop PMP"
         },
         "temperature-fan-wimax" : {
-            "url" : "/dashboard/temperature-fan/wimax/"
+            "url" : "/dashboard/temperature-fan/wimax/",
+            "text" : "Temperature Fan Wimax"
         },
         "temperature-acb-wimax" : {
-            "url" : "/dashboard/temperature-acb/wimax/"
+            "url" : "/dashboard/temperature-acb/wimax/",
+            "text" : "Temperature ACB WiMAX"
         }
     },
     pie_chart_ids = [
@@ -65,25 +77,32 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
     ],
     pie_chart_url_obj = {
         "wimax_sales_opportunity" : {
-            "url" : ""
+            "url" : "",
+            "text" : "Wimax Sales Opportunity"
         },
         "pmp_sales_opportunity" : {
-            "url" : ""
+            "url" : "",
+            "text" : "PMP Sales Opportunity"
         },
         "wimax_sector_capacity" : {
-            "url" : ""
+            "url" : "",
+            "text" : "Wimax Sector Capacity"
         },
         "pmp_sector_capacity" : {
-            "url" : ""
+            "url" : "",
+            "text" : "PMP Sector Capacity"
         },
         "wimax_backhaul_capacity" : {
-            "url" : ""
+            "url" : "",
+            "text" : "Wimax Backhaul Capacity"
         },
         "pmp_backhaul_capacity" : {
-            "url" : ""
+            "url" : "",
+            "text" : "PMP Backhaul Capacity"
         },
         "mfr_cause_code" : {
-            "url" : ""
+            "url" : "",
+            "text" : "MFR Caused Code"
         }
     },
     area_chart_ids = [
@@ -91,7 +110,8 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
     ],
     area_chart_url_obj = {
       "id_mfr_processed" : {
-        "url" : ""
+        "url" : "",
+        "text" : "MFR Processed"
       }  
     };
 
@@ -126,7 +146,12 @@ function initSpeedometerCharts_dashboard() {
     for(var i=0;i<solid_gauge_chart_ids.length;i++) {
         if($("#"+solid_gauge_chart_ids[i]).length > 0 && solid_gauge_url_obj[solid_gauge_chart_ids[i]]["url"]) {
             // Get chart
-            get_speedometer_chart(solid_gauge_url_obj[solid_gauge_chart_ids[i]]["url"],"#"+solid_gauge_chart_ids[i]);
+            get_speedometer_chart(
+                solid_gauge_url_obj[solid_gauge_chart_ids[i]]["url"],
+                "#"+solid_gauge_chart_ids[i],
+                solid_gauge_url_obj[solid_gauge_chart_ids[i]]["text"]
+
+            );
         }
     }
 }
@@ -140,7 +165,11 @@ function initPieCharts_dashboard() {
     for(var i=0;i<pie_chart_ids.length;i++) {
         if($("#"+pie_chart_ids[i]).length > 0 && pie_chart_url_obj[pie_chart_ids[i]]["url"]) {
             // Get chart
-            highcharts_piechart(pie_chart_url_obj[pie_chart_ids[i]]["url"],"#"+pie_chart_ids[i]);
+            highcharts_piechart(
+                pie_chart_url_obj[pie_chart_ids[i]]["url"],
+                "#"+pie_chart_ids[i],
+                pie_chart_url_obj[pie_chart_ids[i]]["text"]
+            );
         }
     }
 }
@@ -154,13 +183,17 @@ function initAreaCharts_dashboard() {
     for(var i=0;i<area_chart_ids.length;i++) {
         if($("#"+area_chart_ids[i]).length > 0 && area_chart_url_obj[area_chart_ids[i]]["url"]) {
             // Get chart for latency of wimax.
-            highcharts_areachart(area_chart_url_obj[area_chart_ids[i]]["url"],"#"+area_chart_ids[i]);
+            highcharts_areachart(
+                area_chart_url_obj[area_chart_ids[i]]["url"],
+                "#"+area_chart_ids[i],
+                area_chart_url_obj[area_chart_ids[i]]["text"]
+            );
         }
     }
 }
 
 // Method for pie Chart
-function highcharts_piechart(url, domElement) {
+function highcharts_piechart(url, domElement,chart_title) {
     $.ajax({
         url : url,
         type : "GET",
@@ -177,6 +210,19 @@ function highcharts_piechart(url, domElement) {
                 $(domElement).html("<h5>Dashboard Setting is not available.</h5>");
             }
         },
+        error : function(err) {
+            hideSpinner();
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: chart_title,
+                // (string | mandatory) the text inside the notification
+                text: err.statusText,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1500
+            });
+        }
     }); // ajax
 }
 /* End of method pie Chart */
@@ -263,7 +309,7 @@ function updatePieChart(chartData, domElement) {
 
 /* method for Area Spline Chart
 highcharts_areachart(url, domElement); */
-function highcharts_areachart(url, domElement) {
+function highcharts_areachart(url, domElement, chart_title) {
     $.ajax({
         url : url,
         type : "GET",
@@ -280,6 +326,19 @@ function highcharts_areachart(url, domElement) {
             } else {
                 $(domElement).html("<h5>Dashboard Setting is not available.</h5>");
             }
+        },
+        error : function(err) {
+            hideSpinner();
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: chart_title,
+                // (string | mandatory) the text inside the notification
+                text: err.statusText,
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false,
+                // Time in ms after which the gritter will dissappear.
+                time : 1500
+            });
         }
     });
 }
@@ -372,7 +431,7 @@ function updateAreaChart(chartData, domElement) {
 
 
 // function for getting speedometer charts through ajax request.
-function get_speedometer_chart(ajax_url, div_id, div_text){
+function get_speedometer_chart(ajax_url, div_id, chart_title){
 
     $.ajax({
         url : ajax_url,
@@ -385,7 +444,7 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
                 response = result;
             }
             if(response.success == 1) {
-                updateSpeedometerChart(response.data.objects, div_id, div_text);
+                updateSpeedometerChart(response.data.objects, div_id, chart_title);
             } else {
                 $(div_id).html("<h5>Dashboard Setting is not available.</h5>");
             }
@@ -394,7 +453,7 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
             hideSpinner();
             $.gritter.add({
                 // (string | mandatory) the heading of the notification
-                title: div_title,
+                title: chart_title,
                 // (string | mandatory) the text inside the notification
                 text: err.statusText,
                 // (bool | optional) if you want it to fade out on its own or just sit there
@@ -402,7 +461,7 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
                 // Time in ms after which the gritter will dissappear.
                 time : 1500
             });
-        },
+        }
     });
 }
 

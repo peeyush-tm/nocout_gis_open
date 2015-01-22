@@ -8597,11 +8597,14 @@ function devicePlottingClass_gmap() {
         	    	);
         	    	
 					ccpl_map.addPopup(toolTip_infobox);
-					// Shift label to left side of marker
-                    var current_left = $("#"+key).position().left;
-                    current_left = current_left - 125;
-                    $("#"+key).css("left",current_left+"px");
-        	    	// toolTip_infobox.updateSize();
+
+					if($("#"+key).length > 0) {
+						// Shift label to left side of marker
+	                    var current_left = $("#"+key).position().left;
+	                    current_left = current_left - 125;
+	                    $("#"+key).css("left",current_left+"px");
+	        	    	// toolTip_infobox.updateSize();
+					}
 	            } else {
 	            	toolTip_infobox = gisPerformanceClass.createInfoboxLabel(
                         labelHtml,
@@ -8644,13 +8647,16 @@ function devicePlottingClass_gmap() {
 	            	    	false
 	        	    	);
 
-						ccpl_map.addPopup(toolTip_infobox);
-						// Shift label to left side of marker
-                        var current_left = $("#"+key).position().left;
-                        current_left = current_left - 125;
-                        $("#"+key).css("left",current_left+"px");
-	        	    	// toolTip_infobox.updateSize();
 						tooltipInfoLabel[key] = toolTip_infobox;
+
+						ccpl_map.addPopup(toolTip_infobox);
+						if($("#"+key).length > 0) {
+							// Shift label to left side of marker
+	                        var current_left = $("#"+key).position().left;
+	                        current_left = current_left - 125;
+	                        $("#"+key).css("left",current_left+"px");
+                        }
+	                        
 					}
 	            } else {
 	                // If label exist for current ss

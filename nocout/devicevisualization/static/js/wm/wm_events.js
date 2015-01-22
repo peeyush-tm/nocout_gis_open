@@ -285,12 +285,14 @@ WhiteMapClass.prototype.mapIdleCondition = function() {
 
 				// Hide perf info label
 			    for (var x = 0; x < labelsArray.length; x++) {
-			        labelsArray[x].destroy();
+			        // labelsArray[x].destroy();
+			        ccpl_map.removePopup(labelsArray[x]);
 			    }
 
 			    // Hide tooltip info label
 			    for (key in tooltipInfoLabel) {
-			        tooltipInfoLabel[key].destroy();
+			        // tooltipInfoLabel[key].destroy();
+			    	ccpl_map.removePopup(tooltipInfoLabel[key]);
 			    }
 
 	            // Reset labels array 

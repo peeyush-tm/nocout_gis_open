@@ -2192,13 +2192,22 @@ function WhiteMapClass() {
 			    		/*Link color object*/
 			    		linkColor = ss_marker_obj.data.link_color;
 			    		linkColor = linkColor && linkColor != 'NA' ? linkColor : 'rgba(74,72,94,0.58)';
-			    			
-		    			// base_info["info"] = bs_ss_devices[i].data.param.base_station;
-		    			// base_info["antenna_height"] = bs_ss_devices[i].data.antenna_height;
+
 		    			// if(zoom_level > 9) {
 			    			// if(ss_marker_obj.data.show_link == 1) {
 			    				/*Create the link between BS & SS or Sector & SS*/
-						    	var ss_link_line = global_this.plotLines_wmap(startEndObj,linkColor,base_info,ss_info,sect_height,sector_array[j].sector_configured_on,ss_marker_obj.name,bs_ss_devices[i].name,bs_ss_devices[i].id,sector_array[j].sector_id);
+						    	var ss_link_line = global_this.plotLines_wmap(
+						    		startEndObj,
+						    		linkColor,
+						    		base_info,
+						    		ss_info,
+						    		sect_height,
+						    		sector_array[j].sector_configured_on,
+						    		ss_marker_obj.name,
+						    		bs_ss_devices[i].name,
+						    		bs_ss_devices[i].id,
+						    		sector_array[j].sector_id
+					    		);
 
 						    	ccpl_map.getLayersByName("Lines")[0].addFeatures([ss_link_line]);
 

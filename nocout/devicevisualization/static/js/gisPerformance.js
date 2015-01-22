@@ -390,10 +390,26 @@ function GisPerformance() {
                                 polyPathArray.push(pt);
                             }
                             
-                            var linearRing = new OpenLayers.Geometry.LinearRing(polyPoints);
-                            var geometry = new OpenLayers.Geometry.Polygon([linearRing]);
+                            try {
+                                // Update Sector Fill Color
+                                sector_polygon.style.fillColor = sector_color;
+                                // Update Sector Info
+                                sector_polygon.azimuth      =  azimuth_angle;;
+                                sector_polygon.beam_width   =  beam_width;;
+                                sector_polygon.polarisation =  orientation;;
+                                sector_polygon.radius       =  radius;
+                                // Destroy Previous Geometry
+                                sector_polygon.path = polyPathArray;
+                                sector_polygon.geometry.components[0].components = polyPathArray;
 
-                            sector_polygon.geometry = geometry;
+                            } catch(e) {
+                                // console.log(e);
+                            }
+
+                            // var linearRing = new OpenLayers.Geometry.LinearRing(polyPathArray);
+                            // var geometry = new OpenLayers.Geometry.Polygon([linearRing]);
+
+                            // sector_polygon.geometry = geometry;
 
                         } else {
                             for(var i=0;i<pointsArray.length;i++) {
@@ -609,16 +625,19 @@ function GisPerformance() {
                                             );
                                             ccpl_map.addPopup(toolTip_infobox);
 
-                                            // Shift label to left side of marker
-                                            var current_left = $("#ss_"+ss_marker.name).position().left;
-                                            current_left = current_left - 125;
-                                            $("#ss_"+ss_marker.name).css("left",current_left+"px");
+                                            tooltipInfoLabel['ss_'+ss_marker.name] = toolTip_infobox;
+
+                                            if($("#ss_"+ss_marker.name).length > 0) {
+                                                // Shift label to left side of markers
+                                                var current_left = $("#ss_"+ss_marker.name).position().left;
+                                                current_left = current_left - 125;
+                                                $("#ss_"+ss_marker.name).css("left",current_left+"px");
+                                            }
 
                                             // If show/hide checkbox is unchecked then hide label
                                             if(hide_flag) {
                                                 toolTip_infobox.hide();
                                             }
-                                            tooltipInfoLabel['ss_'+ss_marker.name] = toolTip_infobox;    
                                         }
                                     }
                                 } else {
@@ -779,7 +798,17 @@ function GisPerformance() {
                                     allMarkersArray_earth.push(ss_link_line);
                                 } else if (window.location.pathname.indexOf('white_background') > -1) {
                                     /*Create the link between BS & SS or Sector & SS*/
-                                    var ss_link_line = whiteMapClass.plotLines_wmap(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
+                                    var ss_link_line = whiteMapClass.plotLines_wmap(
+                                        startEndObj,
+                                        linkColor,
+                                        base_info,
+                                        ss_info,
+                                        sect_height,
+                                        sector_ip,
+                                        ss_marker_data.name,
+                                        bs_object.name,
+                                        bs_object.id
+                                    );
 
                                     ccpl_map.getLayersByName("Lines")[0].addFeatures([ss_link_line]);
 
@@ -869,10 +898,10 @@ function GisPerformance() {
                                 var existing_index = -1;
                                 for (var x = 0; x < labelsArray.length; x++) {
                                     if(window.location.pathname.indexOf("googleEarth") > -1) {
-                                        labelsArray[x].setVisibility(false);
+                                        // pass
                                     } else if (window.location.pathname.indexOf("white_background") > -1) {
-                                        if(labelsArray[x].id) {
-                                            labelsArray[x].destroy();
+                                        if(labelsArray[x].id == "perfLabel_"+ss_marker.name) {
+                                            ccpl_map.removePopup(labelsArray[x]);
                                         }
                                     } else {
                                         var move_listener_obj = labelsArray[x].moveListener_;
@@ -930,14 +959,18 @@ function GisPerformance() {
                                         );
                                         ccpl_map.addPopup(perfLabel_infobox);
 
-                                        var current_left = $("#perfLabel_"+ss_marker.name).position().left;
-                                        current_left = current_left + 10;
-                                        $("#perfLabel_"+ss_marker.name).css("left",current_left+"px");
+                                        if($("#perfLabel_"+ss_marker.name).length > 0) {
+                                            // Left Position in PX
+                                            var current_left = $("#perfLabel_"+ss_marker.name).position().left;
+                                            current_left = current_left + 10;
+                                            $("#perfLabel_"+ss_marker.name).css("left",current_left+"px");
+                                        }
 
                                         // If show/hide checkbox is unchecked then hide label
                                         if(hide_flag) {
                                             perfLabel_infobox.hide();
                                         }
+
                                         labelsArray.push(perfLabel_infobox);
                                     } else {
                                         var perf_infobox = perf_self.createInfoboxLabel(
@@ -955,14 +988,6 @@ function GisPerformance() {
                                 }
                                 // }
                             }//Sub-Station Loop End
-
-                            if (window.location.pathname.indexOf("white_background") > -1) {
-                                ccpl_map.getLayersByName("Markers")[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
-                                // ccpl_map.getLayersByName("Markers")[0].strategies[0].features = new_plotted_ss.concat(ccpl_map.getLayersByName("Markers")[0].features);
-
-                                ccpl_map.getLayersByName("Markers")[0].redraw();
-                                // ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
-                            }
                         }// If sector child are plottable of not condition end-----
                     } else if(sector_polygon) {
 
@@ -1027,7 +1052,6 @@ function GisPerformance() {
                                 }
                             }
                         }
-                        
                     } else {
                         // pass
                     }
@@ -1058,10 +1082,22 @@ function GisPerformance() {
             bs_object.data.param.sector = connected_sectors;
             // Update Loki Object
             all_devices_loki_db.update(bs_object);
-            // Update loki db object end
 
+            if(window.location.pathname.indexOf("white_background") > -1) {
+
+                if(new_plotted_ss && new_plotted_ss.length > 0) {
+                    ccpl_map.getLayersByName("Markers")[0].addFeatures(new_plotted_ss);
+                    ccpl_map.getLayersByName("Markers")[0].redraw();
+                    
+                    // ccpl_map.getLayersByName("Markers")[0].strategies[0].features = ccpl_map.getLayersByName("Markers")[0].features;
+                    ccpl_map.getLayersByName("Markers")[0].strategies[0].recluster();
+                }
+
+                ccpl_map.getLayersByName("Sectors")[0].redraw();
+                // ccpl_map.getLayersByName("Lines")[0].redraw();
+            }
+            // Reset New Plotted SS array
             new_plotted_ss = [];
-            
             // callback
             callback(true);
         }
@@ -1087,7 +1123,6 @@ function GisPerformance() {
             } catch(e) {
                 // console.log(e);
             }
-
             updateGoogleEarthPlacemark(marker, old_icon_obj);
         } else if (window.location.pathname.indexOf("white_background") > -1) {
 
@@ -1096,7 +1131,6 @@ function GisPerformance() {
                 other_size_obj = whiteMapClass.getMarkerSize_wmap(false),
                 other_width = other_size_obj.width ? other_size_obj.width : whiteMapSettings.devices_size.medium.width,
                 other_height = other_size_obj.height ? other_size_obj.height : whiteMapSettings.devices_size.medium.height;
-
             // Update sector marker icon
             marker.attributes.icon = hiddenIconObj;
             marker.attributes.clusterIcon = hiddenIconObj;
@@ -1109,7 +1143,6 @@ function GisPerformance() {
             sectorMarkerLayer.redraw();
         } else {
             var sector_icon_obj = gmap_self.getMarkerImageBySize(base_url+"/"+new_icon,"other");
-
             // Update sector marker icon
             marker.setOptions({
                 "icon" : hiddenIconObj,
@@ -1143,19 +1176,30 @@ function GisPerformance() {
         } else if (window.location.pathname.indexOf("white_background") > -1) {
             // Remove SS if exists
             if (allMarkersObject_wmap['sub_station']['ss_'+ss_name]){
-                hideOpenLayerFeature(allMarkersObject_wmap['sub_station']['ss_'+ss_name]);
-                allMarkersObject_wmap['sub_station']['ss_'+ss_name].destroy();
-                delete allMarkersObject_wmap['sub_station']['ss_'+ss_name];
+                try {
+                    hideOpenLayerFeature(allMarkersObject_wmap['sub_station']['ss_'+ss_name]);
+                    ccpl_map.getLayersByName("Markers")[0].removeFeatures([allMarkersObject_wmap['sub_station']['ss_'+ss_name]]);
+                    allMarkersObject_wmap['sub_station']['ss_'+ss_name].destroy();
+                    delete allMarkersObject_wmap['sub_station']['ss_'+ss_name];
+                } catch(e) {
+                    // console.log(e);
+                }
             }
             // Remove line if exists
             if(allMarkersObject_wmap['path']['line_'+ss_name]) {
-                hideOpenLayerFeature(allMarkersObject_wmap['path']['line_'+ss_name]);
-                allMarkersObject_wmap['path']['line_'+ss_name].destroy();
-                delete allMarkersObject_wmap['path']['ss_'+ss_name];
+                try{
+                    hideOpenLayerFeature(allMarkersObject_wmap['path']['line_'+ss_name]);
+                    ccpl_map.getLayersByName("Lines")[0].removeFeatures([allMarkersObject_wmap['path']['line_'+ss_name]]);
+                    allMarkersObject_wmap['path']['line_'+ss_name].destroy();
+                    delete allMarkersObject_wmap['path']['ss_'+ss_name];
+                } catch(e) {
+                    // console.log(e);
+                }
             }
             // Remove label if exists
             if(tooltipInfoLabel['ss_'+ss_name]) {
-                tooltipInfoLabel['ss_'+ss_name].destroy();
+                // tooltipInfoLabel['ss_'+ss_name].destroy();
+                ccpl_map.removePopup(tooltipInfoLabel['ss_'+ss_name]);
                 // tooltipInfoLabel['ss_'+ss_name].setVisibility(false);
                 delete tooltipInfoLabel['ss_'+ss_name];
             }
@@ -1205,7 +1249,6 @@ function GisPerformance() {
                 }
             }
         }
-
         return val;
     };
 
@@ -1325,7 +1368,6 @@ function GisPerformance() {
                 }
             }
         }
-
         return isPlottable;
     };
 }
