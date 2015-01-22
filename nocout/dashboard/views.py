@@ -1,5 +1,6 @@
 import json
 import datetime
+import calendar
 from dateutil import relativedelta
 
 from django.core.urlresolvers import reverse_lazy, reverse
@@ -22,11 +23,12 @@ from inventory.utils.util import organization_customer_devices, organization_net
     organization_sectors, prepare_machines
 #inventory utils
 
+from performance.utils.util import color_picker
+
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
-    get_dashboard_status_sector_range_counter, \
-    get_topology_status_results
+    get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response
 from dashboard.config import dashboards
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
@@ -667,7 +669,7 @@ class MainDashboardMixin(object):
         status_list = []
         device_list = []
         count_range = ''
-        count_color = ''
+        count_color = '#CED5DB' # For Unknown Range.
 
         # Get User's organizations
         # (admin : organization + sub organization)
@@ -678,8 +680,10 @@ class MainDashboardMixin(object):
         user_devices = organization_network_devices(user_organizations, technology)
         # Get Sectors of technology.Technology is PMP or WIMAX or None(For All: PMP+WIMAX )
         if technology:
+            technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
             sector_list = Sector.objects.filter(bs_technology=technology, sector_configured_on__in=user_devices)
         else:
+            technology_name = 'network'
             sector_list = Sector.objects.filter(sector_configured_on__in=user_devices)
         # Get Devices of sector_list.
         for sector in sector_list:
@@ -689,11 +693,6 @@ class MainDashboardMixin(object):
         device_list = list(set(device_list))
         #Get dictionary of machine and device list.
         machine_dict = self.prepare_machines(device_list)
-
-        if technology:
-            technology_name = DeviceTechnology.objects.get(id=technology).name.lower()
-        else:
-            technology_name = 'network'
 
         if self.temperature:
             dashboard_name = 'temperature'
@@ -744,7 +743,7 @@ class MainDashboardMixin(object):
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
                 "message": "Corresponding dashboard setting is not available.",
-                "success": 0
+                "success":0
             }))
         count = len(status_list)
 
@@ -753,7 +752,7 @@ class MainDashboardMixin(object):
             end_range = getattr(dashboard_setting, 'range%d_end' %i)
 
             # dashboard type is numeric and start_range and end_range exists to compare result.
-            if start_range and end_range:
+            if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
                 if float(start_range) <= float(count) <= float(end_range):
                     count_range = 'range%d' %i
 
@@ -765,19 +764,10 @@ class MainDashboardMixin(object):
         # get color of range in which count exists.
         if count_range:
             count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
-        else:
-            count_color = '#CED5DB' # For Unknown Range.
 
-        response_dict = {
-                "message": "Dashboard setting is successfully fetched to plot the graph.",
-                'dashboard name': dashboard_name,
-                'data': count,
-                'technology': technology,
-                'color': count_color,
-                'success':1
-                }
-
-        return HttpResponse(json.dumps(response_dict))
+        dictionary = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
+        response = get_highchart_response(dictionary)
+        return HttpResponse(response)
 
     def prepare_machines(self, device_list_qs):
         """
@@ -933,20 +923,25 @@ class MFRCauseCodeView(View):
     def get(self, request):
         mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
 
-        chart_data = []
+        chart_series = []
         if mfr_reports.exists():
             last_mfr_report = mfr_reports[0]
         else:
-            return HttpResponse(json.dumps({'result': chart_data}))
+            response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+                'title': 'MFR Cause Code', 'name': ''})
+            return HttpResponse(response)
 
         results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
         for result in results:
-            chart_data.append([
+            chart_series.append([
                 "%s : %s" % (result['processed_key'], result['processed_value']),
                 int(result['processed_value'])
             ])
 
-        return HttpResponse(json.dumps({'series': chart_data}))
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': 'MFR Cause Code', 'name': ''})
+
+        return HttpResponse(response)
 
 
 class MFRProcesedView(View):
@@ -962,40 +957,50 @@ class MFRProcesedView(View):
                 'processed_key', 'processed_value', 'processed_for__process_for')
 
         day = year_before
-        area_chart_categories = []
+        # area_chart_categories = []
         processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
-
+        processed_key_color = {result['processed_key']: color_picker() for result in mfr_processed_results}
         while day <= datetime.date.today():
-            area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
+            #area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
 
             processed_keys = processed_key_dict.keys()
             for result in mfr_processed_results:
                 result_date = result['processed_for__process_for']
                 if result_date.year == day.year and result_date.month == day.month:
-                    processed_key_dict[result['processed_key']].append(int(result['processed_value']))
+                    processed_key_dict[result['processed_key']].append({
+                        "color": processed_key_color[result['processed_key']],
+                        "y": int(result['processed_value']),
+                        "name": result['processed_key'],
+                        "x": calendar.timegm(day.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
+                    })
                     processed_keys.remove(result['processed_key'])
 
             # If no result is available for a processed_key put its value zero for (day.month, day.year)
             for key in processed_keys:
-                processed_key_dict[key].append(0)
+                processed_key_dict[key].append({
+                    "color": processed_key_color[key],
+                    "y": 0,
+                    "name": key,
+                    "x": calendar.timegm(day.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
+                })
 
             day += relativedelta.relativedelta(months=1)
 
         area_chart_series = []
         for key, value in processed_key_dict.items():
-            area_chart_series.append({'name': key, 'data': value})
+            area_chart_series.append({'name': key, 'data': value, 'color': processed_key_color[key]})
 
-        return HttpResponse(json.dumps({
-                            'categories': area_chart_categories,
-                            'series': area_chart_series
-                        }))
+        response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
+            'title': 'MFR Processed', 'valuesuffix': 'seconds'})
+
+        return HttpResponse(response)
 
 #********************************************** main dashboard sector capacity ************************************************
 
 class PMPSectorCapacity(View):
     """
     """
-    def get(self, sector_devices):
+    def get(self, request):
         pmp_data_source_config = {
             'cam_ul_util_kpi': {'service_name': 'cambium_ul_util_kpi', 'model': UtilizationStatus},
             'cam_dl_util_kpi': {'service_name': 'cambium_dl_util_kpi', 'model': UtilizationStatus},
@@ -1021,13 +1026,14 @@ class PMPSectorCapacity(View):
 
         range_counter = get_dashboard_status_sector_range_counter(service_status_results)
 
-        chart_data = []
+        chart_series = []
         for key,value in range_counter.items():
-            chart_data.append(['%s: %s' % (key, value), range_counter[key]])
+            chart_series.append(['%s: %s' % (key, value), range_counter[key]])
 
-        return HttpResponse(json.dumps({
-                            'series': chart_data
-                        }))
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': 'PMP Sector Capacity', 'name': ''})
+
+        return HttpResponse(response)
 
 
 class WiMAXSectorCapacity(View):
@@ -1070,13 +1076,14 @@ class WiMAXSectorCapacity(View):
 
         range_counter = get_dashboard_status_sector_range_counter(service_status_results)
 
-        chart_data = []
+        chart_series = []
         for key,value in range_counter.items():
-            chart_data.append(['%s: %s' % (key, value), range_counter[key]])
+            chart_series.append(['%s: %s' % (key, value), range_counter[key]])
 
-        return HttpResponse(json.dumps({
-                            'series': chart_data
-                        }))
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': 'WiMAX Sector Capacity', 'name': ''})
+
+        return HttpResponse(response)
 
 
 #********************************************** main dashboard sector capacity ************************************************
@@ -1106,28 +1113,31 @@ class SalesOpportunityMixin(object):
         try:
             dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
         except DashboardSetting.DoesNotExist as e:
-            dashboard_setting = DashboardSetting.objects.none()
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard setting is not available.",
+                "success": 0
+            }))
 
-        chart_data = []
-        if dashboard_setting:
-            # Get Sector of User's Organizations. [and are Sub Station]
-            user_sector = organization_sectors(organization, technology)
-            # Get device of User's Organizations. [and are Sub Station]
-            sector_devices = Device.objects.filter(id__in=user_sector.\
-                            values_list('sector_configured_on', flat=True))
+        # Get Sector of User's Organizations. [and are Sub Station]
+        user_sector = organization_sectors(organization, technology)
+        # Get device of User's Organizations. [and are Sub Station]
+        sector_devices = Device.objects.filter(id__in=user_sector.\
+                        values_list('sector_configured_on', flat=True))
 
-            service_status_results = get_topology_status_results(
-                sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
-            )
+        service_status_results = get_topology_status_results(
+            sector_devices, model=model, service_name=service_name, data_source=data_source, user_sector=user_sector
+        )
 
-            range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
+        range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
 
-            response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
-            chart_data = response_dict['data']['objects']['chart_data'][0]['data']
+        response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
+        chart_series = response_dict['data']['objects']['chart_data'][0]['data']
+        colors = response_dict['data']['objects']['colors']
 
-        return HttpResponse(json.dumps({
-                            'series': chart_data,
-                        }))
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors})
+
+        return HttpResponse(response)
 
 
 class PMPSalesOpportunity(SalesOpportunityMixin, View):

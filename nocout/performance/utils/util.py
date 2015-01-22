@@ -191,7 +191,6 @@ def map_results(perf_result, qs):
                 data_source = perf[device]
                 result_qs.append(dict(device_info + data_source.items()))
             except Exception as e:
-                log.exception(e.message)
                 continue
 
     return result_qs

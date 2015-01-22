@@ -105,8 +105,8 @@ def read_data(start_time, end_time, **kwargs):
         for config, options in configs.items():
                 machine_name = options.get('machine')
         for doc in cur:
-	    time = doc.get('time')
-            t = (
+	   	time = doc.get('time')
+            	t = (
             	doc.get('device_name'),
         	doc.get('service_name'),
         	machine_name,
@@ -122,9 +122,9 @@ def read_data(start_time, end_time, **kwargs):
         	doc.get('check_timestamp'),
         	doc.get('ip_address'),
         	doc.get('severity'),
-           )
-	   docs.append(t)
-           t = ()
+           	)
+	   	docs.append(t)
+           	t = ()
      
     return docs
 
@@ -223,7 +223,7 @@ def insert_data(table, data_values, **kwargs):
 				raise mysql.connector.Error, err
     		db.commit()
     		cursor.close()
-		db.close()
+	db.close()
 
 
 if __name__ == '__main__':

@@ -289,23 +289,15 @@ function createHighChart_nocout(chartConfig,dom_id) {
 
     var chart_instance = $('#'+dom_id+'_chart').highcharts({
         chart: {
-            events: {
-                load : function() {
-                    // Hide highcharts.com link from chart when chart is loaded
-                    var highcharts_link = $("#"+dom_id+"_chart svg text:last-child");
-                    $.grep(highcharts_link,function(val) {
-                        if($.trim(val.innerHTML) == 'Highcharts.com') {
-                            val.innerHTML = "";
-                        }
-                    });
-                }
-            },
             zoomType: 'x',
             type: chartConfig.type
         },
         title: {
             // text: chartConfig.name
             text: ""
+        },
+        credits: {
+            enabled: false
         },
         legend:{
             itemDistance : 15,

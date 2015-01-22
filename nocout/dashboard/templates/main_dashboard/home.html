@@ -16,234 +16,154 @@
         top: -45px !important;
     }
     .rf_chart_style {
-        height: 400px;
-        /*width: 100%;
-        max-width: 100%;*/
+        height: 300px;
         margin: 0 auto;
     }
 </style>
 
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
-        <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: WIMAX</h4>
+        <h4><i class="fa fa-dashboard"></i> Main Dashboard</h4>
     </div>
-    <div class="tabbable header-tabs">
-        <div class="tab-content" style="overflow-y:auto;">
-            <div class="col-md-12">
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>MFR Cause Code</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="mfr_cause_code" class="rf_chart_style"></div>
-                        </div>
-                    </div>
-                </div>
-                {% comment %}
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>UL RSSI</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="ul_rssi" class="rf_chart_style"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>DL CINR</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="dl_cinr" class="rf_chart_style"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>UL CINR</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="ul_cinr" class="rf_chart_style"></div>
-                        </div>
-                    </div>
-                </div>
-                {% endcomment %}
-                <div class="col-md-12 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>MFR Processed</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="id_mfr_processed" class="rf_chart_style"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>PMP Sector Capacity</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="pmp_sector_capacity" class="rf_chart_style"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>WiMAX Sector Capacity</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="wimax_sector_capacity" class="rf_chart_style"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>PMP Sales Opportunity</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>WiMAX Sales Opportunity</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Latency WiMAX</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="latency-wimax" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Latency PMP</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="latency-pmp" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Latency ALL</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="latency-all" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Packet Loss WiMAX</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="packet-loss-wimax" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Packet Loss PMP</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="packet-loss-pmp" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Packet Loss ALL</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="packet-loss-all" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Down WiMAX</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="down-wimax" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Down PMP</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="down-pmp" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Down ALL</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="down-all" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Temperature FAN WiMAX</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="temperature-fan-wimax" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Temperature ACB WiMAX</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="temperature-acb-wimax" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 box-container ui-sortable">
-                    <div class="box">
-                        <div class="box-title" style="background-color: transparent;">
-                            <h3>Temperature IDU WiMAX</h3>
-                        </div>
-                        <div class="box-body">
-                            <div id="temperature-idu-wimax" style="width: 300px; height: 200px; float: left"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="box-body">
+        <!-- ********** FIRST ROW START **********-->
+
+        <!-- Speedometers (Gauge) Charts Start -->
+        <div class="col-md-3" align="center">
+            <div id="down-all" style="height: 165px;"></div>
+            <h5>Down</h5>
+        </div>        
+        <div class="col-md-3" align="center">
+            <div id="latency-all" style="height: 165px;"></div>            
+            <h5>Latency</h5>
         </div>
+        <div class="col-md-3" align="center">
+            <div id="packet-loss-all" style="height: 165px;"></div>            
+            <h5>Packet Drop</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="temperature-idu-wimax" style="height: 165px;"></div>            
+            <h5>Temperature IDU Wimax</h5>
+        </div>
+        <!-- Speedometers (Gauge) Charts End -->
+        <div class="clearfix"></div>
+        <!-- ********** FIRST ROW END **********-->
+        <hr/>
+
+        <!-- ********** SECOND ROW START **********-->
+
+        <!-- Capacity pie Charts & city table Start -->
+        <div class="col-md-3" align="center">
+            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>            
+            <h5>Wimax Sales Opportunity</h5>
+        </div>
+        <div class="col-md-6">
+            <h5>Customer Experience Monitoring</h5>
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="city_ranking_table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>City</th>
+                        <th>% Of Customer Affected</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>    
+            <h5>PMP Sales Opportunity</h5>
+        </div>
+        <!-- Capacity pie Charts & city table End -->
+
+        <div class="clearfix"></div>
+        <!-- ********** SECOND ROW END **********-->
+        <hr/>
+
+
+        <!-- ********** THIRD ROW START **********-->
+        <div class="col-md-3" align="center">
+            <div id="wimax_sector_capacity" class="rf_chart_style"></div>
+            <h5>Wimax Sector Capacity</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="pmp_sector_capacity" class="rf_chart_style"></div>
+            <h5>PMP Sector Capacity</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="wimax_backhaul_capacity" class="rf_chart_style"></div>
+            <h5>Wimax Backhaul Capacity</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="pmp_backhaul_capacity" class="rf_chart_style"></div>
+            <h5>PMP Backhaul Capacity</h5>
+        </div>
+        <div class="clearfix"></div>
+        <!-- ********** THIRD ROW END **********-->
+        <hr/>
+
+        <!-- ********** FOURTH ROW START **********-->
+        <div class="col-md-9">
+            <h4>MFR Processed</h4>
+            <div id="id_mfr_processed" class="rf_chart_style"></div>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="mfr_cause_code" class="rf_chart_style"></div>    
+            <h5>MFR Caused Code</h5>
+        </div>
+
+        <div class="clearfix"></div>
+        <!-- ********** FOURTH ROW END **********-->
+        <hr/>
+
+        <!-- ********** FIFTH ROW START **********-->
+        <!-- Speedometers (Gauge) Charts Start -->
+        <div class="col-md-3" align="center">
+            <div id="down-wimax" style="height: 165px;"></div>            
+            <h5>Down Wimax</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="down-pmp" style="height: 165px;"></div>            
+            <h5>Down PMP</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="latency-wimax" style="height: 165px;"></div>
+            <h5>Latency Wimax</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="latency-pmp" style="height: 165px;"></div>            
+            <h5>Latency PMP</h5>
+        </div>
+        <!-- Speedometers (Gauge) Charts End -->
+        <div class="clearfix"></div>
+        <!-- ********** FIFTH ROW END **********-->
+        <hr/>
+
+        <!-- ********** SIXTH ROW START **********-->
+
+        <!-- Speedometers (Gauge) Charts Start -->
+        <div class="col-md-3" align="center">
+            <div id="packet-loss-wimax" style="height: 165px;"></div>            
+            <h5>Packet Drop Wimax</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="packet-loss-pmp" style="height: 165px;"></div>
+            <h5>Packet Drop PMP</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="temperature-fan-wimax" style="height: 165px;"></div>            
+            <h5>Temperature Fan Wimax</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="temperature-acb-wimax" style="height: 165px;"></div>            
+            <h5>Temperature ACB Wimax</h5>
+        </div>
+        <!-- Speedometers (Gauge) Charts End -->
+        <div class="clearfix"></div>
+        <!-- ********** SIXTH ROW END **********-->
+        <div class="clearfix"></div>
     </div>
 </div>
 
@@ -254,183 +174,60 @@
 <!--Highcharts Library-->
 <script src={% static "js/highcharts.js" %}></script>
 <script src={% static "js/highcharts-more.js" %}></script>
+<!-- Solid Gauge Chart highcharts -->
 <script src={% static "js/solid-gauge.js" %}></script>
+<!-- no data for highcharts -->
 <script src={% static "js/no-data-to-display.js" %}></script>
-<!-- SPARKLINES -->
-<script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
-<!-- Dashboard Custom CSS-->
-<script src={% static "js/nocout_dashboard.js" %}></script>
-<!-- no data for hicharts -->
-<script src="http://code.highcharts.com/modules/no-data-to-display.js"></script>
+<!-- Main Dashboard Custom Script-->
+<script type="text/javascript" src={% static "js/nocout/main_dashboard_script.js" %}></script>
 
-<script>
-    var ds_list = [];
+<script type="text/javascript">
+
     jQuery(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
 
-        // charts for the mfr
-        highcharts_piechart(url="{% url 'cause-code-mfr' %}",
-                            domElement='#mfr_cause_code');
-        highcharts_areachart(url="{% url 'processed-mfr' %}",
-                            domElement='#id_mfr_processed');
+        // Update the url of some charts in dict
+        area_chart_url_obj["id_mfr_processed"]["url"] = "{% url 'processed-mfr' %}";
+        pie_chart_url_obj["wimax_sales_opportunity"]["url"] = "{% url 'sales-opportunity-wimax' %}";
+        pie_chart_url_obj["pmp_sales_opportunity"]["url"] = "{% url 'sales-opportunity-pmp' %}";
+        pie_chart_url_obj["wimax_sector_capacity"]["url"] = "{% url 'sector-capacity-wimax' %}";
+        pie_chart_url_obj["pmp_sector_capacity"]["url"] = "{% url 'sector-capacity-pmp' %}";
+        pie_chart_url_obj["wimax_backhaul_capacity"]["url"] = "";
+        pie_chart_url_obj["pmp_backhaul_capacity"]["url"] = "";
+        pie_chart_url_obj["mfr_cause_code"]["url"] = "{% url 'cause-code-mfr' %}";
 
-        // charts for the sector capacity
-        highcharts_piechart(url="{% url 'sector-capacity-pmp' %}",
-                            domElement='#pmp_sector_capacity');
-        highcharts_piechart(url="{% url 'sector-capacity-wimax' %}",
-                            domElement='#wimax_sector_capacity');
 
-        // Get chart for latency of wimax.
-        get_speedometer_chart('/dashboard/latency/wimax/','#latency-wimax','Latency WiMAX');
-        // Get chart for latency of pmp.
-        get_speedometer_chart('/dashboard/latency/pmp/','#latency-pmp','Latency PMP');
-        // Get chart for latency of all.
-        get_speedometer_chart('/dashboard/latency/all/','#latency-all','Latency ALL');
-        // Get chart for packet loss of wimax.
-        get_speedometer_chart('/dashboard/packet_loss/wimax/','#packet-loss-wimax','Packet Loss WiMAX');
-        // Get chart for packet loss of pmp.
-        get_speedometer_chart('/dashboard/packet_loss/pmp/','#packet-loss-pmp','Packet Loss PMP');
-        // Get chart for packet loss of all.
-        get_speedometer_chart('/dashboard/packet_loss/all/','#packet-loss-all','Packet Loss ALL');
-        // Get chart for down of wimax.
-        get_speedometer_chart('/dashboard/down/wimax/','#down-wimax','Down WiMAX');
-        // Get chart for down of pmp.
-        get_speedometer_chart('/dashboard/down/pmp/','#down-pmp','Down PMP');
-        // Get chart for down of all.
-        get_speedometer_chart('/dashboard/down/all/','#down-all','Down ALL');
-        // Get chart for temperature-idu of wimax.
-        get_speedometer_chart('/dashboard/temperature-idu/wimax/','#temperature-idu-wimax','Temperature IDU WiMAX');
-        // Get chart for temperature-acb of wimax.
-        get_speedometer_chart('/dashboard/temperature-acb/wimax/','#temperature-acb-wimax','Temperature ACB WiMAX');
-        // Get chart for temperature-fan of wimax.
-        get_speedometer_chart('/dashboard/temperature-fan/wimax/','#temperature-fan-wimax','Temperature FAN WiMAX');
-
-        // charts for the sales opportunity
-        highcharts_piechart(url="{% url 'sales-opportunity-pmp' %}",
-                            domElement='#pmp_sales_opportunity');
-        highcharts_piechart(url="{% url 'sales-opportunity-wimax' %}",
-                            domElement='#wimax_sales_opportunity');
-
-    });
-
-/* method for pie Chart
-highcharts_piechart(url, domElement); */
-{% include "dashboard/highcharts/piechart.html" %}
-/* End of method pie Chart */
-
-/* method for Area Spline Chart
-highcharts_areachart(url, domElement); */
-{% include "dashboard/highcharts/areachart.html" %}
-/* End of method Area Spline Chart */
-
-// function for getting speedometer charts through ajax request.
-function get_speedometer_chart(ajax_url, div_id, div_text){
-    $.ajax({
-        url : ajax_url,
-        type : "GET",
-        success : function(result) {
-            var response = "";
-            if(typeof result == 'string') {
-                response = JSON.parse(result);
-            } else {
-                response = result;
-            }
-
-            var gaugeOptions = {
-                chart: {
-                    type: 'solidgauge'
-                },
-                title: null,
-                pane: {
-                    center: ['50%', '85%'],
-                    size: '140%',
-                    startAngle: -90,
-                    endAngle: 90,
-                    background: {
-                        backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
-                        innerRadius: '60%',
-                        outerRadius: '100%',
-                        shape: 'arc'
-                    }
-                },
-                tooltip: {
-                    enabled: false
-                },
-
-                // the value axis
-                yAxis: {
-                    stops: [
-                        [0.0, response['color']], // speedometer_color
-                    ],
-                    lineWidth: 0,
-                    minorTickInterval: null,
-                    tickPixelInterval: 400,
-                    tickWidth: 0,
-                    title: {
-                        y: -70
-                    },
-                    labels: {
-                        y: 16
-                    }
-                },
-                plotOptions: {
-                    solidgauge: {
-                        dataLabels: {
-                            y: 5,
-                            borderWidth: 0,
-                            useHTML: true
-                        }
-                    }
+        // Set Global Option for Highcharts
+        if(window.Highcharts) {
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
                 }
-            };
-            $(div_id).highcharts(Highcharts.merge(gaugeOptions, {
-                yAxis: {
-                    min: 0,
-                    max: 200,
-                    title: {
-                        text: div_text
-                    }
-                },
-
-                series: [{
-                    name: div_text,
-                    data: [response['data']],
-                    dataLabels: {
-                    format: '<div style="text-align:center"><span style="font-size:25px;color:' +
-                        ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
-                        '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
-                    },
-                    tooltip: {
-                        valueSuffix: ' revolutions/min'
-                    }
-                }],
-                lang: {
-                    noData: "Dashboard Setting is not available."
-                },
-                noData: {
-                    style: {
-                        fontWeight: 'bold',
-                        fontSize: '15px',
-                        color: '#8A739D'
-                    }
-                }
-            }));
-        },
-        error : function(err) {
-            hideSpinner();
-            $.gritter.add({
-                // (string | mandatory) the heading of the notification
-                title: div_title,
-                // (string | mandatory) the text inside the notification
-                text: err.statusText,
-                // (bool | optional) if you want it to fade out on its own or just sit there
-                sticky: false,
-                // Time in ms after which the gritter will dissappear.
-                time : 1500
             });
-        },
+        }
+
+        // Initialize city ranking datatable
+        $("#city_ranking_table").DataTable();
+
+        // Update datatable row per pages dropdown n search text box style.
+        $('.datatable').each(function () {
+            var datatable = $(this);
+            // SEARCH - Add the placeholder for Search and Turn this into in-line form control
+            var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
+            search_input.attr('placeholder', 'Search');
+            // search_input.css("max-width","150px");
+            search_input.addClass('form-control input-sm');
+            // LENGTH - Inline-Form control
+            var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
+            length_sel.css("max-width","65px");
+            length_sel.addClass('form-control input-sm');
+        });
+
+
+        // Initialize Dashboard
+        initDashboard();
     });
-}
 </script>
+
 {% endblock %}
