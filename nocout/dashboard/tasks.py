@@ -59,32 +59,25 @@ def calculate_timely_sector_capacity(technology, model, processed_for):
     return
     '''
     dashboard_name = '%s_sector_capacity' % (technology.NAME.lower())
-    range_counter = dict(
-            dashboard_name=dashboard_name,
-            sector_name='',
-            processed_for=processed_for,
-            ok=0,
-            warning=0,
-            critical=0,
-            unknown=0
-        )
 
     sectors = SectorCapacityStatus.objects.filter(
-            Q(organization__in=[]),
             Q(sector__sector_configured_on__device_technology=technology.ID),
             Q(severity__in=['warning', 'critical', 'ok']),
         ).values('id', 'sector__name', 'severity', 'sys_timestamp', 'age')
 
     data_list = list()
     for item in sectors:
+        range_counter = dict(
+            dashboard_name=dashboard_name,
+            sector_name=item['sector__name'],
+            processed_for=processed_for,
+        )
         if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
-            range_counter[item['severity'].strip().lower()] += 1
+            range_counter.update({item['severity'].strip().lower() : 1})
         elif item['severity'].strip().lower() == 'ok':
-            range_counter['ok'] += 1
+            range_counter.update({'ok' : 1})
         else:
-            range_counter['unknown'] += 1
-
-        range_counter['sector_name'] = item['sector__name']
+            range_counter({'unknown' : 1})
 
         try:
             data_list.append(model(**range_counter))
@@ -391,10 +384,13 @@ def calculate_daily_main_dashboard():
 
 
 def calculate_daily_severity_status(now):
-    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
+    tzinfo = timezone.get_current_timezone()
+    today = timezone.datetime(now.year, now.month, now.day, tzinfo=tzinfo)
+    previous_day = now - timezone.timedelta(days=1)
+    yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo)
     last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by('dashboard_name',
-            'sector_name').filter(processed_for__day=previous_day.day,
-            processed_for__month=previous_day.month, processed_for__year=previous_day.year)
+            'sector_name').filter(processed_for__gte=yesterday, processed_for__lt=today)
+
     daily_severity_status_list = []
     daily_severity_status = None
     dashboard_name = ''
@@ -406,7 +402,7 @@ def calculate_daily_severity_status(now):
             daily_severity_status = DashboardSeverityStatusDaily(
                 dashboard_name=hourly_severity_status.dashboard_name,
                 sector_name=hourly_severity_status.sector_name,
-                processed_for=now,
+                processed_for=yesterday,
                 warning=hourly_severity_status.warning,
                 critical=hourly_severity_status.critical,
                 ok=hourly_severity_status.ok,
@@ -414,6 +410,8 @@ def calculate_daily_severity_status(now):
                 unknown=hourly_severity_status.unknown
             )
             daily_severity_status_list.append(daily_severity_status)
+            dashboard_name = hourly_severity_status.dashboard_name
+            sector_name = hourly_severity_status.sector_name
 
     bulk_update_create.delay(daily_severity_status_list, action='create', model=DashboardSeverityStatusDaily)
 
@@ -477,36 +475,31 @@ def calculate_weekly_main_dashboard():
 
 def calculate_weekly_severity_status(day, first_day):
     last_week_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
-            'sector_name').filter(processed_for__year=day.year, processed_for__month=day.month, processed_for__day=day.day)
+            'sector_name').filter(processed_for=day)
 
     weekly_severity_status_list = []
     weekly_severity_status = None
-    dashboard_name = ''
-    sector_name = ''
     is_monday = True if day.weekday() == 0 else False
     for daily_severity_status in last_week_daily_severity_status:
-        if dashboard_name == daily_severity_status.dashboard_name and sector_name == daily_severity_status.sector_name:
-            weekly_severity_status = sum_severity_status(weekly_severity_status, daily_severity_status)
+        if is_monday:
+            weekly_severity_status = DashboardSeverityStatusWeekly(
+                dashboard_name=daily_severity_status.dashboard_name,
+                sector_name=daily_severity_status.sector_name,
+                processed_for=first_day,
+                warning=daily_severity_status.warning,
+                critical=daily_severity_status.critical,
+                ok=daily_severity_status.ok,
+                down=daily_severity_status.down,
+                unknown=daily_severity_status.unknown
+            )
         else:
-            if is_monday:
-                weekly_severity_status = DashboardSeverityStatusWeekly(
-                    dashboard_name=daily_severity_status.dashboard_name,
-                    sector_name=daily_severity_status.sector_name,
-                    processed_for=first_day,
-                    warning=daily_severity_status.warning,
-                    critical=daily_severity_status.critical,
-                    ok=daily_severity_status.ok,
-                    down=daily_severity_status.down,
-                    unknown=daily_severity_status.unknown
-                )
-            else:
-                weekly_severity_status = DashboardSeverityStatusWeekly(
-                    dashboard_name=daily_severity_status.dashboard_name,
-                    sector_name=daily_severity_status.sector_name,
-                    processed_for=first_day
-                )
-                weekly_severity_status = sum_severity_status(weekly_severity_status, daily_severity_status)
-            weekly_severity_status_list.append(weekly_severity_status)
+            weekly_severity_status, created  = DashboardSeverityStatusWeekly.objects.get_or_create(
+                dashboard_name=daily_severity_status.dashboard_name,
+                sector_name=daily_severity_status.sector_name,
+                processed_for=first_day
+            )
+            weekly_severity_status = sum_severity_status(weekly_severity_status, daily_severity_status)
+        weekly_severity_status_list.append(weekly_severity_status)
 
     if is_monday:
         bulk_update_create.delay(weekly_severity_status_list, action='create', model=DashboardSeverityStatusWeekly)
@@ -562,7 +555,7 @@ def calculate_monthly_main_dashboard():
     previous_day = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
     first_day = timezone.datetime(previous_day.year, previous_day.month, 1, tzinfo=timezone.get_current_timezone())
 
-    calculate_monthly_severity_status(now)
+    calculate_monthly_severity_status(previous_day, first_day)
     calculate_monthly_range_status(previous_day, first_day)
 
 
@@ -607,44 +600,34 @@ def calculate_monthly_range_status(day, first_day):
         bulk_update_create.delay(monthly_range_status_list)
 
 
-
-def calculate_monthly_severity_status(now):
-    previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
-    first_day = timezone.datetime(previous_day.year, previous_day.month, 1)
+def calculate_monthly_severity_status(day, first_day):
     last_month_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
-            'sector_name').filter(
-            processed_for__month=previous_day.month,
-            processed_for__year=previous_day.year)
+            'sector_name').filter(processed_for=day)
 
     monthly_severity_status_list = []
     monthly_severity_status = None
-    dashboard_name = ''
-    sector_name = ''
-    is_first_day_of_month = True if previous_day.day == 1 else False
+    is_first_day_of_month = True if day.day == 1 else False
     for daily_severity_status in last_month_daily_severity_status:
-        if dashboard_name == daily_severity_status.dashboard_name and sector_name == daily_severity_status.sector_name:
+        if not is_first_day_of_month:
+            monthly_severity_status, created = DashboardSeverityStatusMonthly.objects.get_or_create(
+                dashboard_name=daily_severity_status.dashboard_name,
+                sector_name=daily_severity_status.sector_name,
+                processed_for=first_day
+            )
             monthly_severity_status = sum_severity_status(monthly_severity_status, daily_severity_status)
+            # monthly_severity_status.save() # Save later so current process doesn't slow.
         else:
-            if not is_first_day_of_month:
-                monthly_severity_status, created = DashboardSeverityStatusMonthly.objects.get_or_create(
-                    dashboard_name=daily_range_status.dashboard_name,
-                    device_name=daily_range_status.device_name,
-                    processed_for=first_day
-                )
-                monthly_severity_status = sum_range_status(monthly_severity_status, daily_range_status)
-                # monthly_severity_status.save() # Save later so current process doesn't slow.
-            else:
-                monthly_severity_status = DashboardSeverityStatusMonthly(
-                    dashboard_name=daily_severity_status.dashboard_name,
-                    sector_name=daily_severity_status.sector_name,
-                    processed_for=first_day,
-                    warning=daily_severity_status.warning,
-                    critical=daily_severity_status.critical,
-                    ok=daily_severity_status.ok,
-                    down=daily_severity_status.down,
-                    unknown=daily_severity_status.unknown
-                )
-            monthly_severity_status_list.append(monthly_severity_status)
+            monthly_severity_status = DashboardSeverityStatusMonthly(
+                dashboard_name=daily_severity_status.dashboard_name,
+                sector_name=daily_severity_status.sector_name,
+                processed_for=first_day,
+                warning=daily_severity_status.warning,
+                critical=daily_severity_status.critical,
+                ok=daily_severity_status.ok,
+                down=daily_severity_status.down,
+                unknown=daily_severity_status.unknown
+            )
+        monthly_severity_status_list.append(monthly_severity_status)
 
     if is_first_day_of_month:
         bulk_update_create.delay(monthly_severity_status_list, action='create', model=DashboardSeverityStatusMonthly)
