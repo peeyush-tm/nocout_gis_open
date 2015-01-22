@@ -1612,7 +1612,7 @@ class GISPerfData(View):
 
         # pl
         try:
-            pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
+            pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
                                                             data_source='pl').using(
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
@@ -1622,7 +1622,7 @@ class GISPerfData(View):
 
         # rta
         try:
-            rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
+            rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
                                                             data_source='rta').using(
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
@@ -1632,7 +1632,7 @@ class GISPerfData(View):
 
         # bh severity
         try:
-            backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device).using(
+            backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device.device_name).using(
                                                                        alias=bh_device.machine.name)[0].severity
         except Exception as e:
             logger.error("BH Severity not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,
