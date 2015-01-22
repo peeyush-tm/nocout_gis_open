@@ -12,13 +12,39 @@
         </div>
 
         {% ifequal page_type 'other' %}
-
-            <div id="tableContainer" class="box-body" style="overflow-y:auto;">
-                <table cellpadding="0" cellspacing="0" border="0"
-                       class="datatable table table-striped table-bordered table-hover" id="PerformanceLiveTable">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
+            <div id="tableContainer" class="box-body">
+                <div class="tabbable header-tabs">
+                    <ul class="nav nav-tabs">
+                        <li>
+                            <a href="#{{ page_type|slugify|lower }}_other_block" id="{{ page_type|slugify|lower }}_other_tab" data-toggle="tab">
+                                <span class="hidden-inline-mobile">Others</span>
+                            </a>
+                        </li>
+                        <li class="active">
+                            <a href="#{{ page_type|slugify|lower }}_backhaul_block" id="{{ page_type|slugify|lower }}_backhaul_tab" data-toggle="tab">
+                                <span class="hidden-inline-mobile">Backhaul</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="tab-content" style="overflow-y:auto;">
+                        <div class="tab-pane" id="{{ page_type|slugify|lower }}_other_block">
+                        <table id="{{ page_type|slugify|lower }}_other_performancelistingtable" cellpadding="0"
+                                   cellspacing="0" border="0"
+                                   class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane active" id="{{ page_type|slugify|lower }}_backhaul_block">
+                            <table id="{{ page_type|slugify|lower }}_backhaul_performancelistingtable" cellpadding="0"
+                                   cellspacing="0" border="0"
+                                   class="datatable table table-striped table-bordered table-hover">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         {% else %}
@@ -97,11 +123,25 @@
             ajax_url_get_parameter = "{{ page_type|slugify|lower }}";
 
             /*Ajax url to get grid data*/
-            var destroy = false;
+            var destroy = false,
+                location_array = window.location.href.split("#");
             ///for backhaul devices
             if (ajax_url_get_parameter == "other") {
+
                 var ajax_url_bh = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter;
-                dataTableInstance.createDataTable("PerformanceLiveTable", gridHeadersObj, ajax_url_bh, destroy);
+
+                $("#other_backhaul_tab").attr("data_url", ajax_url_bh);
+                $("#other_backhaul_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+                var ajax_url_other = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter;
+
+                $("#other_other_tab").attr("data_url", ajax_url_other);
+                $("#other_other_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
+                if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
+                    /*Trigger click event on active tab to load its data*/
+                    $("#" + ajax_url_get_parameter + "_backhaul_tab").trigger('click', true);
+                }
             } else {
 
                 ///for network and cusotmer devices
@@ -129,8 +169,6 @@
 
                 $("#customer_ptp_tab").attr("data_url", ajax_url_p2p);
                 $("#customer_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
-
-                var location_array = window.location.href.split("#");
 
                 if ((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
                     /*Trigger click event on active tab to load its data*/
