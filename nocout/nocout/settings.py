@@ -507,13 +507,6 @@ DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
 REPORT_PATH = '/opt/nocout/nocout_gis/nocout/media/download_center/reports'
 REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 
-# Import the local_settings.py file to override global settings
-
-try:
-    from local_settings import *
-except ImportError:
-    pass
-
 
 # ********************** django password options **********************
 PASSWORD_MIN_LENGTH = 6 # Defaults to 6
@@ -532,3 +525,12 @@ PASSWORD_COMPLEXITY = { # You can ommit any or all of these for no limit for tha
     "NON ASCII": 0,   # Non Ascii (ord() >= 128)
     "WORDS": 0        # Words (substrings seperates by a whitespace)
 }
+
+
+# Import the local_settings.py file to override global settings
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
+
