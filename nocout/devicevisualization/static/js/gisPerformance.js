@@ -1086,7 +1086,12 @@ function GisPerformance() {
             if(window.location.pathname.indexOf("white_background") > -1) {
 
                 if(new_plotted_ss && new_plotted_ss.length > 0) {
-                    ccpl_map.getLayersByName("Markers")[0].addFeatures(new_plotted_ss);
+                    // ccpl_map.getLayersByName("Markers")[0].addFeatures(new_plotted_ss);
+                    try {
+                        ccpl_map.getLayersByName("Markers")[0].addFeatures(ccpl_map.getLayersByName("Markers")[0].features.concat(new_plotted_ss));
+                    } catch(e) {
+                        // console.log(e);
+                    }
                     ccpl_map.getLayersByName("Markers")[0].redraw();
                     
                     // ccpl_map.getLayersByName("Markers")[0].strategies[0].features = ccpl_map.getLayersByName("Markers")[0].features;
