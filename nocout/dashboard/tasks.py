@@ -237,7 +237,7 @@ def calculate_timely_network_alert(dashboard_name, processed_for, technology=Non
             if device_result:
                 dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
 
-                dashboard_data_dict.update({'device_name': device_name,
+                dashboard_data_dict.update({'device_name': device_name, 'reference_name': device_name,
                     'dashboard_name': status_dashboard_name, 'processed_for': processed_for})
                 data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
@@ -245,7 +245,7 @@ def calculate_timely_network_alert(dashboard_name, processed_for, technology=Non
             device_result = [result_dict]
     if device_result:
         dashboard_data_dict = get_dashboard_status_range_counter(dashboard_setting, device_result)
-        dashboard_data_dict.update({'device_name': result_dict['device_name'],
+        dashboard_data_dict.update({'device_name': result_dict['device_name'], 'reference_name': result_dict['device_name'],
             'dashboard_name': status_dashboard_name, 'processed_for': processed_for})
         data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
@@ -325,6 +325,7 @@ def calculate_hourly_range_status(now):
             hourly_range_status = DashboardRangeStatusHourly(
                 dashboard_name=timely_range_status.dashboard_name,
                 device_name=timely_range_status.device_name,
+                reference_name=timely_range_status.reference_name,
                 processed_for=now,
                 range1=timely_range_status.range1,
                 range2=timely_range_status.range2,
@@ -437,6 +438,7 @@ def calculate_daily_range_status(now):
             daily_range_status = DashboardRangeStatusDaily(
                 dashboard_name=hourly_range_status.dashboard_name,
                 device_name=hourly_range_status.device_name,
+                reference_name=hourly_range_status.reference_name,
                 processed_for=yesterday,
                 range1=hourly_range_status.range1,
                 range2=hourly_range_status.range2,
@@ -519,6 +521,7 @@ def calculate_weekly_range_status(day, first_day):
             weekly_range_status = DashboardRangeStatusWeekly(
                 dashboard_name=daily_range_status.dashboard_name,
                 device_name=daily_range_status.device_name,
+                reference_name=daily_range_status.reference_name,
                 processed_for=first_day,
                 range1=daily_range_status.range1,
                 range2=daily_range_status.range2,
@@ -581,6 +584,7 @@ def calculate_monthly_range_status(day, first_day):
             monthly_range_status = DashboardRangeStatusMonthly(
                 dashboard_name=daily_range_status.dashboard_name,
                 device_name=daily_range_status.device_name,
+                reference_name=daily_range_status.reference_name,
                 processed_for=first_day,
                 range1=daily_range_status.range1,
                 range2=daily_range_status.range2,
@@ -671,6 +675,7 @@ def calculate_yearly_range_status(day, first_month):
             yearly_range_status = DashboardRangeStatusYearly(
                 dashboard_name=monthly_range_status.dashboard_name,
                 device_name=monthly_range_status.device_name,
+                reference_name=monthly_range_status.reference_name,
                 processed_for=first_month,
                 range1=monthly_range_status.range1,
                 range2=monthly_range_status.range2,
