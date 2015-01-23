@@ -462,7 +462,8 @@ def get_host_services_name(site_name=None, db=None):
                             "Filter: service_description ~ cambium_dl_util_kpi\n"+\
                             "Filter: service_description ~ radwin_dl_util_kpi\n"+\
                             "Filter: service_description ~ radwin_ul_util_kpi\n"+\
-                            "Or: 12\nNegate:\nOutputFormat: python\n"
+                            "Filter: service_description ~ mrotek_port_values\n"+\
+                            "Or: 13\nNegate:\nOutputFormat: python\n"
 	    device_down_query = "GET services\nColumns: host_name\nFilter: service_description ~ Check_MK\nFilter: service_state = 3\n"+\
 				"And: 2\nOutputFormat: python\n"
 

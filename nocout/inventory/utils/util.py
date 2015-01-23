@@ -13,7 +13,7 @@ from django.db.models import Count, Q
 from device.models import Device, DeviceTechnology
 
 #inventory specific functions
-from inventory.models import Sector, Circuit, SubStation
+from inventory.models import Sector, Circuit, SubStation, Backhaul
 
 #nocout utilities
 from nocout.utils.util import cache_for
@@ -167,7 +167,7 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
 
 
 # @cache_for(300)
-def organization_backhaul_devices(organizations, technology = None):
+def organization_backhaul_devices(organizations, technology=None, others=False):
     """
     To result back the all the network devices from the respective organization..
 
@@ -177,19 +177,41 @@ def organization_backhaul_devices(organizations, technology = None):
     :return list of network devices
     """
 
-    return  Device.objects.filter(
-                                    backhaul__isnull=False,
-                                    is_added_to_nms=1,
-                                    is_deleted=0,
-                                    organization__in= organizations
-    )
+    backhaul_devices = Device.objects.filter(
+                                backhaul__isnull=False,
+                                is_added_to_nms=1,
+                                is_deleted=0,
+                                organization__in=organizations
+    ).prefetch_related('backhaul')
+
+
+    if others:
+        backhaul_objects = Backhaul.objects.filter(bh_configured_on_id__in=backhaul_devices.values_list('id', flat=True))
+
+        backhaul_devices = Device.objects.filter(
+            ~Q(id__in=backhaul_devices.values_list('id', flat=True)),
+            (
+                Q(id__in=backhaul_objects.filter(pop__isnull=False).values_list('pop', flat=True))
+                |
+                Q(id__in=backhaul_objects.filter(aggregator__isnull=False).values_list('aggregator', flat=True))
+                |
+                Q(id__in=backhaul_objects.filter(bh_switch__isnull=False).values_list('bh_switch', flat=True))
+            ),
+            is_added_to_nms=1,
+            is_deleted=0,
+            organization__in=organizations
+        )
+
+
+    return backhaul_devices.annotate(dcount=Count('id'))
 
 
 @cache_for(300)
 def filter_devices(organizations=[],
                    data_tab=None,
                    page_type="customer",
-                   required_value_list=[]
+                   required_value_list=[],
+                   other_bh=False
                    ):
 
     """
@@ -220,7 +242,9 @@ def filter_devices(organizations=[],
         device_list = organization_network_devices(organizations, device_technology_id
         ).values(*device_value_list)
     elif page_type == "other":
-        device_list = organization_backhaul_devices(organizations).values(*device_value_list)
+        device_list = organization_backhaul_devices(organizations,
+                                                    technology=None,
+                                                    others=other_bh).values(*device_value_list)
     else:
         device_list = []
     # get the devices in an organisation which are added for monitoring
@@ -253,3 +277,43 @@ def prepare_machines(device_list):
                                  device['device_machine'] == machine]
 
     return machine_dict
+
+
+def organization_sectors(organization, technology=None):
+    """
+    To result back the all the sector from the respective organization.
+
+    :param organization: organization list
+    :param technology:
+    :return list of sector
+    """
+    if int(technology) == int(PMP.ID):
+        sector_list = Sector.objects.filter(
+                                sector_id__isnull=False,
+                                sector_configured_on_port__isnull=True,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    elif int(technology) == int(WiMAX.ID):
+        sector_list = Sector.objects.filter(
+                                sector_id__isnull=False,
+                                sector_configured_on_port__isnull=False,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    elif int(technology) == int(P2P.ID):
+        sector_list = Sector.objects.filter(
+                                sector_id__isnull=False,
+                                sector_configured_on__device_technology=technology,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    else:
+        sector_list = Sector.objects.filter(
+                                sector_id__isnull=False,
+                                sector_configured_on__isnull=False,
+                            ).annotate(total_sector=Count('sector_id'))
+
+    if organization:
+        sector_list = sector_list.filter(organization__in=organization)
+
+    return sector_list

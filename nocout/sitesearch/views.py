@@ -568,13 +568,19 @@ def prepare_raw_sector(sectors):
                                 'name': 'date_of_acceptance',
                                 'title': 'Date of Acceptance',
                                 'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
-                                'value': format_value(format_this=sector['DATE_OF_ACCEPT']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                                'value': str(format_value(format_this=sector['DATE_OF_ACCEPT'])) if sector['SECTOR_TECH'] == 'P2P' else ""
                             },
                             {
                                 'name': 'ethernet_extender',
                                 'title': 'Ethernet Extender',
                                 'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
                                 'value': format_value(format_this=sector['SS_ETH_EXT']) if sector['SECTOR_TECH'] == 'P2P' else ""
+                            },
+                            {
+                                'name': 'hssu_port',
+                                'title': 'HSSU Port',
+                                'show': 1 if sector['SECTOR_TECH'] == 'P2P' else 0,
+                                'value': format_value(format_this=sector['BSHSSUPORT']) if sector['SECTOR_TECH'] == 'P2P' else ""
                             },
                             {
                               'name': 'technology',

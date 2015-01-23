@@ -4,6 +4,7 @@ from operator import itemgetter
 from nocout_logger import nocout_log
 from collections import namedtuple
 from itertools import izip_longest
+from datetime import datetime
 
 logger = nocout_log()
 
@@ -72,14 +73,85 @@ def prepare_hosts_file():
     ss_devices = make_SS_data(bs_devices.all_hosts, bs_devices.ipaddresses, bs_devices.host_attributes)
     #except Exception, exp:
     #   logger.error('Exception in make_SS_data: ' + pformat(exp))
+    # Final Devices
+    all_hosts, ipaddresses, host_attributes = make_Backhaul_data(ss_devices.all_hosts,
+            ss_devices.ipaddresses, ss_devices.host_attributes)
     T.wimax_bs_devices, T.cambium_bs_devices = bs_devices.wimax_bs_devices, bs_devices.cambium_bs_devices
     T.radwin_bs_devices, T.radwin_ss_devices = bs_devices.radwin_bs_devices, ss_devices.radwin_ss_devices
     T.total_radwin_devices = bs_devices.radwin_bs_devices + ss_devices.radwin_ss_devices
     T.wimax_ss_devices = ss_devices.wimax_ss_devices
 
-    write_hosts_file(ss_devices.all_hosts, ss_devices.ipaddresses, ss_devices.host_attributes)
+    write_hosts_file(all_hosts, ipaddresses, host_attributes)
 
     return T
+
+
+def make_Backhaul_data(all_hosts, ipaddresses, host_attributes):
+    # Query for Backhaul entities
+    query = """
+    select 
+    DISTINCT(device_device.ip_address),
+    device_device.device_name,
+    device_devicetype.name,
+    device_device.mac_address,
+    device_device.ip_address,
+    device_devicetype.agent_tag,
+    site_instance_siteinstance.name,
+    device_device.device_alias,
+    device_devicetechnology.name as techno_name,
+    inventory_backhaul.bh_configured_on_id as bh_conf_id
+    from device_device 
+    inner join
+    (device_devicetechnology, device_devicetype, 
+    machine_machine, site_instance_siteinstance, inventory_backhaul)
+    on 
+    (
+    device_devicetype.id = device_device.device_type and
+    device_devicetechnology.id = device_device.device_technology and
+    machine_machine.id = device_device.machine_id and
+    site_instance_siteinstance.id = device_device.site_instance_id and 
+    inventory_backhaul.bh_configured_on_id = device_device.id
+    )
+    where 
+    device_device.is_deleted=0 and 
+    device_devicetype.name in ('Switch', 'RiCi', 'PINE')
+    ;
+    """
+
+    db = mysql_conn()
+    try:
+        cur = db.cursor() 
+        cur.execute(query) 
+    except Exception, exp:
+        logger.error('Backhaul devices data: ' + pformat(exp))
+    else:
+        data = cur.fetchall() 
+    finally:
+        cur.close() 
+        db.close()
+
+    # Processing backhaul configured on devices
+    processed = []
+    hosts_only = open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'a')
+    for device in data:
+        if  str(device[1]) in processed:
+            continue
+        hosts_only.write(str(device[1]) + '\n')
+        processed.append(str(device[1]))
+        entry = str(device[1]) + '|' + str(device[2]) + '|' + str(device[3]).lower() + \
+            '|wan|prod|' + str(device[5]) + '|site:' + str(device[6]) + '|wato|//' 
+        all_hosts.append(entry) 
+        ipaddresses.update({str(device[1]): str(device[0])})
+        host_attributes.update({ str(device[1]): { 
+            'alias': str(device[7]), 
+            'contactgroups': (True, ['all']),
+            'site': str(device[6]),
+            'tag_agent': str(device[5])
+            }})
+
+    hosts_only.close()
+
+    return (all_hosts, ipaddresses, host_attributes)
 
 
 def make_BS_data(all_hosts=[], ipaddresses={}, host_attributes={}):
@@ -396,17 +468,34 @@ def make_SS_data(all_hosts, ipaddresses, host_attributes):
     return T
 
 
-def update_configuration_db():
-    hosts = []
-    with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
-        hosts = map(lambda t: t.strip(), list(f))
-    query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
-    query += " WHERE device_name IN %s" % pformat(tuple(hosts))
+def update_configuration_db(update_device_table=True, update_id=None, status=None, sync_message=None,
+        detailed_message=None):
+
     db = mysql_conn()
-    cur = db.cursor()
-    cur.execute(query)
-    db.commit()
-    cur.close()
+    if update_device_table:
+        hosts = []
+        with open('/omd/sites/master_UA/etc/check_mk/conf.d/wato/hosts.txt', 'r') as f:
+            hosts = map(lambda t: t.strip(), list(f))
+        query = "UPDATE device_device set is_added_to_nms = 1, is_monitored_on_nms = 1"
+        query += " WHERE device_name IN %s" % pformat(tuple(hosts))
+        cur = db.cursor()
+        cur.execute(query)
+        db.commit()
+        cur.close()
+
+    try:
+        if update_id:
+            sync_finished_at = str(datetime.utcnow())
+            query = "UPDATE device_devicesynchistory SET status=%s, message='%s', completed_on='%s'"\
+                     % (status, detailed_message, sync_finished_at)
+            cur = db.cursor()
+            cur.execute(query)
+            db.commit()
+            cur.close()
+    except Exception, exp:
+        logger.error('Sync Log Updation failed: ' + pformat(exp))
+    finally:
+        db.close()
 
 
 ##############################

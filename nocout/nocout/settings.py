@@ -368,6 +368,10 @@ LOGGING = {
     },
 }
 
+##FOR MULTI PROC data analysis
+MULTI_PROCESSING_ENABLED = False
+##FOR MULTI PROC data analysis
+
 SESSION_SECURITY_WARN_AFTER = 540
 SESSION_SECURITY_EXPIRE_AFTER = 600
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -503,20 +507,13 @@ DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
 REPORT_PATH = '/opt/nocout/nocout_gis/nocout/media/download_center/reports'
 REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 
-# Import the local_settings.py file to override global settings
-
-try:
-    from local_settings import *
-except ImportError:
-    pass
-
 
 # ********************** django password options **********************
 PASSWORD_MIN_LENGTH = 6 # Defaults to 6
 PASSWORD_MAX_LENGTH = 120 # Defaults to None
 
-# PASSWORD_DICTIONARY = "/usr/share/dict/words" # Defaults to None
-PASSWORD_DICTIONARY = "/usr/share/dict/american-english" # Defaults to None
+PASSWORD_DICTIONARY = "/usr/share/dict/words" # Defaults to None
+# PASSWORD_DICTIONARY = "/usr/share/dict/american-english" # Defaults to None
 
 PASSWORD_MATCH_THRESHOLD = 0.9 # Defaults to 0.9, should be 0.0 - 1.0 where 1.0 means exactly the same
 PASSWORD_COMMON_SEQUENCES = [] # Should be a list of strings, see passwords/validators.py for default
@@ -528,3 +525,12 @@ PASSWORD_COMPLEXITY = { # You can ommit any or all of these for no limit for tha
     "NON ASCII": 0,   # Non Ascii (ord() >= 128)
     "WORDS": 0        # Words (substrings seperates by a whitespace)
 }
+
+
+# Import the local_settings.py file to override global settings
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
+

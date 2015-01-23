@@ -114,8 +114,8 @@
             <div id="latestStatusContainer">
                 
             </div>
-            <div class="clearfix divide-10"></div>
-            <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">
+            <div class="clearfix"></div>
+            <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;margin-bottom:0px !important;">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -255,6 +255,8 @@
     <script src={% static "js/highchartstable.js" %}></script>
     <!--Our Custom Script-->
     <script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
+    <!--Our Common Utilities Script-->
+    <script src={% static "js/nocout/nocoutUtilsLib.js" %}></script>
 
     <script type="text/javascript">
     /*Global Variables*/
@@ -308,13 +310,21 @@
 
 
         if(page_type_val == 'other') {
-            // Hide Utilization & RSSI Tabs for all network devices
+            // Hide Utilization & IA Table Tabs for Backhaul Devices
             if (!$("#utilization_top").hasClass("hide")) {
                 $("#utilization_top").addClass("hide");
             }
 
             if (!$("#utilization_top_tab").hasClass("hide")) {
                 $("#utilization_top_tab").addClass("hide");
+            }
+
+            if (!$("#topology").hasClass("hide")) {
+                $("#topology").addClass("hide");
+            }
+
+            if (!$("#topology_tab").hasClass("hide")) {
+                $("#topology_tab").addClass("hide");
             }
 
         } else {
@@ -585,7 +595,7 @@
                         showDropdowns: true,
                         ranges: {
                             'Today': [moment().startOf('day'), moment()],
-                            'Last 24 Hours': [moment().subtract(1, 'days'), moment()],
+                            'Last 24 Hours': [moment().subtract('days', 1), moment()],
                             'Last 7 Days': [moment().subtract('days', 6), moment()],
                             'Last 30 Days': [moment().subtract('days', 29), moment()],
                             'This Month': [moment().startOf('month'), moment().endOf('month')],
