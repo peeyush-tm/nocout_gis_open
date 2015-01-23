@@ -95,7 +95,8 @@ def check_rici_port_values(item, _no_params, info):
     infotext = "unknown_value"
     try:
 	ip= lookup_ipaddress(g_hostname)
-	num_port = len(info[0])	
+	num_port = filter(lambda x: x != '' ,info[0])
+	num_port = len(num_port)	
 	if ip:
 		plugin_message =connection_telnet_for_rici_port_state(ip, 23,num_port)
 		if plugin_message:
