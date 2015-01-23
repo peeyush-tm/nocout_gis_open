@@ -13,6 +13,7 @@ from django.views.generic.base import View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
+from nocout.settings import PMP, WiMAX
 from nocout.utils import logged_in_user_organizations
 from inventory.models import Sector
 from device.models import DeviceTechnology, Device
@@ -670,105 +671,6 @@ class MainDashboardMixin(object):
         return HttpResponse(response)
 
 
-class WiMAX_Latency(MainDashboardMixin, View):
-    """
-    The Class based View to get Latency of WIMAX.
-
-    """
-    packet_loss = False
-    down = False
-    temperature = ''
-    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
-
-
-class PMP_Latency(MainDashboardMixin, View):
-    """
-    The Class based View to get Latency of PMP.
-
-    """
-    packet_loss = False
-    down = False
-    temperature = ''
-    technology = DeviceTechnology.objects.get(name__icontains='PMP').id
-
-
-class ALL_Latency(MainDashboardMixin, View):
-    """
-    The Class based View to get Latency of All(WIMAX and PMP).
-
-    """
-    packet_loss = False
-    down = False
-    temperature = ''
-    technology = None
-
-
-class WIMAX_Packet_Loss(MainDashboardMixin, View):
-    """
-    The Class based View to get Packet Loss of WIMAX.
-
-    """
-    packet_loss = True
-    down = False
-    temperature = ''
-    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
-
-
-class PMP_Packet_Loss(MainDashboardMixin, View):
-    """
-    The Class based View to get Packet Loss of PMP.
-
-    """
-    packet_loss = True
-    down = False
-    temperature = ''
-    technology = DeviceTechnology.objects.get(name__icontains='PMP').id
-
-
-class ALL_Packet_Loss(MainDashboardMixin, View):
-    """
-    The Class based View to get Packet Loss of All(WIMAX and PMP).
-
-    """
-    packet_loss = True
-    down = False
-    temperature = ''
-    technology = None
-
-
-class WIMAX_Down(MainDashboardMixin, View):
-    """
-    The Class based View to get down of WIMAX.
-
-    """
-    packet_loss = False
-    down = True
-    temperature = ''
-    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
-
-
-class PMP_Down(MainDashboardMixin, View):
-    """
-    The Class based View to get down of WIMAX.
-
-    """
-    packet_loss = False
-    down = True
-    temperature = ''
-    technology = DeviceTechnology.objects.get(name__icontains='PMP').id
-
-
-class ALL_Down(MainDashboardMixin, View):
-    """
-    The Class based View to get down of WIMAX.
-
-    """
-    packet_loss = False
-    down = True
-    temperature = ''
-    technology = None
-
-
 class WIMAX_Temperature_Idu(MainDashboardMixin, View):
     """
     The Class based View to get Temperature-IDU of WIMAX.
@@ -1090,3 +992,73 @@ def get_range_status_dict(dashboard_name, sector_devices_list):
                                 )
 
     return dashboard_status_dict
+
+
+# *************************** Dashboard Gauge Status ***********************
+class DashboardDeviceStatus(View):
+    '''
+    '''
+    def get(self, request):
+        """
+        """
+        dashboard_name = self.request.GET['dashboard_name']
+        dashboard_name = dashboard_name.replace('#','')
+
+        count = 0
+        count_range = ''
+        count_color = '#CED5DB' # For Unknown Range.
+
+        technology = None
+        if 'pmp' in dashboard_name:
+            technology = PMP.ID
+        elif 'wimax' in dashboard_name:
+            technology = WiMAX.ID
+
+        if '-all' in dashboard_name:
+            dashboard_name = dashboard_name.replace('-all','-network')
+
+        dashboard_status_name = dashboard_name
+        if 'temperature' in dashboard_name:
+            dashboard_name = 'temperature'
+
+        organizations = logged_in_user_organizations(self)
+
+        user_devices = organization_network_devices(organizations, technology)
+        sector_devices = user_devices.filter(sector_configured_on__isnull=False)
+        sector_devices = sector_devices.values_list('device_name',flat=True)
+
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
+        except DashboardSetting.DoesNotExist as e:
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard setting is not available.",
+                "success":0
+            }))
+
+        dashboard_status_dict = get_range_status_dict(dashboard_status_name, sector_devices)
+        if len(dashboard_status_dict):
+            count = sum(dashboard_status_dict.values())
+
+        # print 'count...',count
+        for i in range(1, 11):
+            start_range = getattr(dashboard_setting, 'range%d_start' %i)
+            end_range = getattr(dashboard_setting, 'range%d_end' %i)
+
+            # dashboard type is numeric and start_range and end_range exists to compare result.
+            if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
+                if float(start_range) <= float(count) <= float(end_range):
+                    count_range = 'range%d' %i
+
+            #dashboard type is string and start_range exists to compare result.
+            elif dashboard_setting.dashboard_type == 'STR' and start_range:
+                if str(count).lower() in start_range.lower():
+                    count_range = 'range%d' %i
+
+        # get color of range in which count exists.
+        if count_range:
+            count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
+
+        chart_data_dict = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
+        response = get_highchart_response(chart_data_dict)
+
+        return HttpResponse(response)

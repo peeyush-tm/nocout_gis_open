@@ -188,6 +188,9 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
     $.ajax({
         url : ajax_url,
         type : "GET",
+        data : {
+            'dashboard_name': div_id,
+        },
         success : function(result) {
             var response = "";
             if(typeof result == 'string') {

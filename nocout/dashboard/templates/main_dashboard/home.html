@@ -38,7 +38,7 @@
             <h5>Latency</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="packet-loss-all" style="height: 180px;"></div>
+            <div id="packetloss-all" style="height: 180px;"></div>
             <h5>Packet Drop</h5>
         </div>
         <div class="col-md-3" align="center">
@@ -145,11 +145,11 @@
 
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
-            <div id="packet-loss-wimax" style="height: 180px;"></div>
+            <div id="packetloss-wimax" style="height: 180px;"></div>
             <h5>Packet Drop Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="packet-loss-pmp" style="height: 180px;"></div>
+            <div id="packetloss-pmp" style="height: 180px;"></div>
             <h5>Packet Drop PMP</h5>
         </div>
         <div class="col-md-3" align="center">
@@ -227,11 +227,11 @@
         // Get chart for latency of all.
         get_speedometer_chart('/dashboard/latency/all/','#latency-all','Latency ALL');
         // Get chart for packet loss of wimax.
-        get_speedometer_chart('/dashboard/packet_loss/wimax/','#packet-loss-wimax','Packet Loss WiMAX');
+        get_speedometer_chart('/dashboard/packet_loss/wimax/','#packetloss-wimax','Packet Loss WiMAX');
         // Get chart for packet loss of pmp.
-        get_speedometer_chart('/dashboard/packet_loss/pmp/','#packet-loss-pmp','Packet Loss PMP');
+        get_speedometer_chart('/dashboard/packet_loss/pmp/','#packetloss-pmp','Packet Loss PMP');
         // Get chart for packet loss of all.
-        get_speedometer_chart('/dashboard/packet_loss/all/','#packet-loss-all','Packet Loss ALL');
+        get_speedometer_chart('/dashboard/packet_loss/all/','#packetloss-all','Packet Loss ALL');
         // Get chart for down of wimax.
         get_speedometer_chart('/dashboard/down/wimax/','#down-wimax','Down WiMAX');
         // Get chart for down of pmp.
