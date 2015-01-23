@@ -857,6 +857,18 @@ function GisPerformance() {
 
                                         cross_label.open(mapInstance);
                                         cross_label_array['line_'+ss_marker_data.name] = cross_label;
+                                    } else {
+                                        try {
+                                            // Close the label if exist
+                                            if(cross_label_array['line_'+ss_marker_data.name]) {
+                                                // Remove the cross label
+                                                cross_label_array['line_'+ss_marker_data.name].close();
+                                                // Delete cross label from global object
+                                                delete cross_label_array['line_'+ss_marker_data.name];
+                                            }
+                                        } catch(e) {
+                                            // console.log(e);
+                                        }
                                     }
                                     
                                     allMarkersObject_gmap['path']['line_'+ss_marker_data.name] = ss_link_line;
