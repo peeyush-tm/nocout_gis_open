@@ -650,8 +650,6 @@ def calculate_yearly_main_dashboard():
 
 
 def calculate_yearly_range_status(day, first_month):
-    day = timezone.datetime.today() - timezone.timedelta(days=1)
-    first_month = timezone.datetime(day.year, 1, day.day)
     last_year_monthly_range_status = DashboardRangeStatusMonthly.objects.order_by('dashboard_name',
             'device_name').filter(processed_for__year=day.year)
 
@@ -687,9 +685,9 @@ def calculate_yearly_range_status(day, first_month):
         yearly_range_status_list.append(yearly_range_status)
 
     if is_january:
-        bulk_update_create(yearly_range_status_list, action='create', model=DashboardRangeStatusYearly)
+        bulk_update_create.delay(yearly_range_status_list, action='create', model=DashboardRangeStatusYearly)
     else:
-        bulk_update_create(yearly_range_status_list)
+        bulk_update_create.delay(yearly_range_status_list)
 
 
 def calculate_yearly_severity_status(day, first_month):
