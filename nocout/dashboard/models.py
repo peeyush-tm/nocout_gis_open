@@ -213,7 +213,8 @@ class DashboardSeverityStatus(models.Model):
     Class to store dashboard sector status count severity wise.
     """
     dashboard_name = models.CharField(max_length=100, db_index=True)
-    sector_name = models.CharField(max_length=100, db_index=True)
+    device_name = models.CharField(max_length=100, db_index=True)
+    reference_name = models.CharField(max_length=100, db_index=True)
     processed_for = models.DateTimeField(auto_now_add=False, auto_now=False)
     warning = models.IntegerField(default=0)
     critical = models.IntegerField(default=0)
