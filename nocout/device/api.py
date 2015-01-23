@@ -1035,12 +1035,7 @@ class BulkFetchLPDataApi(View):
                         try:
                             if len(device_value) and (device_value != "NA"):
 
-                                # live polled value of device service
-                                try:
-                                    value = ast.literal_eval(str(device_value))
-                                except Exception as e:
-                                    value = device_value
-                                    logger.info("Value can't be converted. Exception: ", e.message)
+                                value = device_value
 
                                 # get appropriate icon
                                 if service_type == "normal":
@@ -1115,8 +1110,15 @@ class BulkFetchLPDataApi(View):
         # default image to be loaded
         image_partial = icon
 
-        # fetch value from list
-        value = value[0]
+        if type(value) is list:
+            # fetch value from list
+            value = value[0]
+        if type(value) is str:
+            value = value
+
+        #now for % appended for PING cases
+        value = "".join(value.split("%"))
+        #being safe here
 
         if th_ranges and th_icon_settings and len(str(value)):
             compare_this = float(value)
@@ -1172,8 +1174,11 @@ class BulkFetchLPDataApi(View):
         # default image to be loaded
         image_partial = icon
 
-        # fetch value from list
-        value = value[0]
+        if type(value) is list:
+            # fetch value from list
+            value = value[0]
+        if type(value) is str:
+            value = value
 
         if th_ranges and th_icon_settings and value:
             compare_this = ''.join(e for e in value if e.isalnum())
