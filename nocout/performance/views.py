@@ -2472,6 +2472,8 @@ class DeviceServiceDetail(View):
         sds_names = list()
         service_data_sources = {}
 
+        colors = ['#1BEAFF','#A60CE8']
+
         for s in services:
             service_names.append(s['name'])
             temp_sds_name = s['servicespecificdatasource__service_data_sources__name']
@@ -2479,6 +2481,15 @@ class DeviceServiceDetail(View):
             sds_names.append(temp_sds_name)
             service_data_sources[temp_s_name, temp_sds_name] = \
                 s['servicespecificdatasource__service_data_sources__alias']
+            if technology and technology.name.lower() in ['ptp', 'p2p']:
+                if 'ul' in temp_s_name.lower():
+                    appnd = 'UL : '
+                elif 'dl' in temp_s_name.lower():
+                    appnd = 'DL : '
+                else:
+                    appnd = ''
+                service_data_sources[temp_s_name, temp_sds_name] = appnd + \
+                                                                   service_data_sources[temp_s_name, temp_sds_name]
 
         if dr_device:
             performance = PerformanceService.objects.filter(
@@ -2539,13 +2550,21 @@ class DeviceServiceDetail(View):
                     ])
                 else:
                     if (data.service_name, data.data_source) not in temp_chart_data:
-                        color[data.service_name, data.data_source] = perf_utils.color_picker()
+                        # color[data.service_name, data.data_source] = perf_utils.color_picker()
+                        c = SERVICE_DATA_SOURCE[
+                                        data.service_name.strip() + "_" +data.data_source.strip()
+                                    ]['chart_color']
+                        if technology and technology.name.lower() in ['ptp', 'p2p']:
+                            if 'ul' in data.service_name.strip().lower():
+                                c = colors[0]
+                            elif 'dl' in data.service_name.strip().lower():
+                                c = colors[1]
+                            else:
+                                pass
                         temp_chart_data[data.service_name, data.data_source] = {
                             'name': service_data_sources[data.service_name, data.data_source],
                             'data': [],
-                            'color': SERVICE_DATA_SOURCE[
-                                        data.service_name.strip() + "_" +data.data_source.strip()
-                                    ]['chart_color'],
+                            'color': c,
                             'type': SERVICE_DATA_SOURCE[
                                         data.service_name.strip() + "_" +data.data_source.strip()
                                     ]['type']
