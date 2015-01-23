@@ -646,63 +646,6 @@ class MainDashboard(View):
 
         return render(self.request, self.template_name, )
 
-class MainDashboardMixin(object):
-    """
-    Provide common method get for Performance Dashboard.
-
-    To use this Mixin set `template_name` and implement method get_init_data to provide following attributes:
-
-        - data_source_config
-        - technology
-        - devices_method_to_call
-        - devices_method_kwargs
-    """
-    def get(self, request):
-        """
-        Handles the get request
-
-        :param request:
-        :return Http response object:
-        """
-        technology = self.technology
-        user_organizations = logged_in_user_organizations(self)
-        chart_data_dict = get_gauge_chart_status_data(user_organizations, self.packet_loss, self.down, self.temperature, technology)
-        response = get_highchart_response(chart_data_dict)
-        return HttpResponse(response)
-
-
-class WIMAX_Temperature_Idu(MainDashboardMixin, View):
-    """
-    The Class based View to get Temperature-IDU of WIMAX.
-
-    """
-    packet_loss = False
-    down = False
-    temperature = 'IDU'
-    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
-
-
-class WIMAX_Temperature_Acb(MainDashboardMixin, View):
-    """
-    The Class based View to get Temperature-ACB of WIMAX.
-
-    """
-    packet_loss = False
-    down = False
-    temperature = 'ACB'
-    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
-
-
-class WIMAX_Temperature_Fan(MainDashboardMixin, View):
-    """
-    The Class based View to get Temperature-FAN of WIMAX.
-
-    """
-    packet_loss = False
-    down = False
-    temperature = 'FAN'
-    technology = DeviceTechnology.objects.get(name__icontains='WIMAX').id
-
 
 class MFRCauseCodeView(View):
     """
@@ -887,74 +830,6 @@ class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
     tech_name = 'WiMAX'
 
 
-def get_gauge_chart_status_data(organizations, packet_loss, down, temperature, technology):
-    """
-    """
-    count = 0
-    count_range = ''
-    count_color = '#CED5DB' # For Unknown Range.
-
-    technology_name = DeviceTechnology.objects.get(id=technology).name.lower() if technology else 'network'
-    user_devices = organization_network_devices(organizations, technology)
-    sector_devices = user_devices.filter(sector_configured_on__isnull=False)
-    sector_devices = sector_devices.values_list('device_name',flat=True)
-
-    if temperature:
-        dashboard_name = 'temperature'
-        if temperature == 'IDU':
-            dashboard_status_name = 'temperature-idu'
-        elif temperature == 'ACB':
-            dashboard_status_name = 'temperature-acb'
-        elif temperature == 'FAN':
-            dashboard_status_name = 'temperature-fan'
-
-    elif packet_loss:
-        dashboard_name = 'packetloss-%s'%technology_name
-        dashboard_status_name = dashboard_name
-
-    elif down:
-        dashboard_name = 'down-%s'%technology_name
-        dashboard_status_name = dashboard_name
-
-    else:
-        dashboard_name = 'latency-%s'%technology_name
-        dashboard_status_name = dashboard_name
-
-    try:
-        dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
-    except DashboardSetting.DoesNotExist as e:
-        return HttpResponse(json.dumps({
-            "message": "Corresponding dashboard setting is not available.",
-            "success":0
-        }))
-
-    dashboard_status_dict = get_range_status_dict(dashboard_name, sector_devices)
-    if len(dashboard_status_dict):
-        count = sum(dashboard_status_dict.values())
-
-    # print 'count...',count
-    for i in range(1, 11):
-        start_range = getattr(dashboard_setting, 'range%d_start' %i)
-        end_range = getattr(dashboard_setting, 'range%d_end' %i)
-
-        # dashboard type is numeric and start_range and end_range exists to compare result.
-        if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
-            if float(start_range) <= float(count) <= float(end_range):
-                count_range = 'range%d' %i
-
-        #dashboard type is string and start_range exists to compare result.
-        elif dashboard_setting.dashboard_type == 'STR' and start_range:
-            if str(count).lower() in start_range.lower():
-                count_range = 'range%d' %i
-
-    # get color of range in which count exists.
-    if count_range:
-        count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
-
-    dictionary = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
-    return dictionary
-
-
 # *************************** Dashboard Timely Data ***********************
 def get_severity_status_dict(dashboard_name, sector_devices_list):
     '''
@@ -1020,6 +895,7 @@ class DashboardDeviceStatus(View):
         dashboard_status_name = dashboard_name
         if 'temperature' in dashboard_name:
             dashboard_name = 'temperature'
+            dashboard_status_name = dashboard_status_name.replace('-wimax','')
 
         organizations = logged_in_user_organizations(self)
 
