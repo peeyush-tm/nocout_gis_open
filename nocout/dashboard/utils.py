@@ -146,38 +146,41 @@ def get_service_status_results(user_devices, model, service_name, data_source):
     return service_status_results
 
 
+def get_range_status(dashboard_setting, result):
+    range_count = 'unknown'
+    for i in range(1, 11):
+        start_range = getattr(dashboard_setting, 'range%d_start' %i)
+        end_range = getattr(dashboard_setting, 'range%d_end' %i)
+
+        # dashboard type is numeric and start_range and end_range exists to compare result.
+        if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
+            try:
+                if float(start_range) <= float(result['current_value']) <= float(end_range):
+                    range_count = 'range%d' %i
+            except ValueError as value_error:
+                range_count = 'unknown'
+                break
+            except TypeError as type_error:
+                pass
+
+        # dashboard type is string and start_range exists to compare result.
+        elif dashboard_setting.dashboard_type == 'STR' and start_range:
+            if result['current_value'].lower() in start_range.lower():
+                range_count = 'range%d' %i
+
+    return {'range_count': range_count}
+
+
 def get_dashboard_status_range_counter(dashboard_setting, service_status_results):
     range_counter = dict()
     for i in range(1, 11):
         range_counter.update({'range%d' %i: 0})
     range_counter.update({'unknown': 0})
 
+    range_status_dct = dict()
     for result in service_status_results:
-        is_unknown_range = True
-        for i in range(1, 11):
-            start_range = getattr(dashboard_setting, 'range%d_start' %i)
-            end_range = getattr(dashboard_setting, 'range%d_end' %i)
-
-            # dashboard type is numeric and start_range and end_range exists to compare result.
-            if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
-                try:
-                    if float(start_range) <= float(result['current_value']) <= float(end_range):
-                        range_counter['range%d' %i] += 1
-                        is_unknown_range = False
-                except ValueError as value_error:
-                    range_counter['unknown'] += 1
-                    is_unknown_range = False
-                    break
-                except TypeError as type_error:
-                    pass
-
-            # dashboard type is string and start_range exists to compare result.
-            elif dashboard_setting.dashboard_type == 'STR' and start_range:
-                if result['current_value'].lower() in start_range.lower():
-                    range_counter['range%d' %i] += 1
-                    is_unknown_range = False
-        if is_unknown_range:
-            range_counter['unknown'] += 1
+        range_status_dct = get_range_status(dashboard_setting, result)
+        range_counter[range_status_dct['range_count']] += 1
 
     return range_counter
 

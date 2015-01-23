@@ -29,7 +29,7 @@ from performance.utils.util import color_picker
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
-    get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response, get_unused_dashboards
+    get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response, get_unused_dashboards, get_range_status
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
@@ -916,22 +916,11 @@ class DashboardDeviceStatus(View):
             count = sum(dashboard_status_dict.values())
 
         # print 'count...',count
-        for i in range(1, 11):
-            start_range = getattr(dashboard_setting, 'range%d_start' %i)
-            end_range = getattr(dashboard_setting, 'range%d_end' %i)
-
-            # dashboard type is numeric and start_range and end_range exists to compare result.
-            if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
-                if float(start_range) <= float(count) <= float(end_range):
-                    count_range = 'range%d' %i
-
-            #dashboard type is string and start_range exists to compare result.
-            elif dashboard_setting.dashboard_type == 'STR' and start_range:
-                if str(count).lower() in start_range.lower():
-                    count_range = 'range%d' %i
+        range_status_dct = get_range_status(dashboard_setting, {'current_value': count})
+        count_range = range_status_dct['range_count']
 
         # get color of range in which count exists.
-        if count_range:
+        if count_range and count_range != 'unknown':
             count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
 
         chart_data_dict = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
