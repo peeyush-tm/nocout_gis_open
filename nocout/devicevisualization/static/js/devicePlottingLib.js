@@ -2774,12 +2774,28 @@ function devicePlottingClass_gmap() {
 				if(allMarkersObject_gmap['path'][key].map) {
 					allMarkersObject_gmap['path'][key].setMap(null);
 				}
+
+				try {
+					if(cross_label_array[key] && cross_label_array[key].getVisible()) {
+						cross_label_array[key].hide()
+					}
+				} catch(e) {
+					// console.log(e);
+				}
 			}
 
 		} else {
 			for(key in allMarkersObject_gmap['path']) {
 				if(!allMarkersObject_gmap['path'][key].map) {
 					allMarkersObject_gmap['path'][key].setMap(mapInstance);
+				}
+
+				try {
+					if(cross_label_array[key] && !cross_label_array[key].getVisible()) {
+						cross_label_array[key].show()
+					}
+				} catch(e) {
+					// console.log(e);
 				}
 			}
 		}
