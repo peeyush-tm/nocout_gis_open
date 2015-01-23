@@ -156,6 +156,7 @@ class DashboardRangeStatus(models.Model):
     """
     dashboard_name = models.CharField(max_length=100, db_index=True)
     device_name = models.CharField(max_length=100, db_index=True)
+    reference_name = models.CharField(max_length=100, db_index=True)
     processed_for = models.DateTimeField(auto_now_add=False, auto_now=False)
     range1 = models.IntegerField(default=0)
     range2 = models.IntegerField(default=0)
