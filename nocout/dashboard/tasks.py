@@ -63,13 +63,14 @@ def calculate_timely_sector_capacity(technology, model, processed_for):
     sectors = SectorCapacityStatus.objects.filter(
             Q(sector__sector_configured_on__device_technology=technology.ID),
             Q(severity__in=['warning', 'critical', 'ok']),
-        ).values('id', 'sector__name', 'severity', 'sys_timestamp', 'age')
+        ).values('id', 'sector__name', 'sector__sector_configured_on__device_name', 'severity', 'sys_timestamp', 'age')
 
     data_list = list()
     for item in sectors:
         range_counter = dict(
             dashboard_name=dashboard_name,
-            sector_name=item['sector__name'],
+            device_name=item['sector__sector_configured_on__device_name']
+            reference_name=item['sector__name'],
             processed_for=processed_for,
         )
         if (item['age'] <= item['sys_timestamp'] - 600) and (item['severity'].strip().lower() in ['warning', 'critical']):
@@ -281,19 +282,20 @@ def calculate_hourly_main_dashboard():
 
 def calculate_hourly_severity_status(now):
     last_hour_timely_severity_status = DashboardSeverityStatusTimely.objects.order_by('dashboard_name',
-            'sector_name').filter(processed_for__lt=now)
+            'device_name').filter(processed_for__lt=now)
 
     hourly_severity_status_list = []
     hourly_severity_status = None
     dashboard_name = ''
-    sector_name = ''
+    device_name = ''
     for timely_severity_status in last_hour_timely_severity_status:
-        if dashboard_name == timely_severity_status.dashboard_name and sector_name == timely_severity_status.sector_name:
+        if dashboard_name == timely_severity_status.dashboard_name and device_name == timely_severity_status.device_name:
             hourly_severity_status = sum_severity_status(hourly_severity_status, timely_severity_status)
         else:
             hourly_severity_status = DashboardSeverityStatusHourly(
                 dashboard_name=timely_severity_status.dashboard_name,
-                sector_name=timely_severity_status.sector_name,
+                device_name=timely_severity_status.device_name,
+                reference_name=timely_severity_status.reference_name,
                 processed_for=now,
                 warning=timely_severity_status.warning,
                 critical=timely_severity_status.critical,
@@ -303,7 +305,7 @@ def calculate_hourly_severity_status(now):
             )
             hourly_severity_status_list.append(hourly_severity_status)
             dashboard_name = timely_severity_status.dashboard_name
-            sector_name = timely_severity_status.sector_name
+            device_name = timely_severity_status.device_name
 
     bulk_update_create.delay(hourly_severity_status_list, action='create', model=DashboardSeverityStatusHourly)
 
@@ -390,19 +392,20 @@ def calculate_daily_severity_status(now):
     previous_day = now - timezone.timedelta(days=1)
     yesterday = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo)
     last_day_timely_severity_status = DashboardSeverityStatusHourly.objects.order_by('dashboard_name',
-            'sector_name').filter(processed_for__gte=yesterday, processed_for__lt=today)
+            'device_name').filter(processed_for__gte=yesterday, processed_for__lt=today)
 
     daily_severity_status_list = []
     daily_severity_status = None
     dashboard_name = ''
-    sector_name = ''
+    device_name = ''
     for hourly_severity_status in last_day_timely_severity_status:
-        if dashboard_name == hourly_severity_status.dashboard_name and sector_name == hourly_severity_status.sector_name:
+        if dashboard_name == hourly_severity_status.dashboard_name and device_name == hourly_severity_status.device_name:
             daily_severity_status = sum_severity_status(daily_severity_status, hourly_severity_status)
         else:
             daily_severity_status = DashboardSeverityStatusDaily(
                 dashboard_name=hourly_severity_status.dashboard_name,
-                sector_name=hourly_severity_status.sector_name,
+                device_name=hourly_severity_status.device_name,
+                reference_name=hourly_severity_status.reference_name,
                 processed_for=yesterday,
                 warning=hourly_severity_status.warning,
                 critical=hourly_severity_status.critical,
@@ -412,7 +415,7 @@ def calculate_daily_severity_status(now):
             )
             daily_severity_status_list.append(daily_severity_status)
             dashboard_name = hourly_severity_status.dashboard_name
-            sector_name = hourly_severity_status.sector_name
+            device_name = hourly_severity_status.device_name
 
     bulk_update_create.delay(daily_severity_status_list, action='create', model=DashboardSeverityStatusDaily)
 
@@ -477,7 +480,7 @@ def calculate_weekly_main_dashboard():
 
 def calculate_weekly_severity_status(day, first_day):
     last_week_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
-            'sector_name').filter(processed_for=day)
+            'device_name').filter(processed_for=day)
 
     weekly_severity_status_list = []
     weekly_severity_status = None
@@ -486,7 +489,8 @@ def calculate_weekly_severity_status(day, first_day):
         if is_monday:
             weekly_severity_status = DashboardSeverityStatusWeekly(
                 dashboard_name=daily_severity_status.dashboard_name,
-                sector_name=daily_severity_status.sector_name,
+                device_name=daily_severity_status.device_name,
+                reference_name=daily_severity_status.reference_name,
                 processed_for=first_day,
                 warning=daily_severity_status.warning,
                 critical=daily_severity_status.critical,
@@ -497,7 +501,7 @@ def calculate_weekly_severity_status(day, first_day):
         else:
             weekly_severity_status, created  = DashboardSeverityStatusWeekly.objects.get_or_create(
                 dashboard_name=daily_severity_status.dashboard_name,
-                sector_name=daily_severity_status.sector_name,
+                device_name=daily_severity_status.device_name,
                 processed_for=first_day
             )
             weekly_severity_status = sum_severity_status(weekly_severity_status, daily_severity_status)
@@ -608,7 +612,7 @@ def calculate_monthly_range_status(day, first_day):
 
 def calculate_monthly_severity_status(day, first_day):
     last_month_daily_severity_status = DashboardSeverityStatusDaily.objects.order_by('dashboard_name',
-            'sector_name').filter(processed_for=day)
+            'device_name').filter(processed_for=day)
 
     monthly_severity_status_list = []
     monthly_severity_status = None
@@ -617,7 +621,7 @@ def calculate_monthly_severity_status(day, first_day):
         if not is_first_day_of_month:
             monthly_severity_status, created = DashboardSeverityStatusMonthly.objects.get_or_create(
                 dashboard_name=daily_severity_status.dashboard_name,
-                sector_name=daily_severity_status.sector_name,
+                device_name=daily_severity_status.device_name,
                 processed_for=first_day
             )
             monthly_severity_status = sum_severity_status(monthly_severity_status, daily_severity_status)
@@ -625,7 +629,8 @@ def calculate_monthly_severity_status(day, first_day):
         else:
             monthly_severity_status = DashboardSeverityStatusMonthly(
                 dashboard_name=daily_severity_status.dashboard_name,
-                sector_name=daily_severity_status.sector_name,
+                device_name=daily_severity_status.device_name,
+                reference_name=daily_severity_status.reference_name,
                 processed_for=first_day,
                 warning=daily_severity_status.warning,
                 critical=daily_severity_status.critical,
@@ -699,7 +704,7 @@ def calculate_yearly_range_status(day, first_month):
 
 def calculate_yearly_severity_status(day, first_month):
     last_year_monthly_severity_status = DashboardSeverityStatusMonthly.objects.order_by('dashboard_name',
-            'sector_name').filter(processed_for__year=day.year)
+            'device_name').filter(processed_for__year=day.year)
 
     yearly_severity_status_list = []
     yearly_severity_status = None
@@ -708,7 +713,7 @@ def calculate_yearly_severity_status(day, first_month):
         if not is_january:
             yearly_severity_status, created = DashboardSeverityStatusYearly.objects.get_or_create(
                 dashboard_name=monthly_severity_status.dashboard_name,
-                sector_name=monthly_severity_status.sector_name,
+                device_name=monthly_severity_status.device_name,
                 processed_for=first_month
             )
             yearly_severity_status = sum_severity_status(yearly_severity_status, monthly_severity_status)
@@ -716,7 +721,8 @@ def calculate_yearly_severity_status(day, first_month):
         else:
             yearly_severity_status = DashboardSeverityStatusYearly(
                 dashboard_name=monthly_severity_status.dashboard_name,
-                sector_name=monthly_severity_status.sector_name,
+                device_name=monthly_severity_status.device_name,
+                reference_name=monthly_severity_status.reference_name,
                 processed_for=first_month,
                 warning=monthly_severity_status.warning,
                 critical=monthly_severity_status.critical,
