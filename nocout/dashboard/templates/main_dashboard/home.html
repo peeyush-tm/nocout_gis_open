@@ -23,26 +23,26 @@
 
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
-        <h4><i class="fa fa-dashboard"></i>MAIN DASHBOARD</h4>
+        <h4><i class="fa fa-dashboard"></i> Main Dashboard</h4>
     </div>
     <div class="box-body">
         <!-- ********** FIRST ROW START **********-->
 
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
-            <div id="down-all" style="height: 180px;"></div>
+            <div id="down-all" style="height: 165px;"></div>
             <h5>Down</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="latency-all" style="height: 180px;"></div>
+            <div id="latency-all" style="height: 165px;"></div>
             <h5>Latency</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="packetloss-all" style="height: 180px;"></div>
+            <div id="packet-loss-all" style="height: 165px;"></div>
             <h5>Packet Drop</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="temperature-idu-wimax" style="height: 180px;"></div>
+            <div id="temperature-idu-wimax" style="height: 165px;"></div>
             <h5>Temperature IDU Wimax</h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
@@ -105,65 +105,69 @@
         <hr/>
 
         <!-- ********** FOURTH ROW START **********-->
-        <div class="col-md-9">
+        <div class="col-md-12">
             <h4>MFR Processed</h4>
             <div id="id_mfr_processed" class="rf_chart_style"></div>
         </div>
-        <div class="col-md-3" align="center">
-            <div id="mfr_cause_code" class="rf_chart_style"></div>
-            <h5>MFR Caused Code</h5>
-        </div>
-
         <div class="clearfix"></div>
         <!-- ********** FOURTH ROW END **********-->
         <hr/>
 
         <!-- ********** FIFTH ROW START **********-->
-        <!-- Speedometers (Gauge) Charts Start -->
-        <div class="col-md-3" align="center">
-            <div id="down-wimax" style="height: 180px;"></div>
-            <h5>Down Wimax</h5>
+        <div class="col-md-12">
+            <h4>MFR Caused Code</h4>
+            <div id="mfr_cause_code" class="rf_chart_style"></div>
         </div>
-        <div class="col-md-3" align="center">
-            <div id="down-pmp" style="height: 180px;"></div>
-            <h5>Down PMP</h5>
-        </div>
-        <div class="col-md-3" align="center">
-            <div id="latency-wimax" style="height: 180px;"></div>
-            <h5>Latency Wimax</h5>
-        </div>
-        <div class="col-md-3" align="center">
-            <div id="latency-pmp" style="height: 180px;"></div>
-            <h5>Latency PMP</h5>
-        </div>
-        <!-- Speedometers (Gauge) Charts End -->
+
         <div class="clearfix"></div>
         <!-- ********** FIFTH ROW END **********-->
         <hr/>
 
         <!-- ********** SIXTH ROW START **********-->
-
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
-            <div id="packetloss-wimax" style="height: 180px;"></div>
-            <h5>Packet Drop Wimax</h5>
+            <div id="down-wimax" style="height: 165px;"></div>
+            <h5>Down Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="packetloss-pmp" style="height: 180px;"></div>
-            <h5>Packet Drop PMP</h5>
+            <div id="down-pmp" style="height: 165px;"></div>
+            <h5>Down PMP</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="temperature-fan-wimax" style="height: 180px;"></div>
-            <h5>Temperature Fan Wimax</h5>
+            <div id="latency-wimax" style="height: 165px;"></div>
+            <h5>Latency Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="temperature-acb-wimax" style="height: 180px;"></div>
-            <h5>Temperature ACB Wimax</h5>
+            <div id="latency-pmp" style="height: 165px;"></div>
+            <h5>Latency PMP</h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
         <div class="clearfix"></div>
         <!-- ********** SIXTH ROW END **********-->
+        <hr/>
+
+        <!-- ********** SEVENTH ROW START **********-->
+
+        <!-- Speedometers (Gauge) Charts Start -->
+        <div class="col-md-3" align="center">
+            <div id="packet-loss-wimax" style="height: 165px;"></div>
+            <h5>Packet Drop Wimax</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="packet-loss-pmp" style="height: 165px;"></div>
+            <h5>Packet Drop PMP</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="temperature-fan-wimax" style="height: 165px;"></div>
+            <h5>Temperature Fan Wimax</h5>
+        </div>
+        <div class="col-md-3" align="center">
+            <div id="temperature-acb-wimax" style="height: 165px;"></div>
+            <h5>Temperature ACB Wimax</h5>
+        </div>
+        <!-- Speedometers (Gauge) Charts End -->
         <div class="clearfix"></div>
+        <!-- ********** SEVENTH ROW END **********-->
     </div>
 </div>
 
@@ -174,18 +178,29 @@
 <!--Highcharts Library-->
 <script src={% static "js/highcharts.js" %}></script>
 <script src={% static "js/highcharts-more.js" %}></script>
+<!-- Solid Gauge Chart highcharts -->
 <script src={% static "js/solid-gauge.js" %}></script>
+<!-- no data for highcharts -->
 <script src={% static "js/no-data-to-display.js" %}></script>
-<!-- SPARKLINES -->
-<script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
 <!-- Main Dashboard Custom Script-->
 <script type="text/javascript" src={% static "js/nocout/main_dashboard_script.js" %}></script>
-<!-- no data for hicharts -->
-<script type="text/javascript" src="http://code.highcharts.com/modules/no-data-to-display.js"></script>
+
 <script type="text/javascript">
+
     jQuery(document).ready(function () {
         App.setPage("");  //Set current page
         App.init(); //Initialise plugins and elements
+
+        // Update the url of some charts in dict
+        area_chart_url_obj["id_mfr_processed"]["url"] = "{% url 'processed-mfr' %}";
+        pie_chart_url_obj["wimax_sales_opportunity"]["url"] = "{% url 'sales-opportunity-wimax' %}";
+        pie_chart_url_obj["pmp_sales_opportunity"]["url"] = "{% url 'sales-opportunity-pmp' %}";
+        pie_chart_url_obj["wimax_sector_capacity"]["url"] = "{% url 'sector-capacity-wimax' %}";
+        pie_chart_url_obj["pmp_sector_capacity"]["url"] = "{% url 'sector-capacity-pmp' %}";
+        pie_chart_url_obj["wimax_backhaul_capacity"]["url"] = "";
+        pie_chart_url_obj["pmp_backhaul_capacity"]["url"] = "";
+        pie_chart_url_obj["mfr_cause_code"]["url"] = "{% url 'cause-code-mfr' %}";
+
 
         // Set Global Option for Highcharts
         if(window.Highcharts) {
@@ -198,6 +213,7 @@
 
         // Initialize city ranking datatable
         $("#city_ranking_table").DataTable();
+
         // Update datatable row per pages dropdown n search text box style.
         $('.datatable').each(function () {
             var datatable = $(this);
@@ -212,43 +228,8 @@
             length_sel.addClass('form-control input-sm');
         });
 
-        // charts for the mfr
-        highcharts_piechart(url="{% url 'cause-code-mfr' %}",domElement='#mfr_cause_code');
-        highcharts_areachart(url="{% url 'processed-mfr' %}",domElement='#id_mfr_processed');
-
-        // charts for the sector capacity
-        highcharts_piechart(url="{% url 'sector-capacity-pmp' %}",domElement='#pmp_sector_capacity');
-        highcharts_piechart(url="{% url 'sector-capacity-wimax' %}",domElement='#wimax_sector_capacity');
-
-        // Get chart for latency of wimax.
-        get_speedometer_chart('/dashboard/latency/wimax/','#latency-wimax','Latency WiMAX');
-        // Get chart for latency of pmp.
-        get_speedometer_chart('/dashboard/latency/pmp/','#latency-pmp','Latency PMP');
-        // Get chart for latency of all.
-        get_speedometer_chart('/dashboard/latency/all/','#latency-all','Latency ALL');
-        // Get chart for packet loss of wimax.
-        get_speedometer_chart('/dashboard/packet_loss/wimax/','#packetloss-wimax','Packet Loss WiMAX');
-        // Get chart for packet loss of pmp.
-        get_speedometer_chart('/dashboard/packet_loss/pmp/','#packetloss-pmp','Packet Loss PMP');
-        // Get chart for packet loss of all.
-        get_speedometer_chart('/dashboard/packet_loss/all/','#packetloss-all','Packet Loss ALL');
-        // Get chart for down of wimax.
-        get_speedometer_chart('/dashboard/down/wimax/','#down-wimax','Down WiMAX');
-        // Get chart for down of pmp.
-        get_speedometer_chart('/dashboard/down/pmp/','#down-pmp','Down PMP');
-        // Get chart for down of all.
-        get_speedometer_chart('/dashboard/down/all/','#down-all','Down ALL');
-        // Get chart for temperature-idu of wimax.
-        get_speedometer_chart('/dashboard/temperature-idu/wimax/','#temperature-idu-wimax','Temperature IDU WiMAX');
-        // Get chart for temperature-acb of wimax.
-        get_speedometer_chart('/dashboard/temperature-acb/wimax/','#temperature-acb-wimax','Temperature ACB WiMAX');
-        // Get chart for temperature-fan of wimax.
-        get_speedometer_chart('/dashboard/temperature-fan/wimax/','#temperature-fan-wimax','Temperature FAN WiMAX');
-
-        // charts for the sales opportunity
-        highcharts_piechart(url="{% url 'sales-opportunity-pmp' %}",domElement='#pmp_sales_opportunity');
-        highcharts_piechart(url="{% url 'sales-opportunity-wimax' %}",domElement='#wimax_sales_opportunity');
-
+        // Initialize Dashboard
+        initDashboard();
     });
 </script>
 

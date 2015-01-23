@@ -8,10 +8,8 @@ File contains code for migrating the embeded mongodb data to mysql database.This
 from nocout_site_name import *
 import mysql.connector
 from datetime import datetime, timedelta
-from events_rrd_migration import get_latest_event_entry
-import socket
 import imp
-import time
+
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
@@ -31,30 +29,26 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    db = utility_module.mysql_conn(configs=configs)
-    for i in range(len(configs.get('mongo_conf'))):
-	end_time = datetime.now()
-    	start_time = get_latest_event_entry(
-		    db_type='mysql',
-		    db=db,
-		    site=configs.get('mongo_conf')[i][0],
-		    table_name=configs.get('table_name')
-    	)
-    	if start_time is None:
-		start_time = end_time - timedelta(minutes=15)
-    	start_time = utility_module.get_epoch_time(start_time)
-    	end_time = utility_module.get_epoch_time(end_time)
+
+    end_time = datetime.now()
+    start_time = end_time - timedelta(minutes=2)
+    start_time, end_time = start_time.replace(second=0), end_time.replace(second=0)
+    start_time, end_time = int(start_time.strftime('%s')), int(end_time.strftime('%s'))
+
+    # Get site specific configurations for Mongodb connection
+    # Ex conf : ('ospf4_slave_1', 'localhost', 27018)
+    site_spec_mongo_conf = filter(lambda e: e[0] == nocout_site_name, configs.get('mongo_conf'))[0]
    
-   	 # Read data function reads the data from mongodb and insert into mysql
-    	docs = read_data(start_time, end_time,configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
-    	for doc in docs:
-        	values_list = build_data(doc)
-        	data_values.extend(values_list)
+   	# Read data function reads the data from mongodb and insert into mysql
+    docs = read_data(start_time, end_time,configs=site_spec_mongo_conf, db_name=configs.get('nosql_db'))
+    for doc in docs:
+        values_list = build_data(doc)
+        data_values.extend(values_list)
     if data_values:
         insert_data(configs.get('table_name'), data_values, configs=configs)
-        print "Data inserted into mysql db"
+        print "Data inserted into mysql table %s between %s -- %s" % (configs.get('table_name'), start_time, end_time)
     else:
-        print "No data in the mongo db in this time frame"
+        print "No data in the mongo db between %s -- %s" % (start_time, end_time)
 
 def read_data(start_time, end_time, **kwargs):
     """
@@ -77,7 +71,7 @@ def read_data(start_time, end_time, **kwargs):
     )
     if db:
             cur = db.nocout_service_event_log.find({
-                "check_timestamp": {"$gt": start_time, "$lt": end_time}
+                "sys_timestamp": {"$gte": start_time, "$lt": end_time}
             })
             for doc in cur:
             	docs.append(doc)
@@ -145,6 +139,7 @@ def insert_data(table,data_values,**kwargs):
         	raise mysql.connector.Error, err
     	db.commit()
     	cursor.close()
+	db.close()
 
 
 

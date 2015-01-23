@@ -46,7 +46,8 @@ def update_sector_frequency_per_day():
         try:
             machine_name = sector_configured_on.machine.name
         except Exception as e:
-            logger.info("Sector configured on machine not found. Exception: ", e.message)
+            continue
+            # logger.info("Sector configured on machine not found. Exception: ", e.message)
 
         # polled frequency
         polled_frequency = None
@@ -55,13 +56,15 @@ def update_sector_frequency_per_day():
         try:
             if sector.sector_configured_on_port and sector.sector_configured_on_port.name:
                 port_based_frequency = True
-            if 'pmp1' in sector.sector_configured_on_port.name.strip().lower():
-                service_name = 'wimax_pmp1_frequency_invent'
-            elif 'pmp2' in sector.sector_configured_on_port.name.strip().lower():
-                service_name = 'wimax_pmp2_frequency_invent'
             else:
                 port_based_frequency = False
+
             if port_based_frequency:
+                if 'pmp1' in sector.sector_configured_on_port.name.strip().lower():
+                    service_name = 'wimax_pmp1_frequency_invent'
+                elif 'pmp2' in sector.sector_configured_on_port.name.strip().lower():
+                    service_name = 'wimax_pmp2_frequency_invent'
+
                 polled_frequency = InventoryStatus.objects.filter(device_name=sector_configured_on.device_name,
                                                               service_name=service_name,
                                                               data_source='frequency').using(
@@ -71,8 +74,8 @@ def update_sector_frequency_per_day():
                                                               data_source='frequency').using(
                                                               alias=machine_name)[0].current_value
         except Exception as e:
-            logger.exception("Frequency not exist for sector configured on device ({}).".format(sector_configured_on,
-                                                                                           e.message))
+            # logger.exception("Frequency not exist for sector configured on device ({}).".format(sector_configured_on,
+            #                                                                                e.message))
             continue
 
         frequency_obj = None
@@ -86,7 +89,7 @@ def update_sector_frequency_per_day():
                     sector.frequency = frequency_obj
                     sector.save()
             except:
-                logger.exception("No Frequency Found ({})".format(frequency_obj))
+                # logger.exception("No Frequency Found ({})".format(frequency_obj))
                 continue
         else:
             continue
@@ -6075,7 +6078,7 @@ def bulk_upload_error_logger(row=None, sheet=None):
 
     # errors
     errors = ""
-
+    
     # ************************************ DEVICES CHECK ***********************************
     if sheet in ['ptp', 'ptp_bh', 'pmp_bs', 'wimax_bs']:
         # check for base station device
@@ -9790,13 +9793,13 @@ def get_selected_ptp_inventory(base_station, sector):
 
             # state
             try:
-                ptp_row['State'] = State.objects.get(pk=base_station.state).state_name
+                ptp_row['State'] = base_station.state.state_name
             except Exception as e:
                 logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
 
             # city
             try:
-                ptp_row['City'] = City.objects.get(pk=base_station.city).city_name
+                ptp_row['City'] = base_station.city.city_name
             except Exception as e:
                 logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -10198,13 +10201,13 @@ def get_selected_ptp_inventory(base_station, sector):
 
             # ss city
             try:
-                ptp_row['SS City'] = City.objects.get(pk=sub_station.city).city_name
+                ptp_row['SS City'] = sub_station.city.city_name
             except Exception as e:
                 logger.info("SS City not exist for sub station ({}).".format(sub_station.name, e.message))
 
             # ss state
             try:
-                ptp_row['SS State'] = State.objects.get(pk=sub_station.state).state_name
+                ptp_row['SS State'] = sub_station.state.state_name
             except Exception as e:
                 logger.info("SS State not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -10575,13 +10578,13 @@ def get_selected_pmp_inventory(base_station, sector):
 
             # state
             try:
-                pmp_bs_row['State'] = State.objects.get(pk=base_station.state).state_name
+                pmp_bs_row['State'] = base_station.state.state_name
             except Exception as e:
                 logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
 
             # city
             try:
-                pmp_bs_row['City'] = City.objects.get(pk=base_station.city).city_name
+                pmp_bs_row['City'] = base_station.city.city_name
             except Exception as e:
                 logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -10908,7 +10911,7 @@ def get_selected_pmp_inventory(base_station, sector):
 
             # mac address
             try:
-                pmp_sm_row['MAC'] = State.objects.get(pk=base_station.state).state_name
+                pmp_sm_row['MAC'] = sub_station.mac_address
             except Exception as e:
                 logger.info("MAC not exist for sub station ({}).".format(sub_station.name, e.message))
 
@@ -11222,13 +11225,13 @@ def get_selected_wimax_inventory(base_station, sector):
             # *********************************** Near End (Wimax BS) *********************************
             # state
             try:
-                wimax_bs_row['State'] = State.objects.get(pk=base_station.state).state_name
+                wimax_bs_row['State'] = base_station.state.state_name
             except Exception as e:
                 logger.info("State not exist for base station ({}).".format(base_station.name, e.message))
 
             # city
             try:
-                wimax_bs_row['City'] = City.objects.get(pk=base_station.city).city_name
+                wimax_bs_row['City'] = base_station.city.city_name
             except Exception as e:
                 logger.info("City not exist for base station ({}).".format(base_station.name, e.message))
 
@@ -12260,37 +12263,19 @@ def get_topology(technology):
     :param technology:
     :return:
     """
-    ##technology comes as a list
-    create_topology = False  ##when we would be creating topology for first time
-    ## next time onwards it would be update
+
     count = False
-    
-    create_topology = bool(Topology.objects.all().count())
 
     network_devices = get_devices(technology)
     device_list = []
-    for device in network_devices:
-        device_list.append(
-            {
-                'id': device['id'],
-                'device_name': device['device_name'],
-                'device_machine': device['machine__name']
-            }
-        )
 
-    machine_dict = {}
-    #prepare_machines(device_list)
-    machine_dict = prepare_machines(device_list)
-    topology = None
-    topology_old = []
-    for machine in machine_dict:
-        if topology:
-            #this is complete topology for the device set
-            topology |= Topology.objects.filter(device_name__in=machine_dict[machine],
-                                               data_source='topology').using(alias=machine)
-        else:
-            topology = Topology.objects.filter(device_name__in=machine_dict[machine],
-                                               data_source='topology').using(alias=machine)
+
+    for device in network_devices:
+        device_list.append(device['device_name'])
+
+
+    #topology is now synced at the central database only. no need to creating topology
+    topology = Topology.objects.filter(device_name__in=device_list, data_source='topology')
 
         #topology fields
         # device_name
@@ -12307,34 +12292,29 @@ def get_topology(technology):
         # check_timestamp
 
 
-    if not create_topology:  ##create topology if not already exists
-        Topology.objects.bulk_create(topology)
-        count = bool(1)
-
-    else:  ##update the topology
-        sectors = {}
-        for topo_data in topology:
-            try:
-                device_name = None
-                if topo_data.sector_id not in sectors:
-                    device_name = topo_data.device_name
-                    sectors[topo_data.sector_id] = {device_name: []}
-                if device_name:
-                    sectors[topo_data.sector_id][device_name].append(topo_data)
-                else:
-                    continue
-            except Exception as e:
-                logger.exception(e)
+    sectors = {}
+    for topo_data in topology:
+        try:
+            device_name = None
+            if topo_data.sector_id not in sectors:
+                device_name = topo_data.device_name
+                sectors[topo_data.sector_id] = {device_name: []}
+            if device_name:
+                sectors[topo_data.sector_id][device_name].append(topo_data)
+            else:
                 continue
-        polled_sectors = get_sectors(sectors)
-        polled_substations = get_substations(sectors)
-        polled_circuits = get_circuits(polled_substations)
-        count = bool(update_topology(
-                                     polled_sectors=polled_sectors,
-                                     polled_circuits=polled_circuits,
-                                     topo_sectors=sectors
-                                    )
-                    )
+        except Exception as e:
+            logger.exception(e)
+            continue
+    polled_sectors = get_sectors(sectors)
+    polled_substations = get_substations(sectors)
+    polled_circuits = get_circuits(polled_substations)
+    count = bool(update_topology(
+                                 polled_sectors=polled_sectors,
+                                 polled_circuits=polled_circuits,
+                                 topo_sectors=sectors
+                                )
+                )
 
     if count:
         #reset cache

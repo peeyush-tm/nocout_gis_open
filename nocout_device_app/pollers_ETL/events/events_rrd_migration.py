@@ -60,7 +60,7 @@ def get_latest_event_entry(db_type=None, db=None, site=None,table_name=None):
 
     return time
 
-def service_perf_data_live_query(db,site,log_split, final_data=[]):
+def service_perf_data_live_query(site, log_split, service_events_data, service_events_update_criteria):
     """
                 service_perf_data_live_query function perform the live query for service for which log is received and store
         the event data in the embeded mongodb database.
@@ -125,7 +125,12 @@ def service_perf_data_live_query(db,site,log_split, final_data=[]):
     #        current_value = perf_data1.split('- ')[1].strip('\n')
     #    except:
     #        current_value =None
-    serv_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[8],
+
+    # Forward the time stamp, with `second` attribute equal to zero
+    t_stmp = datetime.fromtimestamp(float(log_split[1]))
+    altered_timestamp = (t_stmp.replace(second=0)).strftime('%s')
+
+    serv_event_dict=dict(sys_timestamp=int(altered_timestamp),device_name=log_split[4],severity=log_split[8],
             description=description,min_value=0, max_value=0, avg_value=0,current_value=0,
             data_source = None,warning_threshold=0,critical_threshold =0 ,
             check_timestamp = int(log_split[1]),ip_address=host_ip,service_name=log_split[5],
@@ -137,13 +142,16 @@ def service_perf_data_live_query(db,site,log_split, final_data=[]):
             'service_name': log_split[5]
             }
     # Mongo db updation
-    mongo_module.mongo_db_update(db, matching_criteria, serv_event_dict, 'service_event_status')
+    service_events_update_criteria.append(matching_criteria)
+    #mongo_module.mongo_db_update(db, matching_criteria, serv_event_dict, 'service_event_status')
     # Mongo db insertion
-    mongo_module.mongo_db_insert(db,serv_event_dict,"serv_event")
+    service_events_data.append(serv_event_dict)
+    #mongo_module.mongo_db_insert(db,serv_event_dict,"serv_event")
+
+    return service_events_data, service_events_update_criteria
 
 
-
-def network_perf_data_live_query(db,site,log_split):
+def network_perf_data_live_query(site, log_split, network_events_data, network_events_update_criteria):
     """
                 network_perf_data_live_query function live query to ping services and stores performance data and extracts and 
         stores the events data in mongodb.
@@ -167,8 +175,12 @@ def network_perf_data_live_query(db,site,log_split):
     age1 = int(perf_data[0][1])
     perf_data1 = perf_data[0][0]
     host_perf_data = utility_module.get_threshold(perf_data1)
-    print 'age1', age1
-    print 'host_perf_data', host_perf_data
+    #print 'age1', age1
+    #print 'host_perf_data', host_perf_data
+
+    # Forward the time stamp, with `seconds` attribute equal to zero
+    t_stmp = datetime.fromtimestamp(float(log_split[1]))
+    altered_timestamp = (t_stmp.replace(second=0)).strftime('%s')
 
     host_ip = log_split[11]
     description=log_split[10]
@@ -180,7 +192,7 @@ def network_perf_data_live_query(db,site,log_split):
         host_crit =host_perf_data.get(ds).get('cric')
         if ds == 'pl':
             host_cur=host_cur.strip('%')                
-        host_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[7],
+        host_event_dict=dict(sys_timestamp=int(altered_timestamp),device_name=log_split[4],severity=log_split[7],
                         description=description,min_value=0,max_value=0,avg_value=0,current_value=host_cur,
                 data_source=ds,warning_threshold=host_war,critical_threshold=host_crit,
                 check_timestamp=int(log_split[1]),
@@ -194,10 +206,13 @@ def network_perf_data_live_query(db,site,log_split):
                 'data_source': ds
                 }
         # Mongo db updation
-        mongo_module.mongo_db_update(db, matching_criteria, host_event_dict, 'network_event_status')
+        network_events_update_criteria.append(matching_criteria)
+        #mongo_module.mongo_db_update(db, matching_criteria, host_event_dict, 'network_event_status')
         # mongo db insertion
-        mongo_module.mongo_db_insert(db,host_event_dict,"host_event")
+        network_events_data.append(host_event_dict)
+        #mongo_module.mongo_db_insert(db,host_event_dict,"host_event")
 
+    return network_events_data, network_events_update_criteria
 
 
 def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
@@ -238,6 +253,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
     #start_epoch = get_latest_event_entry(db_type = 'mongodb',db=db)
     #if start_epoch == None:
     start_time = datetime.now() - timedelta(minutes=1)
+    start_time = start_time.replace(second=0)
     start_epoch = int(time.mktime(start_time.timetuple()))
 
     end_time = datetime.now()
@@ -270,19 +286,39 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
         "Filter: log_time > %s\nFilter: log_type !~ FLAPPING\nFilter: service_description !~ Check_MK\nFilter: class = 0\n" % start_epoch +\
         "Filter: class = 1\nFilter: class = 2\nFilter: class = 3\nFilter: class = 4\nFilter: class = 6\nOr: 6\n"
     output = utility_module.get_from_socket(site, query)
-    print output
+    #print output
+
+    network_events_data = []
+    service_events_data = []
+    network_events_update_criteria = []
+    service_events_update_criteria = []
 
     for log_attr in output.split('\n'):
         log_split = [log_split for log_split in log_attr.split(';')]
-        print '---------------- log_split '
-        print log_split
+        #print '---------------- log_split '
+        #print log_split
         try:
             if log_split[0] == 'HOST ALERT' or log_split[0] == 'INITIAL HOST STATE':
-                network_perf_data_live_query(db,site,log_split)    
+                network_events_data, network_events_update_criteria = network_perf_data_live_query(site,log_split, 
+                        network_events_data, network_events_update_criteria)    
             elif log_split[0] == 'SERVICE ALERT' or log_split[0] == 'INITIAL SERVICE STATE':
-                service_perf_data_live_query(db, site, log_split)
+                service_events_data, service_events_update_criteria = service_perf_data_live_query(site, log_split,
+                        service_events_data, service_events_update_criteria)
         except Exception, e:
             print 'Error with log split: ', e
+
+    # Update the network events data into network_event_status collection of Mongodb
+    for entry in zip(network_events_update_criteria, network_events_data):
+        mongo_module.mongo_db_update(db, entry[0], entry[1], 'network_event_status')
+    # Update the service events data into service_event_status collection of Mongodb
+    for entry in zip(service_events_update_criteria, service_events_data):
+        mongo_module.mongo_db_update(db, entry[0], entry[1], 'service_event_status')
+
+    # Bulk insert the events data into Mongodb
+    if network_events_data:
+        mongo_module.mongo_db_insert(db, network_events_data, 'host_event')
+    if service_events_data:
+        mongo_module.mongo_db_insert(db, service_events_data, 'serv_event')
         
 if __name__ == '__main__':
     """

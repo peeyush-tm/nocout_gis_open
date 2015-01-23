@@ -24,6 +24,7 @@ def display_time(seconds, granularity=4):
     :param granularity:
     :return:
     """
+    seconds = float(seconds)
     intervals = (
         ('weeks', 604800),
         ('days', 86400),
@@ -31,6 +32,7 @@ def display_time(seconds, granularity=4):
         ('minutes', 60),
         ('seconds', 1),
     )
+
     try:
         result = []
         for name, count in intervals:

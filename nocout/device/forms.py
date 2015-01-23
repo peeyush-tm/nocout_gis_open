@@ -6,12 +6,15 @@ from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory,  BaseInlineFormSet
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
-import pyproj
-# commented because of goes package is not supported for python 2.7 on centos 6.5
-from shapely.geometry import Polygon, Point
-from shapely.ops import transform
-# commented because of goes package is not supported for python 2.7 on centos 6.5
-from functools import partial
+from service.models import Service, ServiceDataSource
+
+# # commented because of goes package is not supported for python 2.7 on centos 6.5
+# import pyproj
+# from shapely.geometry import Polygon, Point
+# from shapely.ops import transform
+# # commented because of goes package is not supported for python 2.7 on centos 6.5
+# from functools import partial
+
 from django.forms.util import ErrorList
 from nocout.utils import logged_in_user_organizations
 import re
@@ -199,6 +202,7 @@ class DeviceForm(forms.ModelForm):
 
         #commented because of goes package is not supported for python 2.7 on centos 6.5
         # check whether lat log lies in state co-ordinates or not
+        '''
         if latitude and longitude and state:
             try:
                 project = partial(
@@ -227,6 +231,9 @@ class DeviceForm(forms.ModelForm):
             #commented because of goes package is not supported for python 2.7 on centos 6.5 @TODO: check another package
             except Exception as e:
                 logger.exception(e)
+        '''
+        #commented because of goes package is not supported for python 2.7 on centos 6.5 @TODO: check another package
+
         # print self.cleaned_data
         return self.cleaned_data
 
@@ -546,10 +553,10 @@ class BaseDeviceTypeServiceFormset(BaseInlineFormSet):
     Custome Inline formest.
     """
     def __init__(self, *args, **kwargs):
-
         super(BaseDeviceTypeServiceFormset, self).__init__(*args, **kwargs)
         for form in self.forms:
-            form.fields['service'].empty_label = 'Select'
+            choices_list = [(service.id, '%s(%s)' % (service.alias, service.name)) for service in Service.objects.all()]
+            form.fields['service'].choices = choices_list
             form.fields['parameter'].empty_label = 'Select'
 
     def clean(self):
@@ -914,7 +921,8 @@ class BaseDTSDataSourceFormset(BaseInlineFormSet):
 
         super(BaseDTSDataSourceFormset, self).__init__(*args, **kwargs)
         for form in self.forms:
-            form.fields['service_data_sources'].empty_label = 'Select'
+            choices_list = [(sds.id, '%s(%s)' % (sds.alias, sds.name)) for sds in ServiceDataSource.objects.all()]
+            form.fields['service_data_sources'].choices = choices_list
 
     def clean(self):
         for form in self.forms:

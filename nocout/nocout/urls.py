@@ -11,9 +11,9 @@ dajaxice_autodiscover()
 from dashboard.views import MainDashboard
 
 # Uncomment the next two lines to enable the admin:
-# from django.contrib import admin
+from django.contrib import admin
 
-# admin.autodiscover()
+admin.autodiscover()
 
 handler404 = 'nocout.views.handler404'
 handler500 = 'nocout.views.handler500'
@@ -72,7 +72,8 @@ urlpatterns = patterns('',
                        url(r'^scheduling/', include('scheduling_management.urls')),
                        url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
                        url(r'^session_security/', include('session_security.urls')),
-                       # url(r'^admin/', include(admin.site.urls)),
+                       url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
+                       url(r'^admin/', include(admin.site.urls)),
                        url(r'^logs/', include('activity_stream.urls')),
                        url(r'^sm/', include('session_management.urls')),
                        url(r'^bulk_import/', include('inventory.bulk_import_urls')),
@@ -101,4 +102,5 @@ urlpatterns = patterns('',
 #                         }),
 # )
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

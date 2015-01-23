@@ -23,11 +23,11 @@ def main():
     wimax_topology_script = configs.get(mongo_conf[0][0]).get('wimax_topology').get('script')
     wimax_topology_migration_script = __import__(wimax_topology_script)
     wimax_topology_migration_script.main(mongo_conf=mongo_conf,
-    user=configs.get(mongo_conf[0][0]).get('user'),
+    user=configs.get(mongo_conf[0][0]).get('historical_user'),
     sql_passwd=configs.get(mongo_conf[0][0]).get('sql_passwd'),
     nosql_db=configs.get(mongo_conf[0][0]).get('nosql_db'),
     sql_port=configs.get(mongo_conf[0][0]).get('mysql_port'),
-    sql_db=configs.get(mongo_conf[0][0]).get('sql_db'), table_name=configs.get(mongo_conf[0][0]).get('wimax_topology').get('table_name'), ip=configs.get(mongo_conf[0][0]).get('ip')
+    sql_db=configs.get(mongo_conf[0][0]).get('historical_db'), table_name=configs.get(mongo_conf[0][0]).get('wimax_topology').get('table_name'), ip=configs.get(mongo_conf[0][0]).get('historical_ip')
     )
 	
 

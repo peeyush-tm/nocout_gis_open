@@ -272,19 +272,55 @@ function nocoutPerfLib() {
                                 }
 
                                 var count = 0;
+
                                 $.each(device_services, function (key, value) {
 
                                     if (is_first_tab == 1 && count == 0) {
-                                        active_tab_id = value.name;
-                                        active_tab_content_dom_id = value.name + "_" + device_services_tab[i] + '_block';
+                                        active_tab_id = device_services_tab[i]+'_'+String(count)+'_'+String(i);
+                                        active_tab_content_dom_id = device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block';
                                         active_tab_url = "/" + value.url;
-                                        count++;
-                                        service_tabs += '<li class="active" style="' + li_style + '"><a href="#' + value.name + "_" + device_services_tab[i] + '_block" url="' + value.url + '" id="' + value.name + '_tab" data-toggle="tab" style="' + li_a_style + '">' + value.title + '</a></li>';
-                                        service_tabs_data += '<div class="tab-pane active" id="' + value.name + "_" + device_services_tab[i] + '_block"><div align="center" id="last_updated_' + value.name + "_" + device_services_tab[i] + '_block"></div><div class="chart_container"><div id="' + value.name + '_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="' + value.name + '_bottom_table"></div></div></div>';
+
+                                        service_tabs += '<li class="active" style="'+ li_style + '">';
+                                        service_tabs += '<a href="#'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block" ';
+                                        service_tabs += ' url="' + value.url + '" id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_tab" data-toggle="tab" style="';
+                                        service_tabs += li_a_style+'">' + value.title + '</a></li>';
+
+                                        service_tabs_data += '<div class="tab-pane active" ';
+                                        service_tabs_data += 'id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block">';
+                                        service_tabs_data += '<div align="center" id="last_updated_'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block">';
+                                        service_tabs_data += '</div><div class="chart_container"><div id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_chart"';
+                                        service_tabs_data += ' style="height:350px;width:100%;"></div><div class="divide-20"></div>';
+                                        service_tabs_data += '<div id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_bottom_table"></div></div></div>';
+
                                     } else {
-                                        service_tabs += '<li class="" style="' + li_style + '"><a href="#' + value.name + "_" + device_services_tab[i] + '_block" url="' + value.url + '" id="' + value.name + '_tab" data-toggle="tab" style="' + li_a_style + '">' + value.title + '</a></li>';
-                                        service_tabs_data += '<div class="tab-pane" id="' + value.name + "_" + device_services_tab[i] + '_block"><div align="center" id="last_updated_' + value.name + "_" + device_services_tab[i] + '_block"></div><div class="chart_container" style="width:100%;"><div id="' + value.name + '_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="' + value.name + '_bottom_table"></div></div></div>';
+
+                                        service_tabs += '<li class="" style="' + li_style + '">';
+                                        service_tabs += '<a href="#'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block" ';
+                                        service_tabs += 'url="' + value.url + '" id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_tab" ';
+                                        service_tabs += 'data-toggle="tab" style="' + li_a_style + '">' + value.title + '</a></li>';
+
+                                        service_tabs_data += '<div class="tab-pane" id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block">';
+                                        service_tabs_data += '<div align="center" ';
+                                        service_tabs_data += 'id="last_updated_'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_block">';
+                                        service_tabs_data += '</div><div class="chart_container" style="width:100%;"><div id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_chart" ';
+                                        service_tabs_data += 'style="height:350px;width:100%;"></div><div class="divide-20"></div>';
+                                        service_tabs_data += '<div id="'+device_services_tab[i]+'_'+String(count)+'_'+String(i)+'_bottom_table"></div></div></div>';
                                     }
+                                    count++;
+
+
+                                    // if (is_first_tab == 1 && count == 0) {
+                                    //     active_tab_id = value.name;
+                                    //     active_tab_content_dom_id = value.name + "_" + device_services_tab[i] + '_block';
+                                    //     active_tab_url = "/" + value.url;
+                                    //     count++;
+                                    //     service_tabs += '<li class="active" style="' + li_style + '"><a href="#' + value.name + "_" + device_services_tab[i] + '_block" url="' + value.url + '" id="' + value.name + '_tab" data-toggle="tab" style="' + li_a_style + '">' + value.title + '</a></li>';
+                                    //     service_tabs_data += '<div class="tab-pane active" id="' + value.name + "_" + device_services_tab[i] + '_block"><div align="center" id="last_updated_' + value.name + "_" + device_services_tab[i] + '_block"></div><div class="chart_container"><div id="' + value.name + '_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="' + value.name + '_bottom_table"></div></div></div>';
+                                    // } else {
+                                    //     service_tabs += '<li class="" style="' + li_style + '"><a href="#' + value.name + "_" + device_services_tab[i] + '_block" url="' + value.url + '" id="' + value.name + '_tab" data-toggle="tab" style="' + li_a_style + '">' + value.title + '</a></li>';
+                                    //     service_tabs_data += '<div class="tab-pane" id="' + value.name + "_" + device_services_tab[i] + '_block"><div align="center" id="last_updated_' + value.name + "_" + device_services_tab[i] + '_block"></div><div class="chart_container" style="width:100%;"><div id="' + value.name + '_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="' + value.name + '_bottom_table"></div></div></div>';
+                                    // }
+
                                 });
 
                                 service_tabs += '</ul></div>';
@@ -301,8 +337,11 @@ function nocoutPerfLib() {
 
                         /*Bind click event on tabs*/
                         $('.inner_tab_container .nav-tabs li a').click(function (e) {
-                            var serviceId = e.currentTarget.id.slice(0, -4);
-                            var tab_content_dom_id = e.currentTarget.attributes.href.value.split("#").length > 0 ? e.currentTarget.attributes.href.value.split("#")[1] : e.currentTarget.attributes.href.value.split("#")[0];
+
+                            var serviceId = e.currentTarget.id.slice(0, -4),
+                                splitted_local_id = e.currentTarget.attributes.href.value.split("#"),
+                                tab_content_dom_id = splitted_local_id.length > 1 ? splitted_local_id[1] : splitted_local_id[0];
+
                             //@TODO: all the ursl must end with a / - django style
                             var serviceDataUrl = "/" + $.trim(e.currentTarget.attributes.url.value);
                             /*Reset Variables & counters */
@@ -327,6 +366,7 @@ function nocoutPerfLib() {
                                     Highcharts.charts[i].destroy();
                                 }
                             }
+                            
                             Highcharts.charts = [];
 
                             // First get the service status then get the data for that service
