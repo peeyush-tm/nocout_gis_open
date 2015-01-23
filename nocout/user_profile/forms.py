@@ -136,8 +136,10 @@ class UserForm(forms.ModelForm):
         if 'username' in self.cleaned_data:
             password1 = self.cleaned_data['password1']
             username = self.cleaned_data['username']
+
             if password1 == username:
                 raise forms.ValidationError("User ID and password should not be identical")
+
             if password1:
                 user = UserProfile.objects.filter(username=username)
                 if user.exists():

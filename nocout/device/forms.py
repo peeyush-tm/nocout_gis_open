@@ -199,6 +199,7 @@ class DeviceForm(forms.ModelForm):
 
         #commented because of goes package is not supported for python 2.7 on centos 6.5
         # check whether lat log lies in state co-ordinates or not
+        '''
         if latitude and longitude and state:
             project = partial(
                 pyproj.transform,
@@ -223,6 +224,7 @@ class DeviceForm(forms.ModelForm):
             if not poly_g.contains(p1_g):
                 self._errors["latitude"] = ErrorList(
                     [u"Latitude, longitude specified doesn't exist within selected state."])
+        '''
         #commented because of goes package is not supported for python 2.7 on centos 6.5 @TODO: check another package
         # print self.cleaned_data
         return self.cleaned_data
