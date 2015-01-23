@@ -890,18 +890,17 @@ class SectorCapacityMixin(object):
         tech_name = self.tech_name
         organization = []
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+
         user_sector = organization_sectors(organization, technology=technology)
+        sector_devices_list = user_sector.values_list('name',flat=True)
+
+        dashboard_name = '%s_sector_capacity' % (tech_name.lower())
+        dashboard_status_dict = get_severity_status_dict(dashboard_name, sector_devices_list)
 
         chart_series = []
-        dashboard_name = '%s_sector_capacity' % (tech_name.lower())
-        tech_qs = DashboardSeverityStatusTimely.objects.filter(dashboard_name=dashboard_name, sector_name__in=user_sector.values_list('name', flat=True)).order_by('-processed_for')
-        if tech_qs.exists():
-            qs = tech_qs.filter(processed_for=tech_qs[0].processed_for)
-            range_counter = qs.aggregate(Normal=Sum('ok'), Needs_Augmentation=Sum('warning'),
-                                        Stop_Provisioning=Sum('critical'), Unknown=Sum('unknown'))
-
-            for key,value in range_counter.items():
-                chart_series.append(['%s: %s' % (key.replace('_', ' '), value), range_counter[key]])
+        if len(dashboard_status_dict):
+            for key,value in dashboard_status_dict.items():
+                chart_series.append(['%s: %s' % (key.replace('_', ' '), value), dashboard_status_dict[key]])
 
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
             'title': '%s Sector Capacity' % tech_name.upper(), 'name': ''})
@@ -956,21 +955,17 @@ class SalesOpportunityMixin(object):
 
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology)
+        sector_devices_list = user_sector.values_list('name', flat=True)
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
-        tech_qs = DashboardRangeStatusTimely.objects.filter(dashboard_name=dashboard_name, device_name__in=user_sector.values_list('name', flat=True)).order_by('-processed_for')
-        if tech_qs.exists():
-            qs = tech_qs.filter(processed_for=tech_qs[0].processed_for)
-            range_counter = qs.aggregate(range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
-                                range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
-                                range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
-                                range10=Sum('range10'), unknown=Sum('unknown'))
-            response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
+        dashboard_status_dict = get_range_status_dict(dashboard_name, sector_devices_list)
+
+        chart_series = []
+        colors = []
+        if len(dashboard_status_dict):
+            response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, dashboard_status_dict)
             chart_series = response_dict['data']['objects']['chart_data'][0]['data']
             colors = response_dict['data']['objects']['colors']
-        else:
-            chart_series = []
-            colors = []
 
         response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
             'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors})
@@ -1031,17 +1026,9 @@ def get_gauge_chart_status_data(organizations, packet_loss, down, temperature, t
             "success":0
         }))
 
-
-    dashboard_status_dict = DashboardRangeStatusTimely.objects.order_by('-processed_for').filter(
-        dashboard_name=dashboard_status_name,
-        device_name__in=sector_devices
-    )
-
-    if dashboard_status_dict.exists():
-        processed_for = dashboard_status_dict[0].processed_for
-        dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(Sum('range1'), Sum('range2'), Sum('range3'), Sum('range4'), Sum('range5'), Sum('range6'), Sum('range7'), Sum('range8'), Sum('range9'), Sum('range10'), Sum('unknown'))
-
-    count = sum(dashboard_status_dict.values())
+    dashboard_status_dict = get_range_status_dict(dashboard_name, sector_devices)
+    if len(dashboard_status_dict):
+        count = sum(dashboard_status_dict.values())
 
     # print 'count...',count
     for i in range(1, 11):
@@ -1064,3 +1051,42 @@ def get_gauge_chart_status_data(organizations, packet_loss, down, temperature, t
 
     dictionary = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
     return dictionary
+
+
+# *************************** Dashboard Timely Data ***********************
+def get_severity_status_dict(dashboard_name, sector_devices_list):
+    '''
+    '''
+    dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
+        dashboard_name=dashboard_name,
+        sector_name__in=sector_devices_list
+    )
+    if dashboard_status_dict.exists():
+        processed_for = dashboard_status_dict[0].processed_for
+        dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
+                                    Normal=Sum('ok'),
+                                    Needs_Augmentation=Sum('warning'),
+                                    Stop_Provisioning=Sum('critical'),
+                                    Unknown=Sum('unknown')
+                                )
+
+    return dashboard_status_dict
+
+
+def get_range_status_dict(dashboard_name, sector_devices_list):
+    '''
+    '''
+    dashboard_status_dict = DashboardRangeStatusTimely.objects.order_by('-processed_for').filter(
+        dashboard_name=dashboard_name,
+        device_name__in=sector_devices_list
+    )
+    if dashboard_status_dict.exists():
+        processed_for = dashboard_status_dict[0].processed_for
+        dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
+                                    range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
+                                    range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
+                                    range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
+                                    range10=Sum('range10'), unknown=Sum('unknown')
+                                )
+
+    return dashboard_status_dict

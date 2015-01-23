@@ -77,7 +77,7 @@ def calculate_timely_sector_capacity(technology, model, processed_for):
         elif item['severity'].strip().lower() == 'ok':
             range_counter.update({'ok' : 1})
         else:
-            range_counter({'unknown' : 1})
+            range_counter.update({'unknown' : 1})
 
         try:
             data_list.append(model(**range_counter))
