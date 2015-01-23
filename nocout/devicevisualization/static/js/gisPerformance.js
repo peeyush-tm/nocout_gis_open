@@ -823,6 +823,8 @@ function GisPerformance() {
                                     markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= ss_link_line;
                                     markersMasterObj['LinesName'][String(bs_object.name)+ ss_marker_data.name]= ss_link_line;
                                     allMarkersArray_wmap.push(ss_link_line);
+
+
                                 } else {
                                     /*Create the link between BS & SS or Sector & SS*/
 
@@ -850,7 +852,7 @@ function GisPerformance() {
                                     } else {
                                         ss_link_line.setMap(null);
                                     }
-                                    // ss_marker['pl'] = '100';
+
                                     // This is to show "X"(Cross) on line if pl is 100%
                                     if(ss_marker['pl'] && (ss_marker['pl'] == '100' || ss_marker['pl'] == '100%')) {
                                         
@@ -886,18 +888,27 @@ function GisPerformance() {
 
                                         cross_label.open(mapInstance);
                                         cross_label_array['line_'+ss_marker_data.name] = cross_label;
+
+                                        if(isLineChecked > 0) {
+                                            cross_label.show();
+                                        } else {
+                                            cross_label.hide();
+                                        }
                                     } else {
-                                        // Close the label if exist
-                                        if(cross_label_array['line_'+ss_marker_data.name]) {
-                                            // Remove the cross label
-                                            cross_label_array['line_'+ss_marker_data.name].close();
-                                            // Delete cross label from global object
-                                            delete cross_label_array['line_'+ss_marker_data.name];
+                                        try {
+                                            // Close the label if exist
+                                            if(cross_label_array['line_'+ss_marker_data.name]) {
+                                                // Remove the cross label
+                                                cross_label_array['line_'+ss_marker_data.name].close();
+                                                // Delete cross label from global object
+                                                delete cross_label_array['line_'+ss_marker_data.name];
+                                            }
+                                        } catch(e) {
+                                            // console.log(e);
                                         }
                                     }
                                     
                                     allMarkersObject_gmap['path']['line_'+ss_marker_data.name] = ss_link_line;
-
                                     // allMarkersArray_gmap.push(ss_link_line);
                                 }
 
