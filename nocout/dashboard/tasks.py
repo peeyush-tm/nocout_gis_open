@@ -269,7 +269,7 @@ def prepare_machines(device_list):
     return machine_dict
 
 
-@task
+@task()
 def calculate_hourly_main_dashboard():
     '''
     '''
@@ -373,7 +373,7 @@ def sum_range_status(parent, child):
     return parent
 
 
-@task
+@task()
 def calculate_daily_main_dashboard():
     '''
     '''
@@ -459,7 +459,7 @@ def calculate_daily_range_status(now):
     last_day_hourly_range_status.delete()
 
 
-@task
+@task()
 def calculate_weekly_main_dashboard():
     '''
     '''
@@ -547,6 +547,7 @@ def calculate_weekly_range_status(day, first_day):
         bulk_update_create.delay(weekly_range_status_list)
 
 
+@task()
 def calculate_monthly_main_dashboard():
     """
     """
@@ -636,6 +637,7 @@ def calculate_monthly_severity_status(day, first_day):
         bulk_update_create.delay(monthly_severity_status_list)
 
 
+@task()
 def calculate_yearly_main_dashboard():
     """
     """
