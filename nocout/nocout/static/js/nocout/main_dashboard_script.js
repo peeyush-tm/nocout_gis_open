@@ -188,6 +188,9 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
     $.ajax({
         url : ajax_url,
         type : "GET",
+        data : {
+            'dashboard_name': div_id,
+        },
         success : function(result) {
             var response = "";
             if(typeof result == 'string') {
@@ -238,6 +241,7 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
                         minorTickInterval: null,
                         tickPixelInterval: 400,
                         tickWidth: 0,
+                        tickPositions:[1,10],
                         title: {
                             y: -70
                         },
@@ -258,8 +262,8 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
 
                 $(div_id).highcharts(Highcharts.merge(gaugeOptions, {
                     yAxis: {
-                        min: 0,
-                        max: 200,
+                        min: 1,
+                        max: 10,
                         title: {
                             // text: div_text
                             text: ""
@@ -271,12 +275,15 @@ function get_speedometer_chart(ajax_url, div_id, div_text){
                         data: [response.data.objects.chart_data[0].data[0].count],
                         dataLabels: {
                         format: '<div style="text-align:center"><span style="font-size:25px;color:' +
-                            ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
-                            '<span style="font-size:12px;color:silver">* 1000 / min</span></div>'
+                            ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:1f}</span><br/>' +
+                            '</div>'
+                        },
+                        lang: {
+                            noData: 'Data is not available.'
                         },
                         tooltip: {
                             valueSuffix: ' revolutions/min'
-                    
+
                         }
                     }]
                 }));

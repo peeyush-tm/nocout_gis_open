@@ -1,6 +1,7 @@
 """
 Dashboard Utilities.
 """
+import copy
 import json
 from multiprocessing import Process, Queue
 
@@ -8,8 +9,41 @@ from django.conf import settings
 from django.db.models import Count
 from datetime import datetime, timedelta
 
+from dashboard.models import DashboardSetting
+from dashboard.config import dashboards
+
 import logging
 log = logging.getLogger(__name__)
+
+
+def get_unused_dashboards(dashboard_setting_id=None):
+    """
+    """
+    dashboard_settings = DashboardSetting.objects.all()
+    if dashboard_setting_id:
+
+        dashboard_settings = dashboard_settings.exclude(id=dashboard_setting_id)
+
+    technologies = {
+        'P2P': 2,
+        'PMP': 4,
+        'WiMAX': 3,
+        'All': None,
+    }
+
+    types = {
+        'numeric': 'INT',
+        'string': 'String',
+    }
+
+    unused_dashboards = copy.copy(dashboards)
+
+    for dashboard_setting in dashboard_settings:
+        setting_technology = dashboard_setting.technology.id if dashboard_setting.technology else None
+        for i, dashboard_conf in enumerate(unused_dashboards):
+            if dashboard_conf['page_name'] == dashboard_setting.page_name and technologies[dashboard_conf['technology']] == setting_technology and dashboard_conf['is_bh'] == dashboard_setting.is_bh and dashboard_conf['dashboard_name'] == dashboard_setting.name and types[dashboard_conf['dashboard_type']] == dashboard_setting.dashboard_type:
+                unused_dashboards.pop(i)
+    return json.dumps(unused_dashboards)
 
 def get_service_status_data(queue, machine_device_list, machine, model, service_name, data_source):
     """
@@ -112,36 +146,41 @@ def get_service_status_results(user_devices, model, service_name, data_source):
     return service_status_results
 
 
+def get_range_status(dashboard_setting, result):
+    range_count = 'unknown'
+    for i in range(1, 11):
+        start_range = getattr(dashboard_setting, 'range%d_start' %i)
+        end_range = getattr(dashboard_setting, 'range%d_end' %i)
+
+        # dashboard type is numeric and start_range and end_range exists to compare result.
+        if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
+            try:
+                if float(start_range) <= float(result['current_value']) <= float(end_range):
+                    range_count = 'range%d' %i
+            except ValueError as value_error:
+                range_count = 'unknown'
+                break
+            except TypeError as type_error:
+                pass
+
+        # dashboard type is string and start_range exists to compare result.
+        elif dashboard_setting.dashboard_type == 'STR' and start_range:
+            if result['current_value'].lower() in start_range.lower():
+                range_count = 'range%d' %i
+
+    return {'range_count': range_count}
+
+
 def get_dashboard_status_range_counter(dashboard_setting, service_status_results):
     range_counter = dict()
     for i in range(1, 11):
         range_counter.update({'range%d' %i: 0})
     range_counter.update({'unknown': 0})
 
+    range_status_dct = dict()
     for result in service_status_results:
-        is_unknown_range = True
-        for i in range(1, 11):
-            start_range = getattr(dashboard_setting, 'range%d_start' %i)
-            end_range = getattr(dashboard_setting, 'range%d_end' %i)
-
-            # dashboard type is numeric and start_range and end_range exists to compare result.
-            if dashboard_setting.dashboard_type == 'INT' and start_range and end_range:
-                try:
-                    if float(start_range) <= float(result['current_value']) <= float(end_range):
-                        range_counter['range%d' %i] += 1
-                        is_unknown_range = False
-                except ValueError as value_error:
-                    range_counter['unknown'] += 1
-                    is_unknown_range = False
-                    break
-
-            # dashboard type is string and start_range exists to compare result.
-            elif dashboard_setting.dashboard_type == 'STR' and start_range:
-                if result['current_value'].lower() in start_range.lower():
-                    range_counter['range%d' %i] += 1
-                    is_unknown_range = False
-        if is_unknown_range:
-            range_counter['unknown'] += 1
+        range_status_dct = get_range_status(dashboard_setting, result)
+        range_counter[range_status_dct['range_count']] += 1
 
     return range_counter
 
@@ -212,27 +251,6 @@ def get_dashboard_status_sector_range_counter(service_status_results):
 
 
 #**************************** Sales Opportunity *********************#
-def get_topology_status_data(machine_device_list, machine, model, service_name, data_source):
-    """
-    Consolidated Topology Status Data from the Data base.
-
-    :param machine:
-    :param model:
-    :param service_name:
-    :param data_source:
-    :param device_list:
-    :return:
-    """
-    topology_status_data = model.objects.filter(
-        device_name__in=machine_device_list,
-        # service_name__icontains = service_name,
-        # data_source = data_source,
-        data_source = 'topology',
-    ).using(machine)
-
-    return topology_status_data
-
-
 def get_topology_status_results(user_devices, model, service_name, data_source, user_sector):
 
     unique_device_machine_list = {device.machine.name: True for device in user_devices}.keys()
@@ -245,13 +263,17 @@ def get_topology_status_results(user_devices, model, service_name, data_source, 
     status_results = []
     topology_status_results = model.objects.none()
     for machine, machine_device_list in machine_dict.items():
-        topology_status_results |= get_topology_status_data(machine_device_list, machine=machine, model=model, service_name=service_name, data_source=data_source)
+        topology_status_results |= model.objects.filter(
+                                        device_name__in=machine_device_list,
+                                        # service_name__icontains = service_name,
+                                        data_source = 'topology',
+                                    ).using(machine)
 
     for sector in user_sector:
         ss_qs = topology_status_results.filter(sector_id=sector.sector_id).\
                         annotate(Count('connected_device_ip'))
         # current value define the total ss connected to the sector
-        status_results.append({'sector_id': sector.id, 'current_value': ss_qs.count()})
+        status_results.append({'id': sector.id, 'name': sector.name, 'device_name':  sector.sector_configured_on.device_name, 'current_value': ss_qs.count()})
     return status_results
 
 
@@ -279,12 +301,13 @@ def get_highchart_response(dictionary={}):
             "data": [{
                 "color": dictionary['color'],
                 "name": dictionary['name'],
-                "count": dictionary['count']
             }],
             "valuesuffix": "",
             "type": "gauge",
             "valuetext": ""
         }
+        if dictionary['count'] != 0:
+            chart_data['data'][0].update({"count": dictionary['count']})
     elif dictionary['type'] == 'areaspline':
         chart_data = {
             'type': 'areaspline',

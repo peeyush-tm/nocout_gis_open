@@ -6,8 +6,8 @@
 {% endblock %}
 {% load staticfiles %}
 {% block page_setting_block %} {% endblock %}
-{% block content_title %} Main Dashboard: MFR {% endblock %}
-{% block content_description %} Main Dashboard: MFR {% endblock %}
+{% block content_title %} Main Dashboard {% endblock %}
+{% block content_description %} Main Dashboard {% endblock %}
 
 {% block content %}
 
@@ -23,7 +23,7 @@
 
 <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
-        <h4><i class="fa fa-dashboard"></i> RF Performance Dashboard: WIMAX</h4>
+        <h4><i class="fa fa-dashboard"></i>MAIN DASHBOARD</h4>
     </div>
     <div class="box-body">
         <!-- ********** FIRST ROW START **********-->
@@ -32,17 +32,17 @@
         <div class="col-md-3" align="center">
             <div id="down-all" style="height: 180px;"></div>
             <h5>Down</h5>
-        </div>        
+        </div>
         <div class="col-md-3" align="center">
-            <div id="latency-all" style="height: 180px;"></div>            
+            <div id="latency-all" style="height: 180px;"></div>
             <h5>Latency</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="packet-loss-all" style="height: 180px;"></div>            
+            <div id="packetloss-all" style="height: 180px;"></div>
             <h5>Packet Drop</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="temperature-idu-wimax" style="height: 180px;"></div>            
+            <div id="temperature-idu-wimax" style="height: 180px;"></div>
             <h5>Temperature IDU Wimax</h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
@@ -54,7 +54,7 @@
 
         <!-- Capacity pie Charts & city table Start -->
         <div class="col-md-3" align="center">
-            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>            
+            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
             <h5>Wimax Sales Opportunity</h5>
         </div>
         <div class="col-md-6">
@@ -68,12 +68,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    
+
                 </tbody>
             </table>
         </div>
         <div class="col-md-3" align="center">
-            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>    
+            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>
             <h5>PMP Sales Opportunity</h5>
         </div>
         <!-- Capacity pie Charts & city table End -->
@@ -110,7 +110,7 @@
             <div id="id_mfr_processed" class="rf_chart_style"></div>
         </div>
         <div class="col-md-3" align="center">
-            <div id="mfr_cause_code" class="rf_chart_style"></div>    
+            <div id="mfr_cause_code" class="rf_chart_style"></div>
             <h5>MFR Caused Code</h5>
         </div>
 
@@ -121,11 +121,11 @@
         <!-- ********** FIFTH ROW START **********-->
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
-            <div id="down-wimax" style="height: 180px;"></div>            
+            <div id="down-wimax" style="height: 180px;"></div>
             <h5>Down Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="down-pmp" style="height: 180px;"></div>            
+            <div id="down-pmp" style="height: 180px;"></div>
             <h5>Down PMP</h5>
         </div>
         <div class="col-md-3" align="center">
@@ -133,7 +133,7 @@
             <h5>Latency Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="latency-pmp" style="height: 180px;"></div>            
+            <div id="latency-pmp" style="height: 180px;"></div>
             <h5>Latency PMP</h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
@@ -145,19 +145,19 @@
 
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
-            <div id="packet-loss-wimax" style="height: 180px;"></div>            
+            <div id="packetloss-wimax" style="height: 180px;"></div>
             <h5>Packet Drop Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="packet-loss-pmp" style="height: 180px;"></div>
+            <div id="packetloss-pmp" style="height: 180px;"></div>
             <h5>Packet Drop PMP</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="temperature-fan-wimax" style="height: 180px;"></div>            
+            <div id="temperature-fan-wimax" style="height: 180px;"></div>
             <h5>Temperature Fan Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="temperature-acb-wimax" style="height: 180px;"></div>            
+            <div id="temperature-acb-wimax" style="height: 180px;"></div>
             <h5>Temperature ACB Wimax</h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
@@ -227,11 +227,11 @@
         // Get chart for latency of all.
         get_speedometer_chart('/dashboard/latency/all/','#latency-all','Latency ALL');
         // Get chart for packet loss of wimax.
-        get_speedometer_chart('/dashboard/packet_loss/wimax/','#packet-loss-wimax','Packet Loss WiMAX');
+        get_speedometer_chart('/dashboard/packet_loss/wimax/','#packetloss-wimax','Packet Loss WiMAX');
         // Get chart for packet loss of pmp.
-        get_speedometer_chart('/dashboard/packet_loss/pmp/','#packet-loss-pmp','Packet Loss PMP');
+        get_speedometer_chart('/dashboard/packet_loss/pmp/','#packetloss-pmp','Packet Loss PMP');
         // Get chart for packet loss of all.
-        get_speedometer_chart('/dashboard/packet_loss/all/','#packet-loss-all','Packet Loss ALL');
+        get_speedometer_chart('/dashboard/packet_loss/all/','#packetloss-all','Packet Loss ALL');
         // Get chart for down of wimax.
         get_speedometer_chart('/dashboard/down/wimax/','#down-wimax','Down WiMAX');
         // Get chart for down of pmp.
