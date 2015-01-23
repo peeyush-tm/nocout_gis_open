@@ -576,7 +576,7 @@ class Fetch_Inventory_Devices(View):
         """
 
         result = {
-            'success': 0,
+            'success': 1,
             'message': 'Devices Not Fetched Successfully.',
             'data': {
                 'meta': {},
