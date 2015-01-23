@@ -69,7 +69,7 @@ def calculate_timely_sector_capacity(technology, model, processed_for):
     for item in sectors:
         range_counter = dict(
             dashboard_name=dashboard_name,
-            device_name=item['sector__sector_configured_on__device_name']
+            device_name=item['sector__sector_configured_on__device_name'],
             reference_name=item['sector__name'],
             processed_for=processed_for,
         )
@@ -118,7 +118,8 @@ def calculate_timely_sales_opportunity(technology, model, processed_for):
         range_counter = get_dashboard_status_range_counter(dashboard_setting, [result])
         range_counter.update(
             {'dashboard_name': dashboard_name,
-                'device_name': result['name'], # Store sector name as device_name
+                'device_name': result['device_name'],
+                'reference_name': result['name'],   # Store sector name as reference_name
                 'processed_for': processed_for
             }
         )

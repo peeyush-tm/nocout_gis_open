@@ -737,7 +737,8 @@ class SectorCapacityMixin(object):
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
 
         user_sector = organization_sectors(organization, technology=technology)
-        sector_devices_list = user_sector.values_list('name',flat=True)
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
 
         dashboard_name = '%s_sector_capacity' % (tech_name.lower())
         dashboard_status_dict = get_severity_status_dict(dashboard_name, sector_devices_list)
@@ -800,7 +801,8 @@ class SalesOpportunityMixin(object):
 
         # Get Sector of User's Organizations. [and are Sub Station]
         user_sector = organization_sectors(organization, technology)
-        sector_devices_list = user_sector.values_list('name', flat=True)
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
 
         dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
         dashboard_status_dict = get_range_status_dict(dashboard_name, sector_devices_list)
@@ -836,7 +838,7 @@ def get_severity_status_dict(dashboard_name, sector_devices_list):
     '''
     dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
         dashboard_name=dashboard_name,
-        sector_name__in=sector_devices_list
+        device_name__in=sector_devices_list
     )
     if dashboard_status_dict.exists():
         processed_for = dashboard_status_dict[0].processed_for
