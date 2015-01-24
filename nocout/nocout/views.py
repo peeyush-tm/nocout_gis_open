@@ -126,6 +126,9 @@ def auth_view(request):
     user = auth.authenticate(username=username, password=password)
 
     if user is not None:
+        if user.is_staff:
+            return HttpResponse(json.dumps(result), content_type='application/json')
+
         already_logged = user.userprofile.password_changed_at
         password_expire = True
         password_expire_alert = False
