@@ -335,10 +335,10 @@ function GisPerformance() {
 
                     sector_tech = sector_polygon['technology'] ? sector_polygon['technology'] : "";
 
-                    var azimuth_angle = current_sector.azimuth_angle ? current_sector.azimuth_angle : 10,
-                        beam_width = current_sector.beam_width ? current_sector.beam_width : 10,
-                        radius = current_sector.radius ? current_sector.radius : 0.5,
-                        sector_color = current_sector.color ? current_sector.color : 'rgba(74,72,94,0.58)',
+                    var azimuth_angle = current_sector.azimuth_angle && current_sector.azimuth_angle != 'NA' ? current_sector.azimuth_angle : 10,
+                        beam_width = current_sector.beam_width && current_sector.beam_width != 'NA' ? current_sector.beam_width : 10,
+                        radius = current_sector.radius && current_sector.radius != 'NA' ? current_sector.radius : 0.5,
+                        sector_color = current_sector.color && current_sector.color != 'NA' ? current_sector.color : 'rgba(74,72,94,0.58)',
                         orientation = current_sector.polarization ? current_sector.polarization : sector_polygon.polarisation;
 
                     gmap_self.createSectorData(bs_lat,bs_lon,radius,azimuth_angle,beam_width,orientation,function(pointsArray) {
@@ -364,6 +364,7 @@ function GisPerformance() {
 
                         if(window.location.pathname.indexOf("googleEarth") > -1) {
                             try {
+
                                 // Add points for poly coordinates.
                                 polyPoints = ge.createLinearRing('');
                                 polyPoints.setAltitudeMode(ge.ALTITUDE_RELATIVE_TO_GROUND);
@@ -372,6 +373,7 @@ function GisPerformance() {
                                 }
                                 // Set Polygon path
                                 sector_polygon.setOuterBoundary(polyPoints);
+
                                 var poly_sector_color = earth_self.makeRgbaObject(sector_color);
                                 // Color can also be specified by individual color components.
                                 var polyColor = sector_polygon.getStyleSelector().getPolyStyle().getColor();
@@ -382,13 +384,14 @@ function GisPerformance() {
                                 polyColor.setB((+poly_sector_color.b));
 
                                 // Update Sector Info
-                                sector_polygon["azimuth"]      =  azimuth_angle;;
-                                sector_polygon["beam_width"]   =  beam_width;;
-                                sector_polygon["polarisation"] =  orientation;;
-                                sector_polygon["radius"]       =  radius;
-
+                                sector_polygon["azimuth"] = azimuth_angle;;
+                                sector_polygon["beam_width"] = beam_width;;
+                                sector_polygon["polarisation"] = orientation;;
+                                sector_polygon["radius"] = radius;
                             } catch(e) {
-                                // console.log(e);
+                                // console.log(e.name);
+                                // console.log(e.message);
+                                // console.debug(e);
                             }
 
                         } else if(window.location.pathname.indexOf("white_background") > -1) {
@@ -803,7 +806,18 @@ function GisPerformance() {
 
                                 if(window.location.pathname.indexOf("googleEarth") > -1) {
                                     /*Create the link between BS & SS or Sector & SS*/
-                                    var ss_link_line = earth_self.createLink_earth(startEndObj,linkColor,base_info,ss_info,sect_height,sector_ip,ss_marker_data.name,bs_object.name,bs_object.id);
+                                    var ss_link_line = earth_self.createLink_earth(
+                                        startEndObj,
+                                        linkColor,
+                                        base_info,
+                                        ss_info,
+                                        sect_height,
+                                        sector_ip,
+                                        ss_marker_data.name,
+                                        bs_object.name,
+                                        bs_object.originalId,
+                                        sector_id
+                                    );
                                     ssLinkArray.push(ss_link_line);
                                     ssLinkArray_filtered = ssLinkArray;
                                     try {
@@ -832,7 +846,8 @@ function GisPerformance() {
                                         sector_ip,
                                         ss_marker_data.name,
                                         bs_object.name,
-                                        bs_object.id
+                                        bs_object.originalId,
+                                        sector_id
                                     );
 
                                     ccpl_map.getLayersByName("Lines")[0].addFeatures([ss_link_line]);
@@ -914,7 +929,8 @@ function GisPerformance() {
                                         sector_ip,
                                         ss_marker_data.name,
                                         bs_object.name,
-                                        bs_object.id
+                                        bs_object.originalId,
+                                        sector_id
                                     );
                                     ssLinkArray.push(ss_link_line);
                                     ssLinkArray_filtered = ssLinkArray;
@@ -959,17 +975,12 @@ function GisPerformance() {
                                             );
 
                                         cross_label.open(mapInstance);
-                                        
                                         cross_label_array['line_'+ss_marker_data.name] = cross_label;
-                                        try {
-                                            // Hide Cross when line is also hidden
-                                            if(isLineChecked > 0) {
-                                                cross_label.show();
-                                            } else {
-                                                cross_label.hide();
-                                            }
-                                        } catch(e) {
-                                            // console.log(e);
+
+                                        if(isLineChecked > 0) {
+                                            cross_label.show();
+                                        } else {
+                                            cross_label.hide();
                                         }
                                     } else {
                                         try {

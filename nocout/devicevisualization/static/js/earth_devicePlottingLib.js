@@ -1192,7 +1192,13 @@ var state_wise_device_label_text= {};
 			};
 
 			// Create BS placemark.
-			var bs_marker = earth_self.makePlacemark(bs_marker_icon,resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,'bs_'+resultantMarkers[i].id,bsInfo);
+			var bs_marker = earth_self.makePlacemark(
+				bs_marker_icon,
+				resultantMarkers[i].data.lat,
+				resultantMarkers[i].data.lon,
+				'bs_'+resultantMarkers[i].originalId,
+				bsInfo
+			);
 
 
 			/*Push BS placemark to bs placemark array*/
@@ -1362,7 +1368,13 @@ var state_wise_device_label_text= {};
 
 						var sect_height = sectorsArray[j].antenna_height;
 						// Create Sector placemark.
-						var sector_marker = earth_self.makePlacemark(sectorMarkerIcon,resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,sectorsArray[j].sector_configured_on+"_"+j,sectorInfo);
+						var sector_marker = earth_self.makePlacemark(
+							sectorMarkerIcon,
+							resultantMarkers[i].data.lat,
+							resultantMarkers[i].data.lon,
+							sectorsArray[j].sector_configured_on+"_"+j,
+							sectorInfo
+						);
 						updateGoogleEarthPlacemark(sector_marker, sectorMarkerIcon);
 						/*Push Sector placemark to sector placemark array*/
 						plotted_sector_earth.push(sector_marker);
@@ -1605,10 +1617,22 @@ var state_wise_device_label_text= {};
 							// startEndObj["endLat"] = ssDataObj.data.lat;
 							// startEndObj["endLon"] = ssDataObj.data.lon;
 
-							var linkColor = ssDataObj.data.link_color;
+							var line_color = ssDataObj.data.link_color;
+                     linkColor = line_color && line_color != 'NA' ? line_color : 'rgba(74,72,94,0.58)';
 							var bs_info = resultantMarkers[i].data.param.base_station;
 							// var ss_info = ssDataObj.data.param.sub_station;
-							var linkLinePlacemark = earth_self.createLink_earth(startEndObj,linkColor,base_info,ss_info,sect_height,sectorsArray[j].sector_configured_on,ssDataObj.name,resultantMarkers[i].name,resultantMarkers[i].originalId,sectorsArray[j].sector_id);
+							var linkLinePlacemark = earth_self.createLink_earth(
+								startEndObj,
+								linkColor,
+								base_info,
+								ss_info,
+								sect_height,
+								sectorsArray[j].sector_configured_on,
+								ssDataObj.name,
+								resultantMarkers[i].name,
+								resultantMarkers[i].originalId,
+								sectorsArray[j].sector_id
+							);
 
 							// Show line placemark
 							linkLinePlacemark.setVisibility(true);
@@ -1732,12 +1756,18 @@ var state_wise_device_label_text= {};
 		
 		var style = ge.createStyle(''); //create a new style
 		style.getIconStyle().setIcon(icon); //apply the icon to the style
-		if(description.pointType == "base_station") {
-			style.getIconStyle().setScale(1.3);
-		} else {
-			style.getIconStyle().setScale(1.0);
-		}
 		
+		var place_mark_type = description.pointType;
+
+		var current_scale = earth_self.getPlacemarkScale_earth(place_mark_type);
+
+		// if(description.pointType == "base_station") {
+		// 	style.getIconStyle().setScale(1.3);
+		// } else {
+		// 	style.getIconStyle().setScale(1.0);
+		// }
+		
+		style.getIconStyle().setScale(current_scale);
 		
 		placemark.setStyleSelector(style); //apply the style to the placemark
 
@@ -1773,7 +1803,8 @@ var state_wise_device_label_text= {};
 
 		var argumentsLength= arguments.length;
 
-		var  linkObject = {}, link_path_color = linkColor;
+		var  linkObject = {},
+			link_path_color = linkColor && linkColor != 'NA' ? linkColor : 'rgba(74,72,94,0.58)';
 		var ss_info_obj = "", ss_height = 40;
 		if(ss_info != undefined || ss_info == "") {
 			ss_info_obj = ss_info.info;
@@ -1799,7 +1830,7 @@ var state_wise_device_label_text= {};
 
         linkObject= {
         	map: 'current',
-        	strokeColor: link_path_color ? link_path_color : 'rgba(74,72,94,0.58)',
+        	strokeColor: link_path_color,
         	strokeOpacity: 1.0,
         	strokeWeight: 3,
         	pointType: "path",
@@ -1839,7 +1870,7 @@ var state_wise_device_label_text= {};
 		lineStyle.setWidth(4);
 
 		/*Color for the link line*/
-		var link_color_obj = earth_self.makeRgbaObject('rgba(74,72,94,0.58)');
+		var link_color_obj = earth_self.makeRgbaObject(link_path_color);
 
 		lineStyle.getColor().setA(200);
 		lineStyle.getColor().setB((+link_color_obj.b));
@@ -3244,13 +3275,14 @@ var state_wise_device_label_text= {};
 	};
 
 	this.updateAllMarkersWithNewIcon = function(iconSize) {
-		var scaleValue = 1;
+		var scaleValue = 0.7;
+
 		if(iconSize== 'small') {
-			scaleValue = 0.7;
+			scaleValue = 0.4;
 		} else if(iconSize== 'medium') {
-			scaleValue = 1;
+			scaleValue = 0.7;
 		} else {
-			scaleValue = 1.4;
+			scaleValue = 1;
 		}
 
 		//Loop through the sector markers
@@ -3269,12 +3301,37 @@ var state_wise_device_label_text= {};
 			})(masterMarkersObj_earth[i]);
 		}
 		//End of Loop through the Master Markers
-	}
+	};
 
 
-	this.addRulerTool_earth = function() {
+	/**
+	 * This function returns the scale as per the applied size
+	 * @method getPlacemarkScale_earth
+	 * param placemark_type {String}, It contains the type of placemark i.e. either it is BS or other
+	 */
+	this.getPlacemarkScale_earth = function(placemark_type) {
+		var scaleValue = 0.7;
 
-	}
+		if(placemark_type == 'base_station') {
+			if(current_icon_size == 'small') {
+				scaleValue = 0.7;
+			} else if(current_icon_size == 'medium') {
+				scaleValue = 1;
+			} else {
+				scaleValue = 1.4;
+			}
+		} else {
+			if(current_icon_size == 'small') {
+				scaleValue = 0.4;
+			} else if(current_icon_size == 'medium') {
+				scaleValue = 0.7;
+			} else {
+				scaleValue = 1;
+			}
+		}
+
+		return scaleValue;
+	};
 
 
 	/**
@@ -3288,7 +3345,7 @@ var state_wise_device_label_text= {};
 		colorObject["r"] = colorArray[0];
 		colorObject["g"] = colorArray[1];
 		colorObject["b"] = colorArray[2];
-		colorObject["a"] = colorArray[3];
+		colorObject["a"] = colorArray.length == 4 ? colorArray[3] : 200;
 
 		return colorObject;
 	};
