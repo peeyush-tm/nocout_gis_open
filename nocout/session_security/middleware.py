@@ -32,6 +32,12 @@ class SessionSecurityMiddleware(object):
         if not request.user.is_authenticated():
             return
 
+        if request.user.is_staff:
+            if request.path.startswith('/admin/'):
+                return
+            else:
+                raise http.Http404
+
         # If user has not changed password after first time login
         # And trying to access closing pop-up dialog then logout
         is_first_time_login = False if request.user.userprofile.password_changed_at else True
