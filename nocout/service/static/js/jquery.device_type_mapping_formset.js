@@ -54,10 +54,10 @@
 
                     // Don't allow removing answer option for theme 3.
                     // If count is equal to 2.
-                    if ($('.' + options.deleteCssClass).length <=1) {
-                        alert('At-least one options is required to be submitted.');
-                        return false;
-                    }
+                    // if ($('.' + options.deleteCssClass).length <=1) {
+                    //     alert('At-least one options is required to be submitted.');
+                    //     return false;
+                    // }
                     var row = $(this).parents('.' + options.formCssClass),
                         del = row.find('input:hidden[id $= "-DELETE"]');
                     if (del.length) {

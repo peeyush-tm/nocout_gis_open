@@ -959,12 +959,17 @@ function GisPerformance() {
                                             );
 
                                         cross_label.open(mapInstance);
+                                        
                                         cross_label_array['line_'+ss_marker_data.name] = cross_label;
-
-                                        if(isLineChecked > 0) {
-                                            cross_label.show();
-                                        } else {
-                                            cross_label.hide();
+                                        try {
+                                            // Hide Cross when line is also hidden
+                                            if(isLineChecked > 0) {
+                                                cross_label.show();
+                                            } else {
+                                                cross_label.hide();
+                                            }
+                                        } catch(e) {
+                                            // console.log(e);
                                         }
                                     } else {
                                         try {
