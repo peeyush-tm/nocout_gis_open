@@ -6,8 +6,8 @@
 {% endblock %}
 {% load staticfiles %}
 {% block page_setting_block %} {% endblock %}
-{% block content_title %} Main Dashboard: MFR {% endblock %}
-{% block content_description %} Main Dashboard: MFR {% endblock %}
+{% block content_title %} Main Dashboard {% endblock %}
+{% block content_description %} Main Dashboard {% endblock %}
 
 {% block content %}
 
@@ -32,17 +32,17 @@
         <div class="col-md-3" align="center">
             <div id="down-all" style="height: 165px;"></div>
             <h5>Down</h5>
-        </div>        
+        </div>
         <div class="col-md-3" align="center">
-            <div id="latency-all" style="height: 165px;"></div>            
+            <div id="latency-all" style="height: 165px;"></div>
             <h5>Latency</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="packet-loss-all" style="height: 165px;"></div>            
+            <div id="packet-loss-all" style="height: 165px;"></div>
             <h5>Packet Drop</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="temperature-idu-wimax" style="height: 165px;"></div>            
+            <div id="temperature-idu-wimax" style="height: 165px;"></div>
             <h5>Temperature IDU Wimax</h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
@@ -54,7 +54,7 @@
 
         <!-- Capacity pie Charts & city table Start -->
         <div class="col-md-3" align="center">
-            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>            
+            <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
             <h5>Wimax Sales Opportunity</h5>
         </div>
         <div class="col-md-6">
@@ -68,12 +68,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    
+
                 </tbody>
             </table>
         </div>
         <div class="col-md-3" align="center">
-            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>    
+            <div id="pmp_sales_opportunity" class="rf_chart_style"></div>
             <h5>PMP Sales Opportunity</h5>
         </div>
         <!-- Capacity pie Charts & city table End -->
@@ -116,7 +116,7 @@
         <!-- ********** FIFTH ROW START **********-->
         <div class="col-md-12">
             <h4>MFR Caused Code</h4>
-            <div id="mfr_cause_code" class="rf_chart_style"></div>    
+            <div id="mfr_cause_code" class="rf_chart_style"></div>
         </div>
 
         <div class="clearfix"></div>
@@ -126,11 +126,11 @@
         <!-- ********** SIXTH ROW START **********-->
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
-            <div id="down-wimax" style="height: 165px;"></div>            
+            <div id="down-wimax" style="height: 165px;"></div>
             <h5>Down Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="down-pmp" style="height: 165px;"></div>            
+            <div id="down-pmp" style="height: 165px;"></div>
             <h5>Down PMP</h5>
         </div>
         <div class="col-md-3" align="center">
@@ -138,7 +138,7 @@
             <h5>Latency Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="latency-pmp" style="height: 165px;"></div>            
+            <div id="latency-pmp" style="height: 165px;"></div>
             <h5>Latency PMP</h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
@@ -150,7 +150,7 @@
 
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
-            <div id="packet-loss-wimax" style="height: 165px;"></div>            
+            <div id="packet-loss-wimax" style="height: 165px;"></div>
             <h5>Packet Drop Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
@@ -158,11 +158,11 @@
             <h5>Packet Drop PMP</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="temperature-fan-wimax" style="height: 165px;"></div>            
+            <div id="temperature-fan-wimax" style="height: 165px;"></div>
             <h5>Temperature Fan Wimax</h5>
         </div>
         <div class="col-md-3" align="center">
-            <div id="temperature-acb-wimax" style="height: 165px;"></div>            
+            <div id="temperature-acb-wimax" style="height: 165px;"></div>
             <h5>Temperature ACB Wimax</h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
@@ -227,7 +227,6 @@
             length_sel.css("max-width","65px");
             length_sel.addClass('form-control input-sm');
         });
-
 
         // Initialize Dashboard
         initDashboard();

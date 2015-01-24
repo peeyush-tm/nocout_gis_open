@@ -112,7 +112,7 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
       "id_mfr_processed" : {
         "url" : "",
         "text" : "MFR Processed"
-      }  
+      }
     };
 
 /**
@@ -120,7 +120,7 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
  * @method initDashboard
  */
 function initDashboard() {
-    
+
     // Initialize all speedometer(solid gauge) charts
     initSpeedometerCharts_dashboard();
 
@@ -229,7 +229,7 @@ function highcharts_piechart(url, domElement,chart_title) {
 
 /**
  * This function creates or update area chart highchart as per given param
- * @method updateAreaChart 
+ * @method updateAreaChart
  */
 function updatePieChart(chartData, domElement) {
     // Pie Chart Color(Use default colors if API doesn't pass any color list)
@@ -346,7 +346,7 @@ function highcharts_areachart(url, domElement, chart_title) {
 
 /**
  * This function creates or update area chart highchart as per given param
- * @method updateAreaChart 
+ * @method updateAreaChart
  */
 function updateAreaChart(chartData, domElement) {
     // In case of update
@@ -436,6 +436,9 @@ function get_speedometer_chart(ajax_url, div_id, chart_title){
     $.ajax({
         url : ajax_url,
         type : "GET",
+        data : {
+            'dashboard_name': div_id,
+        },
         success : function(result) {
             var response = "";
             if(typeof result == 'string') {
@@ -468,7 +471,7 @@ function get_speedometer_chart(ajax_url, div_id, chart_title){
 
 /**
  * This function creates or update solid gauge highchart as per given param
- * @method updateSpeedometerChart 
+ * @method updateSpeedometerChart
  */
 function updateSpeedometerChart(chartData, div_id, div_text) {
 
@@ -553,7 +556,7 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
             },
             tooltip: {
                 valueSuffix: ' revolutions/min'
-        
+
             }
         }]
     }));
