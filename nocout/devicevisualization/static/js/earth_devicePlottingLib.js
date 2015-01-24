@@ -1218,12 +1218,12 @@ var state_wise_device_label_text= {};
 				if(pointAdded == 1) {
 			
 					connected_end_obj = {
-						"lat" : bs_marker.ptLat,
-						"lon" : bs_marker.ptLon
+						"lat" : this.ptLat,
+						"lon" : this.ptLon
 					};
 
 					if(current_point_for_line) {
-						gmap_self.plot_point_line(bs_marker);
+						gmap_self.plot_point_line(this);
 					}
 
 					return ;
@@ -1235,7 +1235,7 @@ var state_wise_device_label_text= {};
 					return ;
 				}
 
-				var content = gmap_self.makeWindowContent(bs_marker);
+				var content = gmap_self.makeWindowContent(this);
 				if($("iframe.windowIFrame").length) {
 					$("iframe.windowIFrame").remove();
 				}
