@@ -1912,7 +1912,7 @@ var state_wise_device_label_text= {};
 				}, 40);
 			} else {
 				/*Call the function to create info window content*/
-				var content = gmap_self.makeWindowContent(lineStringPlacemark);
+				var content = gmap_self.makeWindowContent(this);
 				
 				$("#google_earth_container").after('<iframe allowTransparency="true" style="position:absolute; top:35px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-4 col-md-offset-8"></iframe>');
 
