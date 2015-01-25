@@ -3948,7 +3948,7 @@ function devicePlottingClass_gmap() {
 			var fresnelTemplate = "<div class='fresnelContainer row' style='height:400px;overflow-y:auto;z-index:9999;position:relative;'>"+leftSlider+" "+middleBlock+" "+rightSlider+"</div>"+chart_detail;
 
 			// if(window.location.pathname.indexOf("googleEarth")> -1) {
-			// 	fresnelTemplate = '<iframe allowTransparency="true" style="position:absolute; top:10px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-5 col-md-offset-7"></iframe>'+fresnelTemplate; 
+			// 	fresnelTemplate = '<iframe allowTransparency="true" style="position:absolute; top:35px; right:10px; overflow: auto; padding:0px; height:100%; max-height: 550px; overflow:auto; z-index:100;" class="windowIFrame col-md-4 col-md-offset-8"></iframe>'+fresnelTemplate; 
 			// }
 
 			/*Call the bootbox to show the popup with Fresnel Zone Graph*/

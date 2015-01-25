@@ -1743,9 +1743,15 @@ function updateGoogleEarthPlacemark(placemark, newIcon) {
     // Define a custom icon.next_polling_btn
     var icon = ge.createIcon('');
     icon.setHref(newIcon);
+
     var style = ge.createStyle('');
     style.getIconStyle().setIcon(icon);
-    // style.getIconStyle().setScale(5.0);
+
+    var place_mark_type = placemark["pointType"] ? placemark["pointType"] : 'other';
+
+    var current_scale = earth_self.getPlacemarkScale_earth(place_mark_type);    
+    style.getIconStyle().setScale(current_scale);
+
     placemark.setStyleSelector(style);
 }
 
