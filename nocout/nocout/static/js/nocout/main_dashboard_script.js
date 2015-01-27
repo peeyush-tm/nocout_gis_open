@@ -476,7 +476,9 @@ function get_speedometer_chart(ajax_url, div_id, chart_title){
 function updateSpeedometerChart(chartData, div_id, div_text) {
 
     var val_count = chartData.chart_data[0].data[0].count,
-        val_color = chartData.chart_data[0].data[0].color;
+        val_color = chartData.chart_data[0].data[0].color,
+        max = chartData.chart_data[0].data[0].max,
+        stops = chartData.chart_data[0].data[0].stops;
 
     // If chart is created on given dom element then destriy chart n then create again
     if($(div_id).highcharts()) {
@@ -540,11 +542,12 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
     $(div_id).highcharts(Highcharts.merge(gaugeOptions, {
         yAxis: {
             min: 0,
-            max: 10,
+            max: max,
             title: {
                 // text: div_text
                 text: ""
-            }
+            },
+            stops: stops,
         },
         series: [{
             name: div_text,

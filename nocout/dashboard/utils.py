@@ -302,6 +302,8 @@ def get_highchart_response(dictionary={}):
                 "color": dictionary['color'],
                 "name": dictionary['name'],
                 "count": dictionary['count'],
+                "max": dictionary['max'],
+                "stops": dictionary['stops'],
             }],
             "valuesuffix": "",
             "type": "gauge",
@@ -326,3 +328,17 @@ def get_highchart_response(dictionary={}):
         },
         "success": 1
     })
+
+
+def get_guege_chart_max_n_stops(dashboard_setting):
+    max_range = 0
+    stops = []
+    for count in range(1, 11):
+        end_range = getattr(dashboard_setting, 'range%d_end' %count)
+        color = getattr(dashboard_setting, 'range%d_color_hex_value' %count)
+        if end_range and color:
+            end_range = int(end_range)
+            stops.append([end_range, color])
+            if end_range > max_range:
+                max_range = end_range
+    return max_range, stops
