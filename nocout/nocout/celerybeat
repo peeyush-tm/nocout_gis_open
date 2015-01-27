@@ -15,7 +15,7 @@ CELERY_BIN="/apps/nocout/nout/bin/celery"
 CELERYBEAT_CHDIR="/apps/nocout/nocout/nocout/"
 
 # Extra arguments to celerybeat
-CELERYBEAT_OPTS="--schedule=/apps/nocout/nocout/nocout/nocout/celerybeat-schedule"
+CELERYBEAT_OPTS="--schedule=/apps/nocout/nocout/nocout/nocout/settings.py"
 
 export DJANGO_SETTINGS_MODULE="nocout.settings"
 
