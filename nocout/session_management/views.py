@@ -193,62 +193,33 @@ def dialog_action(request):
     The Action of the Dialog box appears on the screen.
     If the action is continue then the user will get logged off from the current logged in session
     and the same session key will be used to login the user.
-
     """
     url = request.POST.get('url', '/home/')
-    if request.POST.get('action') == 'continue':
-        session_key = request.session.session_key
-        if hasattr(request.user, 'visitor'):
-            Session.objects.filter(session_key=request.user.visitor.session_key).delete()
+    user = auth.authenticate(token=request.POST.get('auth_token', None))
+    if request.POST.get('action') == 'continue' and user:
+        # session_key = request.session.session_key
+        if hasattr(user, 'visitor'):
+            Session.objects.filter(session_key=user.visitor.session_key).delete()
             # If Session object is modified as session key is changed.
             # Above doesn't remove existing Visitor object. So removing it below.
-            Visitor.objects.filter(user=request.user).delete()
-        Visitor.objects.create(session_key=session_key, user=request.user)
-        if request.POST.get('password_alert'):
-            result = {
-                "success": 1,  # 0 - fail, 1 - success, 2 - exception
-                "message": "Success/Fail message.",
-                "data": {
-                    "meta": {},
-                    "objects": {
-                        'url': url,
-                        'password_expires_on': request.POST.get('password_expires_on')
-                    }
-                }
-            }
-        else:
-            result = {
-                "success": 1,  # 0 - fail, 1 - success, 2 - exception
-                "message": "Success/Fail message.",
-                "data": {
-                    "meta": {},
-                    "objects": {
-                        'url': url,
-                    }
-                }
-            }
-        return HttpResponse(json.dumps(result), content_type='application/json')
+            Visitor.objects.filter(user=user).delete()
+        auth.login(request, user)
+        Visitor.objects.create(session_key=request.session.session_key, user=request.user)
+        UserProfile.objects.filter(id=user.id).update(user_invalid_attempt=0)   # empty the user invalid attempts on successful login
+        object_values = dict(url=url)
 
-    elif request.POST.get('action') == 'logout':
-        #since we are having auto-logoff functionality with us as well
-        #we need to check for session parameter _session_security
-        #_session_security is used by session security to judge the
-        #auto logoff of the user
-        if '_session_security' in request.session:
-            del request.session["_session_security"]
+    else:
+        object_values = dict(url='/login/')
 
-        auth.logout(request)
-        result = {
-            "success": 1,  # 0 - fail, 1 - success, 2 - exception
-            "message": "Success/Fail message.",
-            "data": {
-                "meta": {},
-                "objects": {
-                    'url': '/login/'
-                }
-            }
+    result = {
+        "success": 1,  # 0 - fail, 1 - success, 2 - exception
+        "message": "Success/Fail message.",
+        "data": {
+            "meta": {},
+            "objects": object_values,
         }
-        return HttpResponse(json.dumps(result), content_type='application/json')
+    }
+    return HttpResponse(json.dumps(result), content_type='application/json')
 
 @csrf_exempt
 def change_user_status(request):
