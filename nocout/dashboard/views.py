@@ -29,7 +29,8 @@ from performance.utils.util import color_picker
 from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
-    get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response, get_unused_dashboards, get_range_status
+    get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response,\
+    get_unused_dashboards, get_range_status, get_guege_chart_max_n_stops
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
@@ -925,7 +926,10 @@ class DashboardDeviceStatus(View):
         if count_range and count_range != 'unknown':
             count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
 
-        chart_data_dict = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
+        max_range, chart_stops = get_guege_chart_max_n_stops(dashboard_setting)
+
+        chart_data_dict = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count,
+                'max': max_range, 'stops': chart_stops}
         response = get_highchart_response(chart_data_dict)
 
         return HttpResponse(response)
