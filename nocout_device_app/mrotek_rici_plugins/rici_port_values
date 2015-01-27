@@ -31,37 +31,39 @@ def connection_telnet_for_rici_port_state(hostip, port,num_port):
         Returns nothing.
     
         """
-        try:
-                tn = Telnet(hostip,port,timeout=3)
-        except socket.timeout:
+	try:
+		tn = Telnet(hostip,port,timeout=3)
+	except socket.timeout:
 		plugin_message = ""
 		return plugin_message
-	tn.read_until("USER NAME:")
-        tn.write("su" + "\r\n")
-        tn.write("1234" + "\r\n")
-        tn.write("3" + "\r\n")
-        tn.write("2" + "\r\n")
-        tn.write("1" + "\r\n")
-        tn.write("1" + "\r\n")
-	for index in range(2,num_port):
-        	tn.write("1" + "\r\n")
-        	tn.write("%s" % index + "\r\n")
-		
-        tn.write("exit\r\n")
-        data = tn.read_all()
+	tn.read_until("USER NAME")
+	tn.write("su" + "\r\n")
+	tn.read_until("PASSWORD")
+	tn.write("1234" + "\r\n")
+	tn.write("3\r\n")
+	tn.write("2\r\n")
+	tn.write("1\r\n")
+	tn.write("1\r\n")
+	tn.write("1\r\n")
+	tn.write("2\r\n")
+	tn.write("1\r\n")
+	tn.write("3\r\n")
+	tn.write("1\r\n")
+	tn.write("4\r\n")
+	data1=tn.read_until('(Eth%s)'% num_port)
+	tn.write("%s\r\n" % chr(24))
+	pattern= re.compile(r'\x1b\[((?:[0-9]*;?)+)([A-Za-z])')
+	data1 = pattern.sub('',data1)
+	output = re.findall('(?<=Speed and Duplex\()[\w ]*',data1)
 	plugin_message = ""
 	index = 0
 	try:
-		 for i,row in enumerate(data.split("\n")):
-                        if "C:" in row:
-				index = index+1
-				port_row = int([r for r in row.split()])
-				port_duplex = port_row[3].split('/')[1]
-				port_speed = port_row[3].split('/')[0]
-				port_up = port_row[2].split('(')[0]
-				port_auto = port_row[1]
-				plugin_message += "%s=%s,%s,%s,%s " % (index,port_duplex,port_speed,port_up,port_auto) 
-        except:
+		for entry in output:
+			index = index+1
+			port_duplex = entry.split(' ')[0]
+			port_speed = entry.split(' ')[1] + "_" + entry.split(' ')[2]
+			plugin_message += "%s=%s,%s " % (index,port_duplex,port_speed) 
+	except:
 		plugin_message = ""
 	return plugin_message
                                 
@@ -92,9 +94,11 @@ def check_rici_port_values(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     try:
-	ip= lookup_ipaddress(g_hostname)	
+	ip= lookup_ipaddress(g_hostname)
+	num_port = filter(lambda x: x != '' ,info[0])
+	num_port = len(num_port)	
 	if ip:
-		plugin_message =connection_telnet_for_rici_port_state(ip, 23)
+		plugin_message =connection_telnet_for_rici_port_state(ip, 23,num_port)
 		if plugin_message:
 			infotext = "%s" % (plugin_message)
 			state = 0
@@ -114,4 +118,4 @@ check_info["rici_port_values"] = {
 #########################################################################
 #	SNMP OID for the operating ptx
 #########################################################################
-snmp_info["rici_port_values"] = ( ".1.3.6.1.4.1.5812.2000.4.1.1", ["1.0"] )
+snmp_info["rici_port_values"] = ( ".1.3.6.1.2.1.2.2.1.8", ["21","22","23","24","25","26","27","28"] )

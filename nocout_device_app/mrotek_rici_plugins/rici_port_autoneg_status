@@ -33,8 +33,7 @@ def extract_port_autoneg_status_from_live(hostname):
         """
 	port_autoneg_list = []
         query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 
-			% ("rici_port_values",hostname)
+			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("rici_port_values",hostname)
         
 	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.connect(livestatus_unix_socket)
@@ -72,7 +71,7 @@ def check_rici_port_autoneg_status(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     status_list = []
-    port_string = "FE_"
+    port_string = "fe_"
     try:
 	infotext = ""
 	for index in range(len(info)):

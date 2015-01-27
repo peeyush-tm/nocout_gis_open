@@ -1,7 +1,10 @@
 import json
+import datetime
+import calendar
+from dateutil import relativedelta
 
 from django.core.urlresolvers import reverse_lazy, reverse
-from django.db.models import Q
+from django.db.models import Q, Count, Sum
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
@@ -10,18 +13,23 @@ from django.views.generic.base import View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
+from nocout.settings import PMP, WiMAX
 from nocout.utils import logged_in_user_organizations
-from device.models import DeviceTechnology
-from performance.models import ServiceStatus, NetworkAvailabilityDaily
+from inventory.models import Sector
+from device.models import DeviceTechnology, Device
+from performance.models import ServiceStatus, NetworkAvailabilityDaily, UtilizationStatus, Topology, NetworkStatus
 
 #inventory utils
-from inventory.utils.util import organization_customer_devices, organization_network_devices
+from inventory.utils.util import organization_customer_devices, organization_network_devices,\
+    organization_sectors, prepare_machines
 #inventory utils
 
-from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed
+from performance.utils.util import color_picker
+
+from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
-from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
-from dashboard.config import dashboards
+from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
+    get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response, get_unused_dashboards, get_range_status
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import SuperUserRequiredMixin
 from nocout.mixins.datatable import DatatableSearchMixin, ValuesQuerySetMixin
@@ -117,8 +125,9 @@ class DashbaordSettingsCreateView(SuperUserRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(DashbaordSettingsCreateView, self).get_context_data(**kwargs)
-        context['dashboards'] = json.dumps(dashboards)
+        context['dashboards'] = get_unused_dashboards()
         technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
         return context
 
@@ -142,8 +151,9 @@ class DashbaordSettingsUpdateView(SuperUserRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(DashbaordSettingsUpdateView, self).get_context_data(**kwargs)
-        context['dashboards'] = json.dumps(dashboards)
+        context['dashboards'] = get_unused_dashboards(dashboard_setting_id=self.object.id)
         technology_options = dict(DeviceTechnology.objects.values_list('name', 'id'))
+        technology_options.update({'All': ''})
         context['technology_options'] = json.dumps(technology_options)
         return context
 
@@ -198,7 +208,7 @@ class PerformanceDashboardMixin(object):
             dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='rf_dashboard', name=data_source, is_bh=is_bh)
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
-                "message": "Corresponding dashboard seting is not available.",
+                "message": "Corresponding dashboard setting is not available.",
                 "success": 0
             }))
 
@@ -598,3 +608,324 @@ class MFRReportsDeleteView(UserLogDeleteMixin, DeleteView):
     template_name = 'mfrdfr/mfr_dfr_reports_delete.html'
     success_url = reverse_lazy('mfr-reports-list')
     obj_alias = 'name'
+
+
+#**************************************** Main Dashbaord ***************************************#
+
+
+class MainDashboard(View):
+    """
+    The Class based View to return Main Dashboard.
+
+    Following are charts included in main-dashboard:
+
+        - WiMAX Sector Capicity
+        - PMP Sector Capicity
+        - WiMAX Sales Oppurtunity
+        - PMP Sales Oppurtunity
+        - WiMAX Backhaul Capicity
+        - PMP Backhaul Capicity
+        - Current Alarm (WiMAX, PMP, PTP BH and All)
+        - Network Latency (WiMAX, PMP, PTP BH and All)
+        - Packet Drop (WiMAX, PMP, PTP BH and All)
+        - Temperature (WiMAX, PMP, PTP BH and All)
+        - PTP RAP Backhaul
+        - City Charter
+        - MFR Cause Code
+        - MFR Processed
+    """
+    template_name = 'main_dashboard/home.html'
+
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
+
+        return render(self.request, self.template_name, )
+
+
+class MFRCauseCodeView(View):
+    """
+    """
+
+    def get(self, request):
+        mfr_reports = MFRDFRReports.objects.order_by('-process_for').filter(is_processed=1)
+
+        chart_series = []
+        if mfr_reports.exists():
+            last_mfr_report = mfr_reports[0]
+        else:
+            response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+                'title': 'MFR Cause Code', 'name': ''})
+            return HttpResponse(response)
+
+        results = MFRCauseCode.objects.filter(processed_for=last_mfr_report).values('processed_key', 'processed_value')
+        for result in results:
+            chart_series.append([
+                "%s : %s" % (result['processed_key'], result['processed_value']),
+                int(result['processed_value'])
+            ])
+
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': 'MFR Cause Code', 'name': ''})
+
+        return HttpResponse(response)
+
+
+class MFRProcesedView(View):
+    """
+    """
+    def get(self, request):
+        # Start Calculations for MFR Processed.
+        # Last 12 Months
+        year_before = datetime.date.today() - datetime.timedelta(days=365)
+        year_before = datetime.date(year_before.year, year_before.month, 1)
+
+        mfr_processed_results = MFRProcessed.objects.filter(processed_for__process_for__gte=year_before).values(
+                'processed_key', 'processed_value', 'processed_for__process_for')
+
+        day = year_before
+        # area_chart_categories = []
+        processed_key_dict = {result['processed_key']: [] for result in mfr_processed_results}
+        processed_key_color = {result['processed_key']: color_picker() for result in mfr_processed_results}
+        while day <= datetime.date.today():
+            #area_chart_categories.append(datetime.date.strftime(day, '%b %y'))
+
+            processed_keys = processed_key_dict.keys()
+            for result in mfr_processed_results:
+                result_date = result['processed_for__process_for']
+                if result_date.year == day.year and result_date.month == day.month:
+                    processed_key_dict[result['processed_key']].append({
+                        "color": processed_key_color[result['processed_key']],
+                        "y": int(result['processed_value']),
+                        "name": result['processed_key'],
+                        "x": calendar.timegm(day.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
+                    })
+                    processed_keys.remove(result['processed_key'])
+
+            # If no result is available for a processed_key put its value zero for (day.month, day.year)
+            for key in processed_keys:
+                processed_key_dict[key].append({
+                    "color": processed_key_color[key],
+                    "y": 0,
+                    "name": key,
+                    "x": calendar.timegm(day.timetuple())*1000, # Multiply by 1000 to return correct GMT+05:30 timestamp
+                })
+
+            day += relativedelta.relativedelta(months=1)
+
+        area_chart_series = []
+        for key, value in processed_key_dict.items():
+            area_chart_series.append({'name': key, 'data': value, 'color': processed_key_color[key]})
+
+        response = get_highchart_response(dictionary={'type': 'areaspline', 'chart_series': area_chart_series,
+            'title': 'MFR Processed', 'valuesuffix': 'seconds'})
+
+        return HttpResponse(response)
+
+#********************************************** main dashboard sector capacity ************************************************
+class SectorCapacityMixin(object):
+    '''
+    '''
+    def get(self, request):
+
+        tech_name = self.tech_name
+        organization = []
+        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+
+        user_sector = organization_sectors(organization, technology=technology)
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
+
+        dashboard_name = '%s_sector_capacity' % (tech_name.lower())
+        dashboard_status_dict = get_severity_status_dict(dashboard_name, sector_devices_list)
+
+        chart_series = []
+        if len(dashboard_status_dict):
+            for key,value in dashboard_status_dict.items():
+                chart_series.append(['%s: %s' % (key.replace('_', ' '), value), dashboard_status_dict[key]])
+
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': '%s Sector Capacity' % tech_name.upper(), 'name': ''})
+
+        return HttpResponse(response)
+
+
+
+class PMPSectorCapacity(SectorCapacityMixin, View):
+    """
+    """
+    tech_name = 'PMP'
+
+
+class WiMAXSectorCapacity(SectorCapacityMixin, View):
+    """
+    """
+    tech_name = 'WiMAX'
+
+
+#********************************************** main dashboard sector capacity ************************************************
+
+class SalesOpportunityMixin(object):
+    """
+    """
+    def get(self, request):
+        '''
+        '''
+        is_bh = False
+        tech_name = self.tech_name
+
+        data_source_config = {
+            'topology': {'service_name': 'topology', 'model': Topology},
+        }
+
+        data_source = data_source_config.keys()[0]
+        # Get Service Name from queried data_source
+        service_name = data_source_config[data_source]['service_name']
+        model = data_source_config[data_source]['model']
+
+        organization = []
+        technology = DeviceTechnology.objects.get(name=tech_name).id
+        # convert the data source in format topology_pmp/topology_wimax
+        data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=data_source, is_bh=is_bh)
+        except DashboardSetting.DoesNotExist as e:
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard setting is not available.",
+                "success": 0
+            }))
+
+        # Get Sector of User's Organizations. [and are Sub Station]
+        user_sector = organization_sectors(organization, technology)
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = sector_devices_list.values_list('device_name', flat=True)
+
+        dashboard_name = '%s_sales_opportunity' % (tech_name.lower())
+        dashboard_status_dict = get_range_status_dict(dashboard_name, sector_devices_list)
+
+        chart_series = []
+        colors = []
+        if len(dashboard_status_dict):
+            response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, dashboard_status_dict)
+            chart_series = response_dict['data']['objects']['chart_data'][0]['data']
+            colors = response_dict['data']['objects']['colors']
+
+        response = get_highchart_response(dictionary={'type': 'pie', 'chart_series': chart_series,
+            'title': tech_name + ' Sales Oppurtunity', 'name': '', 'colors': colors})
+
+        return HttpResponse(response)
+
+
+class PMPSalesOpportunity(SalesOpportunityMixin, View):
+    """
+    """
+    tech_name = 'PMP'
+
+
+class WiMAXSalesOpportunity(SalesOpportunityMixin, View):
+    """
+    """
+    tech_name = 'WiMAX'
+
+
+# *************************** Dashboard Timely Data ***********************
+def get_severity_status_dict(dashboard_name, sector_devices_list):
+    '''
+    '''
+    dashboard_status_dict = DashboardSeverityStatusTimely.objects.order_by('-processed_for').filter(
+        dashboard_name=dashboard_name,
+        device_name__in=sector_devices_list
+    )
+    if dashboard_status_dict.exists():
+        processed_for = dashboard_status_dict[0].processed_for
+        dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
+                                    Normal=Sum('ok'),
+                                    Needs_Augmentation=Sum('warning'),
+                                    Stop_Provisioning=Sum('critical'),
+                                    Unknown=Sum('unknown')
+                                )
+
+    return dashboard_status_dict
+
+
+def get_range_status_dict(dashboard_name, sector_devices_list):
+    '''
+    '''
+    dashboard_status_dict = DashboardRangeStatusTimely.objects.order_by('-processed_for').filter(
+        dashboard_name=dashboard_name,
+        device_name__in=sector_devices_list
+    )
+    if dashboard_status_dict.exists():
+        processed_for = dashboard_status_dict[0].processed_for
+        dashboard_status_dict = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
+                                    range1=Sum('range1'), range2=Sum('range2'), range3=Sum('range3'),
+                                    range4=Sum('range4'), range5=Sum('range5'), range6=Sum('range6'),
+                                    range7=Sum('range7'), range8=Sum('range8'), range9=Sum('range9'),
+                                    range10=Sum('range10'), unknown=Sum('unknown')
+                                )
+
+    return dashboard_status_dict
+
+
+# *************************** Dashboard Gauge Status ***********************
+class DashboardDeviceStatus(View):
+    '''
+    '''
+    def get(self, request):
+        """
+        """
+        dashboard_name = self.request.GET['dashboard_name']
+        dashboard_name = dashboard_name.replace('#','')
+
+        count = 0
+        count_range = ''
+        count_color = '#CED5DB' # For Unknown Range.
+
+        technology = None
+        if 'pmp' in dashboard_name:
+            technology = PMP.ID
+        elif 'wimax' in dashboard_name:
+            technology = WiMAX.ID
+
+        if '-all' in dashboard_name:
+            dashboard_name = dashboard_name.replace('-all','-network')
+
+        dashboard_status_name = dashboard_name
+        if 'temperature' in dashboard_name:
+            dashboard_name = 'temperature'
+            dashboard_status_name = dashboard_status_name.replace('-wimax','')
+
+        organizations = logged_in_user_organizations(self)
+
+        user_devices = organization_network_devices(organizations, technology)
+        sector_devices = user_devices.filter(sector_configured_on__isnull=False)
+        sector_devices = sector_devices.values_list('device_name',flat=True)
+
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='main_dashboard', name=dashboard_name, is_bh=False)
+        except DashboardSetting.DoesNotExist as e:
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard setting is not available.",
+                "success":0
+            }))
+
+        dashboard_status_dict = get_range_status_dict(dashboard_status_name, sector_devices)
+        if len(dashboard_status_dict):
+            count = sum(dashboard_status_dict.values())
+
+        # print 'count...',count
+        range_status_dct = get_range_status(dashboard_setting, {'current_value': count})
+        count_range = range_status_dct['range_count']
+
+        # get color of range in which count exists.
+        if count_range and count_range != 'unknown':
+            count_color = getattr(dashboard_setting, '%s_color_hex_value' %count_range)
+
+        chart_data_dict = {'type': 'gauge', 'name': dashboard_name, 'color': count_color, 'count': count}
+        response = get_highchart_response(chart_data_dict)
+
+        return HttpResponse(response)

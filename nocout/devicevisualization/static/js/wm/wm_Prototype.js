@@ -598,8 +598,9 @@ WhiteMapClass.prototype.plotLines_wmap = function(startEndObj,linkColor,bs_info,
 		ssName 		    : ss_name,
 		bsName 			: bs_name,
 		zIndex 			: 9999,
-		type: "line",
-		layerReference: ccpl_map.getLayersByName("Lines")[0]
+		type 			: "line",
+		isActive 		: 1,
+		layerReference  : ccpl_map.getLayersByName("Lines")[0]
 	};
 
 	var pathConnector = new OpenLayers.Feature.Vector(pathDataObject, {}, {

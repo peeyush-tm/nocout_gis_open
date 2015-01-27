@@ -15,7 +15,6 @@ from datetime import datetime, timedelta
 from django import http
 from django.contrib.auth import logout
 from django.core.urlresolvers import reverse
-from django.utils import timezone
 
 from .utils import get_last_activity, set_last_activity
 from .settings import EXPIRE_AFTER, PASSIVE_URLS

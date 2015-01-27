@@ -576,26 +576,29 @@ class Fetch_Inventory_Devices(View):
         """
 
         result = {
-            'success': 0,
-            'message': 'Substation Devices Not Fetched Successfully.',
+            'success': 1,
+            'message': 'Devices Not Fetched Successfully.',
             'data': {
                 'meta': {},
                 'objects': []
             }
         }
-
-        logged_in_user = request.user.userprofile
-
-        if 'admin' in logged_in_user.role.values_list('role_name', flat=True):
-            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
-        else:
-            organizations = [logged_in_user.organization]
-
-        result['data']['objects'] += self.get_result(page_type, organizations)
-
-        result['success'] = 1
-        result['message'] = 'Substation Devices Fetched Successfully.'
         return HttpResponse(json.dumps(result), content_type="application/json")
+
+        #not being used any longer
+
+        # logged_in_user = request.user.userprofile
+        #
+        # if 'admin' in logged_in_user.role.values_list('role_name', flat=True):
+        #     organizations = list(logged_in_user.organization.get_descendants(include_self=True))
+        # else:
+        #     organizations = [logged_in_user.organization]
+        #
+        # result['data']['objects'] += self.get_result(page_type, organizations)
+        #
+        # result['success'] = 1
+        # result['message'] = 'Substation Devices Fetched Successfully.'
+        # return HttpResponse(json.dumps(result), content_type="application/json")
 
     def get_result(self, page_type, organizations):
         """

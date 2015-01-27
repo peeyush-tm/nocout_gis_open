@@ -8,6 +8,9 @@ from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 
 dajaxice_autodiscover()
 
+from nocout.views import AuthView
+from dashboard.views import MainDashboard
+
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 
@@ -18,8 +21,8 @@ handler500 = 'nocout.views.handler500'
 handler403 = 'nocout.views.handler403'
 
 urlpatterns = patterns('',
-                       url(r'^$', RedirectView.as_view(url='login/')),
-                       url(r'^home/', 'home.views.home'),
+                       url(r'^$', RedirectView.as_view(url='home/')),
+                       url(r'^home/', MainDashboard.as_view(), name='home'),
                        url(r'^user/', include('user_profile.urls')),
                        url(r'^user_group/', include('user_group.urls')),
                        url(r'^device/', include('device.urls')),
@@ -56,7 +59,7 @@ urlpatterns = patterns('',
                        url(r'^circuit/', include('inventory.circuit_urls')),
                        url(r'^gis-wizard/', include('inventory.gis_wizard_urls')),
                        url(r'^login/$', 'nocout.views.login'),
-                       url(r'^auth/$', 'nocout.views.auth_view'),
+                       url(r'^auth/$', AuthView.as_view(), name='auth-view'),
                        url(r'^logout/$', 'nocout.views.logout'),
                        url(r'^reset-cache/$', 'nocout.views.reset_cache'),
                        url(r'^site/', include('site_instance.urls')),
@@ -76,6 +79,7 @@ urlpatterns = patterns('',
                        url(r'^sm/', include('session_management.urls')),
                        url(r'^bulk_import/', include('inventory.bulk_import_urls')),
                        url(r'^gis_downloaded_inventories/', include('inventory.gis_selected_bs_inventories_urls')),
+                       url(r'^device_sync_history/', include('device.device_sync_history_urls')),
                        url(r'^api/', include('inventory.api_urls')),
                        url(r'^country/', include('device.country_urls')),
                        url(r'^state/', include('device.state_urls')),
