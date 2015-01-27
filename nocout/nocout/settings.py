@@ -12,6 +12,10 @@ import os
 from django.conf import global_settings
 from collections import namedtuple
 
+from datetime import timedelta
+
+from celery.schedules import crontab
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
 
@@ -265,6 +269,67 @@ BROKER_URL = 'mongodb://localhost:27017/nocout_celery_db'
 CELERY_TIMEZONE = 'Asia/Calcutta'
 
 
+CELERYBEAT_SCHEDULE = {
+    'wimax-topology': {
+        'task': 'inventory.tasks.get_topology',
+        'schedule': timedelta(seconds=300),
+        'args': ['WiMAX']
+    },
+    'pmp-topology': {
+        'task': 'inventory.tasks.get_topology',
+        'schedule': timedelta(seconds=300),
+        'args': ['PMP']
+    },
+    'wimax-ss-topology': {
+        'task': 'inventory.tasks.get_topology_with_substations',
+        'schedule': timedelta(seconds=300),
+        'args': ['WiMAX']
+    },
+    'pmp-ss-topology': {
+        'task': 'inventory.tasks.get_topology_with_substations',
+        'schedule': crontab(minute=0, hour=0),
+        'args': ['PMP']
+    },
+    'update-sector-frequency': {
+        'task': 'inventory.tasks.update_sector_frequency_per_day',
+        'schedule': crontab(minute=0, hour=0)
+    },
+    'check-device-status': {
+        'task': 'alarm_escalation.tasks.check_device_status',
+        'schedule': timedelta(seconds=300),
+    },
+    'gather_sector_status': {
+        'task': 'capacity_management.tasks.gather_sector_status',
+        'schedule': timedelta(seconds=300),
+        'args': ['WiMAX']
+    },
+    'timely-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_timely_main_dashboard',
+        'schedule': timedelta(seconds=300),
+    },
+    'hourly-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
+        'schedule': crontab(minute=0)
+    },
+    'daily-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_daily_main_dashboard',
+        'schedule': crontab(minute=0, hour=0)
+    },
+    'weekly-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_weekly_main_dashboard',
+        'schedule': crontab(minute=0, hour=1) # Run after daily calculation task is completed.
+    },
+    'monthly-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_monthly_main_dashboard',
+        'schedule': crontab(minute=0, hour=1) # Run after daily calculation task is completed.
+    },
+    'yearly-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_yearly_main_dashboard',
+        'schedule': crontab(minute=0, hour=0, day_of_month=1)
+    },
+}
+
+
 import djcelery
 djcelery.setup_loader()
 
@@ -494,4 +559,3 @@ try:
     from local_settings import *
 except ImportError:
     pass
-
