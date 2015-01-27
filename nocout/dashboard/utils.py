@@ -301,13 +301,12 @@ def get_highchart_response(dictionary={}):
             "data": [{
                 "color": dictionary['color'],
                 "name": dictionary['name'],
+                "count": dictionary['count'],
             }],
             "valuesuffix": "",
             "type": "gauge",
             "valuetext": ""
         }
-        if dictionary['count'] != 0:
-            chart_data['data'][0].update({"count": dictionary['count']})
     elif dictionary['type'] == 'areaspline':
         chart_data = {
             'type': 'areaspline',
