@@ -5,14 +5,14 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
     solid_gauge_chart_ids = [
         "down-all",
         "latency-all",
-        "packet-loss-all",
+        "packetloss-all",
         "temperature-idu-wimax",
         "down-wimax",
         "down-pmp",
         "latency-wimax",
         "latency-pmp",
-        "packet-loss-wimax",
-        "packet-loss-pmp",
+        "packetloss-wimax",
+        "packetloss-pmp",
         "temperature-fan-wimax",
         "temperature-acb-wimax"
     ],
@@ -25,7 +25,7 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
             "url" : "/dashboard/latency/all/",
             "text" : "Latency"
         },
-        "packet-loss-all" : {
+        "packetloss-all" : {
             "url" : "/dashboard/packet_loss/all/",
             "text" : "Packet Drop"
         },
@@ -49,11 +49,11 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
             "url" : "/dashboard/latency/pmp/",
             "text" : "Latency PMP"
         },
-        "packet-loss-wimax" : {
+        "packetloss-wimax" : {
             "url" : "/dashboard/packet_loss/wimax/",
             "text" : "Packet Drop WiMAX"
         },
-        "packet-loss-pmp" : {
+        "packetloss-pmp" : {
             "url" : "/dashboard/packet_loss/pmp/",
             "text" : "Packet Drop PMP"
         },
