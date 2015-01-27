@@ -103,14 +103,18 @@ class UserForm(forms.ModelForm):
         """
         if 'username' in [key for key,values in self.cleaned_data.items()]:
             parent = self.cleaned_data['parent']
+            username = self.cleaned_data['username']
             if parent is None:
+                if username == 'gisadmin':
+                    return parent
                 gisadmin = UserProfile.objects.get(username='gisadmin')
                 parent = gisadmin
                 return parent
             else:
-                username = self.cleaned_data['username']
                 if parent.username == username:
-                    raise forms.ValidationError("User cannot be parent of itself")
+                    raise forms.ValidationError("User cannot be parent of itself.")
+                elif parent.parent.username == username:
+                    raise forms.ValidationError("User's child cannot be a parent of user.")
                 return parent
 
 

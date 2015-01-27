@@ -15,7 +15,6 @@ from datetime import datetime, timedelta
 from django import http
 from django.contrib.auth import logout
 from django.core.urlresolvers import reverse
-from django.utils import timezone
 
 from .utils import get_last_activity, set_last_activity
 from .settings import EXPIRE_AFTER, PASSIVE_URLS
@@ -32,27 +31,11 @@ class SessionSecurityMiddleware(object):
         if not request.user.is_authenticated():
             return
 
-        # If user has not changed password after first time login
-        # And trying to access closing pop-up dialog then logout
-        is_first_time_login = False if request.user.userprofile.password_changed_at else True
-        if request.path != '/user/change_password/' and is_first_time_login:
-            logout(request)
-
-        elif request.user.userprofile.password_changed_at:
-            password_changed_at = request.user.userprofile.password_changed_at
-            is_password_expired = password_changed_at + timedelta(days=30) < timezone.now()
-            if is_password_expired and request.path != '/user/change_password/':
-                logout(request)
-
-        # If user is already logged in another session.
-        # Also has logged in using current session (skipping dialog box)
-        # Log-out user from current session.
-        if request.path != '/user/change_password/' and hasattr(request.user, 'visitor'):
-            key_from_cookie = request.session.session_key
-            session_key_in_visitor_db = request.user.visitor.session_key
-
-            if session_key_in_visitor_db != key_from_cookie and request.path != '/sm/dialog_action/' and request.path != '/favicon.ico':
-                logout(request)
+        if request.user.is_staff:
+            if request.path.startswith('/admin/'):
+                return
+            else:
+                raise http.Http404
 
         now = datetime.now()
         self.update_last_activity(request, now)

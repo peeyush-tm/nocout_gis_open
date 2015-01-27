@@ -59,7 +59,8 @@ LANGUAGE_CODE = 'en-us'
 SITE_ID = 1
 
 LOGIN_URL = '/login/'
-LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/')
+LOGIN_REDIRECT_URL = '/home/'
+LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/', 'sm/dialog_action/', 'user/change_password/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -202,6 +203,11 @@ INSTALLED_APPS = (
     'djcelery',
     'rest_framework',
     'alarm_escalation',
+)
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'session_management.backends.TokenAuthBackend',
 )
 
 ##TODO: dynamically populate cache
