@@ -26,13 +26,13 @@ def calculate_timely_main_dashboard():
     '''
     processed_for = timezone.now()
 
-    calculate_timely_sector_capacity(technology=PMP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
-    calculate_timely_sector_capacity(technology=WiMAX, model=DashboardSeverityStatusTimely, processed_for=processed_for)
-
-    calculate_timely_sales_opportunity(technology=PMP, model=DashboardRangeStatusTimely, processed_for=processed_for)
-    calculate_timely_sales_opportunity(technology=WiMAX, model=DashboardRangeStatusTimely, processed_for=processed_for)
-
     user_organizations = Organization.objects.all()
+
+    calculate_timely_sector_capacity(user_organizations, technology=PMP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
+    calculate_timely_sector_capacity(user_organizations, technology=WiMAX, model=DashboardSeverityStatusTimely, processed_for=processed_for)
+
+    calculate_timely_sales_opportunity(user_organizations, technology=PMP, model=DashboardRangeStatusTimely, processed_for=processed_for)
+    calculate_timely_sales_opportunity(user_organizations, technology=WiMAX, model=DashboardRangeStatusTimely, processed_for=processed_for)
 
     calculate_timely_latency(user_organizations, dashboard_name='latency-pmp', processed_for=processed_for,technology=PMP)
     calculate_timely_latency(user_organizations, dashboard_name='latency-wimax', processed_for=processed_for,technology=WiMAX)
@@ -51,7 +51,7 @@ def calculate_timely_main_dashboard():
     calculate_timely_temperature(user_organizations, processed_for=processed_for, chart_type='FAN')
 
 
-def calculate_timely_sector_capacity(technology, model, processed_for):
+def calculate_timely_sector_capacity(organizations, technology, model, processed_for):
     '''
     :param technology: Named Tuple
     :param model: Dashboard Model to store timely dashboard data.
@@ -61,6 +61,7 @@ def calculate_timely_sector_capacity(technology, model, processed_for):
     dashboard_name = '%s_sector_capacity' % (technology.NAME.lower())
 
     sectors = SectorCapacityStatus.objects.filter(
+            Q(organization__in=organizations),
             Q(sector__sector_configured_on__device_technology=technology.ID),
             Q(severity__in=['warning', 'critical', 'ok']),
         ).values('id', 'sector__name', 'sector__sector_configured_on__device_name', 'severity', 'sys_timestamp', 'age')
@@ -88,14 +89,13 @@ def calculate_timely_sector_capacity(technology, model, processed_for):
     bulk_update_create.delay(data_list, action='create', model=model)
 
 
-def calculate_timely_sales_opportunity(technology, model, processed_for):
+def calculate_timely_sales_opportunity(organizations, technology, model, processed_for):
     '''
     :param technology: Named Tuple
     :param model: Dashboard Model to store timely dashboard data.
     :param processed_for:
     return
     '''
-    organization = []
     # convert the data source in format topology_pmp/topology_wimax
     data_source = '%s-%s' % ('topology', technology.NAME.lower())
 
@@ -105,7 +105,7 @@ def calculate_timely_sales_opportunity(technology, model, processed_for):
     except DashboardSetting.DoesNotExist as e:
         return
 
-    user_sector = organization_sectors(organization, technology_id)
+    user_sector = organization_sectors(organizations, technology_id)
     sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
 
     service_status_results = get_topology_status_results(

@@ -734,7 +734,7 @@ class SectorCapacityMixin(object):
     def get(self, request):
 
         tech_name = self.tech_name
-        organization = []
+        organization = logged_in_user_organizations(self)
         technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
 
         user_sector = organization_sectors(organization, technology=technology)
@@ -788,7 +788,7 @@ class SalesOpportunityMixin(object):
         service_name = data_source_config[data_source]['service_name']
         model = data_source_config[data_source]['model']
 
-        organization = []
+        organization = logged_in_user_organizations(self)
         technology = DeviceTechnology.objects.get(name=tech_name).id
         # convert the data source in format topology_pmp/topology_wimax
         data_source = '%s-%s' % (data_source_config.keys()[0], tech_name.lower())
