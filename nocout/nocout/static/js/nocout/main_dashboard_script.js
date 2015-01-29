@@ -512,9 +512,6 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
         },
         // the value axis
         yAxis: {
-            stops: [
-                [0, val_color], // speedometer_color
-            ],
             lineWidth: 0,
             minorTickInterval: null,
             tickPixelInterval: 400,
@@ -543,6 +540,7 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
         yAxis: {
             min: 0,
             max: max,
+            tickInterval: max,
             title: {
                 // text: div_text
                 text: ""
