@@ -35,7 +35,7 @@ class MKGeneralException(Exception):
     def __str__(self):
         return self.reason
 
-def device_availability_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
+def device_availability_data(site,mongo_host,mongo_port,mongo_db_name):
 	"""
 	inventory_perf_data : Function for collecting the data for inventory serviecs.Service state is also retunred for those services
 	Args: site (site on poller on which devices are monitored)
@@ -53,36 +53,39 @@ def device_availability_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 	service = "availability"
-	for host,service_list in hostlist:
-		if "Check_MK" in service_list:
-			serv= "Check_MK"
-		else:
-			serv= "PING"
-		query_string = "GET statehist\nColumns: host_name host_down host_address current_host_state\n"+ \
-		"Filter: host_name = %s\nFilter: service_description = %s\n" %(str(host),serv) + \
-		"Filter: time >= %s\nFilter: time < %s\nStats: sum duration\n" % (start_epoch,end_epoch) + \
-		"Stats: sum duration_part\nOutputFormat: python\n"
-		
-		query_output = utility_module.get_from_socket(site,query_string).strip()
-		query_output  =eval(query_output)
+	end_time = datetime.now()
+	start_time = end_time - timedelta(hours=24)
+	pipe =  [
+		{"$match": {
+        	"local_timestamp": { "$gt": start_time, "$lt": end_time}, "service": "ping", "ds": "pl"
+        	}},
+		{"$unwind": "$data"},
+    		{"$group": {
+        		"_id": "$host",
+			"count": {"$sum": {"$cond":[{"$eq":["$data.value","100"]},1,0]}},
+			"ip":{"$first":"$ip_address"}
+        	}},
+    		]
+	try:
+		result = db['network_perf'].aggregate(pipeline=pipe)
+		result = result.get('result')
+	except:
+		return
+
+
+
+	for entry in result:
 		try:
-			if query_output[0][1] == '0':
-				total_up = (query_output[0][5]  * 100)
-			elif query_output[0][1] == '1':
-				total_down = query_output[0][5]
-				total_up = 100-(total_down * 100)
-			else:
-				continue
-			
-			host_ip = str(query_output[0][2])
-			if query_output[0][3] == "0":
-				host_state = "up"
-			else:
-				host_state = "down"
-			ds="availability"
+			host = entry.get('_id')
+			host_ip = entry.get('ip')
+			down_count = entry.get('count')
+			total_down = ((down_count * 5)/(24*60) *100)
+			total_up = 100 -total_down
+			host_state = "ok"
 		except Exception ,e:
 			print e
 			continue
+		ds="availability"
 		current_time = int(time.time())
 		availability_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host),
 						service_name=service,current_value=total_up,min_value=0,max_value=0,avg_value=0,
@@ -107,9 +110,7 @@ def device_availability_main():
 		mongo_host = desired_config.get('host')
 		mongo_port = desired_config.get('port')
 		mongo_db_name = desired_config.get('nosql_db')
-		query = "GET hosts\nColumns: host_name host_services\nOutputFormat: python\n"
-		output = eval(utility_module.get_from_socket(site,query))
-		device_availability_data(site,output,mongo_host,int(mongo_port),mongo_db_name)
+		device_availability_data(site,mongo_host,int(mongo_port),mongo_db_name)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))
 	except socket.error, msg:

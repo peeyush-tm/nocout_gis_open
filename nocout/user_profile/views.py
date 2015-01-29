@@ -66,13 +66,18 @@ class UserListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixi
     Class Based View for the User data table rendering.
     """
     model = UserProfile
-    required_permissions = ('user_profile.view_userprofile',)
+    required_permissions = ('user_profile.view_userprofile',) # Permission to view user list.
     columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number', 'last_login']
+
+    # order_columns is used for sorting the fields which is used in order_columns.
     order_columns = ['username' , 'first_name', 'email', 'organization__name', 'role__role_name', 'parent__first_name',
                      'phone_number', 'last_login']
+
+    # search_columns: searching is used on the basis of the field which is used in search columns.
     search_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number']
+    # extra_qs_kwars used in DatatableOrganizationFilterMixin.
     extra_qs_kwargs = {
         'is_deleted': 0
     }
@@ -242,6 +247,10 @@ class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
         return self.post(*args, **kwargs)
 
     def get_queryset(self):
+        """
+        User can delete the user of self organization or descendant organization.
+        User can't delete self.
+        """
         queryset = super(UserDelete, self).get_queryset()
         queryset = queryset.filter(organization__in=logged_in_user_organizations(self))
         queryset = queryset.exclude(id=self.request.user.id)
@@ -320,67 +329,46 @@ def change_password(request):
     If the action is continue then the user get prompt to set new password.
     """
     url = request.POST.get('url', '/home/')
-    if request.POST.get('action') == 'continue':
+    user = auth.authenticate(token=request.POST.get('auth_token', None))
+    if request.POST.get('action') == 'continue' and user:
         form = UserPasswordForm(request.POST)
         if form.is_valid():
-            user_id = request.POST.get('user_id')
-            session_key = request.session.session_key
-            if hasattr(request.user, 'visitor'):
-                Session.objects.filter(session_key=request.user.visitor.session_key).delete()
+            if hasattr(user, 'visitor'):
+                Session.objects.filter(session_key=user.visitor.session_key).delete()
                 # If Session object is modified as session key is changed.
                 # Above doesn't remove existing Visitor object. So removing it below.
-                Visitor.objects.filter(user=request.user).delete()
-            Visitor.objects.create(session_key=session_key, user=request.user)
+                Visitor.objects.filter(user=user).delete()
 
-            kwargs=dict(password=make_password(form.data['confirm_pwd']),
-                        password_changed_at=timezone.now(), user_invalid_attempt=0)
-            UserProfile.objects.filter(id=user_id).update(**kwargs)
-            UserPasswordRecord.objects.create(user_id=user_id, password_used=kwargs['password'])
-            result = {
-                "success": 1,  # 0 - fail, 1 - success, 2 - exception
-                "message": "Success/Fail message.",
-                "data": {
-                    "meta": {},
-                    "objects": {
-                        'url': url,
-                    }
-                }
-            }
-            return HttpResponse(json.dumps(result), content_type='application/json')
+            auth.login(request, user)   # Login the request user.
+            Visitor.objects.create(session_key=request.session.session_key, user=request.user)
+
+            user.userprofile.password_changed_at = timezone.now()
+            user.userprofile.user_invalid_attempt = 0
+            user.userprofile.save()
+            user.set_password(form.data['confirm_pwd'])
+            user.save()
+            UserPasswordRecord.objects.create(user_id=user.id, password_used=user.password)
+
+            success = 1     # 0 - fail, 1 - success, 2 - exception
+            message = "Success/Fail message.",
+            object_values = dict(url=url)
 
         else:
-            if '_session_security' in request.session:
-                del request.session["_session_security"]
+            success = 0     # 0 - fail, 1 - success, 2 - exception
+            message = "Invalid Password."
+            object_values = dict(url='/login/',
+                                reason="Ignore dictionary common words and previously used password.",)
+    else:
+        success = 1     # 0 - fail, 1 - success, 2 - exception
+        message = "Success/Fail message."
+        object_values = dict(url='/login/' )
 
-            auth.logout(request)
-            result = {
-                "success": 0,  # 0 - fail, 1 - success, 2 - exception
-                "message": "Invalid Password",
-                "reason": "Ignore dictionary common words and previously used password.",
-                "data": {
-                    "meta": {},
-                    "objects": {
-                        'url': '/login/'
-                    }
-                }
-            }
-            return HttpResponse(json.dumps(result), content_type='application/json')
-    elif request.POST.get('action') == 'logout':
-        #since we are having auto-logoff functionality with us as well
-        #we need to check for session parameter _session_security
-        #_session_security is used by session security to judge the
-        #auto logoff of the user
-        if '_session_security' in request.session:
-            del request.session["_session_security"]
-
-        result = {
-            "success": 1,  # 0 - fail, 1 - success, 2 - exception
-            "message": "Success/Fail message.",
+    result = {
+            "success": success,  # 0 - fail, 1 - success, 2 - exception
+            "message": message,
             "data": {
                 "meta": {},
-                "objects": {
-                    'url': '/login/'
-                }
+                "objects": object_values
             }
         }
-        return HttpResponse(json.dumps(result), content_type='application/json')
+    return HttpResponse(json.dumps(result), content_type='application/json')

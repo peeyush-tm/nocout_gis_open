@@ -148,3 +148,116 @@ class MFRCauseCode(models.Model):
 
     def __unicode__(self):
         return self.processed_for.name
+
+
+class DashboardRangeStatus(models.Model):
+    """
+    Class to store dashboard status  count range wise.
+    """
+    dashboard_name = models.CharField(max_length=100, db_index=True)
+    device_name = models.CharField(max_length=100, db_index=True)
+    reference_name = models.CharField(max_length=100, db_index=True)
+    processed_for = models.DateTimeField(auto_now_add=False, auto_now=False)
+    range1 = models.IntegerField(default=0)
+    range2 = models.IntegerField(default=0)
+    range3 = models.IntegerField(default=0)
+    range4 = models.IntegerField(default=0)
+    range5 = models.IntegerField(default=0)
+    range6 = models.IntegerField(default=0)
+    range7 = models.IntegerField(default=0)
+    range8 = models.IntegerField(default=0)
+    range9 = models.IntegerField(default=0)
+    range10 = models.IntegerField(default=0)
+    unknown = models.IntegerField(default=0)
+
+    class Meta:
+        abstract = True
+
+class DashboardRangeStatusTimely(DashboardRangeStatus):
+    """
+    """
+    pass
+
+
+class DashboardRangeStatusHourly(DashboardRangeStatus):
+    """
+    """
+    pass
+
+
+class DashboardRangeStatusDaily(DashboardRangeStatus):
+    """
+    """
+    pass
+
+
+class DashboardRangeStatusWeekly(DashboardRangeStatus):
+    """
+    """
+    pass
+
+
+class DashboardRangeStatusMonthly(DashboardRangeStatus):
+    """
+    """
+    pass
+
+
+class DashboardRangeStatusYearly(DashboardRangeStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatus(models.Model):
+    """
+    Class to store dashboard sector status count severity wise.
+    """
+    dashboard_name = models.CharField(max_length=100, db_index=True)
+    device_name = models.CharField(max_length=100, db_index=True)
+    reference_name = models.CharField(max_length=100, db_index=True)
+    processed_for = models.DateTimeField(auto_now_add=False, auto_now=False)
+    warning = models.IntegerField(default=0)
+    critical = models.IntegerField(default=0)
+    ok = models.IntegerField(default=0)
+    down = models.IntegerField(default=0)
+    unknown = models.IntegerField(default=0)
+
+    class Meta:
+        abstract = True
+
+
+class DashboardSeverityStatusTimely(DashboardSeverityStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatusHourly(DashboardSeverityStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatusDaily(DashboardSeverityStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatusWeekly(DashboardSeverityStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatusMonthly(DashboardSeverityStatus):
+    """
+    """
+    pass
+
+
+class DashboardSeverityStatusYearly(DashboardSeverityStatus):
+    """
+    """
+    pass

@@ -310,13 +310,21 @@
 
 
         if(page_type_val == 'other') {
-            // Hide Utilization & RSSI Tabs for all network devices
+            // Hide Utilization & IA Table Tabs for Backhaul Devices
             if (!$("#utilization_top").hasClass("hide")) {
                 $("#utilization_top").addClass("hide");
             }
 
             if (!$("#utilization_top_tab").hasClass("hide")) {
                 $("#utilization_top_tab").addClass("hide");
+            }
+
+            if (!$("#topology").hasClass("hide")) {
+                $("#topology").addClass("hide");
+            }
+
+            if (!$("#topology_tab").hasClass("hide")) {
+                $("#topology_tab").addClass("hide");
             }
 
         } else {
@@ -587,7 +595,7 @@
                         showDropdowns: true,
                         ranges: {
                             'Today': [moment().startOf('day'), moment()],
-                            'Last 24 Hours': [moment().subtract('days', 1), moment().subtract('days', 1)],
+                            'Last 24 Hours': [moment().subtract('days', 1), moment()],
                             'Last 7 Days': [moment().subtract('days', 6), moment()],
                             'Last 30 Days': [moment().subtract('days', 29), moment()],
                             'This Month': [moment().startOf('month'), moment().endOf('month')],

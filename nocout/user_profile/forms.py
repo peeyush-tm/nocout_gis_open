@@ -1,11 +1,11 @@
 from django import forms
-import enchant
-from enchant.tokenize import get_tokenizer
+
+from passwords.fields import PasswordField
 from django.contrib.auth.hashers import check_password
-from user_profile.models import UserProfile, UserPasswordRecord
+
 from nocout.widgets import MultipleToSingleSelectionWidget
-from user_profile.fields import PasswordField
 from organization.models import Organization
+from user_profile.models import UserProfile, UserPasswordRecord
 
 
 class UserForm(forms.ModelForm):
@@ -101,17 +101,20 @@ class UserForm(forms.ModelForm):
         """
 
         """
-        print ('cleaned_data..........',self.cleaned_data)
         if 'username' in [key for key,values in self.cleaned_data.items()]:
             parent = self.cleaned_data['parent']
+            username = self.cleaned_data['username']
             if parent is None:
+                if username == 'gisadmin':
+                    return parent
                 gisadmin = UserProfile.objects.get(username='gisadmin')
                 parent = gisadmin
                 return parent
             else:
-                username = self.cleaned_data['username']
                 if parent.username == username:
-                    raise forms.ValidationError("User cannot be parent of itself")
+                    raise forms.ValidationError("User cannot be parent of itself.")
+                elif parent.parent.username == username:
+                    raise forms.ValidationError("User's child cannot be a parent of user.")
                 return parent
 
 
@@ -137,14 +140,10 @@ class UserForm(forms.ModelForm):
         if 'username' in self.cleaned_data:
             password1 = self.cleaned_data['password1']
             username = self.cleaned_data['username']
-            tknzr, enchant_obj = get_tokenizer("en_US"), enchant.Dict("en_US")
-            # filter the words from the password1 field of length greater than 2.
-            words = list(filter(lambda x: len(x)>2, [word[0] for word in tknzr(password1.lower())] ))
-            check_word = [enchant_obj.check(w) for w in words]  # check if the words are dictionary common word or not.
+
             if password1 == username:
                 raise forms.ValidationError("User ID and password should not be identical")
-            elif check_word.count(True) > 0:    # if contain any dictionay common word.
-                raise forms.ValidationError("Ignore dictionay common words")
+
             if password1:
                 user = UserProfile.objects.filter(username=username)
                 if user.exists():
@@ -168,11 +167,6 @@ class UserPasswordForm(forms.Form):
 
     def clean(self):
         confirm_pwd = self.cleaned_data.get("confirm_pwd")
-        tknzr, enchant_obj = get_tokenizer("en_US"), enchant.Dict("en_US")
-        words = list(filter(lambda x: len(x)>2, [word[0] for word in tknzr(confirm_pwd.lower())] ))
-        check_word = [enchant_obj.check(w) for w in words]  # check if the words are dictionary common word or not.
-        if check_word.count(True) > 0:
-            raise forms.ValidationError("Ignore dictionay common words")
         if confirm_pwd:
             user_id = self.cleaned_data.get("user_id")
             if user_id:

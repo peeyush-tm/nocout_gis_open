@@ -84,7 +84,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
-        #if the user role is Admin or superadmin then the action column will appear on the datatable
+        # if the user role is Admin or superadmin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '9%', 'bSortable': False})
@@ -105,13 +105,30 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
-        #if the user role is Admin then the action column will appear on the datatable
+        # if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers_no_nms_actions.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '15%', 'bSortable': False})
 
+        # get deadlock status
+        deadlock_status = ""
+
+        # get last sync run time
+        last_sync_time = ""
+
+        try:
+            last_sync_status = get_current_sync_status()
+            deadlock_status = last_sync_status[0]
+            last_sync_time = last_sync_status[1]
+        except Exception as e:
+            pass
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['datatable_headers_no_nms_actions'] = json.dumps(datatable_headers_no_nms_actions)
+
+        context['deadlock_status'] = deadlock_status
+        context['last_sync_time'] = last_sync_time
+
         return context
 
 
@@ -3309,6 +3326,11 @@ class GisWizardDeviceTypeMixin(object):
         else: # Create View
             save_text = 'Save'
 
+        service_dict = dict()
+        qs = Service.objects.all()
+        for obj in qs:
+            service_dict.update( {obj.id: {'text': '%s(%s)'%(obj.alias, obj.name), 'select': False, 'remove': False}} )
+        context['service_dict'] = json.dumps(service_dict)
         context['save_text'] = save_text
         return context
 
@@ -3604,21 +3626,16 @@ class DeviceSyncHistoryList(ListView):
         """
         context = super(DeviceSyncHistoryList, self).get_context_data(**kwargs)
 
-        deadlock_status = 'no'
-        try:
-            device_history_obj = DeviceSyncHistory.objects.latest('id')
-            if device_history_obj:
-                # current timestamp (with 'utc' as timezone)
-                current_timstamp = datetime.utcnow().replace(tzinfo=None)
-                # 'added_on' timestamp of last run of sync (with 'utc' as timezone)
-                added_on_time = device_history_obj.added_on.replace(tzinfo=None)
-                # current timestamp and added on timestamp difference
-                time_difference = datetime.utcnow() - added_on_time
-                # status of last run of sync
-                last_sync_status = device_history_obj.status
+        # get deadlock status
+        deadlock_status = ""
 
-                if last_sync_status == 0 and time_difference > timedelta(minutes=30, seconds=0):
-                    deadlock_status = 'yes'
+        # get last sync run time
+        last_sync_time = ""
+
+        try:
+            last_sync_status = get_current_sync_status()
+            deadlock_status = last_sync_status[0]
+            last_sync_time = last_sync_status[1]
         except Exception as e:
             pass
 
@@ -3634,7 +3651,10 @@ class DeviceSyncHistoryList(ListView):
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
             context['deadlock_status'] = deadlock_status
+            context['last_sync_time'] = last_sync_time
+
         context['datatable_headers'] = json.dumps(datatable_headers)
+
         return context
 
 
@@ -3710,7 +3730,6 @@ class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, B
                 except Exception as e:
                     logger.info(e.message)
 
-
                 # show user full name in uploded by field
                 try:
                     if dct.get('sync_by'):
@@ -3764,3 +3783,46 @@ class DeviceSyncHistoryUpdate(UpdateView):
     model = DeviceSyncHistory
     form_class = DeviceSyncHistoryEditForm
     success_url = reverse_lazy('device_sync_history_list')
+
+
+def get_current_sync_status():
+    """ Get current sync status i.e. deadlock exist or not and last sync timestamp
+
+    Returns:
+        [deadlock_status, last_sync_time] (list): list containing deadlock status and last sync time
+
+    """
+
+    # deadlock status
+    deadlock_status = 'no'
+
+    # last sync status
+    last_sync_time = ""
+
+    try:
+        device_history_obj = DeviceSyncHistory.objects.latest('id')
+        if device_history_obj:
+            # time of last sync run
+            try:
+                last_sync_time = convert_utc_to_local_timezone(device_history_obj.added_on)
+            except Exception as e:
+                pass
+
+            # current timestamp (with 'utc' as timezone)
+            current_timstamp = datetime.utcnow().replace(tzinfo=None)
+
+            # 'added_on' timestamp of last run of sync (with 'utc' as timezone)
+            added_on_time = device_history_obj.added_on.replace(tzinfo=None)
+
+            # current timestamp and added on timestamp difference
+            time_difference = datetime.utcnow() - added_on_time
+
+            # status of last run of sync
+            last_sync_status = device_history_obj.status
+
+            if last_sync_status == 0 and time_difference > timedelta(minutes=30, seconds=0):
+                deadlock_status = 'yes'
+    except Exception as e:
+        pass
+
+    return [deadlock_status, last_sync_time]

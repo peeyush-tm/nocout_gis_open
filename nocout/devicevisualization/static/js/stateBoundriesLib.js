@@ -4607,7 +4607,7 @@ state_boundries_db.insert({
 	]
 });
 state_boundries_db.insert({
-	"name" : "Gujrat",
+	"name" : "Gujarat",
 	"boundries" : [
 		{"lat":23.725011735951796,"lon":68.1536865234375},
 		{"lat":23.82555130688476,"lon":68.2196044921875},
