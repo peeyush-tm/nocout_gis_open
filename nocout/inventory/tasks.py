@@ -6066,16 +6066,12 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
 
 @task()
 def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
-    print "############################ gis_ob_id - ", gis_ob_id
-    print "############################ workbook_type - ", workbook_type
-    print "############################ sheet_type - ", sheet_type
     # gis object
     gis_obj = None
     try:
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_ob_id)
     except Exception as e:
         logger.info("No GIS object exist. Exception: ", e)
-    print "############################ gis_obj - ", gis_obj
     # workbook type i.e. valid/invalid
     workbook_type = workbook_type
 
@@ -6138,91 +6134,91 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
             # ********************************* BS DEVICE DELTA CHECK ********************************
             if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
                 if 'IP' in row:
-                    try:
-                        bs_device = Device.objects.filter(ip_address=ip_sanitizer('IP'))
+                    if row['IP']:
+                        bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IP']))
                         if bs_device:
                             current_delta += "BS Device: Updated \n"
                         else:
                             current_delta += "BS Device: Created \n"
-                    except Exception as e:
-                        pass
+                    else:
+                        current_delta += "BS Device: NA \n"
                 if sheet_type in ['PMP BS']:
                     if 'ODU IP' in row:
-                        try:
-                            bs_device = Device.objects.filter(ip_address=ip_sanitizer('ODU IP'))
+                        if row['ODU IP']:
+                            bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['ODU IP']))
                             if bs_device:
                                 current_delta += "BS Device: Updated \n"
                             else:
                                 current_delta += "BS Device: Created \n"
-                        except Exception as e:
-                            pass
+                        else:
+                            current_delta += "BS Device: NA \n"
                 if sheet_type in ['PMP BS']:
                     if 'IDU IP' in row:
-                        try:
-                            bs_device = Device.objects.filter(ip_address=ip_sanitizer('IDU IP'))
+                        if row['IDU IP']:
+                            bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IDU IP']))
                             if bs_device:
                                 current_delta += "BS Device: Updated \n"
                             else:
                                 current_delta += "BS Device: Created \n"
-                        except Exception as e:
-                            pass
+                        else:
+                            current_delta += "BS Device: NA \n"
 
             # ********************************* SS DEVICE DELTA CHECK ********************************
             if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
                 if 'SS IP' in row:
-                    try:
-                        ss_device = Device.objects.filter(ip_address=ip_sanitizer('SS IP'))
+                    if row['SS IP']:
+                        ss_device = Device.objects.filter(ip_address=ip_sanitizer(row['SS IP']))
                         if ss_device:
                             current_delta += "SS Device: Updated \n"
                         else:
                             current_delta += "SS Device: Created \n"
-                    except Exception as e:
-                        pass
+                    else:
+                        current_delta += "SS Device: NA \n"
 
             if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
                 # ********************************** BS SWITCH DELTA CHECK **********************************
                 if 'BS Switch IP' in row:
-                    try:
-                        bs_switch_device = Device.objects.filter(ip_address=ip_sanitizer('BS Switch IP'))
+                    if row['BS Switch IP']:
+                        bs_switch_device = Device.objects.filter(ip_address=ip_sanitizer(row['BS Switch IP']))
                         if bs_switch_device:
                             current_delta += "BS Switch Device: Updated \n"
                         else:
                             current_delta += "BS Switch Device: Created \n"
-                    except Exception as e:
-                        pass
+                    else:
+                        current_delta += "BS Switch Device: NA \n"
 
                 # ********************************* AGGREGATOR DELTA CHECK ***********************************
                 if 'Aggregation Switch' in row:
-                    try:
-                        aggregator_device = Device.objects.filter(ip_address=ip_sanitizer('Aggregation Switch'))
+                    if row['Aggregation Switch']:
+                        aggregator_device = Device.objects.filter(ip_address=ip_sanitizer(row['Aggregation Switch']))
                         if aggregator_device:
                             current_delta += "Aggregation Switch Device: Updated \n"
                         else:
                             current_delta += "Aggregation Switch Device: Created \n"
-                    except Exception as e:
-                        pass
+                    else:
+                        current_delta += "Aggregation Switch Device: NA \n"
 
                 # ********************************* BS CONVERTER DELTA CHECK *********************************
                 if 'BS Converter IP' in row:
-                    try:
-                        bs_device = Device.objects.filter(ip_address=ip_sanitizer('BS Converter IP'))
+                    if row['BS Converter IP']:
+                        bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['BS Converter IP']))
                         if bs_device:
                             current_delta += "BS Converter Device: Updated \n"
                         else:
                             current_delta += "BS Converter Device: Created \n"
-                    except Exception as e:
-                        pass
+                    else:
+                        current_delta += "BS Converter Device: NA \n"
 
                 # ********************************* POP CONVERTER DELTA CHECK ********************************
                 if 'POP Converter IP' in row:
-                    try:
-                        bs_device = Device.objects.filter(ip_address=ip_sanitizer('POP Converter IP'))
+                    if row['POP Converter IP']:
+                        bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['POP Converter IP']))
                         if bs_device:
                             current_delta += "POP Converter Device: Updated \n"
                         else:
                             current_delta += "POP Converter Device: Created \n"
-                    except Exception as e:
-                        pass
+                    else:
+                        current_delta += "POP Converter Device: NA \n"
 
             # *********************************** SECTOR ANTENNA CHECK *********************************
             if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
@@ -6388,7 +6384,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
                 customer_name = ""
 
                 if sheet_type in ['PTP', 'PTP BH']:
-                    customer_name = "{}_{}".format(
+                    customer_name = "{0}_{1}_{1}".format(
                         special_chars_name_sanitizer_with_lower_case(
                             row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""),
                         special_chars_name_sanitizer_with_lower_case(
@@ -6438,7 +6434,7 @@ def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
             row['Current Delta'] = current_delta
 
             delta_list.append(row)
-        print "######################################### delta_list - ", delta_list
+
         # create delta workbook
         bulk_upload_delta_file_generator(keys_list, delta_list, sheet_type, file_path, workbook_type)
 
@@ -6459,11 +6455,6 @@ def bulk_upload_delta_file_generator(keys_list, delta_rows, sheettype, file_path
     Returns:
 
     """
-    print "*********************** delta_rows - ", delta_rows
-    print "*********************** keys_list - ", keys_list
-    print "*********************** sheettype - ", sheettype
-    print "*********************** file_path - ", file_path
-    print "*********************** workbook - ", workbook
 
     # error rows list
     delta_rows_list = []
@@ -6480,6 +6471,7 @@ def bulk_upload_delta_file_generator(keys_list, delta_rows, sheettype, file_path
             try:
                 temp_list.append(val[key])
             except Exception as e:
+                temp_list.append("")
                 logger.info(e.message)
         delta_rows_list.append(temp_list)
 
@@ -6518,11 +6510,6 @@ def bulk_upload_delta_file_generator(keys_list, delta_rows, sheettype, file_path
     if not os.path.exists(MEDIA_ROOT + 'inventory_files/bulk_upload_deltas'):
         os.makedirs(MEDIA_ROOT + 'inventory_files/bulk_upload_deltas')
 
-    print "############################# wb_bulk_upload_deltas - ", wb_bulk_upload_deltas
-
-    print "############################# MEDIA_ROOT - ", MEDIA_ROOT
-
-    print "############################# bulk_upload_file_path - ", bulk_upload_file_path
     # saving bulk upload deltas excel sheet
     wb_bulk_upload_deltas.save(MEDIA_ROOT + bulk_upload_file_path)
 
@@ -6844,6 +6831,7 @@ def bulk_upload_error_file_generator(keys_list, error_rows, sheettype, file_path
             try:
                 temp_list.append(val[key])
             except Exception as e:
+                temp_list.append("")
                 logger.info(e.message)
         error_rows_list.append(temp_list)
 
@@ -6881,9 +6869,7 @@ def bulk_upload_error_file_generator(keys_list, error_rows, sheettype, file_path
     # if directory for bulk upload excel sheets didn't exist than create one
     if not os.path.exists(MEDIA_ROOT + 'inventory_files/bulk_upload_errors'):
         os.makedirs(MEDIA_ROOT + 'inventory_files/bulk_upload_errors')
-    print "############################## wb_bulk_upload_errors - ", wb_bulk_upload_errors
-    print "############################## MEDIA_ROOT - ", MEDIA_ROOT
-    print "############################## bulk_upload_file_path - ", bulk_upload_file_path
+
     # saving bulk upload errors excel sheet
     try:
         wb_bulk_upload_errors.save(MEDIA_ROOT + bulk_upload_file_path)
