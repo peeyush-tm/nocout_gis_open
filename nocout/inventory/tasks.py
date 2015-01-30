@@ -97,6 +97,7 @@ def update_sector_frequency_per_day():
     return True
 
 
+
 @task()
 def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_list, full_time, filename):
     """ Validate and upload GIS inventory excel workbook for PTP, PMP and WiMAX technologies
@@ -2412,6 +2413,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
         Returns:
            - Nothing
     """
+
     # gis bulk upload id
     gis_id = gis_id
 
@@ -3881,6 +3883,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'bs_technology': 4,
                     'sector_configured_on': base_station,
                     'antenna': sector_antenna,
+                    'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
                     'description': 'Sector created on {}.'.format(full_time)
                 }
@@ -5076,6 +5079,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'sector_configured_on_port': port,
                     'antenna': sector_antenna,
                     'dr_site': dr_site,
+                    'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'mrc': row['MRC'].strip() if 'MRC' in row.keys() else "",
                     'dr_configured_on': slave_device,
                     'description': 'Sector created on {}.'.format(full_time)
@@ -6062,6 +6066,456 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
         gis_obj.save()
 
 
+@task()
+def bulk_upload_delta_generator(gis_ob_id, workbook_type, sheet_type):
+    # gis object
+    gis_obj = None
+    try:
+        gis_obj = GISInventoryBulkImport.objects.get(pk=gis_ob_id)
+    except Exception as e:
+        logger.info("No GIS object exist. Exception: ", e)
+    # workbook type i.e. valid/invalid
+    workbook_type = workbook_type
+
+    # sheet type i.e. PTP/PTP BH/PMP BS/PMP SM/Wimax BS/Wimax SS/Backhaul
+    sheet_type = sheet_type
+
+    # timestamp
+    timestamp = time.time()
+    full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%d-%b-%Y at %H:%M:%S')
+
+    # get valid or invalid workbook based upon workbook type
+    file_path = ""
+    if workbook_type == 'valid':
+        file_path = gis_obj.valid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
+    elif workbook_type == 'invalid':
+        file_path = gis_obj.invalid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
+    else:
+        book = ""
+
+    sheet = book.sheet_by_index(0)
+
+    keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+    keys_list = [x.encode('utf-8').strip() for x in keys]
+    complete_d = list()
+
+    # fetching excel rows values as list of key value pair dictionaries where keys are from first row of excel
+    # and values are form other remaining rows
+    for row_index in xrange(1, sheet.nrows):
+        d = dict()
+        for col_index in xrange(len(keys)):
+            if keys[col_index] in ["Date Of Acceptance", "SS Date Of Acceptance"]:
+                if isinstance(sheet.cell(row_index, col_index).value, float):
+                    try:
+                        d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
+                            *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
+                    except Exception as e:
+                        logger.info("Date of Exception Error. Exception: {}".format(e.message))
+            else:
+                if isinstance(sheet.cell(row_index, col_index).value, str):
+                    d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
+                elif isinstance(sheet.cell(row_index, col_index).value, unicode):
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+                else:
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
+
+        complete_d.append(d)
+
+    # delta
+    delta_list = []
+
+    try:
+        for row in complete_d:
+            # current delta
+            current_delta = ""
+
+            # ********************************* BS DEVICE DELTA CHECK ********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+                if 'IP' in row:
+                    if row['IP']:
+                        bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IP']))
+                        if bs_device:
+                            current_delta += "BS Device: Updated \n"
+                        else:
+                            current_delta += "BS Device: Created \n"
+                    else:
+                        current_delta += "BS Device: NA \n"
+                if sheet_type in ['PMP BS']:
+                    if 'ODU IP' in row:
+                        if row['ODU IP']:
+                            bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['ODU IP']))
+                            if bs_device:
+                                current_delta += "BS Device: Updated \n"
+                            else:
+                                current_delta += "BS Device: Created \n"
+                        else:
+                            current_delta += "BS Device: NA \n"
+                if sheet_type in ['PMP BS']:
+                    if 'IDU IP' in row:
+                        if row['IDU IP']:
+                            bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['IDU IP']))
+                            if bs_device:
+                                current_delta += "BS Device: Updated \n"
+                            else:
+                                current_delta += "BS Device: Created \n"
+                        else:
+                            current_delta += "BS Device: NA \n"
+
+            # ********************************* SS DEVICE DELTA CHECK ********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+                if 'SS IP' in row:
+                    if row['SS IP']:
+                        ss_device = Device.objects.filter(ip_address=ip_sanitizer(row['SS IP']))
+                        if ss_device:
+                            current_delta += "SS Device: Updated \n"
+                        else:
+                            current_delta += "SS Device: Created \n"
+                    else:
+                        current_delta += "SS Device: NA \n"
+
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
+                # ********************************** BS SWITCH DELTA CHECK **********************************
+                if 'BS Switch IP' in row:
+                    if row['BS Switch IP']:
+                        bs_switch_device = Device.objects.filter(ip_address=ip_sanitizer(row['BS Switch IP']))
+                        if bs_switch_device:
+                            current_delta += "BS Switch Device: Updated \n"
+                        else:
+                            current_delta += "BS Switch Device: Created \n"
+                    else:
+                        current_delta += "BS Switch Device: NA \n"
+
+                # ********************************* AGGREGATOR DELTA CHECK ***********************************
+                if 'Aggregation Switch' in row:
+                    if row['Aggregation Switch']:
+                        aggregator_device = Device.objects.filter(ip_address=ip_sanitizer(row['Aggregation Switch']))
+                        if aggregator_device:
+                            current_delta += "Aggregation Switch Device: Updated \n"
+                        else:
+                            current_delta += "Aggregation Switch Device: Created \n"
+                    else:
+                        current_delta += "Aggregation Switch Device: NA \n"
+
+                # ********************************* BS CONVERTER DELTA CHECK *********************************
+                if 'BS Converter IP' in row:
+                    if row['BS Converter IP']:
+                        bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['BS Converter IP']))
+                        if bs_device:
+                            current_delta += "BS Converter Device: Updated \n"
+                        else:
+                            current_delta += "BS Converter Device: Created \n"
+                    else:
+                        current_delta += "BS Converter Device: NA \n"
+
+                # ********************************* POP CONVERTER DELTA CHECK ********************************
+                if 'POP Converter IP' in row:
+                    if row['POP Converter IP']:
+                        bs_device = Device.objects.filter(ip_address=ip_sanitizer(row['POP Converter IP']))
+                        if bs_device:
+                            current_delta += "POP Converter Device: Updated \n"
+                        else:
+                            current_delta += "POP Converter Device: Created \n"
+                    else:
+                        current_delta += "POP Converter Device: NA \n"
+
+            # *********************************** SECTOR ANTENNA CHECK *********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+                # sector antenna name
+                sector_antenna_name = ""
+
+                if sheet_type in ['PTP']:
+                    sector_antenna_name = '{}_ne'.format(special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row else ""))
+                elif sheet_type in ['PTP BH']:
+                    sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Circuit ID'] if 'Circuit ID' in row else "")
+                elif sheet_type in ['PMP BS']:
+                    sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Sector ID'] if 'Sector ID' in row else "")
+                elif sheet_type in ['Wimax BS']:
+                    sector_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Sector ID'] if 'Sector ID' in row else "")
+                else:
+                    pass
+
+                if sector_antenna_name:
+                    # sector antenna
+                    sector_antenna = Antenna.objects.filter(name=sector_antenna_name)
+
+                    if sector_antenna:
+                        current_delta += "Sector Antenna: Updated \n"
+                    else:
+                        current_delta += "Sector Antenna: Created \n"
+
+            # ************************************* SS ANTENNA CHECK **********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+                # ss antenna name
+                ss_antenna_name = ""
+
+                if sheet_type in ['PTP']:
+                    ss_antenna_name = '{}_ne'.format(special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row else ""))
+                elif sheet_type in ['PTP BH']:
+                    ss_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row else "")
+                elif sheet_type in ['PMP BS']:
+                    ss_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row else "")
+                elif sheet_type in ['Wimax BS']:
+                    ss_antenna_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Circuit ID'] if 'Circuit ID' in row else "")
+                else:
+                    pass
+
+                if ss_antenna_name:
+                    # ss antenna
+                    ss_antenna = Antenna.objects.filter(name=ss_antenna_name)
+
+                    if ss_antenna:
+                        current_delta += "SS Antenna: Updated \n"
+                    else:
+                        current_delta += "SS Antenna: Created \n"
+
+            # ************************************* BACKHAUL CHECK **********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
+                backhaul_name = ip_sanitizer(
+                    row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row else "")
+
+                # backhaul
+                if backhaul_name:
+                    backhaul = Backhaul.objects.filter(name=backhaul_name)
+
+                    if backhaul:
+                        current_delta += "Backhaul: Updated \n"
+                    else:
+                        current_delta += "Backhaul: Created \n"
+
+            # *********************************** BASE STATION CHECK ********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS', 'Backhaul']:
+                # base station name
+                base_station_name = ""
+                bs_temp_name = special_chars_name_sanitizer_with_lower_case(
+                    row['BS Name'] if 'BS Name' in row.keys() else "")
+                try:
+                    if all(k in row for k in ("BS Name", "City", "State")):
+                        # concatinate city and state in bs name
+                        base_station_name = "{}_{}_{}".format(bs_temp_name,
+                                                              row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                              row['State'][:3].lower() if 'State' in row.keys() else "")
+                except Exception as e:
+                    logger.info(e.message)
+
+                # base station
+                if base_station_name:
+                    base_station = BaseStation.objects.filter(name=base_station_name)
+
+                    if base_station:
+                        current_delta += "Base Station: Updated \n"
+                    else:
+                        current_delta += "Base Station: Created \n"
+
+            # ************************************* SECTOR CHECK ***********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP BS', 'Wimax BS']:
+                # ss antenna name
+                sector_name = ""
+
+                if sheet_type in ['PTP', 'PTP BH']:
+                    sector_name = special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                elif sheet_type in ['PMP BS']:
+                    sector_name = '{}_{}'.format(special_chars_name_sanitizer_with_lower_case(
+                        row['Sector ID']) if 'Sector ID' in row.keys() else "",
+                        row['Sector Name'] if 'Sector Name' in row.keys() else "")
+                elif sheet_type in ['Wimax BS']:
+                    # pmp name
+                    pmp = ""
+                    try:
+                        if 'PMP' in row.keys():
+                            pmp = row['PMP']
+                            if isinstance(pmp, basestring) or isinstance(pmp, float):
+                                pmp = int(pmp)
+                    except Exception as e:
+                        pass
+
+                    # sector name
+                    sector_name = '{}_{}_{}'.format(special_chars_name_sanitizer_with_lower_case(
+                        row['Sector ID']) if 'Sector ID' in row.keys() else "",
+                        row['Sector Name'] if 'Sector Name' in row.keys() else "", pmp)
+                else:
+                    pass
+
+                # base station
+                if sector_name:
+                    sector = Sector.objects.filter(name=sector_name)
+
+                    if sector:
+                        current_delta += "Sector: Updated \n"
+                    else:
+                        current_delta += "Sector: Created \n"
+
+            # ************************************ SUBSTATION CHECK **********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+                # substation name
+                substation_name = ""
+
+                if sheet_type in ['PTP', 'PTP BH']:
+                    substation_name = special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                elif sheet_type in ['PMP BS', 'Wimax BS']:
+                    substation_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                else:
+                    pass
+
+                if substation_name:
+                    # substation
+                    substation = SubStation.objects.filter(name=substation_name)
+
+                    if substation:
+                        current_delta += "Sub Station: Updated \n"
+                    else:
+                        current_delta += "Sub Station: Created \n"
+
+            # ************************************ CUSTOMER CHECK ***********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+                # customer name
+                customer_name = ""
+
+                if sheet_type in ['PTP', 'PTP BH']:
+                    customer_name = "{0}_{1}_{1}".format(
+                        special_chars_name_sanitizer_with_lower_case(
+                            row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""),
+                        special_chars_name_sanitizer_with_lower_case(
+                            row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""))
+                elif sheet_type in ['PMP BS', 'Wimax BS']:
+                    customer_name = "{}_{}".format(
+                        special_chars_name_sanitizer_with_lower_case(
+                            row['Customer Name'] if 'Customer Name' in row.keys() else ""),
+                        special_chars_name_sanitizer_with_lower_case(
+                            row['Circuit ID'] if 'Circuit ID' in row.keys() else ""))
+                else:
+                    pass
+
+                if customer_name:
+                    # customer
+                    customer = Customer.objects.filter(name=customer_name)
+
+                    if customer:
+                        current_delta += "Customer: Updated \n"
+                    else:
+                        current_delta += "Customer: Created \n"
+
+            # ************************************ CIRCUIT CHECK ***********************************
+            if sheet_type in ['PTP', 'PTP BH', 'PMP SM', 'Wimax SS']:
+                # circuit name
+                circuit_name = ""
+
+                if sheet_type in ['PTP', 'PTP BH']:
+                    circuit_name = special_chars_name_sanitizer_with_lower_case(
+                        row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                elif sheet_type in ['PMP BS', 'Wimax BS']:
+                    circuit_name = special_chars_name_sanitizer_with_lower_case(
+                        row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                else:
+                    pass
+
+                if circuit_name:
+                    # circuit
+                    circuit = Circuit.objects.filter(name=circuit_name)
+
+                    if circuit:
+                        current_delta += "Circuit: Updated \n"
+                    else:
+                        current_delta += "Circuit: Created \n"
+
+            # adding delta key in current row
+            row['Current Delta'] = current_delta
+
+            delta_list.append(row)
+
+        # create delta workbook
+        bulk_upload_delta_file_generator(keys_list, delta_list, sheet_type, file_path, workbook_type)
+
+    except Exception as e:
+        logger.exception(e.message)
+
+
+def bulk_upload_delta_file_generator(keys_list, delta_rows, sheettype, file_path, workbook):
+    """ Generate excel workbook containing per row errors during bulk upload
+
+    Args:
+        keys_list (list): list containing names of excel columns
+        delta_rows (list) : list of dictionaries containing excel rows
+        sheettype (unicode): type of sheet i.e. valid/invalid
+        filepath (unicode): path of file i.e. inventory_files/invalid/2014-12-29-02-18-32_invalid_WiMAX Few Rows.xls
+        workbook (str): sheet name i.e. 'PMP BS'
+
+    Returns:
+
+    """
+
+    # error rows list
+    delta_rows_list = []
+
+    # headers for excel sheet
+    headers = keys_list
+
+    # append errors key in keys_list
+    keys_list.append('Current Delta')
+
+    for val in delta_rows:
+        temp_list = list()
+        for key in keys_list:
+            try:
+                temp_list.append(val[key])
+            except Exception as e:
+                temp_list.append("")
+                logger.info(e.message)
+        delta_rows_list.append(temp_list)
+
+    wb_bulk_upload_deltas = xlwt.Workbook()
+    ws_bulk_upload_deltas = wb_bulk_upload_deltas.add_sheet(sheettype)
+
+    style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+    style_errors = xlwt.easyxf('pattern: pattern solid, fore_colour red;' 'font: colour white, bold True;')
+
+    try:
+        for i, col in enumerate(headers):
+            if col != 'Current Delta':
+                ws_bulk_upload_deltas.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
+            else:
+                ws_bulk_upload_deltas.write(0, i, col.decode('utf-8', 'ignore').strip(), style_errors)
+    except Exception as e:
+        logger.info(e.message)
+
+    try:
+        for i, l in enumerate(delta_rows_list):
+            i += 1
+            for j, col in enumerate(l):
+                ws_bulk_upload_deltas.write(i, j, col)
+    except Exception as e:
+        logger.info(e.message)
+
+    # bulk upload errors file path
+    if workbook == 'valid':
+        bulk_upload_file_path = file_path.replace('valid', 'bulk_upload_deltas', 1)
+    elif workbook == 'invalid':
+        bulk_upload_file_path = file_path.replace('invalid', 'bulk_upload_deltas', 1)
+    else:
+        bulk_upload_file_path = None
+
+    # if directory for bulk upload excel sheets didn't exist than create one
+    if not os.path.exists(MEDIA_ROOT + 'inventory_files/bulk_upload_deltas'):
+        os.makedirs(MEDIA_ROOT + 'inventory_files/bulk_upload_deltas')
+
+    # saving bulk upload deltas excel sheet
+    wb_bulk_upload_deltas.save(MEDIA_ROOT + bulk_upload_file_path)
+
+
 def bulk_upload_error_logger(row=None, sheet=None):
     """ Generate excel workbook containing per row errors during bulk upload
 
@@ -6361,7 +6815,6 @@ def bulk_upload_error_file_generator(keys_list, error_rows, sheettype, file_path
         workbook (str): sheet name i.e. 'PMP BS'
 
     Returns:
-        device (class 'device.models.Device'): <Device: 10.75.158.219>
 
     """
 
@@ -6380,6 +6833,7 @@ def bulk_upload_error_file_generator(keys_list, error_rows, sheettype, file_path
             try:
                 temp_list.append(val[key])
             except Exception as e:
+                temp_list.append("")
                 logger.info(e.message)
         error_rows_list.append(temp_list)
 
@@ -7886,14 +8340,13 @@ def create_sector(sector_payload):
 
     """
 
-
     # dictionary containing sector payload
     sector_payload = sector_payload
 
     # initializing variables
     name, alias, sector_id, base_station, bs_technology, sector_configured_on, sector_configured_on_port = [''] * 7
     antenna, mrc, tx_power, rx_power, rf_bandwidth, frame_length, cell_radius, frequency, modulation = [''] * 9
-    dr_site, dr_configured_on, description = [''] * 3
+    dr_site, dr_configured_on, description, planned_frequency = [''] * 4
 
     # get sector parameters
     if 'name' in sector_payload.keys():
@@ -7930,6 +8383,8 @@ def create_sector(sector_payload):
         cell_radius = sector_payload['cell_radius'] if sector_payload['cell_radius'] else ""
     if 'frequency' in sector_payload.keys():
         frequency = sector_payload['frequency'] if sector_payload['frequency'] else ""
+    if 'planned_frequency' in sector_payload.keys():
+        planned_frequency = sector_payload['planned_frequency'] if sector_payload['planned_frequency'] else ""
     if 'modulation' in sector_payload.keys():
         modulation = sector_payload['modulation'] if sector_payload['modulation'] else ""
     if 'description' in sector_payload.keys():
@@ -8050,6 +8505,13 @@ def create_sector(sector_payload):
                             sector.frequency = frequency
                         except Exception as e:
                             logger.info("Frequency: ({} - {})".format(frequency, e.message))
+                # planned frequency
+                if planned_frequency:
+                    if isinstance(planned_frequency, int) or isinstance(planned_frequency, float):
+                        try:
+                            sector.planned_frequency = planned_frequency
+                        except Exception as e:
+                            logger.info("Planned Frequency: ({} - {})".format(planned_frequency, e.message))
                 # modulation
                 if modulation:
                     try:
@@ -8183,6 +8645,13 @@ def create_sector(sector_payload):
                             sector.frequency = frequency
                         except Exception as e:
                             logger.info("Frequency: ({} - {})".format(frequency, e.message))
+                # planned frequency
+                if planned_frequency:
+                    if isinstance(planned_frequency, int) or isinstance(planned_frequency, float):
+                        try:
+                            sector.planned_frequency = planned_frequency
+                        except Exception as e:
+                            logger.info("Planned Frequency: ({} - {})".format(planned_frequency, e.message))
                 # modulation
                 if modulation:
                     try:
