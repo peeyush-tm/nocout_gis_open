@@ -1507,7 +1507,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    ospf5_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -2662,7 +2662,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    ospf5_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -3489,11 +3489,11 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
     # get machine and associated sites details in dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    machine_and_site_info = get_machine_details('ospf', [1])
+    machine_and_site_info = get_machine_details('ospf', [2])
 
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    ospf5_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -4108,7 +4108,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
     # get machine and associated sites details in dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    machine_and_site_info = get_machine_details('ospf', [1])
+    machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -4443,7 +4443,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    ospf5_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
@@ -5580,7 +5580,7 @@ def bulk_upload_backhaul_inventory(gis_id, organization, sheettype):
 
     # get 'ospf5' machine and associated sites in a dictionary
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
-    ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+    ospf5_machine_and_site_info = get_machine_details('ospf', [2])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
