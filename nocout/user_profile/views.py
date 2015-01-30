@@ -66,13 +66,18 @@ class UserListingTable(PermissionsRequiredMixin, DatatableOrganizationFilterMixi
     Class Based View for the User data table rendering.
     """
     model = UserProfile
-    required_permissions = ('user_profile.view_userprofile',)
+    required_permissions = ('user_profile.view_userprofile',) # Permission to view user list.
     columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number', 'last_login']
+
+    # order_columns is used for sorting the fields which is used in order_columns.
     order_columns = ['username' , 'first_name', 'email', 'organization__name', 'role__role_name', 'parent__first_name',
                      'phone_number', 'last_login']
+
+    # search_columns: searching is used on the basis of the field which is used in search columns.
     search_columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number']
+    # extra_qs_kwars used in DatatableOrganizationFilterMixin.
     extra_qs_kwargs = {
         'is_deleted': 0
     }
@@ -242,6 +247,10 @@ class UserDelete(PermissionsRequiredMixin, UserLogDeleteMixin, DeleteView):
         return self.post(*args, **kwargs)
 
     def get_queryset(self):
+        """
+        User can delete the user of self organization or descendant organization.
+        User can't delete self.
+        """
         queryset = super(UserDelete, self).get_queryset()
         queryset = queryset.filter(organization__in=logged_in_user_organizations(self))
         queryset = queryset.exclude(id=self.request.user.id)

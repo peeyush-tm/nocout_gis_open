@@ -18,6 +18,9 @@ from dashboard.models import (DashboardSetting, DashboardSeverityStatusTimely, D
 
 from inventory.utils.util import organization_sectors, organization_network_devices
 from dashboard.utils import get_topology_status_results, get_dashboard_status_range_counter
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @task()
@@ -25,14 +28,15 @@ def calculate_timely_main_dashboard():
     '''
     '''
     processed_for = timezone.now()
-
-    calculate_timely_sector_capacity(technology=PMP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
-    calculate_timely_sector_capacity(technology=WiMAX, model=DashboardSeverityStatusTimely, processed_for=processed_for)
-
-    calculate_timely_sales_opportunity(technology=PMP, model=DashboardRangeStatusTimely, processed_for=processed_for)
-    calculate_timely_sales_opportunity(technology=WiMAX, model=DashboardRangeStatusTimely, processed_for=processed_for)
+    logger.info("CELERYBEAT: Timely: starts at ", processed_for)
 
     user_organizations = Organization.objects.all()
+
+    calculate_timely_sector_capacity(user_organizations, technology=PMP, model=DashboardSeverityStatusTimely, processed_for=processed_for)
+    calculate_timely_sector_capacity(user_organizations, technology=WiMAX, model=DashboardSeverityStatusTimely, processed_for=processed_for)
+
+    calculate_timely_sales_opportunity(user_organizations, technology=PMP, model=DashboardRangeStatusTimely, processed_for=processed_for)
+    calculate_timely_sales_opportunity(user_organizations, technology=WiMAX, model=DashboardRangeStatusTimely, processed_for=processed_for)
 
     calculate_timely_latency(user_organizations, dashboard_name='latency-pmp', processed_for=processed_for,technology=PMP)
     calculate_timely_latency(user_organizations, dashboard_name='latency-wimax', processed_for=processed_for,technology=WiMAX)
@@ -49,9 +53,10 @@ def calculate_timely_main_dashboard():
     calculate_timely_temperature(user_organizations, processed_for=processed_for, chart_type='IDU')
     calculate_timely_temperature(user_organizations, processed_for=processed_for, chart_type='ACB')
     calculate_timely_temperature(user_organizations, processed_for=processed_for, chart_type='FAN')
+    logger.info("CELERYBEAT: Timely: ends at ", timezone.now())
 
 
-def calculate_timely_sector_capacity(technology, model, processed_for):
+def calculate_timely_sector_capacity(organizations, technology, model, processed_for):
     '''
     :param technology: Named Tuple
     :param model: Dashboard Model to store timely dashboard data.
@@ -61,10 +66,12 @@ def calculate_timely_sector_capacity(technology, model, processed_for):
     dashboard_name = '%s_sector_capacity' % (technology.NAME.lower())
 
     sectors = SectorCapacityStatus.objects.filter(
+            Q(organization__in=organizations),
             Q(sector__sector_configured_on__device_technology=technology.ID),
             Q(severity__in=['warning', 'critical', 'ok']),
         ).values('id', 'sector__name', 'sector__sector_configured_on__device_name', 'severity', 'sys_timestamp', 'age')
 
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Sectors count: ", sectors.count())
     data_list = list()
     for item in sectors:
         range_counter = dict(
@@ -85,35 +92,37 @@ def calculate_timely_sector_capacity(technology, model, processed_for):
         except Exception as e:
             pass
 
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Data List Count", len(data_list))
     bulk_update_create.delay(data_list, action='create', model=model)
 
 
-def calculate_timely_sales_opportunity(technology, model, processed_for):
+def calculate_timely_sales_opportunity(organizations, technology, model, processed_for):
     '''
     :param technology: Named Tuple
     :param model: Dashboard Model to store timely dashboard data.
     :param processed_for:
     return
     '''
-    organization = []
     # convert the data source in format topology_pmp/topology_wimax
     data_source = '%s-%s' % ('topology', technology.NAME.lower())
+    dashboard_name = '%s_sales_opportunity' % (technology.NAME.lower())
 
     technology_id = technology.ID if technology else None
     try:
         dashboard_setting = DashboardSetting.objects.get(technology_id=technology_id, page_name='main_dashboard', name=data_source, is_bh=False)
     except DashboardSetting.DoesNotExist as e:
+        logger.info("DashboardSetting for %s is not available." % dashboard_name)
         return
 
-    user_sector = organization_sectors(organization, technology_id)
+    user_sector = organization_sectors(organizations, technology_id)
     sector_devices = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Sector's Device Count: ", sector_devices.count())
 
     service_status_results = get_topology_status_results(
         sector_devices, model=Topology, service_name='topology', data_source='topology', user_sector=user_sector
     )
 
     data_list = list()
-    dashboard_name = '%s_sales_opportunity' % (technology.NAME.lower())
     for result in service_status_results:
         range_counter = get_dashboard_status_range_counter(dashboard_setting, [result])
         range_counter.update(
@@ -126,6 +135,7 @@ def calculate_timely_sales_opportunity(technology, model, processed_for):
 
         data_list.append(model(**range_counter))
 
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Data List Count", len(data_list))
     bulk_update_create.delay(data_list, action='create', model=model)
 
 
@@ -134,6 +144,7 @@ def calculate_timely_latency(organizations, dashboard_name, processed_for ,techn
     technology_id = technology.ID if technology else None
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Sector's Device Count: ", sector_devices.count())
 
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
@@ -144,6 +155,7 @@ def calculate_timely_latency(organizations, dashboard_name, processed_for ,techn
                 severity__in=['warning', 'critical', 'down']
             ).using(machine_name).values()
 
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Network Status Count: ", len(status_dict_list))
     calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
 
 
@@ -153,6 +165,7 @@ def calculate_timely_packet_drop(organizations, dashboard_name, processed_for, t
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Sector's Device Count: ", sector_devices.count())
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
     for machine_name, device_list in machine_dict.items():
@@ -163,6 +176,7 @@ def calculate_timely_packet_drop(organizations, dashboard_name, processed_for, t
                 current_value__lt=100
             ).using(machine_name).values()
 
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Network Status Count: ", len(status_dict_list))
     calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
 
 
@@ -172,6 +186,7 @@ def calculate_timely_down_status(organizations, dashboard_name, processed_for, t
     sector_devices = organization_network_devices(organizations, technology_id)
     sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Sector's Device Count: ", sector_devices.count())
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
     for machine_name, device_list in machine_dict.items():
@@ -182,6 +197,7 @@ def calculate_timely_down_status(organizations, dashboard_name, processed_for, t
                 current_value__gte=100
             ).using(machine_name).values()
 
+    logger.info("CELERYBEAT: Timely: ", dashboard_name, "Network Status Count: ", len(status_dict_list))
     calculate_timely_network_alert(dashboard_name, processed_for, technology, status_dict_list)
 
 
@@ -189,8 +205,6 @@ def calculate_timely_temperature(organizations, processed_for, chart_type='IDU')
 
     technology_id = 3
     processed_for=processed_for
-    sector_devices = organization_network_devices(organizations, technology_id)
-    sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
 
     if chart_type == 'IDU':
         service_list = ['wimax_bs_temperature_acb', 'wimax_bs_temperature_fan']
@@ -203,6 +217,10 @@ def calculate_timely_temperature(organizations, processed_for, chart_type='IDU')
         data_source_list = ['fan_temp']
     status_dashboard_name = 'temperature-' + chart_type.lower()
 
+    sector_devices = organization_network_devices(organizations, technology_id)
+    sector_devices = sector_devices.filter(sector_configured_on__isnull=False).values('machine__name', 'device_name')
+    logger.info("CELERYBEAT: Timely: ", status_dashboard_name, "Sector's Device Count: ", sector_devices.count())
+
     machine_dict = prepare_machines(sector_devices)
     status_dict_list = []
     for machine_name, device_list in machine_dict.items():
@@ -212,6 +230,7 @@ def calculate_timely_temperature(organizations, processed_for, chart_type='IDU')
                 severity__in=['warning', 'critical']
             ).using(machine_name).values()
 
+    logger.info("CELERYBEAT: Timely: ", status_dashboard_name, "Network Status Count: ", len(status_dict_list))
     calculate_timely_network_alert('temperature', processed_for, WiMAX, status_dict_list, status_dashboard_name)
 
 
@@ -222,6 +241,7 @@ def calculate_timely_network_alert(dashboard_name, processed_for, technology=Non
         dashboard_setting = DashboardSetting.objects.get(technology_id=technology_id,
                 page_name='main_dashboard', name=dashboard_name, is_bh=False)
     except DashboardSetting.DoesNotExist as e:
+        logger.info(" Dashboard Setting of %s is not available." % dashboard_name)
         return None
 
     data_list = []
@@ -251,6 +271,7 @@ def calculate_timely_network_alert(dashboard_name, processed_for, technology=Non
             'dashboard_name': status_dashboard_name, 'processed_for': processed_for})
         data_list.append(DashboardRangeStatusTimely(**dashboard_data_dict))
 
+    #logger.info("CELERYBEAT: Timely: ")
     bulk_update_create.delay(data_list, action='create', model=DashboardRangeStatusTimely)
 
 
@@ -277,8 +298,10 @@ def calculate_hourly_main_dashboard():
     '''
     now = timezone.now()
 
+    logger.info("CELERYBEAT: Hourly: starts at ", now)
     calculate_hourly_severity_status(now)
     calculate_hourly_range_status(now)
+    logger.info("CELERYBEAT: Hourly: ends at ", timezone.now())
 
 
 def calculate_hourly_severity_status(now):
@@ -383,8 +406,10 @@ def calculate_daily_main_dashboard():
     '''
     now = timezone.now()
 
+    logger.info("CELERYBEAT: Daily: starts at ", now)
     calculate_daily_severity_status(now)
     calculate_daily_range_status(now)
+    logger.info("CELERYBEAT: Daily: ends at ", timezone.now())
 
 
 def calculate_daily_severity_status(now):
@@ -469,6 +494,7 @@ def calculate_daily_range_status(now):
 def calculate_weekly_main_dashboard():
     '''
     '''
+    logger.info("CELERYBEAT: Weekly: starts at ", timezone.now())
     tzinfo = timezone.get_current_timezone()
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     previous_day = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
@@ -477,6 +503,7 @@ def calculate_weekly_main_dashboard():
 
     calculate_weekly_severity_status(previous_day, first_day)
     calculate_weekly_range_status(previous_day, first_day)
+    logger.info("CELERYBEAT: Weekly: ends at ", timezone.now())
 
 
 def calculate_weekly_severity_status(day, first_day):
@@ -560,6 +587,7 @@ def calculate_monthly_main_dashboard():
     """
     """
     now = timezone.now()
+    logger.info("CELERYBEAT: Monthly: starts at ", now)
     tzinfo = timezone.get_current_timezone()
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     previous_day = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
@@ -567,6 +595,7 @@ def calculate_monthly_main_dashboard():
 
     calculate_monthly_severity_status(previous_day, first_day)
     calculate_monthly_range_status(previous_day, first_day)
+    logger.info("CELERYBEAT: Monthly: ends at ", timezone.now())
 
 
 def calculate_monthly_range_status(day, first_day):
@@ -652,6 +681,7 @@ def calculate_yearly_main_dashboard():
     """
     """
     now = timezone.now()
+    logger.info("CELERYBEAT: Yearly: starts at ", now)
     tzinfo = timezone.get_current_timezone()
     previous_day = timezone.datetime.today() - timezone.timedelta(days=1)
     previous_day = timezone.datetime(previous_day.year, previous_day.month, previous_day.day, tzinfo=tzinfo) # Reset to 12 o'clock
@@ -659,6 +689,7 @@ def calculate_yearly_main_dashboard():
 
     calculate_yearly_severity_status(previous_day, first_month)
     calculate_yearly_range_status(previous_day, first_month)
+    logger.info("CELERYBEAT: Yearly: ends at ", timezone.now())
 
 
 def calculate_yearly_range_status(day, first_month):

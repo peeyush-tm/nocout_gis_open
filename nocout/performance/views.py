@@ -8,6 +8,7 @@ from django.db.models import Count, Q
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
+from django.core.urlresolvers import reverse_lazy, reverse
 from django.views.generic import ListView
 from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -650,6 +651,7 @@ class Inventory_Device_Status(View):
         result['data']['objects']['values'] = list()
 
         customer_name = ''
+        customer_name_url = ''
 
         device = Device.objects.get(id=device_id)
         technology = DeviceTechnology.objects.get(id=device.device_technology)
@@ -699,105 +701,295 @@ class Inventory_Device_Status(View):
             for sector in sector_objects:
 
                 sector_id = 'N/A'
+                sector_id_url = ''
+
                 pmp_port = 'N/A'
+                pmp_port_url = ''
+                
                 dr_ip = None
+                dr_ip_url = ''
+
                 base_station = 'N/A'
+                
                 frequency = 'N/A'
+                frequency_url = ''
+
                 planned_frequency = 'N/A'
+                planned_frequency_url = ''
+
                 if sector:
                     base_station = sector.base_station
+                    
                     planned_frequency = [sector.planned_frequency] if sector.planned_frequency else ["N/A"]
-                    frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                     planned_frequency = ",".join(planned_frequency)
+                    
+                    frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                     frequency = ",".join(frequency)
                     if technology.name.lower() in ['ptp', 'p2p']:
                         try:
                             circuits = sector.circuit_set.get()
                             customer_name = circuits.customer.alias
+                            customer_name_url = reverse('customer_edit', kwargs={'pk': circuits.customer.id}, current_app='inventory')
                         except Exception as no_circuit:
                             log.exception(no_circuit)
 
                     else:
                         sector_id = sector.sector_id
+                        sector_id_url = reverse('sector_edit', kwargs={'pk' : sector.id}, current_app='inventory')
                         if technology.name.lower() in ['wimax']:
                             try:
                                 pmp_port = sector.sector_configured_on_port.alias
+                                pmp_port_url = reverse('device_edit', kwargs={'pk': sector.dr_configured_on.id}, current_app='device')
                                 pmp_port = pmp_port.upper()
                             except Exception as no_port:
                                 log.exception(no_port)
                             try:
                                 dr_ip = sector.dr_configured_on.ip_address
+                                dr_ip_url = reverse('device_edit', kwargs={'pk': sector.dr_configured_on.id}, current_app='device')
                             except Exception as no_dr:
                                 dr_ip = None
                                 log.exception(no_dr.message)
                 
                 display_bs_name = 'N/A'
+                bs_name_url = ''
+                
                 city_name = 'N/A'
+                city_url = ''
+                
                 state_name = 'N/A'
+                state_url = ''
 
+                table_values = list()
+                
                 if base_station and base_station != 'N/A':
 
                     city_name = base_station.city.city_name if base_station.city else "N/A"
+                    city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
+
                     state_name = base_station.state.state_name if base_station.state else "N/A"
+                    state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
 
                     display_bs_name = base_station.alias
                     if display_bs_name:
                         display_bs_name = display_bs_name.upper()
+                        bs_name_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
 
                 if technology.name.lower() in ['ptp', 'p2p']:
-                    result['data']['objects']['values'].append([display_bs_name,
-                                                                customer_name,
-                                                                technology.alias,
-                                                                type.alias,
-                                                                city_name,
-                                                                state_name,
-                                                                device.ip_address,
-                                                                # device.mac_address,
-                                                                planned_frequency,
-                                                                frequency
-                    ])
+
+                    table_values = [
+                        {
+                            "val" : display_bs_name,
+                            "url" : bs_name_url
+                        },
+                        {
+                            "val" : customer_name,
+                            "url" : customer_name_url
+                        },
+                        {
+                            "val" : technology.alias,
+                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                        },
+                        {
+                            "val" : type.alias,
+                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                        },
+                        {
+                            "val" : city_name,
+                            "url" : city_url
+                        },
+                        {
+                            "val" : state_name,
+                            "url" : state_url
+                        },
+                        {
+                            "val" : device.ip_address,
+                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+                        },
+                        {
+                            "val" : planned_frequency,
+                            "url" : planned_frequency_url
+                        },
+                        {
+                            "val" : frequency,
+                            "url" : frequency_url
+                        }
+                    ]
+
+                    result['data']['objects']['values'] = table_values
 
                 elif technology.name.lower() in ['wimax']:
-                    result['data']['objects']['values'].append([display_bs_name,
-                                                                sector_id,
-                                                                pmp_port,
-                                                                technology.alias,
-                                                                type.alias,
-                                                                city_name,
-                                                                state_name,
-                                                                device.ip_address,
-                                                                # device.mac_address,
-                                                                planned_frequency,
-                                                                frequency
-                    ])
+
+                    table_values = [
+                        {
+                            "val" : display_bs_name,
+                            "url" : bs_name_url
+                        },
+                        {
+                            "val" : sector_id,
+                            "url" : sector_id_url
+                        },
+                        {
+                            "val" : pmp_port,
+                            "url" : pmp_port_url
+                        },
+                        {
+                            "val" : technology.alias,
+                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                        },
+                        {
+                            "val" : type.alias,
+                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                        },
+                        {
+                            "val" : city_name,
+                            "url" : city_url
+                        },
+                        {
+                            "val" : state_name,
+                            "url" : state_url
+                        },
+                        {
+                            "val" : device.ip_address,
+                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+                        },
+                        {
+                            "val" : planned_frequency,
+                            "url" : planned_frequency_url
+                        },
+                        {
+                            "val" : frequency,
+                            "url" : frequency_url
+                        }
+                    ]
+                    result['data']['objects']['values'] = table_values
+
+                    # result['data']['objects']['values'].append([display_bs_name,
+                    #                                             sector_id,
+                    #                                             pmp_port,
+                    #                                             technology.alias,
+                    #                                             type.alias,
+                    #                                             city_name,
+                    #                                             state_name,
+                    #                                             device.ip_address,
+                    #                                             # device.mac_address,
+                    #                                             planned_frequency,
+                    #                                             frequency
+                    # ])
                     if dr_ip:
                         dr_ip += " (DR) "
-                        result['data']['objects']['values'].append([display_bs_name,
-                                                                sector_id,
-                                                                pmp_port,
-                                                                technology.alias,
-                                                                type.alias,
-                                                                city_name,
-                                                                state_name,
-                                                                dr_ip,
-                                                                # device.mac_address,
-                                                                planned_frequency,
-                                                                frequency
-                    ])
+
+                    table_values = [
+                        {
+                            "val" : display_bs_name,
+                            "url" : bs_name_url
+                        },
+                        {
+                            "val" : sector_id,
+                            "url" : sector_id_url
+                        },
+                        {
+                            "val" : pmp_port,
+                            "url" : pmp_port_url
+                        },
+                        {
+                            "val" : technology.alias,
+                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                        },
+                        {
+                            "val" : type.alias,
+                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                        },
+                        {
+                            "val" : city_name,
+                            "url" : city_url
+                        },
+                        {
+                            "val" : state_name,
+                            "url" : state_url
+                        },
+                        {
+                            "val" : dr_ip,
+                            "url" : dr_ip_url
+                        },
+                        {
+                            "val" : planned_frequency,
+                            "url" : planned_frequency_url
+                        },
+                        {
+                            "val" : frequency,
+                            "url" : frequency_url
+                        }
+                    ]
+
+                    result['data']['objects']['values'] = table_values
+
+                    #     result['data']['objects']['values'].append([display_bs_name,
+                    #                                             sector_id,
+                    #                                             pmp_port,
+                    #                                             technology.alias,
+                    #                                             type.alias,
+                    #                                             city_name,
+                    #                                             state_name,
+                    #                                             dr_ip,
+                    #                                             # device.mac_address,
+                    #                                             planned_frequency,
+                    #                                             frequency
+                    # ])
 
                 else:
-                    result['data']['objects']['values'].append([display_bs_name,
-                                                                sector_id,
-                                                                # pmp_port,
-                                                                technology.alias,
-                                                                type.alias,
-                                                                city_name,
-                                                                state_name,
-                                                                device.ip_address,
-                                                                # device.mac_address,
-                                                                planned_frequency,
-                                                                frequency
-                    ])
+                    table_values = [
+                        {
+                            "val" : display_bs_name,
+                            "url" : bs_name_url
+                        },
+                        {
+                            "val" : sector_id,
+                            "url" : sector_id_url
+                        },
+                        {
+                            "val" : technology.alias,
+                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                        },
+                        {
+                            "val" : type.alias,
+                            "url" : reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
+                        },
+                        {
+                            "val" : city_name,
+                            "url" : city_url
+                        },
+                        {
+                            "val" : state_name,
+                            "url" : state_url
+                        },
+                        {
+                            "val" : device.ip_address,
+                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+                        },
+                        {
+                            "val" : planned_frequency,
+                            "url" : planned_frequency_url
+                        },
+                        {
+                            "val" : frequency,
+                            "url" : frequency_url
+                        }
+                    ]
+                    
+                    result['data']['objects']['values'] = table_values
+
+                    # result['data']['objects']['values'].append([display_bs_name,
+                    #                                             sector_id,
+                    #                                             # pmp_port,
+                    #                                             technology.alias,
+                    #                                             type.alias,
+                    #                                             city_name,
+                    #                                             state_name,
+                    #                                             device.ip_address,
+                    #                                             # device.mac_address,
+                    #                                             planned_frequency,
+                    #                                             frequency
+                    # ])
 
         elif device.substation_set.exists():
             result['data']['objects']['headers'] = ['BS Name',
@@ -832,6 +1024,7 @@ class Inventory_Device_Status(View):
                     base_station = 'N/A'
                     planned_frequency = 'N/A'
                     frequency = 'N/A'
+                    frequency_url = ''
 
                     if sector:
                         base_station = sector.base_station
@@ -839,25 +1032,37 @@ class Inventory_Device_Status(View):
                         frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                         planned_frequency = ",".join(planned_frequency)
                         frequency = ",".join(frequency)
+                        # frequency_url = sector.frequency.id
 
                     #Device Technology
                     ss_type = ""
+                    ss_type_url = ""
                     try:
                         ss_type = type.alias
+                        ss_type_url = reverse('wizard-device-type-update', kwargs={'pk': type.id}, current_app='device')
                     except Exception, e:
                         ss_type = 'N/A'
+                        ss_type_url = ""
 
                     # Handling for city name
+                    city_name = 'N/A'
+                    city_url = ''
                     try:
                         city_name = base_station.city.city_name if base_station.city else "N/A"
+                        city_url = reverse('city_edit', kwargs={'pk': base_station.city.id}, current_app='device')
                     except Exception, e:
                         city_name = 'N/A'
+                        city_url = ''
 
                     # Handling for state name
+                    state_name = 'N/A'
+                    state_url = ''
                     try:
                         state_name = base_station.state.state_name if base_station.state else "N/A"
+                        state_url = reverse('state_edit', kwargs={'pk': base_station.state.id}, current_app='device')
                     except Exception, e:
                         state_name = 'N/A'
+                        state_url = ''
 
                     # try:
                     #     city_name = City.objects.get(id=base_station.city).city_name \
@@ -877,36 +1082,88 @@ class Inventory_Device_Status(View):
                         display_mac_address = display_mac_address.upper()
 
                     display_bs_name = "N/A"
+                    display_bs_url = ""
 
                     if base_station and base_station != 'N/A':
                         display_bs_name = base_station.alias
+                        display_bs_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
 
                     # Condition to show Customer name as BS Name in case of backhaul
                     if circuit.circuit_type:
                         if circuit.circuit_type.lower().strip() in ['bh', 'backhaul']:
                             display_bs_name = customer_name[0].alias
+                            display_bs_url = reverse('customer_edit', kwargs={'pk': customer_name[0].id}, current_app='inventory')
                         else:
                             display_bs_name = base_station.alias
+                            display_bs_url = reverse('base_station_edit', kwargs={'pk': base_station.id}, current_app='inventory')
 
                     if display_bs_name:
                         display_bs_name = display_bs_name.upper()
 
+                    table_values = [
+                        {
+                            "val" : display_bs_name,
+                            "url" : display_bs_url
+                        },
+                        {
+                            "val" : substation.alias,
+                            "url" : reverse('sub_station_edit', kwargs={'pk': substation.id}, current_app='inventory')
+                        },
+                        {
+                            "val" : circuit.circuit_id,
+                            "url" : reverse('circuit_edit', kwargs={'pk': circuit.id}, current_app='inventory')
+                        },
+                        {
+                            "val" : customer_name[0].alias,
+                            "url" : reverse('customer_edit', kwargs={'pk': customer_name[0].id}, current_app='inventory')
+                        },
+                        {
+                            "val" : technology.alias,
+                            "url" : reverse('device_technology_edit', kwargs={'pk': technology.id}, current_app='device')
+                        },
+                        {
+                            "val" : ss_type,
+                            "url" : ss_type_url
+                        },
+                        {
+                            "val" : city_name,
+                            "url" : city_url
+                        },
+                        {
+                            "val" : state_name,
+                            "url" : state_url
+                        },
+                        {
+                            "val" : device.ip_address,
+                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+                        },
+                        {
+                            "val" : display_mac_address,
+                            "url" : reverse('device_edit', kwargs={'pk': device.id}, current_app='device')
+                        },
+                        {
+                            "val" : frequency,
+                            "url" : frequency_url
+                        }
+                    ]
+                    
+                    result['data']['objects']['values'] = table_values
 
-                    result['data']['objects']['values'].append([display_bs_name,
-                                                                substation.alias,
-                                                                circuit.circuit_id,
-                                                                customer_name[0].alias,
-                                                                technology.alias,
-                                                                ss_type,
-                                                                # substation.building_height,
-                                                                # substation.tower_height,
-                                                                city_name,
-                                                                state_name,
-                                                                device.ip_address,
-                                                                display_mac_address,
-                                                                # planned_frequency,
-                                                                frequency
-                    ])
+                    # result['data']['objects']['values'].append([display_bs_name,
+                    #                                             substation.alias,
+                    #                                             circuit.circuit_id,
+                    #                                             customer_name[0].alias,
+                    #                                             technology.alias,
+                    #                                             ss_type,
+                    #                                             # substation.building_height,
+                    #                                             # substation.tower_height,
+                    #                                             city_name,
+                    #                                             state_name,
+                    #                                             device.ip_address,
+                    #                                             display_mac_address,
+                    #                                             # planned_frequency,
+                    #                                             frequency
+                    # ])
 
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
