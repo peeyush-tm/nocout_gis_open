@@ -59,7 +59,8 @@ from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorF
         DownloadSelectedBSInventoryEditForm)
 from inventory.tasks import (validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory,
         bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory,
-        bulk_upload_wimax_ss_inventory, bulk_upload_backhaul_inventory, generate_gis_inventory_excel)
+        bulk_upload_wimax_ss_inventory, bulk_upload_backhaul_inventory, generate_gis_inventory_excel,
+        bulk_upload_delta_generator)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -2792,6 +2793,7 @@ class GISInventoryBulkImportList(ListView):
         Preparing the Context Variable required in the template rendering.
 
         """
+
         context = super(GISInventoryBulkImportList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'original_filename', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto', },
@@ -2914,31 +2916,45 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
 
                 # show icon instead of url in data tables view
                 try:
-                    dct.update(original_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('original_filename'), excel_light_green))
+                    dct.update(
+                        original_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                            MEDIA_URL, dct.pop('original_filename'), excel_light_green))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if error_filename:
-                        dct.update(error_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, error_filename, excel_red))
+                        dct.update(
+                            error_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                MEDIA_URL, error_filename, excel_red))
                     else:
-                        dct.update(error_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
+                        dct.update(
+                            error_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(valid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('valid_filename'), excel_green))
+                        dct.update(
+                            valid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                MEDIA_URL, dct.pop('valid_filename'), excel_green))
                     else:
-                        dct.update(valid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
+                        dct.update(
+                            valid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(invalid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('invalid_filename'), excel_red))
+                        dct.update(
+                            invalid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                MEDIA_URL, dct.pop('invalid_filename'), excel_red))
                     else:
-                        dct.update(invalid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
+                        dct.update(
+                            invalid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
@@ -2972,7 +2988,9 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
                         dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
-                                                        <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
+                                                        <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>\
+                                                        <a href="/bulk_import/generate_delta_sheet/valid/{0}/{1}" class="bulk_import_link" title="Generate Valid Inventory Delta"><i class="fa fa-upload text-success"></i></a>\
+                                                        <a href="/bulk_import/generate_delta_sheet/invalid/{0}/{1}" class="bulk_import_link" title="Generate Invalid Inventory Delta"><i class="fa fa-upload text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
                     else:
                         dct.update(bulk_upload_actions='')
             except Exception as e:
@@ -3486,6 +3504,33 @@ class DownloadSelectedBSInventoryUpdate(UpdateView):
     form_class = DownloadSelectedBSInventoryEditForm
     success_url = reverse_lazy('gis_selected_bs_inventories_list')
 
+
+class BulkUploadDeltaGenerator(View):
+    def get(self, request, *args, **kwargs):
+        # result
+        result = {
+            "success": 0,
+            "message": "Delta sheet not generated.",
+            "data": {
+                "meta": None,
+                "objects": {}
+            }
+        }
+
+        # get id of inventory bulk upload
+        try:
+            bulk_upload_delta_generator.delay(kwargs['id'], kwargs['sheettype'], kwargs['sheetname'])
+            result['success'] = 1
+            result['message'] = "Delta sheet in progress."
+            result['data']['objects']['id'] = kwargs['id']
+            result['data']['objects']['sheetname'] = kwargs['sheetname']
+            result['data']['objects']['sheettype'] = kwargs['sheettype']
+        except Exception as e:
+            logger.info("Delta sheet not generated. Exception: ", e.message)
+
+        print "############################# result - ", result
+
+        return HttpResponse(json.dumps(result))
 
 #**************************************** GIS Wizard ****************************************#
 
