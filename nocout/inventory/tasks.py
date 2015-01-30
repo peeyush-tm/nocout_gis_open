@@ -3883,6 +3883,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'bs_technology': 4,
                     'sector_configured_on': base_station,
                     'antenna': sector_antenna,
+                    'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
                     'description': 'Sector created on {}.'.format(full_time)
                 }
@@ -5078,6 +5079,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'sector_configured_on_port': port,
                     'antenna': sector_antenna,
                     'dr_site': dr_site,
+                    'planned_frequency': row['Planned Frequency'] if 'Planned Frequency' in row.keys() else "",
                     'mrc': row['MRC'].strip() if 'MRC' in row.keys() else "",
                     'dr_configured_on': slave_device,
                     'description': 'Sector created on {}.'.format(full_time)
@@ -8338,14 +8340,13 @@ def create_sector(sector_payload):
 
     """
 
-
     # dictionary containing sector payload
     sector_payload = sector_payload
 
     # initializing variables
     name, alias, sector_id, base_station, bs_technology, sector_configured_on, sector_configured_on_port = [''] * 7
     antenna, mrc, tx_power, rx_power, rf_bandwidth, frame_length, cell_radius, frequency, modulation = [''] * 9
-    dr_site, dr_configured_on, description = [''] * 3
+    dr_site, dr_configured_on, description, planned_frequency = [''] * 4
 
     # get sector parameters
     if 'name' in sector_payload.keys():
@@ -8382,6 +8383,8 @@ def create_sector(sector_payload):
         cell_radius = sector_payload['cell_radius'] if sector_payload['cell_radius'] else ""
     if 'frequency' in sector_payload.keys():
         frequency = sector_payload['frequency'] if sector_payload['frequency'] else ""
+    if 'planned_frequency' in sector_payload.keys():
+        planned_frequency = sector_payload['planned_frequency'] if sector_payload['planned_frequency'] else ""
     if 'modulation' in sector_payload.keys():
         modulation = sector_payload['modulation'] if sector_payload['modulation'] else ""
     if 'description' in sector_payload.keys():
@@ -8502,6 +8505,13 @@ def create_sector(sector_payload):
                             sector.frequency = frequency
                         except Exception as e:
                             logger.info("Frequency: ({} - {})".format(frequency, e.message))
+                # planned frequency
+                if planned_frequency:
+                    if isinstance(planned_frequency, int) or isinstance(planned_frequency, float):
+                        try:
+                            sector.planned_frequency = planned_frequency
+                        except Exception as e:
+                            logger.info("Planned Frequency: ({} - {})".format(planned_frequency, e.message))
                 # modulation
                 if modulation:
                     try:
@@ -8635,6 +8645,13 @@ def create_sector(sector_payload):
                             sector.frequency = frequency
                         except Exception as e:
                             logger.info("Frequency: ({} - {})".format(frequency, e.message))
+                # planned frequency
+                if planned_frequency:
+                    if isinstance(planned_frequency, int) or isinstance(planned_frequency, float):
+                        try:
+                            sector.planned_frequency = planned_frequency
+                        except Exception as e:
+                            logger.info("Planned Frequency: ({} - {})".format(planned_frequency, e.message))
                 # modulation
                 if modulation:
                     try:
