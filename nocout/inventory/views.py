@@ -4531,3 +4531,179 @@ class GisWizardSubStationListingTable(SubStationListingTable):
                     edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sub_station.circuit_set.all()[0].sector.base_station.id, sub_station.circuit_set.all()[0].sector.bs_technology.id, sub_station.circuit_set.all()[0].sector.id, device_id)
             dct.update(actions=detail_action+edit_action)
         return json_data
+
+# This function returns model name as per the given param
+def getModelForSearch(search_by='default'):
+
+    search_model = ''
+
+    if search_by in ['ip_address','mac_address']:
+        search_model = Device
+    elif search_by in ['circuit_id']:
+        search_model = Circuit
+    elif search_by in ['sector_id']:
+        search_model = Sector
+    else:
+        search_model = ''
+
+    return search_model
+
+# This function returns the auto suggestions data as per the given params
+def getAutoSuggestion(request, search_by="default", search_txt=""):
+
+    result = {
+        "success" : 0,
+        "message" : "Record Not Found",
+        "data" : []
+    }
+
+    # Get model as per the search criteria
+    search_model = getModelForSearch(search_by)
+
+    if search_model and search_by:
+        # Condition to fetch data
+        condition = '%s__istartswith'% search_by
+        # fetch queryset as per the condition
+        query_result = search_model.objects.filter(**{condition : str(search_txt)})[:30]
+
+        # If any records found in queryset
+        if len(query_result) > 0:
+            # Initialize data list
+            response_data = []
+            try:
+                # loop queryset to make data dict
+                for data in query_result:
+                    # Make required values dict
+                    single_data_dict = {"id" : data.id,"text" : getattr(data,search_by)}
+                    # Append dict to data list
+                    response_data.append(single_data_dict)
+                    # Clear the dict
+                    single_data_dict = {}
+
+                #Update response dict
+                result["success"] = 1
+                result["message"] = "Suggestion Fetched Successfully."
+                result["data"] = response_data
+            except Exception, e:
+                result["message"] = "Exception occurs."
+
+    # return result dict
+    return HttpResponse(json.dumps(result))
+
+
+# This function returns search result as per the given params
+def getSearchData(request, search_by="default", pk=0):
+
+    result = {
+        "success" : 0,
+        "message" : "Record Not Found",
+        "data" : {
+            "inventory_page_url" : '',
+            "perf_page_url" : '',
+            "alert_page_url" : ''
+        }
+    }
+
+    # Get model as per the search criteria
+    search_model = getModelForSearch(search_by)
+
+    if search_model and search_by:
+        # fetch queryset as per the condition
+        query_result = search_model.objects.filter(pk=pk)
+
+        # If any records found in queryset
+        if len(query_result) > 0:
+            # Initialize data list
+            response_data = []
+
+            try:
+                inventory_page_url = ''
+                perf_page_url = ''
+                alert_page_url = ''
+
+                # Get the single device inventory page, alert page & perf page url
+                if search_by in ['ip_address','mac_address']:
+                    # Device Inventory page url
+                    inventory_page_url = reverse(
+                        'device_edit',
+                        kwargs={'pk': query_result[0].id},
+                        current_app='device'
+                    )
+                    # Single Device perf page url
+                    perf_page_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={'page_type': 'customer', 'device_id' : query_result[0].id},
+                        current_app='performance'
+                    )
+                    # Single Device alert page url
+                    alert_page_url = reverse(
+                        'SingleDeviceDetails',
+                        kwargs={'page_type': 'customer', 'device_id' : query_result[0].id, 'service_name' : 'ping'},
+                        current_app='alert_center'
+                    )
+                elif search_by in ['circuit_id']:
+                    # Circuit Inventory page url
+                    inventory_page_url = reverse(
+                        'circuit_edit',
+                        kwargs={'pk': query_result[0].id},
+                        current_app='inventory'
+                    )
+                    # Single Device perf page url
+                    perf_page_url = ''
+                    # Single Device alert page url
+                    alert_page_url = ''
+
+                elif search_by in ['sector_id']:
+
+                    current_technology = ''
+                    # Get technology of sector from queryset
+                    try:
+                        current_technology = query_result[0].bs_technology.alias
+                    except Exception, e:
+                        current_technology = ''
+
+                    current_technology = current_technology.lower()
+
+                    # Get page type as per the technology
+                    page_type = 'customer' if current_technology in ['ptp','p2p'] else 'network'
+
+                    # Sector Inventory page url
+                    inventory_page_url = reverse(
+                        'sector_edit',
+                        kwargs={'pk': query_result[0].id},
+                        current_app='inventory'
+                    )
+                    # Single Device perf page url
+                    perf_page_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={'page_type': page_type, 'device_id' : query_result[0].id},
+                        current_app='performance'
+                    )
+                    # Single Device alert page url
+                    alert_page_url = reverse(
+                        'SingleDeviceDetails',
+                        kwargs={'page_type': page_type, 'device_id' : query_result[0].id, 'service_name' : 'ping'},
+                        current_app='alert_center'
+                    )
+
+                else:
+
+                    inventory_page_url = ''
+                    perf_page_url = ''
+                    alert_page_url = ''
+
+                #Update response dict
+                result["success"] = 1
+                result["message"] = "Search Successfully."
+                
+                result["data"]["inventory_page_url"] = inventory_page_url
+                result["data"]["perf_page_url"] = perf_page_url
+                result["data"]["alert_page_url"] = alert_page_url
+
+            except Exception, e:
+                result["message"] = "Exception occurs."
+
+
+
+    # return result dict
+    return HttpResponse(json.dumps(result))
