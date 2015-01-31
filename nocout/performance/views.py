@@ -522,6 +522,16 @@ class Get_Perfomance(View):
             'get_status_url': 'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
             'get_services_url': 'performance/get_inventory_service_data_sources/device/' + str(
                 device_id),
+            'inventory_page_url' : reverse(
+                'device_edit',
+                kwargs={'pk': device_id},
+                current_app='device'
+            ),
+            'alert_page_url' : reverse(
+                'SingleDeviceDetails',
+                kwargs={'page_type': page_type, 'device_id' : device_id, 'service_name' : 'ping'},
+                current_app='alert_center'
+            ),
             'page_type': page_type
         }
 
