@@ -138,31 +138,36 @@ function nocoutPerfLib() {
                 }
 
                 if (result.success == 1) {
+
                     device_status = result.data.objects;
-                    /*Loop for table headers*/
-                    var headers = "<tr>";
-                    $.each(device_status.headers, function (key, value) {
-                        headers += '<th>' + value + '</th>';
-                    });
 
-                    headers += "</tr>";
-                    /*Populate table headers*/
-                    $("#status_table thead").html(headers);
+                    if(device_status.headers && device_status.headers.length > 0) {
+                        /*Loop for table headers*/
+                        var headers = "<tr>";
+                        $.each(device_status.headers, function (key, value) {
+                            headers += '<th>' + value + '</th>';
+                        });
 
-                    /*Loop for status table data*/
-                    var status_val = "";
-                    status_val += "<tr>";
-                    for (var i = 0; i < device_status.values.length; i++) {
-                        var val = device_status.values[i]["val"] ? device_status.values[i]["val"] : "",
-                            url = device_status.values[i]["url"] ? device_status.values[i]["url"] : "",
-                            display_txt = url ? '<a href="'+url+'" target="_blank">' + val + '</a>' : val;
+                        headers += "</tr>";
+                        /*Populate table headers*/
+                        $("#status_table thead").html(headers);
 
-                        status_val += '<td>'+display_txt+'</td>';
+                        /*Loop for status table data*/
+                        var status_val = "";
+                        status_val += "<tr>";
+                        for (var i = 0; i < device_status.values.length; i++) {
+                            var val = device_status.values[i]["val"] ? device_status.values[i]["val"] : "",
+                                url = device_status.values[i]["url"] ? device_status.values[i]["url"] : "",
+                                display_txt = url ? '<a href="'+url+'" target="_blank">' + val + '</a>' : val;
+
+                            status_val += '<td>'+display_txt+'</td>';
+                        }
+                        status_val += "</tr>";
+                        
+                        /*Populate table data*/
+                        $("#status_table tbody").html(status_val);
                     }
-                    status_val += "</tr>";
 
-                    /*Populate table data*/
-                    $("#status_table tbody").html(status_val);
                 } else {
                     $.gritter.add({
                         // (string | mandatory) the heading of the notification

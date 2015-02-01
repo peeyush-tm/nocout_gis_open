@@ -141,8 +141,14 @@ iframe {
         $.cookie("isSSChecked", true, {path: '/', secure : true});
         $.cookie("markerIconSize", "medium", {path: '/', secure : true});
         $.cookie("tooltipLabel", "", {path: '/', secure : true});
+
         /*Cookie for collapsed menu*/
         $.cookie("isMenuOpen", 1, {path: '/', secure : true});
+
+        /*Cookie for Global Search*/
+        $.cookie("global_search_criteria", "", {path: '/', secure : true});
+        $.cookie("global_search_val", "", {path: '/', secure : true});
+
       });
 
       /*Triggers when login form is submitted*/

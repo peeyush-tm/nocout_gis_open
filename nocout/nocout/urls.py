@@ -86,6 +86,7 @@ urlpatterns = patterns('',
                        url(r'^city/', include('device.city_urls')),
                        url(r'^wizard/', include('device.wizard_device_type_urls')),
                        url(r'^escalation/', include('alarm_escalation.urls')),
+                       url(r'^global_search/', include('inventory.global_search_urls'))
                        )
 
 # if settings.DEBUG:
