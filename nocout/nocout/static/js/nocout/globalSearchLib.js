@@ -165,12 +165,12 @@ $("#global_search_btn").click(function(e) {
 
 			if(search_data["alert_page_url"]) {
 				var alert_url = base_url+""+search_data["alert_page_url"];
-				link_html += '<a href="'+alert_url+'" class="btn btn-default btn-xs" title="Alerts" target="_blank"><i class="fa fa-warning text-danger"></i></a>';
+				link_html += '<a href="'+alert_url+'" class="btn btn-default btn-xs" title="Alerts" target="_blank"><i class="fa fa-warning text-primary"></i></a>';
 			}
 
 
 			if(link_html) {
-				link_html += "<button class='btn btn-deafult btn-xs' title='Reset' id='reset_global_search'><i class='fa fa-times text-danger'></i></button>"
+				link_html += "<button class='btn btn-deafult btn-xs' title='Reset' id='reset_global_search'><i class='fa fa-refresh'></i></button>"
 			}
 
 			$(".global_search_container #redirect_link_container").html(link_html);
