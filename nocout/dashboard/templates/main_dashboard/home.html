@@ -21,8 +21,8 @@
     }
 </style>
 
-<div class="box border lite">
-    <div id="tableContainer_div" class="box-title">
+<div class="box border lite" id="main_dashboard_container">
+    <div class="box-title">
         <h4><i class="fa fa-dashboard"></i> Main Dashboard</h4>
     </div>
     <div class="box-body">
@@ -31,19 +31,39 @@
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
             <div id="down-all" style="height: 165px;"></div>
-            <h5>Down</h5>
+            <h5>
+                <strong>
+                    Down
+                    <i class="fa fa-signal text-success" id="down-all_trend" title="Down Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="latency-all" style="height: 165px;"></div>
-            <h5>Latency</h5>
+            <h5>
+                <strong>
+                    Latency
+                    <i class="fa fa-signal text-success" id="latency-all_trend" title="Latency Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="packetloss-all" style="height: 165px;"></div>
-            <h5>Packet Drop</h5>
+            <h5>
+                <strong>
+                    Packet Drop
+                    <i class="fa fa-signal text-success" id="packetloss-all_trend" title="Packet Drop Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="temperature-idu-wimax" style="height: 165px;"></div>
-            <h5>Temperature IDU Wimax</h5>
+            <h5>
+                <strong>
+                    Temperature IDU Wimax
+                    <i class="fa fa-signal text-success" id="temperature-idu-wimax_trend" title="Temperature IDU Wimax Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
         <div class="clearfix"></div>
@@ -55,7 +75,12 @@
         <!-- Capacity pie Charts & city table Start -->
         <div class="col-md-3" align="center">
             <div id="wimax_sales_opportunity" class="rf_chart_style"></div>
-            <h5>Wimax Sales Opportunity</h5>
+            <h5>
+                <strong>
+                    Wimax Sales Opportunity
+                    <i class="fa fa-signal text-success" id="wimax_sales_opportunity_trend" title="Wimax Sales Opportunity Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-6">
             <h5>Customer Experience Monitoring</h5>
@@ -74,7 +99,12 @@
         </div>
         <div class="col-md-3" align="center">
             <div id="pmp_sales_opportunity" class="rf_chart_style"></div>
-            <h5>PMP Sales Opportunity</h5>
+            <h5>
+                <strong>
+                    PMP Sales Opportunity
+                    <i class="fa fa-signal text-success" id="pmp_sales_opportunity_trend" title="PMP Sales Opportunity Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <!-- Capacity pie Charts & city table End -->
 
@@ -86,19 +116,39 @@
         <!-- ********** THIRD ROW START **********-->
         <div class="col-md-3" align="center">
             <div id="wimax_sector_capacity" class="rf_chart_style"></div>
-            <h5>Wimax Sector Capacity</h5>
+            <h5>
+                <strong>
+                    Wimax Sector Capacity
+                    <i class="fa fa-signal text-success" id="wimax_sector_capacity_trend" title="Wimax Sector Capacity Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="pmp_sector_capacity" class="rf_chart_style"></div>
-            <h5>PMP Sector Capacity</h5>
+            <h5>
+                <strong>
+                    PMP Sector Capacity
+                    <i class="fa fa-signal text-success" id="pmp_sector_capacity_trend" title="PMP Sector Capacity Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="wimax_backhaul_capacity" class="rf_chart_style"></div>
-            <h5>Wimax Backhaul Capacity</h5>
+            <h5>
+                <strong>
+                    Wimax Backhaul Capacity
+                    <i class="fa fa-signal text-success" id="wimax_backhaul_capacity_trend" title="Wimax Backhaul Capacity Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="pmp_backhaul_capacity" class="rf_chart_style"></div>
-            <h5>PMP Backhaul Capacity</h5>
+            <h5>
+                <strong>
+                    PMP Backhaul Capacity
+                    <i class="fa fa-signal text-success" id="pmp_backhaul_capacity_trend" title="PMP Backhaul Capacity Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="clearfix"></div>
         <!-- ********** THIRD ROW END **********-->
@@ -106,7 +156,12 @@
 
         <!-- ********** FOURTH ROW START **********-->
         <div class="col-md-12">
-            <h4>MFR Processed</h4>
+            <h4>
+                <strong>
+                    MFR Processed
+                    <i class="fa fa-signal text-success" id="id_mfr_processed_trend" title="MFR Processed Trends"> </i>
+                </strong>
+            </h4>
             <div id="id_mfr_processed" class="rf_chart_style"></div>
         </div>
         <div class="clearfix"></div>
@@ -115,7 +170,12 @@
 
         <!-- ********** FIFTH ROW START **********-->
         <div class="col-md-12">
-            <h4>MFR Caused Code</h4>
+            <h4>
+                <strong>
+                    MFR Caused Code
+                    <i class="fa fa-signal text-success" id="mfr_cause_code_trend" title="MFR Caused Code Trends"> </i>
+                </strong>
+            </h4>
             <div id="mfr_cause_code" class="rf_chart_style"></div>
         </div>
 
@@ -127,19 +187,39 @@
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
             <div id="down-wimax" style="height: 165px;"></div>
-            <h5>Down Wimax</h5>
+            <h5>
+                <strong>
+                    Down Wimax
+                    <i class="fa fa-signal text-success" id="down-wimax_trend" title="Down Wimax Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="down-pmp" style="height: 165px;"></div>
-            <h5>Down PMP</h5>
+            <h5>
+                <strong>
+                    Down PMP
+                    <i class="fa fa-signal text-success" id="down-pmp_trend" title="Down PMP Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="latency-wimax" style="height: 165px;"></div>
-            <h5>Latency Wimax</h5>
+            <h5>
+                <strong>
+                    Latency Wimax
+                    <i class="fa fa-signal text-success" id="latency-wimax_trend" title="Latency Wimax Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="latency-pmp" style="height: 165px;"></div>
-            <h5>Latency PMP</h5>
+            <h5>
+                <strong>
+                    Latency PMP
+                    <i class="fa fa-signal text-success" id="latency-pmp_trend" title="Latency PMP Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
         <div class="clearfix"></div>
@@ -151,19 +231,39 @@
         <!-- Speedometers (Gauge) Charts Start -->
         <div class="col-md-3" align="center">
             <div id="packetloss-wimax" style="height: 165px;"></div>
-            <h5>Packet Drop Wimax</h5>
+            <h5>
+                <strong>
+                    Packet Drop Wimax
+                    <i class="fa fa-signal text-success" id="packetloss-wimax_trend" title="Packet Drop Wimax Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="packetloss-pmp" style="height: 165px;"></div>
-            <h5>Packet Drop PMP</h5>
+            <h5>
+                <strong>
+                    Packet Drop PMP
+                    <i class="fa fa-signal text-success" id="packetloss-pmp_trend" title="Packet Drop PMP Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="temperature-fan-wimax" style="height: 165px;"></div>
-            <h5>Temperature Fan Wimax</h5>
+            <h5>
+                <strong>
+                    Temperature Fan Wimax
+                    <i class="fa fa-signal text-success" id="temperature-fan-wimax_trend" title="Temperature Fan Wimax Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <div class="col-md-3" align="center">
             <div id="temperature-acb-wimax" style="height: 165px;"></div>
-            <h5>Temperature ACB Wimax</h5>
+            <h5>
+                <strong>
+                    Temperature ACB Wimax
+                    <i class="fa fa-signal text-success" id="temperature-acb-wimax_trend" title="Temperature ACB Wimax Trends"> </i>
+                </strong>
+            </h5>
         </div>
         <!-- Speedometers (Gauge) Charts End -->
         <div class="clearfix"></div>
