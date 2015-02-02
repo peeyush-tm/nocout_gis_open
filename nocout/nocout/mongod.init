@@ -15,7 +15,7 @@
 
 # NOTE: if you change any OPTIONS here, you get what you pay for:
 # this script assumes all options are in the config file.
-CONFIGFILE="/etc/mongod.conf"
+CONFIGFILE="/omd/mongodb/mongod.conf"
 OPTIONS=" -f $CONFIGFILE"
 SYSCONFIG="/etc/sysconfig/mongod"
 
@@ -24,8 +24,8 @@ PIDFILEPATH=`awk -F'[:=]' -v IGNORECASE=1 '/^[[:blank:]]*(processManagement\.)?p
 
 mongod=${MONGOD-/usr/bin/mongod}
 
-MONGO_USER=mongod
-MONGO_GROUP=mongod
+MONGO_USER=tmadmin
+MONGO_GROUP=tmadmin
 
 if [ -f "$SYSCONFIG" ]; then
     . "$SYSCONFIG"
