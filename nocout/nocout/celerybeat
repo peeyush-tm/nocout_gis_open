@@ -1,38 +1,44 @@
-## /etc/default/celerybeat
+# In CentOS, contents should be placed in the file /etc/sysconfig/celeryd
+# # Available options: http://celery.readthedocs.org/en/latest/tutorials/daemonizing.html#available-options
+# # Where to chdir at start. This could be the root of a virtualenv.
+CELERYD_CHDIR="/omd/nocout/nocout/nocout"
+CELERYBEAT_CHDIR="/omd/nocout/nocout/nocout"
+#
+# # Absolute or relative path to the celery program
+NOCOUT_PYTHON="/omd/nocout/nout/bin/python"
 
-# Absolute or relative path to the 'celery' command:
-CELERY_BIN="/apps/nocout/nout/bin/celery"
-#CELERY_BIN="/virtualenvs/def/bin/celery"
+NOCOUT_MANAGE="$CELERYD_CHDIR/manage.py"
 
-# App instance to use
-# comment out this line if you don't use an app
-# CELERY_APP="proj"
-# or fully qualified:
-#CELERY_APP="proj.tasks:app"
+CELERY_BIN="$NOCOUT_PYTHON $NOCOUT_MANAGE celery"
 
-# Where to chdir at start.
-# CELERYBEAT_CHDIR="/opt/Myproject/"
-CELERYBEAT_CHDIR="/apps/nocout/nocout/nocout/"
+# Path to celerybeat
+CELERYBEAT="$NOCOUT_PYTHON $NOCOUT_MANAGE celerybeat"
 
-# Extra arguments to celerybeat
-CELERYBEAT_OPTS="--schedule=/apps/nocout/nocout/nocout/nocout/settings.py"
+# How to call "manage.py celeryd_multi"
+CELERYD_MULTI="$NOCOUT_PYTHON $NOCOUT_MANAGE celeryd_multi"
+#
+# # How to call "manage.py celeryctl"
+CELERYCTL="$NOCOUT_PYTHON $NOCOUT_MANAGE celeryctl"
+#
+# # App instance to use (value for --app argument).
+CELERY_APP="nocout"
+#
+# # Create log/pid dirs, if they don't already exist
+CELERY_CREATE_DIRS=1
+#
+# # Workers run as an unprivileged user
+CELERYD_USER=tmadmin
+CELERYD_GROUP=tmadmin
+# Beat run as an unprivileged user
+CELERYBEAT_LOG_FILE="/omd/nocout/tmp/celerybeat/nocout-celery-beat-log.log"
+CELERYBEAT_PID_FILE="/omd/nocout/tmp/celerybeat/nocout-celery-beat-pid.pid"
+
+CELERYBEAT_LOG_LEVEL=DEBUG
+
+# Beat run as an unprivileged user
+CELERYBEAT_USER=tmadmin
+CELERYBEAT_GROUP=tmadmin
+CELERYBEAT_OPTS="--schedule=/omd/nocout/tmp/celerybeat/celerybeat-schedule"
 
 export DJANGO_SETTINGS_MODULE="nocout.settings"
-
-# Full path to the celeryd log file. Default is /var/log/celeryd.log
-CELERYBEAT_LOG_FILE="/apps/nocout/tmp/celery/celerybeat.log"
-
-# Full path to the PID file. Default is /var/run/celeryd.pid.
-CELERYBEAT_PID_FILE="/apps/nocout/tmp/celery/celerybeat.pid"
-
-# User to run beat as. Default is current user.
-# Group to run beat as. Default is current user.
-CELERYBEAT_USER="tmadmin"
-CELERYBEAT_GROUP="tmadmin"
-
-# Log level to use for celeryd. Default is INFO.
-CELERYD_LOG_LEVEL="INFO"
-
-# Always create directories (log directory and pid file directory).
-# Default is to only create directories when no custom logfile/pidfile set.
-CELERY_CREATE_DIRS=1
+export PYTHONPATH="$PYTHONPATH:/omd/nocout/nocout/nocout"

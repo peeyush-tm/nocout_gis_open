@@ -11,10 +11,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 import os
 from django.conf import global_settings
 from collections import namedtuple
-
 from datetime import timedelta
-
-from celery.schedules import crontab
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
@@ -104,7 +101,7 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     'dajaxice.finders.DajaxiceFinder',
-    #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    #'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -252,28 +249,23 @@ ALLOWED_APPS_TO_CLEAR_CACHE = [
     'inventory',
 ]
 
-'''
-# RabbitMQ configuration for django-celery
-BROKER_HOST = "localhost"
-BROKER_PORT = 5672
-BROKER_USER = "priyesh"
-BROKER_PASSWORD = "pass"
-BROKER_VHOST = "/nocout_dev"
-'''
+import djcelery
+djcelery.setup_loader()
 
 # MongoDB configuration for django-celery
 CELERY_RESULT_BACKEND = "mongodb"
 CELERY_MONGODB_BACKEND_SETTINGS = {
-    "host": "127.0.0.1",
-    "port": 27017,
+    "host": "10.133.12.163",
+    "port": 27163,
     "database": "nocout_celery_db",             # mongodb database for django-celery
     "taskmeta_collection": "c_queue"            # collection name to use for task output
 }
-BROKER_URL = 'mongodb://localhost:27017/nocout_celery_db'
+BROKER_URL = 'mongodb://10.133.12.163:27163/nocout_celery_db'
+
+from celery import crontab
 
 #=time zone for celery periodic tasks
 CELERY_TIMEZONE = 'Asia/Calcutta'
-
 
 CELERYBEAT_SCHEDULE = {
     'wimax-topology': {
@@ -336,9 +328,6 @@ CELERYBEAT_SCHEDULE = {
 }
 
 
-import djcelery
-djcelery.setup_loader()
-
 CORS_ORIGIN_ALLOW_ALL = True
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
@@ -353,26 +342,26 @@ LOGGING = {
     'disable_existing_loggers': True,
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s:%(lineno)s %(process)d %(thread)d %(message)s',
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s',
             'datefmt' : "%d/%b/%Y %H:%M:%S"
         },
     },
     'handlers': {
         'sentry': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
         },
         'console': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
         'logfile': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join( '/tmp/nocout_main.log' ),
-            'maxBytes': 1000000000,
-            'backupCount':10,
+            'filename': os.path.join('/tmp/nocout_main.log' ),
+            'maxBytes': 1048576,
+            'backupCount':100,
             'formatter': 'verbose',
         },
 
@@ -384,17 +373,17 @@ LOGGING = {
             'propagate': False,
         },
         'raven': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'handlers': ['console', 'sentry'],
             'propagate': False,
         },
         'sentry.errors': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'handlers': ['console'],
             'propagate': False,
         },
         '':{
-            'handlers': ['console','logfile','sentry'],
+            'handlers': ['logfile'],
             'level': 'DEBUG',
         },
     },
@@ -558,6 +547,11 @@ PASSWORD_COMPLEXITY = { # You can ommit any or all of these for no limit for tha
     "WORDS": 0        # Words (substrings seperates by a whitespace)
 }
 
+
+####EMAIL SETTINGS
+DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = '/nocout/tmp/app-messages' # change this to a proper location
 
 # Import the local_settings.py file to override global settings
 
