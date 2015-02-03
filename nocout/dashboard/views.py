@@ -26,7 +26,7 @@ from inventory.utils.util import organization_customer_devices, organization_net
 
 from performance.utils.util import color_picker
 
-from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely
+from dashboard.models import DashboardSetting, MFRDFRReports, DFRProcessed, MFRProcessed, MFRCauseCode, DashboardRangeStatusTimely, DashboardSeverityStatusTimely, DashboardSeverityStatusDaily
 from dashboard.forms import DashboardSettingForm, MFRDFRReportsForm
 from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict,\
     get_dashboard_status_sector_range_counter, get_topology_status_results, get_highchart_response,\
@@ -933,3 +933,85 @@ class DashboardDeviceStatus(View):
         response = get_highchart_response(chart_data_dict)
 
         return HttpResponse(response)
+
+#*************************************************Dashboard Monthly Data ***********************************************************************
+def get_severity_status_dict_monthly(dashboard_name, sector_devices_list):
+    '''
+    '''
+    # dashboard_status_dict = DashboardSeverityStatusDaily.objects.order_by('-processed_for').filter(
+    #     dashboard_name=dashboard_name,
+    #     device_name__in=sector_devices_list
+    # )
+    # Start Calculations for Monthly Trend Sector
+    # Last 30 Days
+    month_before = datetime.date.today() - datetime.timedelta(days=30)
+    month_before = datetime.date(month_before.month, month_before.day, 1)
+    dashboard_status_dict = DashboardSeverityStatusDaily.objects.filter(
+        processed_for__gte=month_before,
+        dashboard_name=dashboard_name,
+        device_name__in=sector_devices_list
+    )
+    processed_key_dict = {result['reference_name']: [] for result in dashboard_status_dict}
+    processed_key_color = {result['reference_name']: color_picker() for result in dashboard_status_dict}
+    
+    while month_before <= datetime.date.today(): 
+        if dashboard_status_dict.exists():
+            processed_for = month_before
+            dashboard_status_dict_final = dashboard_status_dict.filter(processed_for=processed_for).aggregate(
+                                        Normal=Sum('ok'),
+                                        Needs_Augmentation=Sum('warning'),
+                                        Stop_Provisioning=Sum('critical'),
+                                        Unknown=Sum('unknown')
+                                    )
+
+            # processed_key = processed_key_dict.keys()
+            for result in dashboard_status_dict:
+                if result[processed_for] == month_before:
+                    processed_key_dict[result['reference_name']].append({
+                        "color": processed_key_color[result['reference_name']],
+                        "y" : dashboard_status_dict_final,
+                        "name": "sector capacity",
+                        "x" : calendar.timegm(day.timetuple())*1000
+                        })
+        
+        month_before += relativedelta.relativedelta(days=1)    
+                     
+    return processed_key_dict
+
+
+#************************************************* Monthly Trend Pie chart ***********************************************************************
+class MonthlyTrendSectorMixin(object): 
+    '''
+    '''
+    def get(self, request):
+
+        tech_name = self.tech_name
+        organization = logged_in_user_organizations(self)
+        technology = DeviceTechnology.objects.get(name=tech_name.lower()).id
+
+        user_sector = organization_sectors(organization, technology=technology)
+        sector_devices_list = Device.objects.filter(id__in=user_sector.values_list('sector_configured_on', flat=True))
+        sector_devices_list = sector_devices_list.values_list('device_name',flat=True)
+
+        dashboard_name = '%s_sector_capacity' % (tech_name.lower())
+        processed_key_dict = get_severity_status_dict_monthly(dashboard_name, sector_devices_list)
+
+        chart_series = []
+        chart_series = processed_key_dict
+
+        response = get_highchart_response(dictionary={'type': 'chart', 'chart_series': chart_series,
+            'name': '%s Sector Capacity' % tech_name.upper(), 'valuesuffix': ''})
+
+        return HttpResponse(response)
+
+
+class MonthlyTrendSectorPMP(MonthlyTrendSectorMixin, View):
+    """
+    """
+    tech_name = 'PMP'    
+
+class MonthlyTrendSectorWIMAX(MonthlyTrendSectorMixin, View):
+    """
+    """
+    tech_name = 'WIMAX'    
+
