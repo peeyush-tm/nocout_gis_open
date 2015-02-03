@@ -8,35 +8,44 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+
+        # Need To Execute These Manually
+        # drop index performance_utilizationstatus_ffd388bc on performance_utilizationstatus;
+        # drop index performance_servicestatus_ffd388bc on performance_servicestatus;
+        # drop index performance_networkstatus_ffd388bc on performance_networkstatus;
+        # drop index performance_status_ffd388bc on performance_status;
+        # drop index performance_inventorystatus_ffd388bc on performance_inventorystatus;
+        #
+
         # Adding unique constraint on 'InventoryStatus', fields ['device_name', 'service_name', 'data_source']
         db.create_unique(u'performance_inventorystatus', ['device_name', 'service_name', 'data_source'])
 
         # Removing index on 'InventoryStatus', fields ['device_name', 'service_name', 'data_source']
-        db.delete_index(u'performance_inventorystatus', ['device_name', 'service_name', 'data_source'])
+        # db.delete_index(u'performance_inventorystatus', ['device_name', 'service_name', 'data_source'])
 
         # Adding unique constraint on 'Status', fields ['device_name', 'service_name', 'data_source']
         db.create_unique(u'performance_status', ['device_name', 'service_name', 'data_source'])
 
         # Removing index on 'Status', fields ['device_name', 'service_name', 'data_source']
-        db.delete_index(u'performance_status', ['device_name', 'service_name', 'data_source'])
+        # db.delete_index(u'performance_status', ['device_name', 'service_name', 'data_source'])
 
         # Adding unique constraint on 'NetworkStatus', fields ['device_name', 'service_name', 'data_source']
         db.create_unique(u'performance_networkstatus', ['device_name', 'service_name', 'data_source'])
 
         # Removing index on 'NetworkStatus', fields ['device_name', 'service_name', 'data_source']
-        db.delete_index(u'performance_networkstatus', ['device_name', 'service_name', 'data_source'])
+        # db.delete_index(u'performance_networkstatus', ['device_name', 'service_name', 'data_source'])
 
         # Adding unique constraint on 'ServiceStatus', fields ['device_name', 'service_name', 'data_source']
         db.create_unique(u'performance_servicestatus', ['device_name', 'service_name', 'data_source'])
 
         # Removing index on 'ServiceStatus', fields ['device_name', 'service_name', 'data_source']
-        db.delete_index(u'performance_servicestatus', ['device_name', 'service_name', 'data_source'])
+        # db.delete_index(u'performance_servicestatus', ['device_name', 'service_name', 'data_source'])
 
         # Adding unique constraint on 'UtilizationStatus', fields ['device_name', 'service_name', 'data_source']
         db.create_unique(u'performance_utilizationstatus', ['device_name', 'service_name', 'data_source'])
 
         # Removing index on 'UtilizationStatus', fields ['device_name', 'service_name', 'data_source']
-        db.delete_index(u'performance_utilizationstatus', ['device_name', 'service_name', 'data_source'])
+        # db.delete_index(u'performance_utilizationstatus', ['device_name', 'service_name', 'data_source'])
 
 
     def backwards(self, orm):
