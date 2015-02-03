@@ -17,4 +17,6 @@ urlpatterns = patterns('',
                            name='gis_inventory_bulk_import_edit'),
                        url(r'^bulk_upload_valid_data/(?P<sheettype>.+)/(?P<id>\d+)/(?P<sheetname>.+)/$', views.BulkUploadValidData.as_view(),
                            name='BulkUploadValidData'),
+                       url(r'^generate_delta_sheet/(?P<sheettype>.+)/(?P<id>\d+)/(?P<sheetname>.+)/$', views.BulkUploadDeltaGenerator.as_view(),
+                           name='BulkUploadValidData'),
 )

@@ -279,3 +279,34 @@ iframe {
   z-index:100;
   border: 0px none;
 }
+
+.global_search_container {
+  position: absolute;
+  top: 10px;
+  left: 37%;
+}
+.global_search_container .select2-container .select2-choice {
+  height: 30px !important;
+  line-height: 25px !important;
+}
+.global_search_container ul li:last-child {
+  margin-left: 25px;
+}
+.global_search_container ul li:last-child #redirect_link_container a {
+   margin-right: 5px;
+}
+.date_range_filter_container {
+  float:left;
+  max-width: 320px !important;
+  margin-bottom:5px;
+}
+.date_range_filter_container .form-control {
+  height:31px !important;
+}
+#main_dashboard_container .box-body h5, #main_dashboard_container .box-body h4 {
+  margin-top: 0px !important;
+}
+#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .box-body h4 strong i {
+  margin-left: 10px;
+  cursor: pointer;
+}

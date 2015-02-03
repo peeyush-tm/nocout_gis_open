@@ -378,8 +378,8 @@ $("#goFullScreen").click(function() {
 
                 // $("#deviceMap").height(aa-bb);
                 // $("#deviceMap").height(aa);
-                toggleBoxTitle();
-                toggleControlButtons();
+                // toggleBoxTitle();
+                // toggleControlButtons();
 
                 /*Set width-height for map div in fullscreen*/
                 if($(".mapContainerBlock").length > 0) {

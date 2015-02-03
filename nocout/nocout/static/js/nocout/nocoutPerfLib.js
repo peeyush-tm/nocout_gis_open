@@ -138,30 +138,36 @@ function nocoutPerfLib() {
                 }
 
                 if (result.success == 1) {
+
                     device_status = result.data.objects;
-                    /*Loop for table headers*/
-                    var headers = "<tr>";
-                    $.each(device_status.headers, function (key, value) {
-                        headers += '<th>' + value + '</th>';
-                    });
 
-                    headers += "</tr>";
-                    /*Populate table headers*/
-                    $("#status_table thead").html(headers);
-
-                    /*Loop for status table data*/
-                    var status_val = "";
-                    for (var i = 0; i < device_status.values.length; i++) {
-                        status_val += "<tr>"
-                        var loop_through = device_status.values[i];
-                        $.each(loop_through, function (key, value) {
-                            status_val += '<td>' + value + '</td>';
+                    if(device_status.headers && device_status.headers.length > 0) {
+                        /*Loop for table headers*/
+                        var headers = "<tr>";
+                        $.each(device_status.headers, function (key, value) {
+                            headers += '<th>' + value + '</th>';
                         });
+
+                        headers += "</tr>";
+                        /*Populate table headers*/
+                        $("#status_table thead").html(headers);
+
+                        /*Loop for status table data*/
+                        var status_val = "";
+                        status_val += "<tr>";
+                        for (var i = 0; i < device_status.values.length; i++) {
+                            var val = device_status.values[i]["val"] ? device_status.values[i]["val"] : "",
+                                url = device_status.values[i]["url"] ? device_status.values[i]["url"] : "",
+                                display_txt = url ? '<a href="'+url+'" target="_blank">' + val + '</a>' : val;
+
+                            status_val += '<td>'+display_txt+'</td>';
+                        }
                         status_val += "</tr>";
+                        
+                        /*Populate table data*/
+                        $("#status_table tbody").html(status_val);
                     }
 
-                    /*Populate table data*/
-                    $("#status_table tbody").html(status_val);
                 } else {
                     $.gritter.add({
                         // (string | mandatory) the heading of the notification

@@ -19,50 +19,62 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
     solid_gauge_url_obj = {
         "down-all" : {
             "url" : "/dashboard/down/all/",
+            "trends_url" : "",
             "text" : "Down"
         },
         "latency-all" : {
             "url" : "/dashboard/latency/all/",
+            "trends_url" : "",
             "text" : "Latency"
         },
         "packetloss-all" : {
             "url" : "/dashboard/packet_loss/all/",
+            "trends_url" : "",
             "text" : "Packet Drop"
         },
         "temperature-idu-wimax" : {
             "url" : "/dashboard/temperature-idu/wimax/",
+            "trends_url" : "",
             "text" : "Temperature IDU WiMAX"
         },
         "down-wimax" : {
             "url" : "/dashboard/down/wimax/",
+            "trends_url" : "",
             "text" : "Down WiMAX"
         },
         "down-pmp" : {
             "url" : "/dashboard/down/pmp/",
+            "trends_url" : "",
             "text" : "Down PMP"
         },
         "latency-wimax" : {
             "url" : "/dashboard/latency/wimax/",
+            "trends_url" : "",
             "text" : "Latency WiMAX"
         },
         "latency-pmp" : {
             "url" : "/dashboard/latency/pmp/",
+            "trends_url" : "",
             "text" : "Latency PMP"
         },
         "packetloss-wimax" : {
             "url" : "/dashboard/packet_loss/wimax/",
+            "trends_url" : "",
             "text" : "Packet Drop WiMAX"
         },
         "packetloss-pmp" : {
             "url" : "/dashboard/packet_loss/pmp/",
+            "trends_url" : "",
             "text" : "Packet Drop PMP"
         },
         "temperature-fan-wimax" : {
             "url" : "/dashboard/temperature-fan/wimax/",
+            "trends_url" : "",
             "text" : "Temperature Fan Wimax"
         },
         "temperature-acb-wimax" : {
             "url" : "/dashboard/temperature-acb/wimax/",
+            "trends_url" : "",
             "text" : "Temperature ACB WiMAX"
         }
     },
@@ -78,30 +90,37 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
     pie_chart_url_obj = {
         "wimax_sales_opportunity" : {
             "url" : "",
+            "trends_url" : "",
             "text" : "Wimax Sales Opportunity"
         },
         "pmp_sales_opportunity" : {
             "url" : "",
+            "trends_url" : "",
             "text" : "PMP Sales Opportunity"
         },
         "wimax_sector_capacity" : {
             "url" : "",
+            "trends_url" : "",
             "text" : "Wimax Sector Capacity"
         },
         "pmp_sector_capacity" : {
             "url" : "",
+            "trends_url" : "",
             "text" : "PMP Sector Capacity"
         },
         "wimax_backhaul_capacity" : {
             "url" : "",
+            "trends_url" : "",
             "text" : "Wimax Backhaul Capacity"
         },
         "pmp_backhaul_capacity" : {
             "url" : "",
+            "trends_url" : "",
             "text" : "PMP Backhaul Capacity"
         },
         "mfr_cause_code" : {
             "url" : "",
+            "trends_url" : "",
             "text" : "MFR Caused Code"
         }
     },
@@ -111,6 +130,7 @@ var gauge_chart_val_style = "font-size:18px;border:1px solid #DADADA;background:
     area_chart_url_obj = {
       "id_mfr_processed" : {
         "url" : "",
+        "trends_url" : "",
         "text" : "MFR Processed"
       }
     };
@@ -512,9 +532,6 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
         },
         // the value axis
         yAxis: {
-            stops: [
-                [0, val_color], // speedometer_color
-            ],
             lineWidth: 0,
             minorTickInterval: null,
             tickPixelInterval: 400,
@@ -543,6 +560,7 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
         yAxis: {
             min: 0,
             max: max,
+            tickInterval: max,
             title: {
                 // text: div_text
                 text: ""
@@ -564,3 +582,30 @@ function updateSpeedometerChart(chartData, div_id, div_text) {
         }]
     }));
 }
+
+
+/**
+ * This event trigger when any trends icon is clicked
+ * @event click
+ */
+$("#main_dashboard_container .box-body h5 strong i, #main_dashboard_container .box-body h4 strong i").click(function(e) {
+    var trends_id = e.currentTarget.id ? e.currentTarget.id : "",
+        chart_dom_id = trends_id.split("_trend")[0],
+        trends_url = "";
+
+    if(solid_gauge_chart_ids.indexOf(chart_dom_id) > -1) {
+        trends_url = solid_gauge_url_obj[chart_dom_id]["trends_url"] ? solid_gauge_url_obj[chart_dom_id]["trends_url"] : "";
+    } else if(area_chart_ids.indexOf(chart_dom_id) > -1) {
+        trends_url = area_chart_url_obj[chart_dom_id]["trends_url"] ? area_chart_url_obj[chart_dom_id]["trends_url"] : "";
+    } else if(pie_chart_ids.indexOf(chart_dom_id) > -1) {
+        trends_url = pie_chart_url_obj[chart_dom_id]["trends_url"] ? pie_chart_url_obj[chart_dom_id]["trends_url"] : "";
+    } else {
+        // pass
+    }
+
+    if(trends_url) {
+        // $.ajax({
+            
+        // })
+    }
+});

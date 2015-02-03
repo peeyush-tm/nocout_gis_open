@@ -59,7 +59,8 @@ from inventory.forms import (AntennaForm, BaseStationForm, BackhaulForm, SectorF
         DownloadSelectedBSInventoryEditForm)
 from inventory.tasks import (validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory,
         bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory,
-        bulk_upload_wimax_ss_inventory, bulk_upload_backhaul_inventory, generate_gis_inventory_excel)
+        bulk_upload_wimax_ss_inventory, bulk_upload_backhaul_inventory, generate_gis_inventory_excel,
+        bulk_upload_delta_generator)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -2792,12 +2793,15 @@ class GISInventoryBulkImportList(ListView):
         Preparing the Context Variable required in the template rendering.
 
         """
+
         context = super(GISInventoryBulkImportList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'original_filename', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto', },
             {'mData': 'valid_filename', 'sTitle': 'Valid Sheet', 'sWidth': 'auto', },
             {'mData': 'invalid_filename', 'sTitle': 'Invalid Sheet', 'sWidth': 'auto', },
             {'mData': 'error_filename', 'sTitle': 'Error Sheet', 'sWidth': 'auto', },
+            {'mData': 'valid_delta_filename', 'sTitle': 'Valid Delta Sheet', 'sWidth': 'auto', },
+            {'mData': 'invalid_delta_filename', 'sTitle': 'Invalid Delta Sheet', 'sWidth': 'auto', },
             {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
             {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'auto', },
             {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'auto', },
@@ -2808,9 +2812,10 @@ class GISInventoryBulkImportList(ListView):
             {'mData': 'modified_on', 'sTitle': 'Modified On', 'sWidth': 'auto', },
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         if self.request.user.is_superuser:
-            datatable_headers.append({'mData':'bulk_upload_actions', 'sTitle':'Inventory Upload', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append(
+                {'mData': 'bulk_upload_actions', 'sTitle': 'Inventory Upload', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -2821,8 +2826,10 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
 
     """
     model = GISInventoryBulkImport
-    columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
-    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
+    columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology',
+               'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
+    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology',
+                     'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
     search_columns = ['sheet_name', 'technology', 'description', 'uploaded_by']
 
     def prepare_results(self, qs):
@@ -2835,8 +2842,15 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
 
         json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in json_data:
-            # add error_filename in dct
+
+            # add error filename in dct
             dct['error_filename'] = ""
+
+            # add valid delta filename in dct
+            dct['valid_delta_filename'] = ""
+
+            # add invalid delta filename in dct
+            dct['invalid_delta_filename'] = ""
 
             try:
                 excel_green = static("img/ms-office-icons/excel_2013_green.png")
@@ -2912,33 +2926,93 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 except Exception as e:
                     logger.info(e.message)
 
+                # get valid delta file path
+                valid_delta_filename = ""
+
+                try:
+                    valid_delta_file = dct['valid_filename'].replace('valid', 'bulk_upload_deltas', 1)
+                    # if directory for bulk upload excel sheets didn't exist than create one
+                    if os.path.exists(MEDIA_ROOT + valid_delta_file):
+                        valid_delta_filename = valid_delta_file
+                except Exception as e:
+                    logger.info(e.message)
+
+                # get invalid delta file path
+                invalid_delta_filename = ""
+
+                try:
+                    invalid_delta_file = dct['invalid_filename'].replace('invalid', 'bulk_upload_deltas', 1)
+                    # if directory for bulk upload excel sheets didn't exist than create one
+                    if os.path.exists(MEDIA_ROOT + invalid_delta_file):
+                        invalid_delta_filename = invalid_delta_file
+                except Exception as e:
+                    logger.info(e.message)
+
                 # show icon instead of url in data tables view
                 try:
-                    dct.update(original_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('original_filename'), excel_light_green))
+                    dct.update(
+                        original_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                            MEDIA_URL, dct.pop('original_filename'), excel_light_green))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if error_filename:
-                        dct.update(error_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, error_filename, excel_red))
+                        dct.update(
+                            error_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                MEDIA_URL, error_filename, excel_red))
                     else:
-                        dct.update(error_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
+                        dct.update(
+                            error_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                excel_grey))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if valid_delta_filename:
+                        dct.update(
+                            valid_delta_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                MEDIA_URL, valid_delta_filename, excel_green))
+                    else:
+                        dct.update(
+                            valid_delta_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                excel_grey))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if invalid_delta_filename:
+                        dct.update(
+                            invalid_delta_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                MEDIA_URL, invalid_delta_filename, excel_red))
+                    else:
+                        dct.update(
+                            invalid_delta_filename='<img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(valid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('valid_filename'), excel_green))
+                        dct.update(
+                            valid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                MEDIA_URL, dct.pop('valid_filename'), excel_green))
                     else:
-                        dct.update(valid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
+                        dct.update(
+                            valid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(invalid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('invalid_filename'), excel_red))
+                        dct.update(
+                            invalid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                MEDIA_URL, dct.pop('invalid_filename'), excel_red))
                     else:
-                        dct.update(invalid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
+                        dct.update(
+                            invalid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                                excel_grey))
                 except Exception as e:
                     logger.info(e.message)
 
@@ -2972,7 +3046,9 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
                         dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
-                                                        <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
+                                                        <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>\
+                                                        <a href="/bulk_import/generate_delta_sheet/valid/{0}/{1}" class="bulk_import_link" title="Generate Valid Inventory Delta"><i class="fa fa-check-circle-o text-success"></i></a>\
+                                                        <a href="/bulk_import/generate_delta_sheet/invalid/{0}/{1}" class="bulk_import_link" title="Generate Invalid Inventory Delta"><i class="fa fa-check-circle-o text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
                     else:
                         dct.update(bulk_upload_actions='')
             except Exception as e:
@@ -3486,6 +3562,34 @@ class DownloadSelectedBSInventoryUpdate(UpdateView):
     form_class = DownloadSelectedBSInventoryEditForm
     success_url = reverse_lazy('gis_selected_bs_inventories_list')
 
+
+class BulkUploadDeltaGenerator(View):
+    def get(self, request, *args, **kwargs):
+        # result
+        result = {
+            "success": 0,
+            "message": "Delta sheet not generated.",
+            "data": {
+                "meta": None,
+                "objects": {}
+            }
+        }
+
+        # get id of inventory bulk upload
+        try:
+            bulk_upload_delta_generator.delay(kwargs['id'], kwargs['sheettype'], kwargs['sheetname'])
+            result['success'] = 1
+            result['message'] = "Delta sheet in progress."
+            result['data']['objects']['id'] = kwargs['id']
+            result['data']['objects']['sheetname'] = kwargs['sheetname']
+            result['data']['objects']['sheettype'] = kwargs['sheettype']
+        except Exception as e:
+            logger.info("Delta sheet not generated. Exception: ", e.message)
+
+        print "############################# result - ", result
+
+        # return HttpResponse(json.dumps(result))
+        return HttpResponseRedirect('/bulk_import/')
 
 #**************************************** GIS Wizard ****************************************#
 
@@ -4531,3 +4635,179 @@ class GisWizardSubStationListingTable(SubStationListingTable):
                     edit_action = '<a href="/gis-wizard/base-station/{0}/technology/{1}/sector/{2}/sub-station/{3}/"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(sub_station.circuit_set.all()[0].sector.base_station.id, sub_station.circuit_set.all()[0].sector.bs_technology.id, sub_station.circuit_set.all()[0].sector.id, device_id)
             dct.update(actions=detail_action+edit_action)
         return json_data
+
+# This function returns model name as per the given param
+def getModelForSearch(search_by='default'):
+
+    search_model = ''
+
+    if search_by in ['ip_address','mac_address']:
+        search_model = Device
+    elif search_by in ['circuit_id']:
+        search_model = Circuit
+    elif search_by in ['sector_id']:
+        search_model = Sector
+    else:
+        search_model = ''
+
+    return search_model
+
+# This function returns the auto suggestions data as per the given params
+def getAutoSuggestion(request, search_by="default", search_txt=""):
+
+    result = {
+        "success" : 0,
+        "message" : "Record Not Found",
+        "data" : []
+    }
+
+    # Get model as per the search criteria
+    search_model = getModelForSearch(search_by)
+
+    if search_model and search_by:
+        # Condition to fetch data
+        condition = '%s__istartswith'% search_by
+        # fetch queryset as per the condition
+        query_result = search_model.objects.filter(**{condition : str(search_txt)})[:30]
+
+        # If any records found in queryset
+        if len(query_result) > 0:
+            # Initialize data list
+            response_data = []
+            try:
+                # loop queryset to make data dict
+                for data in query_result:
+                    # Make required values dict
+                    single_data_dict = {"id" : data.id,"text" : getattr(data,search_by)}
+                    # Append dict to data list
+                    response_data.append(single_data_dict)
+                    # Clear the dict
+                    single_data_dict = {}
+
+                #Update response dict
+                result["success"] = 1
+                result["message"] = "Suggestion Fetched Successfully."
+                result["data"] = response_data
+            except Exception, e:
+                result["message"] = "Exception occurs."
+
+    # return result dict
+    return HttpResponse(json.dumps(result))
+
+
+# This function returns search result as per the given params
+def getSearchData(request, search_by="default", pk=0):
+
+    result = {
+        "success" : 0,
+        "message" : "Record Not Found",
+        "data" : {
+            "inventory_page_url" : '',
+            "perf_page_url" : '',
+            "alert_page_url" : ''
+        }
+    }
+
+    # Get model as per the search criteria
+    search_model = getModelForSearch(search_by)
+
+    if search_model and search_by:
+        # fetch queryset as per the condition
+        query_result = search_model.objects.filter(pk=pk)
+
+        # If any records found in queryset
+        if len(query_result) > 0:
+            # Initialize data list
+            response_data = []
+
+            try:
+                inventory_page_url = ''
+                perf_page_url = ''
+                alert_page_url = ''
+
+                # Get the single device inventory page, alert page & perf page url
+                if search_by in ['ip_address','mac_address']:
+                    # Device Inventory page url
+                    inventory_page_url = reverse(
+                        'device_edit',
+                        kwargs={'pk': query_result[0].id},
+                        current_app='device'
+                    )
+                    # Single Device perf page url
+                    perf_page_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={'page_type': 'customer', 'device_id' : query_result[0].id},
+                        current_app='performance'
+                    )
+                    # Single Device alert page url
+                    alert_page_url = reverse(
+                        'SingleDeviceDetails',
+                        kwargs={'page_type': 'customer', 'device_id' : query_result[0].id, 'service_name' : 'ping'},
+                        current_app='alert_center'
+                    )
+                elif search_by in ['circuit_id']:
+                    # Circuit Inventory page url
+                    inventory_page_url = reverse(
+                        'circuit_edit',
+                        kwargs={'pk': query_result[0].id},
+                        current_app='inventory'
+                    )
+                    # Single Device perf page url
+                    perf_page_url = ''
+                    # Single Device alert page url
+                    alert_page_url = ''
+
+                elif search_by in ['sector_id']:
+
+                    current_technology = ''
+                    # Get technology of sector from queryset
+                    try:
+                        current_technology = query_result[0].bs_technology.alias
+                    except Exception, e:
+                        current_technology = ''
+
+                    current_technology = current_technology.lower()
+
+                    # Get page type as per the technology
+                    page_type = 'customer' if current_technology in ['ptp','p2p'] else 'network'
+
+                    # Sector Inventory page url
+                    inventory_page_url = reverse(
+                        'sector_edit',
+                        kwargs={'pk': query_result[0].id},
+                        current_app='inventory'
+                    )
+                    # Single Device perf page url
+                    perf_page_url = reverse(
+                        'SingleDevicePerf',
+                        kwargs={'page_type': page_type, 'device_id' : query_result[0].id},
+                        current_app='performance'
+                    )
+                    # Single Device alert page url
+                    alert_page_url = reverse(
+                        'SingleDeviceDetails',
+                        kwargs={'page_type': page_type, 'device_id' : query_result[0].id, 'service_name' : 'ping'},
+                        current_app='alert_center'
+                    )
+
+                else:
+
+                    inventory_page_url = ''
+                    perf_page_url = ''
+                    alert_page_url = ''
+
+                #Update response dict
+                result["success"] = 1
+                result["message"] = "Search Successfully."
+                
+                result["data"]["inventory_page_url"] = inventory_page_url
+                result["data"]["perf_page_url"] = perf_page_url
+                result["data"]["alert_page_url"] = alert_page_url
+
+            except Exception, e:
+                result["message"] = "Exception occurs."
+
+
+
+    # return result dict
+    return HttpResponse(json.dumps(result))

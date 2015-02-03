@@ -45,65 +45,34 @@
         <!--Filters Block Start-->
         <div class="">
             <ul class="list-unstyled list-inline" style="margin-bottom:0px;">
-                <!--  <li>
-                    device_name Filter
-                    <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
-                        <option value="">Select Device</option>
-                    </select>
-                </li>
-                <li>
-                    start_date Filter
-                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="start_date" size="10"
-                           id="start_date" placeholder="Start Date" class="hide">
-                </li>
-                <li>
-                    <span class="col-xs-1 input-sm">To</span>
-                </li> -->
-                <!-- <li>
-                    end_date Filter
-                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10"
-                           id="end_date" placeholder="End Date" class="hide">
-                </li> -->
-                <li style="max-width: 320px;">
+                <li class="date_range_filter_container">
                     <div class="input-group">
-                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text"
-                                                                                                    name="reservation"
-                                                                                                    id="reservationtime"
-                                                                                                    class="form-control input-large search-query"
-                                                                                                    value=""/>
+                        <span class="input-group-addon">
+                            <i class="fa fa-calendar"></i>
+                        </span>
+                        <input type="text" name="reservation" id="reservationtime" class="form-control input-large search-query" value=""/>
                     </div>
                 </li>
                 <li>
-                    <div class="btn-group dropdown col-xs-1">
-                        <button id="apply_filter" class="btn  btn-default btn-sm">
-                            Apply Filter
-                        </button>
-                    </div>
+                    <button id="apply_filter" class="btn  btn-default btn-sm">
+                        <i class="fa fa-filter"></i> Apply Filter
+                    </button>
                 </li>
                 <li>
-                    <div class="btn-group dropdown col-xs-1">
-                        <button id="reset_filter" class="btn  btn-warning btn-sm">
-                            Reset Filter
-                        </button>
-                    </div>
+                    <button id="reset_filter" class="btn  btn-warning btn-sm">
+                        <i class="fa fa-times"></i> Reset Filter
+                    </button>
                 </li>
-
-                <!-- <li>
-                    <div class="btn-group dropdown col-xs-1">
-                        <button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
-                            Download Report
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu context">
-                            <li>
-                                <a id="download_excel">Excel</a>
-                            </li>
-                            <li>
-                                <a id="download_csv">CSV</a>
-                            </li>
-                        </ul>
-                    </div>
-                </li> -->
+                <li>
+                    <a href="#" class="btn btn-default btn-sm hide" id="inventory_link_tag" title="Inventory" target="_blank">
+                        <i class="fa fa-dropbox text-primary"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="btn btn-default btn-sm hide" id="alerts_link_tag" title="Alerts" target="_blank">
+                        <i class="fa fa-warning text-danger"></i>
+                    </a>
+                </li>
             </ul>
         </div>
         <!--Filters Block End-->
@@ -268,8 +237,8 @@
     $(document).ready(function (e) {
 
         var url_array = window.location.href.split("/"),
-                page_type_val = "",
-                base_url = "";
+            page_type_val = "",
+            base_url = "";
 
         /*Set the base url of application for ajax calls*/
         if (window.location.origin) {
@@ -403,8 +372,10 @@
         });
 
         $("#reset_filter").on('click', function () {
-            window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + ''
-                    + '&end_date=';
+            if (window.location.href.indexOf("?") > -1) {
+                window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}';
+                // window.location.href = window.location.href.split("?")[0];
+            }
         });
 
         $("#download_excel").on('click', function () {
@@ -461,9 +432,24 @@
         /*Hide Status Container*/
         //$("#status_container").hide();
 
-        var devicesUrl = base_url + "/" + "{{ get_devices_url }}";
-        var statusUrl = base_url + "/" + "{{ get_status_url }}" + "/";
-        var serviceUrl = base_url + "/" + "{{ get_services_url }}" + "/";
+        var devicesUrl = base_url + "/" + "{{ get_devices_url }}",
+            statusUrl = base_url + "/" + "{{ get_status_url }}" + "/",
+            serviceUrl = base_url + "/" + "{{ get_services_url }}" + "/",
+            inventory_url = "{{ inventory_page_url }}",
+            alert_url = "{{ alert_page_url }}";
+        
+        inventory_url = inventory_url ? base_url+""+inventory_url : "";
+        alert_url = alert_url ? base_url+""+alert_url : "";
+
+        if(inventory_url) {
+            $("#inventory_link_tag").attr("href",inventory_url);
+            $("#inventory_link_tag").removeClass("hide");
+        }
+
+        if(alert_url) {
+            $("#alerts_link_tag").attr("href",alert_url);
+            $("#alerts_link_tag").removeClass("hide");
+        }
 
         current_device = "{{ device.id }}";
         perfInstance = new nocoutPerfLib();
