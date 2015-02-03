@@ -2957,11 +2957,15 @@ class GISPerfData(View):
         # device packet loss
         device_pl = ""
 
+        end_time = int(freeze_time) / 1000
+        start_time = end_time - 300
+
         try:
             if int(freeze_time):
                 device_pl = PerformanceNetwork.objects.filter(device_name=device_name, service_name='ping',
                                                               data_source='pl',
-                                                              sys_timestamp__lte=int(freeze_time) / 1000)\
+                                                              sys_timestamp__gte=start_time,
+                                                              sys_timestamp__lte=end_time)\
                                                               .using(alias=machine_name)\
                                                               .order_by('-sys_timestamp')[:1]
                 if len(device_pl):
