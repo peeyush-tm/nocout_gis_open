@@ -52,7 +52,7 @@ def check_rici_link_ethernet_status(item, _no_params, info):
     """
     state = 3
     link_state = None
-    link_string = "FE-"
+    link_string = "fe_"
     link_state_list = []
     infotext = "unknown_value"
     try:

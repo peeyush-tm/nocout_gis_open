@@ -15,7 +15,7 @@ from inventory.tasks import get_devices
 
 from nocout.utils.util import fetch_raw_result
 
-from performance.models import UtilizationStatus, InventoryStatus, ServiceStatus, Utilization, PerformanceService
+from performance.models import UtilizationStatus, InventoryStatus, ServiceStatus, Utilization, PerformanceService, Topology
 
 from django.utils.dateformat import format
 import datetime
@@ -269,7 +269,7 @@ def get_time():
     end_date = format(datetime.datetime.now(), 'U')
     start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
 
-    return start_date, end_date
+    return float(start_date), float(end_date)
 
 
 def get_average_sector_util(device_object, service, data_source, getit='val'):
@@ -736,6 +736,11 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
                 sys_timestamp = current_out_per_s[0]['sys_timestamp']
 
             severity, age = get_higher_severity(severity_s)
+
+            #condition is : if the topology count >= 8 : the sector is
+            #stop provisioning state
+            if Topology.objects.filter(device_name=sector.sector_configured_on.device_name).count() >= 8:
+                severity = 'critical'
 
             if not severity and not age:
                 continue

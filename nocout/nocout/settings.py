@@ -12,7 +12,6 @@ import os
 from django.conf import global_settings
 from collections import namedtuple
 from datetime import timedelta
-from celery.schedules import crontab
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
@@ -57,7 +56,8 @@ LANGUAGE_CODE = 'en-us'
 SITE_ID = 1
 
 LOGIN_URL = '/login/'
-LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/')
+LOGIN_REDIRECT_URL = '/home/'
+LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/', 'sm/dialog_for_page_refresh/', 'sm/dialog_expired_logout_user/', 'reset-cache/', 'sm/dialog_action/', 'user/change_password/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -101,7 +101,7 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     'dajaxice.finders.DajaxiceFinder',
-    #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    #'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -202,6 +202,11 @@ INSTALLED_APPS = (
     'alarm_escalation',
 )
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'session_management.backends.TokenAuthBackend',
+)
+
 ##TODO: dynamically populate cache
 #
 # def get_cache():
@@ -244,28 +249,23 @@ ALLOWED_APPS_TO_CLEAR_CACHE = [
     'inventory',
 ]
 
-'''
-# RabbitMQ configuration for django-celery
-BROKER_HOST = "localhost"
-BROKER_PORT = 5672
-BROKER_USER = "priyesh"
-BROKER_PASSWORD = "pass"
-BROKER_VHOST = "/nocout_dev"
-'''
+import djcelery
+djcelery.setup_loader()
 
 # MongoDB configuration for django-celery
 CELERY_RESULT_BACKEND = "mongodb"
 CELERY_MONGODB_BACKEND_SETTINGS = {
-    "host": "127.0.0.1",
-    "port": 27017,
+    "host": "10.133.12.163",
+    "port": 27163,
     "database": "nocout_celery_db",             # mongodb database for django-celery
     "taskmeta_collection": "c_queue"            # collection name to use for task output
 }
-BROKER_URL = 'mongodb://localhost:27017/nocout_celery_db'
+BROKER_URL = 'mongodb://10.133.12.163:27163/nocout_celery_db'
+
+from celery import crontab
 
 #=time zone for celery periodic tasks
 CELERY_TIMEZONE = 'Asia/Calcutta'
-
 
 CELERYBEAT_SCHEDULE = {
     'wimax-topology': {
@@ -300,12 +300,33 @@ CELERYBEAT_SCHEDULE = {
         'task': 'capacity_management.tasks.gather_sector_status',
         'schedule': timedelta(seconds=300),
         'args': ['WiMAX']
-    }
+    },
+    'timely-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_timely_main_dashboard',
+        'schedule': timedelta(seconds=300),
+    },
+    'hourly-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_hourly_main_dashboard',
+        'schedule': crontab(minute=0)
+    },
+    'daily-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_daily_main_dashboard',
+        'schedule': crontab(minute=0, hour=0)
+    },
+    'weekly-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_weekly_main_dashboard',
+        'schedule': crontab(minute=0, hour=1) # Run after daily calculation task is completed.
+    },
+    'monthly-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_monthly_main_dashboard',
+        'schedule': crontab(minute=0, hour=1) # Run after daily calculation task is completed.
+    },
+    'yearly-main-dashboard': {
+        'task': 'dashboard.tasks.calculate_yearly_main_dashboard',
+        'schedule': crontab(minute=0, hour=0, day_of_month=1)
+    },
 }
 
-
-import djcelery
-djcelery.setup_loader()
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -321,26 +342,26 @@ LOGGING = {
     'disable_existing_loggers': True,
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s:%(lineno)s %(process)d %(thread)d %(message)s',
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s',
             'datefmt' : "%d/%b/%Y %H:%M:%S"
         },
     },
     'handlers': {
         'sentry': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
         },
         'console': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
         'logfile': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join( '/tmp/nocout_main.log' ),
-            'maxBytes': 1000000000,
-            'backupCount':10,
+            'filename': os.path.join('/tmp/nocout_main.log' ),
+            'maxBytes': 1048576,
+            'backupCount':100,
             'formatter': 'verbose',
         },
 
@@ -352,21 +373,25 @@ LOGGING = {
             'propagate': False,
         },
         'raven': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'handlers': ['console', 'sentry'],
             'propagate': False,
         },
         'sentry.errors': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'handlers': ['console'],
             'propagate': False,
         },
         '':{
-            'handlers': ['console','logfile','sentry'],
+            'handlers': ['logfile'],
             'level': 'DEBUG',
         },
     },
 }
+
+##FOR MULTI PROC data analysis
+MULTI_PROCESSING_ENABLED = False
+##FOR MULTI PROC data analysis
 
 SESSION_SECURITY_WARN_AFTER = 540
 SESSION_SECURITY_EXPIRE_AFTER = 600
@@ -503,20 +528,13 @@ DATE_TIME_FORMAT = "%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"
 REPORT_PATH = '/opt/nocout/nocout_gis/nocout/media/download_center/reports'
 REPORT_RELATIVE_PATH = '/opt/nocout/nocout_gis/nocout'
 
-# Import the local_settings.py file to override global settings
-
-try:
-    from local_settings import *
-except ImportError:
-    pass
-
 
 # ********************** django password options **********************
 PASSWORD_MIN_LENGTH = 6 # Defaults to 6
 PASSWORD_MAX_LENGTH = 120 # Defaults to None
 
-# PASSWORD_DICTIONARY = "/usr/share/dict/words" # Defaults to None
-PASSWORD_DICTIONARY = "/usr/share/dict/american-english" # Defaults to None
+PASSWORD_DICTIONARY = "/usr/share/dict/words" # Defaults to None
+# PASSWORD_DICTIONARY = "/usr/share/dict/american-english" # Defaults to None
 
 PASSWORD_MATCH_THRESHOLD = 0.9 # Defaults to 0.9, should be 0.0 - 1.0 where 1.0 means exactly the same
 PASSWORD_COMMON_SEQUENCES = [] # Should be a list of strings, see passwords/validators.py for default
@@ -528,3 +546,16 @@ PASSWORD_COMPLEXITY = { # You can ommit any or all of these for no limit for tha
     "NON ASCII": 0,   # Non Ascii (ord() >= 128)
     "WORDS": 0        # Words (substrings seperates by a whitespace)
 }
+
+
+####EMAIL SETTINGS
+DEFAULT_FROM_EMAIL = 'wirelessone@tcl.com'
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = '/nocout/tmp/app-messages' # change this to a proper location
+
+# Import the local_settings.py file to override global settings
+
+try:
+    from local_settings import *
+except ImportError:
+    pass

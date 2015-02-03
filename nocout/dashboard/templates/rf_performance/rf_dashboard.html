@@ -141,6 +141,9 @@ function rf_getChartData(counter) {
                         title: {
                             text: response.data.objects.chart_data[0].name
                         },
+                        credits: {
+                            enabled: false
+                        },
                         plotOptions: {
                             pie: {
                                 allowPointSelect: true,

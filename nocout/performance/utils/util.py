@@ -207,6 +207,11 @@ def combined_indexed_gis_devices(indexes):
     indexed_ss = {}
     indexed_bh = {}
 
+    #pop, aggrigation, bs conveter
+    indexed_bh_pop = {}
+    indexed_bh_aggr = {}
+    indexed_bh_conv = {}
+
     if indexes:
         raw_results = cached_all_gis_inventory(query_all_gis_inventory(monitored_only=True))
 
@@ -214,21 +219,59 @@ def combined_indexed_gis_devices(indexes):
             defined_sector_index = result[indexes['sector']]
             defined_ss_index = result[indexes['ss']]
             defined_bh_index = result[indexes['bh']]
+
+            defined_bh_pop_index = result[indexes['pop']]
+            defined_bh_aggr_index = result[indexes['aggr']]
+            defined_bh_conv_index = result[indexes['bsconv']]
+
             #indexing sector
             if defined_sector_index not in indexed_sector:
                 indexed_sector[defined_sector_index] = []
+            try:
+                indexed_sector[defined_sector_index].append(result)
+            except:
+                pass
             #indexing ss
             if defined_ss_index not in indexed_ss:
                 indexed_ss[defined_ss_index] = []
+            try:
+                indexed_ss[defined_ss_index].append(result)
+            except:
+                pass
+
             #indexing bh
-            if defined_bh_index not in indexed_bh:
+            if defined_bh_index and defined_bh_index not in indexed_bh:
                 indexed_bh[defined_bh_index] = []
+            try:
+                indexed_bh[defined_bh_index].append(result)
+            except:
+                pass
 
-            indexed_sector[defined_sector_index].append(result)
-            indexed_ss[defined_ss_index].append(result)
-            indexed_bh[defined_bh_index].append(result)
+            #pop, aggrigation, bs conveter
+            #indexing pop
+            if defined_bh_pop_index and defined_bh_pop_index not in indexed_bh_pop:
+                indexed_bh_pop[defined_bh_pop_index] = []
+            try:
+                indexed_bh_pop[defined_bh_pop_index].append(result)
+            except:
+                pass
 
-    return indexed_sector, indexed_ss, indexed_bh
+            #indexing bsconv
+            if defined_bh_conv_index and defined_bh_conv_index not in indexed_bh_conv:
+                indexed_bh_conv[defined_bh_conv_index] = []
+            try:
+                indexed_bh_conv[defined_bh_conv_index].append(result)
+            except:
+                pass
+            #indexing aggregation
+            if defined_bh_aggr_index and defined_bh_aggr_index not in indexed_bh_aggr:
+                indexed_bh_aggr[defined_bh_aggr_index] = []
+            try:
+                indexed_bh_aggr[defined_bh_aggr_index].append(result)
+            except:
+                pass
+
+    return indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv
 
 
 @cache_for(300)
@@ -246,8 +289,16 @@ def prepare_gis_devices(devices, page_type):
     #     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
     # ##binary search instead
 
-    indexed_sector, indexed_ss, indexed_bh = \
-        combined_indexed_gis_devices(indexes={'sector': 'SECTOR_CONF_ON_NAME', 'ss': 'SSDEVICENAME', 'bh': 'BHCONF'})
+    indexed_sector, indexed_ss, indexed_bh, indexed_bh_pop, indexed_bh_aggr, indexed_bh_conv = \
+        combined_indexed_gis_devices(indexes={
+                                                'sector': 'SECTOR_CONF_ON_NAME',
+                                                'ss': 'SSDEVICENAME',
+                                                'bh': 'BHCONF',
+                                                'pop': 'POP',
+                                                'aggr': 'AGGR',
+                                                'bsconv': 'BSCONV'
+                                            }
+                                    )
 
     # gis_result = indexed_gis_devices(page_type=page_type)
 
@@ -270,6 +321,9 @@ def prepare_gis_devices(devices, page_type):
         is_sector = False
         is_ss = False
         is_bh = False
+        is_pop = False
+        is_aggr = False
+        is_conv = False
 
         sector_id = []
 
@@ -287,6 +341,18 @@ def prepare_gis_devices(devices, page_type):
             #is bh
             is_bh = True
             raw_result = indexed_bh[device_name]
+        #pop, aggr, conv
+        elif device_name in indexed_bh_pop:
+            is_pop = True
+            raw_result = indexed_bh_pop[device_name]
+        #aggr
+        elif device_name in indexed_bh_aggr:
+            is_aggr = True
+            raw_result = indexed_bh_aggr[device_name]
+        #conv
+        elif device_name in indexed_bh_conv:
+            is_conv = True
+            raw_result = indexed_bh_conv[device_name]
         else:
             continue
 
@@ -347,6 +413,21 @@ def prepare_gis_devices(devices, page_type):
                     device.update({
                         "device_type": format_value(bs_row['BHTYPE']),
                         "device_technology": format_value(bs_row['BHTECH'])
+                    })
+                elif is_pop:
+                    device.update({
+                        "device_type": format_value(bs_row['POP_TYPE']),
+                        "device_technology": format_value(bs_row['POP_TECH'])
+                    })
+                elif is_aggr:
+                    device.update({
+                        "device_type": format_value(bs_row['AGGR_TYPE']),
+                        "device_technology": format_value(bs_row['AGGR_TECH'])
+                    })
+                elif is_conv:
+                    device.update({
+                        "device_type": format_value(bs_row['BSCONV_TYPE']),
+                        "device_technology": format_value(bs_row['BSCONV_TECH'])
                     })
 
     return devices

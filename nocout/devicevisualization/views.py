@@ -1601,17 +1601,19 @@ class GISPerfData(View):
         pl_dict = dict()
         pl_dict['name'] = "pl"
         pl_dict['show'] = 1
+        pl_dict['url'] = "performance/service/ping/service_data_source/pl/device/" + str(bh_device.id) + "?start_date=&end_date=",
         pl_dict['title'] = "Packet Drop"
 
         # backhaul rta dictionary
         rta_dict = dict()
         rta_dict['name'] = "rta"
         rta_dict['show'] = 1
+        rta_dict['url'] = "performance/service/ping/service_data_source/rta/device/" + str(bh_device.id) + "?start_date=&end_date=",
         rta_dict['title'] = "Latency"
 
         # pl
         try:
-            pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
+            pl_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
                                                             data_source='pl').using(
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
@@ -1621,7 +1623,7 @@ class GISPerfData(View):
 
         # rta
         try:
-            rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device,
+            rta_dict['value'] = NetworkStatus.objects.filter(device_name=bh_device.device_name,
                                                             data_source='rta').using(
                                                             alias=bh_device.machine.name)[0].current_value
         except Exception as e:
@@ -1631,9 +1633,11 @@ class GISPerfData(View):
 
         # bh severity
         try:
+
             backhaul_data['bhSeverity'] = NetworkStatus.objects.filter(device_name=bh_device,
                                                             data_source='pl').using(
                                                             alias=bh_device.machine.name)[0].severity
+
         except Exception as e:
             backhaul_data['bhSeverity'] = 'unknown'
             # logger.error("BH Severity not exist for backhaul device ({}). Exception: ".format(bh_device.device_name,

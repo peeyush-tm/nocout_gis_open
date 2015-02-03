@@ -7,10 +7,11 @@ def update_device_type_service(sender, instance=None, created=False, **kwargs):
     """
     If a new device type service is created auto assign default data source of service to it.
     """
+    if not created:
+        return
+
     DeviceTypeServiceDataSource = get_model('device', 'DeviceTypeServiceDataSource', seed_cache=True)
     ServiceSpecificDataSource = get_model('service', 'ServiceSpecificDataSource', seed_cache=True)
-
-    DeviceTypeServiceDataSource.objects.filter(device_type_service=instance).delete()
 
     dt_sds = list()
     service_ds = ServiceSpecificDataSource.objects.filter(service=instance.service)

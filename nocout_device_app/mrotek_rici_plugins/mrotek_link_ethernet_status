@@ -52,13 +52,14 @@ def check_mrotek_link_ethernet_status(item, _no_params, info):
     """
     state = 3
     link_state = None
-    link_string = "FE_"
+    link_string = "fe_"
     link_state_list = []
     infotext = "unknown_value"
     try:
 	if info:
 		infotext = ""
-		for index in range(1,len(info)):
+		num_port= min(len(info),5)
+		for index in range(1,num_port):
                 	link_state = info[index][0]
 			if link_state:
                 		link_state = link_state_value(str(link_state))

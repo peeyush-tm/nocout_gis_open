@@ -141,8 +141,14 @@ iframe {
         $.cookie("isSSChecked", true, {path: '/', secure : true});
         $.cookie("markerIconSize", "medium", {path: '/', secure : true});
         $.cookie("tooltipLabel", "", {path: '/', secure : true});
+
         /*Cookie for collapsed menu*/
         $.cookie("isMenuOpen", 1, {path: '/', secure : true});
+
+        /*Cookie for Global Search*/
+        $.cookie("global_search_criteria", "", {path: '/', secure : true});
+        $.cookie("global_search_val", "", {path: '/', secure : true});
+
       });
 
       /*Triggers when login form is submitted*/
@@ -233,24 +239,25 @@ iframe {
                                     user_id: data.data.objects.user_id,
                                     new_pwd: $("#id_new_password").val(),
                                     confirm_pwd: $("#id_confirm_password").val(),
+                                    auth_token: data.data.objects.auth_token,
                                    },
                                    dataType: "json",
-                                   success: function (data) {
-                                       if (data.success == 0){
+                                   success: function (pwd_data) {
+                                       if (pwd_data.success == 0){
                                             $("#password").val('');
                                             var unique_gritter = $.gritter.add({
-                                                title: data.message,
-                                                text: data.reason,
+                                                title: pwd_data.message,
+                                                text: pwd_data.data.objects.reason,
                                                 sticky: false,
                                                 time : 2000,
                                                 after_close: function () {
                                                     $.gritter.removeAll();
-                                                    window.location.replace(data.data.objects.url)
+                                                    window.location.replace(pwd_data.data.objects.url)
                                                 }
                                             });
                                         }
                                         else{
-                                            window.location.replace(data.data.objects.url)
+                                            window.location.replace(pwd_data.data.objects.url)
                                         }
                                    }//success
                                });//ajax
@@ -299,19 +306,19 @@ iframe {
                                    url: "/sm/dialog_action/",
                                    type: "POST",
                                    data: { action: 'continue', url:data.data.objects.url,
-                                    'password_alert':data.data.objects.password_expire_alert,
-                                    'password_expires_on': data.data.objects.password_expires_on },
+                                            auth_token: data.data.objects.auth_token },
                                    dataType: "json",
-                                   success: function (data) {
-                                        if (data.data.objects.password_expires_on == null){
-                                            window.location.replace(data.data.objects.url);
+                                   success: function (sm_data) {
+                                        if (data.data.objects.password_expire_alert){
+                                            bootbox.alert(
+                                                "Change your password, password will expire on " +
+                                                data.data.objects.password_expires_on,
+                                                function() {
+                                                        window.location.replace(sm_data.data.objects.url);
+                                                });
                                         }
                                         else{
-                                            bootbox.alert("Change your password, password will " +
-                                            "expire on " +
-                                            data.data.objects.password_expires_on, function() {
-                                            window.location.replace(data.data.objects.url);
-                                            });
+                                            window.location.replace(sm_data.data.objects.url);
                                         }
                                    }//success
                                });//ajax

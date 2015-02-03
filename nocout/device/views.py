@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
-
 import json
 from operator import itemgetter
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.contrib.auth.models import User
 from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.core.urlresolvers import reverse_lazy, reverse
-from datetime import datetime
+from datetime import datetime, timedelta
 from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType, DevicePort, Country, State, City, \
-    DeviceFrequency, DeviceTypeServiceDataSource, DeviceTypeService
+    DeviceFrequency, DeviceTypeServiceDataSource, DeviceTypeService, DeviceSyncHistory
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DevicePortForm, DeviceFrequencyForm, \
     CountryForm, StateForm, CityForm, DeviceTypeServiceCreateFormset, DeviceTypeServiceUpdateFormset, \
     WizardDeviceTypeForm, WizardDeviceTypeServiceForm, DeviceTypeServiceDataSourceCreateFormset, \
-    DeviceTypeServiceDataSourceUpdateFormset
-from nocout.utils.util import DictDiffer
+    DeviceTypeServiceDataSourceUpdateFormset, DeviceSyncHistoryEditForm
+from nocout.utils.util import DictDiffer, convert_utc_to_local_timezone
 from django.http.response import HttpResponseRedirect, HttpResponse
 from organization.models import Organization
 from service.models import Service
@@ -33,7 +33,7 @@ from nocout.utils import logged_in_user_organizations
 from nocout.mixins.user_action import UserLogDeleteMixin
 from nocout.mixins.permissions import PermissionsRequiredMixin, SuperUserRequiredMixin
 from nocout.mixins.generics import FormRequestMixin
-from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin
+from nocout.mixins.datatable import DatatableSearchMixin, DatatableOrganizationFilterMixin, ValuesQuerySetMixin
 from nocout.mixins.select2 import Select2Mixin
 from django.db.models import Q
 from service.forms import DTServiceDataSourceUpdateFormSet
@@ -84,7 +84,7 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
-        #if the user role is Admin or superadmin then the action column will appear on the datatable
+        # if the user role is Admin or superadmin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '9%', 'bSortable': False})
@@ -105,13 +105,30 @@ class DeviceList(PermissionsRequiredMixin, ListView):
             {'mData': 'state__state_name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'city__city_name', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs'}, ]
 
-        #if the user role is Admin then the action column will appear on the datatable
+        # if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers_no_nms_actions.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '15%', 'bSortable': False})
 
+        # get deadlock status
+        deadlock_status = ""
+
+        # get last sync run time
+        last_sync_time = ""
+
+        try:
+            last_sync_status = get_current_sync_status()
+            deadlock_status = last_sync_status[0]
+            last_sync_time = last_sync_status[1]
+        except Exception as e:
+            pass
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['datatable_headers_no_nms_actions'] = json.dumps(datatable_headers_no_nms_actions)
+
+        context['deadlock_status'] = deadlock_status
+        context['last_sync_time'] = last_sync_time
+
         return context
 
 
@@ -3592,3 +3609,220 @@ def filter_selected_device(request):
     return HttpResponse(json.dumps({
         'device_result': device_result
         }) )
+
+
+class DeviceSyncHistoryList(ListView):
+    """
+    Generic Class based View to List the DeviceSyncHistory.
+    """
+
+    model = DeviceSyncHistory
+    template_name = 'device_sync_history/device_sync_history_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        """
+        context = super(DeviceSyncHistoryList, self).get_context_data(**kwargs)
+
+        # get deadlock status
+        deadlock_status = ""
+
+        # get last sync run time
+        last_sync_time = ""
+
+        try:
+            last_sync_status = get_current_sync_status()
+            deadlock_status = last_sync_status[0]
+            last_sync_time = last_sync_status[1]
+        except Exception as e:
+            pass
+
+        datatable_headers = [
+            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
+            {'mData': 'message', 'sTitle': 'Response Message', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },
+            {'mData': 'sync_by', 'sTitle': 'Synced By', 'sWidth': 'auto', },
+            {'mData': 'added_on', 'sTitle': 'Synced On Timestamp', 'sWidth': 'auto', },
+            {'mData': 'completed_on', 'sTitle': 'Sync Completion Timestamp', 'sWidth': 'auto', },
+        ]
+
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            context['deadlock_status'] = deadlock_status
+            context['last_sync_time'] = last_sync_time
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+
+        return context
+
+
+class DeviceSyncHistoryListingTable(DatatableSearchMixin, ValuesQuerySetMixin, BaseDatatableView):
+    """
+    A generic class based view for the gis inventory bulk import data table rendering.
+
+    """
+    model = DeviceSyncHistory
+    columns = ['status', 'message', 'description', 'sync_by', 'added_on', 'completed_on']
+    order_columns = ['status', 'message', 'description', 'sync_by', 'added_on', 'completed_on']
+    search_columns = ['status', 'message', 'description', 'sync_by']
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
+
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        # queryset
+        queryset = DeviceSyncHistory.objects.filter(sync_by=self.request.user.username).values(*self.columns+['id'])
+
+        # if self.request.user.is_superuser:
+        #     queryset = DeviceSyncHistory.objects.filter().values(*self.columns+['id'])
+        return queryset
+
+    def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+
+        json_data = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in json_data:
+            try:
+                # show 'Success', 'Pending' and 'Failed' in upload status
+                try:
+                    if not dct.get('status'):
+                        status_icon_color = "grey-dot"
+                        dct.update(status='<i class="fa fa-circle {0}"></i> Pending'.format(status_icon_color))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 0:
+                        status_icon_color = "grey-dot"
+                        dct.update(status='<i class="fa fa-circle {0}"></i> Pending'.format(status_icon_color))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 1:
+                        status_icon_color = "green-dot"
+                        dct.update(status='<i class="fa fa-circle {0}"></i> Success'.format(status_icon_color))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 2:
+                        status_icon_color = "red-dot"
+                        dct.update(status='<i class="fa fa-circle {0}"></i> Failed'.format(status_icon_color))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 3:
+                        status_icon_color = "orange-dot"
+                        dct.update(status='<i class="fa fa-circle {0}"></i> Deadlock'.format(status_icon_color))
+                except Exception as e:
+                    logger.info(e.message)
+
+                # show user full name in uploded by field
+                try:
+                    if dct.get('sync_by'):
+                        user = User.objects.get(username=dct.get('sync_by'))
+                        dct.update(sync_by='{} {}'.format(user.first_name, user.last_name))
+                except Exception as e:
+                    logger.info(e.message)
+
+            except Exception as e:
+                logger.info(e)
+
+            # added on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['added_on'] = convert_utc_to_local_timezone(dct['added_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            # completed on field timezone conversion from 'utc' to 'local'
+            try:
+                dct['completed_on'] = convert_utc_to_local_timezone(dct['completed_on'])
+            except Exception as e:
+                logger.error("Timezone conversion not possible. Exception: ", e.message)
+
+            dct.update(actions='<a href="/device_sync_history/{0}/edit/"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="/device_sync_history/{0}/delete/"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
+
+        return json_data
+
+
+class DeviceSyncHistoryDelete(DeleteView):
+    """
+    Class based View to delete the GISInventoryBulkImport
+    """
+    model = DeviceSyncHistory
+    template_name = 'device_sync_history/device_sync_history_delete.html'
+    success_url = reverse_lazy('device_sync_history_list')
+
+    def delete(self, request, *args, **kwargs):
+        device_sync_obj = self.get_object()
+
+        # delete entry from database
+        device_sync_obj.delete()
+        return HttpResponseRedirect(DeviceSyncHistoryDelete.success_url)
+
+
+class DeviceSyncHistoryUpdate(UpdateView):
+    """
+    Class based view to update GISInventoryBulkImport .
+    """
+    template_name = 'device_sync_history/device_sync_history_update.html'
+    model = DeviceSyncHistory
+    form_class = DeviceSyncHistoryEditForm
+    success_url = reverse_lazy('device_sync_history_list')
+
+
+def get_current_sync_status():
+    """ Get current sync status i.e. deadlock exist or not and last sync timestamp
+
+    Returns:
+        [deadlock_status, last_sync_time] (list): list containing deadlock status and last sync time
+
+    """
+
+    # deadlock status
+    deadlock_status = 'no'
+
+    # last sync status
+    last_sync_time = ""
+
+    try:
+        device_history_obj = DeviceSyncHistory.objects.latest('id')
+        if device_history_obj:
+            # time of last sync run
+            try:
+                last_sync_time = convert_utc_to_local_timezone(device_history_obj.added_on)
+            except Exception as e:
+                pass
+
+            # current timestamp (with 'utc' as timezone)
+            current_timstamp = datetime.utcnow().replace(tzinfo=None)
+
+            # 'added_on' timestamp of last run of sync (with 'utc' as timezone)
+            added_on_time = device_history_obj.added_on.replace(tzinfo=None)
+
+            # current timestamp and added on timestamp difference
+            time_difference = datetime.utcnow() - added_on_time
+
+            # status of last run of sync
+            last_sync_status = device_history_obj.status
+
+            if last_sync_status == 0 and time_difference > timedelta(minutes=30, seconds=0):
+                deadlock_status = 'yes'
+    except Exception as e:
+        pass
+
+    return [deadlock_status, last_sync_time]

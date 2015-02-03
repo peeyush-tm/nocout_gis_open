@@ -56,3 +56,18 @@ class SectorCapacityStatus(models.Model):
 
     class Meta:
         ordering = ['-sys_timestamp']
+
+#
+# class SectorCapacityAlerts(models.Model):
+#     """
+#     Class for handling the daily sector Alerts
+#     """
+#     pass
+
+#
+# class SectorSpotStatus(models.Model):
+#     """
+#     Class for handling the daily sector Alerts for Sector Spot Dashboard
+#     """
+#     pass
+
