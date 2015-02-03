@@ -2818,6 +2818,9 @@ class GISInventoryBulkImportList(ListView):
         if self.request.user.is_superuser:
             datatable_headers.append(
                 {'mData': 'bulk_upload_actions', 'sTitle': 'Inventory Upload', 'sWidth': '7%', 'bSortable': False})
+        if self.request.user.is_superuser:
+            datatable_headers.append(
+                {'mData': 'inventory_delete_actions', 'sTitle': 'Inventory Delete', 'sWidth': '7%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -3101,12 +3104,20 @@ class GISInventoryBulkImportListingTable(DatatableSearchMixin, ValuesQuerySetMix
                     if dct.get('sheet_name') in sheet_names_list:
                         dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
                                                         <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>\
-                                                        <a href="/bulk_import/delete_inventory/valid/{0}/{1}" class="bulk_import_link" title="Delete Valid Inventory"><i class="fa fa-minus-square-o text-success"></i></a>\
-                                                        <a href="/bulk_import/delete_inventory/invalid/{0}/{1}" class="bulk_import_link" title="Delete Invalid Inventory Delta"><i class="fa fa-minus-square-o text-danger"></i></a>\
                                                         <a href="/bulk_import/generate_delta_sheet/valid/{0}/{1}" class="bulk_import_link" title="Generate Valid Inventory Delta"><i class="fa fa-check-circle-o text-success"></i></a>\
                                                         <a href="/bulk_import/generate_delta_sheet/invalid/{0}/{1}" class="bulk_import_link" title="Generate Invalid Inventory Delta"><i class="fa fa-check-circle-o text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
                     else:
                         dct.update(bulk_upload_actions='')
+            except Exception as e:
+                logger.info()
+            try:
+                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS', 'Backhaul']
+                if dct.get('sheet_name'):
+                    if dct.get('sheet_name') in sheet_names_list:
+                        dct.update(inventory_delete_actions='<a href="/bulk_import/delete_inventory/valid/{0}/{1}" class="bulk_import_link" title="Delete Valid Inventory"><i class="fa fa-minus-square-o text-success"></i></a>\
+                                                             <a href="/bulk_import/delete_inventory/invalid/{0}/{1}" class="bulk_import_link" title="Delete Invalid Inventory Delta"><i class="fa fa-minus-square-o text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
+                    else:
+                        dct.update(inventory_delete_actions='')
             except Exception as e:
                 logger.info()
         return json_data
