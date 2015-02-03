@@ -299,7 +299,10 @@ def get_average_sector_util(device_object, service, data_source, getit='val'):
     else:
         return 0
 
-    return float(perf['current_value__avg'])
+    if perf and perf['current_value__avg']:
+        return float(perf['current_value__avg'])
+    else:
+        return 0
 
 
 def get_peak_sector_util(device_object, service, data_source, getit='val'):
@@ -350,6 +353,9 @@ def get_peak_sector_util(device_object, service, data_source, getit='val'):
     if perf and len(perf):
         return float(perf[0]['current_value']), float(perf[0]['sys_timestamp'])
 
+    else:
+        return 0
+
 
 def update_sector_status(sectors, cbw, kpi, val, technology):
     """
@@ -390,7 +396,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
         if technology.lower() == 'wimax':
             scs = None
             try:
-                scs = SectorCapacityStatus.objects.get(sector=sector)
+                scs = SectorCapacityStatus.objects.get(sector_sector_id=sector.sector_id)
             except Exception as e:
                 logger.exception(e)
 
@@ -684,7 +690,7 @@ def update_sector_status(sectors, cbw, kpi, val, technology):
         elif technology.lower() == 'pmp':
             scs = None
             try:
-                scs = SectorCapacityStatus.objects.get(sector=sector)
+                scs = SectorCapacityStatus.objects.get(sector_sector_id=sector.sector_id)
             except Exception as e:
                 logger.exception(e)
 
